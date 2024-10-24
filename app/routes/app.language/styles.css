@@ -1,0 +1,15 @@
+.language-header {
+    display: flex;
+    justify-content: space-between; /* 确保左右分布 */
+    align-items: center; /* 如果需要垂直居中 */
+}
+
+.language-action {
+    /* 右对齐 */
+    margin-left: auto; /* 将元素推到右边 */
+}
+
+.publish_languageselect_line {
+    display: flex;
+    justify-content: space-between; /* 子元素之间留有空间 */
+}

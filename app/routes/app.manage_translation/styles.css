@@ -1,0 +1,10 @@
+.manage-header {
+    display: flex;
+    justify-content: space-between; /* 确保左右分布 */
+    align-items: center; /* 如果需要垂直居中 */
+}
+
+.manage-action {
+    /* 右对齐 */
+    margin-left: auto; /* 将元素推到右边 */
+}

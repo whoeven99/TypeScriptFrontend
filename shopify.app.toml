@@ -1,27 +1,33 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "7f7e436dad271dd5805709afc6bfddca"
-name = "testapp3"
-handle = "testapp3-67"
-application_url = "https://example.com/"
+client_id = "fb9fc15cbec02bd735e2a5b491cf8409"
+name = "ZinnTrans"
+handle = "transform-lancy-app"
+application_url = "https://trans.bogdatech.com/"
 embedded = true
 
 [build]
-dev_store_url = "quickstart-869140ea.myshopify.com"
+automatically_update_urls_on_dev = true
+dev_store_url = "quickstart-0f992326.myshopify.com"
+include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = ""
+scopes = "read_content,read_markets,write_locales,write_markets,write_products,write_translations"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [
+  "https://trans.bogdatech.com/auth/callback",
+  "https://trans.bogdatech.com/auth/shopify/callback",
+  "https://trans.bogdatech.com/api/auth/callback"
+]
 
 [webhooks]
 api_version = "2024-10"
 
   [[webhooks.subscriptions]]
   topics = [ "app/uninstalled" ]
-  uri = "/webhooks/app/uninstalled"
+  uri = "//webhooks"
 
 [pos]
 embedded = false

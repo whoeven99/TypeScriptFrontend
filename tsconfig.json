@@ -16,6 +16,10 @@
     "moduleResolution": "Bundler",
     "target": "ES2022",
     "baseUrl": ".",
-    "types": ["node"]
+    "paths": {
+      "~/*": ["./app/*"]
+    },
+    "types": ["node","jquery"]
+    
   }
 }
