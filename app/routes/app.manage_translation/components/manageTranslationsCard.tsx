@@ -2,7 +2,7 @@
 import { useNavigate } from "@remix-run/react";
 import { Card, Space, Button, Typography, Table } from "antd";
 
-const { Title, Text, Paragraph } = Typography;
+const { Title } = Typography;
 
 interface SwitcherSettingCardProps {
   cardTitle: string;

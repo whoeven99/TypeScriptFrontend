@@ -149,20 +149,8 @@ const Index = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  const modules = {
-    toolbar: [
-      [{ header: "1" }, { header: "2" }, { font: [] }],
-      [{ list: "ordered" }, { list: "bullet" }],
-      ["bold", "italic", "underline"],
-      [{ color: [] }, { background: [] }],
-      [{ align: [] }],
-      ["code-block"],
-      ["clean"],
-    ],
-  };
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
-  const [quillLoaded, setQuillLoaded] = useState(false);
 
   useEffect(() => {
     setHasPrevious(collectionsData.pageInfo.hasPreviousPage);

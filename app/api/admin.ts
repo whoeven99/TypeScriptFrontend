@@ -19,11 +19,6 @@ export interface UnpublishInfoType {
   shopLocale: { published: boolean };
 }
 
-export interface UnpublishInfoType {
-  locale: string;
-  shopLocale: { published: boolean };
-}
-
 export const queryShopLanguages = async (request: Request) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -50,7 +45,7 @@ export const queryShopLanguages = async (request: Request) => {
 
     return res;
   } catch (error) {
-    console.error("Error fetching shop languages:", error);
+    console.error("Error fetching shoplocales:", error);
     throw error;
   }
 };
@@ -58,15 +53,20 @@ export const queryShopLanguages = async (request: Request) => {
 export const queryShop = async (request: Request) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  
   try {
-    const query = `{       
+    const query = `{
       shop {
-        name
-
+        myshopifyDomain
         currencyFormats {
           moneyFormat
           moneyWithCurrencyFormat
         }
+        shopPolicies {
+          body
+          id
+          title
+        }       
       }
     }`;
 
@@ -82,7 +82,7 @@ export const queryShop = async (request: Request) => {
     const res = response.data.data.shop;
     return res;
   } catch (error) {
-    console.error("Error fetching shop languages:", error);
+    console.error("Error fetching shop:", error);
     throw error;
   }
 };
@@ -156,8 +156,11 @@ export const queryNextProducts = async ({
             nodes {
               id
               definition {
-                id
+                type {
+                  category
+                }
               }
+              value
             }
           }
           title
@@ -228,8 +231,11 @@ export const queryPreviousProducts = async ({
             nodes {
               id
               definition {
-                id
+                type {
+                  category
+                }
               }
+              value
             }
           }
           title
@@ -602,7 +608,7 @@ export const queryPreviousPages = async ({
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{       
-      pages(first: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
+      pages(last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
         nodes {
           body
           id
@@ -631,6 +637,336 @@ export const queryPreviousPages = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop pages:", error);
+    throw error;
+  }
+};
+
+export const queryNextNavigations = async ({
+  request,
+  endCursor,
+}: {
+  request: Request;
+  endCursor: string | undefined;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const query = `{
+      menus(first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
+        nodes {
+          title
+          id
+          items {
+            id
+            title
+            items {
+              id
+              title
+              items {
+              id
+              title
+              }  
+            }  
+          }        
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+          hasPreviousPage
+          startCursor
+        }
+      }
+    }`;
+
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+    const res = response.data.data.menus;
+
+    return res;
+  } catch (error) {
+    console.error("Error fetching shop menus:", error);
+    throw error;
+  }
+};
+
+export const queryPreviousNavigations = async ({
+  request,
+  startCursor,
+}: {
+  request: Request;
+  startCursor: string | undefined;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const query = `{
+      menus(last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) 
+        nodes {
+          title
+          id
+          items {
+            id
+            title
+            items {
+              id
+              title
+              items {
+              id
+              title
+              }  
+            }  
+          }        
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+          hasPreviousPage
+          startCursor
+        }
+      }
+    }`;
+
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+    const res = response.data.data.menus;
+
+    return res;
+  } catch (error) {
+    console.error("Error fetching shop menus:", error);
+    throw error;
+  }
+};
+
+export const queryNextShopMetafields = async ({
+  request,
+  endCursor,
+}: {
+  request: Request;
+  endCursor: string | undefined;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const query = `{
+      shop {
+        metafields(first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
+          nodes {
+            value
+            id
+          }
+          pageInfo {
+            endCursor
+            hasNextPage
+            hasPreviousPage
+            startCursor
+          }
+        }
+      }
+    }`;
+
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+    const res = response.data.data.shop.metafields;
+    return res;
+  } catch (error) {
+    console.error("Error fetching shop metafields:", error);
+    throw error;
+  }
+};
+
+export const queryPreviousShopMetafields = async ({
+  request,
+  startCursor,
+}: {
+  request: Request;
+  startCursor: string | undefined;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const query = `{
+      shop {
+        metafields(last: 15  ${startCursor ? `, before: "${startCursor}"` : ""}) {
+          nodes {
+            value
+            id
+          }
+          pageInfo {
+            endCursor
+            hasNextPage
+            hasPreviousPage
+            startCursor
+          }
+        }
+      }
+    }`;
+
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+    const res = response.data.data.shop.metafields;
+    return res;
+  } catch (error) {
+    console.error("Error fetching shop metafields:", error);
+    throw error;
+  }
+};
+
+export const queryAllProductMetafields = async ({
+  request,
+}: {
+  request: Request;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const query = `{
+      metafieldDefinitions(ownerType: PRODUCT, first: 250) {
+        nodes {
+          key
+          name
+        }
+      }
+    }`;
+
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+    const res = response.data.data.metafieldDefinitions;
+    return res;
+  } catch (error) {
+    console.error("Error fetching product metafields:", error);
+    throw error;
+  }
+};
+
+export const queryNextProductMetafields = async ({
+  request,
+  key,
+  endCursor,
+}: {
+  request: Request;
+  key: string;
+  endCursor: string | undefined;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const query = `{
+      metafieldDefinitions(ownerType: PRODUCT, key: "${key}", first: 250) {
+        nodes {
+          metafields(first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
+            nodes {
+              value
+              id
+            }
+            pageInfo {
+              endCursor
+              hasNextPage
+              hasPreviousPage
+              startCursor
+            }
+          }
+          name
+        }
+      }
+    }`;
+
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+    const res = response.data.data.metafieldDefinitions;
+    return res;
+  } catch (error) {
+    console.error("Error fetching product metafields:", error);
+    throw error;
+  }
+};
+
+export const queryPreviousProductMetafields = async ({
+  request,
+  key,
+  startCursor,
+}: {
+  request: Request;
+  key: string;
+  startCursor: string | undefined;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const query = `{
+      metafieldDefinitions(ownerType: PRODUCT, key: "${key}", first: 1) {
+        nodes {
+          metafields(last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
+            nodes {
+              value
+              id
+            }
+            pageInfo {
+              endCursor
+              hasNextPage
+              hasPreviousPage
+              startCursor
+            }
+          }
+          name
+        }
+      }
+    }`;
+
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+    const res = response.data.data.metafieldDefinitions;
+    return res;
+  } catch (error) {
+    console.error("Error fetching product metafields:", error);
     throw error;
   }
 };

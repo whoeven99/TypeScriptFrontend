@@ -14,11 +14,9 @@ import {
   PublishInfoType,
   queryAllLanguages,
   queryAllMarket,
-  queryShop,
   queryShopLanguages,
   UnpublishInfoType,
 } from "~/api/admin";
-// import { translateAll, updateUserInfo } from "~/api/serve";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setPublishConfirmState,

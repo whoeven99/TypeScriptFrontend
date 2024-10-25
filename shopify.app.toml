@@ -1,9 +1,9 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "fb9fc15cbec02bd735e2a5b491cf8409"
-name = "ZinnTrans"
-handle = "transform-lancy-app"
-application_url = "https://trans.bogdatech.com/"
+client_id = "7a5eae5811d6629e9b3299748e852a6b"
+name = "ZinnTransTest"
+handle = "transform-lancy-app-test"
+application_url = "https://amplifier-pr-benz-alan.trycloudflare.com"
 embedded = true
 
 [build]
@@ -13,13 +13,13 @@ include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_content,read_markets,write_locales,write_markets,write_products,write_translations"
+scopes = "read_content,read_gift_cards,read_legal_policies,read_markets,read_online_store_navigation,write_locales,write_markets,write_products,write_translations"
 
 [auth]
 redirect_urls = [
-  "https://trans.bogdatech.com/auth/callback",
-  "https://trans.bogdatech.com/auth/shopify/callback",
-  "https://trans.bogdatech.com/api/auth/callback"
+  "https://amplifier-pr-benz-alan.trycloudflare.com/auth/callback",
+  "https://amplifier-pr-benz-alan.trycloudflare.com/auth/shopify/callback",
+  "https://amplifier-pr-benz-alan.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

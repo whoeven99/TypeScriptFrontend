@@ -71,18 +71,18 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     setAllSelectedKeys(newSelectedRowKeys);
   };
 
-  //   // 确认选择 -> 触发 action
-  //   const handleConfirm = () => {
-  //     const selectedLanguages = allSelectedLanguage.map((cur) => cur.isoCode);
-  //     const formData = new FormData();
-  //     formData.append("languages", JSON.stringify(selectedLanguages)); // 将选中的语言作为字符串发送
-  //     submit(formData, {
-  //       method: "post",
-  //       action: "/app/language",
-  //       replace: true,
-  //     }); // 提交表单请求
-  //     setIsModalOpen(false); // 选择后关闭Modal
-  //   };
+  // 确认选择 -> 触发 action
+  const handleConfirm = () => {
+    const formData = new FormData();
+    formData.append("addcurrencies", JSON.stringify(allSelectedCurrency)); // 将选中的语言作为字符串发送
+
+    submit(formData, {
+      method: "post",
+      action: "/app/currency",
+      replace: true,
+    }); // 提交表单请求
+    setIsModalOpen(false); // 选择后关闭Modal
+  };
 
   const handleCloseModal = () => {
     setAllSelectedKeys([]);
@@ -121,7 +121,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
       title="Add currency"
       open={isVisible}
       onCancel={handleCloseModal}
-      //   onOk={() => handleConfirm()} // 确定按钮绑定确认逻辑
+      onOk={() => handleConfirm()} // 确定按钮绑定确认逻辑
       okText="Confirm"
       cancelText="Cancel"
     >

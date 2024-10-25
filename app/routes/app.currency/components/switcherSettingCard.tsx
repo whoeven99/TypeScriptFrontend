@@ -6,37 +6,61 @@ const { Title, Text, Paragraph } = Typography;
 
 interface SwitcherSettingCardProps {
   settingUrl: string;
-  moneyFormatHtml: string | null;
-  moneyWithCurrencyFormatHtml: string | null;
+  moneyWithCurrencyFormatHtml: string | null; //HTML with currency:
+  moneyFormatHtml: string | null; //HTML without currency:
 }
 
 const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   settingUrl,
-  moneyFormatHtml,
   moneyWithCurrencyFormatHtml,
+  moneyFormatHtml,
 }) => {
   const [isVisible, setIsVisible] = useState<boolean>(true);
+  const [isWithMoneyVisible, setIsWithMoneyVisible] = useState<boolean>();
+  const [isWithoutMoneyVisible, setIsWithoutMoneyVisible] =
+    useState<boolean>();
+
   useEffect(() => {
-    if (moneyFormatHtml && moneyWithCurrencyFormatHtml) {
+    if (moneyWithCurrencyFormatHtml && moneyFormatHtml) {
       const parser = new DOMParser();
-      const moneyDoc = parser.parseFromString(moneyFormatHtml, "text/html");
-      const moneyWithCurrencyDoc = parser.parseFromString(
+      const moneyWithMoneyDoc = parser.parseFromString(
         moneyWithCurrencyFormatHtml,
         "text/html",
       );
+      const moneyWithoutMoneyDoc = parser.parseFromString(
+        moneyFormatHtml,
+        "text/html",
+      );
 
-      const moneyElement = moneyDoc.querySelector(".zinn-money");
-      const moneyWithCurrencyElement =
-        moneyWithCurrencyDoc.querySelector(".zinn-money");
+      const moneyWithMoneyElement =
+        moneyWithMoneyDoc.querySelector(".zinn-money");
+      const moneyWithoutMoneyElement =
+        moneyWithoutMoneyDoc.querySelector(".zinn-money");
+
       if (
-        moneyElement !== null &&
-        moneyElement.contains(moneyElement.querySelector(".money")) &&
-        moneyWithCurrencyElement !== null &&
-        moneyWithCurrencyElement.contains(
-          moneyWithCurrencyElement.querySelector(".money"),
+        moneyWithMoneyElement !== null &&
+        moneyWithMoneyElement.contains(
+          moneyWithMoneyElement.querySelector(".money"),
         )
-      )
-        setIsVisible(false);
+      ) {
+        setIsWithMoneyVisible(false);
+      }else{
+        setIsWithMoneyVisible(true);
+      }
+
+      if (
+        moneyWithoutMoneyElement !== null &&
+        moneyWithoutMoneyElement.contains(
+          moneyWithoutMoneyElement.querySelector(".money"),
+        )
+      ) {
+        setIsWithoutMoneyVisible(false);
+      }else{
+        setIsWithoutMoneyVisible(true);
+      }
+
+      if (!isWithMoneyVisible && !isWithoutMoneyVisible) setIsVisible(false);
+      console.log(isWithMoneyVisible, isWithoutMoneyVisible);
     }
   }, [moneyFormatHtml, moneyWithCurrencyFormatHtml]);
 
@@ -70,15 +94,32 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
               2. Under the <strong>’Store defaults‘</strong> section, click
               Change currency formatting, then change with the code below:
             </Text>
-            <strong>HTML with currency:</strong>
-            <Paragraph copyable>
-              &lt;span class="zinn-money"&gt;{moneyFormatHtml}&lt;/span&gt;
-            </Paragraph>
-            <strong>HTML without currency:</strong>
-            <Paragraph copyable>
-              &lt;span class="zinn-money"&gt;{moneyWithCurrencyFormatHtml}
-              &lt;/span&gt;
-            </Paragraph>
+            {isWithMoneyVisible && (
+              <div>
+                <strong>HTML with currency:</strong>
+                <Paragraph
+                  copyable={{
+                    text: `<span class="zinn-money">${moneyWithCurrencyFormatHtml}</span>`,
+                  }}
+                >
+                  &lt;span class="zinn-money"&gt;{moneyWithCurrencyFormatHtml}
+                  &lt;/span&gt;
+                </Paragraph>
+              </div>
+            )}
+            {isWithoutMoneyVisible && (
+              <div>
+                <strong>HTML without currency:</strong>
+                <Paragraph
+                  copyable={{
+                    text: `<span class="zinn-money">${moneyFormatHtml}</span>`,
+                  }}
+                >
+                  &lt;span class="zinn-money"&gt;{moneyFormatHtml}
+                  &lt;/span&gt;
+                </Paragraph>
+              </div>
+            )}
           </Space>
         </Card>
       )}

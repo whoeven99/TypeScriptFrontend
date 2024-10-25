@@ -48,8 +48,6 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   const selectedLanguagesSet = new Set(
     selectedLanguage.map((lang) => lang.language),
   );
-  console.log(isVisible);
-  
 
   useEffect(() => {
     // 更新语言状态

@@ -4,7 +4,6 @@ import { Button, Menu, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { updateUserInfo } from "~/api/serve";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import {
@@ -34,68 +33,12 @@ interface TableDataType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  // function filterEmptyTranslationsAndContent(data: any) {
-  //   // 使用 filter 方法过滤掉 translations 和 translatableContent 为空的节点
-  //   const filter = data.nodes.filter((node: any) => {
-  //     return (
-  //       node.translatableContent.length > 0 || node.translations.length > 0
-  //     );
-  //   });
-  //   return filter;
-  // }
   try {
-    // try {
-    //   // 登录成功后调用 updateUserInfo 更新用户信息
-    //   await updateUserInfo(request);
-    // } catch (error) {
-    //   console.error("Error updating user info:", error);
-    // }
     const shopLanguagesLoad: ShopLocalesType[] =
       await queryShopLanguages(request);
-    // const allMarket: MarketType[] = await queryAllMarket(request);
-    // let allLanguages: AllLanguagesType[] = await queryAllLanguages(request);
-
-    // allLanguages = allLanguages.map((language, index) => ({
-    //   ...language,
-    //   key: index,
-    // }));
-    // const products = await queryAllProducts(request);
-    // const collections = await queryCollections(request);
-    // const pages = await queryPages(request);
-    // const articles = await queryArticles(request);
-    // const blogs = await queryBlogs(request);
-    // const filters = await queryTransType(request, "FILTER");
-    // const metaobjects = await queryTransType(request, "METAOBJECT");
-    // const menus = await queryTransType(request, "MENU");
-    // const policies = await queryTransType(request, "SHOP_POLICY");
-    // const metafield = await queryTransType(request, "METAFIELD");
-    // // const appembed = await queryTransType(request, "ONLINE_STORE_THEME_APP_EMBED");
-    // // const appembed = await queryTransType(request, "ONLINE_STORE_THEME_JSON_TEMPLATE");
-    // // const appembed = await queryTransType(request, "ONLINE_STORE_THEME_LOCALE_CONTENT");
-    // // const appembed = await queryTransType(request, "ONLINE_STORE_THEME_SECTION_GROUP");
-    // // const appembed = await queryTransType(request, "ONLINE_STORE_THEME_SETTINGS_CATEGORY");
-    // // const appembed = await queryTransType(request, "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS");
-    // const emailtemplate = await queryTransType(request, "EMAIL_TEMPLATE");
-    // let delivery = await queryTransType(request, "DELIVERY_METHOD_DEFINITION");
-    // delivery = filterEmptyTranslationsAndContent(delivery);
-    // let packingslip = await queryTransType(request, "PACKING_SLIP_TEMPLATE");
 
     return json({
       shopLanguagesLoad,
-      // products,
-      // collections,
-      // pages,
-      // articles,
-      // blogs,
-      // filters,
-      // metaobjects,
-      // menus,
-      // policies,
-      // metafield,
-      // appembed,
-      // emailtemplate,
-      // delivery,
-      // packingslip,
     });
   } catch (error) {
     console.error("Error load manage_translation:", error);
@@ -125,22 +68,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const {
-    shopLanguagesLoad,
-    //   products,
-    //   collections,
-    //   pages,
-    //   articles,
-    //   blogs,
-    //   filters,
-    //   metaobjects,
-    //   menus,
-    //   policies,
-    //   metafield,
-    //   emailtemplate,
-    //   delivery,
-    //   packingslip,
-  } = useLoaderData<typeof loader>();
+  const { shopLanguagesLoad } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const [shopLanguages, setShopLanguages] =
     useState<ShopLocalesType[]>(shopLanguagesLoad);
@@ -241,7 +169,7 @@ const Index = () => {
       // allItems: metafield.nodes.length,
       allItems: 30,
       sync_status: false,
-      navigation: "store_metadata",
+      navigation: "metafield",
     },
   ]);
   // const [themeDataSource, setThemeDataSource] = useState<
@@ -286,15 +214,6 @@ const Index = () => {
   // ]);
   const [settingsDataSource, setSettingsDataSource] = useState<TableDataType[]>(
     [
-      {
-        key: "notifications",
-        title: "Notifications",
-        allTranslatedItems: 1,
-        // allItems: emailtemplate.nodes.length,
-        allItems: 30,
-        sync_status: false,
-        navigation: "notification",
-      },
       {
         key: "delivery",
         title: "Delivery",

@@ -8,15 +8,20 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { Pagination } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryNextBlogs, queryPreviousBlogs } from "~/api/admin";
-import { Editor } from "@tinymce/tinymce-react";
+import { queryNextNavigations, queryPreviousNavigations } from "~/api/admin";
 
 const { Sider, Content } = Layout;
 
-interface BlogType {
-  id: string;
-  handle: string;
+interface NavigationType {
   title: string;
+  id: string;
+  items: NavigationItemType[];
+}
+
+interface NavigationItemType {
+  id: string;
+  title: string;
+  items: NavigationItemType[] | null;
 }
 
 type TableDataType = {
@@ -28,14 +33,14 @@ type TableDataType = {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
-    const blogs = await queryNextBlogs({ request, endCursor: "" });
+    const navigations = await queryNextNavigations({ request, endCursor: "" });
 
     return json({
-      blogs,
+      navigations,
     });
   } catch (error) {
-    console.error("Error load blog:", error);
-    throw new Response("Error load blog", { status: 500 });
+    console.error("Error load navigation:", error);
+    throw new Response("Error load navigation", { status: 500 });
   }
 };
 
@@ -47,62 +52,66 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
     if (startCursor) {
-      const previousBlogs = await queryPreviousBlogs({
+      const previousNavigations = await queryPreviousNavigations({
         request,
         startCursor,
       }); // 处理逻辑
-      return json({ previousBlogs: previousBlogs });
+      return json({ previousNavigations: previousNavigations });
     }
     if (endCursor) {
-      const nextBlogs = await queryNextBlogs({
+      const nextNavigations = await queryNextNavigations({
         request,
         endCursor,
       }); // 处理逻辑
-      return json({ nextBlogs: nextBlogs });
+      return json({ nextNavigations: nextNavigations });
     }
   } catch (error) {
-    console.error("Error action blog:", error);
-    throw new Response("Error action blog", { status: 500 });
+    console.error("Error action navigation:", error);
+    throw new Response("Error action navigation", { status: 500 });
   }
 };
 
 const Index = () => {
-  const { blogs } = useLoaderData<typeof loader>();
+  const { navigations } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
-  const exMenuData = (blogs: any) => {
-    const data = blogs.nodes.map((blog: any) => ({
-      key: blog.id,
-      label: blog.title,
+  const exMenuData = (navigations: any) => {
+    const data = navigations.nodes.map((navigation: any) => ({
+      key: navigation.id,
+      label: navigation.title,
     }));
     return data;
   };
 
-  const items: MenuProps["items"] = exMenuData(blogs);
+  const items: MenuProps["items"] = exMenuData(navigations);
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
-  const [blogsData, setBlogsData] = useState(blogs);
-  const [blogData, setBlogData] = useState<BlogType>(blogs.nodes[0]);
+  const [navigationsData, setNavigationsData] = useState(navigations);
+  const [navigationData, setNavigationData] = useState<NavigationType>(
+    navigations.nodes[0],
+  );
   const [resourceData, setResourceData] = useState<TableDataType[]>([
     {
       key: "title",
       resource: "Title",
-      default_language: "",
+      default_language: undefined,
       translated: "",
     },
     {
-      key: "handle",
-      resource: "Handle",
-      default_language: "",
+      key: "menu_items",
+      resource: "Menu Items",
+      default_language: undefined,
       translated: "",
     },
   ]);
-  const [selectBlogKey, setSelectBlogKey] = useState(blogs.nodes[0].id);
+  const [selectNavigationKey, setSelectNavigationKey] = useState(
+    navigations.nodes[0].id,
+  );
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    blogsData.pageInfo.hasPreviousPage,
+    navigationsData.pageInfo.hasPreviousPage,
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    blogsData.pageInfo.hasNextPage,
+    navigationsData.pageInfo.hasNextPage,
   );
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -112,52 +121,49 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   useEffect(() => {
-    setHasPrevious(blogsData.pageInfo.hasPreviousPage);
-    setHasNext(blogsData.pageInfo.hasNextPage);
-  }, [blogsData]);
+    setHasPrevious(navigationsData.pageInfo.hasPreviousPage);
+    setHasNext(navigationsData.pageInfo.hasNextPage);
+  }, [navigationsData]);
 
   useEffect(() => {
-    setResourceData([
+    const data = [
       {
         key: "title",
         resource: "Title",
-        default_language: blogData.title,
+        default_language: navigationData.title,
         translated: "",
       },
-      {
-        key: "handle",
-        resource: "Handle",
-        default_language: blogData.handle,
-        translated: "",
-      },
-    ]);
-  }, [blogData]);
+    ];
+    const newdata = data.concat(generateMenuItemsArray(navigationData.items));
+    setResourceData(newdata);
+    console.log(navigationData);
+  }, [navigationData]);
 
   useEffect(() => {
-    if (actionData && "nextBlogs" in actionData) {
-      const nextBlogs = exMenuData(actionData.nextBlogs);
-      // 在这里处理 nextBlogs
-      console.log(nextBlogs);
-      setMenuData(nextBlogs);
-      setBlogsData(actionData.nextBlogs);
+    if (actionData && "nextNavigations" in actionData) {
+      const nextNavigations = exMenuData(actionData.nextNavigations);
+      // 在这里处理 nextNavigations
+      console.log(nextNavigations);
+      setMenuData(nextNavigations);
+      setNavigationsData(actionData.nextNavigations);
     } else {
-      // 如果不存在 nextBlogs，可以执行其他逻辑
-      console.log("nextBlogs undefined");
+      // 如果不存在 nextNavigations，可以执行其他逻辑
+      console.log("nextNavigations undefined");
     }
-  }, [actionData && "nextBlogs" in actionData]);
+  }, [actionData && "nextNavigations" in actionData]);
 
   useEffect(() => {
-    if (actionData && "previousBlogs" in actionData) {
-      const previousBlogs = exMenuData(actionData.previousBlogs);
-      console.log(previousBlogs);
-      // 在这里处理 previousBlogs
-      setMenuData(previousBlogs);
-      setBlogsData(actionData.previousBlogs);
+    if (actionData && "previousNavigations" in actionData) {
+      const previousNavigations = exMenuData(actionData.previousNavigations);
+      console.log(previousNavigations);
+      // 在这里处理 previousNavigations
+      setMenuData(previousNavigations);
+      setNavigationsData(actionData.previousNavigations);
     } else {
-      // 如果不存在 previousBlogs，可以执行其他逻辑
-      console.log("previousBlogs undefined");
+      // 如果不存在 previousNavigations，可以执行其他逻辑
+      console.log("previousNavigations undefined");
     }
-  }, [actionData && "previousBlogs" in actionData]);
+  }, [actionData && "previousNavigations" in actionData]);
 
   const resourceColumns = [
     {
@@ -184,6 +190,33 @@ const Index = () => {
     },
   ];
 
+  const generateMenuItemsArray = (
+    items: NavigationItemType[],
+  ): Array<{
+    key: string;
+    resource: string;
+    default_language: string;
+    translated: string;
+  }> => {
+    return items.flatMap((item) => {
+      // 创建当前项的对象
+      const currentItem = {
+        key: `menu_item_${item.id}`, // 使用 id 生成唯一的 key
+        resource: "Menu Item", // 资源字段固定为 "Menu Items"
+        default_language: item.title, // 默认语言为 item 的标题
+        translated: "", // 翻译字段初始化为空字符串
+      };
+
+      // 如果有子项，递归调用并合并结果
+      if (item.items && item.items.length > 0) {
+        return [currentItem, ...generateMenuItemsArray(item.items)];
+      }
+
+      // 如果没有子项，只返回当前项
+      return [currentItem];
+    });
+  };
+
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
     navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
@@ -191,21 +224,21 @@ const Index = () => {
 
   const onPrevious = () => {
     const formData = new FormData();
-    const startCursor = blogsData.pageInfo.startCursor;
+    const startCursor = navigationsData.pageInfo.startCursor;
     formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/blog",
+      action: "/app/manage_translation/navigation",
     }); // 提交表单请求
   };
 
   const onNext = () => {
     const formData = new FormData();
-    const endCursor = blogsData.pageInfo.endCursor;
+    const endCursor = navigationsData.pageInfo.endCursor;
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/blog",
+      action: "/app/manage_translation/navigation",
     }); // 提交表单请求
   };
 
@@ -214,18 +247,20 @@ const Index = () => {
   // };
 
   const onClick = (e: any) => {
-    // 查找 blogsData 中对应的产品
-    const selectedBlog = blogsData.nodes.find((blog: any) => blog.id === e.key);
+    // 查找 navigationsData 中对应的产品
+    const selectedNavigation = navigationsData.nodes.find(
+      (navigation: any) => navigation.id === e.key,
+    );
 
-    // 如果找到了产品，就更新 blogData
-    if (selectedBlog) {
-      setBlogData(selectedBlog);
+    // 如果找到了产品，就更新 navigationData
+    if (selectedNavigation) {
+      setNavigationData(selectedNavigation);
     } else {
-      console.log("Blog not found");
+      console.log("Navigation not found");
     }
 
     // 更新选中的产品 key
-    setSelectBlogKey(e.key);
+    setSelectNavigationKey(e.key);
   };
 
   return (
@@ -250,12 +285,12 @@ const Index = () => {
         <Sider style={{ background: colorBgContainer }} width={200}>
           <Menu
             mode="inline"
-            defaultSelectedKeys={[blogsData.nodes[0].id]}
+            defaultSelectedKeys={[navigationsData.nodes[0].id]}
             defaultOpenKeys={["sub1"]}
             style={{ height: "100%" }}
             items={menuData}
             // onChange={onChange}
-            selectedKeys={[selectBlogKey]}
+            selectedKeys={[selectNavigationKey]}
             onClick={onClick}
           />
           <div style={{ display: "flex", justifyContent: "center" }}>

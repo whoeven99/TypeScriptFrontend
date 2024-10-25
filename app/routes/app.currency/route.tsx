@@ -1,7 +1,7 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import { Button, Flex, Input, Space, Table, Typography } from "antd";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useSubmit } from "@remix-run/react";
 import { json } from "@remix-run/node";
 import { useEffect, useState } from "react";
@@ -13,21 +13,32 @@ import { TableRowSelection } from "antd/es/table/interface";
 import { useDispatch, useSelector } from "react-redux";
 import { setTableData } from "~/store/modules/currencyTableData";
 import { SearchOutlined } from "@ant-design/icons";
-import Mock from "mockjs";
 import { BaseOptionType, DefaultOptionType } from "antd/es/select";
 import { queryShop } from "~/api/admin";
 import AddCurrencyModal from "./components/addCurrencyModal";
 import CurrencyEditModal from "./components/currencyEditModal";
 import SwitcherSettingCard from "./components/switcherSettingCard";
+import {
+  addCurrency,
+  DeleteCurrency,
+  GetCurrency,
+  UpdateCurrency,
+} from "~/api/serve";
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 export interface CurrencyDataType {
   key: React.Key;
   currency: string;
   rounding: string;
-  exRate: string;
+  exchangeRate: string | number;
   currencyCode: string;
+}
+
+interface CurrencyType {
+  key: number;
+  currencyCode: string;
+  currency: string;
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -40,53 +51,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     //   console.error("Error updating user info:", error);
     // }
     const shop = await queryShop(request);
-    const shopName = shop.name;
-
+    const currencyList = await GetCurrency({ request });
+    const shopDomain = shop.myshopifyDomain;
     const moneyFormat = shop.currencyFormats.moneyFormat;
-
     const moneyWithCurrencyFormat =
       shop.currencyFormats.moneyWithCurrencyFormat;
 
-    const exRateColumns: (BaseOptionType | DefaultOptionType)[] = [
-      { value: "Auto", label: "Auto" },
-      { value: "Manual Rate", label: "Manual Rate" },
-    ];
-
-    const roundingColumns: (BaseOptionType | DefaultOptionType)[] = [
-      { value: "Disable", label: "Disable" },
-      { value: "No decimal", label: "No decimal" },
-      { value: "1", label: "1 (Recommend)" },
-      { value: "0.99", label: "0.99" },
-      { value: "0.95", label: "0.95" },
-      { value: "0.75", label: "0.75" },
-      { value: "0.5", label: "0.5" },
-      { value: "0.25", label: "0.25" },
-    ];
-
-    const data: CurrencyDataType[] = Mock.mock({
-      "data|10": [
-        {
-          "key|+1": 1,
-          currency: "@WORD",
-          rounding:
-            "@pick(" +
-            JSON.stringify(roundingColumns.map((item) => item.value)) +
-            ")",
-          exRate:
-            "@pick(" +
-            JSON.stringify(exRateColumns.map((item) => item.value)) +
-            ")",
-          currencyCode: "@WORD",
-        },
-      ],
-    }).data;
-
     // 返回包含 userId 的 json 响应
     return json({
-      shopName,
-      roundingColumns,
-      exRateColumns,
-      data,
+      shopDomain,
+      currencyList,
       moneyFormat,
       moneyWithCurrencyFormat,
     });
@@ -99,16 +73,77 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 };
 
+export const action = async ({ request }: ActionFunctionArgs) => {
+  try {
+    const formData = await request.formData();
+    const addCurrencies: CurrencyType[] = JSON.parse(
+      formData.get("addcurrencies") as string,
+    );
+    const deleteCurrencies: string[] = JSON.parse(
+      formData.get("deletecurrencies") as string,
+    );
+    const deleteCurrency: string = JSON.parse(
+      formData.get("deletecurrency") as string,
+    );
+    const updateCurrencies = JSON.parse(
+      formData.get("updatecurrencies") as string,
+    );
+
+    if (addCurrencies) {
+      await Promise.all(
+        addCurrencies.map(async (currency) => {
+          // 调用 addCurrency 函数
+          await addCurrency({
+            request,
+            countryName: currency.currency,
+            currencyCode: currency.currencyCode,
+          });
+        }),
+      );
+    }
+
+    if (deleteCurrencies) {
+      await Promise.all(
+        deleteCurrencies.map(async (currency) => {
+          // 调用 addCurrency 函数
+          await DeleteCurrency({
+            request,
+            id: currency,
+          });
+        }),
+      );
+    }
+
+    if (deleteCurrency) {
+      console.log(2);
+
+      // 调用 addCurrency 函数
+      await DeleteCurrency({
+        request,
+        id: deleteCurrency,
+      });
+    }
+
+    if (updateCurrencies) {
+      await UpdateCurrency({
+        request,
+        updateCurrencies: updateCurrencies,
+      });
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error action language:", error);
+    return json({ error: "Error action language" }, { status: 500 });
+  }
+};
+
 const Index = () => {
-  const {
-    shopName,
-    roundingColumns,
-    exRateColumns,
-    data,
-    moneyFormat,
-    moneyWithCurrencyFormat,
-  } = useLoaderData<typeof loader>();
-  const settingUrl = `https://admin.shopify.com/store/${shopName}/settings/general`;
+  const { shopDomain, currencyList, moneyFormat, moneyWithCurrencyFormat } =
+    useLoaderData<typeof loader>();
+  const shop = extractShopName(shopDomain);
+
+  const settingUrl = `https://admin.shopify.com/store/${shop}/settings/general`;
   const [searchInput, setSearchInput] = useState("");
   const [deleteloading, setDeleteLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -123,13 +158,11 @@ const Index = () => {
   const dataSource: CurrencyDataType[] = useSelector(
     (state: any) => state.currencyTableData.rows,
   );
-  console.log(dataSource);
 
   const [originalData, setOriginalData] = useState<CurrencyDataType[]>();
   // 当前显示的数据源
   const [filteredData, setFilteredData] =
     useState<CurrencyDataType[]>(dataSource);
-  console.log(filteredData);
 
   const dispatch = useDispatch();
   const submit = useSubmit(); // 使用 useSubmit 钩子
@@ -148,19 +181,35 @@ const Index = () => {
   }, [moneyFormat, moneyWithCurrencyFormat]);
 
   useEffect(() => {
-    setOriginalData(data);
-    setFilteredData(data); // 用加载的数据初始化 filteredData
+    setOriginalData(currencyList);
+    setFilteredData(currencyList); // 用加载的数据初始化 filteredData
 
-    dispatch(setTableData(data));
-  }, [data, dispatch]);
+    dispatch(setTableData(currencyList));
+  }, [currencyList, dispatch]);
 
   const hasSelected = selectedRowKeys.length > 0;
+
+  const exRateColumns: (BaseOptionType | DefaultOptionType)[] = [
+    { value: "Auto", label: "Auto" },
+    { value: "Manual Rate", label: "Manual Rate" },
+  ];
+
+  const roundingColumns: (BaseOptionType | DefaultOptionType)[] = [
+    { value: "Disable", label: "Disable" },
+    { value: "No decimal", label: "No decimal" },
+    { value: "1", label: "1 (Recommend)" },
+    { value: "0.99", label: "0.99" },
+    { value: "0.95", label: "0.95" },
+    { value: "0.75", label: "0.75" },
+    { value: "0.5", label: "0.5" },
+    { value: "0.25", label: "0.25" },
+  ];
 
   const columns: ColumnsType<any> = [
     {
       title: "Currency",
-      dataIndex: "currency",
-      key: "currency",
+      dataIndex: "currencyCode",
+      key: "currencyCode",
     },
     {
       title: "Rounding",
@@ -169,8 +218,8 @@ const Index = () => {
     },
     {
       title: "Exchange rate",
-      dataIndex: "exRate",
-      key: "exRate",
+      dataIndex: "exchangeRate",
+      key: "exchangeRate",
     },
     {
       title: "Action",
@@ -179,11 +228,25 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button onClick={() => handleEdit(record.key)}>Edit</Button>
-          <Button>Remove</Button>
+          <Button onClick={() => handleDelete(record.key)}>Remove</Button>
         </Space>
       ),
     },
   ];
+
+  function extractShopName(shopDomain: string) {
+    // 正则表达式匹配 quickstart-0f992326.myshopify.com 格式
+    const regex = /^(.*?)\.myshopify\.com$/;
+
+    const match = shopDomain.match(regex);
+
+    if (match) {
+      // 提取 shop name
+      return match[1]; // 返回 quickstart-0f992326
+    } else {
+      throw new Error("Invalid shopDomain format");
+    }
+  }
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -209,7 +272,6 @@ const Index = () => {
   };
 
   const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
-    console.log("selectedRowKeys changed: ", newSelectedRowKeys);
     setSelectedRowKeys(newSelectedRowKeys);
   };
 
@@ -218,11 +280,35 @@ const Index = () => {
     onChange: onSelectChange,
   };
 
-  const handleDelete = () => {
+  const handleDelete = (key: React.Key) => {
+    const formData = new FormData();
+    formData.append("deletecurrency", JSON.stringify(key)); // 将选中的语言作为字符串发送
+    submit(formData, {
+      method: "post",
+      action: "/app/currency",
+    }); // 提交表单请求
+
+    // 过滤掉被删除的项
+    const newData = dataSource.filter(
+      (item: CurrencyDataType) => item.key !== key,
+    );
+    dispatch(setTableData(newData)); // 更新表格数据
+    setSelectedRowKeys([]); // 清空已选中项
+    setOriginalData(newData);
+    setFilteredData(newData); // 确保当前显示的数据也更新
+  };
+
+  const handleAllDelete = () => {
+    const formData = new FormData();
+    formData.append("deletecurrencies", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
+    submit(formData, {
+      method: "post",
+      action: "/app/currency",
+    }); // 提交表单请求
+
     const newData = dataSource.filter(
       (item: CurrencyDataType) => !selectedRowKeys.includes(item.key),
     );
-
     dispatch(setTableData(newData)); // 更新表格数据
     setSelectedRowKeys([]); // 清空已选中项
     setOriginalData(newData);
@@ -261,7 +347,7 @@ const Index = () => {
           <Flex align="center" gap="middle">
             <Button
               type="primary"
-              onClick={handleDelete}
+              onClick={handleAllDelete}
               disabled={!hasSelected}
               loading={deleteloading}
             >
