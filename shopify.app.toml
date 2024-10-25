@@ -1,9 +1,9 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "7a5eae5811d6629e9b3299748e852a6b"
-name = "ZinnTransTest"
-handle = "transform-lancy-app-test"
-application_url = "https://typescriptfrontend.onrender.com/"
+client_id = "6e0ef7be80edbf81020e200228a86d01"
+name = "ZinnTransLocal"
+handle = "transform-lancy-app-local"
+application_url = "https://action-beverage-february-forth.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_gift_cards,read_legal_policies,read_markets,read_onl
 
 [auth]
 redirect_urls = [
-  "https://typescriptfrontend.onrender.com/auth/callback",
-  "https://typescriptfrontend.onrender.com/auth/shopify/callback",
-  "https://typescriptfrontend.onrender.com/api/auth/callback"
+  "https://action-beverage-february-forth.trycloudflare.com/auth/callback",
+  "https://action-beverage-february-forth.trycloudflare.com/auth/shopify/callback",
+  "https://action-beverage-february-forth.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
