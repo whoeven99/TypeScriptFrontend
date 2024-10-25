@@ -1,8 +1,8 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "7a5eae5811d6629e9b3299748e852a6b"
-name = "ZinnTransTest"
-handle = "transform-lancy-app-test"
+client_id = "fb9fc15cbec02bd735e2a5b491cf8409"
+name = "ZinnTrans"
+handle = "transform-lancy-app"
 application_url = "https://absent-bennett-protection-donors.trycloudflare.com"
 embedded = true
 
@@ -27,7 +27,7 @@ api_version = "2024-10"
 
   [[webhooks.subscriptions]]
   topics = [ "app/uninstalled" ]
-  uri = "https://costa-leu-dive-lotus.trycloudflare.com//webhooks"
+  uri = "//webhooks"
 
 [pos]
 embedded = false
