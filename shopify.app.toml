@@ -3,7 +3,7 @@
 client_id = "7a5eae5811d6629e9b3299748e852a6b"
 name = "ZinnTransTest"
 handle = "transform-lancy-app-test"
-application_url = "https://amplifier-pr-benz-alan.trycloudflare.com"
+application_url = "https://absent-bennett-protection-donors.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_gift_cards,read_legal_policies,read_markets,read_onl
 
 [auth]
 redirect_urls = [
-  "https://amplifier-pr-benz-alan.trycloudflare.com/auth/callback",
-  "https://amplifier-pr-benz-alan.trycloudflare.com/auth/shopify/callback",
-  "https://amplifier-pr-benz-alan.trycloudflare.com/api/auth/callback"
+  "https://absent-bennett-protection-donors.trycloudflare.com/auth/callback",
+  "https://absent-bennett-protection-donors.trycloudflare.com/auth/shopify/callback",
+  "https://absent-bennett-protection-donors.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
@@ -27,7 +27,7 @@ api_version = "2024-10"
 
   [[webhooks.subscriptions]]
   topics = [ "app/uninstalled" ]
-  uri = "//webhooks"
+  uri = "https://costa-leu-dive-lotus.trycloudflare.com//webhooks"
 
 [pos]
 embedded = false
