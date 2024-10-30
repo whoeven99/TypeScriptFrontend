@@ -2,7 +2,6 @@ import { Input, Layout, Menu, MenuProps, Modal, Table, theme } from "antd";
 import { useEffect, useState } from "react";
 import { useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { json, LoaderFunctionArgs } from "@remix-run/node";
-import { Editor } from "@tinymce/tinymce-react";
 import { queryShop } from "~/api/admin";
 
 const { Sider, Content } = Layout;
@@ -35,7 +34,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const Index = () => {
   const { policy } = useLoaderData<typeof loader>();
-  console.log(policy);
 
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [menuData, setMenuData] = useState<MenuProps["items"]>([
@@ -69,7 +67,7 @@ const Index = () => {
         translated: "",
       },
     ]);
-  }, []);
+  }, [policyData]);
 
   const resourceColumns = [
     {

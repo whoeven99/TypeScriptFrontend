@@ -3,7 +3,7 @@
 client_id = "6e0ef7be80edbf81020e200228a86d01"
 name = "ZinnTransLocal"
 handle = "transform-lancy-app-local"
-application_url = "https://action-beverage-february-forth.trycloudflare.com"
+application_url = "https://parade-beverly-short-brazilian.trycloudflare.com"
 embedded = true
 
 [build]
@@ -13,13 +13,13 @@ include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_content,read_gift_cards,read_legal_policies,read_markets,read_online_store_navigation,write_locales,write_markets,write_products,write_translations"
+scopes = "read_content,read_legal_policies,read_markets,read_online_store_navigation,write_locales,write_markets,write_products,write_translations"
 
 [auth]
 redirect_urls = [
-  "https://action-beverage-february-forth.trycloudflare.com/auth/callback",
-  "https://action-beverage-february-forth.trycloudflare.com/auth/shopify/callback",
-  "https://action-beverage-february-forth.trycloudflare.com/api/auth/callback"
+  "https://parade-beverly-short-brazilian.trycloudflare.com/auth/callback",
+  "https://parade-beverly-short-brazilian.trycloudflare.com/auth/shopify/callback",
+  "https://parade-beverly-short-brazilian.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

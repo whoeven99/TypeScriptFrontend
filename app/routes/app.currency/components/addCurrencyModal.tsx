@@ -20,7 +20,6 @@ interface AddCurrencyModalProps {
 const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   isVisible,
   setIsModalOpen,
-  // allCurrencies,
   submit,
 }) => {
   const Currencies: CurrencyType[] = [

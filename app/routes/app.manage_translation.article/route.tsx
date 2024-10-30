@@ -115,8 +115,6 @@ const Index = () => {
       translated: "",
     },
   ]);
-  const [optionsData, setOptionsData] = useState<TableDataType[]>([]);
-  const [variantsData, setVariantsData] = useState<TableDataType[]>([]);
   const [selectArticleKey, setSelectArticleKey] = useState(
     articles.nodes[0].id,
   );

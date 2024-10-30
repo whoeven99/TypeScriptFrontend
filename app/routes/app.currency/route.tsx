@@ -57,6 +57,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const moneyWithCurrencyFormat =
       shop.currencyFormats.moneyWithCurrencyFormat;
 
+      
+
     // 返回包含 userId 的 json 响应
     return json({
       shopDomain,

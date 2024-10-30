@@ -11,6 +11,7 @@ import {
   Outlet,
   useActionData,
   useLoaderData,
+  useLocation,
   useSubmit,
 } from "@remix-run/react";
 import AttentionCard from "~/components/attentionCard";
@@ -234,12 +235,12 @@ const Index = () => {
       },
     ],
   );
-
+  const location = useLocation();
+  const { key } = location.state || {}; // 提取传递的状态
   const submit = useSubmit();
 
   useEffect(() => {
     const newArray = shopLanguages
-      .filter((language) => language.published)
       .filter((language) => !language.primary)
       .map((language) => ({
         label: language.name,
@@ -256,6 +257,25 @@ const Index = () => {
       setShopLanguages(actionData.shopLanguagesAction);
     }
   }, [actionData]);
+
+  useEffect(() => {
+    try {
+      const foundItem = menuData.find((item) => item.key === key);
+      console.log(foundItem);
+      if (foundItem) {
+        setCurrent(key);
+        console.log(menuData);
+        console.log(1);
+      } else {
+        // 找不到时的处理逻辑，例如重置当前状态或显示错误消息
+        console.log(2);
+        console.warn(`No item found for key: ${key}`);
+      }
+    } catch (error) {
+      console.error("Error finding item:", error);
+      // 处理异常情况，比如显示错误消息
+    }
+  }, [key, menuData]);
 
   const onClick = (e: any) => {
     // 将 e.key 转换为字符串以确保 current 始终为 string

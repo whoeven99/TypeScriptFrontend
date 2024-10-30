@@ -199,32 +199,6 @@ const Index = () => {
     setResourceData(data);
   }, [metafieldsData]);
 
-//   useEffect(() => {
-//     if (actionData && "nextMetafields" in actionData) {
-//       const nextMetafields = exMenuData(actionData.nextMetafields);
-//       // 在这里处理 nextMetafields
-//       console.log(nextMetafields);
-//       setMenuData(nextMetafields);
-//       setMetafieldsData(actionData.nextMetafields);
-//     } else {
-//       // 如果不存在 nextMetafields，可以执行其他逻辑
-//       console.log("nextMetafields undefined");
-//     }
-//   }, [actionData && "nextMetafields" in actionData]);
-
-//   useEffect(() => {
-//     if (actionData && "previousMetafields" in actionData) {
-//       const previousMetafields = exMenuData(actionData.previousMetafields);
-//       console.log(previousMetafields);
-//       // 在这里处理 previousMetafields
-//       setMenuData(previousMetafields);
-//       setMetafieldsData(actionData.previousMetafields);
-//     } else {
-//       // 如果不存在 previousMetafields，可以执行其他逻辑
-//       console.log("previousMetafields undefined");
-//     }
-//   }, [actionData && "previousMetafields" in actionData]);
-
   const resourceColumns = [
     {
       title: "Resource",

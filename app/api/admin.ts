@@ -53,7 +53,7 @@ export const queryShopLanguages = async (request: Request) => {
 export const queryShop = async (request: Request) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  
+
   try {
     const query = `{
       shop {
@@ -971,15 +971,20 @@ export const queryPreviousProductMetafields = async ({
   }
 };
 
-export const queryTransType = async (
-  request: Request,
-  resourceType: string,
-) => {
+export const queryNextTransType = async ({
+  request,
+  resourceType,
+  endCursor,
+}: {
+  request: Request;
+  resourceType: string;
+  endCursor: string;
+}) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, first: 250) {
+      translatableResources(resourceType: ${resourceType}, first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
         nodes {
           resourceId
           translatableContent {
@@ -995,6 +1000,12 @@ export const queryTransType = async (
             outdated
             key
           }
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+          hasPreviousPage
+          startCursor
         }
       }
     }`;
@@ -1017,7 +1028,64 @@ export const queryTransType = async (
   }
 };
 
-export const queryAllLanguages = async (request: Request) => {
+export const queryPreviousTransType = async ({
+  request,
+  resourceType,
+  startCursor,
+}: {
+  request: Request;
+  resourceType: string;
+  startCursor: string;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const query = `{
+      translatableResources(resourceType: ${resourceType}, last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
+        nodes {
+          resourceId
+          translatableContent {
+            value
+            digest
+            key
+            locale
+            type
+          }
+          translations(locale: "ja") {
+            value
+            updatedAt
+            outdated
+            key
+          }
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+          hasPreviousPage
+          startCursor
+        }
+      }
+    }`;
+
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+    const res = response.data.data.translatableResources;
+
+    return res;
+  } catch (error) {
+    console.error("Error fetching translation data:", error);
+    throw error;
+  }
+};
+
+export const queryAllLanguages = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {
@@ -1046,7 +1114,7 @@ export const queryAllLanguages = async (request: Request) => {
   }
 };
 
-export const queryAllMarket = async (request: Request) => {
+export const queryAllMarket = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {
@@ -1082,21 +1150,14 @@ export const queryAllMarket = async (request: Request) => {
   }
 };
 
-// export const queryStorePages = async (request: Request) => {
+// export const queryAllCustomers = async ({ request }: { request: Request }) => {
 //   const adminAuthResult = await authenticate.admin(request);
 //   const { shop, accessToken } = adminAuthResult.session;
 //   try {
 //     const query = `{
-//       markets(first: 208) {
-//         nodes {
-//           name
-//           primary
-//           webPresences(first: 208) {
-//             nodes {
-//               id
-//             }
-//           }
-//         }
+//       customersCount {
+//         count
+//         precision
 //       }
 //     }`;
 
@@ -1109,11 +1170,12 @@ export const queryAllMarket = async (request: Request) => {
 //       },
 //       data: JSON.stringify({ query }),
 //     });
-//     const res = response.data.data.markets.nodes;
+//     const res = response.data.data;
+//     console.log(res); 
 
 //     return res;
 //   } catch (error) {
-//     console.error("Error fetching all markets:", error);
+//     console.error("Error fetching all orders:", error);
 //     throw error;
 //   }
 // };

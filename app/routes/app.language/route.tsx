@@ -78,8 +78,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     //   console.error("Error updating user info:", error);
     // }
     const shopLanguages: ShopLocalesType[] = await queryShopLanguages(request);
-    const allMarket: MarketType[] = await queryAllMarket(request);
-    let allLanguages: AllLanguagesType[] = await queryAllLanguages(request);
+    const allMarket: MarketType[] = await queryAllMarket({request});
+    let allLanguages: AllLanguagesType[] = await queryAllLanguages({request});
 
     allLanguages = allLanguages.map((language, index) => ({
       ...language,
