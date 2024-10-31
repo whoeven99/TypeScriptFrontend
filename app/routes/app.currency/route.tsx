@@ -117,8 +117,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     if (deleteCurrency) {
-      console.log(2);
-
       // 调用 addCurrency 函数
       await DeleteCurrency({
         request,

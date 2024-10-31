@@ -1171,7 +1171,7 @@ export const queryAllMarket = async ({ request }: { request: Request }) => {
 //       data: JSON.stringify({ query }),
 //     });
 //     const res = response.data.data;
-//     console.log(res); 
+//     console.log(res);
 
 //     return res;
 //   } catch (error) {
@@ -1350,6 +1350,58 @@ export const mutationShopLocaleUnpublish = async ({
         data: JSON.stringify({ query: confirmMutation }),
       });
     }
+  } catch (error) {
+    console.error("Error publish shopLanguage:", error);
+    throw error;
+  }
+};
+
+export const mutationAppSubscriptionCreate = async ({
+  request,
+  name,
+  lineItems,
+  returnUrl,
+}: {
+  request: Request;
+  name: String;
+  lineItems: any;
+  returnUrl: URL;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    // 执行 API 请求
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+        "Content-Type": "application/json",
+      },
+      data: {
+        query: `mutation AppSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $returnUrl: URL!) {
+          appSubscriptionCreate(name: $name, returnUrl: $returnUrl, lineItems: $lineItems) {
+            userErrors {
+              field
+              message
+            }
+            appSubscription {
+              id
+            }
+            confirmationUrl
+          }
+        }`,
+        variables: {
+          name: name,
+          returnUrl: returnUrl,
+          lineItems: lineItems,
+        },
+      },
+    });
+    const res = response.data;
+    console.log(res);
+
+    return res;
   } catch (error) {
     console.error("Error publish shopLanguage:", error);
     throw error;

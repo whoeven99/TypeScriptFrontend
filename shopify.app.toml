@@ -3,7 +3,7 @@
 client_id = "6e0ef7be80edbf81020e200228a86d01"
 name = "ZinnTransLocal"
 handle = "transform-lancy-app-local"
-application_url = "https://parade-beverly-short-brazilian.trycloudflare.com"
+application_url = "https://replica-turns-recognize-dancing.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://parade-beverly-short-brazilian.trycloudflare.com/auth/callback",
-  "https://parade-beverly-short-brazilian.trycloudflare.com/auth/shopify/callback",
-  "https://parade-beverly-short-brazilian.trycloudflare.com/api/auth/callback"
+  "https://replica-turns-recognize-dancing.trycloudflare.com/auth/callback",
+  "https://replica-turns-recognize-dancing.trycloudflare.com/auth/shopify/callback",
+  "https://replica-turns-recognize-dancing.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
