@@ -16,9 +16,9 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   moneyFormatHtml,
 }) => {
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [isWithMoneyVisible, setIsWithMoneyVisible] = useState<boolean>();
+  const [isWithMoneyVisible, setIsWithMoneyVisible] = useState<boolean>(true);
   const [isWithoutMoneyVisible, setIsWithoutMoneyVisible] =
-    useState<boolean>();
+    useState<boolean>(true);
 
   useEffect(() => {
     if (moneyWithCurrencyFormatHtml && moneyFormatHtml) {
@@ -37,32 +37,18 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
       const moneyWithoutMoneyElement =
         moneyWithoutMoneyDoc.querySelector(".zinn-money");
 
-      if (
-        moneyWithMoneyElement !== null &&
-        moneyWithMoneyElement.contains(
-          moneyWithMoneyElement.querySelector(".money"),
-        )
-      ) {
+      if (moneyWithMoneyElement !== null) {
         setIsWithMoneyVisible(false);
-      }else{
-        setIsWithMoneyVisible(true);
       }
 
-      if (
-        moneyWithoutMoneyElement !== null &&
-        moneyWithoutMoneyElement.contains(
-          moneyWithoutMoneyElement.querySelector(".money"),
-        )
-      ) {
+      if (moneyWithoutMoneyElement !== null) {
         setIsWithoutMoneyVisible(false);
-      }else{
-        setIsWithoutMoneyVisible(true);
       }
 
-      if (!isWithMoneyVisible && !isWithoutMoneyVisible) setIsVisible(false);
-      console.log(isWithMoneyVisible, isWithoutMoneyVisible);
+      if (moneyWithMoneyElement && moneyWithoutMoneyElement)
+        setIsVisible(false);
     }
-  }, [moneyFormatHtml, moneyWithCurrencyFormatHtml]);
+  }, [moneyWithCurrencyFormatHtml, moneyFormatHtml]);
 
   return (
     <div>

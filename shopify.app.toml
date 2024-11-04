@@ -3,7 +3,7 @@
 client_id = "6e0ef7be80edbf81020e200228a86d01"
 name = "ZinnTransLocal"
 handle = "transform-lancy-app-local"
-application_url = "https://replica-turns-recognize-dancing.trycloudflare.com"
+application_url = "https://identifying-balloon-measures-techrepublic.trycloudflare.com"
 embedded = true
 
 [build]
@@ -13,13 +13,13 @@ include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_content,read_legal_policies,read_markets,read_online_store_navigation,write_locales,write_markets,write_products,write_translations"
+scopes = "read_content,read_legal_policies,read_markets,read_online_store_navigation,read_translations,write_locales,write_markets,write_products,write_translations"
 
 [auth]
 redirect_urls = [
-  "https://replica-turns-recognize-dancing.trycloudflare.com/auth/callback",
-  "https://replica-turns-recognize-dancing.trycloudflare.com/auth/shopify/callback",
-  "https://replica-turns-recognize-dancing.trycloudflare.com/api/auth/callback"
+  "https://identifying-balloon-measures-techrepublic.trycloudflare.com/auth/callback",
+  "https://identifying-balloon-measures-techrepublic.trycloudflare.com/auth/shopify/callback",
+  "https://identifying-balloon-measures-techrepublic.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

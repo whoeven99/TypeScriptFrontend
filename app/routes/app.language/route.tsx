@@ -3,7 +3,7 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { Typography, Button, Space, Flex, Table, Switch } from "antd";
 import { useEffect, useState } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useSubmit } from "@remix-run/react";
+import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
 import "./styles.css";
 import { authenticate } from "~/shopify.server";
 import {
@@ -69,8 +69,8 @@ export interface MarketType {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
-    const adminAuthResult = await authenticate.admin(request)
-    const {shop} = adminAuthResult.session
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop } = adminAuthResult.session;
     // try {
     //   // 登录成功后调用 updateUserInfo 更新用户信息
     //   await updateUserInfo(request);
@@ -78,8 +78,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     //   console.error("Error updating user info:", error);
     // }
     const shopLanguages: ShopLocalesType[] = await queryShopLanguages(request);
-    const allMarket: MarketType[] = await queryAllMarket({request});
-    let allLanguages: AllLanguagesType[] = await queryAllLanguages({request});
+    const allMarket: MarketType[] = await queryAllMarket({ request });
+    let allLanguages: AllLanguagesType[] = await queryAllLanguages({ request });
 
     allLanguages = allLanguages.map((language, index) => ({
       ...language,
@@ -173,6 +173,7 @@ const Index = () => {
   // })); //语言选择器数据
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   const typeTrans = () => {
@@ -196,15 +197,19 @@ const Index = () => {
   }, [shopLanguages]);
 
   useEffect(() => {
-    const formData = new FormData();
-    formData.append("publishInfo", JSON.stringify(publishInfo)); // 将选中的语言作为字符串发送
-    submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
+    if (publishInfo) {
+      const formData = new FormData();
+      formData.append("publishInfo", JSON.stringify(publishInfo)); // 将选中的语言作为字符串发送
+      submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
+    }
   }, [publishInfo]);
 
   useEffect(() => {
-    const formData = new FormData();
-    formData.append("unPublishInfo", JSON.stringify(unPublishInfo)); // 将选中的语言作为字符串发送
-    submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
+    if (unPublishInfo) {
+      const formData = new FormData();
+      formData.append("unPublishInfo", JSON.stringify(unPublishInfo)); // 将选中的语言作为字符串发送
+      submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
+    }
   }, [unPublishInfo]);
 
   const handleOpenModal = () => {
@@ -244,6 +249,10 @@ const Index = () => {
         submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
       }
     }
+  };
+
+  const handleSet = (languageCode: string) => {
+    navigate("/app/manage_translation", { state: { key: languageCode } });
   };
 
   const handleConfirmPublishModal = () => {
@@ -318,7 +327,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button onClick={() => handleTranslate(record.key)}>翻译</Button>
-          <Button>设置</Button>
+          <Button onClick={() => handleSet(record.locale)}>设置</Button>
         </Space>
       ),
     },
@@ -342,7 +351,6 @@ const Index = () => {
   };
 
   const onSelectChange = (newSelectedRowKeys: any) => {
-    console.log("selectedRowKeys changed: ", newSelectedRowKeys);
     setSelectedRowKeys(newSelectedRowKeys);
   };
 

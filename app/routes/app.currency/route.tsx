@@ -2,7 +2,7 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import { Button, Flex, Input, Space, Table, Typography } from "antd";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useSubmit } from "@remix-run/react";
+import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
 import { json } from "@remix-run/node";
 import { useEffect, useState } from "react";
 // import { SearchOutlined } from "@ant-design/icons"
@@ -24,6 +24,7 @@ import {
   GetCurrency,
   UpdateCurrency,
 } from "~/api/serve";
+import { authenticate } from "~/shopify.server";
 
 const { Title, Text } = Typography;
 
@@ -43,25 +44,17 @@ interface CurrencyType {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
-    // 调用 authenticate 并获取认证结果
-    // try {
-    //   // 登录成功后调用 updateUserInfo 更新用户信息
-    //   await updateUserInfo(request);
-    // } catch (error) {
-    //   console.error("Error updating user info:", error);
-    // }
-    const shop = await queryShop(request);
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop } = adminAuthResult.session;
+    const shopLoad = await queryShop(request);
     const currencyList = await GetCurrency({ request });
-    const shopDomain = shop.myshopifyDomain;
-    const moneyFormat = shop.currencyFormats.moneyFormat;
+    const moneyFormat = shopLoad.currencyFormats.moneyFormat;
     const moneyWithCurrencyFormat =
-      shop.currencyFormats.moneyWithCurrencyFormat;
-
-      
+      shopLoad.currencyFormats.moneyWithCurrencyFormat;
 
     // 返回包含 userId 的 json 响应
     return json({
-      shopDomain,
+      shop,
       currencyList,
       moneyFormat,
       moneyWithCurrencyFormat,
@@ -133,17 +126,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     return null;
   } catch (error) {
-    console.error("Error action language:", error);
-    return json({ error: "Error action language" }, { status: 500 });
+    console.error("Error action currency:", error);
+    return json({ error: "Error action currency" }, { status: 500 });
   }
 };
 
 const Index = () => {
-  const { shopDomain, currencyList, moneyFormat, moneyWithCurrencyFormat } =
+  const { shop, currencyList, moneyFormat, moneyWithCurrencyFormat } =
     useLoaderData<typeof loader>();
-  const shop = extractShopName(shopDomain);
-
-  const settingUrl = `https://admin.shopify.com/store/${shop}/settings/general`;
+  
+  const settingUrl = `https://admin.shopify.com/store/${shop.split('.')[0]}/settings/general`;
   const [searchInput, setSearchInput] = useState("");
   const [deleteloading, setDeleteLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -165,6 +157,7 @@ const Index = () => {
     useState<CurrencyDataType[]>(dataSource);
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   useEffect(() => {
@@ -233,20 +226,6 @@ const Index = () => {
       ),
     },
   ];
-
-  function extractShopName(shopDomain: string) {
-    // 正则表达式匹配 quickstart-0f992326.myshopify.com 格式
-    const regex = /^(.*?)\.myshopify\.com$/;
-
-    const match = shopDomain.match(regex);
-
-    if (match) {
-      // 提取 shop name
-      return match[1]; // 返回 quickstart-0f992326
-    } else {
-      throw new Error("Invalid shopDomain format");
-    }
-  }
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

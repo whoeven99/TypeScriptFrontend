@@ -7,7 +7,6 @@ import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import {
-  Link,
   Outlet,
   useActionData,
   useLoaderData,
@@ -16,6 +15,8 @@ import {
 } from "@remix-run/react";
 import AttentionCard from "~/components/attentionCard";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
+import { useDispatch } from "react-redux";
+import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
 
 const { Text } = Typography;
 
@@ -73,7 +74,7 @@ const Index = () => {
   const actionData = useActionData<typeof action>();
   const [shopLanguages, setShopLanguages] =
     useState<ShopLocalesType[]>(shopLanguagesLoad);
-  const [menuData, setmenuData] = useState<ManageMenuDataType[]>([]);
+  const [menuData, setMenuData] = useState<ManageMenuDataType[]>([]);
   const [current, setCurrent] = useState<string>("");
   const [productsDataSource, setProductsDataSource] = useState<TableDataType[]>(
     [
@@ -235,6 +236,8 @@ const Index = () => {
       },
     ],
   );
+  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
   const location = useLocation();
   const { key } = location.state || {}; // 提取传递的状态
   const submit = useSubmit();
@@ -246,8 +249,11 @@ const Index = () => {
         label: language.name,
         key: language.locale,
       }));
-    setmenuData(newArray);
+    setMenuData(newArray);
     setCurrent(newArray[0].key);
+    if (shopLanguages) {
+      setLoading(false);
+    }
   }, [shopLanguages]);
 
   useEffect(() => {
@@ -277,6 +283,10 @@ const Index = () => {
     }
   }, [key, menuData]);
 
+  useEffect(()=>{
+    dispatch(setSelectLanguageData(current));
+  },[current])
+
   const onClick = (e: any) => {
     // 将 e.key 转换为字符串以确保 current 始终为 string
     setCurrent(e.key);
@@ -287,6 +297,10 @@ const Index = () => {
     formData.append("actionType", "sync");
     submit(formData, { method: "post", action: "/app/manage_translation" });
   };
+
+  if (loading) {
+    return <div>加载中...</div>; // 加载状态
+  }
 
   return (
     <Page>
@@ -310,14 +324,14 @@ const Index = () => {
               minWidth: "80%",
             }}
           ></Menu>
-          <div className="manage-action">
+          {/* <div className="manage-action">
             <Space>
               <Button type="default">Backup</Button>
               <Button type="primary" onClick={handleSyncAll}>
                 Sync all
               </Button>
             </Space>
-          </div>
+          </div> */}
         </div>
         <div className="manage-content-wrap">
           <div className="manage-content-left">
@@ -330,14 +344,17 @@ const Index = () => {
               <ManageTranslationsCard
                 cardTitle="Products"
                 dataSource={productsDataSource}
+                current={current}
               />
               <ManageTranslationsCard
                 cardTitle="Online Store"
                 dataSource={onlineStoreDataSource}
+                current={current}
               />
               <ManageTranslationsCard
                 cardTitle="Settings"
                 dataSource={settingsDataSource}
+                current={current}
               />
             </Space>
           </div>

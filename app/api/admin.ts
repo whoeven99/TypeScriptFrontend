@@ -19,6 +19,24 @@ export interface UnpublishInfoType {
   shopLocale: { published: boolean };
 }
 
+export interface TransType {
+  resourceId: string;
+  translatableContent: [
+    {
+      value: string;
+      key: string;
+      type: string;
+    },
+  ];
+  translations: [
+    {
+      value: string;
+      outdated: boolean;
+      key: string;
+    },
+  ];
+}
+
 export const queryShopLanguages = async (request: Request) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -119,62 +137,55 @@ export const queryAllProducts = async (request: Request) => {
 
 export const queryNextProducts = async ({
   request,
+  locale,
   endCursor,
 }: {
   request: Request;
+  locale: string;
   endCursor: string | undefined;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
-      products(first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
+      translatableResources(resourceType: PRODUCT, first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
         nodes {
-          handle
-          id
-          description
-          descriptionHtml
-          seo {
-            description
-            title
-          }
-          productType
-          options(first: 10) {
-            name
-            values
-          }
-          media(first: 250) {
+          nestedTranslatableResources(first: 15, resourceType: PRODUCT_OPTION) {
             nodes {
-              preview {
-                image {
-                  url
-                }
+              resourceId
+              translatableContent {
+                key
+                value
+              }
+              translations(locale: "${locale}") {
+                outdated
+                key
+                value
               }
             }
           }
-          metafields(first: 250) {
-            nodes {
-              id
-              definition {
-                type {
-                  category
-                }
-              }
-              value
-            }
+          resourceId
+          translatableContent {
+            value
+            key
+            type
           }
-          title
+          translations(locale: "${locale}") {
+            value
+            outdated
+            key
+          }
         }
         pageInfo {
-          hasNextPage
           endCursor
+          hasNextPage
           hasPreviousPage
           startCursor
         }
       }
     }`;
 
-    const response = await axios({
+    const optionResponse = await axios({
       url: `https://${shop}/admin/api/2024-10/graphql.json`,
       method: "POST",
       headers: {
@@ -183,7 +194,8 @@ export const queryNextProducts = async ({
       },
       data: JSON.stringify({ query }),
     });
-    const res = response.data.data.products;
+
+    const res = optionResponse.data.data.translatableResources;
 
     return res;
   } catch (error) {
@@ -194,9 +206,11 @@ export const queryNextProducts = async ({
 
 export const queryPreviousProducts = async ({
   request,
+  marketId,
   startCursor,
 }: {
   request: Request;
+  marketId: string;
   startCursor: string | undefined;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -239,6 +253,12 @@ export const queryPreviousProducts = async ({
             }
           }
           title
+          translations(locale: "${marketId}") {
+            value
+            key
+            outdated
+            updatedAt
+          }
         }
         pageInfo {
           hasNextPage
@@ -975,10 +995,12 @@ export const queryNextTransType = async ({
   request,
   resourceType,
   endCursor,
+  locale,
 }: {
   request: Request;
   resourceType: string;
   endCursor: string;
+  locale: string;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -988,17 +1010,13 @@ export const queryNextTransType = async ({
         nodes {
           resourceId
           translatableContent {
-            value
-            digest
             key
-            locale
-            type
+            value
           }
-          translations(locale: "ja") {
-            value
-            updatedAt
-            outdated
+          translations(locale: "${locale}") {
             key
+            value
+            outdated
           }
         }
         pageInfo {
@@ -1032,10 +1050,12 @@ export const queryPreviousTransType = async ({
   request,
   resourceType,
   startCursor,
+  locale,
 }: {
   request: Request;
   resourceType: string;
   startCursor: string;
+  locale: string;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -1045,17 +1065,13 @@ export const queryPreviousTransType = async ({
         nodes {
           resourceId
           translatableContent {
-            value
-            digest
             key
-            locale
-            type
+            value
           }
-          translations(locale: "ja") {
-            value
-            updatedAt
-            outdated
+          translations(locale: "${locale}") {
             key
+            value
+            outdated
           }
         }
         pageInfo {
@@ -1077,6 +1093,131 @@ export const queryPreviousTransType = async ({
       data: JSON.stringify({ query }),
     });
     const res = response.data.data.translatableResources;
+
+    return res;
+  } catch (error) {
+    console.error("Error fetching translation data:", error);
+    throw error;
+  }
+};
+
+export const queryNextNestTransType = async ({
+  request,
+  resourceType,
+  nestResourceType,
+  endCursor,
+  locale,
+}: {
+  request: Request;
+  resourceType: string;
+  nestResourceType: string;
+  endCursor: string;
+  locale: string;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const query = `{
+      translatableResources(resourceType: ${resourceType}, first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
+        nodes {
+          nestedTranslatableResources(first: 15, resourceType: ${nestResourceType}) {
+            nodes {
+              resourceId
+              translatableContent {
+                key
+                value
+              }
+              translations(locale: "${locale}") {
+                key
+                value
+                outdated
+              }
+            }
+          }
+          resourceId
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+          hasPreviousPage
+          startCursor
+        }
+      }
+    }`;
+
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+    const res = response.data.data.translatableResources;
+
+    return res;
+  } catch (error) {
+    console.error("Error fetching translation data:", error);
+    throw error;
+  }
+};
+
+export const queryPreviousNestTransType = async ({
+  request,
+  resourceType,
+  nestResourceType,
+  startCursor,
+  locale,
+}: {
+  request: Request;
+  resourceType: string;
+  nestResourceType: string;
+  startCursor: string;
+  locale: string;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const query = `{
+      translatableResources(resourceType: ${resourceType}, last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
+        nodes {
+          nestedTranslatableResources(first: 15, resourceType: ${nestResourceType}) {
+            nodes {
+              resourceId
+              translatableContent {
+                key
+                value
+              }
+              translations(locale: "${locale}") {
+                key
+                value
+                outdated
+              }
+            }
+          }
+          resourceId
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+          hasPreviousPage
+          startCursor
+        }
+      }
+    }`;
+
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+    const res = response.data.data.translatableResources;
+    console.log(res);
 
     return res;
   } catch (error) {

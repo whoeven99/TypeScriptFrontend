@@ -7,6 +7,7 @@ const { Title } = Typography;
 interface SwitcherSettingCardProps {
   cardTitle: string;
   dataSource: any;
+  current: string;
 }
 
 interface DataType {
@@ -21,8 +22,10 @@ interface DataType {
 const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   cardTitle,
   dataSource,
+  current,
 }) => {
   const navigate = useNavigate();
+  console.log(current);
 
   const columns = [
     {
@@ -65,7 +68,9 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
           <Space>
             <Button
               onClick={() =>
-                navigate(`/app/manage_translation/${record.navigation}`)
+                navigate(`/app/manage_translation/${record.navigation}`, {
+                  state: { key: current },
+                })
               }
             >
               Edit
@@ -76,7 +81,9 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
             <Button>Sync</Button>
             <Button
               onClick={() =>
-                navigate(`/app/manage_translation/${record.navigation}`)
+                navigate(`/app/manage_translation/${record.navigation}`, {
+                  state: { key: current },
+                })
               }
             >
               Edit
