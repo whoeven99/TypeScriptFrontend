@@ -4,7 +4,6 @@ import {
   Menu,
   MenuProps,
   Modal,
-  Select,
   Table,
   theme,
 } from "antd";

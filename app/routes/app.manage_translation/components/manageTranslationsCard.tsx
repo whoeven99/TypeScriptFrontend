@@ -25,8 +25,6 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   current,
 }) => {
   const navigate = useNavigate();
-  console.log(current);
-
   const columns = [
     {
       title: cardTitle,
@@ -68,9 +66,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
           <Space>
             <Button
               onClick={() =>
-                navigate(`/app/manage_translation/${record.navigation}`, {
-                  state: { key: current },
-                })
+                navigate(`/app/manage_translation/${record.navigation}/?locale=${current}`)
               }
             >
               Edit
@@ -81,9 +77,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
             <Button>Sync</Button>
             <Button
               onClick={() =>
-                navigate(`/app/manage_translation/${record.navigation}`, {
-                  state: { key: current },
-                })
+                navigate(`/app/manage_translation/${record.navigation}/?locale=${current}`)
               }
             >
               Edit
