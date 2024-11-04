@@ -1,16 +1,27 @@
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM3Y6D1a2wlO/ZwW5V1ZwP0pPXX4s5bxm8s6o" crossorigin="anonymous">
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM3Y6D1a2wlO/ZwW5V1ZwP0pPXX4s5bxm8s6o"
+  crossorigin="anonymous"
+>
 
 <div id="container" style="position: fixed; bottom: 80px; right: 20px; width: 200px; display: none;">
-  <div id="selector-box" style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%;">
+  <div
+    id="selector-box"
+    style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%;"
+  >
     <select id="language-switcher" style="width: 100%;"></select>
-    
+
     <select id="currency-switcher" style="margin-top: 10px; width: 100%;"></select>
-    
+
     <button onclick="applyChanges()" style="margin-top: 10px;">确定</button>
     <button onclick="toggleSelector()" style="margin-left: 5px;">关闭</button>
   </div>
 
-  <div id="main-box" style="background: #f0f0f0; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center;">
+  <div
+    id="main-box"
+    style="background: #f0f0f0; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center;"
+  >
     <span id="display-text"></span>
     <span id="arrow" style="float: right;"><i class="fas fa-chevron-up"></i></span>
   </div>
@@ -26,13 +37,13 @@
           languages: [
             { value: 'zh', text: '中文' },
             { value: 'en', text: '英语' },
-            { value: 'fr', text: '法语' }
+            { value: 'fr', text: '法语' },
           ],
           currencies: [
             { value: 'CNY', text: '人民币 (CNY)' },
             { value: 'USD', text: '美元 (USD)' },
-            { value: 'EUR', text: '欧元 (EUR)' }
-          ]
+            { value: 'EUR', text: '欧元 (EUR)' },
+          ],
         };
         resolve(data);
       }, 1000); // 模拟网络延迟
@@ -40,19 +51,19 @@
   }
 
   // 页面加载时获取语言和货币选项
-  window.onload = async function() {
+  window.onload = async function () {
     const { languages, currencies } = await fetchOptions();
 
     // 填充语言选择框
     const languageSwitcher = document.getElementById('language-switcher');
-    languages.forEach(lang => {
+    languages.forEach((lang) => {
       const option = new Option(lang.text, lang.value);
       languageSwitcher.add(option);
     });
 
     // 填充货币选择框
     const currencySwitcher = document.getElementById('currency-switcher');
-    currencies.forEach(currency => {
+    currencies.forEach((currency) => {
       const option = new Option(currency.text, currency.value);
       currencySwitcher.add(option);
     });
@@ -72,7 +83,8 @@
     const box = document.getElementById('selector-box');
     box.style.display = box.style.display === 'none' ? 'block' : 'none';
     const arrow = document.getElementById('arrow');
-    arrow.innerHTML = box.style.display === 'block' ? '<i class="fas fa-chevron-down"></i>' : '<i class="fas fa-chevron-up"></i>';
+    arrow.innerHTML =
+      box.style.display === 'block' ? '<i class="fas fa-chevron-down"></i>' : '<i class="fas fa-chevron-up"></i>';
   }
 
   // 更新主框的显示文本

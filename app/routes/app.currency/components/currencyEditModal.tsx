@@ -28,7 +28,6 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   const [roundingSelectValue, setRoundingSelectValue] = useState<string>();
   const [exRateValue, setExRateValue] = useState<number | null>();
   const title = `Edit ${selectedRow?.currency}`;
-  console.log(selectedRow);
 
   useEffect(() => {
     if (selectedRow?.exchangeRate === "Auto") {

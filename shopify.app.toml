@@ -1,8 +1,8 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "fb9fc15cbec02bd735e2a5b491cf8409"
-name = "ZinnTrans"
-handle = "transform-lancy-app"
+client_id = "7a5eae5811d6629e9b3299748e852a6b"
+name = "ZinnTransTest"
+handle = "transform-lancy-app-test"
 application_url = "https://absent-bennett-protection-donors.trycloudflare.com"
 embedded = true
 
@@ -13,13 +13,13 @@ include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_content,read_gift_cards,read_legal_policies,read_markets,read_online_store_navigation,write_locales,write_markets,write_products,write_translations"
+scopes = "read_content,read_legal_policies,read_markets,read_online_store_navigation,read_translations,write_locales,write_markets,write_products,write_translations"
 
 [auth]
 redirect_urls = [
-  "https://absent-bennett-protection-donors.trycloudflare.com/auth/callback",
-  "https://absent-bennett-protection-donors.trycloudflare.com/auth/shopify/callback",
-  "https://absent-bennett-protection-donors.trycloudflare.com/api/auth/callback"
+  "https://mo-quick-wr-electronics.trycloudflare.com/auth/callback",
+  "https://mo-quick-wr-electronics.trycloudflare.com/auth/shopify/callback",
+  "https://mo-quick-wr-electronics.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
