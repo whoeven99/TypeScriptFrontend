@@ -3,7 +3,7 @@
 client_id = "6e0ef7be80edbf81020e200228a86d01"
 name = "ZinnTransLocal"
 handle = "transform-lancy-app-local"
-application_url = "https://identifying-balloon-measures-techrepublic.trycloudflare.com"
+application_url = "https://mo-quick-wr-electronics.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://identifying-balloon-measures-techrepublic.trycloudflare.com/auth/callback",
-  "https://identifying-balloon-measures-techrepublic.trycloudflare.com/auth/shopify/callback",
-  "https://identifying-balloon-measures-techrepublic.trycloudflare.com/api/auth/callback"
+  "https://mo-quick-wr-electronics.trycloudflare.com/auth/callback",
+  "https://mo-quick-wr-electronics.trycloudflare.com/auth/shopify/callback",
+  "https://mo-quick-wr-electronics.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
