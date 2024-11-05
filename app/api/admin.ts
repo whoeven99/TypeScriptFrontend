@@ -1006,7 +1006,7 @@ export const queryNextTransType = async ({
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
+      translatableResources(resourceType: ${resourceType}, first: 1 ${endCursor ? `, after: "${endCursor}"` : ""}) {
         nodes {
           resourceId
           translatableContent {
@@ -1061,7 +1061,7 @@ export const queryPreviousTransType = async ({
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
+      translatableResources(resourceType: ${resourceType}, last: 1 ${startCursor ? `, before: "${startCursor}"` : ""}) {
         nodes {
           resourceId
           translatableContent {
@@ -1217,8 +1217,6 @@ export const queryPreviousNestTransType = async ({
       data: JSON.stringify({ query }),
     });
     const res = response.data.data.translatableResources;
-    console.log(res);
-
     return res;
   } catch (error) {
     console.error("Error fetching translation data:", error);
@@ -1312,8 +1310,6 @@ export const queryAllMarket = async ({ request }: { request: Request }) => {
 //       data: JSON.stringify({ query }),
 //     });
 //     const res = response.data.data;
-//     console.log(res);
-
 //     return res;
 //   } catch (error) {
 //     console.error("Error fetching all orders:", error);
@@ -1540,8 +1536,6 @@ export const mutationAppSubscriptionCreate = async ({
       },
     });
     const res = response.data;
-    console.log(res);
-
     return res;
   } catch (error) {
     console.error("Error publish shopLanguage:", error);

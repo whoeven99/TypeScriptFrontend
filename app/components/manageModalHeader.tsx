@@ -1,12 +1,13 @@
+import { useLocation, useNavigate } from "@remix-run/react";
 import { Select, Layout, theme } from "antd";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import { ShopLocalesType } from "~/routes/app.language/route";
 
 const { Header } = Layout;
 
 interface ManageModalHeaderProps {
   shopLanguagesLoad: ShopLocalesType[];
+  locale: string | null;
 }
 
 interface SelectType {
@@ -16,14 +17,13 @@ interface SelectType {
 
 const ManageModalHeader: React.FC<ManageModalHeaderProps> = ({
   shopLanguagesLoad,
+  locale,
 }) => {
   const [selectData, setSelectData] = useState<SelectType[]>();
-  const defaultValue: string = useSelector(
-    (state: any) => state.selectLanguageData.key,
-  );
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+  const location = useLocation();
 
   useEffect(() => {
     const newArray = shopLanguagesLoad
@@ -35,6 +35,11 @@ const ManageModalHeader: React.FC<ManageModalHeaderProps> = ({
     setSelectData(newArray);
   }, [shopLanguagesLoad]);
 
+  const onChange = (e: any) => {
+    const currentPath = location.pathname;
+    window.location.href = `${currentPath}?language=${e}`;
+  };
+
   return (
     <Header
       style={{
@@ -45,7 +50,8 @@ const ManageModalHeader: React.FC<ManageModalHeaderProps> = ({
       <Select
         options={selectData}
         style={{ minWidth: "200px" }}
-        defaultValue={defaultValue}
+        defaultValue={locale || shopLanguagesLoad[0].locale}
+        onChange={onChange}
       />
     </Header>
   );

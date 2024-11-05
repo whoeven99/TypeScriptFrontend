@@ -41,8 +41,6 @@ export const addCurrency = async ({
     });
 
     const res = response.data;
-    console.log(res);
-
     return res;
   } catch (error) {
     console.error("Error add currency:", error);
@@ -70,8 +68,6 @@ export const DeleteCurrency = async ({
     });
 
     const res = response.data;
-    console.log(res);
-
     return res;
   } catch (error) {
     console.error("Error delete currency:", error);
@@ -105,8 +101,6 @@ export const UpdateCurrency = async ({
     });
 
     const res = response.data;
-    console.log(res);
-
     return res;
   } catch (error) {
     console.error("Error delete currency:", error);

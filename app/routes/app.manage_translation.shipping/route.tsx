@@ -60,6 +60,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       request,
       resourceType: "PACKING_SLIP_TEMPLATE",
       endCursor: "",
+      locale:"ja"
     });
 
     return json({
@@ -175,8 +176,6 @@ const Index = () => {
                   const codeButton = editor
                     .getContainer()
                     .querySelector('button[data-mce-name="code"]');
-                  console.log(codeButton);
-
                   if (
                     codeButton &&
                     codeButton.classList.contains("tox-tbtn--disabled")

@@ -136,14 +136,12 @@ const Index = () => {
     ];
     const newdata = data.concat(generateMenuItemsArray(navigationData.items));
     setResourceData(newdata);
-    console.log(navigationData);
   }, [navigationData]);
 
   useEffect(() => {
     if (actionData && "nextNavigations" in actionData) {
       const nextNavigations = exMenuData(actionData.nextNavigations);
       // 在这里处理 nextNavigations
-      console.log(nextNavigations);
       setMenuData(nextNavigations);
       setNavigationsData(actionData.nextNavigations);
     } else {
@@ -155,7 +153,6 @@ const Index = () => {
   useEffect(() => {
     if (actionData && "previousNavigations" in actionData) {
       const previousNavigations = exMenuData(actionData.previousNavigations);
-      console.log(previousNavigations);
       // 在这里处理 previousNavigations
       setMenuData(previousNavigations);
       setNavigationsData(actionData.previousNavigations);

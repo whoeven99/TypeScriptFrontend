@@ -40,7 +40,6 @@ const PlanCard: React.FC<PlanCardProps> = ({
     };
     const formData = new FormData();
     formData.append("plandata", JSON.stringify(data)); // 将选中的语言作为字符串发送
-    console.log(1);
 
     submit(formData, {
       method: "post",

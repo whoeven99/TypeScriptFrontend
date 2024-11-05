@@ -8,8 +8,15 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { Pagination } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryNextPages, queryPreviousPages } from "~/api/admin";
+import {
+  queryNextPages,
+  queryNextTransType,
+  queryPreviousPages,
+  queryPreviousTransType,
+  queryShopLanguages,
+} from "~/api/admin";
 import { Editor } from "@tinymce/tinymce-react";
+import { ShopLocalesType } from "../app.language/route";
 
 const { Sider, Content } = Layout;
 
@@ -27,10 +34,21 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
-    const pages = await queryNextPages({ request, endCursor: "" });
+    const shopLanguagesLoad: ShopLocalesType[] =
+      await queryShopLanguages(request);
+    const pages = await queryNextTransType({
+      request,
+      resourceType: "PAGE",
+      endCursor: "",
+      locale: searchTerm || shopLanguagesLoad[0].locale,
+    });
 
     return json({
+      searchTerm,
+      shopLanguagesLoad,
       pages,
     });
   } catch (error) {
@@ -40,6 +58,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -47,16 +67,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
     if (startCursor) {
-      const previousPages = await queryPreviousPages({
+      const previousPages = await queryPreviousTransType({
         request,
+        resourceType: "PAGE",
         startCursor,
+        locale: searchTerm || "",
       }); // 处理逻辑
       return json({ previousPages: previousPages });
     }
     if (endCursor) {
-      const nextPages = await queryNextPages({
+      const nextPages = await queryNextTransType({
         request,
+        resourceType: "PAGE",
         endCursor,
+        locale: searchTerm || "",
       }); // 处理逻辑
       return json({ nextPages: nextPages });
     }
@@ -137,7 +161,6 @@ const Index = () => {
     if (actionData && "nextPages" in actionData) {
       const nextPages = exMenuData(actionData.nextPages);
       // 在这里处理 nextPages
-      console.log(nextPages);
       setMenuData(nextPages);
       setPagesData(actionData.nextPages);
     } else {
@@ -149,7 +172,6 @@ const Index = () => {
   useEffect(() => {
     if (actionData && "previousPages" in actionData) {
       const previousPages = exMenuData(actionData.previousPages);
-      console.log(previousPages);
       // 在这里处理 previousPages
       setMenuData(previousPages);
       setPagesData(actionData.previousPages);
@@ -172,26 +194,26 @@ const Index = () => {
       key: "default_language",
       render: (_: any, record: TableDataType) => {
         if (record?.key === "body") {
-            return (
-              <Editor
-                apiKey="ogejypabqwbcwx7z197dy71mudw3l9bgif8x6ujlffhetcq8" // 如果使用云端版本，需要提供 API 密钥。否则可以省略。
-                value={record.default_language || ""}
-                disabled={true}
-                init={{
-                  height: 300,
-                  menubar: false,
-                  plugins:
-                    "print preview searchreplace autolink directionality visualblocks visualchars fullscreen image link media template code codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount imagetools textpattern help emoticons autosave bdmap indent2em autoresize formatpainter axupimgs",
-                  toolbar:
-                    "code undo redo restoredraft | cut copy paste pastetext | forecolor backcolor bold italic underline strikethrough link anchor | alignleft aligncenter alignright alignjustify outdent indent | \
+          return (
+            <Editor
+              apiKey="ogejypabqwbcwx7z197dy71mudw3l9bgif8x6ujlffhetcq8" // 如果使用云端版本，需要提供 API 密钥。否则可以省略。
+              value={record.default_language || ""}
+              disabled={true}
+              init={{
+                height: 300,
+                menubar: false,
+                plugins:
+                  "print preview searchreplace autolink directionality visualblocks visualchars fullscreen image link media template code codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount imagetools textpattern help emoticons autosave bdmap indent2em autoresize formatpainter axupimgs",
+                toolbar:
+                  "code undo redo restoredraft | cut copy paste pastetext | forecolor backcolor bold italic underline strikethrough link anchor | alignleft aligncenter alignright alignjustify outdent indent | \
                   styleselect formatselect fontselect fontsizeselect | bullist numlist | blockquote subscript superscript removeformat | \
                   table image media charmap emoticons hr pagebreak insertdatetime print preview | fullscreen | bdmap indent2em lineheight formatpainter axupimgs",
-                }}
-                // onEditorChange={handleEditorChange}
-              />
-            );
-          }
-          return <Input disabled value={record?.default_language} />;
+              }}
+              // onEditorChange={handleEditorChange}
+            />
+          );
+        }
+        return <Input disabled value={record?.default_language} />;
       },
     },
     {
@@ -200,25 +222,25 @@ const Index = () => {
       key: "translated",
       render: (_: any, record: TableDataType) => {
         if (record?.key === "body") {
-            return (
-              <Editor
-                apiKey="ogejypabqwbcwx7z197dy71mudw3l9bgif8x6ujlffhetcq8" // 如果使用云端版本，需要提供 API 密钥。否则可以省略。
-                value={record.translated || ""}
-                init={{
-                  height: 300,
-                  menubar: false,
-                  plugins:
-                    "print preview searchreplace autolink directionality visualblocks visualchars fullscreen image link media template code codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount imagetools textpattern help emoticons autosave bdmap indent2em autoresize formatpainter axupimgs",
-                  toolbar:
-                    "code undo redo restoredraft | cut copy paste pastetext | forecolor backcolor bold italic underline strikethrough link anchor | alignleft aligncenter alignright alignjustify outdent indent | \
+          return (
+            <Editor
+              apiKey="ogejypabqwbcwx7z197dy71mudw3l9bgif8x6ujlffhetcq8" // 如果使用云端版本，需要提供 API 密钥。否则可以省略。
+              value={record.translated || ""}
+              init={{
+                height: 300,
+                menubar: false,
+                plugins:
+                  "print preview searchreplace autolink directionality visualblocks visualchars fullscreen image link media template code codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount imagetools textpattern help emoticons autosave bdmap indent2em autoresize formatpainter axupimgs",
+                toolbar:
+                  "code undo redo restoredraft | cut copy paste pastetext | forecolor backcolor bold italic underline strikethrough link anchor | alignleft aligncenter alignright alignjustify outdent indent | \
                   styleselect formatselect fontselect fontsizeselect | bullist numlist | blockquote subscript superscript removeformat | \
                   table image media charmap emoticons hr pagebreak insertdatetime print preview | fullscreen | bdmap indent2em lineheight formatpainter axupimgs",
-                }}
-                // onEditorChange={handleEditorChange}
-              />
-            );
-          }
-          return <Input disabled value={record?.translated} />;
+              }}
+              // onEditorChange={handleEditorChange}
+            />
+          );
+        }
+        return <Input disabled value={record?.translated} />;
       },
     },
   ];

@@ -3,7 +3,7 @@
 client_id = "7a5eae5811d6629e9b3299748e852a6b"
 name = "ZinnTransTest"
 handle = "transform-lancy-app-test"
-application_url = "https://absent-bennett-protection-donors.trycloudflare.com"
+application_url = "https://typescriptfrontend.onrender.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://mo-quick-wr-electronics.trycloudflare.com/auth/callback",
-  "https://mo-quick-wr-electronics.trycloudflare.com/auth/shopify/callback",
-  "https://mo-quick-wr-electronics.trycloudflare.com/api/auth/callback"
+  "https://typescriptfrontend.onrender.com/auth/callback",
+  "https://typescriptfrontend.onrender.com/auth/shopify/callback",
+  "https://typescriptfrontend.onrender.com/api/auth/callback"
 ]
 
 [webhooks]
