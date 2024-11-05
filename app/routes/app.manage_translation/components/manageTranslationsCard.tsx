@@ -66,7 +66,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
           <Space>
             <Button
               onClick={() =>
-                navigate(`/app/manage_translation/${record.navigation}/?locale=${current}`)
+                navigate(`/app/manage_translation/${record.navigation}?language=${current}`)
               }
             >
               Edit
@@ -77,7 +77,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
             <Button>Sync</Button>
             <Button
               onClick={() =>
-                navigate(`/app/manage_translation/${record.navigation}/?locale=${current}`)
+                navigate(`/app/manage_translation/${record.navigation}?language=${current}`)
               }
             >
               Edit

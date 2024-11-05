@@ -1,12 +1,4 @@
-import {
-  Input,
-  Layout,
-  Menu,
-  MenuProps,
-  Modal,
-  Table,
-  theme,
-} from "antd";
+import { Input, Layout, Menu, MenuProps, Modal, Table, theme } from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
@@ -75,31 +67,34 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
+    const shopLanguagesLoad: ShopLocalesType[] =
+      await queryShopLanguages(request);
     const products = await queryNextTransType({
       request,
       resourceType: "PRODUCT",
       endCursor: "",
-      locale: "ja",
+      locale: searchTerm || shopLanguagesLoad[0].locale,
     });
     const product_options = await queryNextNestTransType({
       request,
       resourceType: "PRODUCT",
       nestResourceType: "PRODUCT_OPTION",
       endCursor: "",
-      locale: "ja",
+      locale: searchTerm || shopLanguagesLoad[0].locale,
     });
     const product_metafields = await queryNextNestTransType({
       request,
       resourceType: "PRODUCT",
       nestResourceType: "METAFIELD",
       endCursor: "",
-      locale: "ja",
+      locale: searchTerm || shopLanguagesLoad[0].locale,
     });
-    const shopLanguagesLoad: ShopLocalesType[] =
-      await queryShopLanguages(request);
 
     return json({
+      searchTerm,
       products,
       product_options,
       product_metafields,
@@ -179,7 +174,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { products, product_options, product_metafields, shopLanguagesLoad } =
+  const { products, product_options, product_metafields, shopLanguagesLoad, searchTerm } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
@@ -258,8 +253,6 @@ const Index = () => {
   } = theme.useToken();
 
   const navigate = useNavigate();
-  const location = useLocation();
-  const { key } = location.state || {}; // 提取传递的状态
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   useEffect(() => {
@@ -780,7 +773,7 @@ const Index = () => {
           borderRadius: borderRadiusLG,
         }}
       >
-        <ManageModalHeader shopLanguagesLoad={shopLanguagesLoad}/>
+        <ManageModalHeader shopLanguagesLoad={shopLanguagesLoad} locale={searchTerm}/>
         <Layout
           style={{
             padding: "24px 0",
