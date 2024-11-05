@@ -60,6 +60,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       request,
       resourceType: "METAOBJECT",
       endCursor: "",
+      locale: "ja",
     });
 
     return json({
@@ -83,6 +84,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         request,
         resourceType: "METAOBJECT",
         startCursor,
+        locale: "ja",
       }); // 处理逻辑
       return json({ previousMetaobjects: previousMetaobjects });
     }
@@ -91,6 +93,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         request,
         resourceType: "METAOBJECT",
         endCursor,
+        locale: "ja",
       }); // 处理逻辑
       return json({ nextMetaobjects: nextMetaobjects });
     }
@@ -172,7 +175,6 @@ const Index = () => {
     if (actionData && "nextMetaobjects" in actionData) {
       const nextMetaobjects = exMenuData(actionData.nextMetaobjects);
       // 在这里处理 nextMetaobjects
-      console.log(nextMetaobjects);
       setMenuData(nextMetaobjects);
       setMetaobjectsData(actionData.nextMetaobjects);
     } else {
@@ -184,7 +186,6 @@ const Index = () => {
   useEffect(() => {
     if (actionData && "previousMetaobjects" in actionData) {
       const previousMetaobjects = exMenuData(actionData.previousMetaobjects);
-      console.log(previousMetaobjects);
       // 在这里处理 previousMetaobjects
       setMenuData(previousMetaobjects);
       setMetaobjectsData(actionData.previousMetaobjects);

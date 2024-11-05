@@ -8,8 +8,16 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { Pagination } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryNextArticles, queryPreviousArticles } from "~/api/admin";
+import {
+  queryNextArticles,
+  queryNextTransType,
+  queryPreviousArticles,
+  queryPreviousTransType,
+  queryShopLanguages,
+} from "~/api/admin";
 import { Editor } from "@tinymce/tinymce-react";
+import { ShopLocalesType } from "../app.language/route";
+import ManageModalHeader from "~/components/manageModalHeader";
 
 const { Sider, Content } = Layout;
 
@@ -19,6 +27,21 @@ interface ArticleType {
   title: string;
   body: string | undefined;
   summary: string | undefined;
+  seo: {
+    description: string | undefined;
+    title: string | undefined;
+  };
+  translations: {
+    handle: string | undefined;
+    id: string;
+    title: string | undefined;
+    body: string | undefined;
+    summary: string | undefined;
+    seo: {
+      description: string | undefined;
+      title: string | undefined;
+    };
+  };
 }
 
 type TableDataType = {
@@ -29,10 +52,21 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
-    const articles = await queryNextArticles({ request, endCursor: "" });
+    const shopLanguagesLoad: ShopLocalesType[] =
+      await queryShopLanguages(request);
+    const articles = await queryNextTransType({
+      request,
+      resourceType: "ARTICLE",
+      endCursor: "",
+      locale: searchTerm || shopLanguagesLoad[0].locale,
+    });
 
     return json({
+      searchTerm,
+      shopLanguagesLoad,
       articles,
     });
   } catch (error) {
@@ -42,6 +76,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -49,16 +85,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
     if (startCursor) {
-      const previousArticles = await queryPreviousArticles({
+      const previousArticles = await queryPreviousTransType({
         request,
+        resourceType: "ARTICLE",
         startCursor,
+        locale: searchTerm || "",
       }); // 处理逻辑
       return json({ previousArticles: previousArticles });
     }
     if (endCursor) {
-      const nextArticles = await queryNextArticles({
+      const nextArticles = await queryNextTransType({
         request,
+        resourceType: "ARTICLE",
         endCursor,
+        locale: searchTerm || "",
       }); // 处理逻辑
       return json({ nextArticles: nextArticles });
     }
@@ -69,13 +109,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { articles } = useLoaderData<typeof loader>();
+  const { searchTerm, shopLanguagesLoad, articles } =
+    useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const exMenuData = (articles: any) => {
     const data = articles.nodes.map((article: any) => ({
-      key: article.id,
-      label: article.title,
+      key: article.resourceId,
+      label: article.translatableContent.find(
+        (item: any) => item.key === "title",
+      ).value,
     }));
     return data;
   };
@@ -84,9 +127,9 @@ const Index = () => {
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
   const [articlesData, setArticlesData] = useState(articles);
-  const [articleData, setArticleData] = useState<ArticleType>(
-    articles.nodes[0],
-  );
+  const [articleData, setArticleData] = useState<ArticleType>();
+  console.log(articlesData);
+
   const [resourceData, setResourceData] = useState<TableDataType[]>([
     {
       key: "title",
@@ -114,9 +157,21 @@ const Index = () => {
       default_language: "",
       translated: "",
     },
+    {
+      key: "meta_title",
+      resource: "Meta title",
+      default_language: "",
+      translated: "",
+    },
+    {
+      key: "meta_description",
+      resource: "Meta description",
+      default_language: "",
+      translated: "",
+    },
   ]);
   const [selectArticleKey, setSelectArticleKey] = useState(
-    articles.nodes[0].id,
+    articles.nodes[0].resourceId,
   );
   const [hasPrevious, setHasPrevious] = useState<boolean>(
     articlesData.pageInfo.hasPreviousPage,
@@ -132,6 +187,13 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   useEffect(() => {
+    const data = transBeforeData({
+      articles: articlesData,
+    });
+    setArticleData(data);
+  }, [selectArticleKey]);
+
+  useEffect(() => {
     setHasPrevious(articlesData.pageInfo.hasPreviousPage);
     setHasNext(articlesData.pageInfo.hasNextPage);
   }, [articlesData]);
@@ -141,28 +203,40 @@ const Index = () => {
       {
         key: "title",
         resource: "Title",
-        default_language: articleData.title,
-        translated: "",
+        default_language: articleData?.title,
+        translated: articleData?.translations?.title,
       },
       {
         key: "description",
         resource: "Description",
-        default_language: articleData.body,
-        translated: "",
+        default_language: articleData?.body,
+        translated: articleData?.translations?.body,
       },
       {
         key: "summary",
         resource: "Summary",
-        default_language: articleData.summary,
-        translated: "",
+        default_language: articleData?.summary,
+        translated: articleData?.translations?.summary,
       },
     ]);
     setSeoData([
       {
         key: "url_handle",
         resource: "URL handle",
-        default_language: articleData.handle,
-        translated: "",
+        default_language: articleData?.handle,
+        translated: articleData?.translations?.handle,
+      },
+      {
+        key: "meta_title",
+        resource: "Meta title",
+        default_language: articleData?.seo.title,
+        translated: articleData?.translations?.seo.title,
+      },
+      {
+        key: "meta_description",
+        resource: "Meta description",
+        default_language: articleData?.seo.description,
+        translated: articleData?.translations?.seo.description,
       },
     ]);
   }, [articleData]);
@@ -171,7 +245,6 @@ const Index = () => {
     if (actionData && "nextArticles" in actionData) {
       const nextArticles = exMenuData(actionData.nextArticles);
       // 在这里处理 nextArticles
-      console.log(nextArticles);
       setMenuData(nextArticles);
       setArticlesData(actionData.nextArticles);
     } else {
@@ -183,7 +256,6 @@ const Index = () => {
   useEffect(() => {
     if (actionData && "previousArticles" in actionData) {
       const previousArticles = exMenuData(actionData.previousArticles);
-      console.log(previousArticles);
       // 在这里处理 previousArticles
       setMenuData(previousArticles);
       setArticlesData(actionData.previousArticles);
@@ -285,6 +357,80 @@ const Index = () => {
     },
   ];
 
+  const transBeforeData = ({ articles }: { articles: any }) => {
+    let data: ArticleType = {
+      handle: "",
+      id: "",
+      title: "",
+      body: "",
+      summary: "",
+      seo: {
+        description: "",
+        title: "",
+      },
+      translations: {
+        handle: "",
+        id: "",
+        title: "",
+        body: "",
+        summary: "",
+        seo: {
+          description: "",
+          title: "",
+        },
+      },
+    };
+    const article = articles.nodes.find(
+      (article: any) => article.resourceId === selectArticleKey,
+    );
+    data.id = article.resourceId;
+    data.handle = article.translatableContent.find(
+      (item: any) => item.key === "handle",
+    )?.value;
+    data.title = article.translatableContent.find(
+      (item: any) => item.key === "title",
+    )?.value;
+    data.body = article.translatableContent.find(
+      (item: any) => item.key === "body_html",
+    )?.value;
+    data.summary = article.translatableContent.find(
+      (item: any) => item.key === "summary_html",
+    )?.value;
+    data.seo.title =
+      article.translatableContent.find((item: any) => item.key === "meta_title")
+        ?.value ||
+      article.translatableContent.find((item: any) => item.key === "title")
+        ?.value;
+    data.seo.description =
+      article.translatableContent.find(
+        (item: any) => item.key === "meta_description",
+      )?.value ||
+      article.translatableContent.find((item: any) => item.key === "body_html")
+        ?.value;
+    data.translations.id = article.resourceId;
+    data.translations.title = article.translations.find(
+      (item: any) => item.key === "title",
+    )?.value;
+    data.translations.handle = article.translations.find(
+      (item: any) => item.key === "handle",
+    )?.value;
+    data.translations.body = article.translations.find(
+      (item: any) => item.key === "body_html",
+    )?.value;
+    data.translations.summary = article.translations.find(
+      (item: any) => item.key === "summary_html",
+    )?.value;
+    data.translations.seo.title =
+      article.translations.find((item: any) => item.key === "meta_title")
+        ?.value ||
+      article.translations.find((item: any) => item.key === "title")?.value;
+    data.translations.seo.description =
+      article.translations.find((item: any) => item.key === "meta_description")
+        ?.value ||
+      article.translations.find((item: any) => item.key === "body_html")?.value;
+    return data;
+  };
+
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
     navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
@@ -309,10 +455,6 @@ const Index = () => {
       action: "/app/manage_translation/article",
     }); // 提交表单请求
   };
-
-  // const onChange = () => {
-
-  // };
 
   const onClick = (e: any) => {
     // 查找 articlesData 中对应的产品
@@ -350,34 +492,50 @@ const Index = () => {
           borderRadius: borderRadiusLG,
         }}
       >
-        <Sider style={{ background: colorBgContainer }} width={200}>
-          <Menu
-            mode="inline"
-            defaultSelectedKeys={[articlesData.nodes[0].id]}
-            defaultOpenKeys={["sub1"]}
-            style={{ height: "100%" }}
-            items={menuData}
-            // onChange={onChange}
-            selectedKeys={[selectArticleKey]}
-            onClick={onClick}
-          />
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <Pagination
-              hasPrevious={hasPrevious}
-              onPrevious={onPrevious}
-              hasNext={hasNext}
-              onNext={onNext}
+        <ManageModalHeader
+          shopLanguagesLoad={shopLanguagesLoad}
+          locale={searchTerm}
+        />
+        <Layout
+          style={{
+            padding: "24px 0",
+            background: colorBgContainer,
+            borderRadius: borderRadiusLG,
+          }}
+        >
+          <Sider style={{ background: colorBgContainer }} width={200}>
+            <Menu
+              mode="inline"
+              defaultSelectedKeys={[articlesData.nodes[0].id]}
+              defaultOpenKeys={["sub1"]}
+              style={{ height: "100%" }}
+              items={menuData}
+              // onChange={onChange}
+              selectedKeys={[selectArticleKey]}
+              onClick={onClick}
             />
-          </div>
-        </Sider>
-        <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-          <Table
-            columns={resourceColumns}
-            dataSource={resourceData}
-            pagination={false}
-          />
-          <Table columns={SEOColumns} dataSource={SeoData} pagination={false} />
-        </Content>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <Pagination
+                hasPrevious={hasPrevious}
+                onPrevious={onPrevious}
+                hasNext={hasNext}
+                onNext={onNext}
+              />
+            </div>
+          </Sider>
+          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Table
+              columns={resourceColumns}
+              dataSource={resourceData}
+              pagination={false}
+            />
+            <Table
+              columns={SEOColumns}
+              dataSource={SeoData}
+              pagination={false}
+            />
+          </Content>
+        </Layout>
       </Layout>
     </Modal>
   );

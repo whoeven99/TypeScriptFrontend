@@ -258,7 +258,6 @@ const Index = () => {
 
   useEffect(() => {
     if (actionData) {
-      console.log(actionData.shopLanguagesAction); // 处理返回的数据
       // 例如更新状态
       setShopLanguages(actionData.shopLanguagesAction);
     }
@@ -267,14 +266,10 @@ const Index = () => {
   useEffect(() => {
     try {
       const foundItem = menuData.find((item) => item.key === key);
-      console.log(foundItem);
       if (foundItem) {
         setCurrent(key);
-        console.log(menuData);
-        console.log(1);
       } else {
         // 找不到时的处理逻辑，例如重置当前状态或显示错误消息
-        console.log(2);
         console.warn(`No item found for key: ${key}`);
       }
     } catch (error) {

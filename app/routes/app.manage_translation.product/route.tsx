@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import {
   useActionData,
   useLoaderData,
-  useLocation,
   useNavigate,
   useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
@@ -47,15 +46,15 @@ interface ProductType {
   ];
   title: string;
   translations: {
-    handle: string;
+    handle: string | undefined;
     id: string;
     descriptionHtml: string | undefined;
     seo: {
       description: string | undefined;
       title: string | undefined;
     };
-    productType: string;
-    title: string;
+    productType: string | undefined;
+    title: string | undefined;
   };
 }
 
@@ -107,6 +106,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -118,21 +119,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         request,
         resourceType: "PRODUCT",
         startCursor,
-        locale: "ja",
+        locale: searchTerm || "",
       }); // 处理逻辑
       const previousOptions = await queryPreviousNestTransType({
         request,
         resourceType: "PRODUCT",
         nestResourceType: "PRODUCT_OPTION",
         startCursor,
-        locale: "ja",
+        locale: searchTerm || "",
       });
       const previousMetafields = await queryPreviousNestTransType({
         request,
         resourceType: "PRODUCT",
         nestResourceType: "METAFIELD",
         startCursor,
-        locale: "ja",
+        locale: searchTerm || "",
       });
       return json({
         previousProducts: previousProducts,
@@ -145,21 +146,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         request,
         resourceType: "PRODUCT",
         endCursor,
-        locale: "ja",
+        locale: searchTerm || "",
       }); // 处理逻辑
       const nextOptions = await queryNextNestTransType({
         request,
         resourceType: "PRODUCT",
         nestResourceType: "PRODUCT_OPTION",
         endCursor,
-        locale: "ja",
+        locale: searchTerm || "",
       });
       const nextMetafields = await queryNextNestTransType({
         request,
         resourceType: "PRODUCT",
         nestResourceType: "METAFIELD",
         endCursor,
-        locale: "ja",
+        locale: searchTerm || "",
       });
       return json({
         nextProducts: nextProducts,
@@ -174,8 +175,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { products, product_options, product_metafields, shopLanguagesLoad, searchTerm } =
-    useLoaderData<typeof loader>();
+  const {
+    products,
+    product_options,
+    product_metafields,
+    shopLanguagesLoad,
+    searchTerm,
+  } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const exMenuData = (products: any) => {
@@ -311,8 +317,6 @@ const Index = () => {
       },
     ]);
     const optionsData = productData?.options.map((option, index) => {
-      console.log(option);
-
       if (option?.name === "Title") {
         return null;
       }
@@ -349,7 +353,6 @@ const Index = () => {
     //   );
     //   // setVariantsData(variantsData);
     // }
-    // console.log(optionsData);
     // console.log(optionsData.length);
   }, [productData]);
 
@@ -362,7 +365,7 @@ const Index = () => {
       setProductsData(actionData.nextProducts);
       setProductOptionsData(actionData.nextOptions);
       setProductMetafieldsData(actionData.nextMetafields);
-      setSelectProductKey(actionData.nextProducts.nodes[0].resourceId);
+      // setSelectProductKey(actionData.nextProducts.nodes[0].resourceId);
     } else {
       // 如果不存在 nextProducts，可以执行其他逻辑
       console.log("nextProducts undefined");
@@ -387,7 +390,7 @@ const Index = () => {
       setProductsData(actionData.previousProducts);
       setProductOptionsData(actionData.previousOptions);
       setProductMetafieldsData(actionData.previousMetafields);
-      setSelectProductKey(actionData.previousProducts.nodes[0].resourceId);
+      // setSelectProductKey(actionData.previousProducts.nodes[0].resourceId);
     } else {
       // 如果不存在 previousProducts，可以执行其他逻辑
       console.log("previousProducts undefined");
@@ -682,6 +685,7 @@ const Index = () => {
       )?.value ||
       product.translatableContent.find((item: any) => item.key === "body_html")
         ?.value;
+    data.translations.id = product.resourceId
     data.translations.title = product.translations.find(
       (item: any) => item.key === "title",
     )?.value;
@@ -718,8 +722,6 @@ const Index = () => {
         };
       },
     );
-    console.log(data);
-
     return data;
   };
 
@@ -749,11 +751,6 @@ const Index = () => {
   };
 
   const onClick = (e: any) => {
-    // 查找 productsData 中对应的产品
-    const selectedProduct = productsData.nodes.find(
-      (product: any) => product.id === e.key,
-    );
-    // 更新选中的产品 key
     setSelectProductKey(e.key);
   };
 
@@ -773,7 +770,10 @@ const Index = () => {
           borderRadius: borderRadiusLG,
         }}
       >
-        <ManageModalHeader shopLanguagesLoad={shopLanguagesLoad} locale={searchTerm}/>
+        <ManageModalHeader
+          shopLanguagesLoad={shopLanguagesLoad}
+          locale={searchTerm}
+        />
         <Layout
           style={{
             padding: "24px 0",

@@ -8,8 +8,16 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { Pagination } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryNextBlogs, queryPreviousBlogs } from "~/api/admin";
+import {
+  queryNextBlogs,
+  queryNextTransType,
+  queryPreviousBlogs,
+  queryPreviousTransType,
+  queryShopLanguages,
+} from "~/api/admin";
 import { Editor } from "@tinymce/tinymce-react";
+import { ShopLocalesType } from "../app.language/route";
+import ManageModalHeader from "~/components/manageModalHeader";
 
 const { Sider, Content } = Layout;
 
@@ -17,6 +25,11 @@ interface BlogType {
   id: string;
   handle: string;
   title: string;
+  translations: {
+    id: string;
+    handle: string | undefined;
+    title: string | undefined;
+  };
 }
 
 type TableDataType = {
@@ -27,10 +40,21 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
-    const blogs = await queryNextBlogs({ request, endCursor: "" });
+    const shopLanguagesLoad: ShopLocalesType[] =
+      await queryShopLanguages(request);
+    const blogs = await queryNextTransType({
+      request,
+      resourceType: "BLOG",
+      endCursor: "",
+      locale: searchTerm || shopLanguagesLoad[0].locale,
+    });
 
     return json({
+      searchTerm,
+      shopLanguagesLoad,
       blogs,
     });
   } catch (error) {
@@ -40,6 +64,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -47,16 +73,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
     if (startCursor) {
-      const previousBlogs = await queryPreviousBlogs({
+      const previousBlogs = await queryPreviousTransType({
         request,
+        resourceType: "BLOG",
         startCursor,
+        locale: searchTerm || "",
       }); // 处理逻辑
       return json({ previousBlogs: previousBlogs });
     }
     if (endCursor) {
-      const nextBlogs = await queryNextBlogs({
+      const nextBlogs = await queryNextTransType({
         request,
+        resourceType: "BLOG",
         endCursor,
+        locale: searchTerm || "",
       }); // 处理逻辑
       return json({ nextBlogs: nextBlogs });
     }
@@ -67,13 +97,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { blogs } = useLoaderData<typeof loader>();
+  const { searchTerm, shopLanguagesLoad, blogs } =
+    useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const exMenuData = (blogs: any) => {
     const data = blogs.nodes.map((blog: any) => ({
-      key: blog.id,
-      label: blog.title,
+      key: blog.resourceId,
+      label: blog.translatableContent.find((item: any) => item.key === "title")
+        .value,
     }));
     return data;
   };
@@ -82,7 +114,7 @@ const Index = () => {
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
   const [blogsData, setBlogsData] = useState(blogs);
-  const [blogData, setBlogData] = useState<BlogType>(blogs.nodes[0]);
+  const [blogData, setBlogData] = useState<BlogType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([
     {
       key: "title",
@@ -97,7 +129,7 @@ const Index = () => {
       translated: "",
     },
   ]);
-  const [selectBlogKey, setSelectBlogKey] = useState(blogs.nodes[0].id);
+  const [selectBlogKey, setSelectBlogKey] = useState(blogs.nodes[0].resourceId);
   const [hasPrevious, setHasPrevious] = useState<boolean>(
     blogsData.pageInfo.hasPreviousPage,
   );
@@ -112,6 +144,13 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   useEffect(() => {
+    const data = transBeforeData({
+      blogs: blogsData,
+    });
+    setBlogData(data);
+  }, [selectBlogKey]);
+
+  useEffect(() => {
     setHasPrevious(blogsData.pageInfo.hasPreviousPage);
     setHasNext(blogsData.pageInfo.hasNextPage);
   }, [blogsData]);
@@ -121,14 +160,14 @@ const Index = () => {
       {
         key: "title",
         resource: "Title",
-        default_language: blogData.title,
-        translated: "",
+        default_language: blogData?.title,
+        translated: blogData?.translations?.title,
       },
       {
         key: "handle",
         resource: "Handle",
-        default_language: blogData.handle,
-        translated: "",
+        default_language: blogData?.handle,
+        translated: blogData?.translations?.handle,
       },
     ]);
   }, [blogData]);
@@ -137,7 +176,6 @@ const Index = () => {
     if (actionData && "nextBlogs" in actionData) {
       const nextBlogs = exMenuData(actionData.nextBlogs);
       // 在这里处理 nextBlogs
-      console.log(nextBlogs);
       setMenuData(nextBlogs);
       setBlogsData(actionData.nextBlogs);
     } else {
@@ -149,7 +187,6 @@ const Index = () => {
   useEffect(() => {
     if (actionData && "previousBlogs" in actionData) {
       const previousBlogs = exMenuData(actionData.previousBlogs);
-      console.log(previousBlogs);
       // 在这里处理 previousBlogs
       setMenuData(previousBlogs);
       setBlogsData(actionData.previousBlogs);
@@ -184,6 +221,38 @@ const Index = () => {
     },
   ];
 
+  const transBeforeData = ({ blogs }: { blogs: any }) => {
+    let data: BlogType = {
+      handle: "",
+      id: "",
+      title: "",
+      translations: {
+        handle: "",
+        id: "",
+        title: "",
+      },
+    };
+    const blog = blogs.nodes.find(
+      (blog: any) => blog.resourceId === selectBlogKey,
+    );
+    data.id = blog.resourceId;
+    data.title = blog.translatableContent.find(
+      (item: any) => item.key === "title",
+    )?.value;
+    data.handle = blog.translatableContent.find(
+      (item: any) => item.key === "handle",
+    )?.value;
+    data.translations.id = blog.resourceId;
+    data.translations.title = blog.translations.find(
+      (item: any) => item.key === "title",
+    )?.value;
+    data.translations.handle = blog.translations.find(
+      (item: any) => item.key === "handle",
+    )?.value;
+
+    return data;
+  };
+
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
     navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
@@ -214,17 +283,6 @@ const Index = () => {
   // };
 
   const onClick = (e: any) => {
-    // 查找 blogsData 中对应的产品
-    const selectedBlog = blogsData.nodes.find((blog: any) => blog.id === e.key);
-
-    // 如果找到了产品，就更新 blogData
-    if (selectedBlog) {
-      setBlogData(selectedBlog);
-    } else {
-      console.log("Blog not found");
-    }
-
-    // 更新选中的产品 key
     setSelectBlogKey(e.key);
   };
 
@@ -247,33 +305,45 @@ const Index = () => {
           borderRadius: borderRadiusLG,
         }}
       >
-        <Sider style={{ background: colorBgContainer }} width={200}>
-          <Menu
-            mode="inline"
-            defaultSelectedKeys={[blogsData.nodes[0].id]}
-            defaultOpenKeys={["sub1"]}
-            style={{ height: "100%" }}
-            items={menuData}
-            // onChange={onChange}
-            selectedKeys={[selectBlogKey]}
-            onClick={onClick}
-          />
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <Pagination
-              hasPrevious={hasPrevious}
-              onPrevious={onPrevious}
-              hasNext={hasNext}
-              onNext={onNext}
+        <ManageModalHeader
+          shopLanguagesLoad={shopLanguagesLoad}
+          locale={searchTerm}
+        />
+        <Layout
+          style={{
+            padding: "24px 0",
+            background: colorBgContainer,
+            borderRadius: borderRadiusLG,
+          }}
+        >
+          <Sider style={{ background: colorBgContainer }} width={200}>
+            <Menu
+              mode="inline"
+              defaultSelectedKeys={[blogsData.nodes[0].id]}
+              defaultOpenKeys={["sub1"]}
+              style={{ height: "100%" }}
+              items={menuData}
+              // onChange={onChange}
+              selectedKeys={[selectBlogKey]}
+              onClick={onClick}
             />
-          </div>
-        </Sider>
-        <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-          <Table
-            columns={resourceColumns}
-            dataSource={resourceData}
-            pagination={false}
-          />
-        </Content>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <Pagination
+                hasPrevious={hasPrevious}
+                onPrevious={onPrevious}
+                hasNext={hasNext}
+                onNext={onNext}
+              />
+            </div>
+          </Sider>
+          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Table
+              columns={resourceColumns}
+              dataSource={resourceData}
+              pagination={false}
+            />
+          </Content>
+        </Layout>
       </Layout>
     </Modal>
   );

@@ -23,9 +23,7 @@ const ManageModalHeader: React.FC<ManageModalHeaderProps> = ({
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
-  const navigate = useNavigate()
   const location = useLocation();
-  console.log(selectData);
 
   useEffect(() => {
     const newArray = shopLanguagesLoad

@@ -8,23 +8,37 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { Pagination } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryNextCollections, queryPreviousCollections } from "~/api/admin";
+import {
+  queryNextCollections,
+  queryNextTransType,
+  queryPreviousCollections,
+  queryPreviousTransType,
+  queryShopLanguages,
+} from "~/api/admin";
 import { Editor } from "@tinymce/tinymce-react";
+import { ShopLocalesType } from "../app.language/route";
+import ManageModalHeader from "~/components/manageModalHeader";
 
 const { Sider, Content } = Layout;
 
 interface CollectionType {
   handle: string;
   id: string;
-  description: string | undefined;
   descriptionHtml: string | undefined;
   title: string;
   seo: {
     description: string | undefined;
     title: string | undefined;
   };
-  image: {
-    url: string | undefined;
+  translations: {
+    handle: string;
+    id: string;
+    descriptionHtml: string | undefined;
+    title: string;
+    seo: {
+      description: string | undefined;
+      title: string | undefined;
+    };
   };
 }
 
@@ -36,10 +50,21 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
-    const collections = await queryNextCollections({ request, endCursor: "" });
+    const shopLanguagesLoad: ShopLocalesType[] =
+      await queryShopLanguages(request);
+    const collections = await queryNextTransType({
+      request,
+      resourceType: "COLLECTION",
+      endCursor: "",
+      locale: searchTerm || shopLanguagesLoad[0].locale,
+    });
 
     return json({
+      searchTerm,
+      shopLanguagesLoad,
       collections,
     });
   } catch (error) {
@@ -49,6 +74,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -56,16 +83,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
     if (startCursor) {
-      const previousCollections = await queryPreviousCollections({
+      const previousCollections = await queryPreviousTransType({
         request,
+        resourceType: "COLLECTION",
         startCursor,
+        locale: searchTerm || "",
       }); // 处理逻辑
       return json({ previousCollections: previousCollections });
     }
     if (endCursor) {
-      const nextCollections = await queryNextCollections({
+      const nextCollections = await queryNextTransType({
         request,
+        resourceType: "COLLECTION",
         endCursor,
+        locale: searchTerm || "",
       }); // 处理逻辑
       return json({ nextCollections: nextCollections });
     }
@@ -76,13 +107,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { collections } = useLoaderData<typeof loader>();
+  const { searchTerm, shopLanguagesLoad, collections } =
+    useLoaderData<typeof loader>();
+  console.log(collections);
   const actionData = useActionData<typeof action>();
 
   const exMenuData = (collections: any) => {
     const data = collections.nodes.map((collection: any) => ({
-      key: collection.id,
-      label: collection.title,
+      key: collection.resourceId,
+      label: collection.translatableContent.find(
+        (item: any) => item.key === "title",
+      ).value,
     }));
     return data;
   };
@@ -91,9 +126,7 @@ const Index = () => {
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
   const [collectionsData, setCollectionsData] = useState(collections);
-  const [collectionData, setCollectionData] = useState<CollectionType>(
-    collections.nodes[0],
-  );
+  const [collectionData, setCollectionData] = useState<CollectionType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([
     {
       key: "title",
@@ -134,10 +167,8 @@ const Index = () => {
       translated: "",
     },
   ]);
-  const [optionsData, setOptionsData] = useState<TableDataType[]>([]);
-  const [variantsData, setVariantsData] = useState<TableDataType[]>([]);
   const [selectCollectionKey, setSelectCollectionKey] = useState(
-    collections.nodes[0].id,
+    collections.nodes[0].resourceId,
   );
   const [hasPrevious, setHasPrevious] = useState<boolean>(
     collectionsData.pageInfo.hasPreviousPage,
@@ -158,38 +189,45 @@ const Index = () => {
   }, [collectionsData]);
 
   useEffect(() => {
+    const data = transBeforeData({
+      collections: collectionsData,
+    });
+    setCollectionData(data);
+  }, [selectCollectionKey]);
+
+  useEffect(() => {
     setResourceData([
       {
         key: "title",
         resource: "Title",
-        default_language: collectionData.title,
-        translated: "",
+        default_language: collectionData?.title,
+        translated: collectionData?.translations?.title,
       },
       {
         key: "description",
         resource: "Description",
-        default_language: collectionData.description,
-        translated: "",
+        default_language: collectionData?.descriptionHtml,
+        translated: collectionData?.translations?.descriptionHtml,
       },
     ]);
     setSeoData([
       {
         key: "url_handle",
         resource: "URL handle",
-        default_language: collectionData.handle,
-        translated: "",
+        default_language: collectionData?.handle,
+        translated: collectionData?.translations?.handle,
       },
       {
         key: "meta_title",
         resource: "Meta title",
-        default_language: collectionData.seo.title || collectionData.title,
-        translated: "",
+        default_language: collectionData?.seo.title,
+        translated: collectionData?.translations?.seo.title,
       },
       {
         key: "meta_description",
         resource: "Meta description",
-        default_language: collectionData.seo.description,
-        translated: "",
+        default_language: collectionData?.seo.description,
+        translated: collectionData?.translations?.seo.description,
       },
     ]);
   }, [collectionData]);
@@ -198,7 +236,6 @@ const Index = () => {
     if (actionData && "nextCollections" in actionData) {
       const nextCollections = exMenuData(actionData.nextCollections);
       // 在这里处理 nextCollections
-      console.log(nextCollections);
       setMenuData(nextCollections);
       setCollectionsData(actionData.nextCollections);
     } else {
@@ -210,7 +247,6 @@ const Index = () => {
   useEffect(() => {
     if (actionData && "previousCollections" in actionData) {
       const previousCollections = exMenuData(actionData.previousCollections);
-      console.log(previousCollections);
       // 在这里处理 previousCollections
       setMenuData(previousCollections);
       setCollectionsData(actionData.previousCollections);
@@ -312,6 +348,75 @@ const Index = () => {
     },
   ];
 
+  const transBeforeData = ({ collections }: { collections: any }) => {
+    let data: CollectionType = {
+      handle: "",
+      id: "",
+      descriptionHtml: "",
+      seo: {
+        description: "",
+        title: "",
+      },
+      title: "",
+      translations: {
+        handle: "",
+        id: "",
+        descriptionHtml: "",
+        seo: {
+          description: "",
+          title: "",
+        },
+        title: "",
+      },
+    };
+    const collection = collections.nodes.find(
+      (collection: any) => collection.resourceId === selectCollectionKey,
+    );
+    data.id = collection.resourceId;
+    data.title = collection.translatableContent.find(
+      (item: any) => item.key === "title",
+    )?.value;
+    data.descriptionHtml = collection.translatableContent.find(
+      (item: any) => item.key === "body_html",
+    )?.value;
+    data.handle = collection.translatableContent.find(
+      (item: any) => item.key === "handle",
+    )?.value;
+    data.seo.title =
+      collection.translatableContent.find(
+        (item: any) => item.key === "meta_title",
+      )?.value ||
+      collection.translatableContent.find((item: any) => item.key === "title")
+        ?.value;
+    data.seo.description =
+      collection.translatableContent.find(
+        (item: any) => item.key === "meta_description",
+      )?.value ||
+      collection.translatableContent.find(
+        (item: any) => item.key === "body_html",
+      )?.value;
+    data.translations.title = collection.translations.find(
+      (item: any) => item.key === "title",
+    )?.value;
+    data.translations.descriptionHtml = collection.translations.find(
+      (item: any) => item.key === "body_html",
+    )?.value;
+    data.translations.handle = collection.translations.find(
+      (item: any) => item.key === "handle",
+    )?.value;
+    data.translations.seo.title =
+      collection.translations.find((item: any) => item.key === "meta_title")
+        ?.value ||
+      collection.translations.find((item: any) => item.key === "title")?.value;
+    data.translations.seo.description =
+      collection.translations.find(
+        (item: any) => item.key === "meta_description",
+      )?.value ||
+      collection.translations.find((item: any) => item.key === "body_html")
+        ?.value;
+    return data;
+  };
+
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
     navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
@@ -342,19 +447,6 @@ const Index = () => {
   // };
 
   const onClick = (e: any) => {
-    // 查找 collectionsData 中对应的产品
-    const selectedCollection = collectionsData.nodes.find(
-      (collection: any) => collection.id === e.key,
-    );
-
-    // 如果找到了产品，就更新 collectionData
-    if (selectedCollection) {
-      setCollectionData(selectedCollection);
-    } else {
-      console.log("Collection not found");
-    }
-
-    // 更新选中的产品 key
     setSelectCollectionKey(e.key);
   };
 
@@ -377,34 +469,49 @@ const Index = () => {
           borderRadius: borderRadiusLG,
         }}
       >
-        <Sider style={{ background: colorBgContainer }} width={200}>
-          <Menu
-            mode="inline"
-            defaultSelectedKeys={[collectionsData.nodes[0].id]}
-            defaultOpenKeys={["sub1"]}
-            style={{ height: "100%" }}
-            items={menuData}
-            // onChange={onChange}
-            selectedKeys={[selectCollectionKey]}
-            onClick={onClick}
-          />
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <Pagination
-              hasPrevious={hasPrevious}
-              onPrevious={onPrevious}
-              hasNext={hasNext}
-              onNext={onNext}
+        <ManageModalHeader
+          shopLanguagesLoad={shopLanguagesLoad}
+          locale={searchTerm}
+        />
+        <Layout
+          style={{
+            padding: "24px 0",
+            background: colorBgContainer,
+            borderRadius: borderRadiusLG,
+          }}
+        >
+          <Sider style={{ background: colorBgContainer }} width={200}>
+            <Menu
+              mode="inline"
+              defaultSelectedKeys={[collectionsData.nodes[0].id]}
+              defaultOpenKeys={["sub1"]}
+              style={{ height: "100%" }}
+              items={menuData}
+              selectedKeys={[selectCollectionKey]}
+              onClick={onClick}
             />
-          </div>
-        </Sider>
-        <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-          <Table
-            columns={resourceColumns}
-            dataSource={resourceData}
-            pagination={false}
-          />
-          <Table columns={SEOColumns} dataSource={SeoData} pagination={false} />
-        </Content>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <Pagination
+                hasPrevious={hasPrevious}
+                onPrevious={onPrevious}
+                hasNext={hasNext}
+                onNext={onNext}
+              />
+            </div>
+          </Sider>
+          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Table
+              columns={resourceColumns}
+              dataSource={resourceData}
+              pagination={false}
+            />
+            <Table
+              columns={SEOColumns}
+              dataSource={SeoData}
+              pagination={false}
+            />
+          </Content>
+        </Layout>
       </Layout>
     </Modal>
   );
