@@ -1,14 +1,4 @@
-import {
-  Input,
-  Layout,
-  Menu,
-  MenuProps,
-  Modal,
-  Table,
-  theme,
-  Result,
-  Button,
-} from "antd";
+import { Input, Layout, Modal, Table, theme, Result, Button } from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
@@ -18,34 +8,15 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { Pagination } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
+import {
+  queryNextTransType,
+  queryPreviousTransType,
+  queryShopLanguages,
+} from "~/api/admin";
+import { ShopLocalesType } from "../app.language/route";
+import ManageModalHeader from "~/components/manageModalHeader";
 
-const { Sider, Content } = Layout;
-
-interface TransType {
-  translatableContent:
-    | [
-        {
-          digest: string;
-          key: string;
-          locale: string;
-          type: string;
-          value: string;
-        },
-      ]
-    | [];
-  translations:
-    | [
-        {
-          key: string;
-          locale: string;
-          outdated: boolean;
-          updatedAt: string;
-          value: string;
-        },
-      ]
-    | [];
-}
+const { Content } = Layout;
 
 type TableDataType = {
   key: string | number;
@@ -55,15 +26,21 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
+    const shopLanguagesLoad: ShopLocalesType[] =
+      await queryShopLanguages(request);
     const metaobjects = await queryNextTransType({
       request,
       resourceType: "METAOBJECT",
       endCursor: "",
-      locale: "ja",
+      locale: searchTerm || shopLanguagesLoad[0].locale,
     });
 
     return json({
+      searchTerm,
+      shopLanguagesLoad,
       metaobjects,
     });
   } catch (error) {
@@ -73,6 +50,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -84,7 +63,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         request,
         resourceType: "METAOBJECT",
         startCursor,
-        locale: "ja",
+        locale: searchTerm || "",
       }); // 处理逻辑
       return json({ previousMetaobjects: previousMetaobjects });
     }
@@ -93,7 +72,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         request,
         resourceType: "METAOBJECT",
         endCursor,
-        locale: "ja",
+        locale: searchTerm || "",
       }); // 处理逻辑
       return json({ nextMetaobjects: nextMetaobjects });
     }
@@ -104,44 +83,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { metaobjects } = useLoaderData<typeof loader>();
+  const { searchTerm, shopLanguagesLoad, metaobjects } =
+    useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
-  const exMenuData = (metaobjects: any) => {
-    if (metaobjects) {
-      const data = metaobjects.nodes.map((metaobject: TransType) => {
-        const translatableContent = metaobject?.translatableContent?.[0];
-        if (translatableContent) {
-          return {
-            key: translatableContent?.digest,
-            label: translatableContent?.value,
-          };
-        } else {
-          return null;
-        }
-      });
-      return data;
-    }
-  };
-
-  const items: MenuProps["items"] = exMenuData(metaobjects);
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
   const [metaobjectsData, setMetaobjectsData] = useState(metaobjects);
-  const [metaobjectData, setMetaobjectData] = useState<TransType>(
-    metaobjects.nodes[0],
-  );
-  const [resourceData, setResourceData] = useState<TableDataType[]>([
-    {
-      key: "",
-      resource: "",
-      default_language: "",
-      translated: "",
-    },
-  ]);
-  const [selectMetaobjectKey, setSelectMetaobjectKey] = useState(
-    metaobjects.nodes[0]?.translatableContent[0]?.digest,
-  );
+  const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [hasPrevious, setHasPrevious] = useState<boolean>(
     metaobjectsData.pageInfo.hasPreviousPage,
   );
@@ -158,42 +106,20 @@ const Index = () => {
   useEffect(() => {
     setHasPrevious(metaobjectsData.pageInfo.hasPreviousPage);
     setHasNext(metaobjectsData.pageInfo.hasNextPage);
+    const data = generateMenuItemsArray(metaobjectsData);
+    setResourceData(data);
   }, [metaobjectsData]);
 
   useEffect(() => {
-    setResourceData([
-      {
-        key: "title",
-        resource: "Label",
-        default_language: "",
-        translated: "",
-      },
-    ]);
-  }, [metaobjectData]);
-
-  useEffect(() => {
     if (actionData && "nextMetaobjects" in actionData) {
-      const nextMetaobjects = exMenuData(actionData.nextMetaobjects);
-      // 在这里处理 nextMetaobjects
-      setMenuData(nextMetaobjects);
       setMetaobjectsData(actionData.nextMetaobjects);
-    } else {
-      // 如果不存在 nextMetaobjects，可以执行其他逻辑
-      console.log("nextMetaobjects undefined");
-    }
-  }, [actionData && "nextMetaobjects" in actionData]);
-
-  useEffect(() => {
-    if (actionData && "previousMetaobjects" in actionData) {
-      const previousMetaobjects = exMenuData(actionData.previousMetaobjects);
-      // 在这里处理 previousMetaobjects
-      setMenuData(previousMetaobjects);
+    } else if (actionData && "previousMetaobjects" in actionData) {
       setMetaobjectsData(actionData.previousMetaobjects);
     } else {
-      // 如果不存在 previousMetaobjects，可以执行其他逻辑
-      console.log("previousMetaobjects undefined");
+      // 如果不存在 nextProducts，可以执行其他逻辑
+      console.log("action end");
     }
-  }, [actionData && "previousMetaobjects" in actionData]);
+  }, [actionData]);
 
   const resourceColumns = [
     {
@@ -220,6 +146,19 @@ const Index = () => {
     },
   ];
 
+  const generateMenuItemsArray = (items: any) => {
+    return items.nodes.flatMap((item: any) => {
+      // 创建当前项的对象
+      const currentItem = {
+        key: `${item.resourceId}`, // 使用 id 生成唯一的 key
+        resource: "label", // 资源字段固定为 "Menu Items"
+        default_language: item.translatableContent[0]?.value, // 默认语言为 item 的标题
+        translated: item.translations[0]?.value, // 翻译字段初始化为空字符串
+      };
+      return [currentItem];
+    });
+  };
+
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
     navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
@@ -231,7 +170,7 @@ const Index = () => {
     formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/metaobject",
+      action: `/app/manage_translation/metaobject?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -241,29 +180,8 @@ const Index = () => {
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/metaobject",
+      action: `/app/manage_translation/metaobject?language=${searchTerm}`,
     }); // 提交表单请求
-  };
-
-  // const onChange = () => {
-
-  // };
-
-  const onClick = (e: any) => {
-    // 查找 metaobjectsData 中对应的产品
-    const selectedMetaobject = metaobjectsData.nodes.find(
-      (metaobject: any) => metaobject.translatableContent[0].digest === e.key,
-    );
-
-    // 如果找到了产品，就更新 metaobjectData
-    if (selectedMetaobject) {
-      setMetaobjectData(selectedMetaobject);
-    } else {
-      console.log("Metaobject not found");
-    }
-
-    // 更新选中的产品 key
-    setSelectMetaobjectKey(e.key);
   };
 
   return (
@@ -286,35 +204,33 @@ const Index = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <Sider style={{ background: colorBgContainer }} width={200}>
-            <Menu
-              mode="inline"
-              defaultSelectedKeys={[
-                metaobjectsData.nodes[0]?.translatableContent.digest,
-              ]}
-              defaultOpenKeys={["sub1"]}
-              style={{ height: "100%" }}
-              items={menuData}
-              // onChange={onChange}
-              selectedKeys={[selectMetaobjectKey]}
-              onClick={onClick}
-            />
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <Pagination
-                hasPrevious={hasPrevious}
-                onPrevious={onPrevious}
-                hasNext={hasNext}
-                onNext={onNext}
+          <ManageModalHeader
+            shopLanguagesLoad={shopLanguagesLoad}
+            locale={searchTerm}
+          />
+          <Layout
+            style={{
+              padding: "24px 0",
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
+          >
+            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
               />
-            </div>
-          </Sider>
-          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-            <Table
-              columns={resourceColumns}
-              dataSource={resourceData}
-              pagination={false}
-            />
-          </Content>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Pagination
+                  hasPrevious={hasPrevious}
+                  onPrevious={onPrevious}
+                  hasNext={hasNext}
+                  onNext={onNext}
+                />
+              </div>
+            </Content>
+          </Layout>
         </Layout>
       ) : (
         <Result

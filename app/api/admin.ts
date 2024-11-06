@@ -81,7 +81,6 @@ export const queryShop = async (request: Request) => {
           moneyWithCurrencyFormat
         }
         shopPolicies {
-          body
           id
           title
         }       

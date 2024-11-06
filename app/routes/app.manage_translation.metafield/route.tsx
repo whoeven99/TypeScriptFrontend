@@ -1,13 +1,4 @@
-import {
-  Input,
-  Layout,
-  Menu,
-  MenuProps,
-  Modal,
-  Space,
-  Table,
-  theme,
-} from "antd";
+import { Input, Layout, MenuProps, Modal, Space, Table, theme } from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
@@ -18,36 +9,15 @@ import {
 import { Pagination } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
-  queryAllProductMetafields,
-  queryNextProductMetafields,
-  queryNextShopMetafields,
-  queryPreviousProductMetafields,
-  queryPreviousShopMetafields,
+  queryNextTransType,
+  queryPreviousTransType,
+  queryShopLanguages,
 } from "~/api/admin";
+import { ShopLocalesType } from "../app.language/route";
+import ManageModalHeader from "~/components/manageModalHeader";
 
-const { Sider, Content } = Layout;
+const { Content } = Layout;
 const { TextArea } = Input;
-
-interface MetafieldType {
-  key: string;
-  nodes: [
-    {
-      id: string;
-      value: string;
-    },
-  ];
-  pageInfo: {
-    endCursor: string;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-    startCursor: string;
-  };
-}
-
-interface ProductMetafieldsType {
-  key: string;
-  name: string;
-}
 
 type TableDataType = {
   key: string | number;
@@ -57,23 +27,22 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
-    const shopmetafields = await queryNextShopMetafields({
+    const shopLanguagesLoad: ShopLocalesType[] =
+      await queryShopLanguages(request);
+    const metafields = await queryNextTransType({
       request,
+      resourceType: "METAFIELD",
       endCursor: "",
+      locale: searchTerm || shopLanguagesLoad[0].locale,
     });
 
-    const newData: MetafieldType = {
-      key: "shop_metafields", // 这里设置你想要的 key 的值
-      nodes: shopmetafields.nodes, // 保持原有的 nodes
-      pageInfo: shopmetafields.pageInfo, // 保持原有的 pageInfo
-    };
-
-    const productmetafields = await queryAllProductMetafields({ request });
-
     return json({
-      shopmetafields: newData,
-      productmetafields,
+      searchTerm,
+      shopLanguagesLoad,
+      metafields,
     });
   } catch (error) {
     console.error("Error load metafield:", error);
@@ -82,52 +51,35 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
     const formData = await request.formData();
-    const key: string = JSON.parse(formData.get("key") as string);
     const startCursor: string = JSON.parse(
       formData.get("startCursor") as string,
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
-    if (key) {
-      if (startCursor) {
-        const previousProductMetafields = await queryPreviousProductMetafields({
-          request,
-          key,
-          startCursor,
-        }); // 处理逻辑
-        return json({ previousProductMetafields: previousProductMetafields });
-      }
-      if (endCursor) {
-        const nextProductMetafields = await queryNextProductMetafields({
-          request,
-          key,
-          endCursor,
-        }); // 处理逻辑
-        return json({ nextProductMetafields: nextProductMetafields });
-      }
-      const previousProductMetafields = await queryNextProductMetafields({
+    if (startCursor) {
+      const previousProductMetafields = await queryPreviousTransType({
         request,
-        key,
-        endCursor: "",
+        resourceType: "METAFIELD",
+        startCursor,
+        locale: searchTerm || "",
       }); // 处理逻辑
       return json({ previousProductMetafields: previousProductMetafields });
-    } else {
-      if (startCursor) {
-        const previousShopMetafields = await queryPreviousShopMetafields({
-          request,
-          startCursor,
-        }); // 处理逻辑
-        return json({ previousShopMetafields: previousShopMetafields });
-      }
-      if (endCursor) {
-        const nextShopMetafields = await queryNextShopMetafields({
-          request,
-          endCursor,
-        }); // 处理逻辑
-        return json({ nextShopMetafields: nextShopMetafields });
-      }
     }
+    if (endCursor) {
+      const nextProductMetafields = await queryNextTransType({
+        request,
+        resourceType: "METAFIELD",
+        endCursor,
+        locale: searchTerm || "",
+      }); // 处理逻辑
+      console.log(nextProductMetafields);
+
+      return json({ nextProductMetafields: nextProductMetafields });
+    }
+
     return null;
   } catch (error) {
     console.error("Error action metafield:", error);
@@ -136,36 +88,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shopmetafields, productmetafields } = useLoaderData<typeof loader>();
+  const { searchTerm, shopLanguagesLoad, metafields } =
+    useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
-  const exMenuData = (metafields: any) => {
-    const data = metafields.nodes.map((metafield: any) => ({
-      key: metafield.id,
-      label: metafield.title,
-    }));
-    return data;
-  };
-
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [menuData, setMenuData] = useState<MenuProps["items"]>([
-    {
-      key: "shop",
-      label: "Shop metafield",
-    },
-    {
-      key: "product",
-      label: "Product metafield",
-      children: productmetafields.nodes.map(
-        (productmetafield: ProductMetafieldsType) => ({
-          key: productmetafield.key,
-          label: productmetafield.name,
-        }),
-      ),
-    },
-  ]);
-  const [metafieldsData, setMetafieldsData] =
-    useState<MetafieldType>(shopmetafields);
+  const [metafieldsData, setMetafieldsData] = useState(metafields);
   const [resourceData, setResourceData] = useState<TableDataType[]>([
     {
       key: "title",
@@ -174,7 +102,6 @@ const Index = () => {
       translated: "",
     },
   ]);
-  const [selectMetafieldKey, setSelectMetafieldKey] = useState("shop");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
     metafieldsData.pageInfo.hasPreviousPage,
   );
@@ -191,13 +118,23 @@ const Index = () => {
   useEffect(() => {
     setHasPrevious(metafieldsData.pageInfo.hasPreviousPage);
     setHasNext(metafieldsData.pageInfo.hasNextPage);
+    const data = generateMenuItemsArray(metafieldsData);
+    setResourceData(data);
   }, [metafieldsData]);
 
   useEffect(() => {
-    const data = generateMenuItemsArray(metafieldsData);
-
-    setResourceData(data);
-  }, [metafieldsData]);
+    if (actionData && "nextProductMetafields" in actionData) {
+      // 在这里处理 nextProducts
+      console.log(1);
+      console.log(actionData.nextProductMetafields);
+      setMetafieldsData(actionData.nextProductMetafields);
+    } else if (actionData && "previousProductMetafields" in actionData) {
+      setMetafieldsData(actionData.previousProductMetafields);
+    } else {
+      // 如果不存在 nextProducts，可以执行其他逻辑
+      console.log("action end");
+    }
+  }, [actionData]);
 
   const resourceColumns = [
     {
@@ -235,21 +172,14 @@ const Index = () => {
     },
   ];
 
-  const generateMenuItemsArray = (
-    items: MetafieldType,
-  ): Array<{
-    key: string;
-    resource: string;
-    default_language: string;
-    translated: string;
-  }> => {
-    return items.nodes.flatMap((item) => {
+  const generateMenuItemsArray = (items: any) => {
+    return items.nodes.flatMap((item: any) => {
       // 创建当前项的对象
       const currentItem = {
-        key: `${item.id}`, // 使用 id 生成唯一的 key
+        key: `${item.resourceId}`, // 使用 id 生成唯一的 key
         resource: "value", // 资源字段固定为 "Menu Items"
-        default_language: item.value, // 默认语言为 item 的标题
-        translated: "", // 翻译字段初始化为空字符串
+        default_language: item.translatableContent[0]?.value, // 默认语言为 item 的标题
+        translated: item.translations[0]?.value, // 翻译字段初始化为空字符串
       };
       return [currentItem];
     });
@@ -266,36 +196,20 @@ const Index = () => {
     formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/metafield",
+      action: `/app/manage_translation/metafield?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
   const onNext = () => {
     const formData = new FormData();
     const endCursor = metafieldsData.pageInfo.endCursor;
+    console.log(metafieldsData);
+
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/metafield",
+      action: `/app/manage_translation/metafield?language=${searchTerm}`,
     }); // 提交表单请求
-  };
-
-  // const onChange = () => {
-
-  // };
-
-  const onClick = (e: any) => {
-    // 查找 metafieldsData 中对应的产品
-    const formData = new FormData();
-    const key = e.key;
-    formData.append("key", JSON.stringify(key)); // 将选中的语言作为字符串发送
-    submit(formData, {
-      method: "post",
-      action: "/app/manage_translation/metafield",
-    }); // 提交表单请求
-
-    // 更新选中的产品 key
-    setSelectMetafieldKey(e.key);
   };
 
   return (
@@ -317,35 +231,39 @@ const Index = () => {
           borderRadius: borderRadiusLG,
         }}
       >
-        <Sider style={{ background: colorBgContainer }} width={200}>
-          <Menu
-            mode="inline"
-            defaultSelectedKeys={[metafieldsData.nodes[0].id]}
-            defaultOpenKeys={["sub1"]}
-            style={{ height: "100%" }}
-            items={menuData}
-            // onChange={onChange}
-            selectedKeys={[selectMetafieldKey]}
-            onClick={onClick}
-          />
-        </Sider>
-        <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-            <Table
-              columns={resourceColumns}
-              dataSource={resourceData}
-              pagination={false}
-            />
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <Pagination
-                hasPrevious={hasPrevious}
-                onPrevious={onPrevious}
-                hasNext={hasNext}
-                onNext={onNext}
+        <ManageModalHeader
+          shopLanguagesLoad={shopLanguagesLoad}
+          locale={searchTerm}
+        />
+        <Layout
+          style={{
+            padding: "24px 0",
+            background: colorBgContainer,
+            borderRadius: borderRadiusLG,
+          }}
+        >
+          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Space
+              direction="vertical"
+              size="middle"
+              style={{ display: "flex" }}
+            >
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
               />
-            </div>
-          </Space>
-        </Content>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Pagination
+                  hasPrevious={hasPrevious}
+                  onPrevious={onPrevious}
+                  hasNext={hasNext}
+                  onNext={onNext}
+                />
+              </div>
+            </Space>
+          </Content>
+        </Layout>
       </Layout>
     </Modal>
   );

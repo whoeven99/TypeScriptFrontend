@@ -3,7 +3,7 @@
 client_id = "6e0ef7be80edbf81020e200228a86d01"
 name = "ZinnTransLocal"
 handle = "transform-lancy-app-local"
-application_url = "https://lottery-forming-faqs-diamonds.trycloudflare.com"
+application_url = "https://west-nails-eternal-flash.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://lottery-forming-faqs-diamonds.trycloudflare.com/auth/callback",
-  "https://lottery-forming-faqs-diamonds.trycloudflare.com/auth/shopify/callback",
-  "https://lottery-forming-faqs-diamonds.trycloudflare.com/api/auth/callback"
+  "https://west-nails-eternal-flash.trycloudflare.com/auth/callback",
+  "https://west-nails-eternal-flash.trycloudflare.com/auth/shopify/callback",
+  "https://west-nails-eternal-flash.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

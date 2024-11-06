@@ -238,23 +238,18 @@ const Index = () => {
       // 在这里处理 nextCollections
       setMenuData(nextCollections);
       setCollectionsData(actionData.nextCollections);
-    } else {
-      // 如果不存在 nextCollections，可以执行其他逻辑
-      console.log("nextCollections undefined");
-    }
-  }, [actionData && "nextCollections" in actionData]);
-
-  useEffect(() => {
-    if (actionData && "previousCollections" in actionData) {
+      setSelectCollectionKey(actionData.nextCollections.nodes[0].resourceId);
+    } else if (actionData && "previousCollections" in actionData) {
       const previousCollections = exMenuData(actionData.previousCollections);
       // 在这里处理 previousCollections
       setMenuData(previousCollections);
       setCollectionsData(actionData.previousCollections);
+      setSelectCollectionKey(actionData.previousCollections.nodes[0].resourceId);
     } else {
-      // 如果不存在 previousCollections，可以执行其他逻辑
-      console.log("previousCollections undefined");
+      // 如果不存在 nextCollections，可以执行其他逻辑
+      console.log("nextCollections end");
     }
-  }, [actionData && "previousCollections" in actionData]);
+  }, [actionData ]);
 
   const resourceColumns = [
     {
@@ -428,7 +423,7 @@ const Index = () => {
     formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/collection",
+      action: `/app/manage_translation/collection?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -438,7 +433,7 @@ const Index = () => {
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/collection",
+      action: `/app/manage_translation/collection?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
