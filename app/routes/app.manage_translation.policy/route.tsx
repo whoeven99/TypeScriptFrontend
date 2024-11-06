@@ -2,7 +2,8 @@ import { Input, Layout, Menu, MenuProps, Modal, Table, theme } from "antd";
 import { useEffect, useState } from "react";
 import { useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryShop } from "~/api/admin";
+import { queryNextTransType, queryShop, queryShopLanguages } from "~/api/admin";
+import { ShopLocalesType } from "../app.language/route";
 
 const { Sider, Content } = Layout;
 
@@ -20,10 +21,31 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
+    const shopLanguagesLoad: ShopLocalesType[] =
+      await queryShopLanguages(request);
     const shop = await queryShop(request);
-    const policy = shop.shopPolicies;
+    const policyTitle = shop.shopPolicies;
+    const policyBody = await queryNextTransType({
+      request,
+      resourceType: "SHOP_POLICY",
+      endCursor: "",
+      locale: searchTerm || shopLanguagesLoad[0].locale,
+    });
+    const policy = policyTitle.map((title: any, index: number) => {
+      const body = policyBody[index];
+      return {
+        title: title.title,
+        id: body.id,
+        value: body.value,
+      };
+    });
+    console.log(policy);
     return json({
+      searchTerm,
+      shopLanguagesLoad,
       policy,
     });
   } catch (error) {

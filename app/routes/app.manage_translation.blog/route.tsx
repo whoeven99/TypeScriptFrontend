@@ -178,23 +178,18 @@ const Index = () => {
       // 在这里处理 nextBlogs
       setMenuData(nextBlogs);
       setBlogsData(actionData.nextBlogs);
-    } else {
-      // 如果不存在 nextBlogs，可以执行其他逻辑
-      console.log("nextBlogs undefined");
-    }
-  }, [actionData && "nextBlogs" in actionData]);
-
-  useEffect(() => {
-    if (actionData && "previousBlogs" in actionData) {
+      setSelectBlogKey(actionData.nextBlogs.nodes[0].resourceId);
+    } else if (actionData && "previousBlogs" in actionData) {
       const previousBlogs = exMenuData(actionData.previousBlogs);
       // 在这里处理 previousBlogs
       setMenuData(previousBlogs);
       setBlogsData(actionData.previousBlogs);
+      setSelectBlogKey(actionData.previousBlogs.nodes[0].resourceId);
     } else {
-      // 如果不存在 previousBlogs，可以执行其他逻辑
-      console.log("previousBlogs undefined");
+      // 如果不存在 nextBlogs，可以执行其他逻辑
+      console.log("nextBlogs end");
     }
-  }, [actionData && "previousBlogs" in actionData]);
+  }, [actionData]);
 
   const resourceColumns = [
     {
@@ -264,7 +259,7 @@ const Index = () => {
     formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/blog",
+      action: `/app/manage_translation/blog?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -274,7 +269,7 @@ const Index = () => {
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/blog",
+      action: `/app/manage_translation/blog?language=${searchTerm}`,
     }); // 提交表单请求
   };
 

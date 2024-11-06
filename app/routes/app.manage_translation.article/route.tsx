@@ -247,23 +247,18 @@ const Index = () => {
       // 在这里处理 nextArticles
       setMenuData(nextArticles);
       setArticlesData(actionData.nextArticles);
-    } else {
-      // 如果不存在 nextArticles，可以执行其他逻辑
-      console.log("nextArticles undefined");
-    }
-  }, [actionData && "nextArticles" in actionData]);
-
-  useEffect(() => {
-    if (actionData && "previousArticles" in actionData) {
+      setSelectArticleKey(actionData.nextArticles.nodes[0].resourceId);
+    } else if (actionData && "previousArticles" in actionData) {
       const previousArticles = exMenuData(actionData.previousArticles);
       // 在这里处理 previousArticles
       setMenuData(previousArticles);
       setArticlesData(actionData.previousArticles);
+      setSelectArticleKey(actionData.previousArticles.nodes[0].resourceId);
     } else {
-      // 如果不存在 previousArticles，可以执行其他逻辑
-      console.log("previousArticles undefined");
+      // 如果不存在 nextArticles，可以执行其他逻辑
+      console.log("nextArticles end");
     }
-  }, [actionData && "previousArticles" in actionData]);
+  }, [actionData]);
 
   const resourceColumns = [
     {
@@ -442,7 +437,7 @@ const Index = () => {
     formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/article",
+      action: `/app/manage_translation/article?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -452,7 +447,7 @@ const Index = () => {
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/article",
+      action: `/app/manage_translation/article?language=${searchTerm}`,
     }); // 提交表单请求
   };
 

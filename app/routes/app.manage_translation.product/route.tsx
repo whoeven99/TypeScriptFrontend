@@ -365,20 +365,8 @@ const Index = () => {
       setProductsData(actionData.nextProducts);
       setProductOptionsData(actionData.nextOptions);
       setProductMetafieldsData(actionData.nextMetafields);
-      // setSelectProductKey(actionData.nextProducts.nodes[0].resourceId);
-    } else {
-      // 如果不存在 nextProducts，可以执行其他逻辑
-      console.log("nextProducts undefined");
-    }
-  }, [
-    actionData &&
-      "nextProducts" in actionData &&
-      "nextOptions" in actionData &&
-      "nextMetafields" in actionData,
-  ]);
-
-  useEffect(() => {
-    if (
+      setSelectProductKey(actionData.nextProducts.nodes[0].resourceId);
+    } else if (
       actionData &&
       "previousProducts" in actionData &&
       "previousOptions" in actionData &&
@@ -390,17 +378,12 @@ const Index = () => {
       setProductsData(actionData.previousProducts);
       setProductOptionsData(actionData.previousOptions);
       setProductMetafieldsData(actionData.previousMetafields);
-      // setSelectProductKey(actionData.previousProducts.nodes[0].resourceId);
+      setSelectProductKey(actionData.previousProducts.nodes[0].resourceId);
     } else {
-      // 如果不存在 previousProducts，可以执行其他逻辑
-      console.log("previousProducts undefined");
+      // 如果不存在 nextProducts，可以执行其他逻辑
+      console.log("nextProducts end");
     }
-  }, [
-    actionData &&
-      "previousProducts" in actionData &&
-      "previousOptions" in actionData &&
-      "previousMetafields" in actionData,
-  ]);
+  }, [actionData]);
 
   const resourceColumns = [
     {
@@ -685,7 +668,7 @@ const Index = () => {
       )?.value ||
       product.translatableContent.find((item: any) => item.key === "body_html")
         ?.value;
-    data.translations.id = product.resourceId
+    data.translations.id = product.resourceId;
     data.translations.title = product.translations.find(
       (item: any) => item.key === "title",
     )?.value;
@@ -736,7 +719,7 @@ const Index = () => {
     formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/product",
+      action: `/app/manage_translation/product?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -746,7 +729,7 @@ const Index = () => {
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/product",
+      action: `/app/manage_translation/product?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
