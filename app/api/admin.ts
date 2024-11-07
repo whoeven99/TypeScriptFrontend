@@ -81,6 +81,7 @@ export const queryShop = async (request: Request) => {
           moneyWithCurrencyFormat
         }
         shopPolicies {
+          body
           id
           title
         }       
@@ -1005,7 +1006,7 @@ export const queryNextTransType = async ({
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, first: 1 ${endCursor ? `, after: "${endCursor}"` : ""}) {
+      translatableResources(resourceType: ${resourceType}, first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
         nodes {
           resourceId
           translatableContent {
@@ -1060,7 +1061,7 @@ export const queryPreviousTransType = async ({
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, last: 1 ${startCursor ? `, before: "${startCursor}"` : ""}) {
+      translatableResources(resourceType: ${resourceType}, last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
         nodes {
           resourceId
           translatableContent {

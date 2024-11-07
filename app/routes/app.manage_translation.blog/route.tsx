@@ -9,13 +9,10 @@ import {
 import { Pagination } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
-  queryNextBlogs,
   queryNextTransType,
-  queryPreviousBlogs,
   queryPreviousTransType,
   queryShopLanguages,
 } from "~/api/admin";
-import { Editor } from "@tinymce/tinymce-react";
 import { ShopLocalesType } from "../app.language/route";
 import ManageModalHeader from "~/components/manageModalHeader";
 
@@ -196,12 +193,13 @@ const Index = () => {
       title: "Resource",
       dataIndex: "resource",
       key: "resource",
-      width: 150,
+      width: "10%",
     },
     {
       title: "Default Language",
       dataIndex: "default_language",
       key: "default_language",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         return <Input disabled value={record?.default_language} />;
       },
@@ -210,6 +208,7 @@ const Index = () => {
       title: "Translated",
       dataIndex: "translated",
       key: "translated",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         return <Input value={record?.translated} />;
       },

@@ -244,24 +244,27 @@ const Index = () => {
       // 在这里处理 previousCollections
       setMenuData(previousCollections);
       setCollectionsData(actionData.previousCollections);
-      setSelectCollectionKey(actionData.previousCollections.nodes[0].resourceId);
+      setSelectCollectionKey(
+        actionData.previousCollections.nodes[0].resourceId,
+      );
     } else {
       // 如果不存在 nextCollections，可以执行其他逻辑
       console.log("nextCollections end");
     }
-  }, [actionData ]);
+  }, [actionData]);
 
   const resourceColumns = [
     {
       title: "Resource",
       dataIndex: "resource",
       key: "resource",
-      width: 150,
+      width: "10%",
     },
     {
       title: "Default Language",
       dataIndex: "default_language",
       key: "default_language",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         if (record?.key === "description") {
           return (
@@ -270,7 +273,8 @@ const Index = () => {
               value={record.default_language || ""}
               disabled={true}
               init={{
-                height: 300,
+                min_height: 300,
+                max_height: 300,
                 menubar: false,
                 plugins:
                   "print preview searchreplace autolink directionality visualblocks visualchars fullscreen image link media template code codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount imagetools textpattern help emoticons autosave bdmap indent2em autoresize formatpainter axupimgs",
@@ -278,6 +282,43 @@ const Index = () => {
                   "code undo redo restoredraft | cut copy paste pastetext | forecolor backcolor bold italic underline strikethrough link anchor | alignleft aligncenter alignright alignjustify outdent indent | \
                 styleselect formatselect fontselect fontsizeselect | bullist numlist | blockquote subscript superscript removeformat | \
                 table image media charmap emoticons hr pagebreak insertdatetime print preview | fullscreen | bdmap indent2em lineheight formatpainter axupimgs",
+                setup: (editor) => {
+                  // 初始化时启用 "code" 按钮
+                  editor.on("init", () => {
+                    const codeButton = editor
+                      .getContainer()
+                      .querySelector('button[data-mce-name="code"]');
+                    if (
+                      codeButton &&
+                      codeButton.classList.contains("tox-tbtn--disabled")
+                    ) {
+                      codeButton.classList.remove("tox-tbtn--disabled");
+                      codeButton.setAttribute("aria-disabled", "false");
+                      (codeButton as HTMLButtonElement).disabled = false;
+                    }
+                  });
+
+                  // 限制图片的最大宽度
+                  editor.on("NodeChange", (e) => {
+                    const imgElements = editor.getDoc().querySelectorAll("img");
+                    imgElements.forEach((img) => {
+                      img.style.maxWidth = "100%"; // 最大宽度为100%
+                      img.style.height = "auto"; // 保持比例
+                    });
+                  });
+
+                  // 插入图片时设置样式
+                  editor.on("BeforeSetContent", (e) => {
+                    const content = e.content;
+                    // 如果包含图片，添加最大宽度限制
+                    if (content.includes("<img")) {
+                      e.content = content.replace(
+                        /<img/g,
+                        '<img style="max-width: 100%; height: auto;"',
+                      );
+                    }
+                  });
+                },
               }}
               // onEditorChange={handleEditorChange}
             />
@@ -290,6 +331,7 @@ const Index = () => {
       title: "Translated",
       dataIndex: "translated",
       key: "translated",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         if (record?.key === "description") {
           return (
@@ -297,7 +339,8 @@ const Index = () => {
               apiKey="ogejypabqwbcwx7z197dy71mudw3l9bgif8x6ujlffhetcq8" // 如果使用云端版本，需要提供 API 密钥。否则可以省略。
               value={record.translated || ""}
               init={{
-                height: 300,
+                min_height: 300,
+                max_height: 300,
                 menubar: false,
                 plugins:
                   "print preview searchreplace autolink directionality visualblocks visualchars fullscreen image link media template code codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount imagetools textpattern help emoticons autosave bdmap indent2em autoresize formatpainter axupimgs",
@@ -308,6 +351,28 @@ const Index = () => {
                 // Add any additional configurations needed
                 content_style:
                   "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                setup: (editor) => {
+                  // 限制图片的最大宽度
+                  editor.on("NodeChange", (e) => {
+                    const imgElements = editor.getDoc().querySelectorAll("img");
+                    imgElements.forEach((img) => {
+                      img.style.maxWidth = "100%"; // 最大宽度为100%
+                      img.style.height = "auto"; // 保持比例
+                    });
+                  });
+
+                  // 插入图片时设置样式
+                  editor.on("BeforeSetContent", (e) => {
+                    const content = e.content;
+                    // 如果包含图片，添加最大宽度限制
+                    if (content.includes("<img")) {
+                      e.content = content.replace(
+                        /<img/g,
+                        '<img style="max-width: 100%; height: auto;"',
+                      );
+                    }
+                  });
+                },
               }}
               // onEditorChange={handleEditorChange}
             />
@@ -323,12 +388,13 @@ const Index = () => {
       title: "SEO",
       dataIndex: "resource",
       key: "resource",
-      width: 150,
+      width: "10%",
     },
     {
       title: "Default Language",
       dataIndex: "default_language",
       key: "default_language",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         return <Input disabled value={record?.default_language} />;
       },
@@ -337,6 +403,7 @@ const Index = () => {
       title: "Translated",
       dataIndex: "translated",
       key: "translated",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         return <Input value={record?.translated} />;
       },

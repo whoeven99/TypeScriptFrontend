@@ -80,6 +80,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const shopLanguages: ShopLocalesType[] = await queryShopLanguages(request);
     const allMarket: MarketType[] = await queryAllMarket({ request });
     let allLanguages: AllLanguagesType[] = await queryAllLanguages({ request });
+    console.log(allLanguages.length);
 
     allLanguages = allLanguages.map((language, index) => ({
       ...language,
