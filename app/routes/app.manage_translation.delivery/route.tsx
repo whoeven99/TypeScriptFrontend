@@ -1,4 +1,4 @@
-import { Input, Layout, Modal, Table, theme, Result, Button } from "antd";
+import { Input, Layout, MenuProps, Modal, Space, Table, theme } from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
@@ -17,6 +17,7 @@ import { ShopLocalesType } from "../app.language/route";
 import ManageModalHeader from "~/components/manageModalHeader";
 
 const { Content } = Layout;
+const { TextArea } = Input;
 
 type TableDataType = {
   key: string | number;
@@ -31,9 +32,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const shopLanguagesLoad: ShopLocalesType[] =
       await queryShopLanguages(request);
-    const metaobjects = await queryNextTransType({
+    const deliverys = await queryNextTransType({
       request,
-      resourceType: "METAOBJECT",
+      resourceType: "DELIVERY_METHOD_DEFINITION",
       endCursor: "",
       locale: searchTerm || shopLanguagesLoad[0].locale,
     });
@@ -41,11 +42,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return json({
       searchTerm,
       shopLanguagesLoad,
-      metaobjects,
+      deliverys,
     });
   } catch (error) {
-    console.error("Error load metaobject:", error);
-    throw new Response("Error load metaobject", { status: 500 });
+    console.error("Error load delivery:", error);
+    throw new Response("Error load delivery", { status: 500 });
   }
 };
 
@@ -59,42 +60,53 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
     if (startCursor) {
-      const previousMetaobjects = await queryPreviousTransType({
+      const previousDeliverys = await queryPreviousTransType({
         request,
-        resourceType: "METAOBJECT",
+        resourceType: "DELIVERY_METHOD_DEFINITION",
         startCursor,
         locale: searchTerm || "",
       }); // 处理逻辑
-      return json({ previousMetaobjects: previousMetaobjects });
+      return json({ previousDeliverys: previousDeliverys });
     }
     if (endCursor) {
-      const nextMetaobjects = await queryNextTransType({
+      const nextDeliverys = await queryNextTransType({
         request,
-        resourceType: "METAOBJECT",
+        resourceType: "DELIVERY_METHOD_DEFINITION",
         endCursor,
         locale: searchTerm || "",
       }); // 处理逻辑
-      return json({ nextMetaobjects: nextMetaobjects });
+      console.log(nextDeliverys);
+
+      return json({ nextDeliverys: nextDeliverys });
     }
+
+    return null;
   } catch (error) {
-    console.error("Error action metaobject:", error);
-    throw new Response("Error action metaobject", { status: 500 });
+    console.error("Error action delivery:", error);
+    throw new Response("Error action delivery", { status: 500 });
   }
 };
 
 const Index = () => {
-  const { searchTerm, shopLanguagesLoad, metaobjects } =
+  const { searchTerm, shopLanguagesLoad, deliverys } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [metaobjectsData, setMetaobjectsData] = useState(metaobjects);
-  const [resourceData, setResourceData] = useState<TableDataType[]>([]);
+  const [deliverysData, setDeliverysData] = useState(deliverys);
+  const [resourceData, setResourceData] = useState<TableDataType[]>([
+    {
+      key: "title",
+      resource: "value",
+      default_language: "",
+      translated: "",
+    },
+  ]);
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    metaobjectsData.pageInfo.hasPreviousPage,
+    deliverysData.pageInfo.hasPreviousPage,
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    metaobjectsData.pageInfo.hasNextPage,
+    deliverysData.pageInfo.hasNextPage,
   );
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -104,19 +116,22 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   useEffect(() => {
-    setHasPrevious(metaobjectsData.pageInfo.hasPreviousPage);
-    setHasNext(metaobjectsData.pageInfo.hasNextPage);
-    const data = generateMenuItemsArray(metaobjectsData);
+    setHasPrevious(deliverysData.pageInfo.hasPreviousPage);
+    setHasNext(deliverysData.pageInfo.hasNextPage);
+    const data = generateMenuItemsArray(deliverysData);
     setResourceData(data);
-  }, [metaobjectsData]);
+  }, [deliverysData]);
 
   useEffect(() => {
-    if (actionData && "nextMetaobjects" in actionData) {
-      setMetaobjectsData(actionData.nextMetaobjects);
-    } else if (actionData && "previousMetaobjects" in actionData) {
-      setMetaobjectsData(actionData.previousMetaobjects);
+    if (actionData && "nextDeliverys" in actionData) {
+      // 在这里处理 nexts
+      console.log(1);
+      console.log(actionData.nextDeliverys);
+      setDeliverysData(actionData.nextDeliverys);
+    } else if (actionData && "previousDeliverys" in actionData) {
+      setDeliverysData(actionData.previousDeliverys);
     } else {
-      // 如果不存在 nextProducts，可以执行其他逻辑
+      // 如果不存在 nexts，可以执行其他逻辑
       console.log("action end");
     }
   }, [actionData]);
@@ -134,7 +149,13 @@ const Index = () => {
       key: "default_language",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return <Input disabled value={record?.default_language} />;
+        return (
+          <TextArea
+            disabled
+            value={record?.default_language}
+            autoSize={{ minRows: 1, maxRows: 6 }}
+          />
+        );
       },
     },
     {
@@ -143,7 +164,12 @@ const Index = () => {
       key: "translated",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return <Input value={record?.translated} />;
+        return (
+          <TextArea
+            value={record?.translated}
+            autoSize={{ minRows: 1, maxRows: 6 }}
+          />
+        );
       },
     },
   ];
@@ -153,7 +179,7 @@ const Index = () => {
       // 创建当前项的对象
       const currentItem = {
         key: `${item.resourceId}`, // 使用 id 生成唯一的 key
-        resource: "label", // 资源字段固定为 "Menu Items"
+        resource: "value", // 资源字段固定为 "Menu Items"
         default_language: item.translatableContent[0]?.value, // 默认语言为 item 的标题
         translated: item.translations[0]?.value, // 翻译字段初始化为空字符串
       };
@@ -168,21 +194,23 @@ const Index = () => {
 
   const onPrevious = () => {
     const formData = new FormData();
-    const startCursor = metaobjectsData.pageInfo.startCursor;
+    const startCursor = deliverysData.pageInfo.startCursor;
     formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: `/app/manage_translation/metaobject?language=${searchTerm}`,
+      action: `/app/manage_translation/delivery?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
   const onNext = () => {
     const formData = new FormData();
-    const endCursor = metaobjectsData.pageInfo.endCursor;
+    const endCursor = deliverysData.pageInfo.endCursor;
+    console.log(deliverysData);
+
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: `/app/manage_translation/metaobject?language=${searchTerm}`,
+      action: `/app/manage_translation/delivery?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -198,7 +226,17 @@ const Index = () => {
       okText="Confirm"
       cancelText="Cancel"
     >
-      {metaobjectsData.nodes.length ? (
+      <Layout
+        style={{
+          padding: "24px 0",
+          background: colorBgContainer,
+          borderRadius: borderRadiusLG,
+        }}
+      >
+        <ManageModalHeader
+          shopLanguagesLoad={shopLanguagesLoad}
+          locale={searchTerm}
+        />
         <Layout
           style={{
             padding: "24px 0",
@@ -206,18 +244,12 @@ const Index = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <ManageModalHeader
-            shopLanguagesLoad={shopLanguagesLoad}
-            locale={searchTerm}
-          />
-          <Layout
-            style={{
-              padding: "24px 0",
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
-            }}
-          >
-            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Space
+              direction="vertical"
+              size="middle"
+              style={{ display: "flex" }}
+            >
               <Table
                 columns={resourceColumns}
                 dataSource={resourceData}
@@ -231,16 +263,10 @@ const Index = () => {
                   onNext={onNext}
                 />
               </div>
-            </Content>
-          </Layout>
+            </Space>
+          </Content>
         </Layout>
-      ) : (
-        <Result
-          //   icon={<SmileOutlined />}
-          title="No items found here"
-          extra={<Button type="primary">back</Button>}
-        />
-      )}
+      </Layout>
     </Modal>
   );
 };

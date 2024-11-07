@@ -7,6 +7,7 @@ import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 
 import { authenticate } from "../shopify.server";
+import { ConfigProvider } from "antd";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -28,16 +29,24 @@ export default function App() {
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
-      <NavMenu> 
-        <Link to="/app" rel="home" >
-          Home
-        </Link>
-        <Link to="/app/language" >Language</Link>
-        <Link to="/app/manage_translation">Manage Translation</Link>
-        <Link to="/app/currency">Currency</Link>
-        <Link to="/app/price">Pricing</Link>
-      </NavMenu>
-      <Outlet />
+      <ConfigProvider
+        theme={{
+          token: {
+            colorPrimary: "rgb(117,211,68)", // 设置主色
+          },
+        }}
+      >
+        <NavMenu>
+          <Link to="/app" rel="home">
+            Home
+          </Link>
+          <Link to="/app/language">Language</Link>
+          <Link to="/app/manage_translation">Manage Translation</Link>
+          <Link to="/app/currency">Currency</Link>
+          <Link to="/app/price">Pricing</Link>
+        </NavMenu>
+        <Outlet />
+      </ConfigProvider>
     </AppProvider>
   );
 }

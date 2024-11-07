@@ -1,51 +1,12 @@
-import {
-  Input,
-  Layout,
-  Menu,
-  MenuProps,
-  Modal,
-  Table,
-  theme,
-  Result,
-  Button,
-} from "antd";
+import { Layout, Modal, Table, theme, Result, Button } from "antd";
 import { useEffect, useState } from "react";
-import {
-  useLoaderData,
-  useNavigate,
-  useSubmit,
-} from "@remix-run/react"; // 引入 useNavigate
-import { Pagination } from "@shopify/polaris";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
+import { useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
+import { json, LoaderFunctionArgs } from "@remix-run/node";
+import { queryNextTransType, queryShopLanguages } from "~/api/admin";
 import { Editor } from "@tinymce/tinymce-react";
+import { ShopLocalesType } from "../app.language/route";
 
-const { Sider, Content } = Layout;
-
-interface TransType {
-  translatableContent:
-    | [
-        {
-          digest: string;
-          key: string;
-          locale: string;
-          type: string;
-          value: string;
-        },
-      ]
-    | [];
-  translations:
-    | [
-        {
-          key: string;
-          locale: string;
-          outdated: boolean;
-          updatedAt: string;
-          value: string;
-        },
-      ]
-    | [];
-}
+const { Content } = Layout;
 
 type TableDataType = {
   key: string | number;
@@ -55,15 +16,21 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
+    const shopLanguagesLoad: ShopLocalesType[] =
+      await queryShopLanguages(request);
     const shippings = await queryNextTransType({
       request,
       resourceType: "PACKING_SLIP_TEMPLATE",
       endCursor: "",
-      locale:"ja"
+      locale: searchTerm || shopLanguagesLoad[0].locale,
     });
 
     return json({
+      searchTerm,
+      shopLanguagesLoad,
       shippings,
     });
   } catch (error) {
@@ -72,89 +39,40 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 };
 
-// export const action = async ({ request }: ActionFunctionArgs) => {
-//   try {
-//     const formData = await request.formData();
-//     const startCursor: string = JSON.parse(
-//       formData.get("startCursor") as string,
-//     );
-//     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
-//     if (startCursor) {
-//       const previousShippings = await queryPreviousTransType({
-//         request,
-//         resourceType: "PACKING_SLIP_TEMPLATE",
-//         startCursor,
-//       }); // 处理逻辑
-//       return json({ previousShippings: previousShippings });
-//     }
-//     if (endCursor) {
-//       const nextShippings = await queryNextTransType({
-//         request,
-//         resourceType: "PACKING_SLIP_TEMPLATE",
-//         endCursor,
-//       }); // 处理逻辑
-//       return json({ nextShippings: nextShippings });
-//     }
-//   } catch (error) {
-//     console.error("Error action shipping:", error);
-//     throw new Response("Error action shipping", { status: 500 });
-//   }
-// };
-
 const Index = () => {
   const { shippings } = useLoaderData<typeof loader>();
-  //   const actionData = useActionData<typeof action>();
 
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [menuData, setMenuData] = useState<MenuProps["items"]>([
-    {
-      key: "shipping",
-      label: "Packing slip template",
-    },
-  ]);
   const [shippingsData, setShippingsData] = useState(shippings);
-  const [shippingData, setShippingData] = useState<TransType>(
-    shippings.nodes[0],
-  );
-  const [resourceData, setResourceData] = useState<TableDataType[]>([
-    {
-      key: "",
-      resource: "",
-      default_language: "",
-      translated: "",
-    },
-  ]);
-  const [selectShippingKey, setSelectShippingKey] = useState(
-    shippings.nodes[0]?.translatableContent[0]?.digest,
-  );
+  const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
   const navigate = useNavigate();
-  const submit = useSubmit(); // 使用 useSubmit 钩子
 
   useEffect(() => {
     const Data = shippingsData.nodes.map((node: any) => ({
-      key: node.translatableContent[0].digest,
+      key: node.resourceId,
       resource: "Label",
       default_language: node.translatableContent[0].value,
-      translated: "",
+      translated: node.translations[0]?.value,
     }));
     setResourceData(Data);
-  }, [shippingData]);
+  }, []);
 
   const resourceColumns = [
     {
       title: "Resource",
       dataIndex: "resource",
       key: "resource",
-      width: 150,
+      width: "10%",
     },
     {
       title: "Default Language",
       dataIndex: "default_language",
       key: "default_language",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         return (
           <Editor
@@ -171,8 +89,8 @@ const Index = () => {
                   styleselect formatselect fontselect fontsizeselect | bullist numlist | blockquote subscript superscript removeformat | \
                   table image media charmap emoticons hr pagebreak insertdatetime print preview | fullscreen | bdmap indent2em lineheight formatpainter axupimgs",
               setup: (editor) => {
+                // 初始化时启用 "code" 按钮
                 editor.on("init", () => {
-                  // 仅启用 "code" 按钮，不影响其他按钮
                   const codeButton = editor
                     .getContainer()
                     .querySelector('button[data-mce-name="code"]');
@@ -183,6 +101,27 @@ const Index = () => {
                     codeButton.classList.remove("tox-tbtn--disabled");
                     codeButton.setAttribute("aria-disabled", "false");
                     (codeButton as HTMLButtonElement).disabled = false;
+                  }
+                });
+
+                // 限制图片的最大宽度
+                editor.on("NodeChange", (e) => {
+                  const imgElements = editor.getDoc().querySelectorAll("img");
+                  imgElements.forEach((img) => {
+                    img.style.maxWidth = "100%"; // 最大宽度为100%
+                    img.style.height = "auto"; // 保持比例
+                  });
+                });
+
+                // 插入图片时设置样式
+                editor.on("BeforeSetContent", (e) => {
+                  const content = e.content;
+                  // 如果包含图片，添加最大宽度限制
+                  if (content.includes("<img")) {
+                    e.content = content.replace(
+                      /<img/g,
+                      '<img style="max-width: 100%; height: auto;"',
+                    );
                   }
                 });
               },
@@ -196,6 +135,7 @@ const Index = () => {
       title: "Translated",
       dataIndex: "translated",
       key: "translated",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         return (
           <Editor
@@ -213,6 +153,28 @@ const Index = () => {
               // Add any additional configurations needed
               content_style:
                 "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+              setup: (editor) => {
+                // 限制图片的最大宽度
+                editor.on("NodeChange", (e) => {
+                  const imgElements = editor.getDoc().querySelectorAll("img");
+                  imgElements.forEach((img) => {
+                    img.style.maxWidth = "100%"; // 最大宽度为100%
+                    img.style.height = "auto"; // 保持比例
+                  });
+                });
+
+                // 插入图片时设置样式
+                editor.on("BeforeSetContent", (e) => {
+                  const content = e.content;
+                  // 如果包含图片，添加最大宽度限制
+                  if (content.includes("<img")) {
+                    e.content = content.replace(
+                      /<img/g,
+                      '<img style="max-width: 100%; height: auto;"',
+                    );
+                  }
+                });
+              },
             }}
             // onEditorChange={handleEditorChange}
           />
@@ -224,47 +186,6 @@ const Index = () => {
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
     navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
-  };
-
-  const onPrevious = () => {
-    const formData = new FormData();
-    const startCursor = shippingsData.pageInfo.startCursor;
-    formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-    submit(formData, {
-      method: "post",
-      action: "/app/manage_translation/shipping",
-    }); // 提交表单请求
-  };
-
-  const onNext = () => {
-    const formData = new FormData();
-    const endCursor = shippingsData.pageInfo.endCursor;
-    formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-    submit(formData, {
-      method: "post",
-      action: "/app/manage_translation/shipping",
-    }); // 提交表单请求
-  };
-
-  // const onChange = () => {
-
-  // };
-
-  const onClick = (e: any) => {
-    // 查找 shippingsData 中对应的产品
-    const selectedShipping = shippingsData.nodes.find(
-      (shipping: any) => shipping.translatableContent[0].digest === e.key,
-    );
-
-    // 如果找到了产品，就更新 shippingData
-    if (selectedShipping) {
-      setShippingData(selectedShipping);
-    } else {
-      console.log("Shipping not found");
-    }
-
-    // 更新选中的产品 key
-    setSelectShippingKey(e.key);
   };
 
   return (
@@ -287,20 +208,6 @@ const Index = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <Sider style={{ background: colorBgContainer }} width={200}>
-            <Menu
-              mode="inline"
-              defaultSelectedKeys={[
-                "shipping",
-              ]}
-              defaultOpenKeys={["sub1"]}
-              style={{ height: "100%" }}
-              items={menuData}
-              // onChange={onChange}
-              selectedKeys={[selectShippingKey]}
-              onClick={onClick}
-            />
-          </Sider>
           <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
             <Table
               columns={resourceColumns}

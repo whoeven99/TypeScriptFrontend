@@ -60,24 +60,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
     if (startCursor) {
-      const previousProductMetafields = await queryPreviousTransType({
+      const previousMetafields = await queryPreviousTransType({
         request,
         resourceType: "METAFIELD",
         startCursor,
         locale: searchTerm || "",
       }); // 处理逻辑
-      return json({ previousProductMetafields: previousProductMetafields });
+      return json({ previousMetafields: previousMetafields });
     }
     if (endCursor) {
-      const nextProductMetafields = await queryNextTransType({
+      const nextMetafields = await queryNextTransType({
         request,
         resourceType: "METAFIELD",
         endCursor,
         locale: searchTerm || "",
       }); // 处理逻辑
-      console.log(nextProductMetafields);
+      console.log(nextMetafields);
 
-      return json({ nextProductMetafields: nextProductMetafields });
+      return json({ nextMetafields: nextMetafields });
     }
 
     return null;
@@ -123,15 +123,15 @@ const Index = () => {
   }, [metafieldsData]);
 
   useEffect(() => {
-    if (actionData && "nextProductMetafields" in actionData) {
-      // 在这里处理 nextProducts
+    if (actionData && "nextMetafields" in actionData) {
+      // 在这里处理 nexts
       console.log(1);
-      console.log(actionData.nextProductMetafields);
-      setMetafieldsData(actionData.nextProductMetafields);
-    } else if (actionData && "previousProductMetafields" in actionData) {
-      setMetafieldsData(actionData.previousProductMetafields);
+      console.log(actionData.nextMetafields);
+      setMetafieldsData(actionData.nextMetafields);
+    } else if (actionData && "previousMetafields" in actionData) {
+      setMetafieldsData(actionData.previousMetafields);
     } else {
-      // 如果不存在 nextProducts，可以执行其他逻辑
+      // 如果不存在 nexts，可以执行其他逻辑
       console.log("action end");
     }
   }, [actionData]);
@@ -141,12 +141,13 @@ const Index = () => {
       title: "Resource",
       dataIndex: "resource",
       key: "resource",
-      width: 150,
+      width: "10%",
     },
     {
       title: "Default Language",
       dataIndex: "default_language",
       key: "default_language",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         return (
           <TextArea
@@ -161,6 +162,7 @@ const Index = () => {
       title: "Translated",
       dataIndex: "translated",
       key: "translated",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         return (
           <TextArea
