@@ -31,7 +31,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
   try {
     const shopLanguagesLoad: ShopLocalesType[] =
-      await queryShopLanguages(request);
+      await queryShopLanguages({request});
     const deliverys = await queryNextTransType({
       request,
       resourceType: "DELIVERY_METHOD_DEFINITION",
@@ -125,7 +125,6 @@ const Index = () => {
   useEffect(() => {
     if (actionData && "nextDeliverys" in actionData) {
       // 在这里处理 nexts
-      console.log(1);
       console.log(actionData.nextDeliverys);
       setDeliverysData(actionData.nextDeliverys);
     } else if (actionData && "previousDeliverys" in actionData) {

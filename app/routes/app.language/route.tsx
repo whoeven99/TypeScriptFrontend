@@ -22,12 +22,19 @@ import {
   setPublishConfirmState,
   setPublishLoadingState,
   setPublishState,
+  setStatuState,
   setTableData,
 } from "~/store/modules/languageTableData";
 import AttentionCard from "~/components/attentionCard";
 import PrimaryLanguage from "./components/primaryLanguage";
 import AddLanguageModal from "./components/addLanguageModal";
 import PublishModal from "./components/publishModal";
+import { GetLanguageList, GetTranslate } from "~/api/serve";
+import {
+  CheckCircleTwoTone,
+  CloseCircleTwoTone,
+  LoadingOutlined,
+} from "@ant-design/icons";
 
 const { Title } = Typography;
 
@@ -77,16 +84,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     // } catch (error) {
     //   console.error("Error updating user info:", error);
     // }
-    const shopLanguages: ShopLocalesType[] = await queryShopLanguages(request);
+    const shopLanguages: ShopLocalesType[] = await queryShopLanguages({request});
     const allMarket: MarketType[] = await queryAllMarket({ request });
     let allLanguages: AllLanguagesType[] = await queryAllLanguages({ request });
-    console.log(allLanguages.length);
-
     allLanguages = allLanguages.map((language, index) => ({
       ...language,
       key: index,
     }));
-    return json({ shop, shopLanguages, allLanguages, allMarket });
+    const status = await GetLanguageList({ request });
+    return json({ shop, shopLanguages, allLanguages, allMarket, status });
   } catch (error) {
     console.error("Error load languages:", error);
     throw new Response("Error load languages", { status: 500 });
@@ -97,9 +103,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const languages: string[] = JSON.parse(formData.get("languages") as string); // 获取语言数组
-    const selectedLanguage: ShopLocalesType = JSON.parse(
-      formData.get("selectedLanguage") as string,
-    );
+    const translation = JSON.parse(formData.get("translation") as string);
     const publishInfo: PublishInfoType = JSON.parse(
       formData.get("publishInfo") as string,
     );
@@ -110,40 +114,41 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("deleteData") as string,
     );
 
-    if (languages) {
-      await mutationShopLocaleEnable({ request, languages }); // 处理逻辑
-      const shopLanguages: ShopLocalesType[] =
-        await queryShopLanguages(request);
-      return json({ success: true, shopLanguages });
-    }
+    switch (true) {
+      case !!languages:
+        await mutationShopLocaleEnable({ request, languages }); // 处理逻辑
+        const shopLanguages: ShopLocalesType[] =
+          await queryShopLanguages({request});
+        return json({ success: true, shopLanguages });
 
-    if (selectedLanguage) {
-      const locale = selectedLanguage.locale;
-      // await translateAll({ request, locale });
-      return null;
-    }
+      case !!translation:
+        const source = translation.primaryLanguage.locale;
+        const target = translation.selectedLanguage.locale;
+        const statu = await GetTranslate({ request, source, target });
+        return statu;
 
-    if (publishInfo) {
-      await mutationShopLocalePublish({ request, publishInfos: [publishInfo] });
-      return null;
-    }
+      case !!publishInfo:
+        await mutationShopLocalePublish({
+          request,
+          publishInfos: [publishInfo],
+        });
+        return null;
 
-    if (unPublishInfo) {
-      await mutationShopLocaleUnpublish({
-        request,
-        publishInfos: [unPublishInfo],
-      });
-      return null;
-    }
+      case !!unPublishInfo:
+        await mutationShopLocaleUnpublish({
+          request,
+          publishInfos: [unPublishInfo],
+        });
+        return null;
 
-    if (deleteData) {
-      await mutationShopLocaleDisable({
-        request,
-        languages: deleteData,
-      });
-      return null;
+      case !!deleteData:
+        await mutationShopLocaleDisable({ request, languages: deleteData });
+        return null;
+
+      default:
+        // 你可以在这里处理一个默认的情况，如果没有符合的条件
+        return json({ success: false, message: "Invalid data" });
     }
-    return null;
   } catch (error) {
     console.error("Error action language:", error);
     return json({ error: "Error action language" }, { status: 500 });
@@ -151,7 +156,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, shopLanguages, allLanguages, allMarket } =
+  const { shop, shopLanguages, allLanguages, allMarket, status } =
     useLoaderData<typeof loader>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
@@ -167,30 +172,11 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  // const publishLanguages = dataSource.map((item) => ({
-  //   value: item.language,
-  //   label: item.language,
-  //   disabled: false,
-  // })); //语言选择器数据
+  const primaryLanguage = shopLanguages.find((lang) => lang.primary);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
-
-  const typeTrans = () => {
-    const newdata = shopLanguages.filter((language) => !language.primary);
-    const data = newdata.map((lang, i) => ({
-      key: i,
-      language: lang.name,
-      locale: lang.locale,
-      primary: lang.primary,
-      status: 1,
-      auto_update_translation: false,
-      published: lang.published,
-      loading: false,
-    }));
-    return data;
-  };
 
   useEffect(() => {
     const data = typeTrans();
@@ -213,11 +199,87 @@ const Index = () => {
     }
   }, [unPublishInfo]);
 
+  const columns = [
+    {
+      title: "Language",
+      dataIndex: "language",
+      key: "language",
+      width: "10%",
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: "30%",
+      render: (_: any, record: any) => {
+        return record.status === 2 ? (
+          <LoadingOutlined />
+        ) : record.status ? (
+          <CheckCircleTwoTone twoToneColor="rgb(0,255,0)" />
+        ) : (
+          <CloseCircleTwoTone twoToneColor="rgb(255,0,0)" />
+        );
+      },
+    },
+    // {
+    //   title: "Auto Update Translation",
+    //   dataIndex: "auto_update_translation",
+    //   key: "auto_update_translation",
+    //   render: (_: any, record: any) => {
+    //     return (
+    //       <Switch
+    //         checked={record.auto_update_translation}
+    //         onChange={(checked) => handleAutoUpdateChange(record.key, checked)}
+    //       />
+    //     );
+    //   },
+    // },
+    {
+      title: "Publish",
+      dataIndex: "published",
+      key: "published",
+      width: "30%",
+      render: (_: any, record: any) => (
+        <Switch
+          checked={record.published}
+          onChange={(checked) => handlePublishChange(record.key, checked)}
+          loading={record.loading} // 使用每个项的 loading 状态
+        />
+      ),
+    },
+    {
+      title: "Action",
+      dataIndex: "action",
+      key: "action",
+      width: "30%",
+      render: (_: any, record: any) => (
+        <Space>
+          <Button onClick={() => handleTranslate(record.key)}>翻译</Button>
+          <Button onClick={() => handleSet(record.locale)}>设置</Button>
+        </Space>
+      ),
+    },
+  ];
+
+  const typeTrans = () => {
+    const newdata = shopLanguages.filter((language) => !language.primary);
+    const data = newdata.map((lang, i) => ({
+      key: i,
+      language: lang.name,
+      locale: lang.locale,
+      primary: lang.primary,
+      status:
+        status.find((statu: any) => statu.target === lang.locale)?.status || 0,
+      auto_update_translation: false,
+      published: lang.published,
+      loading: false,
+    }));
+    return data;
+  };
+
   const handleOpenModal = () => {
     setIsLanguageModalOpen(true); // 打开Modal
   };
-
-  const handleAutoUpdateChange = (key: number, checked: boolean) => {};
 
   const handlePublishChange = (key: number, checked: boolean) => {
     const row = dataSource.find((item: any) => item.key === key);
@@ -245,9 +307,16 @@ const Index = () => {
         (item) => item.name === selectedKey.language,
       );
       if (selectedLanguage) {
-        const formData = new FormData();
-        formData.append("selectedLanguage", JSON.stringify(selectedLanguage)); // 将选中的语言作为字符串发送
-        submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
+        // const formData = new FormData();
+        // formData.append(
+        //   "translation",
+        //   JSON.stringify({
+        //     primaryLanguage: primaryLanguage,
+        //     selectedLanguage: selectedLanguage,
+        //   }),
+        // ); // 将选中的语言作为字符串发送
+        // submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
+        dispatch(setStatuState({ key, status: 2 }));
       }
     }
   };
@@ -284,55 +353,6 @@ const Index = () => {
     }
     setIsPublishModalOpen(false); // 关闭Modal
   };
-
-  const columns = [
-    {
-      title: "Language",
-      dataIndex: "language",
-      key: "language",
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-    },
-    {
-      title: "Auto Update Translation",
-      dataIndex: "auto_update_translation",
-      key: "auto_update_translation",
-      render: (_: any, record: any) => {
-        return (
-          <Switch
-            checked={record.auto_update_translation}
-            onChange={(checked) => handleAutoUpdateChange(record.key, checked)}
-          />
-        );
-      },
-    },
-    {
-      title: "Publish",
-      dataIndex: "published",
-      key: "published",
-      render: (_: any, record: any) => (
-        <Switch
-          checked={record.published}
-          onChange={(checked) => handlePublishChange(record.key, checked)}
-          loading={record.loading} // 使用每个项的 loading 状态
-        />
-      ),
-    },
-    {
-      title: "Action",
-      dataIndex: "action",
-      key: "action",
-      render: (_: any, record: any) => (
-        <Space>
-          <Button onClick={() => handleTranslate(record.key)}>翻译</Button>
-          <Button onClick={() => handleSet(record.locale)}>设置</Button>
-        </Space>
-      ),
-    },
-  ];
 
   //表格编辑
   const handleDelete = () => {

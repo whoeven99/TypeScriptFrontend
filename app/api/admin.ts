@@ -37,7 +37,7 @@ export interface TransType {
   ];
 }
 
-export const queryShopLanguages = async (request: Request) => {
+export const queryShopLanguages = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {

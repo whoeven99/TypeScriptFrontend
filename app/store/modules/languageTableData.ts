@@ -44,10 +44,19 @@ const languageTableDataSlice = createSlice({
         row.loading = action.payload.loading;
       }
     },
+    setStatuState: (
+      state,
+      action: PayloadAction<{ key: number; status: number }>,
+    ) => {
+      const row = state.rows.find((item) => item.key === action.payload.key);
+      if (row) {
+        row.status = action.payload.status;
+      }
+    },
   },
 });
 
-export const { setTableData, setPublishConfirmState, setPublishLoadingState, setPublishState } = languageTableDataSlice.actions;
+export const { setTableData, setPublishConfirmState, setPublishLoadingState, setPublishState, setStatuState } = languageTableDataSlice.actions;
 
 const reducer = languageTableDataSlice.reducer;
 export default reducer;

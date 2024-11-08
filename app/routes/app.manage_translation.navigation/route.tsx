@@ -39,7 +39,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
   try {
     const shopLanguagesLoad: ShopLocalesType[] =
-      await queryShopLanguages(request);
+      await queryShopLanguages({request});
     const navigations = await queryNextTransType({
       request,
       resourceType: "MENU",
@@ -185,7 +185,6 @@ const Index = () => {
       menus: itemsData,
     });
     setItemData(data);
-    console.log(3);
   }, [itemsData]);
 
   useEffect(() => {
@@ -214,8 +213,6 @@ const Index = () => {
   useEffect(() => {
     if (ItemData && selectNavigationKey === "items")
       setResourceData(generateMenuItemsArray(ItemData));
-    console.log(ItemData);
-    console.log(4);
   }, [ItemData]);
 
   useEffect(() => {
@@ -228,7 +225,6 @@ const Index = () => {
     } else if (actionData && selectNavigationKey === "items") {
       if ("nextItems" in actionData) {
         setItemsData(actionData.nextItems);
-        console.log(2);
       } else if ("previousItems" in actionData) {
         setItemsData(actionData.previousItems);
       }
@@ -357,9 +353,6 @@ const Index = () => {
         method: "post",
         action: `/app/manage_translation/navigation?language=${searchTerm}`,
       }); // 提交表单请求
-      console.log(selectNavigationKey);
-
-      console.log(1);
     }
   };
 

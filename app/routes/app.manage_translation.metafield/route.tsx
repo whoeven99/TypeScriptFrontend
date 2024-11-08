@@ -31,7 +31,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
   try {
     const shopLanguagesLoad: ShopLocalesType[] =
-      await queryShopLanguages(request);
+      await queryShopLanguages({request});
     const metafields = await queryNextTransType({
       request,
       resourceType: "METAFIELD",

@@ -1,6 +1,82 @@
 import axios from "axios";
 import { authenticate } from "~/shopify.server";
 
+//用户剩余字符数
+export const GetConsumedWords = async ({ request }: { request: Request }) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getConsumedWords`,
+      method: "Post",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+      },
+    });
+    const res = response.data;
+    console.log(res);
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the consumedWords:", error);
+    throw new Error("Error occurred in the consumedWords");
+  }
+};
+
+//查询语言状态
+export const GetLanguageList = async ({ request }: { request: Request }) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readInfoByShopName`,
+      method: "Post",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+      },
+    });
+
+    const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the languageList:", error);
+    throw new Error("Error occurred in the languageList");
+  }
+};
+
+//翻译
+export const GetTranslate = async ({
+  request,
+  source,
+  target,
+}: {
+  request: Request;
+  source: string;
+  target: string;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/clickTranslation`,
+      method: "GET",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        source: source,
+        target: target,
+      },
+    });
+
+    const res = response.data;
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the translation:", error);
+    throw new Error("Error occurred in the translation");
+  }
+};
+
 export const getRateValue = async () => {
   try {
     const response = await axios({

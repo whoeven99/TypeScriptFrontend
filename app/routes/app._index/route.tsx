@@ -10,8 +10,11 @@ import Mock from "mockjs";
 import "./styles.css";
 import UserDataCard from "./components/userDataCard";
 import UserLanguageCard from "./components/userLanguageCard";
+import { GetConsumedWords } from "~/api/serve";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const consumedWords: number = await GetConsumedWords({ request });
+
   const user = Mock.mock({
     data: {
       plan: 0,
@@ -41,6 +44,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }).data;
 
   return json({
+    consumedWords,
     user,
   });
 };
@@ -53,13 +57,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 // };
 
 const Index = () => {
-  const { user } = useLoaderData<typeof loader>();
+  const { consumedWords, user } = useLoaderData<typeof loader>();
   return (
     <Page>
       <TitleBar title="Dashboard" />
       <BlockStack gap="500">
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <UserProfileCard plan={user.plan} />
+          <UserProfileCard plan={user.plan} consumedWords={consumedWords} />
           <UserDataCard visitorData={user.visitorData} gmvData={user.gmvData} />
           <Row gutter={12}>
             {user.languages.map((language: any, index: any) => (

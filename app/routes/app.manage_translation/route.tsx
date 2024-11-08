@@ -1,6 +1,6 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Button, Menu, Space, Typography } from "antd";
+import { Menu, Space } from "antd";
 import { useEffect, useState } from "react";
 import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
@@ -17,8 +17,6 @@ import AttentionCard from "~/components/attentionCard";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import { useDispatch } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
-
-const { Text } = Typography;
 
 interface ManageMenuDataType {
   label: string;
@@ -37,7 +35,7 @@ interface TableDataType {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const shopLanguagesLoad: ShopLocalesType[] =
-      await queryShopLanguages(request);
+      await queryShopLanguages({request});
 
     return json({
       shopLanguagesLoad,
@@ -56,7 +54,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (actionType === "sync") {
       try {
         const shopLanguagesAction: ShopLocalesType[] =
-          await queryShopLanguages(request);
+          await queryShopLanguages({request});
         return json({ shopLanguagesAction });
       } catch (error) {
         console.error("Error action shopLanguages:", error);
