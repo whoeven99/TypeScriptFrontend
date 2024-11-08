@@ -39,3 +39,15 @@
 .characters_all {
     color: #0f0f0f;
 }
+
+.language_cards {
+  display: flex;
+  overflow-x: auto;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.language_cards .ant-col {
+  display: inline-block;
+  margin-right: 10px; /* Optional, for spacing between cards */
+}

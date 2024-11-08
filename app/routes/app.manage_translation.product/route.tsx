@@ -70,7 +70,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
   try {
     const shopLanguagesLoad: ShopLocalesType[] =
-      await queryShopLanguages(request);
+      await queryShopLanguages({request});
     const products = await queryNextTransType({
       request,
       resourceType: "PRODUCT",
@@ -385,6 +385,13 @@ const Index = () => {
     }
   }, [actionData]);
 
+  useEffect(() => {
+    if (!isVisible) {
+      // Modal 已关闭后再进行路由跳转
+      navigate("/app/manage_translation");
+    }
+  }, [isVisible]);
+
   const resourceColumns = [
     {
       title: "Resource",
@@ -405,6 +412,7 @@ const Index = () => {
               value={record.default_language || ""}
               disabled={true}
               init={{
+                min_height: 300,
                 max_height: 300,
                 menubar: false,
                 plugins:
@@ -470,6 +478,7 @@ const Index = () => {
               apiKey="ogejypabqwbcwx7z197dy71mudw3l9bgif8x6ujlffhetcq8" // 如果使用云端版本，需要提供 API 密钥。否则可以省略。
               value={record.translated || ""}
               init={{
+                min_height: 300,
                 max_height: 300,
                 menubar: false,
                 plugins:
@@ -761,7 +770,6 @@ const Index = () => {
 
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
-    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
   };
 
   const onPrevious = () => {

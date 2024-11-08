@@ -9,9 +9,7 @@ import {
 import { Pagination } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
-  queryNextArticles,
   queryNextTransType,
-  queryPreviousArticles,
   queryPreviousTransType,
   queryShopLanguages,
 } from "~/api/admin";
@@ -56,7 +54,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
   try {
     const shopLanguagesLoad: ShopLocalesType[] =
-      await queryShopLanguages(request);
+      await queryShopLanguages({request});
     const articles = await queryNextTransType({
       request,
       resourceType: "ARTICLE",
@@ -128,8 +126,6 @@ const Index = () => {
   const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
   const [articlesData, setArticlesData] = useState(articles);
   const [articleData, setArticleData] = useState<ArticleType>();
-  console.log(articlesData);
-
   const [resourceData, setResourceData] = useState<TableDataType[]>([
     {
       key: "title",

@@ -53,21 +53,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { plan } = useLoaderData<typeof loader>();
-    const actionData = useActionData<typeof action>();
+  const actionData = useActionData<typeof action>();
 
   const submit = useSubmit();
 
-    useEffect(() => {
-      if (actionData) {
-        console.log(actionData.data);
+  useEffect(() => {
+    if (actionData) {
+      console.log(actionData.data);
 
-        //   if (actionData.data.application_charge) {
-        //     const confirmationUrl = actionData.data.application_charge.confirmation_url;
-        //     // 重定向用户到确认支付页面
-        //     window.location.href = confirmationUrl;
-        //   }
-      }
-    }, [actionData]);
+      //   if (actionData.data.application_charge) {
+      //     const confirmationUrl = actionData.data.application_charge.confirmation_url;
+      //     // 重定向用户到确认支付页面
+      //     window.location.href = confirmationUrl;
+      //   }
+    }
+  }, [actionData]);
 
   return (
     <Page>
