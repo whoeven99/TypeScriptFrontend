@@ -78,13 +78,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const adminAuthResult = await authenticate.admin(request);
     const { shop } = adminAuthResult.session;
-    // try {
-    //   // 登录成功后调用 updateUserInfo 更新用户信息
-    //   await updateUserInfo(request);
-    // } catch (error) {
-    //   console.error("Error updating user info:", error);
-    // }
-    const shopLanguages: ShopLocalesType[] = await queryShopLanguages({request});
+    const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
+      request,
+    });
     const allMarket: MarketType[] = await queryAllMarket({ request });
     let allLanguages: AllLanguagesType[] = await queryAllLanguages({ request });
     allLanguages = allLanguages.map((language, index) => ({
@@ -117,8 +113,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     switch (true) {
       case !!languages:
         await mutationShopLocaleEnable({ request, languages }); // 处理逻辑
-        const shopLanguages: ShopLocalesType[] =
-          await queryShopLanguages({request});
+        const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
+          request,
+        });
         return json({ success: true, shopLanguages });
 
       case !!translation:
@@ -172,7 +169,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const primaryLanguage = shopLanguages.find((lang) => lang.primary);
+  // const primaryLanguage = shopLanguages.find((lang) => lang.primary);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -204,13 +201,13 @@ const Index = () => {
       title: "Language",
       dataIndex: "language",
       key: "language",
-      width: "10%",
+      width: "30%",
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      width: "30%",
+      width: "20%",
       render: (_: any, record: any) => {
         return record.status === 2 ? (
           <LoadingOutlined />
@@ -238,7 +235,7 @@ const Index = () => {
       title: "Publish",
       dataIndex: "published",
       key: "published",
-      width: "30%",
+      width: "20%",
       render: (_: any, record: any) => (
         <Switch
           checked={record.published}
@@ -254,8 +251,29 @@ const Index = () => {
       width: "30%",
       render: (_: any, record: any) => (
         <Space>
-          <Button onClick={() => handleTranslate(record.key)}>翻译</Button>
-          <Button onClick={() => handleSet(record.locale)}>设置</Button>
+          {record.status === 2 ? (
+            <Button disabled style={{ width: "100px" }} loading>
+              正在翻译
+            </Button>
+          ) : record.status ? (
+            <Button disabled style={{ width: "100px" }}>
+              已翻译
+            </Button>
+          ) : (
+            <Button
+              onClick={() => handleTranslate(record.key)}
+              style={{ width: "100px" }}
+              type="primary"
+            >
+              翻译
+            </Button>
+          )}
+          <Button
+            onClick={() => handleSet(record.locale)}
+            style={{ width: "100px" }}
+          >
+            设置
+          </Button>
         </Space>
       ),
     },

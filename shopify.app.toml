@@ -3,7 +3,7 @@
 client_id = "6e0ef7be80edbf81020e200228a86d01"
 name = "ZinnTransLocal"
 handle = "transform-lancy-app-local"
-application_url = "https://dayton-enzyme-align-bean.trycloudflare.com"
+application_url = "https://trainers-acids-gig-walt.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://dayton-enzyme-align-bean.trycloudflare.com/auth/callback",
-  "https://dayton-enzyme-align-bean.trycloudflare.com/auth/shopify/callback",
-  "https://dayton-enzyme-align-bean.trycloudflare.com/api/auth/callback"
+  "https://trainers-acids-gig-walt.trycloudflare.com/auth/callback",
+  "https://trainers-acids-gig-walt.trycloudflare.com/auth/shopify/callback",
+  "https://trainers-acids-gig-walt.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

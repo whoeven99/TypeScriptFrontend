@@ -6,11 +6,13 @@ const { Text } = Typography;
 interface UserProfileCardProps {
   plan: number;
   consumedWords: number;
+  totalWords: number;
 }
 
 const UserProfileCard: React.FC<UserProfileCardProps> = ({
   plan,
   consumedWords,
+  totalWords,
 }) => {
   const planName = plan === 0 ? "Free" : "Premium";
 
@@ -36,7 +38,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
               {consumedWords}
             </Text>
             <Text type="secondary" style={{ fontSize: "20px" }}>
-              / 8000
+              / {totalWords}
             </Text>
           </div>
         </div>

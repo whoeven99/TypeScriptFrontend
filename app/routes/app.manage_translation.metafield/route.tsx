@@ -1,4 +1,4 @@
-import { Input, Layout, MenuProps, Modal, Space, Table, theme } from "antd";
+import { Input, Layout, Modal, Space, Table, theme } from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,

@@ -1,6 +1,7 @@
 import React from "react";
-import { Button, Card, Space } from "antd";
+import { Button, Card, Space, Typography } from "antd";
 import { useNavigate } from "@remix-run/react";
+const { Title } = Typography;
 
 interface UserLanguageCardProps {
   flagUrl: string; // 国旗图片的 URL
@@ -17,9 +18,11 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
 }) => {
   const navigate = useNavigate();
 
+  
+
   const onClick = () => {
-    navigate("/app/manage_translation",{ state: { key: languageCode } })
-  }
+    navigate("/app/manage_translation", { state: { key: languageCode } });
+  };
 
   return (
     <Card style={{ textAlign: "center", padding: "20px" }}>
@@ -29,9 +32,14 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
           alt={`${languageName} flag`}
           style={{ width: "60px", height: "auto", marginBottom: "10px" }}
         />
-        <h3>{languageName}</h3>
-        <div>need translate: {wordsNeeded}</div>
-        <Button onClick={onClick}>Go to translate</Button>
+        <Title level={4}>{languageName}</Title>
+        <div>It takes about {wordsNeeded} characters</div>
+        <Space direction="horizontal">
+          <Button onClick={onClick} type="primary">
+            translate
+          </Button>
+          <Button onClick={onClick}>manage</Button>
+        </Space>
       </Space>
     </Card>
   );
