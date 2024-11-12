@@ -1,10 +1,15 @@
 import { Layout, Modal, Table, theme, Result, Button } from "antd";
 import { useEffect, useState } from "react";
-import { useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
-import { json, LoaderFunctionArgs } from "@remix-run/node";
+import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react"; // 引入 useNavigate
+import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryShopLanguages } from "~/api/admin";
 import { Editor } from "@tinymce/tinymce-react";
 import { ShopLocalesType } from "../app.language/route";
+import dynamic from "next/dynamic";
+import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import ManageModalHeader from "~/components/manageModalHeader";
+
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 const { Content } = Layout;
 
@@ -19,8 +24,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const shopLanguagesLoad: ShopLocalesType[] =
-      await queryShopLanguages({request});
+    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+      request,
+    });
     const shippings = await queryNextTransType({
       request,
       resourceType: "PACKING_SLIP_TEMPLATE",
@@ -39,26 +45,59 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 };
 
+export const action = async ({ request }: ActionFunctionArgs) => {
+  try {
+    const formData = await request.formData();
+
+    const confirmData: ConfirmDataType[] = JSON.parse(
+      formData.get("confirmData") as string,
+    );
+    if (confirmData)
+      await updateManageTranslation({
+        request,
+        confirmData,
+      });
+    return null;
+  } catch (error) {
+    console.error("Error action shipping:", error);
+    throw new Response("Error action shipping", { status: 500 });
+  }
+};
+
 const Index = () => {
-  const { shippings } = useLoaderData<typeof loader>();
+  const { searchTerm, shopLanguagesLoad, shippings } =
+    useLoaderData<typeof loader>();
 
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [shippingsData, setShippingsData] = useState(shippings);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
+  const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
   const navigate = useNavigate();
+  const submit = useSubmit(); // 使用 useSubmit 钩子
+  console.log(shippingsData);
 
   useEffect(() => {
     const Data = shippingsData.nodes.map((node: any) => ({
-      key: node.resourceId,
+      key: "body",
       resource: "Label",
       default_language: node.translatableContent[0].value,
       translated: node.translations[0]?.value,
     }));
     setResourceData(Data);
+    setConfirmData([
+      {
+        resourceId: shippingsData.nodes[0].resourceId,
+        locale: shippingsData.nodes[0].translatableContent[0].locale,
+        key: "body",
+        value: "",
+        translatableContentDigest: shippingsData.nodes[0].translatableContent[0].digest,
+        target: searchTerm || "",
+      },
+    ]);
   }, []);
 
   const resourceColumns = [
@@ -75,59 +114,7 @@ const Index = () => {
       width: "45%",
       render: (_: any, record: TableDataType) => {
         return (
-          <Editor
-            apiKey="ogejypabqwbcwx7z197dy71mudw3l9bgif8x6ujlffhetcq8" // 如果使用云端版本，需要提供 API 密钥。否则可以省略。
-            value={record?.default_language || ""}
-            disabled={true}
-            init={{
-              height: 300,
-              menubar: false,
-              plugins:
-                "print preview searchreplace autolink directionality visualblocks visualchars fullscreen image link media template code codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount imagetools textpattern help emoticons autosave bdmap indent2em autoresize formatpainter axupimgs",
-              toolbar:
-                "code undo redo restoredraft | cut copy paste pastetext | forecolor backcolor bold italic underline strikethrough link anchor | alignleft aligncenter alignright alignjustify outdent indent | \
-                  styleselect formatselect fontselect fontsizeselect | bullist numlist | blockquote subscript superscript removeformat | \
-                  table image media charmap emoticons hr pagebreak insertdatetime print preview | fullscreen | bdmap indent2em lineheight formatpainter axupimgs",
-              setup: (editor) => {
-                // 初始化时启用 "code" 按钮
-                editor.on("init", () => {
-                  const codeButton = editor
-                    .getContainer()
-                    .querySelector('button[data-mce-name="code"]');
-                  if (
-                    codeButton &&
-                    codeButton.classList.contains("tox-tbtn--disabled")
-                  ) {
-                    codeButton.classList.remove("tox-tbtn--disabled");
-                    codeButton.setAttribute("aria-disabled", "false");
-                    (codeButton as HTMLButtonElement).disabled = false;
-                  }
-                });
-
-                // 限制图片的最大宽度
-                editor.on("NodeChange", (e) => {
-                  const imgElements = editor.getDoc().querySelectorAll("img");
-                  imgElements.forEach((img) => {
-                    img.style.maxWidth = "100%"; // 最大宽度为100%
-                    img.style.height = "auto"; // 保持比例
-                  });
-                });
-
-                // 插入图片时设置样式
-                editor.on("BeforeSetContent", (e) => {
-                  const content = e.content;
-                  // 如果包含图片，添加最大宽度限制
-                  if (content.includes("<img")) {
-                    e.content = content.replace(
-                      /<img/g,
-                      '<img style="max-width: 100%; height: auto;"',
-                    );
-                  }
-                });
-              },
-            }}
-            // onEditorChange={handleEditorChange}
-          />
+          <ReactQuill theme="snow" defaultValue={record?.default_language} />
         );
       },
     },
@@ -138,50 +125,34 @@ const Index = () => {
       width: "45%",
       render: (_: any, record: TableDataType) => {
         return (
-          <Editor
-            apiKey="ogejypabqwbcwx7z197dy71mudw3l9bgif8x6ujlffhetcq8" // 如果使用云端版本，需要提供 API 密钥。否则可以省略。
-            value={record?.translated || ""}
-            init={{
-              height: 300,
-              menubar: false,
-              plugins:
-                "print preview searchreplace autolink directionality visualblocks visualchars fullscreen image link media template code codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount imagetools textpattern help emoticons autosave bdmap indent2em autoresize formatpainter axupimgs",
-              toolbar:
-                "code undo redo restoredraft | cut copy paste pastetext | forecolor backcolor bold italic underline strikethrough link anchor | alignleft aligncenter alignright alignjustify outdent indent | \
-                  styleselect formatselect fontselect fontsizeselect | bullist numlist | blockquote subscript superscript removeformat | \
-                  table image media charmap emoticons hr pagebreak insertdatetime print preview | fullscreen | bdmap indent2em lineheight formatpainter axupimgs",
-              // Add any additional configurations needed
-              content_style:
-                "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-              setup: (editor) => {
-                // 限制图片的最大宽度
-                editor.on("NodeChange", (e) => {
-                  const imgElements = editor.getDoc().querySelectorAll("img");
-                  imgElements.forEach((img) => {
-                    img.style.maxWidth = "100%"; // 最大宽度为100%
-                    img.style.height = "auto"; // 保持比例
-                  });
-                });
-
-                // 插入图片时设置样式
-                editor.on("BeforeSetContent", (e) => {
-                  const content = e.content;
-                  // 如果包含图片，添加最大宽度限制
-                  if (content.includes("<img")) {
-                    e.content = content.replace(
-                      /<img/g,
-                      '<img style="max-width: 100%; height: auto;"',
-                    );
-                  }
-                });
-              },
-            }}
-            // onEditorChange={handleEditorChange}
-          />
+          record && (
+            <ReactQuill
+              theme="snow"
+              defaultValue={record?.translated}
+              onChange={(content) => handleInputChange(record.key, content)}
+            />
+          )
         );
       },
     },
   ];
+
+  const handleInputChange = (key: string | number, value: string) => {
+    setConfirmData(
+      confirmData.map((item) =>
+        item.key === key ? { ...item, value: value } : item,
+      ),
+    );
+  };
+
+  const handleConfirm = () => {
+    const formData = new FormData();
+    formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
+    submit(formData, {
+      method: "post",
+      action: `/app/manage_translation/shipping?language=${searchTerm}`,
+    }); // 提交表单请求
+  };
 
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
@@ -192,13 +163,19 @@ const Index = () => {
     <Modal
       open={isVisible}
       onCancel={onCancel}
-      //   onOk={() => handleConfirm()} // 确定按钮绑定确认逻辑
       width={"100%"}
-      // style={{
-      //   minHeight: "100%",
-      // }}
-      okText="Confirm"
-      cancelText="Cancel"
+      footer={[
+        <div
+          style={{ display: "flex", justifyContent: "center", width: "100%" }}
+        >
+          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} type="primary">
+            Confirm
+          </Button>
+        </div>,
+      ]}
     >
       {shippingsData.nodes.length ? (
         <Layout
@@ -208,13 +185,25 @@ const Index = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-            <Table
-              columns={resourceColumns}
-              dataSource={resourceData}
-              pagination={false}
-            />
-          </Content>
+          <ManageModalHeader
+            shopLanguagesLoad={shopLanguagesLoad}
+            locale={searchTerm}
+          />
+          <Layout
+            style={{
+              padding: "24px 0",
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
+          >
+            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
+              />
+            </Content>
+          </Layout>
         </Layout>
       ) : (
         <Result

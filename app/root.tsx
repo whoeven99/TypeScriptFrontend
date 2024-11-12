@@ -8,6 +8,7 @@ import {
 import { Provider } from "react-redux";
 import store from "./store";
 import "./styles.css";
+import 'react-quill/dist/quill.snow.css';
 
 export default function App() {
   return (

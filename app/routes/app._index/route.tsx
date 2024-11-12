@@ -8,9 +8,13 @@ import { Col, Space, Typography } from "antd";
 import { useLoaderData } from "@remix-run/react";
 import Mock from "mockjs";
 import "./styles.css";
-import UserDataCard from "./components/userDataCard";
 import UserLanguageCard from "./components/userLanguageCard";
-import { GetConsumedWords, GetLanguageList } from "~/api/serve";
+import {
+  GetConsumedWords,
+  GetLanguageList,
+  GetPicture,
+  GetUserPlan,
+} from "~/api/serve";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 
@@ -22,6 +26,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 
   const consumedWords: number = await GetConsumedWords({ request });
+  const picture = await GetPicture();
+  const plan = await GetUserPlan({ request });
   const status = await GetLanguageList({ request });
 
   const newdata = shopLanguages.filter((language) => !language.primary);
@@ -41,11 +47,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       plan: 0,
       visitorData: 1000,
       gmvData: 200,
-      totalWords:8000
+      totalWords: 8000,
     },
   }).data;
+  console.log(picture);
 
   return json({
+    picture,
     consumedWords,
     languageData,
     user,
@@ -60,20 +68,25 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 // };
 
 const Index = () => {
-  const { consumedWords, languageData, user } = useLoaderData<typeof loader>();
+  const { picture, consumedWords, languageData, user } =
+    useLoaderData<typeof loader>();
   return (
     <Page>
       <TitleBar title="Dashboard" />
       <BlockStack gap="500">
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <UserProfileCard plan={user.plan} consumedWords={consumedWords} totalWords={user.totalWords}/>
+          <UserProfileCard
+            plan={user.plan}
+            consumedWords={consumedWords}
+            totalWords={user.totalWords}
+          />
           {/* <UserDataCard visitorData={user.visitorData} gmvData={user.gmvData} /> */}
           <Title level={3}>{languageData.length} Languages in your shop</Title>
           <div className="language_cards">
             {languageData.map((language: any, index: any) => (
               <Col span={8} key={index}>
                 <UserLanguageCard
-                  flagUrl={language.src}
+                  flagUrl={picture}
                   languageName={language.name}
                   wordsNeeded={language.words}
                   languageCode={language.locale}

@@ -1,4 +1,13 @@
-import { Input, Layout, MenuProps, Modal, Space, Table, theme } from "antd";
+import {
+  Button,
+  Input,
+  Layout,
+  MenuProps,
+  Modal,
+  Space,
+  Table,
+  theme,
+} from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
@@ -15,6 +24,7 @@ import {
 } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import ManageModalHeader from "~/components/manageModalHeader";
+import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 
 const { Content } = Layout;
 const { TextArea } = Input;
@@ -30,8 +40,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const shopLanguagesLoad: ShopLocalesType[] =
-      await queryShopLanguages({request});
+    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+      request,
+    });
     const deliverys = await queryNextTransType({
       request,
       resourceType: "DELIVERY_METHOD_DEFINITION",
@@ -59,28 +70,36 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("startCursor") as string,
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
-    if (startCursor) {
-      const previousDeliverys = await queryPreviousTransType({
-        request,
-        resourceType: "DELIVERY_METHOD_DEFINITION",
-        startCursor,
-        locale: searchTerm || "",
-      }); // 处理逻辑
-      return json({ previousDeliverys: previousDeliverys });
+    const confirmData: ConfirmDataType[] = JSON.parse(
+      formData.get("confirmData") as string,
+    );
+    switch (true) {
+      case !!startCursor:
+        const previousDeliverys = await queryPreviousTransType({
+          request,
+          resourceType: "DELIVERY_METHOD_DEFINITION",
+          startCursor,
+          locale: searchTerm || "",
+        }); // 处理逻辑
+        return json({ previousDeliverys: previousDeliverys });
+      case !!endCursor:
+        const nextDeliverys = await queryNextTransType({
+          request,
+          resourceType: "DELIVERY_METHOD_DEFINITION",
+          endCursor,
+          locale: searchTerm || "",
+        }); // 处理逻辑
+        return json({ nextDeliverys: nextDeliverys });
+      case !!confirmData:
+        await updateManageTranslation({
+          request,
+          confirmData,
+        });
+        return null;
+      default:
+        // 你可以在这里处理一个默认的情况，如果没有符合的条件
+        return json({ success: false, message: "Invalid data" });
     }
-    if (endCursor) {
-      const nextDeliverys = await queryNextTransType({
-        request,
-        resourceType: "DELIVERY_METHOD_DEFINITION",
-        endCursor,
-        locale: searchTerm || "",
-      }); // 处理逻辑
-      console.log(nextDeliverys);
-
-      return json({ nextDeliverys: nextDeliverys });
-    }
-
-    return null;
   } catch (error) {
     console.error("Error action delivery:", error);
     throw new Response("Error action delivery", { status: 500 });
@@ -94,14 +113,11 @@ const Index = () => {
 
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [deliverysData, setDeliverysData] = useState(deliverys);
-  const [resourceData, setResourceData] = useState<TableDataType[]>([
-    {
-      key: "title",
-      resource: "value",
-      default_language: "",
-      translated: "",
-    },
-  ]);
+  const [resourceData, setResourceData] = useState<TableDataType[]>([]);
+  const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [translatedValues, setTranslatedValues] = useState<{
+    [key: string]: string;
+  }>({});
   const [hasPrevious, setHasPrevious] = useState<boolean>(
     deliverysData.pageInfo.hasPreviousPage,
   );
@@ -111,9 +127,23 @@ const Index = () => {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+  console.log(deliverys);
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+
+  useEffect(() => {
+    setConfirmData(
+      deliverys.nodes.map((item: any) => ({
+        resourceId: item.resourceId,
+        locale: item.translatableContent[0]?.locale,
+        key: item.translatableContent[0]?.key,
+        value: "",
+        translatableContentDigest: item.translatableContent[0]?.digest,
+        target: searchTerm,
+      })),
+    );
+  }, []);
 
   useEffect(() => {
     setHasPrevious(deliverysData.pageInfo.hasPreviousPage);
@@ -164,14 +194,29 @@ const Index = () => {
       width: "45%",
       render: (_: any, record: TableDataType) => {
         return (
-          <TextArea
-            value={record?.translated}
-            autoSize={{ minRows: 1, maxRows: 6 }}
-          />
+          record && (
+            <TextArea
+              value={translatedValues[record?.key] || record?.translated}
+              autoSize={{ minRows: 1, maxRows: 6 }}
+              onChange={(e) => handleInputChange(record.key, e.target.value)}
+            />
+          )
         );
       },
     },
   ];
+
+  const handleInputChange = (key: string | number, value: string) => {
+    setTranslatedValues((prev) => ({
+      ...prev,
+      [key]: value, // 更新对应的 key
+    }));
+    setConfirmData(
+      confirmData.map((item) =>
+        item.key === key ? { ...item, value: value } : item,
+      ),
+    );
+  };
 
   const generateMenuItemsArray = (items: any) => {
     return items.nodes.flatMap((item: any) => {
@@ -182,13 +227,8 @@ const Index = () => {
         default_language: item.translatableContent[0]?.value, // 默认语言为 item 的标题
         translated: item.translations[0]?.value, // 翻译字段初始化为空字符串
       };
-      return [currentItem];
+      return currentItem.default_language !== "" ? [currentItem] : [];
     });
-  };
-
-  const onCancel = () => {
-    setIsVisible(false); // 关闭 Modal
-    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
   };
 
   const onPrevious = () => {
@@ -213,17 +253,37 @@ const Index = () => {
     }); // 提交表单请求
   };
 
+  const handleConfirm = () => {
+    const formData = new FormData();
+    formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
+    submit(formData, {
+      method: "post",
+      action: `/app/manage_translation/delivery?language=${searchTerm}`,
+    }); // 提交表单请求
+  };
+
+  const onCancel = () => {
+    setIsVisible(false); // 关闭 Modal
+    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
+  };
+
   return (
     <Modal
       open={isVisible}
       onCancel={onCancel}
-      //   onOk={() => handleConfirm()} // 确定按钮绑定确认逻辑
       width={"100%"}
-      // style={{
-      //   minHeight: "100%",
-      // }}
-      okText="Confirm"
-      cancelText="Cancel"
+      footer={[
+        <div
+          style={{ display: "flex", justifyContent: "center", width: "100%" }}
+        >
+          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} type="primary">
+            Confirm
+          </Button>
+        </div>,
+      ]}
     >
       <Layout
         style={{

@@ -13,14 +13,6 @@ export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
-
-  // try {
-  //   // 登录成功后调用 updateUserInfo 更新用户信息
-  //   await updateUserInfo( request );
-  // } catch (error) {
-  //   console.error("Error updating user info:", error);
-  // }
-
   return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
 };
 

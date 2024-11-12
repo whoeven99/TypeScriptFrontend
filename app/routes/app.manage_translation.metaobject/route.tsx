@@ -15,6 +15,7 @@ import {
 } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import ManageModalHeader from "~/components/manageModalHeader";
+import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 
 const { Content } = Layout;
 
@@ -29,8 +30,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const shopLanguagesLoad: ShopLocalesType[] =
-      await queryShopLanguages({request});
+    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+      request,
+    });
     const metaobjects = await queryNextTransType({
       request,
       resourceType: "METAOBJECT",
@@ -58,23 +60,35 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("startCursor") as string,
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
-    if (startCursor) {
-      const previousMetaobjects = await queryPreviousTransType({
-        request,
-        resourceType: "METAOBJECT",
-        startCursor,
-        locale: searchTerm || "",
-      }); // 处理逻辑
-      return json({ previousMetaobjects: previousMetaobjects });
-    }
-    if (endCursor) {
-      const nextMetaobjects = await queryNextTransType({
-        request,
-        resourceType: "METAOBJECT",
-        endCursor,
-        locale: searchTerm || "",
-      }); // 处理逻辑
-      return json({ nextMetaobjects: nextMetaobjects });
+    const confirmData: ConfirmDataType[] = JSON.parse(
+      formData.get("confirmData") as string,
+    );
+    switch (true) {
+      case !!startCursor:
+        const previousMetaobjects = await queryPreviousTransType({
+          request,
+          resourceType: "METAOBJECT",
+          startCursor,
+          locale: searchTerm || "",
+        }); // 处理逻辑
+        return json({ previousMetaobjects: previousMetaobjects });
+      case !!endCursor:
+        const nextMetaobjects = await queryNextTransType({
+          request,
+          resourceType: "METAOBJECT",
+          endCursor,
+          locale: searchTerm || "",
+        }); // 处理逻辑
+        return json({ nextMetaobjects: nextMetaobjects });
+      case !!confirmData:
+        await updateManageTranslation({
+          request,
+          confirmData,
+        });
+        return null;
+      default:
+        // 你可以在这里处理一个默认的情况，如果没有符合的条件
+        return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
     console.error("Error action metaobject:", error);
@@ -90,6 +104,10 @@ const Index = () => {
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [metaobjectsData, setMetaobjectsData] = useState(metaobjects);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
+  const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [translatedValues, setTranslatedValues] = useState<{
+    [key: string]: string;
+  }>({});
   const [hasPrevious, setHasPrevious] = useState<boolean>(
     metaobjectsData.pageInfo.hasPreviousPage,
   );
@@ -102,6 +120,19 @@ const Index = () => {
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+
+  useEffect(() => {
+    setConfirmData(
+      metaobjects.nodes.map((item: any) => ({
+        resourceId: item.resourceId,
+        locale: item.translatableContent[0]?.locale,
+        key: item.translatableContent[0]?.key,
+        value: "",
+        translatableContentDigest: item.translatableContent[0]?.digest,
+        target: searchTerm,
+      })),
+    );
+  }, []);
 
   useEffect(() => {
     setHasPrevious(metaobjectsData.pageInfo.hasPreviousPage);
@@ -143,10 +174,29 @@ const Index = () => {
       key: "translated",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return <Input value={record?.translated} />;
+        return (
+          record && (
+            <Input
+              value={translatedValues[record?.key] || record?.translated}
+              onChange={(e) => handleInputChange(record.key, e.target.value)}
+            />
+          )
+        );
       },
     },
   ];
+
+  const handleInputChange = (key: string | number, value: string) => {
+    setTranslatedValues((prev) => ({
+      ...prev,
+      [key]: value, // 更新对应的 key
+    }));
+    setConfirmData(
+      confirmData.map((item) =>
+        item.key === key ? { ...item, value: value } : item,
+      ),
+    );
+  };
 
   const generateMenuItemsArray = (items: any) => {
     return items.nodes.flatMap((item: any) => {
@@ -159,11 +209,6 @@ const Index = () => {
       };
       return [currentItem];
     });
-  };
-
-  const onCancel = () => {
-    setIsVisible(false); // 关闭 Modal
-    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
   };
 
   const onPrevious = () => {
@@ -186,17 +231,37 @@ const Index = () => {
     }); // 提交表单请求
   };
 
+  const handleConfirm = () => {
+    const formData = new FormData();
+    formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
+    submit(formData, {
+      method: "post",
+      action: `/app/manage_translation/article?language=${searchTerm}`,
+    }); // 提交表单请求
+  };
+
+  const onCancel = () => {
+    setIsVisible(false); // 关闭 Modal
+    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
+  };
+
   return (
     <Modal
       open={isVisible}
       onCancel={onCancel}
-      //   onOk={() => handleConfirm()} // 确定按钮绑定确认逻辑
       width={"100%"}
-      // style={{
-      //   minHeight: "100%",
-      // }}
-      okText="Confirm"
-      cancelText="Cancel"
+      footer={[
+        <div
+          style={{ display: "flex", justifyContent: "center", width: "100%" }}
+        >
+          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} type="primary">
+            Confirm
+          </Button>
+        </div>,
+      ]}
     >
       {metaobjectsData.nodes.length ? (
         <Layout
