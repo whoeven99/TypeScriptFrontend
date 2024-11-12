@@ -1011,6 +1011,8 @@ export const queryNextTransType = async ({
           resourceId
           translatableContent {
             key
+            digest
+            locale
             value
           }
           translations(locale: "${locale}") {
@@ -1066,6 +1068,8 @@ export const queryPreviousTransType = async ({
           resourceId
           translatableContent {
             key
+            digest
+            locale
             value
           }
           translations(locale: "${locale}") {
@@ -1125,6 +1129,8 @@ export const queryNextNestTransType = async ({
               resourceId
               translatableContent {
                 key
+                digest
+                locale
                 value
               }
               translations(locale: "${locale}") {
@@ -1187,6 +1193,8 @@ export const queryPreviousNestTransType = async ({
               resourceId
               translatableContent {
                 key
+                digest
+                locale
                 value
               }
               translations(locale: "${locale}") {

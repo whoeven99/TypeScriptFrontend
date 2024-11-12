@@ -1,4 +1,13 @@
-import { Input, Layout, Menu, MenuProps, Modal, Table, theme } from "antd";
+import {
+  Button,
+  Input,
+  Layout,
+  Menu,
+  MenuProps,
+  Modal,
+  Table,
+  theme,
+} from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
@@ -15,6 +24,7 @@ import {
 } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import ManageModalHeader from "~/components/manageModalHeader";
+import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 
 const { Sider, Content } = Layout;
 
@@ -38,8 +48,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const shopLanguagesLoad: ShopLocalesType[] =
-      await queryShopLanguages({request});
+    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+      request,
+    });
     const navigations = await queryNextTransType({
       request,
       resourceType: "MENU",
@@ -82,6 +93,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const itemEndCursor: string = JSON.parse(
       formData.get("itemEndCursor") as string,
     );
+    const confirmData: ConfirmDataType[] = JSON.parse(
+      formData.get("confirmData") as string,
+    );
     switch (true) {
       case !!navigationStartCursor: {
         const previousNavigations = await queryPreviousTransType({
@@ -123,6 +137,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ nextItems });
       }
 
+      case !!confirmData:
+        await updateManageTranslation({
+          request,
+          confirmData,
+        });
+        return null;
+
       default: {
         // 如果没有符合条件的 cursor，则抛出错误
         throw new Response("No valid cursor provided", { status: 400 });
@@ -156,6 +177,10 @@ const Index = () => {
   const [ItemData, setItemData] = useState<ItemType[]>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [selectNavigationKey, setSelectNavigationKey] = useState("names");
+  const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [translatedValues, setTranslatedValues] = useState<{
+    [key: string]: string;
+  }>({});
   const [hasPrevious, setHasPrevious] = useState<boolean>(
     navigationsData.pageInfo.hasPreviousPage,
   );
@@ -194,6 +219,16 @@ const Index = () => {
       const data = transBeforeData({
         menus: navigationsData,
       });
+      setConfirmData(
+        navigations.nodes.map((item: any) => ({
+          resourceId: item.resourceId,
+          locale: item.translatableContent[0]?.locale,
+          key: item.translatableContent[0]?.key,
+          value: "",
+          translatableContentDigest: item.translatableContent[0]?.digest,
+          target: searchTerm,
+        })),
+      );
       setNavigationData(data);
     } else {
       setHasPrevious(itemsData.pageInfo.hasPreviousPage);
@@ -201,6 +236,16 @@ const Index = () => {
       const data = transBeforeData({
         menus: itemsData,
       });
+      setConfirmData(
+        navigationItems.nodes.map((item: any) => ({
+          resourceId: item.resourceId,
+          locale: item.translatableContent[0]?.locale,
+          key: item.translatableContent[0]?.key,
+          value: "",
+          translatableContentDigest: item.translatableContent[0]?.digest,
+          target: searchTerm,
+        })),
+      );
       setItemData(data);
     }
   }, [selectNavigationKey]);
@@ -253,10 +298,29 @@ const Index = () => {
       key: "translated",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return <Input value={record?.translated} />;
+        return (
+          record && (
+            <Input
+              value={translatedValues[record?.key] || record?.translated}
+              onChange={(e) => handleInputChange(record.key, e.target.value)}
+            />
+          )
+        );
       },
     },
   ];
+
+  const handleInputChange = (key: string | number, value: string) => {
+    setTranslatedValues((prev) => ({
+      ...prev,
+      [key]: value, // 更新对应的 key
+    }));
+    setConfirmData(
+      confirmData.map((item) =>
+        item.key === key ? { ...item, value: value } : item,
+      ),
+    );
+  };
 
   const transBeforeData = ({ menus }: { menus: any }) => {
     let data: ItemType[] = [
@@ -309,13 +373,6 @@ const Index = () => {
     });
   };
 
-  const onCancel = () => {
-    setNavigationData([]);
-    setItemData([]);
-    setIsVisible(false); // 关闭 Modal
-    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
-  };
-
   const onPrevious = () => {
     if (selectNavigationKey === "names") {
       const formData = new FormData();
@@ -356,25 +413,43 @@ const Index = () => {
     }
   };
 
-  // const onChange = () => {
-
-  // };
-
   const onClick = (e: any) => {
     setSelectNavigationKey(e.key);
+  };
+
+  const handleConfirm = () => {
+    const formData = new FormData();
+    formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
+    submit(formData, {
+      method: "post",
+      action: `/app/manage_translation/navigation?language=${searchTerm}`,
+    }); // 提交表单请求
+  };
+
+  const onCancel = () => {
+    setNavigationData([]);
+    setItemData([]);
+    setIsVisible(false); // 关闭 Modal
+    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
   };
 
   return (
     <Modal
       open={isVisible}
       onCancel={onCancel}
-      //   onOk={() => handleConfirm()} // 确定按钮绑定确认逻辑
       width={"100%"}
-      // style={{
-      //   minHeight: "100%",
-      // }}
-      okText="Confirm"
-      cancelText="Cancel"
+      footer={[
+        <div
+          style={{ display: "flex", justifyContent: "center", width: "100%" }}
+        >
+          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} type="primary">
+            Confirm
+          </Button>
+        </div>,
+      ]}
     >
       <Layout
         style={{

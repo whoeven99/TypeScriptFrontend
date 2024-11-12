@@ -1,4 +1,13 @@
-import { Input, Layout, Menu, MenuProps, Modal, Table, theme } from "antd";
+import {
+  Button,
+  Input,
+  Layout,
+  Menu,
+  MenuProps,
+  Modal,
+  Table,
+  theme,
+} from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
@@ -13,9 +22,12 @@ import {
   queryPreviousTransType,
   queryShopLanguages,
 } from "~/api/admin";
-import { Editor } from "@tinymce/tinymce-react";
 import { ShopLocalesType } from "../app.language/route";
 import ManageModalHeader from "~/components/manageModalHeader";
+import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import dynamic from "next/dynamic";
+
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 const { Sider, Content } = Layout;
 
@@ -53,8 +65,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const shopLanguagesLoad: ShopLocalesType[] =
-      await queryShopLanguages({request});
+    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+      request,
+    });
     const articles = await queryNextTransType({
       request,
       resourceType: "ARTICLE",
@@ -82,23 +95,35 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("startCursor") as string,
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
-    if (startCursor) {
-      const previousArticles = await queryPreviousTransType({
-        request,
-        resourceType: "ARTICLE",
-        startCursor,
-        locale: searchTerm || "",
-      }); // 处理逻辑
-      return json({ previousArticles: previousArticles });
-    }
-    if (endCursor) {
-      const nextArticles = await queryNextTransType({
-        request,
-        resourceType: "ARTICLE",
-        endCursor,
-        locale: searchTerm || "",
-      }); // 处理逻辑
-      return json({ nextArticles: nextArticles });
+    const confirmData: ConfirmDataType[] = JSON.parse(
+      formData.get("confirmData") as string,
+    );
+    switch (true) {
+      case !!startCursor:
+        const previousArticles = await queryPreviousTransType({
+          request,
+          resourceType: "ARTICLE",
+          startCursor,
+          locale: searchTerm || "",
+        }); // 处理逻辑
+        return json({ previousArticles: previousArticles });
+      case !!endCursor:
+        const nextArticles = await queryNextTransType({
+          request,
+          resourceType: "ARTICLE",
+          endCursor,
+          locale: searchTerm || "",
+        }); // 处理逻辑
+        return json({ nextArticles: nextArticles });
+      case !!confirmData:
+        await updateManageTranslation({
+          request,
+          confirmData,
+        });
+        return null;
+      default:
+        // 你可以在这里处理一个默认的情况，如果没有符合的条件
+        return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
     console.error("Error action article:", error);
@@ -126,49 +151,16 @@ const Index = () => {
   const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
   const [articlesData, setArticlesData] = useState(articles);
   const [articleData, setArticleData] = useState<ArticleType>();
-  const [resourceData, setResourceData] = useState<TableDataType[]>([
-    {
-      key: "title",
-      resource: "Title",
-      default_language: "",
-      translated: "",
-    },
-    {
-      key: "description",
-      resource: "Description",
-      default_language: "",
-      translated: "",
-    },
-    {
-      key: "summary",
-      resource: "Summary",
-      default_language: "",
-      translated: "",
-    },
-  ]);
-  const [SeoData, setSeoData] = useState<TableDataType[]>([
-    {
-      key: "url_handle",
-      resource: "URL handle",
-      default_language: "",
-      translated: "",
-    },
-    {
-      key: "meta_title",
-      resource: "Meta title",
-      default_language: "",
-      translated: "",
-    },
-    {
-      key: "meta_description",
-      resource: "Meta description",
-      default_language: "",
-      translated: "",
-    },
-  ]);
+  const [resourceData, setResourceData] = useState<TableDataType[]>([]);
+  const [SeoData, setSeoData] = useState<TableDataType[]>([]);
   const [selectArticleKey, setSelectArticleKey] = useState(
     articles.nodes[0].resourceId,
   );
+  const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [translatedValues, setTranslatedValues] = useState<{
+    [key: string]: string;
+  }>({});
+
   const [hasPrevious, setHasPrevious] = useState<boolean>(
     articlesData.pageInfo.hasPreviousPage,
   );
@@ -203,7 +195,7 @@ const Index = () => {
         translated: articleData?.translations?.title,
       },
       {
-        key: "description",
+        key: "body_html",
         resource: "Description",
         default_language: articleData?.body,
         translated: articleData?.translations?.body,
@@ -217,7 +209,7 @@ const Index = () => {
     ]);
     setSeoData([
       {
-        key: "url_handle",
+        key: "handle",
         resource: "URL handle",
         default_language: articleData?.handle,
         translated: articleData?.translations?.handle,
@@ -269,61 +261,9 @@ const Index = () => {
       key: "default_language",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        if (record?.key === "description" || record?.key === "summary") {
+        if (record?.key === "body_html" || record?.key === "summary") {
           return (
-            <Editor
-              apiKey="ogejypabqwbcwx7z197dy71mudw3l9bgif8x6ujlffhetcq8" // 如果使用云端版本，需要提供 API 密钥。否则可以省略。
-              value={record.default_language || ""}
-              disabled={true}
-              init={{
-                height: 300,
-                menubar: false,
-                plugins:
-                  "print preview searchreplace autolink directionality visualblocks visualchars fullscreen image link media template code codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount imagetools textpattern help emoticons autosave bdmap indent2em autoresize formatpainter axupimgs",
-                toolbar:
-                  "code undo redo restoredraft | cut copy paste pastetext | forecolor backcolor bold italic underline strikethrough link anchor | alignleft aligncenter alignright alignjustify outdent indent | \
-                styleselect formatselect fontselect fontsizeselect | bullist numlist | blockquote subscript superscript removeformat | \
-                table image media charmap emoticons hr pagebreak insertdatetime print preview | fullscreen | bdmap indent2em lineheight formatpainter axupimgs",
-                setup: (editor) => {
-                  // 初始化时启用 "code" 按钮
-                  editor.on("init", () => {
-                    const codeButton = editor
-                      .getContainer()
-                      .querySelector('button[data-mce-name="code"]');
-                    if (
-                      codeButton &&
-                      codeButton.classList.contains("tox-tbtn--disabled")
-                    ) {
-                      codeButton.classList.remove("tox-tbtn--disabled");
-                      codeButton.setAttribute("aria-disabled", "false");
-                      (codeButton as HTMLButtonElement).disabled = false;
-                    }
-                  });
-
-                  // 限制图片的最大宽度
-                  editor.on("NodeChange", (e) => {
-                    const imgElements = editor.getDoc().querySelectorAll("img");
-                    imgElements.forEach((img) => {
-                      img.style.maxWidth = "100%"; // 最大宽度为100%
-                      img.style.height = "auto"; // 保持比例
-                    });
-                  });
-
-                  // 插入图片时设置样式
-                  editor.on("BeforeSetContent", (e) => {
-                    const content = e.content;
-                    // 如果包含图片，添加最大宽度限制
-                    if (content.includes("<img")) {
-                      e.content = content.replace(
-                        /<img/g,
-                        '<img style="max-width: 100%; height: auto;"',
-                      );
-                    }
-                  });
-                },
-              }}
-              // onEditorChange={handleEditorChange}
-            />
+            <ReactQuill theme="snow" defaultValue={record?.default_language} />
           );
         }
         return <Input disabled value={record?.default_language} />;
@@ -335,51 +275,23 @@ const Index = () => {
       key: "translated",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        if (record?.key === "description" || record?.key === "summary") {
+        if (record?.key === "body_html" || record?.key === "summary") {
           return (
-            <Editor
-              apiKey="ogejypabqwbcwx7z197dy71mudw3l9bgif8x6ujlffhetcq8" // 如果使用云端版本，需要提供 API 密钥。否则可以省略。
-              value={record.translated || ""}
-              init={{
-                height: 300,
-                menubar: false,
-                plugins:
-                  "print preview searchreplace autolink directionality visualblocks visualchars fullscreen image link media template code codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount imagetools textpattern help emoticons autosave bdmap indent2em autoresize formatpainter axupimgs",
-                toolbar:
-                  "code undo redo restoredraft | cut copy paste pastetext | forecolor backcolor bold italic underline strikethrough link anchor | alignleft aligncenter alignright alignjustify outdent indent | \
-                styleselect formatselect fontselect fontsizeselect | bullist numlist | blockquote subscript superscript removeformat | \
-                table image media charmap emoticons hr pagebreak insertdatetime print preview | fullscreen | bdmap indent2em lineheight formatpainter axupimgs",
-                // Add any additional configurations needed
-                content_style:
-                  "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-                setup: (editor) => {
-                  // 限制图片的最大宽度
-                  editor.on("NodeChange", (e) => {
-                    const imgElements = editor.getDoc().querySelectorAll("img");
-                    imgElements.forEach((img) => {
-                      img.style.maxWidth = "100%"; // 最大宽度为100%
-                      img.style.height = "auto"; // 保持比例
-                    });
-                  });
-
-                  // 插入图片时设置样式
-                  editor.on("BeforeSetContent", (e) => {
-                    const content = e.content;
-                    // 如果包含图片，添加最大宽度限制
-                    if (content.includes("<img")) {
-                      e.content = content.replace(
-                        /<img/g,
-                        '<img style="max-width: 100%; height: auto;"',
-                      );
-                    }
-                  });
-                },
-              }}
-              // onEditorChange={handleEditorChange}
+            <ReactQuill
+              theme="snow"
+              defaultValue={record?.translated}
+              onChange={(content) => handleInputChange(record.key, content)}
             />
           );
         }
-        return <Input value={record?.translated} />;
+        return (
+          record && (
+            <Input
+              value={translatedValues[record?.key] || record?.translated}
+              onChange={(e) => handleInputChange(record.key, e.target.value)}
+            />
+          )
+        );
       },
     },
   ];
@@ -406,10 +318,29 @@ const Index = () => {
       key: "translated",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return <Input value={record?.translated} />;
+        return (
+          record && (
+            <Input
+              value={translatedValues[record?.key] || record?.translated}
+              onChange={(e) => handleInputChange(record.key, e.target.value)}
+            />
+          )
+        );
       },
     },
   ];
+
+  const handleInputChange = (key: string | number, value: string) => {
+    setTranslatedValues((prev) => ({
+      ...prev,
+      [key]: value, // 更新对应的 key
+    }));
+    setConfirmData(
+      confirmData.map((item) =>
+        item.key === key ? { ...item, value: value } : item,
+      ),
+    );
+  };
 
   const transBeforeData = ({ articles }: { articles: any }) => {
     let data: ArticleType = {
@@ -482,12 +413,18 @@ const Index = () => {
       article.translations.find((item: any) => item.key === "meta_description")
         ?.value ||
       article.translations.find((item: any) => item.key === "body_html")?.value;
-    return data;
-  };
 
-  const onCancel = () => {
-    setIsVisible(false); // 关闭 Modal
-    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
+    setConfirmData(
+      article.translatableContent.map((item: any) => ({
+        resourceId: article.resourceId,
+        locale: item.locale,
+        key: item.key,
+        value: "",
+        translatableContentDigest: item.digest,
+        target: searchTerm,
+      })),
+    );
+    return data;
   };
 
   const onPrevious = () => {
@@ -511,33 +448,41 @@ const Index = () => {
   };
 
   const onClick = (e: any) => {
-    // 查找 articlesData 中对应的产品
-    const selectedArticle = articlesData.nodes.find(
-      (article: any) => article.id === e.key,
-    );
-
-    // 如果找到了产品，就更新 articleData
-    if (selectedArticle) {
-      setArticleData(selectedArticle);
-    } else {
-      console.log("Article not found");
-    }
-
     // 更新选中的产品 key
     setSelectArticleKey(e.key);
+  };
+
+  const handleConfirm = () => {
+    const formData = new FormData();
+    formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
+    submit(formData, {
+      method: "post",
+      action: `/app/manage_translation/article?language=${searchTerm}`,
+    }); // 提交表单请求
+  };
+
+  const onCancel = () => {
+    setIsVisible(false); // 关闭 Modal
+    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
   };
 
   return (
     <Modal
       open={isVisible}
-      onCancel={onCancel}
-      //   onOk={() => handleConfirm()} // 确定按钮绑定确认逻辑
       width={"100%"}
-      // style={{
-      //   minHeight: "100%",
-      // }}
-      okText="Confirm"
-      cancelText="Cancel"
+      onCancel={onCancel}
+      footer={[
+        <div
+          style={{ display: "flex", justifyContent: "center", width: "100%" }}
+        >
+          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} type="primary">
+            Confirm
+          </Button>
+        </div>,
+      ]}
     >
       <Layout
         style={{
@@ -560,7 +505,7 @@ const Index = () => {
           <Sider style={{ background: colorBgContainer }} width={200}>
             <Menu
               mode="inline"
-              defaultSelectedKeys={[articlesData.nodes[0].id]}
+              defaultSelectedKeys={[articlesData.nodes[0].resourceId]}
               defaultOpenKeys={["sub1"]}
               style={{ height: "100%" }}
               items={menuData}
