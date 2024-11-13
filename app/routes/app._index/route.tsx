@@ -32,19 +32,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shopLanguagesWithoutPrimary = shopLanguages.filter(
     (language) => !language.primary,
   );
-  console.log(shopLanguagesWithoutPrimary);
 
   const shopLocales = shopLanguagesWithoutPrimary.map((item) =>
     item.locale.toUpperCase(),
   );
-  console.log(shopLocales);
-
   const picture = await GetPicture(shopLocales);
-  console.log(picture);
 
   const languageData = shopLanguagesWithoutPrimary.map((lang, i) => ({
     key: i,
-    src: picture[i],
+    src: picture[Object.keys(picture)[i]],
     name: lang.name,
     locale: lang.locale,
     status:
@@ -61,7 +57,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       totalWords: plan.chars,
     },
   }).data;
-  console.log(picture);
 
   return json({
     consumedWords,
@@ -95,7 +90,7 @@ const Index = () => {
             {languageData.map((language: any, index: any) => (
               <Col span={8} key={index}>
                 <UserLanguageCard
-                  flagUrl={language.src}
+                  flagUrl={language.src[0]}
                   languageName={language.name}
                   wordsNeeded={language.words}
                   languageCode={language.locale}

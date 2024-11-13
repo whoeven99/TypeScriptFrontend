@@ -29,7 +29,7 @@ import AttentionCard from "~/components/attentionCard";
 import PrimaryLanguage from "./components/primaryLanguage";
 import AddLanguageModal from "./components/addLanguageModal";
 import PublishModal from "./components/publishModal";
-import { GetLanguageList, GetTranslate } from "~/api/serve";
+import { GetLanguageList, GetPicture, GetTranslate } from "~/api/serve";
 import {
   CheckCircleTwoTone,
   CloseCircleTwoTone,
@@ -87,8 +87,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       ...language,
       key: index,
     }));
+    const allCountryCode = allLanguages.map((item) =>
+      item.isoCode.toUpperCase(),
+    );    
+    const allCountryImg = await GetPicture(allCountryCode);
+    console.log(allCountryImg);
+
     const status = await GetLanguageList({ request });
-    return json({ shop, shopLanguages, allLanguages, allMarket, status });
+    return json({
+      shop,
+      shopLanguages,
+      allLanguages,
+      allMarket,
+      status,
+      allCountryImg,
+    });
   } catch (error) {
     console.error("Error load languages:", error);
     throw new Response("Error load languages", { status: 500 });
@@ -153,8 +166,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, shopLanguages, allLanguages, allMarket, status } =
-    useLoaderData<typeof loader>();
+  const {
+    shop,
+    shopLanguages,
+    allLanguages,
+    allMarket,
+    status,
+    allCountryImg,
+  } = useLoaderData<typeof loader>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
   const [selectedRow, setSelectedRow] = useState<
@@ -454,6 +473,7 @@ const Index = () => {
         setIsModalOpen={setIsLanguageModalOpen}
         allLanguages={allLanguages}
         submit={submit}
+        allCountryImg={allCountryImg}
       />
       <PublishModal
         isVisible={isPublishModalOpen} // 父组件控制是否显示
