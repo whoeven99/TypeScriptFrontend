@@ -297,12 +297,6 @@ const Index = () => {
             onChange={handleSearch}
             style={{ marginBottom: 16 }}
           />
-          <Select
-            options={selectData}
-            style={{ minWidth: "200px" }}
-            defaultValue={searchTerm || shopLanguagesLoad[0].locale}
-            onChange={onChange}
-          />
         </Header>
         <Layout
           style={{

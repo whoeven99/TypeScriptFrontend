@@ -1,4 +1,13 @@
-import { Button, Input, Layout, Modal, Space, Table, theme } from "antd";
+import {
+  Button,
+  Input,
+  Layout,
+  Modal,
+  Result,
+  Space,
+  Table,
+  theme,
+} from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
@@ -14,7 +23,6 @@ import {
   queryShopLanguages,
 } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import ManageModalHeader from "~/components/manageModalHeader";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 
 const { Content } = Layout;
@@ -276,17 +284,7 @@ const Index = () => {
         </div>,
       ]}
     >
-      <Layout
-        style={{
-          padding: "24px 0",
-          background: colorBgContainer,
-          borderRadius: borderRadiusLG,
-        }}
-      >
-        <ManageModalHeader
-          shopLanguagesLoad={shopLanguagesLoad}
-          locale={searchTerm}
-        />
+      {metafields.nodes.length ? (
         <Layout
           style={{
             padding: "24px 0",
@@ -316,7 +314,12 @@ const Index = () => {
             </Space>
           </Content>
         </Layout>
-      </Layout>
+      ) : (
+        <Result
+          title="No items found here"
+          extra={<Button type="primary">back</Button>}
+        />
+      )}
     </Modal>
   );
 };

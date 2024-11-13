@@ -1,12 +1,10 @@
-import { useEffect } from "react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Page, BlockStack } from "@shopify/polaris";
-import { TitleBar, useAppBridge } from "@shopify/app-bridge-react";
+import { TitleBar } from "@shopify/app-bridge-react";
 import UserProfileCard from "./components/userProfileCard";
 import { Col, Space, Typography } from "antd";
 import { useLoaderData } from "@remix-run/react";
-import Mock from "mockjs";
 import "./styles.css";
 import UserLanguageCard from "./components/userLanguageCard";
 import {
@@ -17,6 +15,9 @@ import {
 } from "~/api/serve";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
+import { useDispatch } from "react-redux";
+import { useEffect } from "react";
+import { setTableData } from "~/store/modules/languageTableData";
 
 const { Title } = Typography;
 
@@ -28,6 +29,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const consumedWords: number = await GetConsumedWords({ request });
   const plan = await GetUserPlan({ request });
   const status = await GetLanguageList({ request });
+  const shopPrimaryLanguage = shopLanguages.filter(
+    (language) => language.primary,
+  );
 
   const shopLanguagesWithoutPrimary = shopLanguages.filter(
     (language) => !language.primary,
@@ -36,11 +40,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shopLocales = shopLanguagesWithoutPrimary.map((item) =>
     item.locale.toUpperCase(),
   );
-  const picture = await GetPicture(shopLocales);
+  const pictures = await GetPicture(shopLocales);
 
   const languageData = shopLanguagesWithoutPrimary.map((lang, i) => ({
     key: i,
-    src: picture[Object.keys(picture)[i]],
+    src: pictures[Object.keys(pictures)[i]],
     name: lang.name,
     locale: lang.locale,
     status:
@@ -49,14 +53,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     words: Math.floor(Math.random() * (50000 - 10000 + 1)) + 10000,
   }));
 
-  const user = Mock.mock({
-    data: {
-      plan: 0,
-      visitorData: 1000,
-      gmvData: 200,
-      totalWords: plan.chars,
-    },
-  }).data;
+  const user = {
+    plan: 0,
+    totalWords: plan.chars,
+    primaryLanguage: shopPrimaryLanguage,
+    shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimary,
+    shopLanguageCodesWithoutPrimary: shopLocales,
+  };
 
   return json({
     consumedWords,
@@ -65,15 +68,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 };
 
-// export const action = async ({ request }: ActionFunctionArgs) => {
-
-//   return json({
-
-//   });
-// };
-
 const Index = () => {
   const { consumedWords, languageData, user } = useLoaderData<typeof loader>();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const data = languageData.map((lang) => ({
+      key: lang.key,
+      language: lang.name,
+      locale: lang.locale,
+      primary: false,
+      status: lang.status || 0,
+      auto_update_translation: false,
+      published: lang.published,
+      loading: false,
+    }));
+    dispatch(setTableData(data));
+  }, []);
+
   return (
     <Page>
       <TitleBar title="Dashboard" />

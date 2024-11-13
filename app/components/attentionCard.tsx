@@ -47,11 +47,6 @@ const AttentionCard: React.FC<AttentionCardProps> = ({
       >
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <p>{content}</p>
-          {buttonContent && (
-            <Button type="default" >
-              {buttonContent}
-            </Button>
-          )}
         </Space>
       </Card>
     </ConfigProvider>

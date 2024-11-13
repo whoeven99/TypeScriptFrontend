@@ -14,7 +14,6 @@ import {
   queryShopLanguages,
 } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import ManageModalHeader from "~/components/manageModalHeader";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 
 const { Content } = Layout;
@@ -271,37 +270,24 @@ const Index = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <ManageModalHeader
-            shopLanguagesLoad={shopLanguagesLoad}
-            locale={searchTerm}
-          />
-          <Layout
-            style={{
-              padding: "24px 0",
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
-            }}
-          >
-            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-              <Table
-                columns={resourceColumns}
-                dataSource={resourceData}
-                pagination={false}
+          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Table
+              columns={resourceColumns}
+              dataSource={resourceData}
+              pagination={false}
+            />
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <Pagination
+                hasPrevious={hasPrevious}
+                onPrevious={onPrevious}
+                hasNext={hasNext}
+                onNext={onNext}
               />
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <Pagination
-                  hasPrevious={hasPrevious}
-                  onPrevious={onPrevious}
-                  hasNext={hasNext}
-                  onNext={onNext}
-                />
-              </div>
-            </Content>
-          </Layout>
+            </div>
+          </Content>
         </Layout>
       ) : (
         <Result
-          //   icon={<SmileOutlined />}
           title="No items found here"
           extra={<Button type="primary">back</Button>}
         />

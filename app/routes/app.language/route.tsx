@@ -188,7 +188,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  // const primaryLanguage = shopLanguages.find((lang) => lang.primary);
+  const primaryLanguage = shopLanguages.find((lang) => lang.primary);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -237,19 +237,6 @@ const Index = () => {
         );
       },
     },
-    // {
-    //   title: "Auto Update Translation",
-    //   dataIndex: "auto_update_translation",
-    //   key: "auto_update_translation",
-    //   render: (_: any, record: any) => {
-    //     return (
-    //       <Switch
-    //         checked={record.auto_update_translation}
-    //         onChange={(checked) => handleAutoUpdateChange(record.key, checked)}
-    //       />
-    //     );
-    //   },
-    // },
     {
       title: "Publish",
       dataIndex: "published",
@@ -272,11 +259,11 @@ const Index = () => {
         <Space>
           {record.status === 2 ? (
             <Button disabled style={{ width: "100px" }} loading>
-              正在翻译
+              translating
             </Button>
           ) : record.status ? (
             <Button disabled style={{ width: "100px" }}>
-              已翻译
+              translated
             </Button>
           ) : (
             <Button
@@ -284,14 +271,14 @@ const Index = () => {
               style={{ width: "100px" }}
               type="primary"
             >
-              翻译
+              translate
             </Button>
           )}
           <Button
             onClick={() => handleSet(record.locale)}
             style={{ width: "100px" }}
           >
-            设置
+            manage
           </Button>
         </Space>
       ),
@@ -344,15 +331,15 @@ const Index = () => {
         (item) => item.name === selectedKey.language,
       );
       if (selectedLanguage) {
-        // const formData = new FormData();
-        // formData.append(
-        //   "translation",
-        //   JSON.stringify({
-        //     primaryLanguage: primaryLanguage,
-        //     selectedLanguage: selectedLanguage,
-        //   }),
-        // ); // 将选中的语言作为字符串发送
-        // submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
+        const formData = new FormData();
+        formData.append(
+          "translation",
+          JSON.stringify({
+            primaryLanguage: primaryLanguage,
+            selectedLanguage: selectedLanguage,
+          }),
+        ); // 将选中的语言作为字符串发送
+        submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
         dispatch(setStatuState({ key, status: 2 }));
       }
     }

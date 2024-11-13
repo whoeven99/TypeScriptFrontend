@@ -7,7 +7,6 @@ import { Editor } from "@tinymce/tinymce-react";
 import { ShopLocalesType } from "../app.language/route";
 import dynamic from "next/dynamic";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
-import ManageModalHeader from "~/components/manageModalHeader";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
@@ -94,7 +93,8 @@ const Index = () => {
         locale: shippingsData.nodes[0].translatableContent[0].locale,
         key: "body",
         value: "",
-        translatableContentDigest: shippingsData.nodes[0].translatableContent[0].digest,
+        translatableContentDigest:
+          shippingsData.nodes[0].translatableContent[0].digest,
         target: searchTerm || "",
       },
     ]);
@@ -185,29 +185,16 @@ const Index = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <ManageModalHeader
-            shopLanguagesLoad={shopLanguagesLoad}
-            locale={searchTerm}
-          />
-          <Layout
-            style={{
-              padding: "24px 0",
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
-            }}
-          >
-            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-              <Table
-                columns={resourceColumns}
-                dataSource={resourceData}
-                pagination={false}
-              />
-            </Content>
-          </Layout>
+          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Table
+              columns={resourceColumns}
+              dataSource={resourceData}
+              pagination={false}
+            />
+          </Content>
         </Layout>
       ) : (
         <Result
-          //   icon={<SmileOutlined />}
           title="No items found here"
           extra={<Button type="primary">back</Button>}
         />

@@ -5,6 +5,7 @@ import {
   Menu,
   MenuProps,
   Modal,
+  Result,
   Table,
   theme,
 } from "antd";
@@ -23,7 +24,6 @@ import {
   queryShopLanguages,
 } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import ManageModalHeader from "~/components/manageModalHeader";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 
 const { Sider, Content } = Layout;
@@ -346,17 +346,7 @@ const Index = () => {
         </div>,
       ]}
     >
-      <Layout
-        style={{
-          padding: "24px 0",
-          background: colorBgContainer,
-          borderRadius: borderRadiusLG,
-        }}
-      >
-        <ManageModalHeader
-          shopLanguagesLoad={shopLanguagesLoad}
-          locale={searchTerm}
-        />
+      {blogs.nodes.length ? (
         <Layout
           style={{
             padding: "24px 0",
@@ -392,7 +382,12 @@ const Index = () => {
             />
           </Content>
         </Layout>
-      </Layout>
+      ) : (
+        <Result
+          title="No items found here"
+          extra={<Button type="primary">back</Button>}
+        />
+      )}
     </Modal>
   );
 };

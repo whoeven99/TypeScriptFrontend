@@ -5,6 +5,7 @@ import {
   Menu,
   MenuProps,
   Modal,
+  Result,
   Table,
   theme,
 } from "antd";
@@ -23,7 +24,6 @@ import {
   queryShopLanguages,
 } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import ManageModalHeader from "~/components/manageModalHeader";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import dynamic from "next/dynamic";
 
@@ -256,7 +256,9 @@ const Index = () => {
       width: "45%",
       render: (_: any, record: TableDataType) => {
         if (record?.key === "description") {
-          return <ReactQuill theme="snow" defaultValue={record?.default_language} />;
+          return (
+            <ReactQuill theme="snow" defaultValue={record?.default_language} />
+          );
         }
         return <Input disabled value={record?.default_language} />;
       },
@@ -469,17 +471,7 @@ const Index = () => {
         </div>,
       ]}
     >
-      <Layout
-        style={{
-          padding: "24px 0",
-          background: colorBgContainer,
-          borderRadius: borderRadiusLG,
-        }}
-      >
-        <ManageModalHeader
-          shopLanguagesLoad={shopLanguagesLoad}
-          locale={searchTerm}
-        />
+      {collections.nodes.length ? (
         <Layout
           style={{
             padding: "24px 0",
@@ -519,7 +511,12 @@ const Index = () => {
             />
           </Content>
         </Layout>
-      </Layout>
+      ) : (
+        <Result
+          title="No items found here"
+          extra={<Button type="primary">back</Button>}
+        />
+      )}
     </Modal>
   );
 };

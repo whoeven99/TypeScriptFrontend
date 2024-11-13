@@ -1,4 +1,4 @@
-import { Avatar, Button, Card } from "antd";
+import { Avatar, Card } from "antd";
 import { Typography } from "antd";
 
 const { Text } = Typography;
@@ -25,10 +25,6 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
           </Avatar>
           <div className="plan_overview">
             <span>Current Plan: {planName}</span>
-            <div className="plan_action">
-              <Button>Free Words</Button>
-              <Button type="primary">Upgrade</Button>
-            </div>
           </div>
         </div>
         <div className="user_profilecard_right">
