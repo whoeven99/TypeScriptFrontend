@@ -201,7 +201,7 @@ const Index = () => {
     ]);
     setSeoData([
       {
-        key: "url_handle",
+        key: "handle",
         resource: "URL handle",
         default_language: collectionData?.handle,
         translated: collectionData?.translations?.handle,
