@@ -8,7 +8,7 @@ import {
   Table,
   theme,
 } from "antd";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import {
   useActionData,
   useLoaderData,
@@ -129,20 +129,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
-    const updatedConfirmData = confirmData.map((item) => {
-      // 检查 key 是否是字符串并包含下划线
-      if (
-        typeof item.key === "string" &&
-        item.key.includes("_") &&
-        item.key.split("_")[1] !== "type"
-      ) {
-        // 将 key 修改为下划线前的部分
-        item.key = item.key.split("_")[0]; // 取下划线前的部分
-      }
-
-      return item;
-    });
-    console.log(updatedConfirmData);
     switch (true) {
       case !!startCursor:
         const previousProducts = await queryPreviousTransType({
@@ -197,6 +183,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           nextMetafields: nextMetafields,
         });
       case !!confirmData:
+        const updatedConfirmData = confirmData.map((item) => {
+          // 检查 key 是否是字符串并包含下划线
+          if (
+            typeof item.key === "string" &&
+            item.key.includes("_") &&
+            item.key.split("_")[1] !== "type"
+          ) {
+            // 将 key 修改为下划线前的部分
+            item.key = item.key.split("_")[0]; // 取下划线前的部分
+          }
+
+          return item;
+        });
         await updateManageTranslation({
           request,
           confirmData: updatedConfirmData,
@@ -793,38 +792,29 @@ const Index = () => {
   };
 
   const onCancel = () => {
+    navigate("/app/manage_translation");
     setIsVisible(false); // 关闭 Modal
   };
 
   return (
-    <Modal
-      open={isVisible}
-      onCancel={onCancel}
-      width={"100%"}
-      footer={[
-        <div
-          style={{ display: "flex", justifyContent: "center", width: "100%" }}
-        >
-          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
-            Cancel
-          </Button>
-          <Button onClick={handleConfirm} type="primary">
-            Confirm
-          </Button>
-        </div>,
-      ]}
-    >
-      <Layout
-        style={{
-          padding: "24px 0",
-          background: colorBgContainer,
-          borderRadius: borderRadiusLG,
-        }}
+    <Suspense fallback={<div>Loading...</div>}>
+      <Modal
+        open={isVisible}
+        onCancel={onCancel}
+        width={"100%"}
+        footer={[
+          <div
+            style={{ display: "flex", justifyContent: "center", width: "100%" }}
+          >
+            <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirm} type="primary">
+              Confirm
+            </Button>
+          </div>,
+        ]}
       >
-        <ManageModalHeader
-          shopLanguagesLoad={shopLanguagesLoad}
-          locale={searchTerm}
-        />
         <Layout
           style={{
             padding: "24px 0",
@@ -832,62 +822,67 @@ const Index = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <Sider style={{ background: colorBgContainer }} width={200}>
-            <Menu
-              mode="inline"
-              defaultSelectedKeys={[productsData.nodes[0].resourceId]}
-              defaultOpenKeys={["sub1"]}
-              style={{ height: "100%" }}
-              items={menuData}
-              selectedKeys={[selectProductKey]}
-              onClick={onClick}
-            />
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <Pagination
-                hasPrevious={hasPrevious}
-                onPrevious={onPrevious}
-                hasNext={hasNext}
-                onNext={onNext}
+          <ManageModalHeader
+            shopLanguagesLoad={shopLanguagesLoad}
+            locale={searchTerm}
+          />
+          <Layout
+            style={{
+              padding: "24px 0",
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
+          >
+            <Sider style={{ background: colorBgContainer }} width={200}>
+              <Menu
+                mode="inline"
+                defaultSelectedKeys={[productsData.nodes[0].resourceId]}
+                defaultOpenKeys={["sub1"]}
+                style={{ height: "100%" }}
+                items={menuData}
+                selectedKeys={[selectProductKey]}
+                onClick={onClick}
               />
-            </div>
-          </Sider>
-          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-            <Table
-              columns={resourceColumns}
-              dataSource={resourceData}
-              pagination={false}
-            />
-            <Table
-              columns={SEOColumns}
-              dataSource={SeoData}
-              pagination={false}
-            />
-            {Array.isArray(optionsData) && optionsData[0] !== null && (
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Pagination
+                  hasPrevious={hasPrevious}
+                  onPrevious={onPrevious}
+                  hasNext={hasNext}
+                  onNext={onNext}
+                />
+              </div>
+            </Sider>
+            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
               <Table
-                columns={optionsColumns}
-                dataSource={optionsData}
+                columns={resourceColumns}
+                dataSource={resourceData}
                 pagination={false}
               />
-            )}
-            {Array.isArray(metafieldsData) &&
-              metafieldsData[0] !== undefined && (
+              <Table
+                columns={SEOColumns}
+                dataSource={SeoData}
+                pagination={false}
+              />
+              {Array.isArray(optionsData) && optionsData[0] !== null && (
                 <Table
-                  columns={metafieldsColumns}
-                  dataSource={metafieldsData}
+                  columns={optionsColumns}
+                  dataSource={optionsData}
                   pagination={false}
                 />
               )}
-            {/* {Array.isArray(variantsData) && variantsData[0] !== null && (
-            <Table
-              columns={variantsColumns}
-              dataSource={variantsData}
-              pagination={false}
-            />
-          )} */}
-          </Content>
+              {Array.isArray(metafieldsData) &&
+                metafieldsData[0] !== undefined && (
+                  <Table
+                    columns={metafieldsColumns}
+                    dataSource={metafieldsData}
+                    pagination={false}
+                  />
+                )}
+            </Content>
+          </Layout>
         </Layout>
-      </Layout>
-    </Modal>
+      </Modal>
+    </Suspense>
   );
 };
 

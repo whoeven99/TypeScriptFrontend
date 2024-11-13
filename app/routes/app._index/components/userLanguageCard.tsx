@@ -18,8 +18,6 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  
-
   const onClick = () => {
     navigate("/app/manage_translation", { state: { key: languageCode } });
   };

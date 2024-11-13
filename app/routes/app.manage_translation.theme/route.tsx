@@ -242,7 +242,7 @@ const Index = () => {
 
   const onChange = (e: any) => {
     const currentPath = location.pathname;
-    window.location.href = `${currentPath}?language=${e}`;
+    navigate(`${currentPath}?language=${e}`);
   };
 
   const handleConfirm = () => {

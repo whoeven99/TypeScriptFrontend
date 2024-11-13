@@ -23,6 +23,7 @@ const ManageModalHeader: React.FC<ManageModalHeaderProps> = ({
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+  const navigation = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
@@ -37,7 +38,7 @@ const ManageModalHeader: React.FC<ManageModalHeaderProps> = ({
 
   const onChange = (e: any) => {
     const currentPath = location.pathname;
-    window.location.href = `${currentPath}?language=${e}`;
+    navigation(`${currentPath}?language=${e}`);
   };
 
   return (

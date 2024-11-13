@@ -26,14 +26,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 
   const consumedWords: number = await GetConsumedWords({ request });
-  const picture = await GetPicture();
   const plan = await GetUserPlan({ request });
   const status = await GetLanguageList({ request });
 
-  const newdata = shopLanguages.filter((language) => !language.primary);
-  const languageData = newdata.map((lang, i) => ({
+  const shopLanguagesWithoutPrimary = shopLanguages.filter(
+    (language) => !language.primary,
+  );
+
+  const shopLocales = shopLanguagesWithoutPrimary.map((item) =>
+    item.locale.toUpperCase(),
+  );
+  const picture = await GetPicture(shopLocales);
+
+  const languageData = shopLanguagesWithoutPrimary.map((lang, i) => ({
     key: i,
-    src: "/cn.png",
+    src: picture[Object.keys(picture)[i]],
     name: lang.name,
     locale: lang.locale,
     status:
@@ -47,13 +54,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       plan: 0,
       visitorData: 1000,
       gmvData: 200,
-      totalWords: 8000,
+      totalWords: plan.chars,
     },
   }).data;
-  console.log(picture);
 
   return json({
-    picture,
     consumedWords,
     languageData,
     user,
@@ -68,8 +73,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 // };
 
 const Index = () => {
-  const { picture, consumedWords, languageData, user } =
-    useLoaderData<typeof loader>();
+  const { consumedWords, languageData, user } = useLoaderData<typeof loader>();
   return (
     <Page>
       <TitleBar title="Dashboard" />
@@ -86,7 +90,7 @@ const Index = () => {
             {languageData.map((language: any, index: any) => (
               <Col span={8} key={index}>
                 <UserLanguageCard
-                  flagUrl={picture}
+                  flagUrl={language.src[0]}
                   languageName={language.name}
                   wordsNeeded={language.words}
                   languageCode={language.locale}
