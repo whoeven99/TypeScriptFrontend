@@ -50,26 +50,6 @@ export const GetPicture = async (locale: string[]) => {
   }
 };
 
-//用户已使用字符数
-export const GetConsumedWords = async ({ request }: { request: Request }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-  try {
-    const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getConsumedWords`,
-      method: "Post",
-      data: {
-        shopName: shop,
-      },
-    });
-    const res = response.data.response;
-    return res;
-  } catch (error) {
-    console.error("Error occurred in the consumedWords:", error);
-    throw new Error("Error occurred in the consumedWords");
-  }
-};
-
 //查询语言状态
 export const GetLanguageList = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -104,6 +84,7 @@ export const GetTranslate = async ({
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  console.log(source, target);
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/clickTranslation`,

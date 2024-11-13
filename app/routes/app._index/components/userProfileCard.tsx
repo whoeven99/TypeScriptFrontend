@@ -5,14 +5,14 @@ const { Text } = Typography;
 
 interface UserProfileCardProps {
   plan: number;
-  consumedWords: number;
-  totalWords: number;
+  chars: number;
+  totalChars: number;
 }
 
 const UserProfileCard: React.FC<UserProfileCardProps> = ({
   plan,
-  consumedWords,
-  totalWords,
+  chars,
+  totalChars,
 }) => {
   const planName = plan === 0 ? "Free" : "Premium";
 
@@ -31,10 +31,10 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
           <span className="character_usage_label">Character Usage: </span>
           <div className="characters_statistical">
             <Text strong style={{ fontSize: "28px", lineHeight: "28px" }}>
-              {consumedWords}
+              {chars}
             </Text>
             <Text type="secondary" style={{ fontSize: "20px" }}>
-              / {totalWords}
+              / {totalChars}
             </Text>
           </div>
         </div>

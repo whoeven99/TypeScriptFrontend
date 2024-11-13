@@ -91,7 +91,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       item.isoCode.toUpperCase(),
     );    
     const allCountryImg = await GetPicture(allCountryCode);
-    console.log(allCountryImg);
 
     const status = await GetLanguageList({ request });
     return json({

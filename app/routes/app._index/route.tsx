@@ -7,26 +7,19 @@ import { Col, Space, Typography } from "antd";
 import { useLoaderData } from "@remix-run/react";
 import "./styles.css";
 import UserLanguageCard from "./components/userLanguageCard";
-import {
-  GetConsumedWords,
-  GetLanguageList,
-  GetPicture,
-  GetUserPlan,
-} from "~/api/serve";
+import { GetLanguageList, GetPicture, GetUserPlan } from "~/api/serve";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
-import { useEffect } from "react";
 import { setTableData } from "~/store/modules/languageTableData";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
     request,
   });
 
-  const consumedWords: number = await GetConsumedWords({ request });
   const plan = await GetUserPlan({ request });
   const status = await GetLanguageList({ request });
   const shopPrimaryLanguage = shopLanguages.filter(
@@ -55,36 +48,34 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const user = {
     plan: 0,
-    totalWords: plan.chars,
-    primaryLanguage: shopPrimaryLanguage,
+    chars: plan.chars,
+    totalChars: plan.totalChars,
+    primaryLanguage: shopPrimaryLanguage[0].name,
     shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimary,
     shopLanguageCodesWithoutPrimary: shopLocales,
   };
 
   return json({
-    consumedWords,
     languageData,
     user,
   });
 };
 
 const Index = () => {
-  const { consumedWords, languageData, user } = useLoaderData<typeof loader>();
+  const { languageData, user } = useLoaderData<typeof loader>();
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    const data = languageData.map((lang) => ({
-      key: lang.key,
-      language: lang.name,
-      locale: lang.locale,
-      primary: false,
-      status: lang.status || 0,
-      auto_update_translation: false,
-      published: lang.published,
-      loading: false,
-    }));
-    dispatch(setTableData(data));
-  }, []);
+  const data = languageData.map((lang) => ({
+    key: lang.key,
+    language: lang.name,
+    locale: lang.locale,
+    primary: false,
+    status: lang.status || 0,
+    auto_update_translation: false,
+    published: lang.published,
+    loading: false,
+  }));
+  dispatch(setTableData(data));
 
   return (
     <Page>
@@ -93,16 +84,23 @@ const Index = () => {
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <UserProfileCard
             plan={user.plan}
-            consumedWords={consumedWords}
-            totalWords={user.totalWords}
+            chars={user.chars}
+            totalChars={user.totalChars}
           />
           {/* <UserDataCard visitorData={user.visitorData} gmvData={user.gmvData} /> */}
-          <Title level={3}>{languageData.length} Languages in your shop</Title>
+          <div>
+            <Title level={3}>
+              {languageData.length} Languages in your shop
+            </Title>
+            <Text>Your store’s default language: {user.primaryLanguage}</Text>
+          </div>
+
           <div className="language_cards">
             {languageData.map((language: any, index: any) => (
               <Col span={8} key={index}>
                 <UserLanguageCard
                   flagUrl={language.src[0]}
+                  primaryLanguage={user.primaryLanguage}
                   languageName={language.name}
                   wordsNeeded={language.words}
                   languageCode={language.locale}
