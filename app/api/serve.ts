@@ -32,12 +32,12 @@ export const GetUserPlan = async ({ request }: { request: Request }) => {
 };
 
 //获取国旗图片链接
-export const GetPicture = async () => {
+export const GetPicture = async (locale: string[]) => {
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getImageInfo`,
       method: "Post",
-      data: ["AF", "AK"],
+      data: ["MR"],
     });
     const res = response.data.response;
     return res;
@@ -131,7 +131,6 @@ export const updateManageTranslation = async ({
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  console.log(confirmData);
 
   try {
     // 遍历 confirmData 数组
@@ -153,7 +152,6 @@ export const updateManageTranslation = async ({
           },
         });
         const res = response.data;
-        console.log(res);
       }
     }
   } catch (error) {
