@@ -2,9 +2,9 @@ import {
   Button,
   Input,
   Layout,
-  Menu,
   MenuProps,
   Modal,
+  Space,
   Table,
   theme,
 } from "antd";
@@ -26,18 +26,8 @@ import { ShopLocalesType } from "../app.language/route";
 import ManageModalHeader from "~/components/manageModalHeader";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 
-const { Sider, Content } = Layout;
-
-interface BlogType {
-  id: string;
-  handle: string;
-  title: string;
-  translations: {
-    id: string;
-    handle: string | undefined;
-    title: string | undefined;
-  };
-}
+const { Content } = Layout;
+const { TextArea } = Input;
 
 type TableDataType = {
   key: string | number;
@@ -53,9 +43,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
       request,
     });
-    const blogs = await queryNextTransType({
+    const deliverys = await queryNextTransType({
       request,
-      resourceType: "BLOG",
+      resourceType: "DELIVERY_METHOD_DEFINITION",
       endCursor: "",
       locale: searchTerm || shopLanguagesLoad[0].locale,
     });
@@ -63,11 +53,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return json({
       searchTerm,
       shopLanguagesLoad,
-      blogs,
+      deliverys,
     });
   } catch (error) {
-    console.error("Error load blog:", error);
-    throw new Response("Error load blog", { status: 500 });
+    console.error("Error load delivery:", error);
+    throw new Response("Error load delivery", { status: 500 });
   }
 };
 
@@ -85,21 +75,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     switch (true) {
       case !!startCursor:
-        const previousBlogs = await queryPreviousTransType({
+        const previousDeliverys = await queryPreviousTransType({
           request,
-          resourceType: "BLOG",
+          resourceType: "DELIVERY_METHOD_DEFINITION",
           startCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-        return json({ previousBlogs: previousBlogs });
+        return json({ previousDeliverys: previousDeliverys });
       case !!endCursor:
-        const nextBlogs = await queryNextTransType({
+        const nextDeliverys = await queryNextTransType({
           request,
-          resourceType: "BLOG",
+          resourceType: "DELIVERY_METHOD_DEFINITION",
           endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-        return json({ nextBlogs: nextBlogs });
+        return json({ nextDeliverys: nextDeliverys });
       case !!confirmData:
         await updateManageTranslation({
           request,
@@ -111,94 +101,67 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
-    console.error("Error action blog:", error);
-    throw new Response("Error action blog", { status: 500 });
+    console.error("Error action delivery:", error);
+    throw new Response("Error action delivery", { status: 500 });
   }
 };
 
 const Index = () => {
-  const { searchTerm, shopLanguagesLoad, blogs } =
+  const { searchTerm, shopLanguagesLoad, deliverys } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
-  const exMenuData = (blogs: any) => {
-    const data = blogs.nodes.map((blog: any) => ({
-      key: blog.resourceId,
-      label: blog.translatableContent.find((item: any) => item.key === "title")
-        .value,
-    }));
-    return data;
-  };
-
-  const items: MenuProps["items"] = exMenuData(blogs);
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
-  const [blogsData, setBlogsData] = useState(blogs);
-  const [blogData, setBlogData] = useState<BlogType>();
+  const [deliverysData, setDeliverysData] = useState(deliverys);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [selectBlogKey, setSelectBlogKey] = useState(blogs.nodes[0].resourceId);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    blogsData.pageInfo.hasPreviousPage,
+    deliverysData.pageInfo.hasPreviousPage,
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    blogsData.pageInfo.hasNextPage,
+    deliverysData.pageInfo.hasNextPage,
   );
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+  console.log(deliverys);
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   useEffect(() => {
-    const data = transBeforeData({
-      blogs: blogsData,
-    });
-    setBlogData(data);
-  }, [selectBlogKey]);
+    setConfirmData(
+      deliverys.nodes.map((item: any) => ({
+        resourceId: item.resourceId,
+        locale: item.translatableContent[0]?.locale,
+        key: item.translatableContent[0]?.key,
+        value: "",
+        translatableContentDigest: item.translatableContent[0]?.digest,
+        target: searchTerm,
+      })),
+    );
+  }, []);
 
   useEffect(() => {
-    setHasPrevious(blogsData.pageInfo.hasPreviousPage);
-    setHasNext(blogsData.pageInfo.hasNextPage);
-  }, [blogsData]);
+    setHasPrevious(deliverysData.pageInfo.hasPreviousPage);
+    setHasNext(deliverysData.pageInfo.hasNextPage);
+    const data = generateMenuItemsArray(deliverysData);
+    setResourceData(data);
+  }, [deliverysData]);
 
   useEffect(() => {
-    setResourceData([
-      {
-        key: "title",
-        resource: "Title",
-        default_language: blogData?.title,
-        translated: blogData?.translations?.title,
-      },
-      {
-        key: "handle",
-        resource: "Handle",
-        default_language: blogData?.handle,
-        translated: blogData?.translations?.handle,
-      },
-    ]);
-  }, [blogData]);
-
-  useEffect(() => {
-    if (actionData && "nextBlogs" in actionData) {
-      const nextBlogs = exMenuData(actionData.nextBlogs);
-      // 在这里处理 nextBlogs
-      setMenuData(nextBlogs);
-      setBlogsData(actionData.nextBlogs);
-      setSelectBlogKey(actionData.nextBlogs.nodes[0].resourceId);
-    } else if (actionData && "previousBlogs" in actionData) {
-      const previousBlogs = exMenuData(actionData.previousBlogs);
-      // 在这里处理 previousBlogs
-      setMenuData(previousBlogs);
-      setBlogsData(actionData.previousBlogs);
-      setSelectBlogKey(actionData.previousBlogs.nodes[0].resourceId);
+    if (actionData && "nextDeliverys" in actionData) {
+      // 在这里处理 nexts
+      console.log(actionData.nextDeliverys);
+      setDeliverysData(actionData.nextDeliverys);
+    } else if (actionData && "previousDeliverys" in actionData) {
+      setDeliverysData(actionData.previousDeliverys);
     } else {
-      // 如果不存在 nextBlogs，可以执行其他逻辑
-      console.log("nextBlogs end");
+      // 如果不存在 nexts，可以执行其他逻辑
+      console.log("action end");
     }
   }, [actionData]);
 
@@ -215,7 +178,13 @@ const Index = () => {
       key: "default_language",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return <Input disabled value={record?.default_language} />;
+        return (
+          <TextArea
+            disabled
+            value={record?.default_language}
+            autoSize={{ minRows: 1, maxRows: 6 }}
+          />
+        );
       },
     },
     {
@@ -224,13 +193,15 @@ const Index = () => {
       key: "translated",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        if (record)
-          return (
-            <Input
+        return (
+          record && (
+            <TextArea
               value={translatedValues[record?.key] || record?.translated}
-              onChange={(e) => handleInputChange(record?.key, e.target.value)}
+              autoSize={{ minRows: 1, maxRows: 6 }}
+              onChange={(e) => handleInputChange(record.key, e.target.value)}
             />
-          );
+          )
+        );
       },
     },
   ];
@@ -247,71 +218,38 @@ const Index = () => {
     );
   };
 
-  const transBeforeData = ({ blogs }: { blogs: any }) => {
-    let data: BlogType = {
-      handle: "",
-      id: "",
-      title: "",
-      translations: {
-        handle: "",
-        id: "",
-        title: "",
-      },
-    };
-    const blog = blogs.nodes.find(
-      (blog: any) => blog.resourceId === selectBlogKey,
-    );
-    data.id = blog.resourceId;
-    data.title = blog.translatableContent.find(
-      (item: any) => item.key === "title",
-    )?.value;
-    data.handle = blog.translatableContent.find(
-      (item: any) => item.key === "handle",
-    )?.value;
-    data.translations.id = blog.resourceId;
-    data.translations.title = blog.translations.find(
-      (item: any) => item.key === "title",
-    )?.value;
-    data.translations.handle = blog.translations.find(
-      (item: any) => item.key === "handle",
-    )?.value;
-
-    setConfirmData(
-      blog.translatableContent.map((item: any) => ({
-        resourceId: blog.resourceId,
-        locale: item.locale,
-        key: item.key,
-        value: "",
-        translatableContentDigest: item.digest,
-        target: searchTerm,
-      })),
-    );
-
-    return data;
-  };
-
-  const onCancel = () => {
-    setIsVisible(false); // 关闭 Modal
-    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
+  const generateMenuItemsArray = (items: any) => {
+    return items.nodes.flatMap((item: any) => {
+      // 创建当前项的对象
+      const currentItem = {
+        key: `${item.resourceId}`, // 使用 id 生成唯一的 key
+        resource: "value", // 资源字段固定为 "Menu Items"
+        default_language: item.translatableContent[0]?.value, // 默认语言为 item 的标题
+        translated: item.translations[0]?.value, // 翻译字段初始化为空字符串
+      };
+      return currentItem.default_language !== "" ? [currentItem] : [];
+    });
   };
 
   const onPrevious = () => {
     const formData = new FormData();
-    const startCursor = blogsData.pageInfo.startCursor;
+    const startCursor = deliverysData.pageInfo.startCursor;
     formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: `/app/manage_translation/blog?language=${searchTerm}`,
+      action: `/app/manage_translation/delivery?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
   const onNext = () => {
     const formData = new FormData();
-    const endCursor = blogsData.pageInfo.endCursor;
+    const endCursor = deliverysData.pageInfo.endCursor;
+    console.log(deliverysData);
+
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: `/app/manage_translation/blog?language=${searchTerm}`,
+      action: `/app/manage_translation/delivery?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -320,12 +258,13 @@ const Index = () => {
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: `/app/manage_translation/blog?language=${searchTerm}`,
+      action: `/app/manage_translation/delivery?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
-  const onClick = (e: any) => {
-    setSelectBlogKey(e.key);
+  const onCancel = () => {
+    setIsVisible(false); // 关闭 Modal
+    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
   };
 
   return (
@@ -364,32 +303,26 @@ const Index = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <Sider style={{ background: colorBgContainer }} width={200}>
-            <Menu
-              mode="inline"
-              defaultSelectedKeys={[blogsData.nodes[0].id]}
-              defaultOpenKeys={["sub1"]}
-              style={{ height: "100%" }}
-              items={menuData}
-              // onChange={onChange}
-              selectedKeys={[selectBlogKey]}
-              onClick={onClick}
-            />
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <Pagination
-                hasPrevious={hasPrevious}
-                onPrevious={onPrevious}
-                hasNext={hasNext}
-                onNext={onNext}
-              />
-            </div>
-          </Sider>
           <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-            <Table
-              columns={resourceColumns}
-              dataSource={resourceData}
-              pagination={false}
-            />
+            <Space
+              direction="vertical"
+              size="middle"
+              style={{ display: "flex" }}
+            >
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
+              />
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Pagination
+                  hasPrevious={hasPrevious}
+                  onPrevious={onPrevious}
+                  hasNext={hasNext}
+                  onNext={onNext}
+                />
+              </div>
+            </Space>
           </Content>
         </Layout>
       </Layout>

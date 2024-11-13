@@ -7,6 +7,7 @@ const { Title } = Typography;
 interface SwitcherSettingCardProps {
   cardTitle: string;
   dataSource: any;
+  current: string;
 }
 
 interface DataType {
@@ -21,19 +22,21 @@ interface DataType {
 const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   cardTitle,
   dataSource,
+  current,
 }) => {
   const navigate = useNavigate();
-
   const columns = [
     {
       title: cardTitle,
       dataIndex: "title",
       key: "title",
+      width: "30%",
     },
     {
       title: "Items Translated",
       dataIndex: "items",
       key: "items",
+      width: "30%",
       render: (_: any, record: any) => {
         return record.allItems ? (
           <div>
@@ -44,44 +47,56 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
         );
       },
     },
-    {
-      title: "Item Sync Status",
-      dataIndex: "sync_status",
-      key: "sync_status",
-      render: (_: any, record: any) => {
-        return record.sync_status ? (
-          <div>Real-time Sync</div>
-        ) : (
-          <div>Manual Sync</div>
-        );
-      },
-    },
+    // {
+    //   title: "Item Sync Status",
+    //   dataIndex: "sync_status",
+    //   key: "sync_status",
+    //   render: (_: any, record: any) => {
+    //     return record.sync_status ? (
+    //       <div>Real-time Sync</div>
+    //     ) : (
+    //       <div>Manual Sync</div>
+    //     );
+    //   },
+    // },
     {
       title: "Operation",
       dataIndex: "operation",
       key: "operation",
+      width: "40%",
       render: (_: any, record: DataType) => {
-        return record.sync_status ? (
-          <Space>
-            <Button
-              onClick={() =>
-                navigate(`/app/manage_translation/${record.navigation}`)
-              }
-            >
-              Edit
-            </Button>
-          </Space>
-        ) : (
-          <Space>
-            <Button>Sync</Button>
-            <Button
-              onClick={() =>
-                navigate(`/app/manage_translation/${record.navigation}`)
-              }
-            >
-              Edit
-            </Button>
-          </Space>
+        // return record.sync_status ? (
+        //   <Space>
+        //     <Button
+        //       onClick={() =>
+        //         navigate(`/app/manage_translation/${record.navigation}?language=${current}`)
+        //       }
+        //     >
+        //       Edit
+        //     </Button>
+        //   </Space>
+        // ) : (
+        //   <Space>
+        //     <Button>Sync</Button>
+        //     <Button
+        //       onClick={() =>
+        //         navigate(`/app/manage_translation/${record.navigation}?language=${current}`)
+        //       }
+        //     >
+        //       Edit
+        //     </Button>
+        //   </Space>
+        // );
+        return (
+          <Button
+            onClick={() =>
+              navigate(
+                `/app/manage_translation/${record.navigation}?language=${current}`,
+              )
+            }
+          >
+            Edit
+          </Button>
         );
       },
     },

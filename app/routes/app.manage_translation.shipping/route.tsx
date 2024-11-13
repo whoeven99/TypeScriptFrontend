@@ -1,36 +1,17 @@
-import {
-  Button,
-  Layout,
-  Menu,
-  MenuProps,
-  Modal,
-  Table,
-  theme,
-} from "antd";
+import { Layout, Modal, Table, theme, Result, Button } from "antd";
 import { useEffect, useState } from "react";
 import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryNextTransType, queryShop, queryShopLanguages } from "~/api/admin";
+import { queryNextTransType, queryShopLanguages } from "~/api/admin";
+import { Editor } from "@tinymce/tinymce-react";
 import { ShopLocalesType } from "../app.language/route";
-import ManageModalHeader from "~/components/manageModalHeader";
-import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import dynamic from "next/dynamic";
+import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import ManageModalHeader from "~/components/manageModalHeader";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
-const { Sider, Content } = Layout;
-
-interface PolicyType {
-  id: string;
-  body: string;
-  title: string;
-  locale: string;
-  digest: string;
-  translations: {
-    id: string;
-    body: string | undefined;
-  };
-}
+const { Content } = Layout;
 
 type TableDataType = {
   key: string | number;
@@ -46,47 +27,31 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
       request,
     });
-    const shop = await queryShop(request);
-    const policyTitle = shop.shopPolicies;
-    const policyBody = await queryNextTransType({
+    const shippings = await queryNextTransType({
       request,
-      resourceType: "SHOP_POLICY",
+      resourceType: "PACKING_SLIP_TEMPLATE",
       endCursor: "",
       locale: searchTerm || shopLanguagesLoad[0].locale,
     });
 
-    const policies = policyTitle.map((title: any, index: number) => {
-      const body = policyBody.nodes[index];
-      return {
-        title: title.title,
-        id: title.id,
-        body: title.body,
-        locale: body.translatableContent[0].locale,
-        digest: body.translatableContent[0].digest,
-        translations: {
-          id: body.resourceId,
-          value: body.translations[0]?.value,
-        },
-      };
-    });
     return json({
       searchTerm,
       shopLanguagesLoad,
-      policies,
+      shippings,
     });
   } catch (error) {
-    console.error("Error load policy:", error);
-    throw new Response("Error load policy", { status: 500 });
+    console.error("Error load shipping:", error);
+    throw new Response("Error load shipping", { status: 500 });
   }
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
+
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
-
     if (confirmData)
       await updateManageTranslation({
         request,
@@ -94,28 +59,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       });
     return null;
   } catch (error) {
-    console.error("Error action policy:", error);
-    throw new Response("Error action policy", { status: 500 });
+    console.error("Error action shipping:", error);
+    throw new Response("Error action shipping", { status: 500 });
   }
 };
 
 const Index = () => {
-  const { searchTerm, shopLanguagesLoad, policies } =
+  const { searchTerm, shopLanguagesLoad, shippings } =
     useLoaderData<typeof loader>();
 
-  const exMenuData = (policies: any) => {
-    const data = policies.map((policy: PolicyType) => ({
-      key: policy.id,
-      label: policy.title,
-    }));
-    return data;
-  };
-
-  const items: MenuProps["items"] = exMenuData(policies);
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [policyData, setPolicyData] = useState<PolicyType>(policies);
+  const [shippingsData, setShippingsData] = useState(shippings);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [selectPolicyKey, setSelectPolicyKey] = useState(policies[0].id);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -123,36 +78,27 @@ const Index = () => {
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  console.log(shippingsData);
 
   useEffect(() => {
-    const data: PolicyType = policies.find(
-      (policy: any) => policy.id === selectPolicyKey,
-    );
+    const Data = shippingsData.nodes.map((node: any) => ({
+      key: "body",
+      resource: "Label",
+      default_language: node.translatableContent[0].value,
+      translated: node.translations[0]?.value,
+    }));
+    setResourceData(Data);
     setConfirmData([
       {
-        resourceId: data.translations.id,
-        locale: data.locale,
+        resourceId: shippingsData.nodes[0].resourceId,
+        locale: shippingsData.nodes[0].translatableContent[0].locale,
         key: "body",
         value: "",
-        translatableContentDigest: data.digest,
+        translatableContentDigest: shippingsData.nodes[0].translatableContent[0].digest,
         target: searchTerm || "",
       },
     ]);
-    setPolicyData(data);
-  }, [selectPolicyKey]);
-
-  useEffect(() => {
-    setResourceData([
-      {
-        key: "body",
-        resource: "Content",
-        default_language: policyData?.body,
-        translated: policyData.translations?.body,
-      },
-    ]);
-  }, [policyData]);
-
-  const menuData: MenuProps["items"] = items;
+  }, []);
 
   const resourceColumns = [
     {
@@ -199,16 +145,12 @@ const Index = () => {
     );
   };
 
-  const onClick = (e: any) => {
-    setSelectPolicyKey(e.key);
-  };
-
   const handleConfirm = () => {
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: `/app/manage_translation/policy?language=${searchTerm}`,
+      action: `/app/manage_translation/shipping?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -235,17 +177,7 @@ const Index = () => {
         </div>,
       ]}
     >
-      <Layout
-        style={{
-          padding: "24px 0",
-          background: colorBgContainer,
-          borderRadius: borderRadiusLG,
-        }}
-      >
-        <ManageModalHeader
-          shopLanguagesLoad={shopLanguagesLoad}
-          locale={searchTerm}
-        />
+      {shippingsData.nodes.length ? (
         <Layout
           style={{
             padding: "24px 0",
@@ -253,27 +185,33 @@ const Index = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <Sider style={{ background: colorBgContainer }} width={200}>
-            <Menu
-              mode="inline"
-              defaultSelectedKeys={[policies[0].id]}
-              defaultOpenKeys={["sub1"]}
-              style={{ height: "100%" }}
-              items={menuData}
-              // onChange={onChange}
-              selectedKeys={[selectPolicyKey]}
-              onClick={onClick}
-            />
-          </Sider>
-          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-            <Table
-              columns={resourceColumns}
-              dataSource={resourceData}
-              pagination={false}
-            />
-          </Content>
+          <ManageModalHeader
+            shopLanguagesLoad={shopLanguagesLoad}
+            locale={searchTerm}
+          />
+          <Layout
+            style={{
+              padding: "24px 0",
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
+          >
+            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
+              />
+            </Content>
+          </Layout>
         </Layout>
-      </Layout>
+      ) : (
+        <Result
+          //   icon={<SmileOutlined />}
+          title="No items found here"
+          extra={<Button type="primary">back</Button>}
+        />
+      )}
     </Modal>
   );
 };

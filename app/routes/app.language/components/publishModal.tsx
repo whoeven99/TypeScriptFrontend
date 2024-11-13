@@ -40,7 +40,6 @@ const PublishModal: React.FC<PublishModalProps> = ({
     setPrimaryMarket(res);
     setPrimaryState(!!res); // 如果找到则设置为 true，否则为 false
   }, [allMarket]);
-  // console.log(allMarket);
 
   const onChange = (e: any) => {
     setIsChecked(e.target.checked); // 更新复选框状态

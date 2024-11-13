@@ -1,6 +1,168 @@
 import axios from "axios";
 import { authenticate } from "~/shopify.server";
 
+export interface ConfirmDataType {
+  resourceId: string;
+  locale: string;
+  key: string;
+  value: string | null;
+  translatableContentDigest: string;
+  target: string;
+}
+
+//获取用户的额度字符数 和 已使用的字符
+export const GetUserPlan = async ({ request }: { request: Request }) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getUserLimitChars`,
+      method: "Post",
+      data: {
+        shopName: shop,
+      },
+    });
+    const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the userplan:", error);
+    throw new Error("Error occurred in the userplan");
+  }
+};
+
+//获取国旗图片链接
+export const GetPicture = async (locale: string[]) => {
+  // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
+  const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
+  console.log(updatedLocales);
+
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getImageInfo`,
+      method: "Post",
+      data: updatedLocales,
+    });
+    const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the pictures:", error);
+    throw new Error("Error occurred in the pictures");
+  }
+};
+
+//用户已使用字符数
+export const GetConsumedWords = async ({ request }: { request: Request }) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getConsumedWords`,
+      method: "Post",
+      data: {
+        shopName: shop,
+      },
+    });
+    const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the consumedWords:", error);
+    throw new Error("Error occurred in the consumedWords");
+  }
+};
+
+//查询语言状态
+export const GetLanguageList = async ({ request }: { request: Request }) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readInfoByShopName`,
+      method: "Post",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+      },
+    });
+
+    const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the languageList:", error);
+    throw new Error("Error occurred in the languageList");
+  }
+};
+
+//一键全部翻译
+export const GetTranslate = async ({
+  request,
+  source,
+  target,
+}: {
+  request: Request;
+  source: string;
+  target: string;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/clickTranslation`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        source: source,
+        target: target,
+      },
+    });
+
+    const res = response.data;
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the translation:", error);
+    throw new Error("Error occurred in the translation");
+  }
+};
+
+//编辑翻译
+export const updateManageTranslation = async ({
+  request,
+  confirmData,
+}: {
+  request: Request;
+  confirmData: ConfirmDataType[];
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
+  try {
+    // 遍历 confirmData 数组
+    for (const item of confirmData) {
+      // 只在 value 存在时才调用接口
+      if (item.value !== "") {
+        const response = await axios({
+          url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/updateShopifyDataByTranslateTextRequest`,
+          method: "POST",
+          data: {
+            shopName: shop,
+            accessToken: accessToken,
+            locale: item.locale,
+            key: item.key,
+            value: item.value,
+            translatableContentDigest: item.translatableContentDigest,
+            resourceId: item.resourceId,
+            target: item.target,
+          },
+        });
+        const res = response.data;
+      }
+    }
+  } catch (error) {
+    console.error("Error occurred in the translation:", error);
+    throw new Error("Error occurred in the translation");
+  }
+};
+
 export const getRateValue = async () => {
   try {
     const response = await axios({
@@ -41,8 +203,6 @@ export const addCurrency = async ({
     });
 
     const res = response.data;
-    console.log(res);
-
     return res;
   } catch (error) {
     console.error("Error add currency:", error);
@@ -70,8 +230,6 @@ export const DeleteCurrency = async ({
     });
 
     const res = response.data;
-    console.log(res);
-
     return res;
   } catch (error) {
     console.error("Error delete currency:", error);
@@ -105,8 +263,6 @@ export const UpdateCurrency = async ({
     });
 
     const res = response.data;
-    console.log(res);
-
     return res;
   } catch (error) {
     console.error("Error delete currency:", error);

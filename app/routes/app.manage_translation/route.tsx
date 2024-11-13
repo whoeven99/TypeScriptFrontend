@@ -1,22 +1,25 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Button, Menu, Space, Typography } from "antd";
-import { useEffect, useState } from "react";
+import { Menu, Space } from "antd";
+import { Suspense, useEffect, useState } from "react";
 import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import {
-  Link,
   Outlet,
   useActionData,
   useLoaderData,
+  useLocation,
   useSubmit,
 } from "@remix-run/react";
 import AttentionCard from "~/components/attentionCard";
-import ManageTranslationsCard from "./components/manageTranslationsCard";
-
-const { Text } = Typography;
+import { useDispatch } from "react-redux";
+import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
+import React from "react";
+const ManageTranslationsCard = React.lazy(
+  () => import("./components/manageTranslationsCard"),
+);
 
 interface ManageMenuDataType {
   label: string;
@@ -34,8 +37,9 @@ interface TableDataType {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
-    const shopLanguagesLoad: ShopLocalesType[] =
-      await queryShopLanguages(request);
+    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+      request,
+    });
 
     return json({
       shopLanguagesLoad,
@@ -53,8 +57,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (actionType === "sync") {
       try {
-        const shopLanguagesAction: ShopLocalesType[] =
-          await queryShopLanguages(request);
+        const shopLanguagesAction: ShopLocalesType[] = await queryShopLanguages(
+          { request },
+        );
         return json({ shopLanguagesAction });
       } catch (error) {
         console.error("Error action shopLanguages:", error);
@@ -72,33 +77,30 @@ const Index = () => {
   const actionData = useActionData<typeof action>();
   const [shopLanguages, setShopLanguages] =
     useState<ShopLocalesType[]>(shopLanguagesLoad);
-  const [menuData, setmenuData] = useState<ManageMenuDataType[]>([]);
+  const [menuData, setMenuData] = useState<ManageMenuDataType[]>([]);
   const [current, setCurrent] = useState<string>("");
-  const [productsDataSource, setProductsDataSource] = useState<TableDataType[]>(
-    [
-      {
-        key: "products",
-        title: "Products",
-        allTranslatedItems: 1,
-        // allItems: products.nodes.length,
-        allItems: 30,
-        sync_status: true,
-        navigation: "product",
-      },
-      {
-        key: "collections",
-        title: "Collections",
-        allTranslatedItems: 1,
-        // allItems: collections.nodes.length,
-        allItems: 30,
-        sync_status: true,
-        navigation: "collection",
-      },
-    ],
-  );
-  const [onlineStoreDataSource, setOnlineStoreDataSource] = useState<
-    TableDataType[]
-  >([
+  const productsDataSource: TableDataType[] = [
+    {
+      key: "products",
+      title: "Products",
+      allTranslatedItems: 1,
+      // allItems: products.nodes.length,
+      allItems: 30,
+      sync_status: true,
+      navigation: "product",
+    },
+    {
+      key: "collections",
+      title: "Collections",
+      allTranslatedItems: 1,
+      // allItems: collections.nodes.length,
+      allItems: 30,
+      sync_status: true,
+      navigation: "collection",
+    },
+  ];
+
+  const onlineStoreDataSource: TableDataType[] = [
     {
       key: "articles",
       title: "Articles",
@@ -171,91 +173,82 @@ const Index = () => {
       sync_status: false,
       navigation: "metafield",
     },
-  ]);
-  // const [themeDataSource, setThemeDataSource] = useState<
-  //   TableDataType[]
-  // >([
-  //   {
-  //     title: "App embed",
-  //     allTranslatedItems: 1,
-  //     allItems: 30,
-  //     sync_status: false,
-  //   },
-  //   {
-  //     title: "Default theme content",
-  //     allTranslatedItems: 1,
-  //     allItems: 30,
-  //     sync_status: false,
-  //   },
-  //   {
-  //     title: "Section groups",
-  //     allTranslatedItems: 1,
-  //     allItems: 30,
-  //     sync_status: false,
-  //   },
-  //   {
-  //     title: "Static section",
-  //     allTranslatedItems: 1,
-  //     allItems: 30,
-  //     sync_status: false,
-  //   },
-  //   {
-  //     title: "Templates",
-  //     allTranslatedItems: 1,
-  //     allItems: 30,
-  //     sync_status: false,
-  //   },
-  //   {
-  //     title: "Theme settings",
-  //     allTranslatedItems: 1,
-  //     allItems: 30,
-  //     sync_status: false,
-  //   },
-  // ]);
-  const [settingsDataSource, setSettingsDataSource] = useState<TableDataType[]>(
-    [
-      {
-        key: "delivery",
-        title: "Delivery",
-        allTranslatedItems: 1,
-        // allItems: delivery.length,
-        allItems: 30,
-        sync_status: false,
-        navigation: "delivery",
-      },
-      {
-        key: "shipping",
-        title: "Shipping",
-        allTranslatedItems: 1,
-        // allItems: packingslip.nodes.length,
-        allItems: 30,
-        sync_status: false,
-        navigation: "shipping",
-      },
-    ],
-  );
+    {
+      key: "theme",
+      title: "Theme",
+      allTranslatedItems: 1,
+      // allItems: metafield.nodes.length,
+      allItems: 30,
+      sync_status: false,
+      navigation: "theme",
+    },
+  ];
+  const settingsDataSource: TableDataType[] = [
+    {
+      key: "delivery",
+      title: "Delivery",
+      allTranslatedItems: 1,
+      // allItems: delivery.length,
+      allItems: 30,
+      sync_status: false,
+      navigation: "delivery",
+    },
+    {
+      key: "shipping",
+      title: "Shipping",
+      allTranslatedItems: 1,
+      // allItems: packingslip.nodes.length,
+      allItems: 30,
+      sync_status: false,
+      navigation: "shipping",
+    },
+  ];
 
+  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const location = useLocation();
+  const { key } = location.state || {}; // 提取传递的状态
   const submit = useSubmit();
 
   useEffect(() => {
     const newArray = shopLanguages
-      .filter((language) => language.published)
       .filter((language) => !language.primary)
       .map((language) => ({
         label: language.name,
         key: language.locale,
       }));
-    setmenuData(newArray);
+    setMenuData(newArray);
     setCurrent(newArray[0].key);
+    if (shopLanguages) {
+      setLoading(false);
+    }
   }, [shopLanguages]);
 
   useEffect(() => {
     if (actionData) {
-      console.log(actionData.shopLanguagesAction); // 处理返回的数据
       // 例如更新状态
       setShopLanguages(actionData.shopLanguagesAction);
     }
   }, [actionData]);
+
+  useEffect(() => {
+    try {
+      const foundItem = menuData.find((item) => item.key === key);
+      if (foundItem) {
+        setCurrent(key);
+      } else {
+        // 找不到时的处理逻辑，例如重置当前状态或显示错误消息
+        console.warn(`No item found for key: ${key}`);
+      }
+    } catch (error) {
+      console.error("Error finding item:", error);
+      // 处理异常情况，比如显示错误消息
+    }
+  }, [key, menuData]);
+
+  useEffect(() => {
+    dispatch(setSelectLanguageData(current));
+  }, [current]);
 
   const onClick = (e: any) => {
     // 将 e.key 转换为字符串以确保 current 始终为 string
@@ -267,6 +260,10 @@ const Index = () => {
     formData.append("actionType", "sync");
     submit(formData, { method: "post", action: "/app/manage_translation" });
   };
+
+  if (loading) {
+    return <div>加载中...</div>; // 加载状态
+  }
 
   return (
     <Page>
@@ -290,36 +287,42 @@ const Index = () => {
               minWidth: "80%",
             }}
           ></Menu>
-          <div className="manage-action">
+          {/* <div className="manage-action">
             <Space>
               <Button type="default">Backup</Button>
               <Button type="primary" onClick={handleSyncAll}>
                 Sync all
               </Button>
             </Space>
-          </div>
+          </div> */}
         </div>
         <div className="manage-content-wrap">
           <div className="manage-content-left">
-            <Space
-              direction="vertical"
-              size="middle"
-              style={{ display: "flex" }}
-            >
-              <div className="search-input"></div>
-              <ManageTranslationsCard
-                cardTitle="Products"
-                dataSource={productsDataSource}
-              />
-              <ManageTranslationsCard
-                cardTitle="Online Store"
-                dataSource={onlineStoreDataSource}
-              />
-              <ManageTranslationsCard
-                cardTitle="Settings"
-                dataSource={settingsDataSource}
-              />
-            </Space>
+            <Suspense fallback={<div>加载翻译内容...</div>}>
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ display: "flex" }}
+              >
+                <div className="search-input"></div>
+                {/* 使用 Suspense 包裹懒加载组件 */}
+                <ManageTranslationsCard
+                  cardTitle="Products"
+                  dataSource={productsDataSource}
+                  current={current}
+                />
+                <ManageTranslationsCard
+                  cardTitle="Online Store"
+                  dataSource={onlineStoreDataSource}
+                  current={current}
+                />
+                <ManageTranslationsCard
+                  cardTitle="Settings"
+                  dataSource={settingsDataSource}
+                  current={current}
+                />
+              </Space>
+            </Suspense>
           </div>
           <div className="manage-content-right"></div>
         </div>

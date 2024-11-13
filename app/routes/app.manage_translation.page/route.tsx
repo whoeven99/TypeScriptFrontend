@@ -1,4 +1,13 @@
-import { Input, Layout, Menu, MenuProps, Modal, Table, theme } from "antd";
+import {
+  Button,
+  Input,
+  Layout,
+  Menu,
+  MenuProps,
+  Modal,
+  Table,
+  theme,
+} from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
@@ -8,15 +17,40 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { Pagination } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryNextPages, queryPreviousPages } from "~/api/admin";
+import {
+  queryNextTransType,
+  queryPreviousTransType,
+  queryShopLanguages,
+} from "~/api/admin";
 import { Editor } from "@tinymce/tinymce-react";
+import { ShopLocalesType } from "../app.language/route";
+import ManageModalHeader from "~/components/manageModalHeader";
+import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import dynamic from "next/dynamic";
+
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 const { Sider, Content } = Layout;
 
 interface PageType {
   id: string;
-  body: string;
-  title: string;
+  body: string | undefined;
+  title: string | undefined;
+  handle: string;
+  seo: {
+    description: string | undefined;
+    title: string | undefined;
+  };
+  translations: {
+    id: string;
+    body: string | undefined;
+    title: string | undefined;
+    handle: string | undefined;
+    seo: {
+      description: string | undefined;
+      title: string | undefined;
+    };
+  };
 }
 
 type TableDataType = {
@@ -27,10 +61,22 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
-    const pages = await queryNextPages({ request, endCursor: "" });
+    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+      request,
+    });
+    const pages = await queryNextTransType({
+      request,
+      resourceType: "PAGE",
+      endCursor: "",
+      locale: searchTerm || shopLanguagesLoad[0].locale,
+    });
 
     return json({
+      searchTerm,
+      shopLanguagesLoad,
       pages,
     });
   } catch (error) {
@@ -40,25 +86,43 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
       formData.get("startCursor") as string,
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
-    if (startCursor) {
-      const previousPages = await queryPreviousPages({
-        request,
-        startCursor,
-      }); // 处理逻辑
-      return json({ previousPages: previousPages });
-    }
-    if (endCursor) {
-      const nextPages = await queryNextPages({
-        request,
-        endCursor,
-      }); // 处理逻辑
-      return json({ nextPages: nextPages });
+    const confirmData: ConfirmDataType[] = JSON.parse(
+      formData.get("confirmData") as string,
+    );
+    switch (true) {
+      case !!startCursor:
+        const previousPages = await queryPreviousTransType({
+          request,
+          resourceType: "PAGE",
+          startCursor,
+          locale: searchTerm || "",
+        }); // 处理逻辑
+        return json({ previousPages: previousPages });
+      case !!endCursor:
+        const nextPages = await queryNextTransType({
+          request,
+          resourceType: "PAGE",
+          endCursor,
+          locale: searchTerm || "",
+        }); // 处理逻辑
+        return json({ nextPages: nextPages });
+      case !!confirmData:
+        await updateManageTranslation({
+          request,
+          confirmData,
+        });
+        return null;
+      default:
+        // 你可以在这里处理一个默认的情况，如果没有符合的条件
+        return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
     console.error("Error action page:", error);
@@ -67,13 +131,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { pages } = useLoaderData<typeof loader>();
+  const { searchTerm, shopLanguagesLoad, pages } =
+    useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const exMenuData = (pages: any) => {
     const data = pages.nodes.map((page: any) => ({
-      key: page.id,
-      label: page.title,
+      key: page.resourceId,
+      label: page.translatableContent.find((item: any) => item.key === "title")
+        .value,
     }));
     return data;
   };
@@ -82,22 +148,14 @@ const Index = () => {
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
   const [pagesData, setPagesData] = useState(pages);
-  const [pageData, setPageData] = useState<PageType>(pages.nodes[0]);
-  const [resourceData, setResourceData] = useState<TableDataType[]>([
-    {
-      key: "title",
-      resource: "Title",
-      default_language: "",
-      translated: "",
-    },
-    {
-      key: "body",
-      resource: "Content",
-      default_language: "",
-      translated: "",
-    },
-  ]);
-  const [selectPageKey, setSelectPageKey] = useState(pages.nodes[0].id);
+  const [pageData, setPageData] = useState<PageType>();
+  const [resourceData, setResourceData] = useState<TableDataType[]>([]);
+  const [SeoData, setSeoData] = useState<TableDataType[]>([]);
+  const [selectPageKey, setSelectPageKey] = useState(pages.nodes[0].resourceId);
+  const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [translatedValues, setTranslatedValues] = useState<{
+    [key: string]: string;
+  }>({});
   const [hasPrevious, setHasPrevious] = useState<boolean>(
     pagesData.pageInfo.hasPreviousPage,
   );
@@ -117,18 +175,45 @@ const Index = () => {
   }, [pagesData]);
 
   useEffect(() => {
+    const data = transBeforeData({
+      pages: pagesData,
+    });
+    setPageData(data);
+  }, [selectPageKey]);
+
+  useEffect(() => {
     setResourceData([
       {
         key: "title",
         resource: "Title",
-        default_language: pageData.title,
-        translated: "",
+        default_language: pageData?.title,
+        translated: pageData?.translations?.title,
       },
       {
         key: "body",
-        resource: "Content",
-        default_language: pageData.body,
-        translated: "",
+        resource: "Description",
+        default_language: pageData?.body,
+        translated: pageData?.translations?.body,
+      },
+    ]);
+    setSeoData([
+      {
+        key: "url_handle",
+        resource: "URL handle",
+        default_language: pageData?.handle,
+        translated: pageData?.translations?.handle,
+      },
+      {
+        key: "meta_title",
+        resource: "Meta title",
+        default_language: pageData?.seo.title,
+        translated: pageData?.translations?.seo.title,
+      },
+      {
+        key: "meta_description",
+        resource: "Meta description",
+        default_language: pageData?.seo.description,
+        translated: pageData?.translations?.seo.description,
       },
     ]);
   }, [pageData]);
@@ -137,95 +222,183 @@ const Index = () => {
     if (actionData && "nextPages" in actionData) {
       const nextPages = exMenuData(actionData.nextPages);
       // 在这里处理 nextPages
-      console.log(nextPages);
       setMenuData(nextPages);
       setPagesData(actionData.nextPages);
-    } else {
-      // 如果不存在 nextPages，可以执行其他逻辑
-      console.log("nextPages undefined");
-    }
-  }, [actionData && "nextPages" in actionData]);
-
-  useEffect(() => {
-    if (actionData && "previousPages" in actionData) {
+      setSelectPageKey(actionData.nextPages.nodes[0].resourceId);
+    } else if (actionData && "previousPages" in actionData) {
       const previousPages = exMenuData(actionData.previousPages);
-      console.log(previousPages);
       // 在这里处理 previousPages
       setMenuData(previousPages);
       setPagesData(actionData.previousPages);
+      setSelectPageKey(actionData.previousPages.nodes[0].resourceId);
     } else {
-      // 如果不存在 previousPages，可以执行其他逻辑
-      console.log("previousPages undefined");
+      // 如果不存在 nextPages，可以执行其他逻辑
+      console.log("nextPages end");
     }
-  }, [actionData && "previousPages" in actionData]);
+  }, [actionData]);
 
   const resourceColumns = [
     {
       title: "Resource",
       dataIndex: "resource",
       key: "resource",
-      width: 150,
+      width: "10%",
     },
     {
       title: "Default Language",
       dataIndex: "default_language",
       key: "default_language",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         if (record?.key === "body") {
-            return (
-              <Editor
-                apiKey="ogejypabqwbcwx7z197dy71mudw3l9bgif8x6ujlffhetcq8" // 如果使用云端版本，需要提供 API 密钥。否则可以省略。
-                value={record.default_language || ""}
-                disabled={true}
-                init={{
-                  height: 300,
-                  menubar: false,
-                  plugins:
-                    "print preview searchreplace autolink directionality visualblocks visualchars fullscreen image link media template code codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount imagetools textpattern help emoticons autosave bdmap indent2em autoresize formatpainter axupimgs",
-                  toolbar:
-                    "code undo redo restoredraft | cut copy paste pastetext | forecolor backcolor bold italic underline strikethrough link anchor | alignleft aligncenter alignright alignjustify outdent indent | \
-                  styleselect formatselect fontselect fontsizeselect | bullist numlist | blockquote subscript superscript removeformat | \
-                  table image media charmap emoticons hr pagebreak insertdatetime print preview | fullscreen | bdmap indent2em lineheight formatpainter axupimgs",
-                }}
-                // onEditorChange={handleEditorChange}
-              />
-            );
-          }
-          return <Input disabled value={record?.default_language} />;
+          return (
+            <ReactQuill theme="snow" defaultValue={record?.default_language} />
+          );
+        }
+        return <Input disabled value={record?.default_language} />;
       },
     },
     {
       title: "Translated",
       dataIndex: "translated",
       key: "translated",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         if (record?.key === "body") {
-            return (
-              <Editor
-                apiKey="ogejypabqwbcwx7z197dy71mudw3l9bgif8x6ujlffhetcq8" // 如果使用云端版本，需要提供 API 密钥。否则可以省略。
-                value={record.translated || ""}
-                init={{
-                  height: 300,
-                  menubar: false,
-                  plugins:
-                    "print preview searchreplace autolink directionality visualblocks visualchars fullscreen image link media template code codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount imagetools textpattern help emoticons autosave bdmap indent2em autoresize formatpainter axupimgs",
-                  toolbar:
-                    "code undo redo restoredraft | cut copy paste pastetext | forecolor backcolor bold italic underline strikethrough link anchor | alignleft aligncenter alignright alignjustify outdent indent | \
-                  styleselect formatselect fontselect fontsizeselect | bullist numlist | blockquote subscript superscript removeformat | \
-                  table image media charmap emoticons hr pagebreak insertdatetime print preview | fullscreen | bdmap indent2em lineheight formatpainter axupimgs",
-                }}
-                // onEditorChange={handleEditorChange}
-              />
-            );
-          }
-          return <Input disabled value={record?.translated} />;
+          return (
+            <ReactQuill
+              theme="snow"
+              defaultValue={record?.translated}
+              onChange={(content) => handleInputChange(record.key, content)}
+            />
+          );
+        }
+        return (
+          record && (
+            <Input
+              disabled
+              value={translatedValues[record?.key] || record?.translated}
+              onChange={(e) => handleInputChange(record.key, e.target.value)}
+            />
+          )
+        );
       },
     },
   ];
 
-  const onCancel = () => {
-    setIsVisible(false); // 关闭 Modal
-    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
+  const SEOColumns = [
+    {
+      title: "SEO",
+      dataIndex: "resource",
+      key: "resource",
+      width: "10%",
+    },
+    {
+      title: "Default Language",
+      dataIndex: "default_language",
+      key: "default_language",
+      width: "45%",
+      render: (_: any, record: TableDataType) => {
+        return <Input disabled value={record?.default_language} />;
+      },
+    },
+    {
+      title: "Translated",
+      dataIndex: "translated",
+      key: "translated",
+      width: "45%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          record && (
+            <Input
+              value={translatedValues[record?.key] || record?.translated}
+              onChange={(e) => handleInputChange(record.key, e.target.value)}
+            />
+          )
+        );
+      },
+    },
+  ];
+
+  const handleInputChange = (key: string | number, value: string) => {
+    setTranslatedValues((prev) => ({
+      ...prev,
+      [key]: value, // 更新对应的 key
+    }));
+    setConfirmData(
+      confirmData.map((item) =>
+        item.key === key ? { ...item, value: value } : item,
+      ),
+    );
+  };
+
+  const transBeforeData = ({ pages }: { pages: any }) => {
+    let data: PageType = {
+      id: "",
+      title: "",
+      body: "",
+      handle: "",
+      seo: {
+        description: "",
+        title: "",
+      },
+      translations: {
+        id: "",
+        title: "",
+        body: "",
+        handle: "",
+        seo: {
+          description: "",
+          title: "",
+        },
+      },
+    };
+    const page = pages.nodes.find(
+      (page: any) => page.resourceId === selectPageKey,
+    );
+    data.id = page.resourceId;
+    data.title = page.translatableContent.find(
+      (item: any) => item.key === "title",
+    )?.value;
+    data.body = page.translatableContent.find(
+      (item: any) => item.key === "body_html",
+    )?.value;
+    data.seo.title =
+      page.translatableContent.find((item: any) => item.key === "meta_title")
+        ?.value ||
+      page.translatableContent.find((item: any) => item.key === "title")?.value;
+    data.seo.description =
+      page.translatableContent.find(
+        (item: any) => item.key === "meta_description",
+      )?.value ||
+      page.translatableContent.find((item: any) => item.key === "body_html")
+        ?.value;
+    data.translations.id = page.resourceId;
+    data.translations.title = page.translations.find(
+      (item: any) => item.key === "title",
+    )?.value;
+    data.translations.title = page.translations.find(
+      (item: any) => item.key === "body_html",
+    )?.value;
+    data.translations.seo.title =
+      page.translations.find((item: any) => item.key === "meta_title")?.value ||
+      page.translations.find((item: any) => item.key === "title")?.value;
+    data.translations.seo.description =
+      page.translations.find((item: any) => item.key === "meta_description")
+        ?.value ||
+      page.translations.find((item: any) => item.key === "body_html")?.value;
+
+    setConfirmData(
+      page.translatableContent.map((item: any) => ({
+        resourceId: page.resourceId,
+        locale: item.locale,
+        key: item.key,
+        value: "",
+        translatableContentDigest: item.digest,
+        target: searchTerm,
+      })),
+    );
+    return data;
   };
 
   const onPrevious = () => {
@@ -234,7 +407,7 @@ const Index = () => {
     formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/page",
+      action: `/app/manage_translation/page?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -244,40 +417,45 @@ const Index = () => {
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: "/app/manage_translation/page",
+      action: `/app/manage_translation/page?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
-  // const onChange = () => {
-
-  // };
-
   const onClick = (e: any) => {
-    // 查找 pagesData 中对应的产品
-    const selectedPage = pagesData.nodes.find((page: any) => page.id === e.key);
-
-    // 如果找到了产品，就更新 pageData
-    if (selectedPage) {
-      setPageData(selectedPage);
-    } else {
-      console.log("Page not found");
-    }
-
-    // 更新选中的产品 key
     setSelectPageKey(e.key);
+  };
+
+  const handleConfirm = () => {
+    const formData = new FormData();
+    formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
+    submit(formData, {
+      method: "post",
+      action: `/app/manage_translation/article?language=${searchTerm}`,
+    }); // 提交表单请求
+  };
+
+  const onCancel = () => {
+    setIsVisible(false); // 关闭 Modal
+    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
   };
 
   return (
     <Modal
       open={isVisible}
       onCancel={onCancel}
-      //   onOk={() => handleConfirm()} // 确定按钮绑定确认逻辑
       width={"100%"}
-      // style={{
-      //   minHeight: "100%",
-      // }}
-      okText="Confirm"
-      cancelText="Cancel"
+      footer={[
+        <div
+          style={{ display: "flex", justifyContent: "center", width: "100%" }}
+        >
+          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} type="primary">
+            Confirm
+          </Button>
+        </div>,
+      ]}
     >
       <Layout
         style={{
@@ -286,33 +464,50 @@ const Index = () => {
           borderRadius: borderRadiusLG,
         }}
       >
-        <Sider style={{ background: colorBgContainer }} width={200}>
-          <Menu
-            mode="inline"
-            defaultSelectedKeys={[pagesData.nodes[0].id]}
-            defaultOpenKeys={["sub1"]}
-            style={{ height: "100%" }}
-            items={menuData}
-            // onChange={onChange}
-            selectedKeys={[selectPageKey]}
-            onClick={onClick}
-          />
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <Pagination
-              hasPrevious={hasPrevious}
-              onPrevious={onPrevious}
-              hasNext={hasNext}
-              onNext={onNext}
+        <ManageModalHeader
+          shopLanguagesLoad={shopLanguagesLoad}
+          locale={searchTerm}
+        />
+        <Layout
+          style={{
+            padding: "24px 0",
+            background: colorBgContainer,
+            borderRadius: borderRadiusLG,
+          }}
+        >
+          <Sider style={{ background: colorBgContainer }} width={200}>
+            <Menu
+              mode="inline"
+              defaultSelectedKeys={[pagesData.nodes[0].id]}
+              defaultOpenKeys={["sub1"]}
+              style={{ height: "100%" }}
+              items={menuData}
+              // onChange={onChange}
+              selectedKeys={[selectPageKey]}
+              onClick={onClick}
             />
-          </div>
-        </Sider>
-        <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-          <Table
-            columns={resourceColumns}
-            dataSource={resourceData}
-            pagination={false}
-          />
-        </Content>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <Pagination
+                hasPrevious={hasPrevious}
+                onPrevious={onPrevious}
+                hasNext={hasNext}
+                onNext={onNext}
+              />
+            </div>
+          </Sider>
+          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Table
+              columns={resourceColumns}
+              dataSource={resourceData}
+              pagination={false}
+            />
+            <Table
+              columns={SEOColumns}
+              dataSource={SeoData}
+              pagination={false}
+            />
+          </Content>
+        </Layout>
       </Layout>
     </Modal>
   );
