@@ -3,7 +3,7 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { Typography, Button, Space, Flex, Table, Switch } from "antd";
 import { useEffect, useState } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
 import "./styles.css";
 import { authenticate } from "~/shopify.server";
 import {
@@ -179,32 +179,41 @@ const Index = () => {
   const [publishMarket, setPublishMarket] = useState<string>();
   const [publishInfo, setPublishInfo] = useState<PublishInfoType>();
   const [unPublishInfo, setUnpublishInfo] = useState<UnpublishInfoType>();
-  const [primaryLanguage, setPrimaryLanguage] = useState<
-    ShopLocalesType | undefined
-  >(shopLanguages.find((lang) => lang.primary));
+  const [data, setData] = useState<LanguagesDataType[]>([]);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
-  const newdata = shopLanguages.filter((language) => !language.primary);
-  const data = newdata.map((lang, i) => ({
-    key: i,
-    language: lang.name,
-    locale: lang.locale,
-    primary: lang.primary,
-    status:
-      status.find((statu: any) => statu.target === lang.locale)?.status || 0,
-    auto_update_translation: false,
-    published: lang.published,
-    loading: false,
-  }));
-
-  dispatch(setTableData(data));
-
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
+
+  const primaryLanguage: ShopLocalesType | undefined = shopLanguages.find(
+    (lang) => lang.primary,
+  );
+  console.log(data);
+  useEffect(() => {
+    if (!shopLanguages || !status) return; // 确保数据加载完成后再执行
+    const newdata = shopLanguages.filter((language) => !language.primary);
+    const data = newdata.map((lang, i) => ({
+      key: i,
+      language: lang.name,
+      locale: lang.locale,
+      primary: lang.primary,
+      status:
+        status.find((statu: any) => statu.target === lang.locale)?.status || 0,
+      auto_update_translation: false,
+      published: lang.published,
+      loading: false,
+    }));
+
+    dispatch(setTableData(data));
+  }, [shopLanguages, status]); // 依赖 shopLanguages 和 status
+
+  useEffect(() => {
+    setData(dataSource);
+  }, [dataSource]);
 
   useEffect(() => {
     if (publishInfo) {
@@ -235,7 +244,7 @@ const Index = () => {
       key: "status",
       width: "20%",
       render: (_: any, record: any) => {
-        return <TranslatedIcon type="language" status={record.status} />;
+        return <TranslatedIcon status={record.status} />;
       },
     },
     {
@@ -260,11 +269,11 @@ const Index = () => {
         <Space>
           {record.status === 2 ? (
             <Button disabled style={{ width: "100px" }} loading>
-              translating
+              Translating
             </Button>
           ) : record.status ? (
             <Button disabled style={{ width: "100px" }}>
-              translated
+              Translated
             </Button>
           ) : (
             <Button
@@ -272,14 +281,13 @@ const Index = () => {
               style={{ width: "100px" }}
               type="primary"
             >
-              translate
+              Translate
             </Button>
           )}
-          <Button
-            onClick={() => handleSet(record.locale)}
-            style={{ width: "100px" }}
-          >
-            manage
+          <Button>
+            <Link to={`/app/manage_translation?language=${record.locale}`}>
+              Manage Translation
+            </Link>
           </Button>
         </Space>
       ),
@@ -291,7 +299,7 @@ const Index = () => {
   };
 
   const handlePublishChange = (key: number, checked: boolean) => {
-    const row = dataSource.find((item: any) => item.key === key);
+    const row = data.find((item: any) => item.key === key);
 
     if (checked) {
       dispatch(setPublishLoadingState({ key, loading: checked }));
@@ -308,7 +316,9 @@ const Index = () => {
   };
 
   const handleTranslate = async (key: number) => {
-    const selectedKey = dataSource.find(
+    console.log(key);
+
+    const selectedKey = data.find(
       (item: { key: number }) => item.key === key,
     );
     if (selectedKey) {
@@ -328,10 +338,6 @@ const Index = () => {
         dispatch(setStatuState({ key, status: 2 }));
       }
     }
-  };
-
-  const handleSet = (languageCode: string) => {
-    navigate("/app/manage_translation", { state: { key: languageCode } });
   };
 
   const handleConfirmPublishModal = () => {
@@ -365,10 +371,10 @@ const Index = () => {
 
   //表格编辑
   const handleDelete = () => {
-    const newData = dataSource.filter(
+    const newData = data.filter(
       (item: LanguagesDataType) => !selectedRowKeys.includes(item.key),
     );
-    const deleteData = dataSource.filter((item: LanguagesDataType) =>
+    const deleteData = data.filter((item: LanguagesDataType) =>
       selectedRowKeys.includes(item.key),
     );
 
@@ -436,7 +442,7 @@ const Index = () => {
           <Table
             rowSelection={rowSelection}
             columns={columns}
-            dataSource={dataSource}
+            dataSource={data}
           />
         </Flex>
       </Space>

@@ -52,7 +52,10 @@
 /* 状态为 "Translating" 时 */
 .translating {
   background-color: #e0f7ff; /* 浅蓝色背景 */
-  margin-right: 8px; /* 圆形和文字之间的间距 */
+}
+
+.translating .circle {
+  border-color: #2196f3; /* 蓝色圆圈 */
 }
 
 .translating .text {
