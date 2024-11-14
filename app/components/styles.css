@@ -1,1 +1,23 @@
-
+.icon-container {
+    display: flex;
+    align-items: center;  /* 垂直居中 */
+    background-color: #f0f0f0; /* 背景色，灰色背景 */
+    padding: 5px 15px;
+    border-radius: 25px; /* 椭圆形容器 */
+    width: fit-content; /* 根据内容宽度自动调整 */
+  }
+  
+  .circle {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #888; /* 灰色边框 */
+    border-radius: 50%; /* 圆形 */
+    margin-right: 10px; /* 圆形和文字之间的间距 */
+  }
+  
+  .text {
+    font-size: 14px;
+    color: #888; /* 灰色文字 */
+    font-family: Arial, sans-serif;
+  }
+  

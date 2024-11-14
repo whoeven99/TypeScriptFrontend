@@ -1,5 +1,4 @@
-// import { Link } from "@shopify/polaris";
-import { useNavigate } from "@remix-run/react";
+import { Link, useNavigate } from "@remix-run/react";
 import { Card, Space, Button, Typography, Table } from "antd";
 
 const { Title } = Typography;
@@ -47,55 +46,17 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
         );
       },
     },
-    // {
-    //   title: "Item Sync Status",
-    //   dataIndex: "sync_status",
-    //   key: "sync_status",
-    //   render: (_: any, record: any) => {
-    //     return record.sync_status ? (
-    //       <div>Real-time Sync</div>
-    //     ) : (
-    //       <div>Manual Sync</div>
-    //     );
-    //   },
-    // },
     {
       title: "Operation",
       dataIndex: "operation",
       key: "operation",
       width: "40%",
       render: (_: any, record: DataType) => {
-        // return record.sync_status ? (
-        //   <Space>
-        //     <Button
-        //       onClick={() =>
-        //         navigate(`/app/manage_translation/${record.navigation}?language=${current}`)
-        //       }
-        //     >
-        //       Edit
-        //     </Button>
-        //   </Space>
-        // ) : (
-        //   <Space>
-        //     <Button>Sync</Button>
-        //     <Button
-        //       onClick={() =>
-        //         navigate(`/app/manage_translation/${record.navigation}?language=${current}`)
-        //       }
-        //     >
-        //       Edit
-        //     </Button>
-        //   </Space>
-        // );
         return (
-          <Button
-            onClick={() =>
-              navigate(
-                `/app/manage_translation/${record.navigation}?language=${current}`,
-              )
-            }
-          >
-            Edit
+          <Button>
+            <Link to={`/app/manage_translation/${record.navigation}?language=${current}`}>
+              Edit
+            </Link>
           </Button>
         );
       },

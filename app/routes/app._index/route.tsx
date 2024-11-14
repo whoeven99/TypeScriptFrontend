@@ -87,7 +87,6 @@ const Index = () => {
             chars={user.chars}
             totalChars={user.totalChars}
           />
-          {/* <UserDataCard visitorData={user.visitorData} gmvData={user.gmvData} /> */}
           <div>
             <Title level={3}>
               {languageData.length} Languages in your shop
