@@ -55,15 +55,15 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         />
         <Title level={4}>{languageName}</Title>
 
-        {result[0].status === 2 ? (
+        {/* {result[0].status === 2 ? (
           <LoadingOutlined />
         ) : result[0].status ? (
           <CheckCircleTwoTone twoToneColor="rgb(0,255,0)" />
         ) : (
           <div>It takes about {wordsNeeded} characters</div>
-        )}
+        )} */}
         <Space direction="horizontal">
-          <Button onClick={() => handleTranslate(result.key)} type="primary">
+          <Button onClick={() => handleTranslate(result[0].key)} type="primary">
             translate
           </Button>
           <Button onClick={onClick}>manage</Button>

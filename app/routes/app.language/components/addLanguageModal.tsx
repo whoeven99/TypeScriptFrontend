@@ -32,38 +32,13 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   submit,
   allCountryImg,
 }) => {
-  const img: Record<string, string[]> = {
-    AR: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/SA.png",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/EG.png",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AE.png",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/JO.png",
-    ],
-    HY: ["https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AM.png"],
-    AS: ["https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/IN.png"],
-    AF: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/ZA.png",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/NA.png",
-    ],
-    AZ: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AZ.png",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/IR.png",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/RU.png",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/TR.png",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/GE.png",
-    ],
-    AK: ["https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/GH.png"],
-    AM: ["https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/ET.png"],
-    SQ: [
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AL.png",
-      "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/XK.png",
-    ],
-  };
-
+  const updatedLocales = allLanguages.map((item) =>
+    item.isoCode.replace(/-/g, "_"),
+  );
   const addLanguages: AddLanguageType[] = allLanguages.map((lang, i) => ({
     key: lang.key,
     isoCode: lang.isoCode,
-    src: img[lang.isoCode.toUpperCase()],
+    src: allCountryImg[updatedLocales[i].toUpperCase()],
     name: lang.name,
     state: "", // 默认值为 false
   }));
@@ -81,7 +56,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   const selectedLanguagesSet = new Set(
     selectedLanguage.map((lang) => lang.language),
   );
-  
+
   useEffect(() => {
     // 更新语言状态
     const updatedLanguages = addLanguages.map((lang) => {

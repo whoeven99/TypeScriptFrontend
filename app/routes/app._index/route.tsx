@@ -64,7 +64,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 const Index = () => {
   const { languageData, user } = useLoaderData<typeof loader>();
   const dispatch = useDispatch();
-
   const data = languageData.map((lang) => ({
     key: lang.key,
     language: lang.name,

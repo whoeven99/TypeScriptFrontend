@@ -1,23 +1,60 @@
 .icon-container {
-    display: flex;
-    align-items: center;  /* 垂直居中 */
-    background-color: #f0f0f0; /* 背景色，灰色背景 */
-    padding: 5px 15px;
-    border-radius: 25px; /* 椭圆形容器 */
-    width: fit-content; /* 根据内容宽度自动调整 */
-  }
-  
-  .circle {
-    width: 20px;
-    height: 20px;
-    border: 2px solid #888; /* 灰色边框 */
-    border-radius: 50%; /* 圆形 */
-    margin-right: 10px; /* 圆形和文字之间的间距 */
-  }
-  
-  .text {
-    font-size: 14px;
-    color: #888; /* 灰色文字 */
-    font-family: Arial, sans-serif;
-  }
-  
+  display: flex;
+  align-items: center; /* 垂直居中 */
+  background-color: #f0f0f0; /* 背景色，灰色背景 */
+  padding: 4px 12px;
+  border-radius: 25px; /* 椭圆形容器 */
+  width: fit-content; /* 根据内容宽度自动调整 */
+}
+
+.circle {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #888; /* 默认灰色边框 */
+  border-radius: 50%; /* 圆形 */
+  margin-right: 8px; /* 圆形和文字之间的间距 */
+  transition: all 0.2s ease; /* 圆形动画效果 */
+}
+
+/* 默认的文本样式 */
+.text {
+  font-size: 12px;
+  color: #888; /* 默认灰色文字 */
+  font-family: Arial, sans-serif;
+}
+
+/* 状态为 "Untranslated" 时 */
+.untranslated {
+  background-color: #f0f0f0; /* 灰色背景 */
+}
+
+.untranslated .circle {
+  border-color: #888; /* 灰色圆圈 */
+}
+
+.untranslated .text {
+  color: #888; /* 灰色文字 */
+}
+
+/* 状态为 "Translated" 时 */
+.translated {
+  background-color: #e0f7e0; /* 浅绿色背景 */
+}
+
+.translated .circle {
+  border-color: #4caf50; /* 绿色圆圈 */
+}
+
+.translated .text {
+  color: #4caf50; /* 绿色文字 */
+}
+
+/* 状态为 "Translating" 时 */
+.translating {
+  background-color: #e0f7ff; /* 浅蓝色背景 */
+  margin-right: 8px; /* 圆形和文字之间的间距 */
+}
+
+.translating .text {
+  color: #2196f3; /* 蓝色文字 */
+}

@@ -30,11 +30,7 @@ import PrimaryLanguage from "./components/primaryLanguage";
 import AddLanguageModal from "./components/addLanguageModal";
 import PublishModal from "./components/publishModal";
 import { GetLanguageList, GetPicture, GetTranslate } from "~/api/serve";
-import {
-  CheckCircleTwoTone,
-  CloseCircleTwoTone,
-  LoadingOutlined,
-} from "@ant-design/icons";
+import TranslatedIcon from "~/components/translateIcon";
 
 const { Title } = Typography;
 
@@ -89,7 +85,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }));
     const allCountryCode = allLanguages.map((item) =>
       item.isoCode.toUpperCase(),
-    );    
+    );
     const allCountryImg = await GetPicture(allCountryCode);
 
     const status = await GetLanguageList({ request });
@@ -183,20 +179,32 @@ const Index = () => {
   const [publishMarket, setPublishMarket] = useState<string>();
   const [publishInfo, setPublishInfo] = useState<PublishInfoType>();
   const [unPublishInfo, setUnpublishInfo] = useState<UnpublishInfoType>();
-  const dataSource: LanguagesDataType[] = useSelector(
-    (state: any) => state.languageTableData.rows,
-  );
-
-  const primaryLanguage = shopLanguages.find((lang) => lang.primary);
+  const [primaryLanguage, setPrimaryLanguage] = useState<
+    ShopLocalesType | undefined
+  >(shopLanguages.find((lang) => lang.primary));
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
-  useEffect(() => {
-    const data = typeTrans();
-    dispatch(setTableData(data));
-  }, [shopLanguages]);
+  const newdata = shopLanguages.filter((language) => !language.primary);
+  const data = newdata.map((lang, i) => ({
+    key: i,
+    language: lang.name,
+    locale: lang.locale,
+    primary: lang.primary,
+    status:
+      status.find((statu: any) => statu.target === lang.locale)?.status || 0,
+    auto_update_translation: false,
+    published: lang.published,
+    loading: false,
+  }));
+
+  dispatch(setTableData(data));
+
+  const dataSource: LanguagesDataType[] = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
 
   useEffect(() => {
     if (publishInfo) {
@@ -227,13 +235,7 @@ const Index = () => {
       key: "status",
       width: "20%",
       render: (_: any, record: any) => {
-        return record.status === 2 ? (
-          <LoadingOutlined />
-        ) : record.status ? (
-          <CheckCircleTwoTone twoToneColor="rgb(0,255,0)" />
-        ) : (
-          <CloseCircleTwoTone twoToneColor="rgb(255,0,0)" />
-        );
+        return <TranslatedIcon type="language" status={record.status} />;
       },
     },
     {
@@ -283,22 +285,6 @@ const Index = () => {
       ),
     },
   ];
-
-  const typeTrans = () => {
-    const newdata = shopLanguages.filter((language) => !language.primary);
-    const data = newdata.map((lang, i) => ({
-      key: i,
-      language: lang.name,
-      locale: lang.locale,
-      primary: lang.primary,
-      status:
-        status.find((statu: any) => statu.target === lang.locale)?.status || 0,
-      auto_update_translation: false,
-      published: lang.published,
-      loading: false,
-    }));
-    return data;
-  };
 
   const handleOpenModal = () => {
     setIsLanguageModalOpen(true); // 打开Modal
