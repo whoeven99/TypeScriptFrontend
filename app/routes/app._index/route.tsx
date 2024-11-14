@@ -88,7 +88,7 @@ const Index = () => {
           />
           <div>
             <Title level={3}>
-              {languageData.length} Languages in your shop
+              {languageData.length} alternative languages
             </Title>
             <Text>Your store’s default language: {user.primaryLanguage}</Text>
           </div>
