@@ -281,7 +281,8 @@ const Index = () => {
         if (record)
           return (
             <Input
-              value={translatedValues[record?.key] || record?.translated}
+              defaultValue={record?.translated}
+              value={translatedValues[record?.key]}
               onChange={(e) => handleInputChange(record.key, e.target.value)}
             />
           );

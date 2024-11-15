@@ -37,7 +37,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       key: "items",
       width: "30%",
       render: (_: any, record: any) => {
-        return record.allItems ? (
+        return record.allItems != null && record.allTranslatedItems != null ? (
           <div>
             {record.allTranslatedItems}/{record.allItems}
           </div>
@@ -54,7 +54,9 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       render: (_: any, record: DataType) => {
         return (
           <Button>
-            <Link to={`/app/manage_translation/${record.navigation}?language=${current}`}>
+            <Link
+              to={`/app/manage_translation/${record.navigation}?language=${current}`}
+            >
               Edit
             </Link>
           </Button>

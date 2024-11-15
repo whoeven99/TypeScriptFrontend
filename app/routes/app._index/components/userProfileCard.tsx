@@ -4,7 +4,7 @@ import { Typography } from "antd";
 const { Text } = Typography;
 
 interface UserProfileCardProps {
-  plan: number;
+  plan: string;
   chars: number;
   totalChars: number;
 }
@@ -14,7 +14,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
   chars,
   totalChars,
 }) => {
-  const planName = plan === 0 ? "Free" : "Premium";
+  const planName = plan === "Free" ? "Free" : "Premium";
 
   return (
     <Card style={{ height: "128px" }}>
