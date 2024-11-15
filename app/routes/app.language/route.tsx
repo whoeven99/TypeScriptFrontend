@@ -286,7 +286,7 @@ const Index = () => {
           <Button
           >
             <Link to={`/app/manage_translation?language=${record.locale}`}>
-              Manage Translation
+              Manage
             </Link>
           </Button>
         </Space>
