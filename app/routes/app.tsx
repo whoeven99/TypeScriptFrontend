@@ -4,7 +4,14 @@ import type {
   LoaderFunctionArgs,
 } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, Outlet, useLoaderData, useRouteError } from "@remix-run/react";
+import {
+  Link,
+  Outlet,
+  useActionData,
+  useLoaderData,
+  useRouteError,
+  useSubmit,
+} from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
 import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
@@ -12,39 +19,89 @@ import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 
 import { authenticate } from "../shopify.server";
 import { ConfigProvider } from "antd";
-import { GetTranslate } from "~/api/serve";
+import { GetTranslate, GetTranslationItemsInfo } from "~/api/serve";
+import { ShopLocalesType } from "./app.language/route";
+import { queryShopLanguages } from "~/api/admin";
+import { useEffect } from "react";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
-  return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
+  const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
+    request,
+  });
+  const shopLanguagesWithoutPrimary = shopLanguages.filter(
+    (language) => !language.primary,
+  );
+  const shopLocales = shopLanguagesWithoutPrimary.map((item) => item.locale);
+
+  return json({ apiKey: process.env.SHOPIFY_API_KEY || "", shopLocales });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const translation = JSON.parse(formData.get("translation") as string);
-
+    const itemsInfo = JSON.parse(formData.get("itemsInfo") as string);
     switch (true) {
       case !!translation:
         const source = translation.primaryLanguage.locale;
         const target = translation.selectedLanguage;
         const statu = await GetTranslate({ request, source, target });
-        return statu;
+        return json({ statu: statu });
 
+      case !!itemsInfo:
+        const data = await GetTranslationItemsInfo({ request, itemsInfo });
+        return json({ data: data });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
-    console.error("Error action language:", error);
-    return json({ error: "Error action language" }, { status: 500 });
+    console.error("Error action app:", error);
+    return json({ error: "Error action app" }, { status: 500 });
   }
 };
 
 export default function App() {
-  const { apiKey } = useLoaderData<typeof loader>();
+  const { apiKey, shopLocales } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
+  const resourceTypes = [
+    "Article",
+    "Blog titles",
+    "Collection",
+    "delivery",
+    "Filters",
+    "Navigation",
+    "Store metadata",
+    "Metaobjects",
+    "Theme",
+    "Shipping",
+    "Pages",
+    "Products",
+    "Policies",
+  ];
+  const submit = useSubmit();
+
+  useEffect(() => {
+    if (shopLocales) {
+      const formData = new FormData();
+      formData.append(
+        "itemsInfo",
+        JSON.stringify({
+          targets: shopLocales,
+          resourceTypes: resourceTypes,
+        }),
+      );
+      submit(formData, { method: "post", action: "/app", navigate: false }); // 提交表单请求
+    }
+    // 将选中的语言作为字符串发送
+  }, []);
+
+  useEffect(() => {
+    if (actionData && "data" in actionData) console.log(actionData);
+  }, [actionData]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

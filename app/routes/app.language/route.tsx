@@ -192,7 +192,6 @@ const Index = () => {
   const primaryLanguage: ShopLocalesType | undefined = shopLanguages.find(
     (lang) => lang.primary,
   );
-  console.log(data);
   useEffect(() => {
     if (!shopLanguages || !status) return; // 确保数据加载完成后再执行
     const newdata = shopLanguages.filter((language) => !language.primary);
@@ -284,7 +283,8 @@ const Index = () => {
               Translate
             </Button>
           )}
-          <Button>
+          <Button
+          >
             <Link to={`/app/manage_translation?language=${record.locale}`}>
               Manage Translation
             </Link>
@@ -316,8 +316,6 @@ const Index = () => {
   };
 
   const handleTranslate = async (key: number) => {
-    console.log(key);
-
     const selectedKey = data.find(
       (item: { key: number }) => item.key === key,
     );
