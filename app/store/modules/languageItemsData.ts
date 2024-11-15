@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface LanguageItemsDataState {
   language: string;
+  type: string;
   translatedNumber: number;
   totalNumber: number;
 }
@@ -12,60 +13,23 @@ const languageItemsDataSlice = createSlice({
   name: "LanguageItemsData",
   initialState,
   reducers: {
-    updateData: (state, action: PayloadAction<LanguageItemsDataState>) => {
-      const index = state.findIndex(
-        (item) => item.language === action.payload.language,
-      );
+    updateData: (state, action: PayloadAction<LanguageItemsDataState[]>) => {
+      action.payload.forEach((item) => {
+        console.log("Checking item language:", item.language); // 打印每个item的language
+        const index = state.findIndex(
+          (existingItem) =>
+            existingItem.language === item.language &&
+            existingItem.type === item.type,
+        );
+        console.log("Found index:", index);
 
-      if (index !== -1) {
-        // 如果找到了该对象，更新它
-        state[index] = action.payload;
-      } else {
-        // 如果没有找到该对象，添加新的对象
-        state.push(action.payload);
-      }
+        if (index !== -1) {
+          state[index] = item;
+        } else {
+          state.push(item);
+        }
+      });
     },
-    // setPublishConfirmState: (
-    //   state,
-    //   action: PayloadAction<{
-    //     key: number;
-    //     published: boolean;
-    //     loading: boolean;
-    //   }>,
-    // ) => {
-    //   const row = state.rows.find((item) => item.key === action.payload.key);
-    //   if (row) {
-    //     row.loading = action.payload.loading;
-    //     row.published = action.payload.published;
-    //   }
-    // },
-    // setPublishState: (
-    //   state,
-    //   action: PayloadAction<{ key: number; published: boolean }>,
-    // ) => {
-    //   const row = state.rows.find((item) => item.key === action.payload.key);
-    //   if (row) {
-    //     row.published = action.payload.published;
-    //   }
-    // },
-    // setPublishLoadingState: (
-    //   state,
-    //   action: PayloadAction<{ key: number; loading: boolean }>,
-    // ) => {
-    //   const row = state.rows.find((item) => item.key === action.payload.key);
-    //   if (row) {
-    //     row.loading = action.payload.loading;
-    //   }
-    // },
-    // setStatuState: (
-    //   state,
-    //   action: PayloadAction<{ key: number; status: number }>,
-    // ) => {
-    //   const row = state.rows.find((item) => item.key === action.payload.key);
-    //   if (row) {
-    //     row.status = action.payload.status;
-    //   }
-    // },
   },
 });
 

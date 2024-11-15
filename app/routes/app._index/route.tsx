@@ -7,7 +7,12 @@ import { Col, Space, Typography } from "antd";
 import { useLoaderData } from "@remix-run/react";
 import "./styles.css";
 import UserLanguageCard from "./components/userLanguageCard";
-import { GetLanguageList, GetPicture, GetUserPlan } from "~/api/serve";
+import {
+  GetLanguageList,
+  GetPicture,
+  GetUserSubscriptionPlan,
+  GetUserWords,
+} from "~/api/serve";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
@@ -20,7 +25,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     request,
   });
 
-  const plan = await GetUserPlan({ request });
+  const words = await GetUserWords({ request });
+  const plan = await GetUserSubscriptionPlan({ request });
   const status = await GetLanguageList({ request });
   const shopPrimaryLanguage = shopLanguages.filter(
     (language) => language.primary,
@@ -47,9 +53,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }));
 
   const user = {
-    plan: 0,
-    chars: plan.chars,
-    totalChars: plan.totalChars,
+    plan: plan,
+    chars: words.chars,
+    totalChars: words.totalChars,
     primaryLanguage: shopPrimaryLanguage[0].name,
     shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimary,
     shopLanguageCodesWithoutPrimary: shopLocales,

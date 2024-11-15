@@ -20,55 +20,67 @@ export const GetTranslationItemsInfo = async ({
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  console.log(itemsInfo);
-  let res: any = [];
+  let res = [];
+  // 这里用 Promise 包装来确保流处理完成后返回数据
   try {
-    const stream = new ReadableStream({
-      async start(controller) {
-        const encoder = new TextEncoder();
+    // 设置流的头信息
+    for (let target of itemsInfo.targets) {
+      for (let resourceType of itemsInfo.resourceTypes) {
+        const response = await axios({
+          url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
+          method: "POST",
+          data: {
+            shopName: shop,
+            accessToken: accessToken,
+            target: target,
+            resourceType: resourceType,
+          },
+        });
 
-        // 设置流的头信息
-
-        for (let target of itemsInfo.targets) {
-          for (let resourceType of itemsInfo.resourceTypes) {
-            const response = await axios({
-              url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
-              method: "Post",
-              data: {
-                shopName: shop,
-                accessToken: accessToken,
-                target: target,
-                resourceType: resourceType,
-              },
-            });
-
-            const data = response.data.response;
-            // res.push(data);
-            // console.log(res);
-
-            // 将数据编码并写入流
-            controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({ target, resourceType, res })}\n\n`,
-              ),
-            );
-          }
-        }
-
-        // 结束流
-        controller.close();
-      },
-    });
-
+        const data = response.data.response;
+        res.push({
+          language: target,
+          type: Object.keys(data.translated)[0].split("_")[0],
+          translatedNumber: data.translated[Object.keys(data.translated)[0]],
+          totalNumber: data.all[Object.keys(data.all)[0]],
+        });
+        // 将数据编码并写入流
+      }
+    }
     return res;
   } catch (error) {
-    console.error("Error occurred in the itemsInfo:", error);
-    throw new Error("Error occurred in the itemsInfo");
+    console.error("Error fetching translation items:", error);
+    throw new Error("Error fetching translation items");
   }
 };
 
 //获取用户的额度字符数 和 已使用的字符
-export const GetUserPlan = async ({ request }: { request: Request }) => {
+export const GetUserSubscriptionPlan = async ({
+  request,
+}: {
+  request: Request;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getUserSubscriptionPlan`,
+      method: "Post",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+      },
+    });
+    const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the userplan:", error);
+    throw new Error("Error occurred in the userplan");
+  }
+};
+
+//获取用户的额度字符数 和 已使用的字符
+export const GetUserWords = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   try {

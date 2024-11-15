@@ -8,6 +8,7 @@ import {
   Link,
   Outlet,
   useActionData,
+  useFetcher,
   useLoaderData,
   useRouteError,
   useSubmit,
@@ -23,6 +24,8 @@ import { GetTranslate, GetTranslationItemsInfo } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import { queryShopLanguages } from "~/api/admin";
 import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { updateData } from "~/store/modules/languageItemsData";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -82,7 +85,8 @@ export default function App() {
     "Products",
     "Policies",
   ];
-  const submit = useSubmit();
+  const fetcher = useFetcher();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (shopLocales) {
@@ -94,14 +98,19 @@ export default function App() {
           resourceTypes: resourceTypes,
         }),
       );
-      submit(formData, { method: "post", action: "/app", navigate: false }); // 提交表单请求
+      fetcher.submit(formData, {
+        method: "post",
+        action: "/app",
+      }); // 提交表单请求
     }
     // 将选中的语言作为字符串发送
   }, []);
 
   useEffect(() => {
-    if (actionData && "data" in actionData) console.log(actionData);
-  }, [actionData]);
+    if (fetcher.data && Array.isArray((fetcher.data as { data: any[] }).data)) {
+      dispatch(updateData((fetcher.data as { data: any[] }).data));
+    }
+  }, [fetcher.data]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

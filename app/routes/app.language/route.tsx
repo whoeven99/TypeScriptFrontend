@@ -29,7 +29,12 @@ import AttentionCard from "~/components/attentionCard";
 import PrimaryLanguage from "./components/primaryLanguage";
 import AddLanguageModal from "./components/addLanguageModal";
 import PublishModal from "./components/publishModal";
-import { GetLanguageList, GetPicture, GetTranslate } from "~/api/serve";
+import {
+  GetLanguageList,
+  GetPicture,
+  GetTranslate,
+  GetUserWords,
+} from "~/api/serve";
 import TranslatedIcon from "~/components/translateIcon";
 
 const { Title } = Typography;
@@ -87,6 +92,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       item.isoCode.toUpperCase(),
     );
     const allCountryImg = await GetPicture(allCountryCode);
+    const words = await GetUserWords({ request });
 
     const status = await GetLanguageList({ request });
     return json({
@@ -96,6 +102,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       allMarket,
       status,
       allCountryImg,
+      words,
     });
   } catch (error) {
     console.error("Error load languages:", error);
@@ -168,6 +175,7 @@ const Index = () => {
     allMarket,
     status,
     allCountryImg,
+    words,
   } = useLoaderData<typeof loader>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
@@ -179,6 +187,7 @@ const Index = () => {
   const [publishMarket, setPublishMarket] = useState<string>();
   const [publishInfo, setPublishInfo] = useState<PublishInfoType>();
   const [unPublishInfo, setUnpublishInfo] = useState<UnpublishInfoType>();
+  const [disable, setDisable] = useState<boolean>(false);
   const [data, setData] = useState<LanguagesDataType[]>([]);
 
   const dispatch = useDispatch();
@@ -192,6 +201,11 @@ const Index = () => {
   const primaryLanguage: ShopLocalesType | undefined = shopLanguages.find(
     (lang) => lang.primary,
   );
+
+  useEffect(() => {
+    if (words.chars > words.totalChars) setDisable(true);
+  }, [words]);
+
   useEffect(() => {
     if (!shopLanguages || !status) return; // 确保数据加载完成后再执行
     const newdata = shopLanguages.filter((language) => !language.primary);
@@ -283,8 +297,7 @@ const Index = () => {
               Translate
             </Button>
           )}
-          <Button
-          >
+          <Button>
             <Link to={`/app/manage_translation?language=${record.locale}`}>
               Manage
             </Link>
@@ -316,9 +329,7 @@ const Index = () => {
   };
 
   const handleTranslate = async (key: number) => {
-    const selectedKey = data.find(
-      (item: { key: number }) => item.key === key,
-    );
+    const selectedKey = data.find((item: { key: number }) => item.key === key);
     if (selectedKey) {
       const selectedLanguage = shopLanguages.find(
         (item) => item.name === selectedKey.language,
@@ -408,6 +419,7 @@ const Index = () => {
           title="Translation word credits have been exhausted."
           content="The translation cannot be completed due to exhausted credits."
           buttonContent="Get more word credits"
+          show={disable}
         />
         <div className="language-header">
           <Title style={{ fontSize: "1.25rem", display: "inline" }}>

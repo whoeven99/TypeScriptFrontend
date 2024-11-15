@@ -153,7 +153,6 @@ const Index = () => {
   useEffect(() => {
     if (actionData && "nextFilters" in actionData) {
       // 在这里处理 nexts
-      console.log(1);
       console.log(actionData.nextFilters);
       setFiltersData(actionData.nextFilters);
     } else if (actionData && "previousFilters" in actionData) {
