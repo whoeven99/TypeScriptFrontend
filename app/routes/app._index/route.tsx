@@ -31,13 +31,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   );
 
   const shopLocales = shopLanguagesWithoutPrimary.map((item) =>
-    item.locale.toUpperCase(),
+    item.locale.replace(/-/g, "_"),
   );
   const pictures = await GetPicture(shopLocales);
 
   const languageData = shopLanguagesWithoutPrimary.map((lang, i) => ({
     key: i,
-    src: pictures[Object.keys(pictures)[i]],
+    src: pictures[shopLocales[i]],
     name: lang.name,
     locale: lang.locale,
     status:
@@ -87,9 +87,7 @@ const Index = () => {
             totalChars={user.totalChars}
           />
           <div>
-            <Title level={3}>
-              {languageData.length} alternative languages
-            </Title>
+            <Title level={3}>{languageData.length} alternative languages</Title>
             <Text>Your store’s default language: {user.primaryLanguage}</Text>
           </div>
 

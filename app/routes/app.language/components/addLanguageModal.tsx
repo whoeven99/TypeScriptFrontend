@@ -31,7 +31,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   allLanguages,
   submit,
   allCountryImg,
-}) => {
+}) => {  
   const updatedLocales = allLanguages.map((item) =>
     item.isoCode.replace(/-/g, "_"),
   );

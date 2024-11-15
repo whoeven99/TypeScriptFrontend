@@ -10,6 +10,63 @@ export interface ConfirmDataType {
   target: string;
 }
 
+//获取各项翻译状态
+export const GetTranslationItemsInfo = async ({
+  request,
+  itemsInfo,
+}: {
+  request: Request;
+  itemsInfo: any;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  console.log(itemsInfo);
+  let res: any = [];
+  try {
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+
+        // 设置流的头信息
+
+        for (let target of itemsInfo.targets) {
+          for (let resourceType of itemsInfo.resourceTypes) {
+            const response = await axios({
+              url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
+              method: "Post",
+              data: {
+                shopName: shop,
+                accessToken: accessToken,
+                target: target,
+                resourceType: resourceType,
+              },
+            });
+
+            const data = response.data.response;
+            // res.push(data);
+            // console.log(res);
+
+            // 将数据编码并写入流
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({ target, resourceType, res })}\n\n`,
+              ),
+            );
+          }
+        }
+
+        // 结束流
+        controller.close();
+      },
+    });
+
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the itemsInfo:", error);
+    throw new Error("Error occurred in the itemsInfo");
+  }
+};
+
 //获取用户的额度字符数 和 已使用的字符
 export const GetUserPlan = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
