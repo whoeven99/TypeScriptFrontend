@@ -28,7 +28,13 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
           </div>
         </div>
         <div className="user_profilecard_right">
-          <span className="character_usage_label">One-time word credits: </span>
+          {plan ? (
+            <span className="character_usage_label">
+              One-time word credits:
+            </span>
+          ) : (
+            <span className="character_usage_label">Word credits/month:</span>
+          )}
           <div className="characters_statistical">
             <Text strong style={{ fontSize: "28px", lineHeight: "28px" }}>
               {chars}
