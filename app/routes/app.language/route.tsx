@@ -88,19 +88,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       ...language,
       key: index,
     }));
-    const allCountryCode = allLanguages.map((item) =>
-      item.isoCode.toUpperCase(),
-    );
+    const allCountryCode = allLanguages.map((item) => item.isoCode);
+
     const allCountryImg = await GetPicture(allCountryCode);
     const words = await GetUserWords({ request });
 
-    const status = await GetLanguageList({ request });
+    const languages = await GetLanguageList({ request });
     return json({
       shop,
       shopLanguages,
       allLanguages,
       allMarket,
-      status,
+      languages,
       allCountryImg,
       words,
     });
@@ -173,7 +172,7 @@ const Index = () => {
     shopLanguages,
     allLanguages,
     allMarket,
-    status,
+    languages,
     allCountryImg,
     words,
   } = useLoaderData<typeof loader>();
@@ -207,7 +206,7 @@ const Index = () => {
   }, [words]);
 
   useEffect(() => {
-    if (!shopLanguages || !status) return; // 确保数据加载完成后再执行
+    if (!shopLanguages || !languages) return; // 确保数据加载完成后再执行
     const newdata = shopLanguages.filter((language) => !language.primary);
     const data = newdata.map((lang, i) => ({
       key: i,
@@ -215,14 +214,14 @@ const Index = () => {
       locale: lang.locale,
       primary: lang.primary,
       status:
-        status.find((statu: any) => statu.target === lang.locale)?.status || 0,
+        languages.find((statu: any) => statu.target === lang.locale)?.status || 0,
       auto_update_translation: false,
       published: lang.published,
       loading: false,
     }));
 
     dispatch(setTableData(data));
-  }, [shopLanguages, status]); // 依赖 shopLanguages 和 status
+  }, [shopLanguages, languages]); // 依赖 shopLanguages 和 status
 
   useEffect(() => {
     setData(dataSource);
@@ -281,7 +280,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           {record.status === 2 ? (
-            <Button disabled style={{ width: "100px" }} loading>
+            <Button disabled style={{ width: "100px" }}>
               Translating
             </Button>
           ) : record.status ? (
@@ -335,15 +334,15 @@ const Index = () => {
         (item) => item.name === selectedKey.language,
       );
       if (selectedLanguage) {
-        const formData = new FormData();
-        formData.append(
-          "translation",
-          JSON.stringify({
-            primaryLanguage: primaryLanguage,
-            selectedLanguage: selectedLanguage,
-          }),
-        ); // 将选中的语言作为字符串发送
-        submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
+        // const formData = new FormData();
+        // formData.append(
+        //   "translation",
+        //   JSON.stringify({
+        //     primaryLanguage: primaryLanguage,
+        //     selectedLanguage: selectedLanguage,
+        //   }),
+        // ); // 将选中的语言作为字符串发送
+        // submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
         dispatch(setStatuState({ key, status: 2 }));
       }
     }

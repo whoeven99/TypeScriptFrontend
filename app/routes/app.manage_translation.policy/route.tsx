@@ -226,7 +226,7 @@ const Index = () => {
         </div>,
       ]}
     >
-      {policies.nodes.length ? (
+      {policies.length ? (
         <Layout
           style={{
             padding: "24px 0",

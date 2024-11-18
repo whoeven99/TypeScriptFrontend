@@ -76,15 +76,11 @@ export const queryShop = async (request: Request) => {
     const query = `{
       shop {
         myshopifyDomain
+        email
         currencyFormats {
           moneyFormat
           moneyWithCurrencyFormat
-        }
-        shopPolicies {
-          body
-          id
-          title
-        }       
+        }     
       }
     }`;
 

@@ -10,6 +10,7 @@ import UserLanguageCard from "./components/userLanguageCard";
 import {
   GetLanguageList,
   GetPicture,
+  GetTotalWords,
   GetUserSubscriptionPlan,
   GetUserWords,
 } from "~/api/serve";
@@ -27,7 +28,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const words = await GetUserWords({ request });
   const plan = await GetUserSubscriptionPlan({ request });
-  const status = await GetLanguageList({ request });
+  const languages = await GetLanguageList({ request });
   const shopPrimaryLanguage = shopLanguages.filter(
     (language) => language.primary,
   );
@@ -36,10 +37,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     (language) => !language.primary,
   );
 
-  const shopLocales = shopLanguagesWithoutPrimary.map((item) =>
-    item.locale.replace(/-/g, "_"),
-  );
+  const shopLocales = shopLanguagesWithoutPrimary.map((item) => item.locale);
+
   const pictures = await GetPicture(shopLocales);
+  const totalWords = await GetTotalWords({ request, targets: shopLocales });
 
   const languageData = shopLanguagesWithoutPrimary.map((lang, i) => ({
     key: i,
@@ -47,15 +48,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     name: lang.name,
     locale: lang.locale,
     status:
-      status.find((statu: any) => statu.target === lang.locale)?.status || 0,
+      languages.find((language: any) => language.target === lang.locale)
+        ?.status || 0,
     published: lang.published,
-    words: Math.floor(Math.random() * (50000 - 10000 + 1)) + 10000,
+    totalWords: totalWords[i],
   }));
 
   const user = {
     plan: plan,
-    chars: words.chars,
-    totalChars: words.totalChars,
+    chars: words?.chars,
+    totalChars: words?.totalChars,
     primaryLanguage: shopPrimaryLanguage[0].name,
     shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimary,
     shopLanguageCodesWithoutPrimary: shopLocales,
@@ -94,7 +96,14 @@ const Index = () => {
           />
           <div>
             <Title level={3}>{languageData.length} alternative languages</Title>
-            <Text>Your store’s default language: {user.primaryLanguage}</Text>
+            <div>
+              <Text type="secondary">Your store’s default language: </Text>
+              <Text>
+                {user.primaryLanguage
+                  ? user.primaryLanguage
+                  : "No primary language set"}
+              </Text>
+            </div>
           </div>
 
           <div className="language_cards">
@@ -104,7 +113,7 @@ const Index = () => {
                   flagUrl={language.src[0]}
                   primaryLanguage={user.primaryLanguage}
                   languageName={language.name}
-                  wordsNeeded={language.words}
+                  wordsNeeded={language.totalWords}
                   languageCode={language.locale}
                 />
               </Col>

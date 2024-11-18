@@ -88,8 +88,7 @@ const Index = () => {
   const location = useLocation();
   const { key } = location.state || {}; // 提取传递的状态
   const submit = useSubmit();
-  const items = useSelector((state: any) => state.languageItemsData);
-  console.log(current);
+  const items = useSelector((state: any) => state.languageItemsData);  
 
   const productsDataSource: TableDataType[] = [
     {
@@ -98,11 +97,11 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) => item.language === current && item.type === "Products",
-        )?.translatedNumber || undefined,
+        )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) => item.language === current && item.type === "Products",
-        )?.totalNumber || undefined,
+        )?.totalNumber ?? undefined,
       sync_status: true,
       navigation: "product",
     },
@@ -113,12 +112,12 @@ const Index = () => {
         items.find(
           (item: any) =>
             item.language === current && item.type === "Collection",
-        )?.translatedNumber || undefined,
+        )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) =>
             item.language === current && item.type === "Collection",
-        )?.translatedNumber || undefined,
+        )?.totalNumber ?? undefined,
       sync_status: true,
       navigation: "collection",
     },
@@ -131,11 +130,11 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) => item.language === current && item.type === "Article",
-        )?.translatedNumber || undefined,
+        )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) => item.language === current && item.type === "Article",
-        )?.translatedNumber || undefined,
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "article",
     },
@@ -146,12 +145,12 @@ const Index = () => {
         items.find(
           (item: any) =>
             item.language === current && item.type === "Blog titles",
-        )?.translatedNumber || undefined,
+        )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) =>
             item.language === current && item.type === "Blog titles",
-        )?.translatedNumber || undefined,
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "blog",
     },
@@ -161,11 +160,11 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) => item.language === current && item.type === "Pages",
-        )?.translatedNumber || undefined,
+        )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) => item.language === current && item.type === "Pages",
-        )?.translatedNumber || undefined,
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "page",
     },
@@ -175,11 +174,11 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) => item.language === current && item.type === "Filters",
-        )?.translatedNumber || undefined,
+        )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) => item.language === current && item.type === "Filters",
-        )?.translatedNumber || undefined,
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "filter",
     },
@@ -190,12 +189,12 @@ const Index = () => {
         items.find(
           (item: any) =>
             item.language === current && item.type === "Metaobjects",
-        )?.translatedNumber || undefined,
+        )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) =>
             item.language === current && item.type === "Metaobjects",
-        )?.translatedNumber || undefined,
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "metaobject",
     },
@@ -206,12 +205,12 @@ const Index = () => {
         items.find(
           (item: any) =>
             item.language === current && item.type === "Navigation",
-        )?.translatedNumber || undefined,
+        )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) =>
             item.language === current && item.type === "Navigation",
-        )?.translatedNumber || undefined,
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "navigation",
     },
@@ -221,11 +220,11 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) => item.language === current && item.type === "Policies",
-        )?.translatedNumber || undefined,
+        )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) => item.language === current && item.type === "Policies",
-        )?.translatedNumber || undefined,
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "policy",
     },
@@ -236,12 +235,12 @@ const Index = () => {
         items.find(
           (item: any) =>
             item.language === current && item.type === "Store metadata",
-        )?.translatedNumber || undefined,
+        )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) =>
             item.language === current && item.type === "Store metadata",
-        )?.translatedNumber || undefined,
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "metafield",
     },
@@ -251,11 +250,11 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) => item.language === current && item.type === "Theme",
-        )?.translatedNumber || undefined,
+        )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) => item.language === current && item.type === "Theme",
-        )?.translatedNumber || undefined,
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "theme",
     },
@@ -267,11 +266,11 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) => item.language === current && item.type === "delivery",
-        )?.translatedNumber || undefined,
+        )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) => item.language === current && item.type === "delivery",
-        )?.translatedNumber || undefined,
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "delivery",
     },
@@ -281,11 +280,11 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) => item.language === current && item.type === "Shipping",
-        )?.translatedNumber || undefined,
+        )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) => item.language === current && item.type === "Shipping",
-        )?.translatedNumber || undefined,
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "shipping",
     },

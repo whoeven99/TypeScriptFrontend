@@ -153,7 +153,6 @@ const Index = () => {
   useEffect(() => {
     if (actionData && "nextMetafields" in actionData) {
       // 在这里处理 nexts
-      console.log(1);
       console.log(actionData.nextMetafields);
       setMetafieldsData(actionData.nextMetafields);
     } else if (actionData && "previousMetafields" in actionData) {
