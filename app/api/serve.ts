@@ -165,6 +165,8 @@ export const GetLanguageList = async ({ request }: { request: Request }) => {
     });
 
     const res = response.data.response;
+    console.log(res);
+    
     return res;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);

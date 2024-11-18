@@ -28,7 +28,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const words = await GetUserWords({ request });
   const plan = await GetUserSubscriptionPlan({ request });
-  const status = await GetLanguageList({ request });
+  const languages = await GetLanguageList({ request });
   const shopPrimaryLanguage = shopLanguages.filter(
     (language) => language.primary,
   );
@@ -48,7 +48,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     name: lang.name,
     locale: lang.locale,
     status:
-      status.find((statu: any) => statu.target === lang.locale)?.status || 0,
+      languages.find((language: any) => language.target === lang.locale)
+        ?.status || 0,
     published: lang.published,
     totalWords: totalWords[i],
   }));
@@ -95,7 +96,14 @@ const Index = () => {
           />
           <div>
             <Title level={3}>{languageData.length} alternative languages</Title>
-            <Text>Your store’s default language: {user.primaryLanguage}</Text>
+            <div>
+              <Text type="secondary">Your store’s default language: </Text>
+              <Text>
+                {user.primaryLanguage
+                  ? user.primaryLanguage
+                  : "No primary language set"}
+              </Text>
+            </div>
           </div>
 
           <div className="language_cards">

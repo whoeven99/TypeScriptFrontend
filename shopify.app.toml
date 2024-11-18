@@ -3,7 +3,7 @@
 client_id = "6e0ef7be80edbf81020e200228a86d01"
 name = "ZinnTransLocal"
 handle = "transform-lancy-app-local"
-application_url = "https://nearly-oriented-antique-los.trycloudflare.com"
+application_url = "https://alaska-sticker-benz-deutsche.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://nearly-oriented-antique-los.trycloudflare.com/auth/callback",
-  "https://nearly-oriented-antique-los.trycloudflare.com/auth/shopify/callback",
-  "https://nearly-oriented-antique-los.trycloudflare.com/api/auth/callback"
+  "https://alaska-sticker-benz-deutsche.trycloudflare.com/auth/callback",
+  "https://alaska-sticker-benz-deutsche.trycloudflare.com/auth/shopify/callback",
+  "https://alaska-sticker-benz-deutsche.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
@@ -27,8 +27,8 @@ api_version = "2024-07"
 
   [[webhooks.subscriptions]]
   topics = [ "app/uninstalled" ]
-  compliance_topics = [ "customers/redact", "customers/data_request", "shop/redact" ]
   uri = "/webhooks"
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 
 [pos]
 embedded = false
