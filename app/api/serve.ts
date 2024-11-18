@@ -1,5 +1,6 @@
 import axios from "axios";
 import { authenticate } from "~/shopify.server";
+import { queryShop } from "./admin";
 
 export interface ConfirmDataType {
   resourceId: string;
@@ -9,6 +10,30 @@ export interface ConfirmDataType {
   translatableContentDigest: string;
   target: string;
 }
+
+//用户数据更新
+export const UpdateUser = async ({ request }: { request: Request }) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const shopData = await queryShop(request);
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/user/add`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        email: shopData.email,
+      },
+    });
+
+    const res = response.data.response;
+    console.log(res);
+  } catch (error) {
+    console.error("Error fetching translation items:", error);
+    throw new Error("Error fetching translation items");
+  }
+};
 
 //获取各项翻译状态
 export const GetTranslationItemsInfo = async ({
@@ -21,9 +46,7 @@ export const GetTranslationItemsInfo = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   let res = [];
-  // 这里用 Promise 包装来确保流处理完成后返回数据
   try {
-    // 设置流的头信息
     for (let target of itemsInfo.targets) {
       for (let resourceType of itemsInfo.resourceTypes) {
         const response = await axios({
@@ -44,7 +67,6 @@ export const GetTranslationItemsInfo = async ({
           translatedNumber: data.translated[Object.keys(data.translated)[0]],
           totalNumber: data.all[Object.keys(data.all)[0]],
         });
-        // 将数据编码并写入流
       }
     }
     return res;
@@ -54,7 +76,7 @@ export const GetTranslationItemsInfo = async ({
   }
 };
 
-//获取用户的额度字符数 和 已使用的字符
+//获取用户的计划
 export const GetUserSubscriptionPlan = async ({
   request,
 }: {
@@ -110,7 +132,17 @@ export const GetPicture = async (locale: string[]) => {
       method: "Post",
       data: updatedLocales,
     });
-    const res = response.data.response;
+    const data = response.data.response;
+    const res = Object.keys(data).reduce(
+      (acc: { [key: string]: string }, key) => {
+        // 将 key 中的 "_" 替换为 "-"
+        const newKey = key.replace("_", "-");
+        // 保持原来的值，重新赋值给新键
+        acc[newKey] = data[key];
+        return acc;
+      },
+      {},
+    );
     return res;
   } catch (error) {
     console.error("Error occurred in the pictures:", error);
@@ -133,6 +165,43 @@ export const GetLanguageList = async ({ request }: { request: Request }) => {
     });
 
     const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the languageList:", error);
+    throw new Error("Error occurred in the languageList");
+  }
+};
+
+//查询语言待翻译字符数
+export const GetTotalWords = async ({
+  request,
+  targets,
+}: {
+  request: Request;
+  targets: string[];
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  let res: number[] = [];
+  console.log(targets);
+
+  try {
+    for (const target of targets) {
+      const response = await axios({
+        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTotalWords`,
+        method: "Post",
+        data: {
+          shopName: shop,
+          accessToken: accessToken,
+          target: target,
+        },
+      });
+
+      const word = response.data.response;
+      res.push(word);
+    }
+    console.log(res);
+
     return res;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);

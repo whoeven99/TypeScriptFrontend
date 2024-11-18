@@ -36,8 +36,8 @@
   display: flex;
   gap: 4px; /* 控制各字符使用项的间距 */
   margin-top: 30px;
-  justify-content: right;
-  align-items: flex-end; /* 确保底部对齐 */
+  justify-content: center; /* 水平居中对齐 */
+  align-items: center; /* 垂直居中对齐 */
 }
 
 .characters_all {

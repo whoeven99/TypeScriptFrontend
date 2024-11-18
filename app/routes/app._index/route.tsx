@@ -10,6 +10,7 @@ import UserLanguageCard from "./components/userLanguageCard";
 import {
   GetLanguageList,
   GetPicture,
+  GetTotalWords,
   GetUserSubscriptionPlan,
   GetUserWords,
 } from "~/api/serve";
@@ -36,10 +37,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     (language) => !language.primary,
   );
 
-  const shopLocales = shopLanguagesWithoutPrimary.map((item) =>
-    item.locale.replace(/-/g, "_"),
-  );
+  const shopLocales = shopLanguagesWithoutPrimary.map((item) => item.locale);
+
   const pictures = await GetPicture(shopLocales);
+  const totalWords = await GetTotalWords({ request, targets: shopLocales });
 
   const languageData = shopLanguagesWithoutPrimary.map((lang, i) => ({
     key: i,
@@ -49,13 +50,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     status:
       status.find((statu: any) => statu.target === lang.locale)?.status || 0,
     published: lang.published,
-    words: Math.floor(Math.random() * (50000 - 10000 + 1)) + 10000,
+    totalWords: totalWords[i],
   }));
 
   const user = {
     plan: plan,
-    chars: words.chars,
-    totalChars: words.totalChars,
+    chars: words?.chars,
+    totalChars: words?.totalChars,
     primaryLanguage: shopPrimaryLanguage[0].name,
     shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimary,
     shopLanguageCodesWithoutPrimary: shopLocales,
@@ -104,7 +105,7 @@ const Index = () => {
                   flagUrl={language.src[0]}
                   primaryLanguage={user.primaryLanguage}
                   languageName={language.name}
-                  wordsNeeded={language.words}
+                  wordsNeeded={language.totalWords}
                   languageCode={language.locale}
                 />
               </Col>

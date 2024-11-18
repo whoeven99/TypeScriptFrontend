@@ -33,12 +33,12 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   allCountryImg,
 }) => {  
   const updatedLocales = allLanguages.map((item) =>
-    item.isoCode.replace(/-/g, "_"),
+    item.isoCode,
   );
   const addLanguages: AddLanguageType[] = allLanguages.map((lang, i) => ({
     key: lang.key,
     isoCode: lang.isoCode,
-    src: allCountryImg[updatedLocales[i].toUpperCase()],
+    src: allCountryImg[updatedLocales[i]],
     name: lang.name,
     state: "", // 默认值为 false
   }));

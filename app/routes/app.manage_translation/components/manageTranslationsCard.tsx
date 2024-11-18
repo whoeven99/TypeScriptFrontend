@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { Card, Space, Button, Typography, Table } from "antd";
 
 const { Title } = Typography;
@@ -23,7 +23,6 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   dataSource,
   current,
 }) => {
-  const navigate = useNavigate();
   const columns = [
     {
       title: cardTitle,
@@ -37,12 +36,15 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       key: "items",
       width: "30%",
       render: (_: any, record: any) => {
-        return record.allItems != null && record.allTranslatedItems != null ? (
+        return record.allItems === undefined ||
+          record.allTranslatedItems === undefined ||
+          record.allItems === 0 &&
+          record.allTranslatedItems === 0 ? (
+          <div>--</div>
+        ) : (
           <div>
             {record.allTranslatedItems}/{record.allItems}
           </div>
-        ) : (
-          <div>--</div>
         );
       },
     },

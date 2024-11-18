@@ -88,9 +88,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       ...language,
       key: index,
     }));
-    const allCountryCode = allLanguages.map((item) =>
-      item.isoCode.toUpperCase(),
-    );
+    const allCountryCode = allLanguages.map((item) => item.isoCode);
+
     const allCountryImg = await GetPicture(allCountryCode);
     const words = await GetUserWords({ request });
 
@@ -281,7 +280,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           {record.status === 2 ? (
-            <Button disabled style={{ width: "100px" }} loading>
+            <Button disabled style={{ width: "100px" }}>
               Translating
             </Button>
           ) : record.status ? (
@@ -335,15 +334,15 @@ const Index = () => {
         (item) => item.name === selectedKey.language,
       );
       if (selectedLanguage) {
-        const formData = new FormData();
-        formData.append(
-          "translation",
-          JSON.stringify({
-            primaryLanguage: primaryLanguage,
-            selectedLanguage: selectedLanguage,
-          }),
-        ); // 将选中的语言作为字符串发送
-        submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
+        // const formData = new FormData();
+        // formData.append(
+        //   "translation",
+        //   JSON.stringify({
+        //     primaryLanguage: primaryLanguage,
+        //     selectedLanguage: selectedLanguage,
+        //   }),
+        // ); // 将选中的语言作为字符串发送
+        // submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
         dispatch(setStatuState({ key, status: 2 }));
       }
     }
