@@ -3,7 +3,7 @@ import { json } from "@remix-run/node";
 import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import UserProfileCard from "./components/userProfileCard";
-import { Col, Space, Typography } from "antd";
+import { Col, Row, Space, Typography } from "antd";
 import { useLoaderData } from "@remix-run/react";
 import "./styles.css";
 import UserLanguageCard from "./components/userLanguageCard";
@@ -94,21 +94,22 @@ const Index = () => {
             chars={user.chars}
             totalChars={user.totalChars}
           />
-          <div>
+          <div style={{ paddingLeft: "8px" }}>
             <Title level={3}>{languageData.length} alternative languages</Title>
             <div>
-              <Text type="secondary">Your store’s default language: </Text>
-              <Text>
+              <Text>Your store’s default language: </Text>
+              <Text strong>
                 {user.primaryLanguage
                   ? user.primaryLanguage
                   : "No primary language set"}
               </Text>
             </div>
           </div>
-
-          <div className="language_cards">
-            {languageData.map((language: any, index: any) => (
+          <Row gutter={[16, 16]}>
+            {languageData.map((language: any, index: number) => (
               <Col span={8} key={index}>
+                {" "}
+                {/* 每个 Col 占据 1/3 的宽度 */}
                 <UserLanguageCard
                   flagUrl={language.src[0]}
                   primaryLanguage={user.primaryLanguage}
@@ -118,7 +119,7 @@ const Index = () => {
                 />
               </Col>
             ))}
-          </div>
+          </Row>
         </Space>
       </BlockStack>
     </Page>

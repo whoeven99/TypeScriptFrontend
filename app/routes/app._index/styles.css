@@ -55,3 +55,11 @@
   display: inline-block;
   margin-right: 10px; /* Optional, for spacing between cards */
 }
+
+.language_statu {
+  display: flex;
+  justify-content: center; /* 水平居中 */
+  align-items: center; /* 垂直居中 */
+  height: 2em; /* 设置高度为两行高，假设一行高为 1em */
+  text-align: center; /* 使文本水平居中 */
+}
