@@ -4,6 +4,7 @@ import { useNavigate, useSubmit } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setStatuState } from "~/store/modules/languageTableData";
 import { CheckCircleTwoTone, LoadingOutlined } from "@ant-design/icons";
+import TranslatedIcon from "~/components/translateIcon";
 const { Title } = Typography;
 
 interface UserLanguageCardProps {
@@ -51,19 +52,24 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         <img
           src={flagUrl}
           alt={`${languageName} flag`}
-          style={{ width: "60px", height: "auto", marginBottom: "10px" }}
+          style={{
+            width: "60px",
+            height: "auto",
+            marginBottom: "10px",
+            border: "1px solid #888", // 添加灰色边框
+            borderRadius: "2px"
+          }}
         />
         <Title level={4}>{languageName}</Title>
-
-        {result[0].status === 2 ? (
-          <LoadingOutlined />
-        ) : result[0].status ? (
-          <CheckCircleTwoTone twoToneColor="rgb(0,255,0)" />
-        ) : (
-          <p>
-            need to translate: <br /> {wordsNeeded} characters
-          </p>
-        )}
+        <div className="language_statu">
+          {result[0].status ? (
+            <TranslatedIcon status={result[0].status} />
+          ) : (
+            <p>
+              need to translate: <br /> {wordsNeeded} characters
+            </p>
+          )}
+        </div>
         <Space direction="horizontal">
           <Button onClick={() => handleTranslate(result[0].key)} type="primary">
             Translate

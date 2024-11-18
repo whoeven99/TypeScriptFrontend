@@ -37,10 +37,10 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
           )}
           <div className="characters_statistical">
             <Text strong style={{ fontSize: "28px", lineHeight: "28px" }}>
-              {chars}
+              {Intl.NumberFormat().format(chars)}
             </Text>
             <Text type="secondary" style={{ fontSize: "20px" }}>
-              / {totalChars}
+              / {Intl.NumberFormat().format(totalChars)}
             </Text>
           </div>
         </div>

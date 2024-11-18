@@ -214,7 +214,8 @@ const Index = () => {
       locale: lang.locale,
       primary: lang.primary,
       status:
-        languages.find((statu: any) => statu.target === lang.locale)?.status || 0,
+        languages.find((statu: any) => statu.target === lang.locale)?.status ||
+        0,
       auto_update_translation: false,
       published: lang.published,
       loading: false,
@@ -414,46 +415,54 @@ const Index = () => {
     <Page>
       <TitleBar title="Language" />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <div>
+          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+            Languages
+          </Title>
+          <PrimaryLanguage shopLanguages={shopLanguages} />
+        </div>
         <AttentionCard
           title="Translation word credits have been exhausted."
           content="The translation cannot be completed due to exhausted credits."
           buttonContent="Get more word credits"
-          show={disable}
+          show={true}
         />
-        <div className="language-header">
-          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-            Languages
-          </Title>
-          <div className="language-action">
-            <Space>
-              <Button type="default" onClick={PreviewClick}>
-                Preview store
+        <div className="languageTable_action">
+          <Flex
+            align="center"
+            justify="space-between" // 使按钮左右分布
+            style={{ width: "100%", marginBottom: "16px" }}
+          >
+            <Flex align="center" gap="middle">
+              <Button
+                type="primary"
+                onClick={handleDelete}
+                disabled={!hasSelected}
+                loading={deleteloading}
+              >
+                Delete
               </Button>
-              <Button type="primary" onClick={handleOpenModal}>
-                Add Language
-              </Button>
-            </Space>
-          </div>
-        </div>
-        <PrimaryLanguage shopLanguages={shopLanguages} />
-        <Flex gap="middle" vertical>
-          <Flex align="center" gap="middle">
-            <Button
-              type="primary"
-              onClick={handleDelete}
-              disabled={!hasSelected}
-              loading={deleteloading}
-            >
-              Delete
-            </Button>
-            {hasSelected ? `Selected ${selectedRowKeys.length} items` : null}
+              {hasSelected ? `Selected ${selectedRowKeys.length} items` : null}
+            </Flex>
+            <div>
+              <Space>
+                <Button type="default" onClick={PreviewClick}>
+                  Preview store
+                </Button>
+                <Button type="primary" onClick={handleOpenModal}>
+                  Add Language
+                </Button>
+              </Space>
+            </div>
           </Flex>
+          {/* 表格部分，占满宽度 */}
           <Table
             rowSelection={rowSelection}
             columns={columns}
             dataSource={data}
+            style={{ width: "100%" }}
           />
-        </Flex>
+        </div>
       </Space>
       <AddLanguageModal
         isVisible={isLanguageModalOpen}

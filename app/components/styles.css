@@ -16,11 +16,15 @@
   transition: all 0.2s ease; /* 圆形动画效果 */
 }
 
-/* 默认的文本样式 */
 .text {
   font-size: 12px;
   color: #888; /* 默认灰色文字 */
   font-family: Arial, sans-serif;
+  display: flex; /* 启用 flexbox 布局 */
+  justify-content: center; /* 水平居中 */
+  align-items: center; /* 垂直居中 */
+  height: 100%; /* 确保有足够的高度 */
+  line-height: normal; /* 可以根据需要调整行高 */
 }
 
 /* 状态为 "Untranslated" 时 */
@@ -46,7 +50,7 @@
 }
 
 .translated .text {
-  color: #4caf50; /* 绿色文字 */
+  color: #29845a; /* 绿色文字 */
 }
 
 /* 状态为 "Translating" 时 */
@@ -55,7 +59,19 @@
 }
 
 .translating .circle {
-  border-color: #2196f3; /* 蓝色圆圈 */
+  border-color: transparent; /* 设置边框透明 */
+  border-top-color: #2196f3; /* 只保留顶部边框为蓝色 */
+  animation: rotating 1s infinite linear; /* 旋转动画 */
+}
+
+/* 动画：旋转 */
+@keyframes rotating {
+  0% {
+    transform: rotate(0deg); /* 初始角度 */
+  }
+  100% {
+    transform: rotate(360deg); /* 旋转360度 */
+  }
 }
 
 .translating .text {

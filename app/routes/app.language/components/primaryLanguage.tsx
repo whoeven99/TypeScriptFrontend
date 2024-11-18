@@ -15,8 +15,8 @@ const PrimaryLanguage: React.FC<{ shopLanguages: ShopLocalesType[] }> = ({ shopL
 
   return (
     <div>
-      <Text type="secondary">Your store’s default language:</Text>
-      <Text> {primaryLanguage ? primaryLanguage.name : "No primary language set"}</Text>
+      <Text>Your store’s default language:</Text>
+      <Text strong> {primaryLanguage ? primaryLanguage.name : "No primary language set"}</Text>
     </div>
   );
 };

@@ -7,7 +7,6 @@ interface TranslatedIconProps {
 }
 
 const TranslatedIcon: React.FC<TranslatedIconProps> = ({ status, value }) => {
-  // const [progress, setProgress] = useState(value); // 用于存储进度百分比
   const [isTranslated, setIsTranslated] = useState<boolean>();
   const [isTranslating, setIsTranslating] = useState<boolean>();
 
