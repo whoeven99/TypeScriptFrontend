@@ -97,6 +97,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const languages = await GetLanguageList({ shop, accessToken });
     return json({
       shop,
+      allCountryCode,
       shopLanguages,
       allLanguages,
       allMarket,
@@ -173,6 +174,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const {
     shop,
+    allCountryCode,
     shopLanguages,
     allLanguages,
     allMarket,
@@ -214,7 +216,7 @@ const Index = () => {
     const newdata = shopLanguages.filter((language) => !language.primary);
     const data = newdata.map((lang, i) => ({
       key: i,
-      language: lang.name,
+      language: `${lang.name}(${languageData[allCountryCode[i]].Local})`,
       locale: lang.locale,
       primary: lang.primary,
       status:
