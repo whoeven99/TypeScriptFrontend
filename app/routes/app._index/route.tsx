@@ -9,7 +9,7 @@ import "./styles.css";
 import UserLanguageCard from "./components/userLanguageCard";
 import {
   GetLanguageList,
-  GetPicture,
+  GetLanguageData,
   GetUserSubscriptionPlan,
   GetUserWords,
 } from "~/api/serve";
@@ -35,11 +35,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     (language) => !language.primary,
   );
   const shopLocales = shopLanguagesWithoutPrimary.map((item) => item.locale);
-  // const pictures = await GetPicture(shopLocales);
+  const pictures = await GetLanguageData(shopLocales);
+  console.log(pictures);
   const shopData = await queryShop({ request });
   const languageData = shopLanguagesWithoutPrimary.map((lang, i) => ({
     key: i,
-    src: "error",
+    src: pictures[shopLocales[i]].countries,
     name: lang.name,
     locale: lang.locale,
     status:
