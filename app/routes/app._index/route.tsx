@@ -13,55 +13,62 @@ import {
   GetUserSubscriptionPlan,
   GetUserWords,
 } from "~/api/serve";
-import { queryShop, queryShopLanguages } from "~/api/admin";
+import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
 import { useEffect } from "react";
+import { authenticate } from "~/shopify.server";
 
 const { Title, Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-    request,
-  });
-  const words = await GetUserWords({ request });
-  const plan = await GetUserSubscriptionPlan({ request });
-  // const languages = await GetLanguageList({ request });
-  const shopPrimaryLanguage = shopLanguages.filter(
-    (language) => language.primary,
-  );
-  const shopLanguagesWithoutPrimary = shopLanguages.filter(
-    (language) => !language.primary,
-  );
-  const shopLocales = shopLanguagesWithoutPrimary.map((item) => item.locale);
-  const pictures = await GetLanguageData(shopLocales);
-  // const shopData = await queryShop({ request });
-  const languageData = shopLanguagesWithoutPrimary.map((lang, i) => ({
-    key: i,
-    src: pictures[shopLocales[i]].countries,
-    name: lang.name,
-    locale: lang.locale,
-    status: 0,
-    // languages.find((language: any) => language.target === lang.locale)
-    //   ?.status || 0,
-    published: lang.published,
-  }));
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
+      shop,
+      accessToken,
+    });
+    const words = await GetUserWords({ shop });
+    const plan = await GetUserSubscriptionPlan({ shop, accessToken });
+    const languages = await GetLanguageList({ shop, accessToken });
+    const shopPrimaryLanguage = shopLanguages.filter(
+      (language) => language.primary,
+    );
+    const shopLanguagesWithoutPrimary = shopLanguages.filter(
+      (language) => !language.primary,
+    );
+    const shopLocales = shopLanguagesWithoutPrimary.map((item) => item.locale);
+    const pictures = await GetLanguageData({ locale: shopLocales });
+    const languageData = shopLanguagesWithoutPrimary.map((lang, i) => ({
+      key: i,
+      src: pictures[shopLocales[i]].countries || "error",
+      name: lang.name,
+      locale: lang.locale,
+      status:
+        languages.find((language: any) => language.target === lang.locale)
+          ?.status || 0,
+      published: lang.published,
+    }));
 
-  const user = {
-    // name: shopData.name,
-    plan: plan,
-    chars: words?.chars,
-    totalChars: words?.totalChars,
-    primaryLanguage: shopPrimaryLanguage[0].name,
-    shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimary,
-    shopLanguageCodesWithoutPrimary: shopLocales,
-  };
+    const user = {
+      plan: plan,
+      chars: words?.chars,
+      totalChars: words?.totalChars,
+      primaryLanguage: shopPrimaryLanguage[0].name,
+      shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimary,
+      shopLanguageCodesWithoutPrimary: shopLocales,
+    };
 
-  return json({
-    languageData,
-    user,
-  });
+    return json({
+      languageData,
+      user,
+    });
+  } catch (error) {
+    console.error("Error load index:", error);
+    throw new Response("Error load index", { status: 500 });
+  }
 };
 
 const Index = () => {
@@ -79,9 +86,9 @@ const Index = () => {
     loading: false,
   }));
 
-  // useEffect(() => {
-  dispatch(setTableData(data)); // 只在组件首次渲染时触发
-  // }, [dispatch, data]);
+  useEffect(() => {
+    dispatch(setTableData(data)); // 只在组件首次渲染时触发
+  }, [dispatch, data]);
 
   return (
     <Page>
@@ -89,10 +96,9 @@ const Index = () => {
       <BlockStack gap="500">
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>Hi! {"user.name"}</Title>
+            <Title level={3}>CIWI: Click CIWI 10x Your Store's Profits</Title>
           </div>
           <UserProfileCard
-            name={"user.name"}
             plan={user.plan}
             chars={user.chars}
             totalChars={user.totalChars}

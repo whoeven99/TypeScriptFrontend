@@ -25,6 +25,7 @@ import {
 import { ShopLocalesType } from "../app.language/route";
 import { SearchOutlined } from "@ant-design/icons";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import { authenticate } from "~/shopify.server";
 
 const { Header, Content } = Layout;
 const { TextArea } = Input;
@@ -42,11 +43,14 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
     const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      request,
+      shop,
+      accessToken,
     });
     const themes = await queryNextTransType({
       request,

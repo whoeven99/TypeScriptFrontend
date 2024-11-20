@@ -76,11 +76,12 @@ export interface MarketType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   try {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop } = adminAuthResult.session;
     const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-      request,
+      shop,
+      accessToken,
     });
     const allMarket: MarketType[] = await queryAllMarket({ request });
     let allLanguages: AllLanguagesType[] = await queryAllLanguages({ request });
@@ -89,11 +90,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       key: index,
     }));
     const allCountryCode = allLanguages.map((item) => item.isoCode);
-    const languageData = await GetLanguageData(allCountryCode);
-    
-    const words = await GetUserWords({ request });
+    const languageData = await GetLanguageData({ locale: allCountryCode });
 
-    const languages = await GetLanguageList({ request });
+    const words = await GetUserWords({ shop });
+
+    const languages = await GetLanguageList({ shop, accessToken });
     return json({
       shop,
       shopLanguages,
@@ -110,6 +111,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
     const languages: string[] = JSON.parse(formData.get("languages") as string); // 获取语言数组
@@ -128,7 +131,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!languages:
         await mutationShopLocaleEnable({ request, languages }); // 处理逻辑
         const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-          request,
+          shop,
+          accessToken,
         });
         return json({ success: true, shopLanguages });
 

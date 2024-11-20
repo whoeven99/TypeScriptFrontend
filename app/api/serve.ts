@@ -77,12 +77,12 @@ export const GetTranslationItemsInfo = async ({
 
 //获取用户的计划
 export const GetUserSubscriptionPlan = async ({
-  request,
+  shop,
+  accessToken,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getUserSubscriptionPlan`,
@@ -101,9 +101,7 @@ export const GetUserSubscriptionPlan = async ({
 };
 
 //获取用户的额度字符数 和 已使用的字符
-export const GetUserWords = async ({ request }: { request: Request }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
+export const GetUserWords = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getUserLimitChars`,
@@ -121,7 +119,7 @@ export const GetUserWords = async ({ request }: { request: Request }) => {
 };
 
 //获取国旗图片链接
-export const GetLanguageData = async (locale: string[]) => {
+export const GetLanguageData = async ({ locale }: { locale: string[] }) => {
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
 
@@ -160,9 +158,13 @@ export const GetLanguageData = async (locale: string[]) => {
 };
 
 //查询语言状态
-export const GetLanguageList = async ({ request }: { request: Request }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+export const GetLanguageList = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string | undefined;
+}) => {
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readInfoByShopName`,
@@ -206,7 +208,7 @@ export const GetTotalWords = async ({
     return res;
   } catch (error) {
     console.error("Error occurred in the totalWords:", error);
-    throw new Error("Error occurred in the totalWords");
+    return { status: "error", error: "Failed to fetch total words" }; // 错误时返回默认值和错误信息
   }
 };
 
