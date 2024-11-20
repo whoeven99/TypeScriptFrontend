@@ -53,7 +53,9 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         <TextArea
           value={translatedValues[record?.key]}
           autoSize={{ minRows: 1, maxRows: 6 }}
-          onChange={(e) => handleInputChange(record.key, e.target.value, record.index)}
+          onChange={(e) =>
+            handleInputChange(record.key, e.target.value, record.index)
+          }
         />
       );
     } else if (record?.key === "body_html") {
@@ -61,14 +63,18 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         <ReactQuill
           theme="snow"
           value={translatedValues[record?.key]}
-          onChange={(content) => handleInputChange(record.key, content, record.index)}
+          onChange={(content) =>
+            handleInputChange(record.key, content, record.index)
+          }
         />
       );
     }
     return (
       <Input
         value={translatedValues[record?.key]}
-        onChange={(e) => handleInputChange(record.key, e.target.value, record.index)}
+        onChange={(e) =>
+          handleInputChange(record.key, e.target.value, record.index)
+        }
       />
     );
   } else {
@@ -81,7 +87,14 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         />
       );
     } else if (record?.key === "body_html") {
-      return <ReactQuill theme="snow" value={defaultValue} />;
+      return (
+        <ReactQuill
+          theme="snow"
+          value={defaultValue}
+          readOnly
+          scrollingContainer={"5"}
+        />
+      );
     }
     return <Input disabled value={defaultValue} />;
   }

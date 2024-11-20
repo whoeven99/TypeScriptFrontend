@@ -16,7 +16,7 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {
-    const shopData = await queryShop({request});
+    const shopData = await queryShop({ request });
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/user/add`,
       method: "POST",
@@ -124,6 +124,8 @@ export const GetUserWords = async ({ request }: { request: Request }) => {
 export const GetPicture = async (locale: string[]) => {
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
+
+  console.log(updatedLocales);
 
   try {
     const response = await axios({
