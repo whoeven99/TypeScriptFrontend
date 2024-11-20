@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryShopLanguages } from "~/api/admin";
-import { Editor } from "@tinymce/tinymce-react";
 import { ShopLocalesType } from "../app.language/route";
 import dynamic from "next/dynamic";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
@@ -13,7 +12,8 @@ const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 const { Content } = Layout;
 
 type TableDataType = {
-  key: string | number;
+  key: string;
+  index: number;
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
@@ -79,24 +79,18 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   useEffect(() => {
-    const Data = shippingsData.nodes.map((node: any) => ({
+    console.log(confirmData);
+  }, [confirmData]);
+
+  useEffect(() => {
+    const Data = shippingsData.nodes.map((node: any, index: number) => ({
       key: "body",
+      index: index,
       resource: "Label",
       default_language: node.translatableContent[0].value,
       translated: node.translations[0]?.value,
     }));
     setResourceData(Data);
-    setConfirmData([
-      {
-        resourceId: shippingsData.nodes[0].resourceId,
-        locale: shippingsData.nodes[0].translatableContent[0].locale,
-        key: "body",
-        value: "",
-        translatableContentDigest:
-          shippingsData.nodes[0].translatableContent[0].digest,
-        target: searchTerm || "",
-      },
-    ]);
   }, []);
 
   const resourceColumns = [
@@ -113,7 +107,11 @@ const Index = () => {
       width: "45%",
       render: (_: any, record: TableDataType) => {
         return (
-          <ReactQuill theme="snow" defaultValue={record?.default_language} />
+          <ReactQuill
+            theme="snow"
+            defaultValue={record?.default_language}
+            readOnly
+          />
         );
       },
     },
@@ -128,7 +126,9 @@ const Index = () => {
             <ReactQuill
               theme="snow"
               defaultValue={record?.translated}
-              onChange={(content) => handleInputChange(record.key, content)}
+              onChange={(content) =>
+                handleInputChange(record.key, content, record.index)
+              }
             />
           )
         );
@@ -136,12 +136,33 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string | number, value: string) => {
-    setConfirmData(
-      confirmData.map((item) =>
-        item.key === key ? { ...item, value: value } : item,
-      ),
-    );
+  const handleInputChange = (key: string, value: string, index: number) => {
+    setConfirmData((prevData) => {
+      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+
+      if (existingItemIndex !== -1) {
+        // 如果 key 存在，更新其对应的 value
+        const updatedConfirmData = [...prevData];
+        updatedConfirmData[existingItemIndex] = {
+          ...updatedConfirmData[existingItemIndex],
+          value: value,
+        };
+        return updatedConfirmData;
+      } else {
+        // 如果 key 不存在，新增一条数据
+        const newItem = {
+          resourceId: shippings.nodes[index]?.resourceId,
+          locale: shippings.nodes[index]?.translatableContent[0]?.locale,
+          key: key,
+          value: value, // 初始为空字符串
+          translatableContentDigest:
+            shippings.nodes[index]?.translatableContent[0]?.digest,
+          target: searchTerm || "",
+        };
+
+        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+      }
+    });
   };
 
   const handleConfirm = () => {

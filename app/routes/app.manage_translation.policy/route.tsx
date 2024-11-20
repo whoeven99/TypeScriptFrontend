@@ -1,4 +1,13 @@
-import { Button, Layout, Menu, MenuProps, Modal, Result, Table, theme } from "antd";
+import {
+  Button,
+  Layout,
+  Menu,
+  MenuProps,
+  Modal,
+  Result,
+  Table,
+  theme,
+} from "antd";
 import { useEffect, useState } from "react";
 import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
@@ -37,7 +46,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
       request,
     });
-    const shop = await queryShop(request);
+    const shop = await queryShop({request});
     const policyTitle = shop.shopPolicies;
     const policyBody = await queryNextTransType({
       request,
@@ -130,6 +139,7 @@ const Index = () => {
       },
     ]);
     setPolicyData(data);
+    setConfirmData([]);
   }, [selectPolicyKey]);
 
   useEffect(() => {

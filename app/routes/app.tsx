@@ -7,11 +7,9 @@ import { json } from "@remix-run/node";
 import {
   Link,
   Outlet,
-  useActionData,
   useFetcher,
   useLoaderData,
   useRouteError,
-  useSubmit,
 } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
 import { AppProvider } from "@shopify/shopify-app-remix/react";
@@ -20,7 +18,11 @@ import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 
 import { authenticate } from "../shopify.server";
 import { ConfigProvider } from "antd";
-import { GetTranslate, GetTranslationItemsInfo } from "~/api/serve";
+import {
+  GetTotalWords,
+  GetTranslate,
+  GetTranslationItemsInfo,
+} from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import { queryShopLanguages } from "~/api/admin";
 import { useEffect } from "react";
@@ -47,6 +49,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
     const translation = JSON.parse(formData.get("translation") as string);
     const itemsInfo = JSON.parse(formData.get("itemsInfo") as string);
+    const languageCode = JSON.parse(formData.get("languageCode") as string);
     switch (true) {
       case !!translation:
         const source = translation.primaryLanguage.locale;
@@ -57,6 +60,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!itemsInfo:
         const data = await GetTranslationItemsInfo({ request, itemsInfo });
         return json({ data: data });
+
+      case !!languageCode:
+        const totalWords = await GetTotalWords({
+          request,
+          target: languageCode,
+        });
+        return json({ totalWords: totalWords });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -69,7 +79,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function App() {
   const { apiKey, shopLocales } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
   const resourceTypes = [
     "Article",
     "Blog titles",

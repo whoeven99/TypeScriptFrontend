@@ -1,9 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Card, Space, Typography } from "antd";
-import { useNavigate, useSubmit } from "@remix-run/react";
+import { useFetcher, useNavigate, useSubmit } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setStatuState } from "~/store/modules/languageTableData";
-import { CheckCircleTwoTone, LoadingOutlined } from "@ant-design/icons";
 import TranslatedIcon from "~/components/translateIcon";
 const { Title } = Typography;
 
@@ -11,23 +10,42 @@ interface UserLanguageCardProps {
   flagUrl: string; // 国旗图片的 URL
   languageName: string; // 语言名称
   languageCode: string; //语言代码
-  wordsNeeded: number; // 需要翻译的字数
   primaryLanguage: string; //用户默认语言
+}
+
+interface FetchData {
+  totalWords: number;
 }
 
 const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   flagUrl,
   languageName,
   languageCode,
-  wordsNeeded,
   primaryLanguage,
 }) => {
   const data = useSelector((state: any) => state.languageTableData.rows);
   const result = data.filter((item: any) => item.locale === languageCode);
+  const [words, setWords] = useState<number>();
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const submit = useSubmit();
+  const fetcher = useFetcher<FetchData>();
+
+  useEffect(() => {
+    const formData = new FormData();
+    formData.append("languageCode", JSON.stringify(languageCode));
+    fetcher.submit(formData, {
+      method: "post",
+      action: "/app",
+    }); // 提交表单请求
+  }, []);
+
+  useEffect(() => {
+    if (fetcher.data) {
+      setWords(fetcher.data.totalWords)
+    }
+  }, [fetcher.data]);
 
   const handleTranslate = async (key: number) => {
     const formData = new FormData();
@@ -57,17 +75,21 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
             height: "auto",
             marginBottom: "10px",
             border: "1px solid #888", // 添加灰色边框
-            borderRadius: "2px"
+            borderRadius: "2px",
           }}
         />
         <Title level={4}>{languageName}</Title>
         <div className="language_statu">
-          {result[0].status ? (
-            <TranslatedIcon status={result[0].status} />
+          {words ? (
+            result[0].status ? (
+              <TranslatedIcon status={result[0].status} />
+            ) : (
+              <p>
+                need to translate: <br /> {words} characters
+              </p>
+            )
           ) : (
-            <p>
-              need to translate: <br /> {wordsNeeded} characters
-            </p>
+            <>Calculating</>
           )}
         </div>
         <Space direction="horizontal">

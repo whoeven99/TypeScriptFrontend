@@ -68,19 +68,24 @@ export const queryShopLanguages = async ({ request }: { request: Request }) => {
   }
 };
 
-export const queryShop = async (request: Request) => {
+export const queryShop = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       shop {
         name
+        contactEmail
         myshopifyDomain
-        email
         currencyFormats {
           moneyFormat
           moneyWithCurrencyFormat
-        }     
+        }
+        shopPolicies {
+          body
+          id
+          title
+        }       
       }
     }`;
 

@@ -16,7 +16,7 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {
-    const shopData = await queryShop(request);
+    const shopData = await queryShop({request});
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/user/add`,
       method: "POST",
@@ -28,7 +28,6 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
     });
 
     const res = response.data.response;
-    console.log(res);
   } catch (error) {
     console.error("Error fetching translation items:", error);
     throw new Error("Error fetching translation items");
@@ -165,8 +164,6 @@ export const GetLanguageList = async ({ request }: { request: Request }) => {
     });
 
     const res = response.data.response;
-    console.log(res);
-    
     return res;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);
@@ -177,33 +174,25 @@ export const GetLanguageList = async ({ request }: { request: Request }) => {
 //查询语言待翻译字符数
 export const GetTotalWords = async ({
   request,
-  targets,
+  target,
 }: {
   request: Request;
-  targets: string[];
+  target: string;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  let res: number[] = [];
-  console.log(targets);
-
   try {
-    for (const target of targets) {
-      const response = await axios({
-        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTotalWords`,
-        method: "Post",
-        data: {
-          shopName: shop,
-          accessToken: accessToken,
-          target: target,
-        },
-      });
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTotalWords`,
+      method: "Post",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        target: target,
+      },
+    });
 
-      const word = response.data.response;
-      res.push(word);
-    }
-    console.log(res);
-
+    const res = response.data.response;
     return res;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);
@@ -257,24 +246,21 @@ export const updateManageTranslation = async ({
   try {
     // 遍历 confirmData 数组
     for (const item of confirmData) {
-      // 只在 value 存在时才调用接口
-      if (item.value !== "") {
-        const response = await axios({
-          url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/updateShopifyDataByTranslateTextRequest`,
-          method: "POST",
-          data: {
-            shopName: shop,
-            accessToken: accessToken,
-            locale: item.locale,
-            key: item.key,
-            value: item.value,
-            translatableContentDigest: item.translatableContentDigest,
-            resourceId: item.resourceId,
-            target: item.target,
-          },
-        });
-        const res = response.data;
-      }
+      const response = await axios({
+        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/updateShopifyDataByTranslateTextRequest`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          accessToken: accessToken,
+          locale: item.locale,
+          key: item.key,
+          value: item.value,
+          translatableContentDigest: item.translatableContentDigest,
+          resourceId: item.resourceId,
+          target: item.target,
+        },
+      });
+      const res = response.data;
     }
   } catch (error) {
     console.error("Error occurred in the translation:", error);

@@ -4,20 +4,20 @@ import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import UserProfileCard from "./components/userProfileCard";
 import { Col, Row, Space, Typography } from "antd";
-import { useLoaderData } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import "./styles.css";
 import UserLanguageCard from "./components/userLanguageCard";
 import {
   GetLanguageList,
   GetPicture,
-  GetTotalWords,
   GetUserSubscriptionPlan,
   GetUserWords,
 } from "~/api/serve";
-import { queryShopLanguages } from "~/api/admin";
+import { queryShop, queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
+import { useEffect, useState } from "react";
 
 const { Title, Text } = Typography;
 
@@ -25,23 +25,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
     request,
   });
-
   const words = await GetUserWords({ request });
   const plan = await GetUserSubscriptionPlan({ request });
   const languages = await GetLanguageList({ request });
   const shopPrimaryLanguage = shopLanguages.filter(
     (language) => language.primary,
   );
-
   const shopLanguagesWithoutPrimary = shopLanguages.filter(
     (language) => !language.primary,
   );
-
   const shopLocales = shopLanguagesWithoutPrimary.map((item) => item.locale);
-
   const pictures = await GetPicture(shopLocales);
-  const totalWords = await GetTotalWords({ request, targets: shopLocales });
-
+  const shopData = await queryShop({ request });
   const languageData = shopLanguagesWithoutPrimary.map((lang, i) => ({
     key: i,
     src: pictures[shopLocales[i]],
@@ -51,10 +46,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       languages.find((language: any) => language.target === lang.locale)
         ?.status || 0,
     published: lang.published,
-    totalWords: totalWords[i],
   }));
 
   const user = {
+    name: shopData.name,
     plan: plan,
     chars: words?.chars,
     totalChars: words?.totalChars,
@@ -72,6 +67,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 const Index = () => {
   const { languageData, user } = useLoaderData<typeof loader>();
   const dispatch = useDispatch();
+
   const data = languageData.map((lang) => ({
     key: lang.key,
     language: lang.name,
@@ -89,7 +85,11 @@ const Index = () => {
       <TitleBar title="Dashboard" />
       <BlockStack gap="500">
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+          <div style={{ paddingLeft: "8px" }}>
+            <Title level={3}>Hi! {user.name}</Title>
+          </div>
           <UserProfileCard
+            name={user.name}
             plan={user.plan}
             chars={user.chars}
             totalChars={user.totalChars}
@@ -109,12 +109,10 @@ const Index = () => {
             {languageData.map((language: any, index: number) => (
               <Col span={8} key={index}>
                 {" "}
-                {/* 每个 Col 占据 1/3 的宽度 */}
                 <UserLanguageCard
                   flagUrl={language.src[0]}
                   primaryLanguage={user.primaryLanguage}
                   languageName={language.name}
-                  wordsNeeded={language.totalWords}
                   languageCode={language.locale}
                 />
               </Col>

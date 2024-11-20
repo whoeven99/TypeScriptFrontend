@@ -4,12 +4,14 @@ import { Typography } from "antd";
 const { Text } = Typography;
 
 interface UserProfileCardProps {
+  name: string;
   plan: string;
   chars: number;
   totalChars: number;
 }
 
 const UserProfileCard: React.FC<UserProfileCardProps> = ({
+  name,
   plan,
   chars,
   totalChars,
@@ -21,7 +23,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
       <div className="user_profile_wrapper">
         <div className="user_profilecard_left">
           <Avatar size={"large"} style={{ backgroundColor: "#f56a00" }}>
-            K
+            {name.charAt(0).toUpperCase()}
           </Avatar>
           <div className="plan_overview">
             <span>Current Plan: {planName}</span>
