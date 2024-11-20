@@ -1,4 +1,13 @@
-import { Button, Input, Layout, Modal, Select, Space, Table, theme } from "antd";
+import {
+  Button,
+  Input,
+  Layout,
+  Modal,
+  Select,
+  Space,
+  Table,
+  theme,
+} from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
@@ -45,8 +54,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       endCursor: "",
       locale: searchTerm || shopLanguagesLoad[0].locale,
     });
-    console.log(themes);
-
     return json({
       searchTerm,
       shopLanguagesLoad,
@@ -191,7 +198,7 @@ const Index = () => {
     }));
     setConfirmData((prevData) => {
       const existingItemIndex = prevData.findIndex((item) => item.key === key);
-  
+
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
         const updatedConfirmData = [...prevData];
@@ -207,10 +214,11 @@ const Index = () => {
           locale: themes.nodes[0]?.translatableContent[0]?.locale,
           key: key,
           value: value, // 初始为空字符串
-          translatableContentDigest: themes.nodes[0]?.translatableContent[0]?.digest,
+          translatableContentDigest:
+            themes.nodes[0]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
-  
+
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       }
     });
@@ -224,7 +232,10 @@ const Index = () => {
           key: `${item.key}`, // 使用 id 生成唯一的 key
           resource: item.key, // 资源字段固定为 "Menu Items"
           default_language: item.value, // 默认语言为 item 的标题
-          translated: items.nodes[0]?.translations[index]?.value, // 翻译字段初始化为空字符串
+          translated:
+            items.nodes[0]?.translations.find(
+              (translation: any) => translation.key === item.key,
+            )?.value || "", // 翻译字段初始化为空字符串
         };
         return [currentItem];
       },
@@ -297,12 +308,6 @@ const Index = () => {
             onChange={handleSearch}
             style={{ marginBottom: 16 }}
           />
-          <Select
-            options={selectData}
-            style={{ minWidth: "200px" }}
-            defaultValue={searchTerm || shopLanguagesLoad[0].locale}
-            onChange={onChange}
-          />
         </Header>
         <Layout
           style={{
@@ -317,7 +322,11 @@ const Index = () => {
               size="middle"
               style={{ display: "flex" }}
             >
-              <Table columns={resourceColumns} dataSource={resourceData} />
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={{ position: ["bottomCenter"] }}
+              />
             </Space>
           </Content>
         </Layout>

@@ -4,6 +4,7 @@ import {
   Menu,
   MenuProps,
   Modal,
+  Result,
   Table,
   theme,
 } from "antd";
@@ -12,7 +13,6 @@ import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react"; // 引
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryShop, queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import ManageModalHeader from "~/components/manageModalHeader";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import dynamic from "next/dynamic";
 
@@ -46,7 +46,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
       request,
     });
-    const shop = await queryShop(request);
+    const shop = await queryShop({request});
     const policyTitle = shop.shopPolicies;
     const policyBody = await queryNextTransType({
       request,
@@ -139,6 +139,7 @@ const Index = () => {
       },
     ]);
     setPolicyData(data);
+    setConfirmData([]);
   }, [selectPolicyKey]);
 
   useEffect(() => {
@@ -235,17 +236,7 @@ const Index = () => {
         </div>,
       ]}
     >
-      <Layout
-        style={{
-          padding: "24px 0",
-          background: colorBgContainer,
-          borderRadius: borderRadiusLG,
-        }}
-      >
-        <ManageModalHeader
-          shopLanguagesLoad={shopLanguagesLoad}
-          locale={searchTerm}
-        />
+      {policies.length ? (
         <Layout
           style={{
             padding: "24px 0",
@@ -273,7 +264,12 @@ const Index = () => {
             />
           </Content>
         </Layout>
-      </Layout>
+      ) : (
+        <Result
+          title="No items found here"
+          extra={<Button type="primary">back</Button>}
+        />
+      )}
     </Modal>
   );
 };

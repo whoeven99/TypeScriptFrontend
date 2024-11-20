@@ -6,12 +6,14 @@ interface AttentionCardProps {
   title: string;
   content: string;
   buttonContent: string | undefined;
+  show: boolean;
 }
 
 const AttentionCard: React.FC<AttentionCardProps> = ({
   title,
   content,
   buttonContent,
+  show,
 }) => {
   const [visible, setVisible] = useState(true);
 
@@ -20,41 +22,38 @@ const AttentionCard: React.FC<AttentionCardProps> = ({
   }
 
   return (
-    <ConfigProvider
-      theme={{
-        components: {
-          Card: {
-            /* 这里是你的组件 token */
-            headerBg: "rgb(255,184,0)",
+    show && (
+      <ConfigProvider
+        theme={{
+          components: {
+            Card: {
+              /* 这里是你的组件 token */
+              headerBg: "rgb(255,184,0)",
+            },
           },
-        },
-      }}
-    >
-      <Card
-        title={
-          <>
-            <ExclamationCircleFilled />
-            <span>&nbsp;</span>
-            {`${title}`}
-          </>
-        }
-        extra={
-          <Button type="link" onClick={() => setVisible(false)}>
-            <CloseOutlined style={{ color: "#000" }} />
-          </Button>
-        }
-        bordered
+        }}
       >
-        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <p>{content}</p>
-          {buttonContent && (
-            <Button type="default" >
-              {buttonContent}
+        <Card
+          title={
+            <>
+              <ExclamationCircleFilled />
+              <span>&nbsp;</span>
+              {`${title}`}
+            </>
+          }
+          extra={
+            <Button type="link" onClick={() => setVisible(false)}>
+              <CloseOutlined style={{ color: "#000" }} />
             </Button>
-          )}
-        </Space>
-      </Card>
-    </ConfigProvider>
+          }
+          bordered
+        >
+          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+            <p>{content}</p>
+          </Space>
+        </Card>
+      </ConfigProvider>
+    )
   );
 };
 
