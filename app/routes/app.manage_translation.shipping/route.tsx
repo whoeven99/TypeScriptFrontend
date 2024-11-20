@@ -78,10 +78,7 @@ const Index = () => {
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
-  useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
-
+  
   useEffect(() => {
     const Data = shippingsData.nodes.map((node: any, index: number) => ({
       key: "body",

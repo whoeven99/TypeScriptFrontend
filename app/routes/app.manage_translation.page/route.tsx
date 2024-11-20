@@ -165,10 +165,7 @@ const Index = () => {
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
-  useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
-
+  
   useEffect(() => {
     setHasPrevious(pagesData.pageInfo.hasPreviousPage);
     setHasNext(pagesData.pageInfo.hasNextPage);
