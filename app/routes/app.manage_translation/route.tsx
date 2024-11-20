@@ -14,9 +14,10 @@ import {
   useSubmit,
 } from "@remix-run/react";
 import AttentionCard from "~/components/attentionCard";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
 import React from "react";
+import { GetUserWords } from "~/api/serve";
 const ManageTranslationsCard = React.lazy(
   () => import("./components/manageTranslationsCard"),
 );
@@ -40,9 +41,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
       request,
     });
+    const words = await GetUserWords({ request });
 
     return json({
       shopLanguagesLoad,
+      words,
     });
   } catch (error) {
     console.error("Error load manage_translation:", error);
@@ -73,28 +76,48 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shopLanguagesLoad } = useLoaderData<typeof loader>();
+  const { shopLanguagesLoad, words } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const [shopLanguages, setShopLanguages] =
     useState<ShopLocalesType[]>(shopLanguagesLoad);
   const [menuData, setMenuData] = useState<ManageMenuDataType[]>([]);
   const [current, setCurrent] = useState<string>("");
+  const [disable, setDisable] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const location = useLocation();
+  const { key } = location.state || {}; // 提取传递的状态
+  const submit = useSubmit();
+  const items = useSelector((state: any) => state.languageItemsData);  
+
   const productsDataSource: TableDataType[] = [
     {
       key: "products",
       title: "Products",
-      allTranslatedItems: 1,
-      // allItems: products.nodes.length,
-      allItems: 30,
+      allTranslatedItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Products",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Products",
+        )?.totalNumber ?? undefined,
       sync_status: true,
       navigation: "product",
     },
     {
       key: "collections",
       title: "Collections",
-      allTranslatedItems: 1,
-      // allItems: collections.nodes.length,
-      allItems: 30,
+      allTranslatedItems:
+        items.find(
+          (item: any) =>
+            item.language === current && item.type === "Collection",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) =>
+            item.language === current && item.type === "Collection",
+        )?.totalNumber ?? undefined,
       sync_status: true,
       navigation: "collection",
     },
@@ -104,81 +127,134 @@ const Index = () => {
     {
       key: "articles",
       title: "Articles",
-      allTranslatedItems: 1,
-      // allItems: articles.nodes.length,
-      allItems: 30,
+      allTranslatedItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Article",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Article",
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "article",
     },
     {
       key: "blog_titles",
       title: "Blog titles",
-      allTranslatedItems: 1,
-      // allItems: blogs.nodes.length,
-      allItems: 30,
+      allTranslatedItems:
+        items.find(
+          (item: any) =>
+            item.language === current && item.type === "Blog titles",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) =>
+            item.language === current && item.type === "Blog titles",
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "blog",
     },
     {
       key: "pages",
       title: "Pages",
-      allTranslatedItems: 1,
-      // allItems: pages.nodes.length,
-      allItems: 30,
+      allTranslatedItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Pages",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Pages",
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "page",
     },
     {
       key: "filters",
       title: "Filters",
-      allTranslatedItems: 1,
-      // allItems: filters.nodes.length,
-      allItems: 30,
+      allTranslatedItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Filters",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Filters",
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "filter",
     },
     {
       key: "metaobjects",
       title: "Metaobjects",
-      allTranslatedItems: 1,
-      // allItems: metaobjects.nodes.length,
-      allItems: 30,
+      allTranslatedItems:
+        items.find(
+          (item: any) =>
+            item.language === current && item.type === "Metaobjects",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) =>
+            item.language === current && item.type === "Metaobjects",
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "metaobject",
     },
     {
       key: "navigation",
       title: "Navigation",
-      allTranslatedItems: 1,
-      // allItems: menus.nodes.length,
-      allItems: 30,
+      allTranslatedItems:
+        items.find(
+          (item: any) =>
+            item.language === current && item.type === "Navigation",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) =>
+            item.language === current && item.type === "Navigation",
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "navigation",
     },
     {
       key: "policies",
       title: "Policies",
-      allTranslatedItems: 1,
-      // allItems: policies.nodes.length,
-      allItems: 30,
+      allTranslatedItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Policies",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Policies",
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "policy",
     },
     {
       key: "store_metadata",
       title: "Store metadata",
-      allTranslatedItems: 1,
-      // allItems: metafield.nodes.length,
-      allItems: 30,
+      allTranslatedItems:
+        items.find(
+          (item: any) =>
+            item.language === current && item.type === "Store metadata",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) =>
+            item.language === current && item.type === "Store metadata",
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "metafield",
     },
     {
       key: "theme",
       title: "Theme",
-      allTranslatedItems: 1,
-      // allItems: metafield.nodes.length,
-      allItems: 30,
+      allTranslatedItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Theme",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Theme",
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "theme",
     },
@@ -187,28 +263,36 @@ const Index = () => {
     {
       key: "delivery",
       title: "Delivery",
-      allTranslatedItems: 1,
-      // allItems: delivery.length,
-      allItems: 30,
+      allTranslatedItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "delivery",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "delivery",
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "delivery",
     },
     {
       key: "shipping",
       title: "Shipping",
-      allTranslatedItems: 1,
-      // allItems: packingslip.nodes.length,
-      allItems: 30,
+      allTranslatedItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Shipping",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Shipping",
+        )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "shipping",
     },
   ];
 
-  const [loading, setLoading] = useState(true);
-  const dispatch = useDispatch();
-  const location = useLocation();
-  const { key } = location.state || {}; // 提取传递的状态
-  const submit = useSubmit();
+  useEffect(() => {
+    if (words.chars > words.totalChars) setDisable(true);
+  }, [words]);
 
   useEffect(() => {
     const newArray = shopLanguages
@@ -273,6 +357,7 @@ const Index = () => {
           title="Translation word credits have been exhausted."
           content="The translation cannot be completed due to exhausted credits."
           buttonContent="Get more word credits"
+          show={disable}
         />
         <div className="manage-header">
           <Menu

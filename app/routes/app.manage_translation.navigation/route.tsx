@@ -23,7 +23,6 @@ import {
   queryShopLanguages,
 } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import ManageModalHeader from "~/components/manageModalHeader";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 
 const { Sider, Content } = Layout;
@@ -38,7 +37,8 @@ interface ItemType {
 }
 
 type TableDataType = {
-  key: string | number;
+  key: string;
+  index: number;
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
@@ -195,6 +195,10 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   useEffect(() => {
+    console.log(confirmData);
+  }, [confirmData]);
+
+  useEffect(() => {
     setHasPrevious(navigationsData.pageInfo.hasPreviousPage);
     setHasNext(navigationsData.pageInfo.hasNextPage);
     const data = transBeforeData({
@@ -219,16 +223,6 @@ const Index = () => {
       const data = transBeforeData({
         menus: navigationsData,
       });
-      setConfirmData(
-        navigations.nodes.map((item: any) => ({
-          resourceId: item.resourceId,
-          locale: item.translatableContent[0]?.locale,
-          key: item.translatableContent[0]?.key,
-          value: "",
-          translatableContentDigest: item.translatableContent[0]?.digest,
-          target: searchTerm,
-        })),
-      );
       setNavigationData(data);
     } else {
       setHasPrevious(itemsData.pageInfo.hasPreviousPage);
@@ -236,18 +230,10 @@ const Index = () => {
       const data = transBeforeData({
         menus: itemsData,
       });
-      setConfirmData(
-        navigationItems.nodes.map((item: any) => ({
-          resourceId: item.resourceId,
-          locale: item.translatableContent[0]?.locale,
-          key: item.translatableContent[0]?.key,
-          value: "",
-          translatableContentDigest: item.translatableContent[0]?.digest,
-          target: searchTerm,
-        })),
-      );
       setItemData(data);
     }
+    setConfirmData([]);
+    setTranslatedValues({});
   }, [selectNavigationKey]);
 
   useEffect(() => {
@@ -301,8 +287,10 @@ const Index = () => {
         return (
           record && (
             <Input
-              value={translatedValues[record?.key] || record?.translated}
-              onChange={(e) => handleInputChange(record.key, e.target.value)}
+              value={translatedValues[record?.key]}
+              onChange={(e) =>
+                handleInputChange(record.key, e.target.value, record.index)
+              }
             />
           )
         );
@@ -310,16 +298,51 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string | number, value: string) => {
+  const handleInputChange = (key: string, value: string, index: number) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
     }));
-    setConfirmData(
-      confirmData.map((item) =>
-        item.key === key ? { ...item, value: value } : item,
-      ),
-    );
+    setConfirmData((prevData) => {
+      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+
+      if (existingItemIndex !== -1) {
+        // 如果 key 存在，更新其对应的 value
+        const updatedConfirmData = [...prevData];
+        updatedConfirmData[existingItemIndex] = {
+          ...updatedConfirmData[existingItemIndex],
+          value: value,
+        };
+        return updatedConfirmData;
+      } else if (selectNavigationKey === "names") {
+        // 如果 key 不存在，新增一条数据
+        const newItem = {
+          resourceId: navigations.nodes[index]?.resourceId,
+          locale: navigations.nodes[index]?.translatableContent[0]?.locale,
+          key: key,
+          value: value, // 初始为空字符串
+          translatableContentDigest:
+            navigations.nodes[index]?.translatableContent[0]?.digest,
+          target: searchTerm || "",
+        };
+        console.log(1);
+
+        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+      } else {
+        const newItem = {
+          resourceId: navigationItems.nodes[index]?.resourceId,
+          locale: navigationItems.nodes[index]?.translatableContent[0]?.locale,
+          key: key,
+          value: value, // 初始为空字符串
+          translatableContentDigest:
+            navigationItems.nodes[index]?.translatableContent[0]?.digest,
+          target: searchTerm || "",
+        };
+        console.log(2);
+
+        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+      }
+    });
   };
 
   const transBeforeData = ({ menus }: { menus: any }) => {
@@ -355,14 +378,16 @@ const Index = () => {
     items: ItemType[],
   ): Array<{
     key: string;
+    index: number;
     resource: string;
     default_language: string | undefined;
     translated: string | undefined;
   }> => {
-    return items.map((item: ItemType) => {
+    return items.map((item: ItemType, index: number) => {
       // 创建当前项的对象
       const currentItem = {
         key: `menu_item_${item.id}`, // 使用 id 生成唯一的 key
+        index: index,
         resource: "label", // 资源字段固定为 "Menu Items"
         default_language: item?.label, // 默认语言为 item 的标题
         translated: item.translations?.label, // 翻译字段初始化为空字符串
@@ -458,45 +483,33 @@ const Index = () => {
           borderRadius: borderRadiusLG,
         }}
       >
-        <ManageModalHeader
-          shopLanguagesLoad={shopLanguagesLoad}
-          locale={searchTerm}
-        />
-        <Layout
-          style={{
-            padding: "24px 0",
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
-        >
-          <Sider style={{ background: colorBgContainer }} width={200}>
-            <Menu
-              mode="inline"
-              defaultSelectedKeys={[navigationsData.nodes[0].id]}
-              defaultOpenKeys={["sub1"]}
-              style={{ height: "100%" }}
-              items={menuData}
-              // onChange={onChange}
-              selectedKeys={[selectNavigationKey]}
-              onClick={onClick}
+        <Sider style={{ background: colorBgContainer }} width={200}>
+          <Menu
+            mode="inline"
+            defaultSelectedKeys={[navigationsData.nodes[0].id]}
+            defaultOpenKeys={["sub1"]}
+            style={{ height: "100%" }}
+            items={menuData}
+            // onChange={onChange}
+            selectedKeys={[selectNavigationKey]}
+            onClick={onClick}
+          />
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <Pagination
+              hasPrevious={hasPrevious}
+              onPrevious={onPrevious}
+              hasNext={hasNext}
+              onNext={onNext}
             />
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <Pagination
-                hasPrevious={hasPrevious}
-                onPrevious={onPrevious}
-                hasNext={hasNext}
-                onNext={onNext}
-              />
-            </div>
-          </Sider>
-          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-            <Table
-              columns={resourceColumns}
-              dataSource={resourceData}
-              pagination={false}
-            />
-          </Content>
-        </Layout>
+          </div>
+        </Sider>
+        <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+          <Table
+            columns={resourceColumns}
+            dataSource={resourceData}
+            pagination={false}
+          />
+        </Content>
       </Layout>
     </Modal>
   );

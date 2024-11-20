@@ -3,7 +3,7 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { Typography, Button, Space, Flex, Table, Switch } from "antd";
 import { useEffect, useState } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
 import "./styles.css";
 import { authenticate } from "~/shopify.server";
 import {
@@ -29,12 +29,13 @@ import AttentionCard from "~/components/attentionCard";
 import PrimaryLanguage from "./components/primaryLanguage";
 import AddLanguageModal from "./components/addLanguageModal";
 import PublishModal from "./components/publishModal";
-import { GetLanguageList, GetPicture, GetTranslate } from "~/api/serve";
 import {
-  CheckCircleTwoTone,
-  CloseCircleTwoTone,
-  LoadingOutlined,
-} from "@ant-design/icons";
+  GetLanguageList,
+  GetPicture,
+  GetTranslate,
+  GetUserWords,
+} from "~/api/serve";
+import TranslatedIcon from "~/components/translateIcon";
 
 const { Title } = Typography;
 
@@ -87,20 +88,20 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       ...language,
       key: index,
     }));
-    const allCountryCode = allLanguages.map((item) =>
-      item.isoCode.toUpperCase(),
-    );    
-    const allCountryImg = await GetPicture(allCountryCode);
-    console.log(allCountryImg);
+    const allCountryCode = allLanguages.map((item) => item.isoCode);
 
-    const status = await GetLanguageList({ request });
+    const allCountryImg = await GetPicture(allCountryCode);
+    const words = await GetUserWords({ request });
+
+    const languages = await GetLanguageList({ request });
     return json({
       shop,
       shopLanguages,
       allLanguages,
       allMarket,
-      status,
+      languages,
       allCountryImg,
+      words,
     });
   } catch (error) {
     console.error("Error load languages:", error);
@@ -171,8 +172,9 @@ const Index = () => {
     shopLanguages,
     allLanguages,
     allMarket,
-    status,
+    languages,
     allCountryImg,
+    words,
   } = useLoaderData<typeof loader>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
@@ -184,20 +186,47 @@ const Index = () => {
   const [publishMarket, setPublishMarket] = useState<string>();
   const [publishInfo, setPublishInfo] = useState<PublishInfoType>();
   const [unPublishInfo, setUnpublishInfo] = useState<UnpublishInfoType>();
-  const dataSource: LanguagesDataType[] = useSelector(
-    (state: any) => state.languageTableData.rows,
-  );
-
-  // const primaryLanguage = shopLanguages.find((lang) => lang.primary);
+  const [disable, setDisable] = useState<boolean>(false);
+  const [data, setData] = useState<LanguagesDataType[]>([]);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
+  const dataSource: LanguagesDataType[] = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
+
+  const primaryLanguage: ShopLocalesType | undefined = shopLanguages.find(
+    (lang) => lang.primary,
+  );
+
   useEffect(() => {
-    const data = typeTrans();
+    if (words.chars > words.totalChars) setDisable(true);
+  }, [words]);
+
+  useEffect(() => {
+    if (!shopLanguages || !languages) return; // 确保数据加载完成后再执行
+    const newdata = shopLanguages.filter((language) => !language.primary);
+    const data = newdata.map((lang, i) => ({
+      key: i,
+      language: lang.name,
+      locale: lang.locale,
+      primary: lang.primary,
+      status:
+        languages.find((statu: any) => statu.target === lang.locale)?.status ||
+        0,
+      auto_update_translation: false,
+      published: lang.published,
+      loading: false,
+    }));
+
     dispatch(setTableData(data));
-  }, [shopLanguages]);
+  }, [shopLanguages, languages]); // 依赖 shopLanguages 和 status
+
+  useEffect(() => {
+    setData(dataSource);
+  }, [dataSource]);
 
   useEffect(() => {
     if (publishInfo) {
@@ -228,28 +257,9 @@ const Index = () => {
       key: "status",
       width: "20%",
       render: (_: any, record: any) => {
-        return record.status === 2 ? (
-          <LoadingOutlined />
-        ) : record.status ? (
-          <CheckCircleTwoTone twoToneColor="rgb(0,255,0)" />
-        ) : (
-          <CloseCircleTwoTone twoToneColor="rgb(255,0,0)" />
-        );
+        return <TranslatedIcon status={record.status} />;
       },
     },
-    // {
-    //   title: "Auto Update Translation",
-    //   dataIndex: "auto_update_translation",
-    //   key: "auto_update_translation",
-    //   render: (_: any, record: any) => {
-    //     return (
-    //       <Switch
-    //         checked={record.auto_update_translation}
-    //         onChange={(checked) => handleAutoUpdateChange(record.key, checked)}
-    //       />
-    //     );
-    //   },
-    // },
     {
       title: "Publish",
       dataIndex: "published",
@@ -271,12 +281,12 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           {record.status === 2 ? (
-            <Button disabled style={{ width: "100px" }} loading>
-              正在翻译
+            <Button disabled style={{ width: "100px" }}>
+              Translating
             </Button>
           ) : record.status ? (
             <Button disabled style={{ width: "100px" }}>
-              已翻译
+              Translated
             </Button>
           ) : (
             <Button
@@ -284,42 +294,25 @@ const Index = () => {
               style={{ width: "100px" }}
               type="primary"
             >
-              翻译
+              Translate
             </Button>
           )}
-          <Button
-            onClick={() => handleSet(record.locale)}
-            style={{ width: "100px" }}
-          >
-            设置
+          <Button>
+            <Link to={`/app/manage_translation?language=${record.locale}`}>
+              Manage
+            </Link>
           </Button>
         </Space>
       ),
     },
   ];
 
-  const typeTrans = () => {
-    const newdata = shopLanguages.filter((language) => !language.primary);
-    const data = newdata.map((lang, i) => ({
-      key: i,
-      language: lang.name,
-      locale: lang.locale,
-      primary: lang.primary,
-      status:
-        status.find((statu: any) => statu.target === lang.locale)?.status || 0,
-      auto_update_translation: false,
-      published: lang.published,
-      loading: false,
-    }));
-    return data;
-  };
-
   const handleOpenModal = () => {
     setIsLanguageModalOpen(true); // 打开Modal
   };
 
   const handlePublishChange = (key: number, checked: boolean) => {
-    const row = dataSource.find((item: any) => item.key === key);
+    const row = data.find((item: any) => item.key === key);
 
     if (checked) {
       dispatch(setPublishLoadingState({ key, loading: checked }));
@@ -336,9 +329,7 @@ const Index = () => {
   };
 
   const handleTranslate = async (key: number) => {
-    const selectedKey = dataSource.find(
-      (item: { key: number }) => item.key === key,
-    );
+    const selectedKey = data.find((item: { key: number }) => item.key === key);
     if (selectedKey) {
       const selectedLanguage = shopLanguages.find(
         (item) => item.name === selectedKey.language,
@@ -356,10 +347,6 @@ const Index = () => {
         dispatch(setStatuState({ key, status: 2 }));
       }
     }
-  };
-
-  const handleSet = (languageCode: string) => {
-    navigate("/app/manage_translation", { state: { key: languageCode } });
   };
 
   const handleConfirmPublishModal = () => {
@@ -393,10 +380,10 @@ const Index = () => {
 
   //表格编辑
   const handleDelete = () => {
-    const newData = dataSource.filter(
+    const newData = data.filter(
       (item: LanguagesDataType) => !selectedRowKeys.includes(item.key),
     );
-    const deleteData = dataSource.filter((item: LanguagesDataType) =>
+    const deleteData = data.filter((item: LanguagesDataType) =>
       selectedRowKeys.includes(item.key),
     );
 
@@ -428,45 +415,54 @@ const Index = () => {
     <Page>
       <TitleBar title="Language" />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <div>
+          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+            Languages
+          </Title>
+          <PrimaryLanguage shopLanguages={shopLanguages} />
+        </div>
         <AttentionCard
           title="Translation word credits have been exhausted."
           content="The translation cannot be completed due to exhausted credits."
           buttonContent="Get more word credits"
+          show={true}
         />
-        <div className="language-header">
-          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-            Languages
-          </Title>
-          <div className="language-action">
-            <Space>
-              <Button type="default" onClick={PreviewClick}>
-                Preview store
+        <div className="languageTable_action">
+          <Flex
+            align="center"
+            justify="space-between" // 使按钮左右分布
+            style={{ width: "100%", marginBottom: "16px" }}
+          >
+            <Flex align="center" gap="middle">
+              <Button
+                type="primary"
+                onClick={handleDelete}
+                disabled={!hasSelected}
+                loading={deleteloading}
+              >
+                Delete
               </Button>
-              <Button type="primary" onClick={handleOpenModal}>
-                Add Language
-              </Button>
-            </Space>
-          </div>
-        </div>
-        <PrimaryLanguage shopLanguages={shopLanguages} />
-        <Flex gap="middle" vertical>
-          <Flex align="center" gap="middle">
-            <Button
-              type="primary"
-              onClick={handleDelete}
-              disabled={!hasSelected}
-              loading={deleteloading}
-            >
-              Delete
-            </Button>
-            {hasSelected ? `Selected ${selectedRowKeys.length} items` : null}
+              {hasSelected ? `Selected ${selectedRowKeys.length} items` : null}
+            </Flex>
+            <div>
+              <Space>
+                <Button type="default" onClick={PreviewClick}>
+                  Preview store
+                </Button>
+                <Button type="primary" onClick={handleOpenModal}>
+                  Add Language
+                </Button>
+              </Space>
+            </div>
           </Flex>
+          {/* 表格部分，占满宽度 */}
           <Table
             rowSelection={rowSelection}
             columns={columns}
-            dataSource={dataSource}
+            dataSource={data}
+            style={{ width: "100%" }}
           />
-        </Flex>
+        </div>
       </Space>
       <AddLanguageModal
         isVisible={isLanguageModalOpen}
