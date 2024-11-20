@@ -14,7 +14,7 @@ interface LanguageModalProps {
   setIsModalOpen: (visible: boolean) => void;
   allLanguages: AllLanguagesType[];
   submit: SubmitFunction;
-  allCountryImg: any;
+  languageData: any;
 }
 
 interface AddLanguageType {
@@ -30,16 +30,14 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   setIsModalOpen,
   allLanguages,
   submit,
-  allCountryImg,
-}) => {  
-  const updatedLocales = allLanguages.map((item) =>
-    item.isoCode,
-  );
+  languageData,
+}) => {
+  const updatedLocales = allLanguages.map((item) => item.isoCode);
   const addLanguages: AddLanguageType[] = allLanguages.map((lang, i) => ({
     key: lang.key,
     isoCode: lang.isoCode,
-    src: allCountryImg[updatedLocales[i]],
-    name: lang.name,
+    src: languageData[updatedLocales[i]].countries,
+    name: `${lang.name}(${languageData[updatedLocales[i]].Local})`,
     state: "", // 默认值为 false
   }));
   const [allSelectedKeys, setAllSelectedKeys] = useState<React.Key[]>([]); // 保存所有选中的key
@@ -54,16 +52,16 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   );
 
   const selectedLanguagesSet = new Set(
-    selectedLanguage.map((lang) => lang.language),
+    selectedLanguage.map((lang) => lang.locale),
   );
 
   useEffect(() => {
     // 更新语言状态
     const updatedLanguages = addLanguages.map((lang) => {
-      if (selectedLanguagesSet.has(lang.name)) {
+      if (selectedLanguagesSet.has(lang.isoCode)) {
         // 检查是否是默认语言
         const isPrimary = selectedLanguage.some(
-          (sl) => sl.language === lang.name && sl.primary,
+          (sl) => sl.locale === lang.isoCode && sl.primary,
         );
         return { ...lang, state: isPrimary ? "Primary" : "Added" }; // 根据 primary 设置状态
       }
@@ -72,8 +70,8 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
 
     // 根据状态排序
     const sortedFilteredLanguages = updatedLanguages.sort((a, b) => {
-      const aSelected = selectedLanguagesSet.has(a.name) ? -1 : 1; // 将已选语言放前面
-      const bSelected = selectedLanguagesSet.has(b.name) ? -1 : 1;
+      const aSelected = selectedLanguagesSet.has(a.isoCode) ? -1 : 1; // 将已选语言放前面
+      const bSelected = selectedLanguagesSet.has(b.isoCode) ? -1 : 1;
       return aSelected - bSelected;
     });
 
@@ -168,7 +166,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
     ), // Filter selected keys based on current filtered languages
     onChange: handleRowSelectionChange,
     getCheckboxProps: (record: any) => ({
-      disabled: selectedLanguagesSet.has(record.name), // Disable checkbox if the language is already selected
+      disabled: selectedLanguagesSet.has(record.isoCode), // Disable checkbox if the language is already selected
     }),
   };
 
@@ -200,7 +198,12 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
                 key={index} // 为每个 img 标签添加唯一的 key 属性
                 src={url}
                 alt={`${record.name} flag`}
-                style={{ width: "60px", height: "auto", marginBottom: "10px" }}
+                style={{
+                  width: "30px",
+                  height: "auto",
+                  border: "1px solid #888",
+                  borderRadius: "2px",
+                }}
               />
             ))}
           </div>

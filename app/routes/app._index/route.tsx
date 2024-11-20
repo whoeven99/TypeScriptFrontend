@@ -4,12 +4,12 @@ import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import UserProfileCard from "./components/userProfileCard";
 import { Col, Row, Space, Typography } from "antd";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import "./styles.css";
 import UserLanguageCard from "./components/userLanguageCard";
 import {
   GetLanguageList,
-  GetPicture,
+  GetLanguageData,
   GetUserSubscriptionPlan,
   GetUserWords,
 } from "~/api/serve";
@@ -17,7 +17,7 @@ import { queryShop, queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 const { Title, Text } = Typography;
 
@@ -35,11 +35,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     (language) => !language.primary,
   );
   const shopLocales = shopLanguagesWithoutPrimary.map((item) => item.locale);
-  const pictures = await GetPicture(shopLocales);
+  const pictures = await GetLanguageData(shopLocales);
+  console.log(pictures);
   const shopData = await queryShop({ request });
   const languageData = shopLanguagesWithoutPrimary.map((lang, i) => ({
     key: i,
-    src: pictures[shopLocales[i]],
+    src: pictures[shopLocales[i]].countries,
     name: lang.name,
     locale: lang.locale,
     status:
@@ -78,7 +79,10 @@ const Index = () => {
     published: lang.published,
     loading: false,
   }));
-  dispatch(setTableData(data));
+
+  useEffect(() => {
+    dispatch(setTableData(data)); // 只在组件首次渲染时触发
+  }, [dispatch, data]);
 
   return (
     <Page>
@@ -108,7 +112,6 @@ const Index = () => {
           <Row gutter={[16, 16]}>
             {languageData.map((language: any, index: number) => (
               <Col span={8} key={index}>
-                {" "}
                 <UserLanguageCard
                   flagUrl={language.src[0]}
                   primaryLanguage={user.primaryLanguage}

@@ -16,7 +16,7 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {
-    const shopData = await queryShop({request});
+    const shopData = await queryShop({ request });
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/user/add`,
       method: "POST",
@@ -115,15 +115,17 @@ export const GetUserWords = async ({ request }: { request: Request }) => {
     const res = response.data.response;
     return res;
   } catch (error) {
-    console.error("Error occurred in the userplan:", error);
-    throw new Error("Error occurred in the userplan");
+    console.error("Error occurred in the userwords:", error);
+    throw new Error("Error occurred in the userwords");
   }
 };
 
 //获取国旗图片链接
-export const GetPicture = async (locale: string[]) => {
+export const GetLanguageData = async (locale: string[]) => {
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
+
+  console.log(updatedLocales);
 
   try {
     const response = await axios({
@@ -133,7 +135,17 @@ export const GetPicture = async (locale: string[]) => {
     });
     const data = response.data.response;
     const res = Object.keys(data).reduce(
-      (acc: { [key: string]: string }, key) => {
+      (
+        acc: {
+          [key: string]: {
+            isoCode: string;
+            Local: string;
+            countries: [];
+            Name: string;
+          };
+        },
+        key,
+      ) => {
         // 将 key 中的 "_" 替换为 "-"
         const newKey = key.replace("_", "-");
         // 保持原来的值，重新赋值给新键

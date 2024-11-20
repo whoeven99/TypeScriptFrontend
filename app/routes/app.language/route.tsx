@@ -31,7 +31,7 @@ import AddLanguageModal from "./components/addLanguageModal";
 import PublishModal from "./components/publishModal";
 import {
   GetLanguageList,
-  GetPicture,
+  GetLanguageData,
   GetTranslate,
   GetUserWords,
 } from "~/api/serve";
@@ -89,8 +89,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       key: index,
     }));
     const allCountryCode = allLanguages.map((item) => item.isoCode);
-
-    const allCountryImg = await GetPicture(allCountryCode);
+    const languageData = await GetLanguageData(allCountryCode);
+    
     const words = await GetUserWords({ request });
 
     const languages = await GetLanguageList({ request });
@@ -100,7 +100,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       allLanguages,
       allMarket,
       languages,
-      allCountryImg,
+      languageData,
       words,
     });
   } catch (error) {
@@ -173,7 +173,7 @@ const Index = () => {
     allLanguages,
     allMarket,
     languages,
-    allCountryImg,
+    languageData,
     words,
   } = useLoaderData<typeof loader>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
@@ -469,7 +469,7 @@ const Index = () => {
         setIsModalOpen={setIsLanguageModalOpen}
         allLanguages={allLanguages}
         submit={submit}
-        allCountryImg={allCountryImg}
+        languageData={languageData}
       />
       <PublishModal
         isVisible={isPublishModalOpen} // 父组件控制是否显示
