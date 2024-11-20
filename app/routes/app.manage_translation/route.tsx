@@ -389,7 +389,7 @@ const Index = () => {
         </div>
         <div className="manage-content-wrap">
           <div className="manage-content-left">
-            <Suspense fallback={<div>加载翻译内容...</div>}>
+            <Suspense fallback={<div>loading...</div>}>
               <Space
                 direction="vertical"
                 size="middle"

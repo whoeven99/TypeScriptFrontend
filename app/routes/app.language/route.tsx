@@ -1,7 +1,7 @@
 import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Typography, Button, Space, Flex, Table, Switch } from "antd";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
 import "./styles.css";
@@ -419,74 +419,78 @@ const Index = () => {
   }; //新页面预览商店
 
   return (
-    <Page>
-      <TitleBar title="Language" />
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <div>
-          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-            Languages
-          </Title>
-          <PrimaryLanguage shopLanguages={shopLanguages} />
-        </div>
-        <AttentionCard
-          title="Translation word credits have been exhausted."
-          content="The translation cannot be completed due to exhausted credits."
-          buttonContent="Get more word credits"
-          show={true}
-        />
-        <div className="languageTable_action">
-          <Flex
-            align="center"
-            justify="space-between" // 使按钮左右分布
-            style={{ width: "100%", marginBottom: "16px" }}
-          >
-            <Flex align="center" gap="middle">
-              <Button
-                type="primary"
-                onClick={handleDelete}
-                disabled={!hasSelected}
-                loading={deleteloading}
-              >
-                Delete
-              </Button>
-              {hasSelected ? `Selected ${selectedRowKeys.length} items` : null}
-            </Flex>
-            <div>
-              <Space>
-                <Button type="default" onClick={PreviewClick}>
-                  Preview store
-                </Button>
-                <Button type="primary" onClick={handleOpenModal}>
-                  Add Language
-                </Button>
-              </Space>
-            </div>
-          </Flex>
-          {/* 表格部分，占满宽度 */}
-          <Table
-            rowSelection={rowSelection}
-            columns={columns}
-            dataSource={data}
-            style={{ width: "100%" }}
+    <Suspense fallback={<div>Loading...</div>}>
+      <Page>
+        <TitleBar title="Language" />
+        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+          <div>
+            <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+              Languages
+            </Title>
+            <PrimaryLanguage shopLanguages={shopLanguages} />
+          </div>
+          <AttentionCard
+            title="Translation word credits have been exhausted."
+            content="The translation cannot be completed due to exhausted credits."
+            buttonContent="Get more word credits"
+            show={disable}
           />
-        </div>
-      </Space>
-      <AddLanguageModal
-        isVisible={isLanguageModalOpen}
-        setIsModalOpen={setIsLanguageModalOpen}
-        allLanguages={allLanguages}
-        submit={submit}
-        languageData={languageData}
-      />
-      <PublishModal
-        isVisible={isPublishModalOpen} // 父组件控制是否显示
-        onOk={() => handleConfirmPublishModal()}
-        onCancel={() => handleClosePublishModal()}
-        setPublishMarket={setPublishMarket}
-        selectedRow={selectedRow}
-        allMarket={allMarket}
-      />
-    </Page>
+          <div className="languageTable_action">
+            <Flex
+              align="center"
+              justify="space-between" // 使按钮左右分布
+              style={{ width: "100%", marginBottom: "16px" }}
+            >
+              <Flex align="center" gap="middle">
+                <Button
+                  type="primary"
+                  onClick={handleDelete}
+                  disabled={!hasSelected}
+                  loading={deleteloading}
+                >
+                  Delete
+                </Button>
+                {hasSelected
+                  ? `Selected ${selectedRowKeys.length} items`
+                  : null}
+              </Flex>
+              <div>
+                <Space>
+                  <Button type="default" onClick={PreviewClick}>
+                    Preview store
+                  </Button>
+                  <Button type="primary" onClick={handleOpenModal}>
+                    Add Language
+                  </Button>
+                </Space>
+              </div>
+            </Flex>
+            {/* 表格部分，占满宽度 */}
+            <Table
+              rowSelection={rowSelection}
+              columns={columns}
+              dataSource={data}
+              style={{ width: "100%" }}
+            />
+          </div>
+        </Space>
+        <AddLanguageModal
+          isVisible={isLanguageModalOpen}
+          setIsModalOpen={setIsLanguageModalOpen}
+          allLanguages={allLanguages}
+          submit={submit}
+          languageData={languageData}
+        />
+        <PublishModal
+          isVisible={isPublishModalOpen} // 父组件控制是否显示
+          onOk={() => handleConfirmPublishModal()}
+          onCancel={() => handleClosePublishModal()}
+          setPublishMarket={setPublishMarket}
+          selectedRow={selectedRow}
+          allMarket={allMarket}
+        />
+      </Page>
+    </Suspense>
   );
 };
 
