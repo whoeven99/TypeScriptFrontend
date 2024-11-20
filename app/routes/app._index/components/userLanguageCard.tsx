@@ -33,6 +33,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   const fetcher = useFetcher<FetchData>();
 
   useEffect(() => {
+    console.log(1);
     const formData = new FormData();
     formData.append("languageCode", JSON.stringify(languageCode));
     fetcher.submit(formData, {
@@ -43,7 +44,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
 
   useEffect(() => {
     if (fetcher.data) {
-      setWords(fetcher.data.totalWords)
+      setWords(fetcher.data.totalWords);
     }
   }, [fetcher.data]);
 

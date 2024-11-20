@@ -154,8 +154,8 @@ export const GetLanguageData = async (locale: string[]) => {
     );
     return res;
   } catch (error) {
-    console.error("Error occurred in the pictures:", error);
-    throw new Error("Error occurred in the pictures");
+    console.error("Error occurred in the languageData:", error);
+    throw new Error("Error occurred in the languageData");
   }
 };
 

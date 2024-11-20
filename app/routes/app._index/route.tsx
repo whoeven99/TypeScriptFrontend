@@ -27,7 +27,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
   const words = await GetUserWords({ request });
   const plan = await GetUserSubscriptionPlan({ request });
-  const languages = await GetLanguageList({ request });
+  // const languages = await GetLanguageList({ request });
   const shopPrimaryLanguage = shopLanguages.filter(
     (language) => language.primary,
   );
@@ -36,18 +36,20 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   );
   const shopLocales = shopLanguagesWithoutPrimary.map((item) => item.locale);
   const pictures = await GetLanguageData(shopLocales);
-  const shopData = await queryShop({ request });
+  // const shopData = await queryShop({ request });
   const languageData = shopLanguagesWithoutPrimary.map((lang, i) => ({
     key: i,
     src: pictures[shopLocales[i]].countries,
     name: lang.name,
     locale: lang.locale,
     status: 0,
+    // languages.find((language: any) => language.target === lang.locale)
+    //   ?.status || 0,
     published: lang.published,
   }));
 
   const user = {
-    name: shopData.name,
+    // name: shopData.name,
     plan: plan,
     chars: words?.chars,
     totalChars: words?.totalChars,
@@ -77,9 +79,9 @@ const Index = () => {
     loading: false,
   }));
 
-  useEffect(() => {
-    dispatch(setTableData(data)); // 只在组件首次渲染时触发
-  }, [dispatch, data]);
+  // useEffect(() => {
+  dispatch(setTableData(data)); // 只在组件首次渲染时触发
+  // }, [dispatch, data]);
 
   return (
     <Page>
@@ -87,10 +89,10 @@ const Index = () => {
       <BlockStack gap="500">
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>Hi! {user.name}</Title>
+            <Title level={3}>Hi! {"user.name"}</Title>
           </div>
           <UserProfileCard
-            name={user.name}
+            name={"user.name"}
             plan={user.plan}
             chars={user.chars}
             totalChars={user.totalChars}
