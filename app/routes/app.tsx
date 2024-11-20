@@ -50,6 +50,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const translation = JSON.parse(formData.get("translation") as string);
     const itemsInfo = JSON.parse(formData.get("itemsInfo") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
+    console.log(languageCode);
+    
     switch (true) {
       case !!translation:
         const source = translation.primaryLanguage.locale;

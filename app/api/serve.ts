@@ -125,8 +125,6 @@ export const GetLanguageData = async (locale: string[]) => {
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
 
-  console.log(updatedLocales);
-
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getImageInfo`,
@@ -207,8 +205,8 @@ export const GetTotalWords = async ({
     const res = response.data.response;
     return res;
   } catch (error) {
-    console.error("Error occurred in the languageList:", error);
-    throw new Error("Error occurred in the languageList");
+    console.error("Error occurred in the totalWords:", error);
+    throw new Error("Error occurred in the totalWords");
   }
 };
 

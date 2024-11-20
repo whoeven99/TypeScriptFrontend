@@ -36,16 +36,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   );
   const shopLocales = shopLanguagesWithoutPrimary.map((item) => item.locale);
   const pictures = await GetLanguageData(shopLocales);
-  console.log(pictures);
   const shopData = await queryShop({ request });
   const languageData = shopLanguagesWithoutPrimary.map((lang, i) => ({
     key: i,
     src: pictures[shopLocales[i]].countries,
     name: lang.name,
     locale: lang.locale,
-    status:
-      languages.find((language: any) => language.target === lang.locale)
-        ?.status || 0,
+    status: 0,
     published: lang.published,
   }));
 
