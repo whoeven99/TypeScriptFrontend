@@ -96,7 +96,7 @@ const Index = () => {
       <BlockStack gap="500">
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>CIWI: Click CIWI 10x Your Store's Profits</Title>
+            <Title level={3}>Faster, higher-quality localization translation tool.</Title>
           </div>
           <UserProfileCard
             plan={user.plan}
