@@ -1,14 +1,4 @@
-import {
-  Button,
-  Input,
-  Layout,
-  MenuProps,
-  Modal,
-  Result,
-  Space,
-  Table,
-  theme,
-} from "antd";
+import { Button, Layout, Modal, Result, Space, Table, theme } from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
@@ -25,11 +15,13 @@ import {
 } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import ManageTableInput from "~/components/manageTableInput";
 
 const { Content } = Layout;
 
 type TableDataType = {
-  key: string | number;
+  key: string;
+  index: number;
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
@@ -131,17 +123,8 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   useEffect(() => {
-    setConfirmData(
-      filters.nodes.map((item: any) => ({
-        resourceId: item.resourceId,
-        locale: item.translatableContent[0]?.locale,
-        key: item.translatableContent[0]?.key,
-        value: "",
-        translatableContentDigest: item.translatableContent[0]?.digest,
-        target: searchTerm,
-      })),
-    );
-  }, []);
+    console.log(confirmData);
+  }, [confirmData]);
 
   useEffect(() => {
     setHasPrevious(filtersData.pageInfo.hasPreviousPage);
@@ -176,7 +159,7 @@ const Index = () => {
       key: "default_language",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return <Input disabled value={record?.default_language} />;
+        return <ManageTableInput record={record} textarea={false} />;
       },
     },
     {
@@ -186,34 +169,57 @@ const Index = () => {
       width: "45%",
       render: (_: any, record: TableDataType) => {
         return (
-          record && (
-            <Input
-              value={translatedValues[record?.key] || record?.translated}
-              onChange={(e) => handleInputChange(record.key, e.target.value)}
-            />
-          )
+          <ManageTableInput
+            record={record}
+            translatedValues={translatedValues}
+            setTranslatedValues={setTranslatedValues}
+            handleInputChange={handleInputChange}
+            textarea={false}
+          />
         );
       },
     },
   ];
 
-  const handleInputChange = (key: string | number, value: string) => {
+  const handleInputChange = (key: string, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
     }));
-    setConfirmData(
-      confirmData.map((item) =>
-        item.key === key ? { ...item, value: value } : item,
-      ),
-    );
+    setConfirmData((prevData) => {
+      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+
+      if (existingItemIndex !== -1) {
+        // 如果 key 存在，更新其对应的 value
+        const updatedConfirmData = [...prevData];
+        updatedConfirmData[existingItemIndex] = {
+          ...updatedConfirmData[existingItemIndex],
+          value: value,
+        };
+        return updatedConfirmData;
+      } else {
+        // 如果 key 不存在，新增一条数据
+        const newItem = {
+          resourceId: filters.nodes[0]?.resourceId,
+          locale: filters.nodes[0]?.translatableContent[0]?.locale,
+          key: key,
+          value: value, // 初始为空字符串
+          translatableContentDigest:
+            filters.nodes[0]?.translatableContent[0]?.digest,
+          target: searchTerm || "",
+        };
+
+        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+      }
+    });
   };
 
   const generateMenuItemsArray = (items: any) => {
-    return items.nodes.flatMap((item: any) => {
+    return items.nodes.flatMap((item: any, index: number) => {
       // 创建当前项的对象
       const currentItem = {
         key: `${item.resourceId}`, // 使用 id 生成唯一的 key
+        index: index,
         resource: "label", // 资源字段固定为 "Menu Items"
         default_language: item.translatableContent[0]?.value, // 默认语言为 item 的标题
         translated: item.translations[0]?.value, // 翻译字段初始化为空字符串

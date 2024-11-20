@@ -1,6 +1,5 @@
 import {
   Button,
-  Input,
   Layout,
   Menu,
   MenuProps,
@@ -25,9 +24,7 @@ import {
 } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
-import dynamic from "next/dynamic";
-
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+import ManageTableInput from "~/components/manageTableInput";
 
 const { Sider, Content } = Layout;
 
@@ -53,7 +50,7 @@ interface PageType {
 }
 
 type TableDataType = {
-  key: string | number;
+  key: string;
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
@@ -169,6 +166,10 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   useEffect(() => {
+    console.log(confirmData);
+  }, [confirmData]);
+
+  useEffect(() => {
     setHasPrevious(pagesData.pageInfo.hasPreviousPage);
     setHasNext(pagesData.pageInfo.hasNextPage);
   }, [pagesData]);
@@ -178,6 +179,8 @@ const Index = () => {
       pages: pagesData,
     });
     setPageData(data);
+    setConfirmData([]);
+    setTranslatedValues({});
   }, [selectPageKey]);
 
   useEffect(() => {
@@ -197,7 +200,7 @@ const Index = () => {
     ]);
     setSeoData([
       {
-        key: "url_handle",
+        key: "handle",
         resource: "URL handle",
         default_language: pageData?.handle,
         translated: pageData?.translations?.handle,
@@ -249,12 +252,7 @@ const Index = () => {
       key: "default_language",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        if (record?.key === "body") {
-          return (
-            <ReactQuill theme="snow" defaultValue={record?.default_language} />
-          );
-        }
-        return <Input disabled value={record?.default_language} />;
+        return <ManageTableInput record={record} textarea={false} />;
       },
     },
     {
@@ -263,23 +261,14 @@ const Index = () => {
       key: "translated",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        if (record?.key === "body") {
-          return (
-            <ReactQuill
-              theme="snow"
-              defaultValue={record?.translated}
-              onChange={(content) => handleInputChange(record.key, content)}
-            />
-          );
-        }
         return (
-          record && (
-            <Input
-              disabled
-              value={translatedValues[record?.key] || record?.translated}
-              onChange={(e) => handleInputChange(record.key, e.target.value)}
-            />
-          )
+          <ManageTableInput
+            record={record}
+            translatedValues={translatedValues}
+            setTranslatedValues={setTranslatedValues}
+            handleInputChange={handleInputChange}
+            textarea={false}
+          />
         );
       },
     },
@@ -298,7 +287,7 @@ const Index = () => {
       key: "default_language",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return <Input disabled value={record?.default_language} />;
+        return <ManageTableInput record={record} textarea={false} />;
       },
     },
     {
@@ -308,27 +297,54 @@ const Index = () => {
       width: "45%",
       render: (_: any, record: TableDataType) => {
         return (
-          record && (
-            <Input
-              value={translatedValues[record?.key] || record?.translated}
-              onChange={(e) => handleInputChange(record.key, e.target.value)}
-            />
-          )
+          <ManageTableInput
+            record={record}
+            translatedValues={translatedValues}
+            setTranslatedValues={setTranslatedValues}
+            handleInputChange={handleInputChange}
+            textarea={false}
+          />
         );
       },
     },
   ];
 
-  const handleInputChange = (key: string | number, value: string) => {
+  const handleInputChange = (key: string, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
     }));
-    setConfirmData(
-      confirmData.map((item) =>
-        item.key === key ? { ...item, value: value } : item,
-      ),
-    );
+    setConfirmData((prevData) => {
+      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+
+      if (existingItemIndex !== -1) {
+        // 如果 key 存在，更新其对应的 value
+        const updatedConfirmData = [...prevData];
+        updatedConfirmData[existingItemIndex] = {
+          ...updatedConfirmData[existingItemIndex],
+          value: value,
+        };
+        return updatedConfirmData;
+      } else {
+        // 如果 key 不存在，新增一条数据
+        const newItem = {
+          resourceId: pages.nodes.find(
+            (item: any) => item.resourceId === selectPageKey,
+          )?.resourceId,
+          locale: pages.nodes
+            .find((item: any) => item.resourceId === selectPageKey)
+            ?.translatableContent.find((item: any) => item.key === key)?.locale,
+          key: key,
+          value: value, // 初始为空字符串
+          translatableContentDigest: pages.nodes
+            .find((item: any) => item.resourceId === selectPageKey)
+            ?.translatableContent.find((item: any) => item.key === key)?.digest,
+          target: searchTerm || "",
+        };
+
+        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+      }
+    });
   };
 
   const transBeforeData = ({ pages }: { pages: any }) => {
@@ -386,17 +402,6 @@ const Index = () => {
       page.translations.find((item: any) => item.key === "meta_description")
         ?.value ||
       page.translations.find((item: any) => item.key === "body_html")?.value;
-
-    setConfirmData(
-      page.translatableContent.map((item: any) => ({
-        resourceId: page.resourceId,
-        locale: item.locale,
-        key: item.key,
-        value: "",
-        translatableContentDigest: item.digest,
-        target: searchTerm,
-      })),
-    );
     return data;
   };
 
