@@ -93,6 +93,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const languageData = await GetLanguageData({ locale: allCountryCode });
 
     const words = await GetUserWords({ shop });
+    console.log(words);
 
     const languages = await GetLanguageList({ shop, accessToken });
     return json({
