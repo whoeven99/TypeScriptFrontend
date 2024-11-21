@@ -27,6 +27,7 @@ import {
 import { ShopLocalesType } from "../app.language/route";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
+import { authenticate } from "~/shopify.server";
 
 const { Sider, Content } = Layout;
 
@@ -75,11 +76,14 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
     const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      request,
+      shop,
+      accessToken,
     });
     const products = await queryNextTransType({
       request,
@@ -262,10 +266,7 @@ const Index = () => {
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
-  useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
-
+  
   useEffect(() => {
     setHasPrevious(productsData.pageInfo.hasPreviousPage);
     setHasNext(productsData.pageInfo.hasNextPage);

@@ -1,7 +1,7 @@
 import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Typography, Button, Space, Flex, Table, Switch } from "antd";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
 import "./styles.css";
@@ -31,7 +31,7 @@ import AddLanguageModal from "./components/addLanguageModal";
 import PublishModal from "./components/publishModal";
 import {
   GetLanguageList,
-  GetPicture,
+  GetLanguageData,
   GetTranslate,
   GetUserWords,
 } from "~/api/serve";
@@ -76,11 +76,12 @@ export interface MarketType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   try {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop } = adminAuthResult.session;
     const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-      request,
+      shop,
+      accessToken,
     });
     const allMarket: MarketType[] = await queryAllMarket({ request });
     let allLanguages: AllLanguagesType[] = await queryAllLanguages({ request });
@@ -89,18 +90,20 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       key: index,
     }));
     const allCountryCode = allLanguages.map((item) => item.isoCode);
+    const languageData = await GetLanguageData({ locale: allCountryCode });
 
-    const allCountryImg = await GetPicture(allCountryCode);
-    const words = await GetUserWords({ request });
+    const words = await GetUserWords({ shop });
+    console.log(words);
 
-    const languages = await GetLanguageList({ request });
+    const languages = await GetLanguageList({ shop, accessToken });
     return json({
       shop,
+      allCountryCode,
       shopLanguages,
       allLanguages,
       allMarket,
       languages,
-      allCountryImg,
+      languageData,
       words,
     });
   } catch (error) {
@@ -110,6 +113,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
     const languages: string[] = JSON.parse(formData.get("languages") as string); // 获取语言数组
@@ -128,7 +133,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!languages:
         await mutationShopLocaleEnable({ request, languages }); // 处理逻辑
         const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-          request,
+          shop,
+          accessToken,
         });
         return json({ success: true, shopLanguages });
 
@@ -169,11 +175,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const {
     shop,
+    allCountryCode,
     shopLanguages,
     allLanguages,
     allMarket,
     languages,
-    allCountryImg,
+    languageData,
     words,
   } = useLoaderData<typeof loader>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
@@ -210,7 +217,7 @@ const Index = () => {
     const newdata = shopLanguages.filter((language) => !language.primary);
     const data = newdata.map((lang, i) => ({
       key: i,
-      language: lang.name,
+      language: `${lang.name}(${languageData[allCountryCode[i]].Local})`,
       locale: lang.locale,
       primary: lang.primary,
       status:
@@ -412,74 +419,78 @@ const Index = () => {
   }; //新页面预览商店
 
   return (
-    <Page>
-      <TitleBar title="Language" />
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <div>
-          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-            Languages
-          </Title>
-          <PrimaryLanguage shopLanguages={shopLanguages} />
-        </div>
-        <AttentionCard
-          title="Translation word credits have been exhausted."
-          content="The translation cannot be completed due to exhausted credits."
-          buttonContent="Get more word credits"
-          show={true}
-        />
-        <div className="languageTable_action">
-          <Flex
-            align="center"
-            justify="space-between" // 使按钮左右分布
-            style={{ width: "100%", marginBottom: "16px" }}
-          >
-            <Flex align="center" gap="middle">
-              <Button
-                type="primary"
-                onClick={handleDelete}
-                disabled={!hasSelected}
-                loading={deleteloading}
-              >
-                Delete
-              </Button>
-              {hasSelected ? `Selected ${selectedRowKeys.length} items` : null}
-            </Flex>
-            <div>
-              <Space>
-                <Button type="default" onClick={PreviewClick}>
-                  Preview store
-                </Button>
-                <Button type="primary" onClick={handleOpenModal}>
-                  Add Language
-                </Button>
-              </Space>
-            </div>
-          </Flex>
-          {/* 表格部分，占满宽度 */}
-          <Table
-            rowSelection={rowSelection}
-            columns={columns}
-            dataSource={data}
-            style={{ width: "100%" }}
+    <Suspense fallback={<div>Loading...</div>}>
+      <Page>
+        <TitleBar title="Language" />
+        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+          <div>
+            <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+              Languages
+            </Title>
+            <PrimaryLanguage shopLanguages={shopLanguages} />
+          </div>
+          <AttentionCard
+            title="Translation word credits have been exhausted."
+            content="The translation cannot be completed due to exhausted credits."
+            buttonContent="Get more word credits"
+            show={disable}
           />
-        </div>
-      </Space>
-      <AddLanguageModal
-        isVisible={isLanguageModalOpen}
-        setIsModalOpen={setIsLanguageModalOpen}
-        allLanguages={allLanguages}
-        submit={submit}
-        allCountryImg={allCountryImg}
-      />
-      <PublishModal
-        isVisible={isPublishModalOpen} // 父组件控制是否显示
-        onOk={() => handleConfirmPublishModal()}
-        onCancel={() => handleClosePublishModal()}
-        setPublishMarket={setPublishMarket}
-        selectedRow={selectedRow}
-        allMarket={allMarket}
-      />
-    </Page>
+          <div className="languageTable_action">
+            <Flex
+              align="center"
+              justify="space-between" // 使按钮左右分布
+              style={{ width: "100%", marginBottom: "16px" }}
+            >
+              <Flex align="center" gap="middle">
+                <Button
+                  type="primary"
+                  onClick={handleDelete}
+                  disabled={!hasSelected}
+                  loading={deleteloading}
+                >
+                  Delete
+                </Button>
+                {hasSelected
+                  ? `Selected ${selectedRowKeys.length} items`
+                  : null}
+              </Flex>
+              <div>
+                <Space>
+                  <Button type="default" onClick={PreviewClick}>
+                    Preview store
+                  </Button>
+                  <Button type="primary" onClick={handleOpenModal}>
+                    Add Language
+                  </Button>
+                </Space>
+              </div>
+            </Flex>
+            {/* 表格部分，占满宽度 */}
+            <Table
+              rowSelection={rowSelection}
+              columns={columns}
+              dataSource={data}
+              style={{ width: "100%" }}
+            />
+          </div>
+        </Space>
+        <AddLanguageModal
+          isVisible={isLanguageModalOpen}
+          setIsModalOpen={setIsLanguageModalOpen}
+          allLanguages={allLanguages}
+          submit={submit}
+          languageData={languageData}
+        />
+        <PublishModal
+          isVisible={isPublishModalOpen} // 父组件控制是否显示
+          onOk={() => handleConfirmPublishModal()}
+          onCancel={() => handleClosePublishModal()}
+          setPublishMarket={setPublishMarket}
+          selectedRow={selectedRow}
+          allMarket={allMarket}
+        />
+      </Page>
+    </Suspense>
   );
 };
 

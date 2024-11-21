@@ -13,9 +13,9 @@ interface UserLanguageCardProps {
   primaryLanguage: string; //用户默认语言
 }
 
-interface FetchData {
-  totalWords: number;
-}
+// interface FetchData {
+//   totalWords: number;
+// }
 
 const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   flagUrl,
@@ -24,28 +24,56 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   primaryLanguage,
 }) => {
   const data = useSelector((state: any) => state.languageTableData.rows);
-  const result = data.filter((item: any) => item.locale === languageCode);
-  const [words, setWords] = useState<number>();
+  const [result, setResult] = useState<
+    {
+      key: number;
+      language: string;
+      locale: string;
+      primary: boolean;
+      status: number;
+      auto_update_translation: boolean;
+      published: boolean;
+      loading: boolean;
+    }[]
+  >([{
+    key: 2,
+    language: 'en',
+    locale: 'en-US',
+    primary: true,
+    status: 0, 
+    auto_update_translation: true,
+    published: true,
+    loading: false,
+  }]);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const submit = useSubmit();
-  const fetcher = useFetcher<FetchData>();
+  // const fetcher = useFetcher<FetchData>();
+
+  // useEffect(() => {
+  //   const formData = new FormData();
+  //   formData.append("languageCode", JSON.stringify(languageCode));
+  //   fetcher.submit(formData, {
+  //     method: "post",
+  //     action: "/app",
+  //   }); // 提交表单请求
+  // }, []);
+
+  // useEffect(() => {
+  //   if (fetcher.data && typeof fetcher.data.totalWords === 'number') {
+  //     setWords(fetcher.data.totalWords);
+  //   } else {
+  //     setWords(undefined);
+  //   }
+  // }, [fetcher.data]);
 
   useEffect(() => {
-    const formData = new FormData();
-    formData.append("languageCode", JSON.stringify(languageCode));
-    fetcher.submit(formData, {
-      method: "post",
-      action: "/app",
-    }); // 提交表单请求
-  }, []);
-
-  useEffect(() => {
-    if (fetcher.data) {
-      setWords(fetcher.data.totalWords)
-    }
-  }, [fetcher.data]);
+    const filteredData = data.filter(
+      (item: any) => item.locale === languageCode,
+    );
+    setResult(filteredData);
+  }, [data, languageCode]);
 
   const handleTranslate = async (key: number) => {
     const formData = new FormData();
@@ -80,17 +108,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         />
         <Title level={4}>{languageName}</Title>
         <div className="language_statu">
-          {words ? (
-            result[0].status ? (
-              <TranslatedIcon status={result[0].status} />
-            ) : (
-              <p>
-                need to translate: <br /> {words} characters
-              </p>
-            )
-          ) : (
-            <>Calculating</>
-          )}
+          {result ? <TranslatedIcon status={result[0].status} /> : <>...</>}
         </div>
         <Space direction="horizontal">
           <Button onClick={() => handleTranslate(result[0].key)} type="primary">

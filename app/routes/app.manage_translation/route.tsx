@@ -18,6 +18,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
 import React from "react";
 import { GetUserWords } from "~/api/serve";
+import { authenticate } from "~/shopify.server";
 const ManageTranslationsCard = React.lazy(
   () => import("./components/manageTranslationsCard"),
 );
@@ -37,11 +38,14 @@ interface TableDataType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   try {
     const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      request,
+      shop,
+      accessToken,
     });
-    const words = await GetUserWords({ request });
+    const words = await GetUserWords({ shop });
 
     return json({
       shopLanguagesLoad,
@@ -54,6 +58,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
     const actionType = formData.get("actionType");
@@ -61,7 +67,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (actionType === "sync") {
       try {
         const shopLanguagesAction: ShopLocalesType[] = await queryShopLanguages(
-          { request },
+          { shop, accessToken },
         );
         return json({ shopLanguagesAction });
       } catch (error) {
@@ -88,7 +94,7 @@ const Index = () => {
   const location = useLocation();
   const { key } = location.state || {}; // 提取传递的状态
   const submit = useSubmit();
-  const items = useSelector((state: any) => state.languageItemsData);  
+  const items = useSelector((state: any) => state.languageItemsData);
 
   const productsDataSource: TableDataType[] = [
     {
@@ -383,7 +389,7 @@ const Index = () => {
         </div>
         <div className="manage-content-wrap">
           <div className="manage-content-left">
-            <Suspense fallback={<div>加载翻译内容...</div>}>
+            <Suspense fallback={<div>loading...</div>}>
               <Space
                 direction="vertical"
                 size="middle"

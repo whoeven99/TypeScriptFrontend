@@ -37,37 +37,48 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
 //获取各项翻译状态
 export const GetTranslationItemsInfo = async ({
   request,
-  itemsInfo,
+  targets,
 }: {
   request: Request;
-  itemsInfo: any;
+  targets: string[];
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  let res = [];
+  let res: {
+    language: string;
+    type: string;
+    translatedNumber: number;
+    totalNumber: number;
+  }[] = [];
   try {
-    for (let target of itemsInfo.targets) {
-      for (let resourceType of itemsInfo.resourceTypes) {
-        const response = await axios({
-          url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
-          method: "POST",
-          data: {
-            shopName: shop,
-            accessToken: accessToken,
-            target: target,
-            resourceType: resourceType,
-          },
-        });
+    for (let target of targets) {
+      const response = await axios({
+        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getItemsInSqlByShopName`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          accessToken: accessToken,
+          target: target,
+        },
+      });
 
-        const data = response.data.response;
-        res.push({
-          language: target,
-          type: Object.keys(data.translated)[0].split("_")[0],
-          translatedNumber: data.translated[Object.keys(data.translated)[0]],
-          totalNumber: data.all[Object.keys(data.all)[0]],
-        });
-      }
+      const data = response.data.response;
+      console.log(data);
+
+      res = [
+        ...res,
+        ...Object.keys(data).map((key) => {
+          return {
+            language: target,
+            type: data[key].itemName,
+            translatedNumber: data[key].translatedNumber,
+            totalNumber: data[key].totalNumber,
+          };
+        }),
+      ];
     }
+    console.log(res);
+
     return res;
   } catch (error) {
     console.error("Error fetching translation items:", error);
@@ -77,12 +88,12 @@ export const GetTranslationItemsInfo = async ({
 
 //获取用户的计划
 export const GetUserSubscriptionPlan = async ({
-  request,
+  shop,
+  accessToken,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getUserSubscriptionPlan`,
@@ -101,9 +112,7 @@ export const GetUserSubscriptionPlan = async ({
 };
 
 //获取用户的额度字符数 和 已使用的字符
-export const GetUserWords = async ({ request }: { request: Request }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
+export const GetUserWords = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getUserLimitChars`,
@@ -115,17 +124,15 @@ export const GetUserWords = async ({ request }: { request: Request }) => {
     const res = response.data.response;
     return res;
   } catch (error) {
-    console.error("Error occurred in the userplan:", error);
-    throw new Error("Error occurred in the userplan");
+    console.error("Error occurred in the userwords:", error);
+    throw new Error("Error occurred in the userwords");
   }
 };
 
 //获取国旗图片链接
-export const GetPicture = async (locale: string[]) => {
+export const GetLanguageData = async ({ locale }: { locale: string[] }) => {
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
-
-  console.log(updatedLocales);
 
   try {
     const response = await axios({
@@ -135,7 +142,17 @@ export const GetPicture = async (locale: string[]) => {
     });
     const data = response.data.response;
     const res = Object.keys(data).reduce(
-      (acc: { [key: string]: string }, key) => {
+      (
+        acc: {
+          [key: string]: {
+            isoCode: string;
+            Local: string;
+            countries: [];
+            Name: string;
+          };
+        },
+        key,
+      ) => {
         // 将 key 中的 "_" 替换为 "-"
         const newKey = key.replace("_", "-");
         // 保持原来的值，重新赋值给新键
@@ -146,15 +163,19 @@ export const GetPicture = async (locale: string[]) => {
     );
     return res;
   } catch (error) {
-    console.error("Error occurred in the pictures:", error);
-    throw new Error("Error occurred in the pictures");
+    console.error("Error occurred in the languageData:", error);
+    throw new Error("Error occurred in the languageData");
   }
 };
 
 //查询语言状态
-export const GetLanguageList = async ({ request }: { request: Request }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+export const GetLanguageList = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string | undefined;
+}) => {
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readInfoByShopName`,
@@ -197,8 +218,8 @@ export const GetTotalWords = async ({
     const res = response.data.response;
     return res;
   } catch (error) {
-    console.error("Error occurred in the languageList:", error);
-    throw new Error("Error occurred in the languageList");
+    console.error("Error occurred in the totalWords:", error);
+    return { status: "error", error: "Failed to fetch total words" }; // 错误时返回默认值和错误信息
   }
 };
 

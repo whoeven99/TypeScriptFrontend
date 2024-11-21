@@ -15,6 +15,7 @@ import { queryNextTransType, queryShop, queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import dynamic from "next/dynamic";
+import { authenticate } from "~/shopify.server";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
@@ -40,14 +41,17 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
     const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      request,
+      shop,
+      accessToken,
     });
-    const shop = await queryShop({request});
-    const policyTitle = shop.shopPolicies;
+    const shopData = await queryShop({request});
+    const policyTitle = shopData.shopPolicies;
     const policyBody = await queryNextTransType({
       request,
       resourceType: "SHOP_POLICY",

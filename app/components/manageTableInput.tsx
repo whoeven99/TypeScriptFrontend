@@ -92,7 +92,6 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
           theme="snow"
           value={defaultValue}
           readOnly
-          scrollingContainer={"5"}
         />
       );
     }

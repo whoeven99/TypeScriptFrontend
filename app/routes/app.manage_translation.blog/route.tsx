@@ -25,6 +25,7 @@ import {
 import { ShopLocalesType } from "../app.language/route";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
+import { authenticate } from "~/shopify.server";
 
 const { Sider, Content } = Layout;
 
@@ -47,11 +48,14 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
     const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      request,
+      shop,
+      accessToken,
     });
     const blogs = await queryNextTransType({
       request,
@@ -155,10 +159,6 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
-
-  useEffect(() => {
     const data = transBeforeData({
       blogs: blogsData,
     });
@@ -221,7 +221,7 @@ const Index = () => {
       key: "default_language",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return <ManageTableInput record={record} textarea={false}/>;
+        return <ManageTableInput record={record} textarea={false} />;
       },
     },
     {
@@ -265,15 +265,14 @@ const Index = () => {
           resourceId: blogs.nodes.find(
             (item: any) => item.resourceId === selectBlogKey,
           )?.resourceId,
-          locale: blogs.nodes.find(
-            (item: any) => item.resourceId === selectBlogKey,
-          )?.translatableContent.find((item: any) => item.key === key)?.locale,
+          locale: blogs.nodes
+            .find((item: any) => item.resourceId === selectBlogKey)
+            ?.translatableContent.find((item: any) => item.key === key)?.locale,
           key: key,
           value: value, // 初始为空字符串
-          translatableContentDigest:
-            blogs.nodes.find(
-              (item: any) => item.resourceId === selectBlogKey,
-            )?.translatableContent.find((item: any) => item.key === key)?.digest,
+          translatableContentDigest: blogs.nodes
+            .find((item: any) => item.resourceId === selectBlogKey)
+            ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",
         };
 
