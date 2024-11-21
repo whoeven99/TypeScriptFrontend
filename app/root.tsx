@@ -29,7 +29,7 @@ export default function App() {
     };
 
     document.head.appendChild(script);
-  }, []);
+  });
 
   return (
     <Provider store={store}>
