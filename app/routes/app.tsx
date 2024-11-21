@@ -17,7 +17,7 @@ import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 
 import { authenticate } from "../shopify.server";
-import { ConfigProvider } from "antd";
+import { ConfigProvider, Skeleton } from "antd";
 import {
   GetTotalWords,
   GetTranslate,
@@ -25,7 +25,7 @@ import {
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import { queryShopLanguages } from "~/api/admin";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { updateData } from "~/store/modules/languageItemsData";
 
@@ -124,8 +124,11 @@ export default function App() {
           </Link>
           <Link to="/app/language">Language</Link>
           <Link to="/app/manage_translation">Manage Translation</Link>
+          <Link to="/app/price">Price</Link>
         </NavMenu>
-        <Outlet />
+        <Suspense fallback={<Skeleton active />}>
+          <Outlet />
+        </Suspense>
       </ConfigProvider>
     </AppProvider>
   );

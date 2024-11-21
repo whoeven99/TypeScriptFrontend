@@ -2,11 +2,9 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import UserProfileCard from "./components/userProfileCard";
-import { Col, Row, Space, Typography } from "antd";
+import { Col, Row, Skeleton, Space, Typography } from "antd";
 import { useLoaderData } from "@remix-run/react";
 import "./styles.css";
-import UserLanguageCard from "./components/userLanguageCard";
 import {
   GetLanguageList,
   GetLanguageData,
@@ -17,8 +15,11 @@ import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { authenticate } from "~/shopify.server";
+
+const UserProfileCard = lazy(() => import("./components/userProfileCard"));
+const UserLanguageCard = lazy(() => import("./components/userLanguageCard"));
 
 const { Title, Text } = Typography;
 
@@ -96,13 +97,17 @@ const Index = () => {
       <BlockStack gap="500">
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>Faster, higher-quality localization translation tool.</Title>
+            <Title level={3}>
+              Faster, higher-quality localization translation tool.
+            </Title>
           </div>
-          <UserProfileCard
-            plan={user.plan}
-            chars={user.chars}
-            totalChars={user.totalChars}
-          />
+          <Suspense fallback={<Skeleton active />}>
+            <UserProfileCard
+              plan={user.plan}
+              chars={user.chars}
+              totalChars={user.totalChars}
+            />
+          </Suspense>
           <div style={{ paddingLeft: "8px" }}>
             <Title level={3}>{languageData.length} alternative languages</Title>
             <div>
@@ -117,12 +122,14 @@ const Index = () => {
           <Row gutter={[16, 16]}>
             {languageData.map((language: any, index: number) => (
               <Col span={8} key={index}>
-                <UserLanguageCard
-                  flagUrl={language.src[0]}
-                  primaryLanguage={user.primaryLanguage}
-                  languageName={language.name}
-                  languageCode={language.locale}
-                />
+                <Suspense fallback={<Skeleton active />}>
+                  <UserLanguageCard
+                    flagUrl={language.src[0]}
+                    primaryLanguage={user.primaryLanguage}
+                    languageName={language.name}
+                    languageCode={language.locale}
+                  />
+                </Suspense>
               </Col>
             ))}
           </Row>

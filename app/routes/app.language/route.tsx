@@ -1,7 +1,7 @@
 import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Typography, Button, Space, Flex, Table, Switch } from "antd";
-import { Suspense, useEffect, useState } from "react";
+import { Typography, Button, Space, Flex, Table, Switch, Skeleton } from "antd";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
 import "./styles.css";
@@ -26,9 +26,6 @@ import {
   setTableData,
 } from "~/store/modules/languageTableData";
 import AttentionCard from "~/components/attentionCard";
-import PrimaryLanguage from "./components/primaryLanguage";
-import AddLanguageModal from "./components/addLanguageModal";
-import PublishModal from "./components/publishModal";
 import {
   GetLanguageList,
   GetLanguageData,
@@ -36,6 +33,10 @@ import {
   GetUserWords,
 } from "~/api/serve";
 import TranslatedIcon from "~/components/translateIcon";
+
+const PrimaryLanguage = lazy(() => import("./components/primaryLanguage"));
+const AddLanguageModal = lazy(() => import("./components/addLanguageModal"));
+const PublishModal = lazy(() => import("./components/publishModal"));
 
 const { Title } = Typography;
 
@@ -217,7 +218,7 @@ const Index = () => {
     const newdata = shopLanguages.filter((language) => !language.primary);
     const data = newdata.map((lang, i) => ({
       key: i,
-      language: `${lang.name}(${languageData[allCountryCode[i]].Local})`,
+      language: `${lang.name}(${languageData[newdata[i].locale].Local})`,
       locale: lang.locale,
       primary: lang.primary,
       status:
@@ -419,61 +420,63 @@ const Index = () => {
   }; //新页面预览商店
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <Page>
-        <TitleBar title="Language" />
-        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <div>
-            <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-              Languages
-            </Title>
+    <Page>
+      <TitleBar title="Language" />
+      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <div>
+          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+            Languages
+          </Title>
+          <Suspense fallback={<Skeleton.Node active style={{ width: 160 }} />}>
             <PrimaryLanguage shopLanguages={shopLanguages} />
-          </div>
-          <AttentionCard
-            title="Translation word credits have been exhausted."
-            content="The translation cannot be completed due to exhausted credits."
-            buttonContent="Get more word credits"
-            show={disable}
-          />
-          <div className="languageTable_action">
-            <Flex
-              align="center"
-              justify="space-between" // 使按钮左右分布
-              style={{ width: "100%", marginBottom: "16px" }}
-            >
-              <Flex align="center" gap="middle">
-                <Button
-                  type="primary"
-                  onClick={handleDelete}
-                  disabled={!hasSelected}
-                  loading={deleteloading}
-                >
-                  Delete
-                </Button>
-                {hasSelected
-                  ? `Selected ${selectedRowKeys.length} items`
-                  : null}
-              </Flex>
-              <div>
-                <Space>
-                  <Button type="default" onClick={PreviewClick}>
-                    Preview store
-                  </Button>
-                  <Button type="primary" onClick={handleOpenModal}>
-                    Add Language
-                  </Button>
-                </Space>
-              </div>
+          </Suspense>
+        </div>
+        <AttentionCard
+          title="Translation word credits have been exhausted."
+          content="The translation cannot be completed due to exhausted credits."
+          buttonContent="Get more word credits"
+          show={disable}
+        />
+        <div className="languageTable_action">
+          <Flex
+            align="center"
+            justify="space-between" // 使按钮左右分布
+            style={{ width: "100%", marginBottom: "16px" }}
+          >
+            <Flex align="center" gap="middle">
+              <Button
+                type="primary"
+                onClick={handleDelete}
+                disabled={!hasSelected}
+                loading={deleteloading}
+              >
+                Delete
+              </Button>
+              {hasSelected ? `Selected ${selectedRowKeys.length} items` : null}
             </Flex>
-            {/* 表格部分，占满宽度 */}
+            <div>
+              <Space>
+                <Button type="default" onClick={PreviewClick}>
+                  Preview store
+                </Button>
+                <Button type="primary" onClick={handleOpenModal}>
+                  Add Language
+                </Button>
+              </Space>
+            </div>
+          </Flex>
+          {/* 表格部分，占满宽度 */}
+          <Suspense fallback={<Skeleton active />}>
             <Table
               rowSelection={rowSelection}
               columns={columns}
               dataSource={data}
               style={{ width: "100%" }}
             />
-          </div>
-        </Space>
+          </Suspense>
+        </div>
+      </Space>
+      <Suspense fallback={<Skeleton active />}>
         <AddLanguageModal
           isVisible={isLanguageModalOpen}
           setIsModalOpen={setIsLanguageModalOpen}
@@ -481,6 +484,8 @@ const Index = () => {
           submit={submit}
           languageData={languageData}
         />
+      </Suspense>
+      <Suspense fallback={<Skeleton active />}>
         <PublishModal
           isVisible={isPublishModalOpen} // 父组件控制是否显示
           onOk={() => handleConfirmPublishModal()}
@@ -489,8 +494,8 @@ const Index = () => {
           selectedRow={selectedRow}
           allMarket={allMarket}
         />
-      </Page>
-    </Suspense>
+      </Suspense>
+    </Page>
   );
 };
 
