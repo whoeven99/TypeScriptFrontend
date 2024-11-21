@@ -8,15 +8,41 @@ import {
 import { Provider } from "react-redux";
 import store from "./store";
 import "./styles.css";
-import 'react-quill/dist/quill.snow.css';
+import "react-quill/dist/quill.snow.css";
+import { useEffect } from "react";
 
 export default function App() {
+  useEffect(() => {
+    // Create the script element for Shopify App Bridge
+    const script = document.createElement("script");
+    script.src = "https://cdn.shopify.com/shopifycloud/app-bridge.js";
+    script.async = true;
+
+    script.onload = () => {
+      // Define the processWebVitals function after the script is loaded
+      const processWebVitals = (metrics: any) => {
+        const monitorUrl =
+          "https://population-connecting-thumb-gross.trycloudflare.com/web-vitals-metrics";
+        const data = JSON.stringify(metrics);
+        navigator.sendBeacon(monitorUrl, data);
+      };
+    };
+
+    document.head.appendChild(script);
+  }, []);
+
   return (
     <Provider store={store}>
       <html>
         <head>
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
+          <meta name="shopify-debug" content="web-vitals" />
+          <meta
+            name="shopify-api-key"
+            content="6e0ef7be80edbf81020e200228a86d01"
+          />
+          <meta name="shopify-debug" content="web-vitals" />
           <link rel="preconnect" href="https://cdn.shopify.com/" />
           <link
             rel="stylesheet"
@@ -29,7 +55,10 @@ export default function App() {
           <Outlet />
           <ScrollRestoration />
           <Scripts />
-          <script src="//code.tidio.co/inl4rrmds8vvbldv1k6gyc2nzxongl3p.js" async></script>
+          <script
+            src="//code.tidio.co/inl4rrmds8vvbldv1k6gyc2nzxongl3p.js"
+            async
+          ></script>
         </body>
       </html>
     </Provider>
