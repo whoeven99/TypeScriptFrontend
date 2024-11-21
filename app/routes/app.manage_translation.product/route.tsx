@@ -361,7 +361,6 @@ const Index = () => {
     //   );
     //   // setVariantsData(variantsData);
     // }
-    // console.log(optionsData.length);
   }, [productData]);
 
   useEffect(() => {

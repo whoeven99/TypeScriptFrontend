@@ -3,7 +3,13 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { Typography, Button, Space, Flex, Table, Switch, Skeleton } from "antd";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
+import {
+  Link,
+  useFetcher,
+  useLoaderData,
+  useNavigate,
+  useSubmit,
+} from "@remix-run/react";
 import "./styles.css";
 import { authenticate } from "~/shopify.server";
 import {
@@ -33,6 +39,7 @@ import {
   GetUserWords,
 } from "~/api/serve";
 import TranslatedIcon from "~/components/translateIcon";
+import { WordsType } from "../app._index/route";
 
 const PrimaryLanguage = lazy(() => import("./components/primaryLanguage"));
 const AddLanguageModal = lazy(() => import("./components/addLanguageModal"));
@@ -76,41 +83,21 @@ export interface MarketType {
   };
 }
 
+interface FetchType {
+  allCountryCode: string[];
+  allLanguages: AllLanguagesType[];
+  allMarket: MarketType[];
+  languageData: any;
+  languagesLoad: any;
+  shop: string;
+  shopLanguagesLoad: ShopLocalesType[];
+  words: WordsType;
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-  try {
-    const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-      shop,
-      accessToken,
-    });
-    const allMarket: MarketType[] = await queryAllMarket({ request });
-    let allLanguages: AllLanguagesType[] = await queryAllLanguages({ request });
-    allLanguages = allLanguages.map((language, index) => ({
-      ...language,
-      key: index,
-    }));
-    const allCountryCode = allLanguages.map((item) => item.isoCode);
-    const languageData = await GetLanguageData({ locale: allCountryCode });
+  await authenticate.admin(request);
 
-    const words = await GetUserWords({ shop });
-    console.log(words);
-
-    const languages = await GetLanguageList({ shop, accessToken });
-    return json({
-      shop,
-      allCountryCode,
-      shopLanguages,
-      allLanguages,
-      allMarket,
-      languages,
-      languageData,
-      words,
-    });
-  } catch (error) {
-    console.error("Error load languages:", error);
-    throw new Response("Error load languages", { status: 500 });
-  }
+  return null;
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -118,6 +105,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
+    const loading = JSON.parse(formData.get("loading") as string); // 获取语言数组
     const languages: string[] = JSON.parse(formData.get("languages") as string); // 获取语言数组
     const translation = JSON.parse(formData.get("translation") as string);
     const publishInfo: PublishInfoType = JSON.parse(
@@ -131,6 +119,35 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
 
     switch (true) {
+      case !!loading:
+        const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+          shop,
+          accessToken,
+        });
+        const allMarket: MarketType[] = await queryAllMarket({ request });
+        let allLanguages: AllLanguagesType[] = await queryAllLanguages({
+          request,
+        });
+        allLanguages = allLanguages.map((language, index) => ({
+          ...language,
+          key: index,
+        }));
+        const allCountryCode = allLanguages.map((item) => item.isoCode);
+        const languageData = await GetLanguageData({ locale: allCountryCode });
+
+        const words = await GetUserWords({ shop });
+        const languagesLoad = await GetLanguageList({ shop, accessToken });
+
+        return json({
+          shop: shop,
+          allCountryCode: allCountryCode,
+          shopLanguagesLoad: shopLanguagesLoad,
+          allLanguages: allLanguages,
+          allMarket: allMarket,
+          languagesLoad: languagesLoad,
+          languageData: languageData,
+          words: words,
+        });
       case !!languages:
         await mutationShopLocaleEnable({ request, languages }); // 处理逻辑
         const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
@@ -174,16 +191,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const {
-    shop,
-    allCountryCode,
-    shopLanguages,
-    allLanguages,
-    allMarket,
-    languages,
-    languageData,
-    words,
-  } = useLoaderData<typeof loader>();
+  const [shop, setShop] = useState<string>("");
+  const [allCountryCode, setAllCountryCode] = useState<string[]>([]);
+  const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>(
+    [],
+  );
+  const [allLanguages, setAllLanguages] = useState<AllLanguagesType[]>([]);
+  const [allMarket, setAllMarket] = useState<MarketType[]>([]);
+  const [languagesLoad, setLanguagesLoad] = useState<any>();
+  const [languageData, setLanguageData] = useState<any>();
+  const [words, setWords] = useState<WordsType>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
   const [selectedRow, setSelectedRow] = useState<
@@ -196,41 +213,67 @@ const Index = () => {
   const [unPublishInfo, setUnpublishInfo] = useState<UnpublishInfoType>();
   const [disable, setDisable] = useState<boolean>(false);
   const [data, setData] = useState<LanguagesDataType[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const fetcher = useFetcher<FetchType>();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
 
-  const primaryLanguage: ShopLocalesType | undefined = shopLanguages.find(
+  const primaryLanguage: ShopLocalesType | undefined = shopLanguagesLoad?.find(
     (lang) => lang.primary,
   );
 
   useEffect(() => {
-    if (words.chars > words.totalChars) setDisable(true);
+    const formData = new FormData();
+    formData.append("loading", JSON.stringify(true));
+    fetcher.submit(formData, {
+      method: "post",
+      action: "/app/language",
+    });
+    shopify.loading(true);
+  }, []);
+
+  useEffect(() => {
+    if (fetcher.data) {
+      setShop(fetcher.data.shop);
+      setAllCountryCode(fetcher.data.allCountryCode);
+      setShopLanguagesLoad(fetcher.data.shopLanguagesLoad);
+      setAllLanguages(fetcher.data.allLanguages);
+      setAllMarket(fetcher.data.allMarket);
+      setLanguagesLoad(fetcher.data.languagesLoad);
+      setLanguageData(fetcher.data.languageData);
+      setWords(fetcher.data.words);
+      shopify.loading(false);
+      setLoading(false);
+    }
+  }, [fetcher.data]);
+
+  useEffect(() => {
+    if (words && words.chars > words.totalChars) setDisable(true);
   }, [words]);
 
   useEffect(() => {
-    if (!shopLanguages || !languages) return; // 确保数据加载完成后再执行
-    const newdata = shopLanguages.filter((language) => !language.primary);
+    if (!shopLanguagesLoad || !languagesLoad) return; // 确保数据加载完成后再执行
+    const newdata = shopLanguagesLoad.filter((language) => !language.primary);
     const data = newdata.map((lang, i) => ({
       key: i,
       language: `${lang.name}(${languageData[newdata[i].locale].Local})`,
       locale: lang.locale,
       primary: lang.primary,
       status:
-        languages.find((statu: any) => statu.target === lang.locale)?.status ||
-        0,
+        languagesLoad.find((statu: any) => statu.target === lang.locale)
+          ?.status || 0,
       auto_update_translation: false,
       published: lang.published,
       loading: false,
     }));
 
     dispatch(setTableData(data));
-  }, [shopLanguages, languages]); // 依赖 shopLanguages 和 status
+  }, [shopLanguagesLoad, languagesLoad]); // 依赖 shopLanguagesLoad 和 status
 
   useEffect(() => {
     setData(dataSource);
@@ -338,8 +381,8 @@ const Index = () => {
 
   const handleTranslate = async (key: number) => {
     const selectedKey = data.find((item: { key: number }) => item.key === key);
-    if (selectedKey) {
-      const selectedLanguage = shopLanguages.find(
+    if (selectedKey && shopLanguagesLoad) {
+      const selectedLanguage = shopLanguagesLoad.find(
         (item) => item.name === selectedKey.language,
       );
       if (selectedLanguage) {
@@ -417,84 +460,89 @@ const Index = () => {
   const PreviewClick = () => {
     const shopUrl = `https://${shop}`;
     window.open(shopUrl, "_blank", "noopener,noreferrer");
-  }; //新页面预览商店
+  };
 
   return (
     <Page>
       <TitleBar title="Language" />
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+      {loading ? (
+        <div>loading...</div>
+      ) : (
         <div>
-          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-            Languages
-          </Title>
-          <Suspense fallback={<Skeleton.Node active style={{ width: 160 }} />}>
-            <PrimaryLanguage shopLanguages={shopLanguages} />
-          </Suspense>
-        </div>
-        <AttentionCard
-          title="Translation word credits have been exhausted."
-          content="The translation cannot be completed due to exhausted credits."
-          buttonContent="Get more word credits"
-          show={disable}
-        />
-        <div className="languageTable_action">
-          <Flex
-            align="center"
-            justify="space-between" // 使按钮左右分布
-            style={{ width: "100%", marginBottom: "16px" }}
-          >
-            <Flex align="center" gap="middle">
-              <Button
-                type="primary"
-                onClick={handleDelete}
-                disabled={!hasSelected}
-                loading={deleteloading}
-              >
-                Delete
-              </Button>
-              {hasSelected ? `Selected ${selectedRowKeys.length} items` : null}
-            </Flex>
+          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
             <div>
-              <Space>
-                <Button type="default" onClick={PreviewClick}>
-                  Preview store
-                </Button>
-                <Button type="primary" onClick={handleOpenModal}>
-                  Add Language
-                </Button>
-              </Space>
+              <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+                Languages
+              </Title>
+              <PrimaryLanguage shopLanguages={shopLanguagesLoad} />F{" "}
             </div>
-          </Flex>
-          {/* 表格部分，占满宽度 */}
+            <AttentionCard
+              title="Translation word credits have been exhausted."
+              content="The translation cannot be completed due to exhausted credits."
+              buttonContent="Get more word credits"
+              show={disable}
+            />
+            <div className="languageTable_action">
+              <Flex
+                align="center"
+                justify="space-between" // 使按钮左右分布
+                style={{ width: "100%", marginBottom: "16px" }}
+              >
+                <Flex align="center" gap="middle">
+                  <Button
+                    type="primary"
+                    onClick={handleDelete}
+                    disabled={!hasSelected}
+                    loading={deleteloading}
+                  >
+                    Delete
+                  </Button>
+                  {hasSelected
+                    ? `Selected ${selectedRowKeys.length} items`
+                    : null}
+                </Flex>
+                <div>
+                  <Space>
+                    <Button type="default" onClick={PreviewClick}>
+                      Preview store
+                    </Button>
+                    <Button type="primary" onClick={handleOpenModal}>
+                      Add Language
+                    </Button>
+                  </Space>
+                </div>
+              </Flex>
+              <Suspense fallback={<Skeleton active />}>
+                <Table
+                  rowSelection={rowSelection}
+                  columns={columns}
+                  dataSource={data}
+                  style={{ width: "100%" }}
+                />
+              </Suspense>
+            </div>
+          </Space>
           <Suspense fallback={<Skeleton active />}>
-            <Table
-              rowSelection={rowSelection}
-              columns={columns}
-              dataSource={data}
-              style={{ width: "100%" }}
+            <AddLanguageModal
+              isVisible={isLanguageModalOpen}
+              setIsModalOpen={setIsLanguageModalOpen}
+              allLanguages={allLanguages}
+              submit={submit}
+              languageData={languageData}
+            />
+          </Suspense>
+          <Suspense fallback={<Skeleton active />}>
+            <PublishModal
+              isVisible={isPublishModalOpen} // 父组件控制是否显示
+              onOk={() => handleConfirmPublishModal()}
+              onCancel={() => handleClosePublishModal()}
+              setPublishMarket={setPublishMarket}
+              selectedRow={selectedRow}
+              allMarket={allMarket}
             />
           </Suspense>
         </div>
-      </Space>
-      <Suspense fallback={<Skeleton active />}>
-        <AddLanguageModal
-          isVisible={isLanguageModalOpen}
-          setIsModalOpen={setIsLanguageModalOpen}
-          allLanguages={allLanguages}
-          submit={submit}
-          languageData={languageData}
-        />
-      </Suspense>
-      <Suspense fallback={<Skeleton active />}>
-        <PublishModal
-          isVisible={isPublishModalOpen} // 父组件控制是否显示
-          onOk={() => handleConfirmPublishModal()}
-          onCancel={() => handleClosePublishModal()}
-          setPublishMarket={setPublishMarket}
-          selectedRow={selectedRow}
-          allMarket={allMarket}
-        />
-      </Suspense>
+      )}
     </Page>
   );
 };
