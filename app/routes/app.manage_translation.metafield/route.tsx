@@ -137,7 +137,6 @@ const Index = () => {
   useEffect(() => {
     if (actionData && "nextMetafields" in actionData) {
       // 在这里处理 nexts
-      console.log(actionData.nextMetafields);
       setMetafieldsData(actionData.nextMetafields);
     } else if (actionData && "previousMetafields" in actionData) {
       setMetafieldsData(actionData.previousMetafields);
@@ -242,7 +241,6 @@ const Index = () => {
   const onNext = () => {
     const formData = new FormData();
     const endCursor = metafieldsData.pageInfo.endCursor;
-    console.log(metafieldsData);
 
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {

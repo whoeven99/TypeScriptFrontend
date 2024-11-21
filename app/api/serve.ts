@@ -63,8 +63,6 @@ export const GetTranslationItemsInfo = async ({
       });
 
       const data = response.data.response;
-      console.log(data);
-
       res = [
         ...res,
         ...Object.keys(data).map((key) => {
@@ -77,8 +75,6 @@ export const GetTranslationItemsInfo = async ({
         }),
       ];
     }
-    console.log(res);
-
     return res;
   } catch (error) {
     console.error("Error fetching translation items:", error);

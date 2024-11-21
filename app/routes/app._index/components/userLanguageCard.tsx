@@ -13,7 +13,7 @@ interface UserLanguageCardProps {
   primaryLanguage: string; //用户默认语言
 }
 
-// interface FetchData {
+// interface FetchType {
 //   totalWords: number;
 // }
 
@@ -49,7 +49,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const submit = useSubmit();
-  // const fetcher = useFetcher<FetchData>();
+  // const fetcher = useFetcher<FetchType>();
 
   // useEffect(() => {
   //   const formData = new FormData();

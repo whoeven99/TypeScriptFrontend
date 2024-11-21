@@ -137,7 +137,6 @@ const Index = () => {
   useEffect(() => {
     if (actionData && "nextDeliverys" in actionData) {
       // 在这里处理 nexts
-      console.log(actionData.nextDeliverys);
       setDeliverysData(actionData.nextDeliverys);
     } else if (actionData && "previousDeliverys" in actionData) {
       setDeliverysData(actionData.previousDeliverys);
@@ -242,7 +241,6 @@ const Index = () => {
   const onNext = () => {
     const formData = new FormData();
     const endCursor = deliverysData.pageInfo.endCursor;
-    console.log(deliverysData);
 
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {

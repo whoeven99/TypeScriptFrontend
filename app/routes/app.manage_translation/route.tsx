@@ -9,9 +9,8 @@ import { ShopLocalesType } from "../app.language/route";
 import {
   Outlet,
   useActionData,
-  useLoaderData,
+  useFetcher,
   useLocation,
-  useSubmit,
 } from "@remix-run/react";
 import AttentionCard from "~/components/attentionCard";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,6 +18,7 @@ import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
 import React from "react";
 import { GetUserWords } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
+import { WordsType } from "../app._index/route";
 const ManageTranslationsCard = React.lazy(
   () => import("./components/manageTranslationsCard"),
 );
@@ -37,7 +37,17 @@ interface TableDataType {
   navigation: string;
 }
 
+interface FetchType {
+  shopLanguagesLoad: [];
+  words: WordsType;
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  await authenticate.admin(request);
+  return null;
+};
+
+export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {
@@ -46,35 +56,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       accessToken,
     });
     const words = await GetUserWords({ shop });
-
     return json({
-      shopLanguagesLoad,
-      words,
+      shopLanguagesLoad: shopLanguagesLoad,
+      words: words,
     });
-  } catch (error) {
-    console.error("Error load manage_translation:", error);
-    throw new Response("Error load manage_translation", { status: 500 });
-  }
-};
-
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-  try {
-    const formData = await request.formData();
-    const actionType = formData.get("actionType");
-
-    if (actionType === "sync") {
-      try {
-        const shopLanguagesAction: ShopLocalesType[] = await queryShopLanguages(
-          { shop, accessToken },
-        );
-        return json({ shopLanguagesAction });
-      } catch (error) {
-        console.error("Error action shopLanguages:", error);
-        throw new Response("Error action shopLanguages", { status: 500 });
-      }
-    }
   } catch (error) {
     console.error("Error action manage_translation:", error);
     throw new Response("Error action manage_translation", { status: 500 });
@@ -82,10 +67,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shopLanguagesLoad, words } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
-  const [shopLanguages, setShopLanguages] =
-    useState<ShopLocalesType[]>(shopLanguagesLoad);
+  // const { shopLanguagesLoad, words } = useLoaderData<typeof loader>();
+  const [words, setWords] = useState<WordsType>();
+  const [shopLanguages, setShopLanguages] = useState<ShopLocalesType[]>();
   const [menuData, setMenuData] = useState<ManageMenuDataType[]>([]);
   const [current, setCurrent] = useState<string>("");
   const [disable, setDisable] = useState<boolean>(false);
@@ -93,7 +77,7 @@ const Index = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const { key } = location.state || {}; // 提取传递的状态
-  const submit = useSubmit();
+  const fetcher = useFetcher<FetchType>();
   const items = useSelector((state: any) => state.languageItemsData);
 
   const productsDataSource: TableDataType[] = [
@@ -297,29 +281,46 @@ const Index = () => {
   ];
 
   useEffect(() => {
-    if (words.chars > words.totalChars) setDisable(true);
+    const formData = new FormData();
+    fetcher.submit(formData, {
+      method: "post",
+      action: "/app/manage_translation",
+    });
+    shopify.loading(true);
+  }, []);
+
+  useEffect(() => {
+    if (fetcher.data) {
+      setShopLanguages(fetcher.data.shopLanguagesLoad);
+      setWords(fetcher.data.words);
+      setLoading(false)
+    }
+  }, [fetcher.data]);
+
+  useEffect(() => {
+    if (shopLanguages && words) {
+    } else {
+      shopify.loading(false);
+      setLoading(false);
+    }
+  }, [shopLanguages, words]);
+
+  useEffect(() => {
+    if (words && words.chars > words.totalChars) setDisable(true);
   }, [words]);
 
   useEffect(() => {
-    const newArray = shopLanguages
-      .filter((language) => !language.primary)
-      .map((language) => ({
-        label: language.name,
-        key: language.locale,
-      }));
-    setMenuData(newArray);
-    setCurrent(newArray[0].key);
     if (shopLanguages) {
-      setLoading(false);
+      const newArray = shopLanguages
+        .filter((language) => !language.primary)
+        .map((language) => ({
+          label: language.name,
+          key: language.locale,
+        }));
+      setMenuData(newArray);
+      setCurrent(newArray[0].key);
     }
   }, [shopLanguages]);
-
-  useEffect(() => {
-    if (actionData) {
-      // 例如更新状态
-      setShopLanguages(actionData.shopLanguagesAction);
-    }
-  }, [actionData]);
 
   useEffect(() => {
     try {
@@ -345,80 +346,68 @@ const Index = () => {
     setCurrent(e.key);
   };
 
-  const handleSyncAll = () => {
-    const formData = new FormData();
-    formData.append("actionType", "sync");
-    submit(formData, { method: "post", action: "/app/manage_translation" });
-  };
-
-  if (loading) {
-    return <div>加载中...</div>; // 加载状态
-  }
-
   return (
     <Page>
       <TitleBar title="Manage Translation" />
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <AttentionCard
-          title="Translation word credits have been exhausted."
-          content="The translation cannot be completed due to exhausted credits."
-          buttonContent="Get more word credits"
-          show={disable}
-        />
-        <div className="manage-header">
-          <Menu
-            onClick={onClick}
-            selectedKeys={[current]}
-            mode="horizontal"
-            items={menuData}
-            style={{
-              backgroundColor: "transparent", // 背景透明
-              borderBottom: "none", // 去掉底部边框
-              color: "#000", // 文本颜色
-              minWidth: "80%",
-            }}
-          ></Menu>
-          {/* <div className="manage-action">
-            <Space>
-              <Button type="default">Backup</Button>
-              <Button type="primary" onClick={handleSyncAll}>
-                Sync all
-              </Button>
-            </Space>
-          </div> */}
+      {loading ? (
+        <div>loading...</div>
+      ) : (
+        <div>
+          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+            <AttentionCard
+              title="Translation word credits have been exhausted."
+              content="The translation cannot be completed due to exhausted credits."
+              buttonContent="Get more word credits"
+              show={disable}
+            />
+            <div className="manage-header">
+              <Menu
+                onClick={onClick}
+                selectedKeys={[current]}
+                mode="horizontal"
+                items={menuData}
+                style={{
+                  backgroundColor: "transparent", // 背景透明
+                  borderBottom: "none", // 去掉底部边框
+                  color: "#000", // 文本颜色
+                  minWidth: "80%",
+                }}
+              ></Menu>
+            </div>
+            <div className="manage-content-wrap">
+              <div className="manage-content-left">
+                <Suspense fallback={<div>loading...</div>}>
+                  <Space
+                    direction="vertical"
+                    size="middle"
+                    style={{ display: "flex" }}
+                  >
+                    <div className="search-input"></div>
+                    {/* 使用 Suspense 包裹懒加载组件 */}
+                    <ManageTranslationsCard
+                      cardTitle="Products"
+                      dataSource={productsDataSource}
+                      current={current}
+                    />
+                    <ManageTranslationsCard
+                      cardTitle="Online Store"
+                      dataSource={onlineStoreDataSource}
+                      current={current}
+                    />
+                    <ManageTranslationsCard
+                      cardTitle="Settings"
+                      dataSource={settingsDataSource}
+                      current={current}
+                    />
+                  </Space>
+                </Suspense>
+              </div>
+              <div className="manage-content-right"></div>
+            </div>
+          </Space>
+          <Outlet />
         </div>
-        <div className="manage-content-wrap">
-          <div className="manage-content-left">
-            <Suspense fallback={<div>loading...</div>}>
-              <Space
-                direction="vertical"
-                size="middle"
-                style={{ display: "flex" }}
-              >
-                <div className="search-input"></div>
-                {/* 使用 Suspense 包裹懒加载组件 */}
-                <ManageTranslationsCard
-                  cardTitle="Products"
-                  dataSource={productsDataSource}
-                  current={current}
-                />
-                <ManageTranslationsCard
-                  cardTitle="Online Store"
-                  dataSource={onlineStoreDataSource}
-                  current={current}
-                />
-                <ManageTranslationsCard
-                  cardTitle="Settings"
-                  dataSource={settingsDataSource}
-                  current={current}
-                />
-              </Space>
-            </Suspense>
-          </div>
-          <div className="manage-content-right"></div>
-        </div>
-      </Space>
-      <Outlet />
+      )}
     </Page>
   );
 };

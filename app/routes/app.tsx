@@ -19,33 +19,31 @@ import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
 import { ConfigProvider } from "antd";
 import {
+  GetLanguageData,
+  GetLanguageList,
   GetTotalWords,
   GetTranslate,
   GetTranslationItemsInfo,
+  GetUserSubscriptionPlan,
+  GetUserWords,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import { queryShopLanguages } from "~/api/admin";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { updateData } from "~/store/modules/languageItemsData";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
+interface LoadingFetchType {
+  shopLocales: string[];
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     await authenticate.admin(request);
-    const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-      shop,
-      accessToken,
-    });
-    const shopLanguagesWithoutPrimary = shopLanguages.filter(
-      (language) => !language.primary,
-    );
-    const shopLocales = shopLanguagesWithoutPrimary.map((item) => item.locale);
 
-    return json({ apiKey: process.env.SHOPIFY_API_KEY || "", shopLocales });
+    return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
   } catch (error) {
     console.error("Error load app:", error);
     throw new Response("Error load app", { status: 500 });
@@ -53,13 +51,72 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
+    const loading = JSON.parse(formData.get("loading") as string); 
+    const index = JSON.parse(formData.get("index") as string);
     const translation = JSON.parse(formData.get("translation") as string);
     const targets = JSON.parse(formData.get("targets") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
 
     switch (true) {
+      case !!loading:
+        const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
+          shop,
+          accessToken,
+        });
+        const shopLanguagesWithoutPrimary = shopLanguages.filter(
+          (language) => !language.primary,
+        );
+        const shopLocales = shopLanguagesWithoutPrimary.map(
+          (item) => item.locale,
+        );
+
+        return json({ shopLocales: shopLocales });
+      case !!index:
+        const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
+          shop,
+          accessToken,
+        });
+        const words = await GetUserWords({ shop });
+        const plan = await GetUserSubscriptionPlan({ shop, accessToken });
+        const languages = await GetLanguageList({ shop, accessToken });
+        const shopPrimaryLanguage = shopLanguagesIndex.filter(
+          (language) => language.primary,
+        );
+        const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
+          (language) => !language.primary,
+        );
+        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
+          (item) => item.locale,
+        );
+        const pictures = await GetLanguageData({ locale: shopLocalesIndex });
+        const languageData = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
+          key: i,
+          src: pictures[shopLocalesIndex[i]].countries || "error",
+          name: lang.name,
+          locale: lang.locale,
+          status:
+            languages.find((language: any) => language.target === lang.locale)
+              ?.status || 0,
+          published: lang.published,
+        }));
+
+        const user = {
+          plan: plan,
+          chars: words?.chars,
+          totalChars: words?.totalChars,
+          primaryLanguage: shopPrimaryLanguage[0].name,
+          shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
+          shopLanguageCodesWithoutPrimary: shopLocalesIndex,
+        };
+
+        return json({
+          languageData,
+          user,
+        });
       case !!translation:
         const source = translation.primaryLanguage.locale;
         const target = translation.selectedLanguage;
@@ -87,9 +144,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shopLocales } = useLoaderData<typeof loader>();
+  const { apiKey } = useLoaderData<typeof loader>();
+  const [shopLocales, setShopLoacles] = useState<string[]>([]);
+
   const fetcher = useFetcher();
+  const loadingFetcher = useFetcher<LoadingFetchType>();
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    shopify.loading(true);
+    const formData = new FormData();
+    formData.append("loading", JSON.stringify(true));
+    loadingFetcher.submit(formData, {
+      method: "post",
+      action: "/app",
+    });
+  }, []);
 
   useEffect(() => {
     if (shopLocales) {
@@ -100,13 +170,16 @@ export default function App() {
         action: "/app",
       }); // 提交表单请求
     }
-    // 将选中的语言作为字符串发送
-  }, []);
+  }, [shopLocales]);
 
   useEffect(() => {
     if (fetcher.data && Array.isArray((fetcher.data as { data: any[] }).data)) {
       dispatch(updateData((fetcher.data as { data: any[] }).data));
     }
+    if (loadingFetcher.data) {
+      setShopLoacles(loadingFetcher.data.shopLocales);
+    }
+    shopify.loading(false);
   }, [fetcher.data]);
 
   return (

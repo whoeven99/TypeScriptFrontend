@@ -137,7 +137,6 @@ const Index = () => {
   useEffect(() => {
     if (actionData && "nextFilters" in actionData) {
       // 在这里处理 nexts
-      console.log(actionData.nextFilters);
       setFiltersData(actionData.nextFilters);
     } else if (actionData && "previousFilters" in actionData) {
       setFiltersData(actionData.previousFilters);
@@ -242,7 +241,6 @@ const Index = () => {
   const onNext = () => {
     const formData = new FormData();
     const endCursor = filtersData.pageInfo.endCursor;
-    console.log(filtersData);
 
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {

@@ -326,7 +326,6 @@ const Index = () => {
             navigations.nodes[index]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
-        console.log(1);
 
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       } else {
@@ -339,7 +338,6 @@ const Index = () => {
             navigationItems.nodes[index]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
-        console.log(2);
 
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       }
