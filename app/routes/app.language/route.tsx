@@ -386,16 +386,16 @@ const Index = () => {
         (item) => item.name === selectedKey.language,
       );
       if (selectedLanguage) {
-        const formData = new FormData();
-        formData.append(
-          "translation",
-          JSON.stringify({
-            primaryLanguage: primaryLanguage,
-            selectedLanguage: selectedLanguage,
-          }),
-        ); // 将选中的语言作为字符串发送
-        submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
-        dispatch(setStatuState({ key, status: 2 }));
+        // const formData = new FormData();
+        // formData.append(
+        //   "translation",
+        //   JSON.stringify({
+        //     primaryLanguage: primaryLanguage,
+        //     selectedLanguage: selectedLanguage,
+        //   }),
+        // ); // 将选中的语言作为字符串发送
+        // submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
+        // dispatch(setStatuState({ key, status: 2 }));
       }
     }
   };

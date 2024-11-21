@@ -22,7 +22,7 @@ export default function App() {
       // Define the processWebVitals function after the script is loaded
       const processWebVitals = (metrics: any) => {
         const monitorUrl =
-          "https://typescriptfrontendprod.onrender.com/web-vitals-metrics";
+          "https://population-connecting-thumb-gross.trycloudflare.com/web-vitals-metrics";
         const data = JSON.stringify(metrics);
         navigator.sendBeacon(monitorUrl, data);
       };
@@ -40,7 +40,7 @@ export default function App() {
           <meta name="shopify-debug" content="web-vitals" />
           <meta
             name="shopify-api-key"
-            content="fb9fc15cbec02bd735e2a5b491cf8409"
+            content="6e0ef7be80edbf81020e200228a86d01"
           />
           <meta name="shopify-debug" content="web-vitals" />
           <link rel="preconnect" href="https://cdn.shopify.com/" />
