@@ -40,7 +40,7 @@ export default function App() {
           <meta name="shopify-debug" content="web-vitals" />
           <meta
             name="shopify-api-key"
-            content="6e0ef7be80edbf81020e200228a86d01"
+            content="fb9fc15cbec02bd735e2a5b491cf8409"
           />
           <meta name="shopify-debug" content="web-vitals" />
           <link rel="preconnect" href="https://cdn.shopify.com/" />
