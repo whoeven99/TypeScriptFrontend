@@ -386,15 +386,15 @@ const Index = () => {
         (item) => item.name === selectedKey.language,
       );
       if (selectedLanguage) {
-        // const formData = new FormData();
-        // formData.append(
-        //   "translation",
-        //   JSON.stringify({
-        //     primaryLanguage: primaryLanguage,
-        //     selectedLanguage: selectedLanguage,
-        //   }),
-        // ); // 将选中的语言作为字符串发送
-        // submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
+        const formData = new FormData();
+        formData.append(
+          "translation",
+          JSON.stringify({
+            primaryLanguage: primaryLanguage,
+            selectedLanguage: selectedLanguage,
+          }),
+        ); // 将选中的语言作为字符串发送
+        submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
         dispatch(setStatuState({ key, status: 2 }));
       }
     }
@@ -474,7 +474,7 @@ const Index = () => {
               <Title style={{ fontSize: "1.25rem", display: "inline" }}>
                 Languages
               </Title>
-              <PrimaryLanguage shopLanguages={shopLanguagesLoad} />F{" "}
+              <PrimaryLanguage shopLanguages={shopLanguagesLoad} />{" "}
             </div>
             <AttentionCard
               title="Translation word credits have been exhausted."
