@@ -3,7 +3,7 @@
 client_id = "6e0ef7be80edbf81020e200228a86d01"
 name = "ZinnTransLocal"
 handle = "transform-lancy-app-local"
-application_url = "https://ba-interstate-plaintiff-fisheries.trycloudflare.com"
+application_url = "https://population-connecting-thumb-gross.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://ba-interstate-plaintiff-fisheries.trycloudflare.com/auth/callback",
-  "https://ba-interstate-plaintiff-fisheries.trycloudflare.com/auth/shopify/callback",
-  "https://ba-interstate-plaintiff-fisheries.trycloudflare.com/api/auth/callback"
+  "https://population-connecting-thumb-gross.trycloudflare.com/auth/callback",
+  "https://population-connecting-thumb-gross.trycloudflare.com/auth/shopify/callback",
+  "https://population-connecting-thumb-gross.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
