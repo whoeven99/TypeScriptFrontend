@@ -22,7 +22,7 @@ export default function App() {
       // Define the processWebVitals function after the script is loaded
       const processWebVitals = (metrics: any) => {
         const monitorUrl =
-          "https://population-connecting-thumb-gross.trycloudflare.com/web-vitals-metrics";
+          "https://typescriptfrontendprod.onrender.com/web-vitals-metrics";
         const data = JSON.stringify(metrics);
         navigator.sendBeacon(monitorUrl, data);
       };
