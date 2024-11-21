@@ -56,7 +56,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const translation = JSON.parse(formData.get("translation") as string);
-    const itemsInfo = JSON.parse(formData.get("itemsInfo") as string);
+    const targets = JSON.parse(formData.get("targets") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
 
     switch (true) {
@@ -66,8 +66,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const statu = await GetTranslate({ request, source, target });
         return json({ statu: statu });
 
-      case !!itemsInfo:
-        const data = await GetTranslationItemsInfo({ request, itemsInfo });
+      case !!targets:
+        const data = await GetTranslationItemsInfo({ request, targets });
         return json({ data: data });
 
       case !!languageCode:
@@ -88,34 +88,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function App() {
   const { apiKey, shopLocales } = useLoaderData<typeof loader>();
-  const resourceTypes = [
-    "Article",
-    "Blog titles",
-    "Collection",
-    "delivery",
-    "Filters",
-    "Navigation",
-    "Store metadata",
-    "Metaobjects",
-    "Theme",
-    "Shipping",
-    "Pages",
-    "Products",
-    "Policies",
-  ];
   const fetcher = useFetcher();
   const dispatch = useDispatch();
 
   useEffect(() => {
     if (shopLocales) {
       const formData = new FormData();
-      formData.append(
-        "itemsInfo",
-        JSON.stringify({
-          targets: shopLocales,
-          resourceTypes: resourceTypes,
-        }),
-      );
+      formData.append("targets", JSON.stringify(shopLocales));
       fetcher.submit(formData, {
         method: "post",
         action: "/app",

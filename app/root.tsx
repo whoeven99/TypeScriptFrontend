@@ -17,18 +17,6 @@ export default function App() {
     const script = document.createElement("script");
     script.src = "https://cdn.shopify.com/shopifycloud/app-bridge.js";
     script.async = true;
-
-    script.onload = () => {
-      // Define the processWebVitals function after the script is loaded
-      const processWebVitals = (metrics: any) => {
-        const monitorUrl =
-          "https://population-connecting-thumb-gross.trycloudflare.com/web-vitals-metrics";
-        const data = JSON.stringify(metrics);
-        navigator.sendBeacon(monitorUrl, data);
-      };
-    };
-
-    document.head.appendChild(script);
   }, []);
 
   return (
