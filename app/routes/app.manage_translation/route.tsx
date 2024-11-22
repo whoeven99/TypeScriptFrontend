@@ -286,11 +286,6 @@ const Index = () => {
       navigation: "shipping",
     },
   ];
-
-  useEffect(() => {
-    console.log(productsDataSource);
-  }, [productsDataSource]);
-
   useEffect(() => {
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));

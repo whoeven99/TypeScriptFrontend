@@ -89,8 +89,6 @@ export const GetItemsInSqlByShopName = async ({
       });
 
       const data = response.data.response;
-      console.log(data);
-
       res = [
         ...res,
         ...Object.keys(data).map((key) => {
@@ -103,7 +101,6 @@ export const GetItemsInSqlByShopName = async ({
         }),
       ];
     }
-    console.log(res);
 
     return res;
   } catch (error) {

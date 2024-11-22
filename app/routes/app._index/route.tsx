@@ -57,7 +57,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 const Index = () => {
-  // const { languageData, user } = useLoaderData<typeof loader>();
   const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
   const [user, setUser] = useState<UserType>();
   const [loading, setLoading] = useState<boolean>(true);

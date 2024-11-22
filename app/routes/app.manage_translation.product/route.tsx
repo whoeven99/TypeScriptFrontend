@@ -287,10 +287,6 @@ const Index = () => {
   const confirmFetcher = useFetcher<FetcherType>();
 
   useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
-
-  useEffect(() => {
     setHasPrevious(productsData.pageInfo.hasPreviousPage);
     setHasNext(productsData.pageInfo.hasNextPage);
   }, [productsData]);
@@ -413,12 +409,9 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      console.log(confirmFetcher.data);
       const errorItem = confirmFetcher.data.data.find(
         (item) => item.success === false,
       );
-      console.log(errorItem);
-
       if (!errorItem) {
         message.success("save success");
       } else {
@@ -619,7 +612,6 @@ const Index = () => {
   // ];
 
   const handleInputChange = (key: string, value: string, index?: number) => {
-    console.log(index);
 
     setTranslatedValues((prev) => ({
       ...prev,
@@ -818,7 +810,6 @@ const Index = () => {
         };
       },
     );
-    console.log(data);
 
     return data;
   };
