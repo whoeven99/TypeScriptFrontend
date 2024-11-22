@@ -54,7 +54,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  console.log(accessToken)
+  // console.log(accessToken)
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
