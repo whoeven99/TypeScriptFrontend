@@ -35,16 +35,18 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
       published: boolean;
       loading: boolean;
     }[]
-  >([{
-    key: 2,
-    language: 'en',
-    locale: 'en-US',
-    primary: true,
-    status: 0, 
-    auto_update_translation: true,
-    published: true,
-    loading: false,
-  }]);
+  >([
+    {
+      key: 2,
+      language: "en",
+      locale: "en-US",
+      primary: true,
+      status: 0,
+      auto_update_translation: true,
+      published: true,
+      loading: false,
+    },
+  ]);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -111,9 +113,23 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
           {result ? <TranslatedIcon status={result[0].status} /> : <>...</>}
         </div>
         <Space direction="horizontal">
-          <Button onClick={() => handleTranslate(result[0].key)} type="primary">
-            Translate
-          </Button>
+          {result[0].status === 2 ? (
+            <Button disabled style={{ width: "100px" }}>
+              Translating
+            </Button>
+          ) : result[0].status ? (
+            <Button disabled style={{ width: "100px" }}>
+              Translated
+            </Button>
+          ) : (
+            <Button
+              onClick={() => handleTranslate(result[0].key)}
+              style={{ width: "100px" }}
+              type="primary"
+            >
+              Translate
+            </Button>
+          )}
           <Button onClick={onClick}>Manage</Button>
         </Space>
       </Space>

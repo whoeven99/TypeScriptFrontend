@@ -126,8 +126,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const statu = await GetTranslate({ request, source, target });
         return json({ statu: statu });
       case !!targets:
-        console.log(1);
-
         await GetTranslationItemsInfo({ shop, accessToken, targets });
         const data = await GetItemsInSqlByShopName({ shop, accessToken, targets });
         return json({ data: data });

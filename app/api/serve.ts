@@ -6,7 +6,7 @@ export interface ConfirmDataType {
   resourceId: string;
   locale: string;
   key: string;
-  value: string | null;
+  value: string;
   translatableContentDigest: string;
   target: string;
 }
@@ -80,7 +80,6 @@ export const GetItemsInSqlByShopName = async ({
   }[] = [];
   try {
     for (let target of targets) {
-      console.log(target);
       const response = await axios({
         url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getItemsInSqlByShopName`,
         method: "POST",
@@ -193,37 +192,6 @@ export const GetLanguageData = async ({ locale }: { locale: string[] }) => {
   }
 };
 
-//新增用户语言
-export const InsertShopTranslateInfo = async ({
-  shop,
-  accessToken,
-  source,
-  targets,
-}: {
-  shop: string;
-  accessToken: string | undefined;
-  source: string;
-  targets: string[];
-}) => {
-  try {
-    for (const target of targets) {
-      const response = await axios({
-        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/insertShopTranslateInfo`,
-        method: "Post",
-        data: {
-          shopName: shop,
-          accessToken: accessToken,
-          source: source,
-          target: target,
-        },
-      });
-    }
-  } catch (error) {
-    console.error("Error occurred in the languageList:", error);
-    throw new Error("Error occurred in the languageList");
-  }
-};
-
 //查询语言状态
 export const GetLanguageList = async ({
   shop,
@@ -324,6 +292,11 @@ export const updateManageTranslation = async ({
   let res: {
     success: boolean;
     errorMsg: string;
+    data: {
+      resourceId: string;
+      key: string;
+      value: string;
+    };
   }[] = [];
   try {
     // 遍历 confirmData 数组
@@ -346,6 +319,11 @@ export const updateManageTranslation = async ({
         res.push({
           success: response.data.success,
           errorMsg: response.data.errorMsg,
+          data: {
+            resourceId: item.resourceId,
+            key: item.key,
+            value: item.value,
+          },
         });
       }
     }

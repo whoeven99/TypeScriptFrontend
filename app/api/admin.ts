@@ -1366,6 +1366,17 @@ export const mutationShopLocaleEnable = async ({
         },
         data: JSON.stringify({ query: mutation }),
       });
+
+      const response = await axios({
+        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/insertShopTranslateInfo`,
+        method: "Post",
+        data: {
+          shopName: shop,
+          accessToken: accessToken,
+          // source: source,
+          target: language,
+        },
+      });
     }
   } catch (error) {
     console.error("Error mutating shop languages:", error);

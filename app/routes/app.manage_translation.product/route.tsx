@@ -9,7 +9,7 @@ import {
   Table,
   theme,
 } from "antd";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useActionData,
   useFetcher,
@@ -37,6 +37,11 @@ interface FetcherType {
   data: {
     success: boolean;
     errorMsg: string;
+    data: {
+      resourceId: string;
+      key: string;
+      value: string;
+    };
   }[];
 }
 
@@ -263,6 +268,7 @@ const Index = () => {
     products.nodes[0].resourceId,
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -301,52 +307,56 @@ const Index = () => {
   }, [selectProductKey]);
 
   useEffect(() => {
-    setResourceData([
-      {
-        key: "title",
-        index: 3,
-        resource: "Title",
-        default_language: productData?.title,
-        translated: productData?.translations?.title,
-      },
-      {
-        key: "body_html",
-        index: 3,
-        resource: "Description",
-        default_language: productData?.descriptionHtml,
-        translated: productData?.translations?.descriptionHtml,
-      },
-      {
-        key: "product_type",
-        index: 3,
-        resource: "ProductType",
-        default_language: productData?.productType,
-        translated: productData?.translations?.productType,
-      },
-    ]);
-    setSeoData([
-      {
-        key: "handle",
-        index: 3,
-        resource: "URL handle",
-        default_language: productData?.handle,
-        translated: productData?.translations?.handle,
-      },
-      {
-        key: "meta_title",
-        index: 3,
-        resource: "Meta title",
-        default_language: productData?.seo.title,
-        translated: productData?.translations?.seo.title,
-      },
-      {
-        key: "meta_description",
-        index: 3,
-        resource: "Meta description",
-        default_language: productData?.seo.description,
-        translated: productData?.translations?.seo.description,
-      },
-    ]);
+    setResourceData(
+      [
+        {
+          key: "title",
+          index: 3,
+          resource: "Title",
+          default_language: productData?.title,
+          translated: productData?.translations?.title,
+        },
+        {
+          key: "body_html",
+          index: 3,
+          resource: "Description",
+          default_language: productData?.descriptionHtml,
+          translated: productData?.translations?.descriptionHtml,
+        },
+        {
+          key: "product_type",
+          index: 3,
+          resource: "ProductType",
+          default_language: productData?.productType,
+          translated: productData?.translations?.productType,
+        },
+      ].filter((item) => item.default_language),
+    );
+    setSeoData(
+      [
+        {
+          key: "handle",
+          index: 3,
+          resource: "URL handle",
+          default_language: productData?.handle,
+          translated: productData?.translations?.handle,
+        },
+        {
+          key: "meta_title",
+          index: 3,
+          resource: "Meta title",
+          default_language: productData?.seo.title,
+          translated: productData?.translations?.seo.title,
+        },
+        {
+          key: "meta_description",
+          index: 3,
+          resource: "Meta description",
+          default_language: productData?.seo.description,
+          translated: productData?.translations?.seo.description,
+        },
+      ].filter((item) => item.default_language),
+    );
     const optionsData = productData?.options.map((option, index) => {
       if (option?.name === "Title") {
         return null;
@@ -404,7 +414,9 @@ const Index = () => {
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
       console.log(confirmFetcher.data);
-      const errorItem = confirmFetcher.data.data.find((item) => item.success === false);
+      const errorItem = confirmFetcher.data.data.find(
+        (item) => item.success === false,
+      );
       console.log(errorItem);
 
       if (!errorItem) {
@@ -413,6 +425,7 @@ const Index = () => {
         message.error(errorItem?.errorMsg);
       }
     }
+    setConfirmLoading(false);
   }, [confirmFetcher.data]);
 
   useEffect(() => {
@@ -628,10 +641,10 @@ const Index = () => {
         if (index && index.toString()[0] === "2") {
           const count: number = Number(index.toString().slice(1));
           const newItem = {
-            resourceId: product_metafields.nodes.find(
+            resourceId: productMetafieldsData.nodes.find(
               (item: any) => item.resourceId === selectProductKey,
             )?.nestedTranslatableResources.nodes[count]?.resourceId,
-            locale: product_metafields.nodes
+            locale: productMetafieldsData.nodes
               .find((item: any) => item.resourceId === selectProductKey)
               ?.nestedTranslatableResources.nodes[
                 count
@@ -639,7 +652,7 @@ const Index = () => {
               ?.locale,
             key: key,
             value: value, // 初始为空字符串
-            translatableContentDigest: product_metafields.nodes
+            translatableContentDigest: productMetafieldsData.nodes
               .find((item: any) => item.resourceId === selectProductKey)
               ?.nestedTranslatableResources.nodes[
                 count
@@ -651,10 +664,10 @@ const Index = () => {
         } else if (index && index.toString()[0] === "1") {
           const count: number = Number(index.toString().slice(1));
           const newItem = {
-            resourceId: product_options.nodes.find(
+            resourceId: productOptionsData.nodes.find(
               (item: any) => item.resourceId === selectProductKey,
             )?.nestedTranslatableResources.nodes[count]?.resourceId,
-            locale: product_options.nodes
+            locale: productOptionsData.nodes
               .find((item: any) => item.resourceId === selectProductKey)
               ?.nestedTranslatableResources.nodes[
                 count
@@ -662,7 +675,7 @@ const Index = () => {
               ?.locale,
             key: key,
             value: value, // 初始为空字符串
-            translatableContentDigest: product_options.nodes
+            translatableContentDigest: productOptionsData.nodes
               .find((item: any) => item.resourceId === selectProductKey)
               ?.nestedTranslatableResources.nodes[
                 count
@@ -673,10 +686,10 @@ const Index = () => {
           return [...prevData, newItem]; // 将新数据添加到 confirmData 中
         } else {
           const newItem = {
-            resourceId: products.nodes.find(
+            resourceId: productsData.nodes.find(
               (item: any) => item.resourceId === selectProductKey,
             )?.resourceId,
-            locale: products.nodes
+            locale: productsData.nodes
               .find((item: any) => item.resourceId === selectProductKey)
               ?.translatableContent.find((item: any) => item.key === key)
               ?.locale,
@@ -762,17 +775,12 @@ const Index = () => {
     data.handle = product.translatableContent.find(
       (item: any) => item.key === "handle",
     )?.value;
-    data.seo.title =
-      product.translatableContent.find((item: any) => item.key === "meta_title")
-        ?.value ||
-      product.translatableContent.find((item: any) => item.key === "title")
-        ?.value;
-    data.seo.description =
-      product.translatableContent.find(
-        (item: any) => item.key === "meta_description",
-      )?.value ||
-      product.translatableContent.find((item: any) => item.key === "body_html")
-        ?.value;
+    data.seo.title = product.translatableContent.find(
+      (item: any) => item.key === "meta_title",
+    )?.value;
+    data.seo.description = product.translatableContent.find(
+      (item: any) => item.key === "meta_description",
+    )?.value;
     data.translations.id = product.resourceId;
     data.translations.title = product.translations.find(
       (item: any) => item.key === "title",
@@ -786,32 +794,32 @@ const Index = () => {
     data.translations.handle = product.translations.find(
       (item: any) => item.key === "handle",
     )?.value;
-    data.translations.seo.title =
-      product.translations.find((item: any) => item.key === "meta_title")
-        ?.value ||
-      product.translations.find((item: any) => item.key === "title")?.value;
-    data.translations.seo.description =
-      product.translations.find((item: any) => item.key === "meta_description")
-        ?.value ||
-      product.translations.find((item: any) => item.key === "body_html")?.value;
+    data.translations.seo.title = product.translations.find(
+      (item: any) => item.key === "meta_title",
+    )?.value;
+    data.translations.seo.description = product.translations.find(
+      (item: any) => item.key === "meta_description",
+    )?.value;
     data.options = productOption.nestedTranslatableResources.nodes.map(
-      (item: any, index: number) => {
+      (item: any) => {
         return {
           id: item.resourceId,
-          name: item.translatableContent[index]?.value,
-          translation: item.translations[index]?.value,
+          name: item.translatableContent[0]?.value,
+          translation: item.translations[0]?.value,
         };
       },
     );
     data.metafields = productMetafield.nestedTranslatableResources.nodes.map(
-      (item: any, index: number) => {
+      (item: any) => {
         return {
           id: item.resourceId,
-          name: item.translatableContent[index]?.value,
-          translation: item.translations[index]?.value,
+          name: item.translatableContent[0]?.value,
+          translation: item.translations[0]?.value,
         };
       },
     );
+    console.log(data);
+
     return data;
   };
 
@@ -840,6 +848,7 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
+    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
@@ -854,87 +863,90 @@ const Index = () => {
   };
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <Modal
-        open={isVisible}
-        onCancel={onCancel}
-        width={"100%"}
-        footer={[
-          <div
-            style={{ display: "flex", justifyContent: "center", width: "100%" }}
+    <Modal
+      open={isVisible}
+      onCancel={onCancel}
+      width={"100%"}
+      footer={[
+        <div
+          style={{ display: "flex", justifyContent: "center", width: "100%" }}
+        >
+          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            type="primary"
+            disabled={confirmLoading}
+            loading={confirmLoading}
           >
-            <Button onClick={onCancel} style={{ marginRight: "10px" }}>
-              Cancel
-            </Button>
-            <Button onClick={handleConfirm} type="primary">
-              Confirm
-            </Button>
-          </div>,
-        ]}
-      >
-        {productsData.nodes.length ? (
-          <Layout
-            style={{
-              padding: "24px 0",
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
-            }}
-          >
-            <Sider style={{ background: colorBgContainer }} width={200}>
-              <Menu
-                mode="inline"
-                defaultSelectedKeys={[productsData.nodes[0].resourceId]}
-                defaultOpenKeys={["sub1"]}
-                style={{ height: "100%" }}
-                items={menuData}
-                selectedKeys={[selectProductKey]}
-                onClick={onClick}
+            Confirm
+          </Button>
+        </div>,
+      ]}
+    >
+      {productsData.nodes.length ? (
+        <Layout
+          style={{
+            padding: "24px 0",
+            background: colorBgContainer,
+            borderRadius: borderRadiusLG,
+          }}
+        >
+          <Sider style={{ background: colorBgContainer }} width={200}>
+            <Menu
+              mode="inline"
+              defaultSelectedKeys={[productsData.nodes[0].resourceId]}
+              defaultOpenKeys={["sub1"]}
+              style={{ height: "100%" }}
+              items={menuData}
+              selectedKeys={[selectProductKey]}
+              onClick={onClick}
+            />
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <Pagination
+                hasPrevious={hasPrevious}
+                onPrevious={onPrevious}
+                hasNext={hasNext}
+                onNext={onNext}
               />
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <Pagination
-                  hasPrevious={hasPrevious}
-                  onPrevious={onPrevious}
-                  hasNext={hasNext}
-                  onNext={onNext}
-                />
-              </div>
-            </Sider>
-            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            </div>
+          </Sider>
+          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Table
+              columns={resourceColumns}
+              dataSource={resourceData}
+              pagination={false}
+            />
+            <Table
+              columns={SEOColumns}
+              dataSource={SeoData}
+              pagination={false}
+            />
+            {Array.isArray(optionsData) && optionsData[0] !== null && (
               <Table
-                columns={resourceColumns}
-                dataSource={resourceData}
+                columns={optionsColumns}
+                dataSource={optionsData}
                 pagination={false}
               />
-              <Table
-                columns={SEOColumns}
-                dataSource={SeoData}
-                pagination={false}
-              />
-              {Array.isArray(optionsData) && optionsData[0] !== null && (
+            )}
+            {Array.isArray(metafieldsData) &&
+              metafieldsData[0] !== undefined && (
                 <Table
-                  columns={optionsColumns}
-                  dataSource={optionsData}
+                  columns={metafieldsColumns}
+                  dataSource={metafieldsData}
                   pagination={false}
                 />
               )}
-              {Array.isArray(metafieldsData) &&
-                metafieldsData[0] !== undefined && (
-                  <Table
-                    columns={metafieldsColumns}
-                    dataSource={metafieldsData}
-                    pagination={false}
-                  />
-                )}
-            </Content>
-          </Layout>
-        ) : (
-          <Result
-            title="No items found here"
-            extra={<Button type="primary">back</Button>}
-          />
-        )}
-      </Modal>
-    </Suspense>
+          </Content>
+        </Layout>
+      ) : (
+        <Result
+          title="No items found here"
+          extra={<Button type="primary">back</Button>}
+        />
+      )}
+    </Modal>
   );
 };
 

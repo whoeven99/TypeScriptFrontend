@@ -51,15 +51,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {
-    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      shop,
-      accessToken,
-    });
-    const words = await GetUserWords({ shop });
-    return json({
-      shopLanguagesLoad: shopLanguagesLoad,
-      words: words,
-    });
+    const formData = await request.formData();
+    const loading = JSON.parse(formData.get("loading") as string);
+    switch (true) {
+      case !!loading:
+        const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+          shop,
+          accessToken,
+        });
+        const words = await GetUserWords({ shop });
+        return json({
+          shopLanguagesLoad: shopLanguagesLoad,
+          words: words,
+        });
+      default:
+        // 你可以在这里处理一个默认的情况，如果没有符合的条件
+        return json({ success: false, message: "Invalid data" });
+    }
   } catch (error) {
     console.error("Error action manage_translation:", error);
     throw new Response("Error action manage_translation", { status: 500 });
@@ -282,6 +290,7 @@ const Index = () => {
 
   useEffect(() => {
     const formData = new FormData();
+    formData.append("loading", JSON.stringify(true));
     fetcher.submit(formData, {
       method: "post",
       action: "/app/manage_translation",
@@ -293,7 +302,7 @@ const Index = () => {
     if (fetcher.data) {
       setShopLanguages(fetcher.data.shopLanguagesLoad);
       setWords(fetcher.data.words);
-      setLoading(false)
+      setLoading(false);
     }
   }, [fetcher.data]);
 
