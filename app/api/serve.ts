@@ -17,7 +17,7 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const shopData = await queryShop({ request });
-    const response = await axios({
+    await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/user/add`,
       method: "POST",
       data: {
@@ -26,11 +26,9 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         email: shopData.email,
       },
     });
-
-    const res = response.data.response;
   } catch (error) {
-    console.error("Error fetching translation items:", error);
-    throw new Error("Error fetching translation items");
+    console.error("Error fetching user:", error);
+    throw new Error("Error fetching user");
   }
 };
 
@@ -57,8 +55,8 @@ export const GetTranslationItemsInfo = async ({
       });
     }
   } catch (error) {
-    console.error("Error fetching translation items:", error);
-    throw new Error("Error fetching translation items");
+    console.error("Error fetching updating translation items:", error);
+    throw new Error("Error fetching updating translation items");
   }
 };
 
@@ -91,6 +89,8 @@ export const GetItemsInSqlByShopName = async ({
       });
 
       const data = response.data.response;
+      console.log(data);
+
       res = [
         ...res,
         ...Object.keys(data).map((key) => {
@@ -103,10 +103,12 @@ export const GetItemsInSqlByShopName = async ({
         }),
       ];
     }
+    console.log(res);
+
     return res;
   } catch (error) {
-    console.error("Error fetching translation items:", error);
-    throw new Error("Error fetching translation items");
+    console.error("Error fetching search translation items:", error);
+    throw new Error("Error fetching search translation items");
   }
 };
 

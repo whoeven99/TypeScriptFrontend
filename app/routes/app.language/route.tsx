@@ -3,13 +3,7 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { Typography, Button, Space, Flex, Table, Switch, Skeleton } from "antd";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  Link,
-  useFetcher,
-  useLoaderData,
-  useNavigate,
-  useSubmit,
-} from "@remix-run/react";
+import { useFetcher, useNavigate, useSubmit } from "@remix-run/react";
 import "./styles.css";
 import { authenticate } from "~/shopify.server";
 import {
@@ -106,9 +100,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
-    const selectedLanguages: string[] = JSON.parse(
-      formData.get("selectedLanguages") as string,
-    ); // 获取语言数组
+    const addLanguages = JSON.parse(formData.get("addLanguages") as string); // 获取语言数组
     const translation = JSON.parse(formData.get("translation") as string);
     const publishInfo: PublishInfoType = JSON.parse(
       formData.get("publishInfo") as string,
@@ -150,13 +142,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           languageData: languageData,
           words: words,
         });
-      case !!selectedLanguages:
-        await mutationShopLocaleEnable({ request, selectedLanguages }); // 处理逻辑
+      case !!addLanguages:
+        const success = await mutationShopLocaleEnable({
+          request,
+          addLanguages,
+        }); // 处理逻辑
         const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,
         });
-        return json({ success: true, shopLanguages });
+        return json({ success: success, shopLanguages });
 
       case !!translation:
         const source = translation.primaryLanguage.locale;
@@ -219,6 +214,7 @@ const Index = () => {
 
   const dispatch = useDispatch();
   const fetcher = useFetcher<FetchType>();
+  const addFetcher = useFetcher<any>();
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
@@ -391,16 +387,16 @@ const Index = () => {
         (item) => item.name === selectedKey.language,
       );
       if (selectedLanguage) {
-        // const formData = new FormData();
-        // formData.append(
-        //   "translation",
-        //   JSON.stringify({
-        //     primaryLanguage: primaryLanguage,
-        //     selectedLanguage: selectedLanguage,
-        //   }),
-        // ); // 将选中的语言作为字符串发送
+        const formData = new FormData();
+        formData.append(
+          "translation",
+          JSON.stringify({
+            primaryLanguage: primaryLanguage,
+            selectedLanguage: selectedLanguage,
+          }),
+        ); // 将选中的语言作为字符串发送
         // submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
-        // dispatch(setStatuState({ key, status: 2 }));
+        dispatch(setStatuState({ key, status: 2 }));
       }
     }
   };
@@ -527,16 +523,17 @@ const Index = () => {
               </Suspense>
             </div>
           </Space>
-          <Suspense fallback={<Skeleton active />}>
+          <Suspense>
             <AddLanguageModal
               isVisible={isLanguageModalOpen}
               setIsModalOpen={setIsLanguageModalOpen}
               allLanguages={allLanguages}
-              submit={submit}
+              addFetcher={addFetcher}
               languageData={languageData}
+              primaryLanguage={primaryLanguage}
             />
           </Suspense>
-          <Suspense fallback={<Skeleton active />}>
+          <Suspense>
             <PublishModal
               isVisible={isPublishModalOpen} // 父组件控制是否显示
               onOk={() => handleConfirmPublishModal()}

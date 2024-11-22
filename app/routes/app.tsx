@@ -53,7 +53,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;  
+  const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
@@ -126,9 +126,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const statu = await GetTranslate({ request, source, target });
         return json({ statu: statu });
       case !!targets:
-        await GetTranslationItemsInfo({ shop, accessToken, targets });
         const data = await GetItemsInSqlByShopName({ shop, accessToken, targets });
+        await GetTranslationItemsInfo({ shop, accessToken, targets });
         return json({ data: data });
+        return null;
       case !!languageCode:
         const totalWords = await GetTotalWords({
           request,

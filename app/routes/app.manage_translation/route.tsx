@@ -120,7 +120,6 @@ const Index = () => {
       navigation: "collection",
     },
   ];
-
   const onlineStoreDataSource: TableDataType[] = [
     {
       key: "articles",
@@ -287,6 +286,10 @@ const Index = () => {
       navigation: "shipping",
     },
   ];
+
+  useEffect(() => {
+    console.log(productsDataSource);
+  }, [productsDataSource]);
 
   useEffect(() => {
     const formData = new FormData();
