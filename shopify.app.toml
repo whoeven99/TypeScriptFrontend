@@ -1,9 +1,9 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "7a5eae5811d6629e9b3299748e852a6b"
-name = "ZinnTransTest"
-handle = "transform-lancy-app-test"
-application_url = "https://typescriptfrontend.onrender.com/"
+client_id = "fb9fc15cbec02bd735e2a5b491cf8409"
+name = "ZinnTrans"
+handle = "transform-lancy-app"
+application_url = "https://typescriptfrontendprod.onrender.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://typescriptfrontend.onrender.com/auth/callback",
-  "https://typescriptfrontend.onrender.com/auth/shopify/callback",
-  "https://typescriptfrontend.onrender.com/api/auth/callback"
+  "https://typescriptfrontendprod.onrender.com/auth/callback",
+  "https://typescriptfrontendprod.onrender.com/auth/shopify/callback",
+  "https://typescriptfrontendprod.onrender.com/api/auth/callback"
 ]
 
 [webhooks]
