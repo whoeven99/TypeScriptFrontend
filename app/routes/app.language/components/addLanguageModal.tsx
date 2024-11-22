@@ -128,7 +128,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   const handleConfirm = () => {
     const selectedLanguages = allSelectedLanguage.map((lang) => lang.isoCode);
     const formData = new FormData();
-    formData.append("languages", JSON.stringify(selectedLanguages)); // 将选中的语言作为字符串发送
+    formData.append("selectedLanguages", JSON.stringify(selectedLanguages)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
       action: "/app/language",

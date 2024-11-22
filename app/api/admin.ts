@@ -1332,17 +1332,17 @@ export const queryAllMarket = async ({ request }: { request: Request }) => {
 
 export const mutationShopLocaleEnable = async ({
   request,
-  languages,
+  selectedLanguages,
 }: {
   request: Request;
-  languages: string[]; // 接受语言数组
+  selectedLanguages: string[]; // 接受语言数组
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
   try {
     // 遍历语言数组并逐个执行 GraphQL mutation
-    for (const language of languages) {
+    for (const language of selectedLanguages) {
       const mutation = `
         mutation {
           shopLocaleEnable(locale: "${language}") {

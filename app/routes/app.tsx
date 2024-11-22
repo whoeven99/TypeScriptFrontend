@@ -23,9 +23,10 @@ import {
   GetLanguageList,
   GetTotalWords,
   GetTranslate,
-  GetTranslationItemsInfo,
+  GetItemsInSqlByShopName,
   GetUserSubscriptionPlan,
   GetUserWords,
+  GetTranslationItemsInfo,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import { queryShopLanguages } from "~/api/admin";
@@ -52,10 +53,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const { shop, accessToken } = adminAuthResult.session;  
   try {
     const formData = await request.formData();
-    const loading = JSON.parse(formData.get("loading") as string); 
+    const loading = JSON.parse(formData.get("loading") as string);
     const index = JSON.parse(formData.get("index") as string);
     const translation = JSON.parse(formData.get("translation") as string);
     const targets = JSON.parse(formData.get("targets") as string);
@@ -93,16 +94,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           (item) => item.locale,
         );
         const pictures = await GetLanguageData({ locale: shopLocalesIndex });
-        const languageData = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
-          key: i,
-          src: pictures[shopLocalesIndex[i]].countries || "error",
-          name: lang.name,
-          locale: lang.locale,
-          status:
-            languages.find((language: any) => language.target === lang.locale)
-              ?.status || 0,
-          published: lang.published,
-        }));
+        const languageData = shopLanguagesWithoutPrimaryIndex.map(
+          (lang, i) => ({
+            key: i,
+            src: pictures[shopLocalesIndex[i]].countries || "error",
+            name: lang.name,
+            locale: lang.locale,
+            status:
+              languages.find((language: any) => language.target === lang.locale)
+                ?.status || 0,
+            published: lang.published,
+          }),
+        );
 
         const user = {
           plan: plan,
@@ -122,11 +125,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const target = translation.selectedLanguage;
         const statu = await GetTranslate({ request, source, target });
         return json({ statu: statu });
-
       case !!targets:
-        const data = await GetTranslationItemsInfo({ request, targets });
-        return json({ data: data });
+        console.log(1);
 
+        await GetTranslationItemsInfo({ shop, accessToken, targets });
+        const data = await GetItemsInSqlByShopName({ shop, accessToken, targets });
+        return json({ data: data });
       case !!languageCode:
         const totalWords = await GetTotalWords({
           request,
@@ -147,9 +151,9 @@ export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
   const [shopLocales, setShopLoacles] = useState<string[]>([]);
 
-  const fetcher = useFetcher();
   const loadingFetcher = useFetcher<LoadingFetchType>();
   const dispatch = useDispatch();
+  const fetcher = useFetcher();
 
   useEffect(() => {
     shopify.loading(true);
@@ -173,14 +177,14 @@ export default function App() {
   }, [shopLocales]);
 
   useEffect(() => {
-    if (fetcher.data && Array.isArray((fetcher.data as { data: any[] }).data)) {
-      dispatch(updateData((fetcher.data as { data: any[] }).data));
-    }
     if (loadingFetcher.data) {
       setShopLoacles(loadingFetcher.data.shopLocales);
     }
+    if (fetcher.data && Array.isArray((fetcher.data as { data: any[] }).data)) {
+      dispatch(updateData((fetcher.data as { data: any[] }).data));
+    }
     shopify.loading(false);
-  }, [fetcher.data]);
+  }, [fetcher.data, loadingFetcher.data]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

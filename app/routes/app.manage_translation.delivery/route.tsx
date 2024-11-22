@@ -126,11 +126,12 @@ const Index = () => {
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
-  
   useEffect(() => {
     setHasPrevious(deliverysData.pageInfo.hasPreviousPage);
     setHasNext(deliverysData.pageInfo.hasNextPage);
     const data = generateMenuItemsArray(deliverysData);
+    console.log(data);
+
     setResourceData(data);
   }, [deliverysData]);
 
@@ -181,13 +182,19 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string, value: string) => {
+  useEffect(() => {
+    console.log(confirmData);
+  }, [confirmData]);
+
+  const handleInputChange = (key: string, value: string, index: number) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+      const existingItemIndex = prevData.findIndex(
+        (item) => item.resourceId === key,
+      );
 
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
@@ -200,12 +207,12 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: deliverys.nodes[0]?.resourceId,
-          locale: deliverys.nodes[0]?.translatableContent[0]?.locale,
-          key: key,
+          resourceId: deliverys.nodes[index]?.resourceId,
+          locale: deliverys.nodes[index]?.translatableContent[0]?.locale,
+          key: "value",
           value: value, // 初始为空字符串
           translatableContentDigest:
-            deliverys.nodes[0]?.translatableContent[0]?.digest,
+            deliverys.nodes[index]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
 
@@ -216,15 +223,18 @@ const Index = () => {
 
   const generateMenuItemsArray = (items: any) => {
     return items.nodes.flatMap((item: any, index: number) => {
-      // 创建当前项的对象
-      const currentItem = {
-        key: `${item.resourceId}`, // 使用 id 生成唯一的 key
-        index: index,
-        resource: "value", // 资源字段固定为 "Menu Items"
-        default_language: item.translatableContent[0]?.value, // 默认语言为 item 的标题
-        translated: item.translations[0]?.value, // 翻译字段初始化为空字符串
-      };
-      return currentItem.default_language !== "" ? [currentItem] : [];
+      if (item.translatableContent.length !== 0) {
+        // 创建当前项的对象
+        const currentItem = {
+          key: `${item.resourceId}`, // 使用 id 生成唯一的 key
+          index: index,
+          resource: "value", // 资源字段固定为 "Menu Items"
+          default_language: item.translatableContent[0]?.value, // 默认语言为 item 的标题
+          translated: item.translations[0]?.value, // 翻译字段初始化为空字符串
+        };
+        return currentItem.default_language !== "" ? [currentItem] : [];
+      }
+      return [];
     });
   };
 

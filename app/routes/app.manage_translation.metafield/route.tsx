@@ -126,7 +126,6 @@ const Index = () => {
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
-  
   useEffect(() => {
     setHasPrevious(metafieldsData.pageInfo.hasPreviousPage);
     setHasNext(metafieldsData.pageInfo.hasNextPage);
@@ -181,13 +180,15 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string, value: string) => {
+  const handleInputChange = (key: string, value: string, index: number) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+      const existingItemIndex = prevData.findIndex(
+        (item) => item.resourceId === key,
+      );
 
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
@@ -200,12 +201,12 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: metafields.nodes[0]?.resourceId,
-          locale: metafields.nodes[0]?.translatableContent[0]?.locale,
+          resourceId: metafields.nodes[index]?.resourceId,
+          locale: metafields.nodes[index]?.translatableContent[0]?.locale,
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest:
-            metafields.nodes[0]?.translatableContent[0]?.digest,
+            metafields.nodes[index]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
 

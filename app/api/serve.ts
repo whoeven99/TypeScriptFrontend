@@ -34,16 +34,44 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
   }
 };
 
-//获取各项翻译状态
+//更新各项翻译状态
 export const GetTranslationItemsInfo = async ({
-  request,
+  shop,
+  accessToken,
   targets,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string | undefined;
   targets: string[];
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    for (let target of targets) {
+      await axios({
+        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          accessToken: accessToken,
+          target: target,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching translation items:", error);
+    throw new Error("Error fetching translation items");
+  }
+};
+
+//获取各项翻译状态
+export const GetItemsInSqlByShopName = async ({
+  shop,
+  accessToken,
+  targets,
+}: {
+  shop: string;
+  accessToken: string | undefined;
+  targets: string[];
+}) => {
   let res: {
     language: string;
     type: string;
@@ -52,6 +80,7 @@ export const GetTranslationItemsInfo = async ({
   }[] = [];
   try {
     for (let target of targets) {
+      console.log(target);
       const response = await axios({
         url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getItemsInSqlByShopName`,
         method: "POST",
@@ -164,6 +193,37 @@ export const GetLanguageData = async ({ locale }: { locale: string[] }) => {
   }
 };
 
+//新增用户语言
+export const InsertShopTranslateInfo = async ({
+  shop,
+  accessToken,
+  source,
+  targets,
+}: {
+  shop: string;
+  accessToken: string | undefined;
+  source: string;
+  targets: string[];
+}) => {
+  try {
+    for (const target of targets) {
+      const response = await axios({
+        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/insertShopTranslateInfo`,
+        method: "Post",
+        data: {
+          shopName: shop,
+          accessToken: accessToken,
+          source: source,
+          target: target,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Error occurred in the languageList:", error);
+    throw new Error("Error occurred in the languageList");
+  }
+};
+
 //查询语言状态
 export const GetLanguageList = async ({
   shop,
@@ -261,26 +321,35 @@ export const updateManageTranslation = async ({
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-
+  let res: {
+    success: boolean;
+    errorMsg: string;
+  }[] = [];
   try {
     // 遍历 confirmData 数组
     for (const item of confirmData) {
-      const response = await axios({
-        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/updateShopifyDataByTranslateTextRequest`,
-        method: "POST",
-        data: {
-          shopName: shop,
-          accessToken: accessToken,
-          locale: item.locale,
-          key: item.key,
-          value: item.value,
-          translatableContentDigest: item.translatableContentDigest,
-          resourceId: item.resourceId,
-          target: item.target,
-        },
-      });
-      const res = response.data;
+      if (item.translatableContentDigest && item.locale) {
+        const response = await axios({
+          url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/updateShopifyDataByTranslateTextRequest`,
+          method: "POST",
+          data: {
+            shopName: shop,
+            accessToken: accessToken,
+            locale: item.locale,
+            key: item.key,
+            value: item.value,
+            translatableContentDigest: item.translatableContentDigest,
+            resourceId: item.resourceId,
+            target: item.target,
+          },
+        });
+        res.push({
+          success: response.data.success,
+          errorMsg: response.data.errorMsg,
+        });
+      }
     }
+    return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
     throw new Error("Error occurred in the translation");

@@ -17,6 +17,7 @@ interface ManageTableInputProps {
   >;
   handleInputChange?: (key: string, value: string, index: number) => void;
   textarea: boolean;
+  index?: number;
 }
 
 const ManageTableInput: React.FC<ManageTableInputProps> = ({
@@ -25,6 +26,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   setTranslatedValues,
   handleInputChange,
   textarea,
+  index,
 }) => {
   const [defaultValue, setDefaultValue] = useState<string>(
     record?.default_language || "",
@@ -54,7 +56,11 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
           value={translatedValues[record?.key]}
           autoSize={{ minRows: 1, maxRows: 6 }}
           onChange={(e) =>
-            handleInputChange(record.key, e.target.value, record.index)
+            handleInputChange(
+              record.key,
+              e.target.value,
+              index ? Number(index + "" + record.index) : record.index,
+            )
           }
         />
       );
@@ -64,7 +70,11 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
           theme="snow"
           value={translatedValues[record?.key]}
           onChange={(content) =>
-            handleInputChange(record.key, content, record.index)
+            handleInputChange(
+              record.key,
+              content,
+              index ? Number(index + "" + record.index) : record.index,
+            )
           }
         />
       );
@@ -73,7 +83,11 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
       <Input
         value={translatedValues[record?.key]}
         onChange={(e) =>
-          handleInputChange(record.key, e.target.value, record.index)
+          handleInputChange(
+            record.key,
+            e.target.value,
+            index ? Number(index + "" + record.index) : index || record.index,
+          )
         }
       />
     );
@@ -87,13 +101,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         />
       );
     } else if (record?.key === "body_html") {
-      return (
-        <ReactQuill
-          theme="snow"
-          value={defaultValue}
-          readOnly
-        />
-      );
+      return <ReactQuill theme="snow" value={defaultValue} readOnly />;
     }
     return <Input disabled value={defaultValue} />;
   }

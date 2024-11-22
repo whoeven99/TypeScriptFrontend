@@ -181,13 +181,13 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string, value: string) => {
+  const handleInputChange = (key: string, value: string, index: number) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+      const existingItemIndex = prevData.findIndex((item) => item.resourceId === key);
 
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
@@ -200,12 +200,12 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: filters.nodes[0]?.resourceId,
-          locale: filters.nodes[0]?.translatableContent[0]?.locale,
+          resourceId: filters.nodes[index]?.resourceId,
+          locale: filters.nodes[index]?.translatableContent[0]?.locale,
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest:
-            filters.nodes[0]?.translatableContent[0]?.digest,
+            filters.nodes[index]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
 

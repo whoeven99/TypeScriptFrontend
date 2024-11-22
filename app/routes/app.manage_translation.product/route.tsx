@@ -3,6 +3,7 @@ import {
   Layout,
   Menu,
   MenuProps,
+  message,
   Modal,
   Result,
   Table,
@@ -11,6 +12,7 @@ import {
 import { Suspense, useEffect, useState } from "react";
 import {
   useActionData,
+  useFetcher,
   useLoaderData,
   useNavigate,
   useSubmit,
@@ -31,6 +33,13 @@ import { authenticate } from "~/shopify.server";
 
 const { Sider, Content } = Layout;
 
+interface FetcherType {
+  data: {
+    success: boolean;
+    errorMsg: string;
+  }[];
+}
+
 interface ProductType {
   handle: string;
   id: string;
@@ -42,6 +51,7 @@ interface ProductType {
   productType: string;
   options: [
     {
+      id: string;
       name: string | undefined;
       // values: string[] | undefined;
       translation: string | undefined;
@@ -49,6 +59,7 @@ interface ProductType {
   ];
   metafields: [
     {
+      id: string;
       name: string | undefined;
       // values: string[] | undefined;
       translation: string | undefined;
@@ -70,6 +81,7 @@ interface ProductType {
 
 type TableDataType = {
   key: string;
+  index: number;
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
@@ -190,7 +202,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           if (
             typeof item.key === "string" &&
             item.key.includes("_") &&
-            item.key.split("_")[1] !== "type"
+            item.key.split("_")[1] !== "type" &&
+            item.key.split("_")[1] !== "meta"
           ) {
             // 将 key 修改为下划线前的部分
             item.key = item.key.split("_")[0]; // 取下划线前的部分
@@ -198,11 +211,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           return item;
         });
-        await updateManageTranslation({
+        const data = await updateManageTranslation({
           request,
           confirmData: updatedConfirmData,
         });
-        return null;
+        return json({ data: data });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -265,8 +278,12 @@ const Index = () => {
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const confirmFetcher = useFetcher<FetcherType>();
 
-  
+  useEffect(() => {
+    console.log(confirmData);
+  }, [confirmData]);
+
   useEffect(() => {
     setHasPrevious(productsData.pageInfo.hasPreviousPage);
     setHasNext(productsData.pageInfo.hasNextPage);
@@ -287,18 +304,21 @@ const Index = () => {
     setResourceData([
       {
         key: "title",
+        index: 3,
         resource: "Title",
         default_language: productData?.title,
         translated: productData?.translations?.title,
       },
       {
         key: "body_html",
+        index: 3,
         resource: "Description",
         default_language: productData?.descriptionHtml,
         translated: productData?.translations?.descriptionHtml,
       },
       {
         key: "product_type",
+        index: 3,
         resource: "ProductType",
         default_language: productData?.productType,
         translated: productData?.translations?.productType,
@@ -307,18 +327,21 @@ const Index = () => {
     setSeoData([
       {
         key: "handle",
+        index: 3,
         resource: "URL handle",
         default_language: productData?.handle,
         translated: productData?.translations?.handle,
       },
       {
         key: "meta_title",
+        index: 3,
         resource: "Meta title",
         default_language: productData?.seo.title,
         translated: productData?.translations?.seo.title,
       },
       {
         key: "meta_description",
+        index: 3,
         resource: "Meta description",
         default_language: productData?.seo.description,
         translated: productData?.translations?.seo.description,
@@ -330,6 +353,7 @@ const Index = () => {
       }
       return {
         key: `name_${index}`,
+        index: index,
         resource: "Option name",
         default_language: option?.name,
         translated: option.translation,
@@ -339,28 +363,13 @@ const Index = () => {
     const metafieldsData = productData?.metafields.map((metafield, index) => {
       return {
         key: `value_${index}`,
+        index: index,
         resource: "Product metafield",
         default_language: metafield?.name,
         translated: metafield?.translation,
       };
     });
     if (metafieldsData) setMetafieldsData(metafieldsData);
-    // if (productData.options[0]?.values) {
-    //   const variantsData = productData.options[0]?.values.map(
-    //     (value, index) => {
-    //       if (value === "Default Title") {
-    //         return null;
-    //       }
-    //       return {
-    //         key: index,
-    //         resource: "Variant name",
-    //         default_language: value,
-    //         translated: "",
-    //       };
-    //     },
-    //   );
-    //   // setVariantsData(variantsData);
-    // }
   }, [productData]);
 
   useEffect(() => {
@@ -391,6 +400,20 @@ const Index = () => {
       console.log("nextProducts end");
     }
   }, [actionData]);
+
+  useEffect(() => {
+    if (confirmFetcher.data && confirmFetcher.data.data) {
+      console.log(confirmFetcher.data);
+      const errorItem = confirmFetcher.data.data.find((item) => item.success === false);
+      console.log(errorItem);
+
+      if (!errorItem) {
+        message.success("save success");
+      } else {
+        message.error(errorItem?.errorMsg);
+      }
+    }
+  }, [confirmFetcher.data]);
 
   useEffect(() => {
     if (!isVisible) {
@@ -502,6 +525,7 @@ const Index = () => {
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
             textarea={false}
+            index={1}
           />
         );
       },
@@ -541,6 +565,7 @@ const Index = () => {
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
             textarea={false}
+            index={2}
           />
         );
       },
@@ -580,7 +605,9 @@ const Index = () => {
   //   },
   // ];
 
-  const handleInputChange = (key: string, value: string) => {
+  const handleInputChange = (key: string, value: string, index?: number) => {
+    console.log(index);
+
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
@@ -598,22 +625,72 @@ const Index = () => {
         return updatedConfirmData;
       } else {
         // 如果 key 不存在，新增一条数据
-        const newItem = {
-          resourceId: products.nodes.find(
-            (item: any) => item.resourceId === selectProductKey,
-          )?.resourceId,
-          locale: products.nodes
-            .find((item: any) => item.resourceId === selectProductKey)
-            ?.translatableContent.find((item: any) => item.key === key)?.locale,
-          key: key,
-          value: value, // 初始为空字符串
-          translatableContentDigest: products.nodes
-            .find((item: any) => item.resourceId === selectProductKey)
-            ?.translatableContent.find((item: any) => item.key === key)?.digest,
-          target: searchTerm || "",
-        };
+        if (index && index.toString()[0] === "2") {
+          const count: number = Number(index.toString().slice(1));
+          const newItem = {
+            resourceId: product_metafields.nodes.find(
+              (item: any) => item.resourceId === selectProductKey,
+            )?.nestedTranslatableResources.nodes[count]?.resourceId,
+            locale: product_metafields.nodes
+              .find((item: any) => item.resourceId === selectProductKey)
+              ?.nestedTranslatableResources.nodes[
+                count
+              ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
+              ?.locale,
+            key: key,
+            value: value, // 初始为空字符串
+            translatableContentDigest: product_metafields.nodes
+              .find((item: any) => item.resourceId === selectProductKey)
+              ?.nestedTranslatableResources.nodes[
+                count
+              ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
+              ?.digest,
+            target: searchTerm || "",
+          };
+          return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+        } else if (index && index.toString()[0] === "1") {
+          const count: number = Number(index.toString().slice(1));
+          const newItem = {
+            resourceId: product_options.nodes.find(
+              (item: any) => item.resourceId === selectProductKey,
+            )?.nestedTranslatableResources.nodes[count]?.resourceId,
+            locale: product_options.nodes
+              .find((item: any) => item.resourceId === selectProductKey)
+              ?.nestedTranslatableResources.nodes[
+                count
+              ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
+              ?.locale,
+            key: key,
+            value: value, // 初始为空字符串
+            translatableContentDigest: product_options.nodes
+              .find((item: any) => item.resourceId === selectProductKey)
+              ?.nestedTranslatableResources.nodes[
+                count
+              ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
+              ?.digest,
+            target: searchTerm || "",
+          };
+          return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+        } else {
+          const newItem = {
+            resourceId: products.nodes.find(
+              (item: any) => item.resourceId === selectProductKey,
+            )?.resourceId,
+            locale: products.nodes
+              .find((item: any) => item.resourceId === selectProductKey)
+              ?.translatableContent.find((item: any) => item.key === key)
+              ?.locale,
+            key: key,
+            value: value, // 初始为空字符串
+            translatableContentDigest: products.nodes
+              .find((item: any) => item.resourceId === selectProductKey)
+              ?.translatableContent.find((item: any) => item.key === key)
+              ?.digest,
+            target: searchTerm || "",
+          };
 
-        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+          return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+        }
       }
     });
   };
@@ -638,12 +715,14 @@ const Index = () => {
       productType: "",
       options: [
         {
+          id: "",
           name: "",
           translation: "",
         },
       ],
       metafields: [
         {
+          id: "",
           name: "",
           translation: "",
         },
@@ -718,6 +797,7 @@ const Index = () => {
     data.options = productOption.nestedTranslatableResources.nodes.map(
       (item: any, index: number) => {
         return {
+          id: item.resourceId,
           name: item.translatableContent[index]?.value,
           translation: item.translations[index]?.value,
         };
@@ -726,6 +806,7 @@ const Index = () => {
     data.metafields = productMetafield.nestedTranslatableResources.nodes.map(
       (item: any, index: number) => {
         return {
+          id: item.resourceId,
           name: item.translatableContent[index]?.value,
           translation: item.translations[index]?.value,
         };
@@ -761,7 +842,7 @@ const Index = () => {
   const handleConfirm = () => {
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
-    submit(formData, {
+    confirmFetcher.submit(formData, {
       method: "post",
       action: `/app/manage_translation/product?language=${searchTerm}`,
     }); // 提交表单请求

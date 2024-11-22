@@ -186,7 +186,7 @@ const Index = () => {
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+      const existingItemIndex = prevData.findIndex((item) => item.resourceId === key);
 
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value

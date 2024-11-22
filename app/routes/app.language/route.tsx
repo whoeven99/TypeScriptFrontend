@@ -106,7 +106,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string); // 获取语言数组
-    const languages: string[] = JSON.parse(formData.get("languages") as string); // 获取语言数组
+    const selectedLanguages: string[] = JSON.parse(formData.get("selectedLanguages") as string); // 获取语言数组
     const translation = JSON.parse(formData.get("translation") as string);
     const publishInfo: PublishInfoType = JSON.parse(
       formData.get("publishInfo") as string,
@@ -148,8 +148,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           languageData: languageData,
           words: words,
         });
-      case !!languages:
-        await mutationShopLocaleEnable({ request, languages }); // 处理逻辑
+      case !!selectedLanguages:
+        await mutationShopLocaleEnable({ request, selectedLanguages }); // 处理逻辑
         const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,

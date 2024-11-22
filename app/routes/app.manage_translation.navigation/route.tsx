@@ -198,7 +198,6 @@ const Index = () => {
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
-  
   useEffect(() => {
     setHasPrevious(navigationsData.pageInfo.hasPreviousPage);
     setHasNext(navigationsData.pageInfo.hasNextPage);
@@ -372,7 +371,9 @@ const Index = () => {
     });
     return data;
   };
-
+  useEffect(() => {
+    console.log(confirmData);
+  }, [confirmData]);
   const generateMenuItemsArray = (
     items: ItemType[],
   ): Array<{
