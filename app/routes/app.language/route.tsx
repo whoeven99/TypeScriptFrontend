@@ -105,8 +105,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
-    const loading = JSON.parse(formData.get("loading") as string); // 获取语言数组
-    const selectedLanguages: string[] = JSON.parse(formData.get("selectedLanguages") as string); // 获取语言数组
+    const loading = JSON.parse(formData.get("loading") as string);
+    const selectedLanguages: string[] = JSON.parse(
+      formData.get("selectedLanguages") as string,
+    ); // 获取语言数组
     const translation = JSON.parse(formData.get("translation") as string);
     const publishInfo: PublishInfoType = JSON.parse(
       formData.get("publishInfo") as string,
@@ -217,6 +219,7 @@ const Index = () => {
 
   const dispatch = useDispatch();
   const fetcher = useFetcher<FetchType>();
+  const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
 
   const dataSource: LanguagesDataType[] = useSelector(
@@ -348,10 +351,12 @@ const Index = () => {
               Translate
             </Button>
           )}
-          <Button>
-            <Link to={`/app/manage_translation?language=${record.locale}`}>
-              Manage
-            </Link>
+          <Button
+            onClick={() => {
+              navigate("/app/manage_translation", { state: record.locale });
+            }}
+          >
+            Manage
           </Button>
         </Space>
       ),

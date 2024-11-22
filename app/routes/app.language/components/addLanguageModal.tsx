@@ -98,7 +98,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
     // 检查是否超过20
     if (addedLanguagesCount > 20) {
       // 弹出错误提示
-      message.error("Your have reach your plan limit(Max. 20)");
+      message.error("Your have reach your shopify plan limit(Max<=20)");
       return;
     }
 

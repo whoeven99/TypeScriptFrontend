@@ -24,13 +24,13 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
             K
           </Avatar>
           <div className="plan_overview">
-            <span>Current Plan: {planName}</span>
+            <span>Pricing Plan: {planName}</span>
           </div>
         </div>
         <div className="user_profilecard_right">
           {plan ? (
             <span className="character_usage_label">
-              One-time word credits:
+              One-time Character credits:
             </span>
           ) : (
             <span className="character_usage_label">Character credits/month:</span>

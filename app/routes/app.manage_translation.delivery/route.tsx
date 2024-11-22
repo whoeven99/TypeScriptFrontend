@@ -130,8 +130,6 @@ const Index = () => {
     setHasPrevious(deliverysData.pageInfo.hasPreviousPage);
     setHasNext(deliverysData.pageInfo.hasNextPage);
     const data = generateMenuItemsArray(deliverysData);
-    console.log(data);
-
     setResourceData(data);
   }, [deliverysData]);
 
