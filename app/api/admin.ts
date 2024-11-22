@@ -1,5 +1,8 @@
 import axios from "axios";
-import { LanguagesDataType } from "~/routes/app.language/route";
+import {
+  LanguagesDataType,
+  ShopLocalesType,
+} from "~/routes/app.language/route";
 import { authenticate } from "~/shopify.server";
 
 // function filterEmptyTranslationsAndContent(data: any) {
@@ -1332,17 +1335,20 @@ export const queryAllMarket = async ({ request }: { request: Request }) => {
 
 export const mutationShopLocaleEnable = async ({
   request,
-  selectedLanguages,
+  addLanguages,
 }: {
   request: Request;
-  selectedLanguages: string[]; // 接受语言数组
+  addLanguages: {
+    primaryLanguage: ShopLocalesType | undefined;
+    selectedLanguages: string[];
+  }; // 接受语言数组
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-
+  let success = true;
   try {
     // 遍历语言数组并逐个执行 GraphQL mutation
-    for (const language of selectedLanguages) {
+    for (const language of addLanguages.selectedLanguages) {
       const mutation = `
         mutation {
           shopLocaleEnable(locale: "${language}") {
@@ -1357,7 +1363,7 @@ export const mutationShopLocaleEnable = async ({
       `;
 
       // 执行 API 请求
-      await axios({
+      const serveResponse = await axios({
         url: `https://${shop}/admin/api/2024-10/graphql.json`,
         method: "POST",
         headers: {
@@ -1367,17 +1373,22 @@ export const mutationShopLocaleEnable = async ({
         data: JSON.stringify({ query: mutation }),
       });
 
-      const response = await axios({
+      const shopifyResponse = await axios({
         url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/insertShopTranslateInfo`,
         method: "Post",
         data: {
           shopName: shop,
           accessToken: accessToken,
-          // source: source,
+          source: addLanguages?.primaryLanguage?.locale,
           target: language,
         },
       });
+      if (serveResponse.status !== 200 || shopifyResponse.status !== 200) {
+        success = false;
+        // 这里可以放置你希望执行的代码
+      }
     }
+    return success;
   } catch (error) {
     console.error("Error mutating shop languages:", error);
     throw error;

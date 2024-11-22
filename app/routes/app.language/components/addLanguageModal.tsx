@@ -1,20 +1,22 @@
 import { useEffect, useState } from "react";
-import { Modal, Input, Table, Space, message } from "antd";
+import { Modal, Input, Table, Space, message, Button } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import SelectedLanguageTag from "../../../components/selectedLanguageTag";
 import {
   AllLanguagesType,
   LanguagesDataType,
+  ShopLocalesType,
 } from "~/routes/app.language/route";
-import { SubmitFunction } from "@remix-run/react";
+import { FetcherWithComponents, SubmitFunction } from "@remix-run/react";
 import { useSelector } from "react-redux";
 
 interface LanguageModalProps {
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   allLanguages: AllLanguagesType[];
-  submit: SubmitFunction;
+  addFetcher: FetcherWithComponents<any>;
   languageData: any;
+  primaryLanguage: ShopLocalesType | undefined;
 }
 
 interface AddLanguageType {
@@ -29,8 +31,9 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   isVisible,
   setIsModalOpen,
   allLanguages,
-  submit,
+  addFetcher,
   languageData,
+  primaryLanguage,
 }) => {
   const updatedLocales = allLanguages.map((item) => item.isoCode);
   const addLanguages: AddLanguageType[] = allLanguages.map((lang, i) => ({
@@ -47,6 +50,8 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   const [allSelectedLanguage, setAllSelectedLanguage] = useState<
     AllLanguagesType[]
   >([]); // 保存选中的语言对象
+  const [confirmButtonDisable, setConfirmButtonDisable] =
+    useState<boolean>(false);
   const selectedLanguage: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
@@ -54,6 +59,17 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   const selectedLanguagesSet = new Set(
     selectedLanguage.map((lang) => lang.locale),
   );
+
+  useEffect(() => {
+    if (addFetcher.data) {
+      if (addFetcher.data.success) {
+        message.success("add success");
+      } else {
+        message.error("error");
+      }
+      setIsModalOpen(false);
+    }
+  }, [addFetcher.data]);
 
   useEffect(() => {
     // 更新语言状态
@@ -128,17 +144,21 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   const handleConfirm = () => {
     const selectedLanguages = allSelectedLanguage.map((lang) => lang.isoCode);
     const formData = new FormData();
-    formData.append("selectedLanguages", JSON.stringify(selectedLanguages)); // 将选中的语言作为字符串发送
-    submit(formData, {
+    formData.append(
+      "addLanguages",
+      JSON.stringify({
+        selectedLanguages: selectedLanguages,
+        primaryLanguage: primaryLanguage,
+      }),
+    ); // 将选中的语言作为字符串发送
+    addFetcher.submit(formData, {
       method: "post",
       action: "/app/language",
-      replace: true,
     }); // 提交表单请求
     setAllSelectedKeys([]); // 清除已选中的语言
     setSearchInput(""); // 清除搜索框内容
-    setFilteredLanguages(addLanguages); // 重置为初始语言列表
     setAllSelectedLanguage([]); // 清除已选中的语言对象
-    setIsModalOpen(false); // 选择后关闭Modal
+    setConfirmButtonDisable(true);
   };
 
   const handleCloseModal = () => {
@@ -224,9 +244,21 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       width={1000}
       open={isVisible}
       onCancel={handleCloseModal}
-      onOk={() => handleConfirm()} // 确定按钮绑定确认逻辑
-      okText="Confirm"
-      cancelText="Cancel"
+      footer={[
+        <div>
+          <Button onClick={handleCloseModal} style={{ marginRight: "10px" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            type="primary"
+            disabled={confirmButtonDisable}
+            loading={confirmButtonDisable}
+          >
+            Confirm
+          </Button>
+        </div>,
+      ]}
     >
       <Input
         placeholder="Search languages..."

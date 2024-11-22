@@ -3,7 +3,7 @@
 client_id = "6e0ef7be80edbf81020e200228a86d01"
 name = "ZinnTransLocal"
 handle = "transform-lancy-app-local"
-application_url = "https://automobiles-privileges-nuke-numerous.trycloudflare.com"
+application_url = "https://arbitrary-bars-laboratories-luxembourg.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://automobiles-privileges-nuke-numerous.trycloudflare.com/auth/callback",
-  "https://automobiles-privileges-nuke-numerous.trycloudflare.com/auth/shopify/callback",
-  "https://automobiles-privileges-nuke-numerous.trycloudflare.com/api/auth/callback"
+  "https://arbitrary-bars-laboratories-luxembourg.trycloudflare.com/auth/callback",
+  "https://arbitrary-bars-laboratories-luxembourg.trycloudflare.com/auth/shopify/callback",
+  "https://arbitrary-bars-laboratories-luxembourg.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
