@@ -1,11 +1,12 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
+import { UpdateUser } from "~/api/serve";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop, session, admin } = await authenticate.webhook(request);
 
-  if (!admin && topic !== 'SHOP_REDACT') {
+  if (!admin && topic !== "SHOP_REDACT") {
     // The admin context isn't returned if the webhook fired after a shop was uninstalled.
     // The SHOP_REDACT webhook will be fired up to 48 hours after a shop uninstalls the app.
     // Because of this, no admin context is available.
@@ -22,6 +23,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       break;
     case "CUSTOMERS_DATA_REQUEST":
+      await UpdateUser({ request });
+      break;
     case "CUSTOMERS_REDACT":
     case "SHOP_REDACT":
     default:

@@ -63,3 +63,9 @@
   height: 2em; /* 设置高度为两行高，假设一行高为 1em */
   text-align: center; /* 使文本水平居中 */
 }
+
+.flag-container {
+  display: flex;
+  justify-content: center; /* 横向居中 */
+  gap: 10px; /* 设置图片间距 */
+}

@@ -15,7 +15,7 @@ interface LanguageModalProps {
   setIsModalOpen: (visible: boolean) => void;
   allLanguages: AllLanguagesType[];
   addFetcher: FetcherWithComponents<any>;
-  languageData: any;
+  languageLocaleInfo: any;
   primaryLanguage: ShopLocalesType | undefined;
 }
 
@@ -32,15 +32,15 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   setIsModalOpen,
   allLanguages,
   addFetcher,
-  languageData,
+  languageLocaleInfo,
   primaryLanguage,
 }) => {
   const updatedLocales = allLanguages.map((item) => item.isoCode);
   const addLanguages: AddLanguageType[] = allLanguages.map((lang, i) => ({
     key: lang.key,
     isoCode: lang.isoCode,
-    src: languageData[updatedLocales[i]].countries,
-    name: `${lang.name}(${languageData[updatedLocales[i]].Local})`,
+    src: languageLocaleInfo[updatedLocales[i]].countries,
+    name: `${lang.name}(${languageLocaleInfo[updatedLocales[i]].Local})`,
     state: "", // 默认值为 false
   }));
   const [allSelectedKeys, setAllSelectedKeys] = useState<React.Key[]>([]); // 保存所有选中的key
@@ -86,8 +86,8 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
 
     // 根据状态排序
     const sortedFilteredLanguages = updatedLanguages.sort((a, b) => {
-      const aSelected = selectedLanguagesSet.has(a.isoCode) ? -1 : 1; // 将已选语言放前面
-      const bSelected = selectedLanguagesSet.has(b.isoCode) ? -1 : 1;
+      const aSelected = selectedLanguagesSet.has(a.isoCode) ? 1 : -1; // 将已选语言放前面
+      const bSelected = selectedLanguagesSet.has(b.isoCode) ? 1 : -1;
       return aSelected - bSelected;
     });
 
@@ -99,9 +99,46 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchInput(value);
-    const filteredData = addLanguages.filter((lang) =>
-      lang.name.toLowerCase().includes(value.toLowerCase()),
-    );
+
+    if (value.trim() === "") {
+      // 当搜索框为空时，恢复初始排序
+      const updatedLanguages = addLanguages.map((lang) => {
+        const isPrimary = selectedLanguage.some(
+          (sl) => sl.locale === lang.isoCode && sl.primary,
+        );
+        const state = selectedLanguagesSet.has(lang.isoCode)
+          ? isPrimary
+            ? "Primary"
+            : "Added"
+          : ""; // 更新语言状态
+        return { ...lang, state };
+      });
+
+      const sortedFilteredLanguages = updatedLanguages.sort((a, b) => {
+        const aSelected = selectedLanguagesSet.has(a.isoCode) ? 1 : -1;
+        const bSelected = selectedLanguagesSet.has(b.isoCode) ? 1 : -1;
+        return aSelected - bSelected;
+      });
+
+      setFilteredLanguages(sortedFilteredLanguages);
+      return;
+    }
+
+    // 过滤逻辑
+    const filteredData = addLanguages
+      .map((lang) => {
+        const isPrimary = selectedLanguage.some(
+          (sl) => sl.locale === lang.isoCode && sl.primary,
+        );
+        const state = selectedLanguagesSet.has(lang.isoCode)
+          ? isPrimary
+            ? "Primary"
+            : "Added"
+          : ""; // 更新语言状态
+        return { ...lang, state };
+      })
+      .filter((lang) => lang.name.toLowerCase().includes(value.toLowerCase()));
+
     setFilteredLanguages(filteredData);
   };
 
@@ -198,7 +235,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       width: "20%",
     },
     {
-      title: "Maybe used in",
+      title: "Relevant region(s)",
       dataIndex: "src",
       key: "src",
       width: "60%",

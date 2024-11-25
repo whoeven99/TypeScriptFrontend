@@ -1,17 +1,9 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Col, Row, Skeleton, Space, Typography } from "antd";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import "./styles.css";
-import {
-  GetLanguageList,
-  GetLanguageData,
-  GetUserSubscriptionPlan,
-  GetUserWords,
-} from "~/api/serve";
-import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
@@ -28,11 +20,13 @@ interface LanguageDataType {
   src: string[];
   name: string;
   locale: string;
+  localeName: string;
   status: number;
   published: boolean;
 }
 
 interface UserType {
+  name: string;
   plan: string;
   chars: number;
   totalChars: number;
@@ -57,23 +51,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 const Index = () => {
-  // const { languageData, user } = useLoaderData<typeof loader>();
   const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
+
   const [user, setUser] = useState<UserType>();
   const [loading, setLoading] = useState<boolean>(true);
   const dispatch = useDispatch();
   const fetcher = useFetcher<FetchType>();
-
-  const data = languageData.map((lang) => ({
-    key: lang.key,
-    language: lang.name,
-    locale: lang.locale,
-    primary: false,
-    status: lang.status || 0,
-    auto_update_translation: false,
-    published: lang.published,
-    loading: false,
-  }));
 
   useEffect(() => {
     const formData = new FormData();
@@ -95,8 +78,19 @@ const Index = () => {
   }, [fetcher.data]);
 
   useEffect(() => {
+    const data = languageData.map((lang) => ({
+      key: lang.key,
+      language: lang.name,
+      localeName: lang.localeName,
+      locale: lang.locale,
+      primary: false,
+      status: lang.status || 0,
+      auto_update_translation: false,
+      published: lang.published,
+      loading: false,
+    }));
     dispatch(setTableData(data)); // 只在组件首次渲染时触发
-  }, [dispatch, data]);
+  }, [dispatch, languageData]);
 
   return (
     <Page>
@@ -114,6 +108,7 @@ const Index = () => {
             <Suspense fallback={<Skeleton active />}>
               {user && (
                 <UserProfileCard
+                  name={user.name}
                   plan={user.plan}
                   chars={user.chars}
                   totalChars={user.totalChars}
@@ -141,7 +136,7 @@ const Index = () => {
                   <Suspense fallback={<Skeleton active />}>
                     {user && (
                       <UserLanguageCard
-                        flagUrl={language.src[0]}
+                        flagUrl={language.src.slice(0, 4)}
                         primaryLanguage={user.primaryLanguage}
                         languageName={language.name}
                         languageCode={language.locale}

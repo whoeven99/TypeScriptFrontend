@@ -6,12 +6,7 @@ import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import {
-  Outlet,
-  useActionData,
-  useFetcher,
-  useLocation,
-} from "@remix-run/react";
+import { Outlet, useFetcher, useLocation } from "@remix-run/react";
 import AttentionCard from "~/components/attentionCard";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
@@ -286,11 +281,6 @@ const Index = () => {
       navigation: "shipping",
     },
   ];
-
-  useEffect(() => {
-    console.log(productsDataSource);
-  }, [productsDataSource]);
-
   useEffect(() => {
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
@@ -335,17 +325,9 @@ const Index = () => {
   }, [shopLanguages]);
 
   useEffect(() => {
-    try {
-      const foundItem = menuData.find((item) => item.key === key);
-      if (foundItem) {
-        setCurrent(key);
-      } else {
-        // 找不到时的处理逻辑，例如重置当前状态或显示错误消息
-        console.warn(`No item found for key: ${key}`);
-      }
-    } catch (error) {
-      console.error("Error finding item:", error);
-      // 处理异常情况，比如显示错误消息
+    const foundItem = menuData.find((item) => item.key === key);
+    if (foundItem) {
+      setCurrent(key);
     }
   }, [key, menuData]);
 

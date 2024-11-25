@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { Card, Button, ConfigProvider, Space } from "antd";
-import { CloseOutlined, ExclamationCircleFilled } from "@ant-design/icons";
+import { Banner } from "@shopify/polaris";
 
 interface AttentionCardProps {
   title: string;
@@ -23,36 +22,9 @@ const AttentionCard: React.FC<AttentionCardProps> = ({
 
   return (
     show && (
-      <ConfigProvider
-        theme={{
-          components: {
-            Card: {
-              /* 这里是你的组件 token */
-              headerBg: "rgb(255,184,0)",
-            },
-          },
-        }}
-      >
-        <Card
-          title={
-            <>
-              <ExclamationCircleFilled />
-              <span>&nbsp;</span>
-              {`${title}`}
-            </>
-          }
-          extra={
-            <Button type="link" onClick={() => setVisible(false)}>
-              <CloseOutlined style={{ color: "#000" }} />
-            </Button>
-          }
-          bordered
-        >
-          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-            <p>{content}</p>
-          </Space>
-        </Card>
-      </ConfigProvider>
+      <Banner title={title} tone="critical" onDismiss={() => {}}>
+        <p>{content}</p>
+      </Banner>
     )
   );
 };

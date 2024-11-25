@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Card, Space, Typography } from "antd";
+import { Button, Card, message, Space, Typography } from "antd";
 import { useFetcher, useNavigate, useSubmit } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setStatuState } from "~/store/modules/languageTableData";
@@ -7,7 +7,7 @@ import TranslatedIcon from "~/components/translateIcon";
 const { Title } = Typography;
 
 interface UserLanguageCardProps {
-  flagUrl: string; // 国旗图片的 URL
+  flagUrl: string[]; // 国旗图片的 URL
   languageName: string; // 语言名称
   languageCode: string; //语言代码
   primaryLanguage: string; //用户默认语言
@@ -50,7 +50,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const submit = useSubmit();
+  const translateFetcher = useFetcher<any>();
   // const fetcher = useFetcher<FetchType>();
 
   // useEffect(() => {
@@ -77,6 +77,23 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
     setResult(filteredData);
   }, [data, languageCode]);
 
+  useEffect(() => {
+    console.log(2);
+    if (translateFetcher.data && translateFetcher.data.statu) {
+      if (translateFetcher.data.statu.success) {
+        message.success("The translation task is in progress.");
+        dispatch(
+          setStatuState({
+            target: translateFetcher.data.statu.target,
+            status: 2,
+          }),
+        );
+      } else {
+        message.error(translateFetcher.data.statu.errorMsg);
+      }
+    }
+  }, [translateFetcher.data]);
+
   const handleTranslate = async (key: number) => {
     const formData = new FormData();
     formData.append(
@@ -86,8 +103,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         selectedLanguage: languageCode,
       }),
     ); // 将选中的语言作为字符串发送
-    submit(formData, { method: "post", action: "/app" }); // 提交表单请求
-    dispatch(setStatuState({ key, status: 2 }));
+    translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
   };
 
   const onClick = () => {
@@ -97,39 +113,35 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   return (
     <Card style={{ textAlign: "center", padding: "20px" }}>
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <img
-          src={flagUrl}
-          alt={`${languageName} flag`}
-          style={{
-            width: "60px",
-            height: "auto",
-            marginBottom: "10px",
-            border: "1px solid #888", // 添加灰色边框
-            borderRadius: "2px",
-          }}
-        />
+        <div className="flag-container">
+          {flagUrl.map((url, index) => (
+            <img
+              key={index}
+              src={url}
+              alt={`${languageName} flag`}
+              style={{
+                width: "60px",
+                height: "auto",
+                marginBottom: "10px",
+                border: "1px solid #888", // 添加灰色边框
+                borderRadius: "2px",
+              }}
+            />
+          ))}
+        </div>
+
         <Title level={4}>{languageName}</Title>
         <div className="language_statu">
           {result ? <TranslatedIcon status={result[0].status} /> : <>...</>}
         </div>
         <Space direction="horizontal">
-          {result[0].status === 2 ? (
-            <Button disabled style={{ width: "100px" }}>
-              Translating
-            </Button>
-          ) : result[0].status ? (
-            <Button disabled style={{ width: "100px" }}>
-              Translated
-            </Button>
-          ) : (
-            <Button
-              onClick={() => handleTranslate(result[0].key)}
-              style={{ width: "100px" }}
-              type="primary"
-            >
-              Translate
-            </Button>
-          )}
+          <Button
+            onClick={() => handleTranslate(result[0].key)}
+            style={{ width: "100px" }}
+            type="primary"
+          >
+            Translate
+          </Button>
           <Button onClick={onClick}>Manage</Button>
         </Space>
       </Space>

@@ -208,7 +208,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             typeof item.key === "string" &&
             item.key.includes("_") &&
             item.key.split("_")[1] !== "type" &&
-            item.key.split("_")[1] !== "meta"
+            item.key.split("_")[0] !== "meta"
           ) {
             // 将 key 修改为下划线前的部分
             item.key = item.key.split("_")[0]; // 取下划线前的部分
@@ -285,10 +285,6 @@ const Index = () => {
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const confirmFetcher = useFetcher<FetcherType>();
-
-  useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
 
   useEffect(() => {
     setHasPrevious(productsData.pageInfo.hasPreviousPage);
@@ -413,12 +409,10 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      console.log(confirmFetcher.data);
-      const errorItem = confirmFetcher.data.data.find(
-        (item) => item.success === false,
-      );
-      console.log(errorItem);
-
+      const errorItem = confirmFetcher.data.data.find((item) => {
+        item.success === false;
+        console.log(item);
+      });
       if (!errorItem) {
         message.success("save success");
       } else {
@@ -619,8 +613,6 @@ const Index = () => {
   // ];
 
   const handleInputChange = (key: string, value: string, index?: number) => {
-    console.log(index);
-
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
@@ -818,7 +810,6 @@ const Index = () => {
         };
       },
     );
-    console.log(data);
 
     return data;
   };
