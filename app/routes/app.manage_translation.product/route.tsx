@@ -208,7 +208,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             typeof item.key === "string" &&
             item.key.includes("_") &&
             item.key.split("_")[1] !== "type" &&
-            item.key.split("_")[1] !== "meta"
+            item.key.split("_")[0] !== "meta"
           ) {
             // 将 key 修改为下划线前的部分
             item.key = item.key.split("_")[0]; // 取下划线前的部分
@@ -409,9 +409,10 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find(
-        (item) => item.success === false,
-      );
+      const errorItem = confirmFetcher.data.data.find((item) => {
+        item.success === false;
+        console.log(item);
+      });
       if (!errorItem) {
         message.success("save success");
       } else {
@@ -612,7 +613,6 @@ const Index = () => {
   // ];
 
   const handleInputChange = (key: string, value: string, index?: number) => {
-
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key

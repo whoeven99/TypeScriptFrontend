@@ -153,7 +153,7 @@ export const GetUserWords = async ({ shop }: { shop: string }) => {
 };
 
 //获取国旗图片链接
-export const GetLanguageData = async ({ locale }: { locale: string[] }) => {
+export const GetLanguageLocaleInfo = async ({ locale }: { locale: string[] }) => {
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
 
@@ -270,7 +270,8 @@ export const GetTranslate = async ({
       },
     });
 
-    const res = response.data;
+    const res = { ...response.data, target: target };
+    console.log(res);
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
@@ -333,6 +334,7 @@ export const updateManageTranslation = async ({
   }
 };
 
+//获取汇率数据
 export const getRateValue = async () => {
   try {
     const response = await axios({
@@ -348,6 +350,7 @@ export const getRateValue = async () => {
   }
 };
 
+//添加用户自定义汇率
 export const addCurrency = async ({
   request,
   countryName,
@@ -380,6 +383,7 @@ export const addCurrency = async ({
   }
 };
 
+//删除用户自定义汇率
 export const DeleteCurrency = async ({
   request,
   id,
@@ -407,6 +411,7 @@ export const DeleteCurrency = async ({
   }
 };
 
+//更新用户自定义汇率
 export const UpdateCurrency = async ({
   request,
   updateCurrencies,
@@ -440,6 +445,7 @@ export const UpdateCurrency = async ({
   }
 };
 
+//获取用户自定义汇率
 export const GetCurrency = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;

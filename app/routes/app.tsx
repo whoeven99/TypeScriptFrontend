@@ -19,7 +19,7 @@ import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
 import { ConfigProvider } from "antd";
 import {
-  GetLanguageData,
+  GetLanguageLocaleInfo,
   GetLanguageList,
   GetTotalWords,
   GetTranslate,
@@ -29,7 +29,7 @@ import {
   GetTranslationItemsInfo,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
-import { queryShopLanguages } from "~/api/admin";
+import { queryShop, queryShopLanguages } from "~/api/admin";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { updateData } from "~/store/modules/languageItemsData";
@@ -75,9 +75,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocales = shopLanguagesWithoutPrimary.map(
           (item) => item.locale,
         );
-
         return json({ shopLocales: shopLocales });
       case !!index:
+        const shopData = await queryShop({ request });
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,
@@ -94,12 +94,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
           (item) => item.locale,
         );
-        const pictures = await GetLanguageData({ locale: shopLocalesIndex });
+        const languageLocaleInfo = await GetLanguageLocaleInfo({
+          locale: shopLocalesIndex,
+        });
         const languageData = shopLanguagesWithoutPrimaryIndex.map(
           (lang, i) => ({
             key: i,
-            src: pictures[shopLocalesIndex[i]].countries || "error",
+            src: languageLocaleInfo[shopLocalesIndex[i]].countries || "error",
             name: lang.name,
+            localeName: languageLocaleInfo[shopLocalesIndex[i]].Local,
             locale: lang.locale,
             status:
               languages.find((language: any) => language.target === lang.locale)
@@ -109,6 +112,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         const user = {
+          name: shopData.name,
           plan: plan,
           chars: words?.chars,
           totalChars: words?.totalChars,

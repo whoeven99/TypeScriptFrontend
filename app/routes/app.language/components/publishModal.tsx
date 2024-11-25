@@ -34,7 +34,6 @@ const PublishModal: React.FC<PublishModalProps> = ({
   const [primaryMarket, setPrimaryMarket] = useState<MarketType | undefined>();
   const [isChecked, setIsChecked] = useState<boolean>(false); // 新增状态
 
-
   useEffect(() => {
     const res = allMarket.find((item) => item.primary === true);
     setPrimaryMarket(res);
@@ -62,10 +61,8 @@ const PublishModal: React.FC<PublishModalProps> = ({
       }}
     >
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <div className="publish_languageselect_line">
-          <Text strong={true}>Language:</Text>
-          <Text>{selectedRow?.language}</Text>
-        </div>
+        <Text strong={true}>Language:</Text>
+        <Text>{selectedRow?.language}</Text>
         <Text strong={true}>Active Market:</Text>
         {primaryState && (
           <Checkbox onChange={onChange}>{primaryMarket?.name}</Checkbox>
