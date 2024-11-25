@@ -64,6 +64,22 @@
   animation: rotating 1s infinite linear; /* 旋转动画 */
 }
 
+.translating .text {
+  color: #2196f3; /* 蓝色文字 */
+}
+
+.partly_translated {
+  background-color: #e0f7e0; 
+}
+
+.partly_translated .circle {
+  border-top-color: #4caf50; 
+}
+
+.partly_translated .text {
+  color: #29845a; 
+}
+
 /* 动画：旋转 */
 @keyframes rotating {
   0% {
@@ -72,8 +88,4 @@
   100% {
     transform: rotate(360deg); /* 旋转360度 */
   }
-}
-
-.translating .text {
-  color: #2196f3; /* 蓝色文字 */
 }

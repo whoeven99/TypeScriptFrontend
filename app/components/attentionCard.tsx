@@ -22,7 +22,7 @@ const AttentionCard: React.FC<AttentionCardProps> = ({
 
   return (
     show && (
-      <Banner title={title} tone="critical" onDismiss={() => {}}>
+      <Banner title={title} tone="critical" onDismiss={() => {setVisible(false)}}>
         <p>{content}</p>
       </Banner>
     )

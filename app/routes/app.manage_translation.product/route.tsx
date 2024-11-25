@@ -411,7 +411,6 @@ const Index = () => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
       const errorItem = confirmFetcher.data.data.find((item) => {
         item.success === false;
-        console.log(item);
       });
       if (!errorItem) {
         message.success("Save success");

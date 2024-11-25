@@ -1383,6 +1383,7 @@ export const mutationShopLocaleEnable = async ({
           target: language,
         },
       });
+
       if (serveResponse.status !== 200 || shopifyResponse.status !== 200) {
         success = false;
         // 这里可以放置你希望执行的代码

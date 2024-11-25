@@ -60,7 +60,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const loading = JSON.parse(formData.get("loading") as string);
     const index = JSON.parse(formData.get("index") as string);
     const translation = JSON.parse(formData.get("translation") as string);
-    const targets = JSON.parse(formData.get("targets") as string);
+    const target = JSON.parse(formData.get("target") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
 
     switch (true) {
@@ -129,8 +129,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       case !!translation:
         const source = translation.primaryLanguage.locale;
-        const target = translation.selectedLanguage;
-        const statu = await GetTranslate({ request, source, target });
+        const selectedLanguage = translation.selectedLanguage;
+        const statu = await GetTranslate({
+          request,
+          source,
+          target: selectedLanguage,
+        });
         return json({ statu: statu });
       case !!target:
         const data = await GetItemsInSqlByShopName({
@@ -138,7 +142,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           accessToken,
           target,
         });
-        console.log(data);
         await GetTranslationItemsInfo({ shop, accessToken, target });
         return json({ data: data });
       case !!languageCode:

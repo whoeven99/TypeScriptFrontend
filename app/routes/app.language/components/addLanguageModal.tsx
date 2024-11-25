@@ -8,7 +8,8 @@ import {
   ShopLocalesType,
 } from "~/routes/app.language/route";
 import { FetcherWithComponents, SubmitFunction } from "@remix-run/react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { setTableData } from "~/store/modules/languageTableData";
 
 interface LanguageModalProps {
   isVisible: boolean;
@@ -55,6 +56,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   const selectedLanguage: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
+  const dispatch = useDispatch();
 
   const selectedLanguagesSet = new Set(
     selectedLanguage.map((lang) => lang.locale),
@@ -64,6 +66,22 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
     if (addFetcher.data) {
       if (addFetcher.data.success) {
         message.success("Add success");
+        const newdata = addFetcher.data.shopLanguages.filter(
+          (language: any) => !language.primary,
+        );
+        const data = newdata.map((lang: any, i: any) => ({
+          key: i,
+          language: lang.name,
+          localeName: languageLocaleInfo[newdata[i].locale].Local,
+          locale: lang.locale,
+          primary: lang.primary,
+          status: 0,
+          auto_update_translation: false,
+          published: lang.published,
+          loading: false,
+        }));
+
+        dispatch(setTableData(data));
       } else {
         message.error("error");
       }

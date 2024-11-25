@@ -1,6 +1,15 @@
 import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Typography, Button, Space, Flex, Table, Switch, Skeleton, message } from "antd";
+import {
+  Typography,
+  Button,
+  Space,
+  Flex,
+  Table,
+  Switch,
+  Skeleton,
+  message,
+} from "antd";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useNavigate, useSubmit } from "@remix-run/react";
@@ -256,15 +265,17 @@ const Index = () => {
   }, [fetcher.data]);
 
   useEffect(() => {
-    console.log(2);
     if (translateFetcher.data && translateFetcher.data.statu) {
       if (translateFetcher.data.statu.success) {
-        message.success("The translation task is in progress.");
-        dispatch(
-          setStatuState({ target: translateFetcher.data.statu.target, status: 2 }),
-        );
+        
       } else {
         message.error(translateFetcher.data.statu.errorMsg);
+        dispatch(
+          setStatuState({
+            target: translateFetcher.data.statu.target,
+            status: 3,
+          }),
+        );
       }
     }
   }, [translateFetcher.data]);
@@ -356,23 +367,14 @@ const Index = () => {
       width: "30%",
       render: (_: any, record: any) => (
         <Space>
-          {record.status === 2 ? (
-            <Button  style={{ width: "100px" }}>
-              Translating
-            </Button>
-          ) : record.status ? (
-            <Button  style={{ width: "100px" }}>
-              Translated
-            </Button>
-          ) : (
-            <Button
-              onClick={() => handleTranslate(record.key)}
-              style={{ width: "100px" }}
-              type="primary"
-            >
-              Translate
-            </Button>
-          )}
+          <Button
+            onClick={() => handleTranslate(record.key)}
+            style={{ width: "100px" }}
+            type="primary"
+          >
+            Translate
+          </Button>
+
           <Button
             onClick={() => {
               navigate("/app/manage_translation", {
@@ -428,6 +430,13 @@ const Index = () => {
           action: "/app/language",
         }); // 提交表单请求
       }
+      message.success("The translation task is in progress.");
+      dispatch(
+        setStatuState({
+          target: selectedItem.locale,
+          status: 2,
+        }),
+      );
     }
   };
 

@@ -258,6 +258,8 @@ export const GetTranslate = async ({
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  console.log(source, target);
+  
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/clickTranslation`,
@@ -271,6 +273,7 @@ export const GetTranslate = async ({
     });
 
     const res = { ...response.data, target: target };
+    
     console.log(res);
     return res;
   } catch (error) {
