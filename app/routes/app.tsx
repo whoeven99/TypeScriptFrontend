@@ -27,6 +27,7 @@ import {
   GetUserSubscriptionPlan,
   GetUserWords,
   GetTranslationItemsInfo,
+  UpdateUser,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import { queryShop, queryShopLanguages } from "~/api/admin";
@@ -43,7 +44,6 @@ interface LoadingFetchType {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     await authenticate.admin(request);
-
     return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
   } catch (error) {
     console.error("Error load app:", error);
@@ -75,6 +75,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocales = shopLanguagesWithoutPrimary.map(
           (item) => item.locale,
         );
+        await UpdateUser({ request });
+
         return json({ shopLocales: shopLocales });
       case !!index:
         const shopData = await queryShop({ request });
