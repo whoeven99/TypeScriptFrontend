@@ -4,7 +4,7 @@ EXPOSE 3000
 
 WORKDIR /app
 
-ENV NODE_ENV=test
+ENV NODE_ENV=prod
 
 COPY package.json package-lock.json* ./
 
@@ -17,8 +17,8 @@ COPY . .
 
 RUN npm run build
 
-ENV SHOPIFY_APP_URL="https://typescriptfrontend.onrender.com"
-ENV SHOPIFY_API_KEY="7a5eae5811d6629e9b3299748e852a6b"
-ENV SHOPIFY_API_SECRET="bdada26c401b6b2bdc537fc67f001cc6"
+ENV SHOPIFY_APP_URL="https://typescriptfrontendprod.onrender.com/"
+ENV SHOPIFY_API_KEY="fb9fc15cbec02bd735e2a5b491cf8409"
+ENV SHOPIFY_API_SECRET="02e88a0c0c3ec60c97cdf7b6d1ab7ac7"
 
 CMD ["npm", "run", "docker-start"]

@@ -268,7 +268,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       },
     },
     {
-      title: "Statu",
+      title: "Status",
       dataIndex: "state",
       key: "state",
       width: "20%",

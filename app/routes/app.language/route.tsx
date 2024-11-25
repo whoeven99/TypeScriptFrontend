@@ -357,11 +357,11 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           {record.status === 2 ? (
-            <Button disabled style={{ width: "100px" }}>
+            <Button  style={{ width: "100px" }}>
               Translating
             </Button>
           ) : record.status ? (
-            <Button disabled style={{ width: "100px" }}>
+            <Button  style={{ width: "100px" }}>
               Translated
             </Button>
           ) : (
