@@ -78,7 +78,6 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   }, [data, languageCode]);
 
   useEffect(() => {
-    console.log(2);
     if (translateFetcher.data && translateFetcher.data.statu) {
       if (translateFetcher.data.statu.success) {
         message.success("The translation task is in progress.");

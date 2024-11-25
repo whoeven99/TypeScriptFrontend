@@ -427,7 +427,6 @@ const Index = () => {
           method: "post",
           action: "/app/language",
         }); // 提交表单请求
-        console.log(selectedLanguage);
       }
     }
   };

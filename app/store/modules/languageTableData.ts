@@ -49,6 +49,7 @@ const languageTableDataSlice = createSlice({
       action: PayloadAction<{ target: string; status: number }>,
     ) => {
       const row = state.rows.find((item) => item.locale === action.payload.target);
+      console.log(row)
       if (row) {
         row.status = action.payload.status;
       }
