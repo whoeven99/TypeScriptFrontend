@@ -49,7 +49,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       },
     },
     {
-      title: "Operation",
+      title: "Action",
       dataIndex: "operation",
       key: "operation",
       width: "40%",
