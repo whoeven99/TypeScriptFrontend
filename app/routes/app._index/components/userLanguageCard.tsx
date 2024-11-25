@@ -78,26 +78,22 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   }, [data, languageCode]);
 
   useEffect(() => {
-    if (translateFetcher.data && translateFetcher.data.statu) {    
+    if (translateFetcher.data && translateFetcher.data.statu) {
       if (translateFetcher.data.statu.success) {
-        message.success("The translation task is in progress.");
+      } else {
+        message.error(translateFetcher.data.statu.errorMsg);
         dispatch(
           setStatuState({
             target: translateFetcher.data.statu.target,
-            status: 2,
+            status: 3,
           }),
         );
-      } else {
-        message.error(translateFetcher.data.statu.errorMsg);
-        setStatuState({
-          target: translateFetcher.data.statu.target,
-          status: 2,
-        });
       }
     }
   }, [translateFetcher.data]);
 
   const handleTranslate = async (key: number) => {
+    const selectedItem = data.find((item: { key: number }) => item.key === key);
     const formData = new FormData();
     formData.append(
       "translation",
@@ -107,6 +103,12 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
       }),
     ); // 将选中的语言作为字符串发送
     translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
+    dispatch(
+      setStatuState({
+        target: selectedItem.locale,
+        status: 2,
+      }),
+    );
   };
 
   const onClick = () => {
