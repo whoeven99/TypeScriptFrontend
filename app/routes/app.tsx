@@ -19,7 +19,7 @@ import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
 import { ConfigProvider } from "antd";
 import {
-  GetLanguageData,
+  GetLanguageLocaleInfo,
   GetLanguageList,
   GetTotalWords,
   GetTranslate,
@@ -27,9 +27,10 @@ import {
   GetUserSubscriptionPlan,
   GetUserWords,
   GetTranslationItemsInfo,
+  UpdateUser,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
-import { queryShopLanguages } from "~/api/admin";
+import { queryShop, queryShopLanguages } from "~/api/admin";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { updateData } from "~/store/modules/languageItemsData";
@@ -43,7 +44,6 @@ interface LoadingFetchType {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     await authenticate.admin(request);
-
     return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
   } catch (error) {
     console.error("Error load app:", error);
@@ -54,7 +54,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  // console.log(accessToken)
+
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
@@ -75,9 +75,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocales = shopLanguagesWithoutPrimary.map(
           (item) => item.locale,
         );
+        await UpdateUser({ request });
 
         return json({ shopLocales: shopLocales });
       case !!index:
+        const shopData = await queryShop({ request });
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,
@@ -94,12 +96,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
           (item) => item.locale,
         );
-        const pictures = await GetLanguageData({ locale: shopLocalesIndex });
+        const languageLocaleInfo = await GetLanguageLocaleInfo({
+          locale: shopLocalesIndex,
+        });
         const languageData = shopLanguagesWithoutPrimaryIndex.map(
           (lang, i) => ({
             key: i,
-            src: pictures[shopLocalesIndex[i]].countries || "error",
+            src: languageLocaleInfo[shopLocalesIndex[i]].countries || "error",
             name: lang.name,
+            localeName: languageLocaleInfo[shopLocalesIndex[i]].Local,
             locale: lang.locale,
             status:
               languages.find((language: any) => language.target === lang.locale)
@@ -109,6 +114,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         const user = {
+          name: shopData.name,
           plan: plan,
           chars: words?.chars,
           totalChars: words?.totalChars,
@@ -126,11 +132,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const target = translation.selectedLanguage;
         const statu = await GetTranslate({ request, source, target });
         return json({ statu: statu });
-      case !!targets:
-        const data = await GetItemsInSqlByShopName({ shop, accessToken, targets });
-        await GetTranslationItemsInfo({ shop, accessToken, targets });
+      case !!target:
+        const data = await GetItemsInSqlByShopName({
+          shop,
+          accessToken,
+          target,
+        });
+        console.log(data);
+        await GetTranslationItemsInfo({ shop, accessToken, target });
         return json({ data: data });
-        return null;
       case !!languageCode:
         const totalWords = await GetTotalWords({
           request,
@@ -167,12 +177,14 @@ export default function App() {
 
   useEffect(() => {
     if (shopLocales) {
-      const formData = new FormData();
-      formData.append("targets", JSON.stringify(shopLocales));
-      fetcher.submit(formData, {
-        method: "post",
-        action: "/app",
-      }); // 提交表单请求
+      for (const target of shopLocales) {
+        const formData = new FormData();
+        formData.append("target", JSON.stringify(target));
+        fetcher.submit(formData, {
+          method: "post",
+          action: "/app",
+        }); // 提交表单请求
+      }
     }
   }, [shopLocales]);
 

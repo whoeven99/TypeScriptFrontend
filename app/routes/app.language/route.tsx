@@ -1,6 +1,6 @@
 import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Typography, Button, Space, Flex, Table, Switch, Skeleton } from "antd";
+import { Typography, Button, Space, Flex, Table, Switch, Skeleton, message } from "antd";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useNavigate, useSubmit } from "@remix-run/react";
@@ -28,7 +28,7 @@ import {
 import AttentionCard from "~/components/attentionCard";
 import {
   GetLanguageList,
-  GetLanguageData,
+  GetLanguageLocaleInfo,
   GetTranslate,
   GetUserWords,
 } from "~/api/serve";
@@ -39,7 +39,7 @@ const PrimaryLanguage = lazy(() => import("./components/primaryLanguage"));
 const AddLanguageModal = lazy(() => import("./components/addLanguageModal"));
 const PublishModal = lazy(() => import("./components/publishModal"));
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 export interface ShopLocalesType {
   locale: string;
@@ -57,6 +57,7 @@ export interface AllLanguagesType {
 export interface LanguagesDataType {
   key: number;
   language: string;
+  localeName: string;
   locale: string;
   primary: boolean;
   status: number;
@@ -81,7 +82,7 @@ interface FetchType {
   allCountryCode: string[];
   allLanguages: AllLanguagesType[];
   allMarket: MarketType[];
-  languageData: any;
+  languageLocaleInfo: any;
   languagesLoad: any;
   shop: string;
   shopLanguagesLoad: ShopLocalesType[];
@@ -127,7 +128,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           key: index,
         }));
         const allCountryCode = allLanguages.map((item) => item.isoCode);
-        const languageData = await GetLanguageData({ locale: allCountryCode });
+        const languageLocaleInfo = await GetLanguageLocaleInfo({
+          locale: allCountryCode,
+        });
 
         const words = await GetUserWords({ shop });
         const languagesLoad = await GetLanguageList({ shop, accessToken });
@@ -139,7 +142,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           allLanguages: allLanguages,
           allMarket: allMarket,
           languagesLoad: languagesLoad,
-          languageData: languageData,
+          languageLocaleInfo: languageLocaleInfo,
           words: words,
         });
       case !!addLanguages:
@@ -157,7 +160,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const source = translation.primaryLanguage.locale;
         const target = translation.selectedLanguage.locale;
         const statu = await GetTranslate({ request, source, target });
-        return statu;
+        return json({ statu: statu });
 
       case !!publishInfo:
         await mutationShopLocalePublish({
@@ -196,7 +199,7 @@ const Index = () => {
   const [allLanguages, setAllLanguages] = useState<AllLanguagesType[]>([]);
   const [allMarket, setAllMarket] = useState<MarketType[]>([]);
   const [languagesLoad, setLanguagesLoad] = useState<any>();
-  const [languageData, setLanguageData] = useState<any>();
+  const [languageLocaleInfo, setLanguageLocaleInfo] = useState<any>();
   const [words, setWords] = useState<WordsType>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
@@ -217,6 +220,7 @@ const Index = () => {
   const addFetcher = useFetcher<any>();
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const translateFetcher = useFetcher<any>();
 
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
@@ -244,12 +248,26 @@ const Index = () => {
       setAllLanguages(fetcher.data.allLanguages);
       setAllMarket(fetcher.data.allMarket);
       setLanguagesLoad(fetcher.data.languagesLoad);
-      setLanguageData(fetcher.data.languageData);
+      setLanguageLocaleInfo(fetcher.data.languageLocaleInfo);
       setWords(fetcher.data.words);
       shopify.loading(false);
       setLoading(false);
     }
   }, [fetcher.data]);
+
+  useEffect(() => {
+    console.log(2);
+    if (translateFetcher.data && translateFetcher.data.statu) {
+      if (translateFetcher.data.statu.success) {
+        message.success("The translation task is in progress.");
+        dispatch(
+          setStatuState({ target: translateFetcher.data.statu.target, status: 2 }),
+        );
+      } else {
+        message.error(translateFetcher.data.statu.errorMsg);
+      }
+    }
+  }, [translateFetcher.data]);
 
   useEffect(() => {
     if (words && words.chars > words.totalChars) setDisable(true);
@@ -260,7 +278,8 @@ const Index = () => {
     const newdata = shopLanguagesLoad.filter((language) => !language.primary);
     const data = newdata.map((lang, i) => ({
       key: i,
-      language: `${lang.name}(${languageData[newdata[i].locale].Local})`,
+      language: lang.name,
+      localeName: languageLocaleInfo[newdata[i].locale].Local,
       locale: lang.locale,
       primary: lang.primary,
       status:
@@ -300,6 +319,13 @@ const Index = () => {
       dataIndex: "language",
       key: "language",
       width: "30%",
+      render: (_: any, record: any) => {
+        return (
+          <Text>
+            {record.language}({record.localeName})
+          </Text>
+        );
+      },
     },
     {
       title: "Status",
@@ -349,7 +375,9 @@ const Index = () => {
           )}
           <Button
             onClick={() => {
-              navigate("/app/manage_translation", { state: record.locale });
+              navigate("/app/manage_translation", {
+                state: { key: record.locale },
+              });
             }}
           >
             Manage
@@ -381,10 +409,10 @@ const Index = () => {
   };
 
   const handleTranslate = async (key: number) => {
-    const selectedKey = data.find((item: { key: number }) => item.key === key);
-    if (selectedKey && shopLanguagesLoad) {
+    const selectedItem = data.find((item: { key: number }) => item.key === key);
+    if (selectedItem && shopLanguagesLoad) {
       const selectedLanguage = shopLanguagesLoad.find(
-        (item) => item.name === selectedKey.language,
+        (item) => item.name === selectedItem.language,
       );
       if (selectedLanguage) {
         const formData = new FormData();
@@ -395,8 +423,11 @@ const Index = () => {
             selectedLanguage: selectedLanguage,
           }),
         ); // 将选中的语言作为字符串发送
-        // submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
-        dispatch(setStatuState({ key, status: 2 }));
+        translateFetcher.submit(formData, {
+          method: "post",
+          action: "/app/language",
+        }); // 提交表单请求
+        console.log(selectedLanguage);
       }
     }
   };
@@ -529,7 +560,7 @@ const Index = () => {
               setIsModalOpen={setIsLanguageModalOpen}
               allLanguages={allLanguages}
               addFetcher={addFetcher}
-              languageData={languageData}
+              languageLocaleInfo={languageLocaleInfo}
               primaryLanguage={primaryLanguage}
             />
           </Suspense>
