@@ -32,7 +32,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
         <div className="user_profilecard_right">
           {plan ? (
             <span className="character_usage_label">
-              One-time Character credits:
+              One-time character credits:
             </span>
           ) : (
             <span className="character_usage_label">

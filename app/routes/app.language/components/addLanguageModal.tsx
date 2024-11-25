@@ -63,7 +63,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   useEffect(() => {
     if (addFetcher.data) {
       if (addFetcher.data.success) {
-        message.success("add success");
+        message.success("Add success");
       } else {
         message.error("error");
       }
@@ -268,7 +268,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       },
     },
     {
-      title: "State",
+      title: "Statu",
       dataIndex: "state",
       key: "state",
       width: "20%",
@@ -292,7 +292,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
             disabled={confirmButtonDisable}
             loading={confirmButtonDisable}
           >
-            Confirm
+            Add
           </Button>
         </div>,
       ]}

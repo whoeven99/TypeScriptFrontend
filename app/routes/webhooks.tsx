@@ -1,7 +1,6 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
-import { UpdateUser } from "~/api/serve";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop, session, admin } = await authenticate.webhook(request);
@@ -23,8 +22,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       break;
     case "CUSTOMERS_DATA_REQUEST":
-      await UpdateUser({ request });
-      break;
     case "CUSTOMERS_REDACT":
     case "SHOP_REDACT":
     default:
