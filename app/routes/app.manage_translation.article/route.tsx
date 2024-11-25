@@ -486,7 +486,7 @@ const Index = () => {
             Cancel
           </Button>
           <Button onClick={handleConfirm} type="primary">
-            Confirm
+            Save
           </Button>
         </div>,
       ]}

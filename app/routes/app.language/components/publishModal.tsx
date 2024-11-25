@@ -59,6 +59,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
       style={{
         top: "40%",
       }}
+      okText="Publish"
     >
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <Text strong={true}>Language:</Text>

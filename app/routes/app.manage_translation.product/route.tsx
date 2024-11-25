@@ -414,7 +414,7 @@ const Index = () => {
         console.log(item);
       });
       if (!errorItem) {
-        message.success("save success");
+        message.success("Save success");
       } else {
         message.error(errorItem?.errorMsg);
       }
@@ -871,7 +871,7 @@ const Index = () => {
             disabled={confirmLoading}
             loading={confirmLoading}
           >
-            Confirm
+            Save
           </Button>
         </div>,
       ]}

@@ -130,13 +130,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const target = translation.selectedLanguage;
         const statu = await GetTranslate({ request, source, target });
         return json({ statu: statu });
-      case !!targets:
+      case !!target:
         const data = await GetItemsInSqlByShopName({
           shop,
           accessToken,
-          targets,
+          target,
         });
-        await GetTranslationItemsInfo({ shop, accessToken, targets });
+        console.log(data);
+        await GetTranslationItemsInfo({ shop, accessToken, target });
         return json({ data: data });
       case !!languageCode:
         const totalWords = await GetTotalWords({
@@ -174,12 +175,14 @@ export default function App() {
 
   useEffect(() => {
     if (shopLocales) {
-      const formData = new FormData();
-      formData.append("targets", JSON.stringify(shopLocales));
-      fetcher.submit(formData, {
-        method: "post",
-        action: "/app",
-      }); // 提交表单请求
+      for (const target of shopLocales) {
+        const formData = new FormData();
+        formData.append("target", JSON.stringify(target));
+        fetcher.submit(formData, {
+          method: "post",
+          action: "/app",
+        }); // 提交表单请求
+      }
     }
   }, [shopLocales]);
 
