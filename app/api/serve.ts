@@ -32,7 +32,7 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
   }
 };
 
-//更新各项翻译状态
+//更新数据库各项翻译状态
 export const GetTranslationItemsInfo = async ({
   shop,
   accessToken,
@@ -148,7 +148,7 @@ export const GetUserWords = async ({ shop }: { shop: string }) => {
   }
 };
 
-//获取国旗图片链接
+//获取本地化信息
 export const GetLanguageLocaleInfo = async ({
   locale,
 }: {
@@ -217,6 +217,36 @@ export const GetLanguageList = async ({
   }
 };
 
+//翻译中语言状态返回
+export const GetLanguageStatus = async ({
+  shop,
+  source,
+  target,
+}: {
+  shop: string;
+  source: string;
+  target: string[];
+}) => {
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readTranslateDOByArray`,
+      method: "Post",
+      data: [
+        {
+          shopName: shop,
+          source: source,
+          target: target[0],
+        },
+      ],
+    });
+    const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the languageStatus:", error);
+    throw new Error("Error occurred in the languageStatus");
+  }
+};
+
 //查询语言待翻译字符数
 export const GetTotalWords = async ({
   request,
@@ -258,8 +288,6 @@ export const GetTranslate = async ({
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  console.log(source, target);
-  
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/clickTranslation`,
@@ -273,8 +301,6 @@ export const GetTranslate = async ({
     });
 
     const res = { ...response.data, target: target };
-    
-    console.log(res);
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);

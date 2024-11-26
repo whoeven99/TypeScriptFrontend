@@ -31,6 +31,7 @@ interface UserType {
   chars: number;
   totalChars: number;
   primaryLanguage: string;
+  primaryLanguageCode: string;
   shopLanguagesWithoutPrimary: ShopLocalesType[];
   shopLanguageCodesWithoutPrimary: string[];
 }
@@ -76,6 +77,40 @@ const Index = () => {
       setLoading(false);
     }
   }, [fetcher.data]);
+
+  // useEffect(() => {
+  //   if (statusFetcher.data) {
+  //     console.log(statusFetcher.data);
+  //     const items = statusFetcher.data.data.map((item: any) => {
+  //       if (item.status === 2) {
+  //         return item;
+  //       } else {
+  //         dispatch(setStatuState({ target: item.target, status: item.status }));
+  //       }
+  //     });
+  //     if (items[0] !== undefined) {
+  //       // 加入10秒的延时
+  //       const delayTimeout = setTimeout(() => {
+  //         const formData = new FormData();
+  //         formData.append(
+  //           "statusData",
+  //           JSON.stringify({
+  //             source: primaryLanguage?.locale,
+  //             target: [items[0].target],
+  //           }),
+  //         );
+
+  //         statusFetcher.submit(formData, {
+  //           method: "post",
+  //           action: "/app",
+  //         });
+  //       }, 10000); // 10秒延时（10000毫秒）
+
+  //       // 清除超时定时器，以防组件卸载后仍然尝试执行
+  //       return () => clearTimeout(delayTimeout);
+  //     }
+  //   }
+  // }, [statusFetcher.data]);
 
   useEffect(() => {
     const data = languageData.map((lang) => ({
@@ -138,6 +173,7 @@ const Index = () => {
                       <UserLanguageCard
                         flagUrl={language.src.slice(0, 4)}
                         primaryLanguage={user.primaryLanguage}
+                        primaryLanguageCode={user.primaryLanguageCode}
                         languageName={language.name}
                         languageCode={language.locale}
                       />

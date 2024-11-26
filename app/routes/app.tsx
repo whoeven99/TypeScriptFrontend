@@ -28,6 +28,7 @@ import {
   GetUserWords,
   GetTranslationItemsInfo,
   UpdateUser,
+  GetLanguageStatus,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import { queryShop, queryShopLanguages } from "~/api/admin";
@@ -61,6 +62,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const index = JSON.parse(formData.get("index") as string);
     const translation = JSON.parse(formData.get("translation") as string);
     const target = JSON.parse(formData.get("target") as string);
+    const statusData = JSON.parse(formData.get("statusData") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
 
     switch (true) {
@@ -119,6 +121,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           chars: words?.chars,
           totalChars: words?.totalChars,
           primaryLanguage: shopPrimaryLanguage[0].name,
+          primaryLanguageCode:shopPrimaryLanguage[0].locale,
           shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
@@ -130,12 +133,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!translation:
         const source = translation.primaryLanguage.locale;
         const selectedLanguage = translation.selectedLanguage;
-        const statu = await GetTranslate({
+        const translateResponse = await GetTranslate({
           request,
           source,
           target: selectedLanguage,
         });
-        return json({ statu: statu });
+        return json({ data: translateResponse });
       case !!target:
         const data = await GetItemsInSqlByShopName({
           shop,
@@ -144,6 +147,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         await GetTranslationItemsInfo({ shop, accessToken, target });
         return json({ data: data });
+      case !!statusData:
+        const statusResponse = await GetLanguageStatus({
+          shop,
+          source: statusData.source,
+          target: statusData.target,
+        });
+        return json({ data: statusResponse });
       case !!languageCode:
         const totalWords = await GetTotalWords({
           request,
@@ -180,26 +190,27 @@ export default function App() {
 
   useEffect(() => {
     if (shopLocales) {
-      for (const target of shopLocales) {
-        const formData = new FormData();
-        formData.append("target", JSON.stringify(target));
-        fetcher.submit(formData, {
-          method: "post",
-          action: "/app",
-        }); // 提交表单请求
-      }
+      const formData = new FormData();
+      formData.append("target", JSON.stringify(shopLocales[0]));
+      fetcher.submit(formData, {
+        method: "post",
+        action: "/app",
+      }); // 提交表单请求
     }
   }, [shopLocales]);
+
+  useEffect(() => {
+    if (fetcher.data && Array.isArray((fetcher.data as { data: any[] }).data)) {
+      dispatch(updateData((fetcher.data as { data: any[] }).data));
+    }
+  }, [fetcher.data]);
 
   useEffect(() => {
     if (loadingFetcher.data) {
       setShopLoacles(loadingFetcher.data.shopLocales);
     }
-    if (fetcher.data && Array.isArray((fetcher.data as { data: any[] }).data)) {
-      dispatch(updateData((fetcher.data as { data: any[] }).data));
-    }
     shopify.loading(false);
-  }, [fetcher.data, loadingFetcher.data]);
+  }, [loadingFetcher.data]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

@@ -168,8 +168,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!translation:
         const source = translation.primaryLanguage.locale;
         const target = translation.selectedLanguage.locale;
-        const statu = await GetTranslate({ request, source, target });
-        return json({ statu: statu });
+        const statusResponse = await GetTranslate({ request, source, target });
+        return json({ data: statusResponse });
 
       case !!publishInfo:
         await mutationShopLocalePublish({
@@ -225,11 +225,12 @@ const Index = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   const dispatch = useDispatch();
-  const fetcher = useFetcher<FetchType>();
-  const addFetcher = useFetcher<any>();
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const fetcher = useFetcher<FetchType>();
+  const addFetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
+  const statusFetcher = useFetcher<any>();
 
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
@@ -265,20 +266,52 @@ const Index = () => {
   }, [fetcher.data]);
 
   useEffect(() => {
-    if (translateFetcher.data && translateFetcher.data.statu) {
-      if (translateFetcher.data.statu.success) {
-        
+    if (translateFetcher.data && translateFetcher.data.data) {
+      if (translateFetcher.data.data.success) {
       } else {
-        message.error(translateFetcher.data.statu.errorMsg);
+        message.error(translateFetcher.data.data.errorMsg);
         dispatch(
           setStatuState({
-            target: translateFetcher.data.statu.target,
+            target: translateFetcher.data.data.target,
             status: 3,
           }),
         );
       }
     }
   }, [translateFetcher.data]);
+
+  useEffect(() => {
+    if (statusFetcher.data) {
+      const items = statusFetcher.data.data.map((item: any) => {
+        if (item.status === 2) {
+          return item;
+        } else {
+          dispatch(setStatuState({ target: item.target, status: item.status }));
+        }
+      });
+      if (items[0] !== undefined) {
+        // 加入10秒的延时
+        const delayTimeout = setTimeout(() => {
+          const formData = new FormData();
+          formData.append(
+            "statusData",
+            JSON.stringify({
+              source: primaryLanguage?.locale,
+              target: [items[0].target],
+            }),
+          );
+
+          statusFetcher.submit(formData, {
+            method: "post",
+            action: "/app",
+          });
+        }, 10000); // 10秒延时（10000毫秒）
+
+        // 清除超时定时器，以防组件卸载后仍然尝试执行
+        return () => clearTimeout(delayTimeout);
+      }
+    }
+  }, [statusFetcher.data]);
 
   useEffect(() => {
     if (words && words.chars > words.totalChars) setDisable(true);
@@ -294,13 +327,28 @@ const Index = () => {
       locale: lang.locale,
       primary: lang.primary,
       status:
-        languagesLoad.find((statu: any) => statu.target === lang.locale)
+        languagesLoad.find((language: any) => language.target === lang.locale)
           ?.status || 0,
       auto_update_translation: false,
       published: lang.published,
       loading: false,
     }));
 
+    const findItem = data.find((data: any) => data.status === 2);
+    if (findItem) {
+      const formData = new FormData();
+      formData.append(
+        "statusData",
+        JSON.stringify({
+          source: primaryLanguage?.locale,
+          target: [findItem.locale],
+        }),
+      );
+      statusFetcher.submit(formData, {
+        method: "post",
+        action: "/app",
+      });
+    } 
     dispatch(setTableData(data));
   }, [shopLanguagesLoad, languagesLoad]); // 依赖 shopLanguagesLoad 和 status
 

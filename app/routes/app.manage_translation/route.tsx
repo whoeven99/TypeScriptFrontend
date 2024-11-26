@@ -14,6 +14,7 @@ import React from "react";
 import { GetUserWords } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import { WordsType } from "../app._index/route";
+import { updateData } from "~/store/modules/languageItemsData";
 const ManageTranslationsCard = React.lazy(
   () => import("./components/manageTranslationsCard"),
 );
@@ -81,6 +82,7 @@ const Index = () => {
   const location = useLocation();
   const { key } = location.state || {}; // 提取传递的状态
   const fetcher = useFetcher<FetchType>();
+  const currentFetcher = useFetcher<any>();
   const items = useSelector((state: any) => state.languageItemsData);
 
   const productsDataSource: TableDataType[] = [
@@ -300,6 +302,15 @@ const Index = () => {
   }, [fetcher.data]);
 
   useEffect(() => {
+    if (
+      currentFetcher.data &&
+      Array.isArray((currentFetcher.data as { data: any[] }).data)
+    ) {
+      dispatch(updateData((currentFetcher.data as { data: any[] }).data));
+    }
+  }, [currentFetcher.data]);
+
+  useEffect(() => {
     if (shopLanguages && words) {
     } else {
       shopify.loading(false);
@@ -336,8 +347,16 @@ const Index = () => {
   }, [current]);
 
   const onClick = (e: any) => {
-    // 将 e.key 转换为字符串以确保 current 始终为 string
     setCurrent(e.key);
+    const findItem = items.find((item: any) => item.language === e.key);
+    if (!findItem) {
+      const formData = new FormData();
+      formData.append("target", JSON.stringify(e.key));
+      currentFetcher.submit(formData, {
+        method: "post",
+        action: "/app",
+      }); // 提交表单请求
+    }
   };
 
   return (
