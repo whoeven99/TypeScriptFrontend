@@ -557,7 +557,7 @@ export const GetPendingOrders = async ({ shop }: { shop: string }) => {
       shopName: shop,
     });
 
-    const res = response.data;
+    const res = response.data.response;
     console.log(res);
     return res
   } catch (error) {
