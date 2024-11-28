@@ -513,13 +513,13 @@ export const InsertOrUpdateOrder = async ({
   status,
   confirmationUrl,
 }: {
-  shop: string;
+  shop?: string;
   id: string;
-  amount: number;
-  name: string;
-  createdAt: string;
+  amount?: number;
+  name?: string;
+  createdAt?: string;
   status: string;
-  confirmationUrl: URL;
+  confirmationUrl?: URL;
 }) => {
   try {
     const response = await axios({
@@ -535,18 +535,31 @@ export const InsertOrUpdateOrder = async ({
         confirmationUrl: confirmationUrl,
       },
     });
+    const res = response.data;
+    console.log(res);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    throw new Error("Error fetching user");
+  }
+};
+
+//获取订单id
+export const GetPendingOrders = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/orders/getPendingOrders`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
     console.log({
       shopName: shop,
-      id: id,
-      amount: amount,
-      name: name,
-      createdAt: createdAt,
-      status: status,
-      confirmationUrl: confirmationUrl,
     });
 
     const res = response.data;
     console.log(res);
+    return res
   } catch (error) {
     console.error("Error fetching user:", error);
     throw new Error("Error fetching user");

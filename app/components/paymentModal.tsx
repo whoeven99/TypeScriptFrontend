@@ -63,6 +63,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
           status: order.status,
           confirmationUrl: confirmationUrl,
         };
+        console.log(orderInfo);
         const formData = new FormData();
         formData.append("orderInfo", JSON.stringify(orderInfo));
         orderFetcher.submit(formData, {

@@ -1,6 +1,8 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
+import { GetPendingOrders, InsertOrUpdateOrder } from "~/api/serve";
+import { queryOrders } from "~/api/admin";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop, session, admin } = await authenticate.webhook(request);
@@ -22,6 +24,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       break;
     case "APP_PURCHASES_ONE_TIME_UPDATE":
+      const ids: string[] = await GetPendingOrders({ shop });
+      for (const id of ids) {
+        const data = await queryOrders({ request, id });
+        await InsertOrUpdateOrder({
+          id: data?.id,
+          status: data?.status,
+        });
+      }
+      break;
     case "CUSTOMERS_DATA_REQUEST":
     case "CUSTOMERS_REDACT":
     case "SHOP_REDACT":
