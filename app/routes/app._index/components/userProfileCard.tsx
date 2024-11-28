@@ -1,35 +1,25 @@
-import { Avatar, Card } from "antd";
+import { Avatar, Button, Card } from "antd";
 import { Typography } from "antd";
 
 const { Text } = Typography;
 
 interface UserProfileCardProps {
-  name: string;
+  setPaymentModalVisible: React.Dispatch<React.SetStateAction<boolean>>;
   plan: string;
   chars: number;
   totalChars: number;
 }
 
 const UserProfileCard: React.FC<UserProfileCardProps> = ({
-  name,
+  setPaymentModalVisible,
   plan,
   chars,
   totalChars,
 }) => {
-  const planName = plan === "Free" ? "Free" : "Premium";
-
   return (
-    <Card style={{ height: "128px" }}>
+    <Card>
       <div className="user_profile_wrapper">
         <div className="user_profilecard_left">
-          <Avatar size={"large"} style={{ backgroundColor: "#f56a00" }}>
-            {name.charAt(0).toUpperCase()}
-          </Avatar>
-          <div className="plan_overview">
-            <span>Pricing Plan: {planName}</span>
-          </div>
-        </div>
-        <div className="user_profilecard_right">
           {plan ? (
             <span className="character_usage_label">
               One-time character credits:
@@ -47,6 +37,9 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
               / {Intl.NumberFormat().format(totalChars)}
             </Text>
           </div>
+        </div>
+        <div className="user_profilecard_right">
+          <Button type="primary" onClick={() => setPaymentModalVisible(true)} />
         </div>
       </div>
     </Card>

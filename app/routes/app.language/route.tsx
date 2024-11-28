@@ -528,8 +528,7 @@ const Index = () => {
 
     const formData = new FormData();
     formData.append("deleteData", JSON.stringify(deleteData)); // 将选中的语言作为字符串发送
-    submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
-
+    submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求    
     dispatch(setTableData(newData)); // 更新表格数据
     setSelectedRowKeys([]); // 清空已选中项
   };

@@ -55,7 +55,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   // }, [fetcher.data]);
 
   useEffect(() => {
-    if (data.status === 2) {
+    if (data && data.status === 2) {
       const formData = new FormData();
       formData.append(
         "statusData",
@@ -145,7 +145,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   return (
     <Card style={{ textAlign: "center", padding: "20px" }}>
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <div className="flag-container">
+        <div className="flag_container">
           {flagUrl.map((url, index) => (
             <img
               key={index}

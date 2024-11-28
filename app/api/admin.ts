@@ -1532,16 +1532,20 @@ export const mutationShopLocaleUnpublish = async ({
 export const mutationAppSubscriptionCreate = async ({
   request,
   name,
-  lineItems,
+  price,
   returnUrl,
 }: {
   request: Request;
   name: String;
-  lineItems: any;
+  price: {
+    amount: number;
+    currencyCode: string;
+  };
   returnUrl: URL;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  console.log(shop);
   try {
     // 执行 API 请求
     const response = await axios({
@@ -1552,14 +1556,21 @@ export const mutationAppSubscriptionCreate = async ({
         "Content-Type": "application/json",
       },
       data: {
-        query: `mutation AppSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $returnUrl: URL!) {
-          appSubscriptionCreate(name: $name, returnUrl: $returnUrl, lineItems: $lineItems) {
+        query: `mutation AppPurchaseOneTimeCreate($name: String!, $price: MoneyInput!, $returnUrl: URL!) {
+          appPurchaseOneTimeCreate(name: $name, returnUrl: $returnUrl, price: $price, test: ${true}) {
             userErrors {
               field
               message
             }
-            appSubscription {
+            appPurchaseOneTime {
+              createdAt
               id
+              name
+              price {
+                amount
+                currencyCode
+              }
+              status
             }
             confirmationUrl
           }
@@ -1567,14 +1578,18 @@ export const mutationAppSubscriptionCreate = async ({
         variables: {
           name: name,
           returnUrl: returnUrl,
-          lineItems: lineItems,
+          price: {
+            amount:price.amount,
+            currencyCode:price.currencyCode
+          },
         },
       },
     });
     const res = response.data;
+    console.log(res);
     return res;
   } catch (error) {
-    console.error("Error publish shopLanguage:", error);
+    console.error("Payment failed:", error);
     throw error;
   }
 };

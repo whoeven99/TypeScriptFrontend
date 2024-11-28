@@ -502,3 +502,53 @@ export const GetCurrency = async ({ request }: { request: Request }) => {
     throw new Error("Error delete currency");
   }
 };
+
+//更新订单数据
+export const InsertOrUpdateOrder = async ({
+  shop,
+  id,
+  amount,
+  name,
+  createdAt,
+  status,
+  confirmationUrl,
+}: {
+  shop: string;
+  id: string;
+  amount: number;
+  name: string;
+  createdAt: string;
+  status: string;
+  confirmationUrl: URL;
+}) => {
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/orders/insertOrUpdateOrder`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        id: id,
+        amount: amount,
+        name: name,
+        createdAt: createdAt,
+        status: status,
+        confirmationUrl: confirmationUrl,
+      },
+    });
+    console.log({
+      shopName: shop,
+      id: id,
+      amount: amount,
+      name: name,
+      createdAt: createdAt,
+      status: status,
+      confirmationUrl: confirmationUrl,
+    });
+
+    const res = response.data;
+    console.log(res);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    throw new Error("Error fetching user");
+  }
+};

@@ -5,6 +5,9 @@ EXPOSE 3000
 WORKDIR /app
 
 ENV NODE_ENV=local
+ENV SHOPIFY_APP_URL="https://localhost:3000"
+ENV SHOPIFY_API_KEY="4b05c1caefa9e0761a0538b64159b627"
+ENV SHOPIFY_API_SECRET="ee60a93b498145dd16acfe018d8379ca"
 
 COPY package.json package-lock.json* ./
 
@@ -16,9 +19,5 @@ RUN npm remove @shopify/cli
 COPY . .
 
 RUN npm run build
-
-ENV SHOPIFY_APP_URL="https://localhost:3000"
-ENV SHOPIFY_API_KEY="6e0ef7be80edbf81020e200228a86d01"
-ENV SHOPIFY_API_SECRET="b7b5a1967c270c9f1e660aee6b570e08"
 
 CMD ["npm", "run", "docker-start"]

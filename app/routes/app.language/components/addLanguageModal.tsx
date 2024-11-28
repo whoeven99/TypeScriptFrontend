@@ -79,8 +79,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
           auto_update_translation: false,
           published: lang.published,
           loading: false,
-        }));
-
+        }));        
         dispatch(setTableData(data));
       } else {
         message.error("error");

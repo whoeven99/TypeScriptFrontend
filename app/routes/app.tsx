@@ -29,12 +29,14 @@ import {
   GetTranslationItemsInfo,
   UpdateUser,
   GetLanguageStatus,
+  InsertOrUpdateOrder,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
-import { queryShop, queryShopLanguages } from "~/api/admin";
+import { mutationAppSubscriptionCreate, queryShopLanguages } from "~/api/admin";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { updateData } from "~/store/modules/languageItemsData";
+import { updateNumber } from "~/store/modules/totalCharacters";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -45,6 +47,7 @@ interface LoadingFetchType {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     await authenticate.admin(request);
+    console.log(process.env.SHOPIFY_API_KEY);
     return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
   } catch (error) {
     console.error("Error load app:", error);
@@ -64,6 +67,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const target = JSON.parse(formData.get("target") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
+    const payInfo = JSON.parse(formData.get("payInfo") as string);
+    const orderInfo = JSON.parse(formData.get("orderInfo") as string);
 
     switch (true) {
       case !!loading:
@@ -81,7 +86,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         return json({ shopLocales: shopLocales });
       case !!index:
-        const shopData = await queryShop({ request });
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,
@@ -116,12 +120,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         const user = {
-          name: shopData.name,
           plan: plan,
           chars: words?.chars,
           totalChars: words?.totalChars,
           primaryLanguage: shopPrimaryLanguage[0].name,
-          primaryLanguageCode:shopPrimaryLanguage[0].locale,
+          primaryLanguageCode: shopPrimaryLanguage[0].locale,
           shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
@@ -140,13 +143,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         return json({ data: translateResponse });
       case !!target:
-        const data = await GetItemsInSqlByShopName({
+        const targetData = await GetItemsInSqlByShopName({
           shop,
           accessToken,
           target,
         });
         await GetTranslationItemsInfo({ shop, accessToken, target });
-        return json({ data: data });
+        return json({ data: targetData });
       case !!statusData:
         const statusResponse = await GetLanguageStatus({
           shop,
@@ -160,6 +163,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           target: languageCode,
         });
         return json({ totalWords: totalWords });
+      case !!payInfo:
+        const returnUrl: URL = new URL(
+          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
+        );
+        console.log(returnUrl);
+        const payData = await mutationAppSubscriptionCreate({
+          request,
+          name: payInfo.name,
+          price: payInfo.price,
+          returnUrl,
+        });
+        return json({ data: payData });
+      case !!orderInfo:
+        const orderData = await InsertOrUpdateOrder({
+          shop: shop,
+          id: orderInfo.id,
+          amount: orderInfo.amount,
+          name: orderInfo.name,
+          createdAt: orderInfo.createdAt,
+          status: orderInfo.status,
+          confirmationUrl: orderInfo.confirmationUrl,
+        });
+        return json({ data: orderData });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -201,7 +227,14 @@ export default function App() {
 
   useEffect(() => {
     if (fetcher.data && Array.isArray((fetcher.data as { data: any[] }).data)) {
-      dispatch(updateData((fetcher.data as { data: any[] }).data));
+      const items = (fetcher.data as { data: any[] }).data;
+      const totalCharacters =
+        (items.find((item: any) => item.type === "Article").totalNumber +
+          items.find((item: any) => item.type === "Products").totalNumber) *
+          1000 +
+        100000;
+      dispatch(updateData(items));
+      dispatch(updateNumber(totalCharacters));
     }
   }, [fetcher.data]);
 

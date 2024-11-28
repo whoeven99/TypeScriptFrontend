@@ -1,6 +1,7 @@
 import languageTableDataSlice from "./modules/languageTableData";
 import languageItemsDataSlice from "./modules/languageItemsData"
 import selectLanguageDataSlice from "./modules/selectLanguageData"
+import TotalCharactersSlice from "./modules/totalCharacters"
 import { configureStore } from "@reduxjs/toolkit";
 
 const store = configureStore({
@@ -8,6 +9,7 @@ const store = configureStore({
     languageTableData: languageTableDataSlice,
     languageItemsData: languageItemsDataSlice,
     selectLanguageData: selectLanguageDataSlice,
+    TotalCharacters: TotalCharactersSlice,
   },
 });
 

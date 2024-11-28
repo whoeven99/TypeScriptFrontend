@@ -21,6 +21,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
 
       break;
+    case "APP_PURCHASES_ONE_TIME_UPDATE":
     case "CUSTOMERS_DATA_REQUEST":
     case "CUSTOMERS_REDACT":
     case "SHOP_REDACT":

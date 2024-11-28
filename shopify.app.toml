@@ -1,9 +1,9 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "6e0ef7be80edbf81020e200228a86d01"
+client_id = "4b05c1caefa9e0761a0538b64159b627"
 name = "Ciwi.ai:FAT(Local)"
 handle = "ciwi_local"
-application_url = "https://bowl-jacksonville-force-brook.trycloudflare.com"
+application_url = "https://increasing-bm-scientific-tournaments.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://bowl-jacksonville-force-brook.trycloudflare.com/auth/callback",
-  "https://bowl-jacksonville-force-brook.trycloudflare.com/auth/shopify/callback",
-  "https://bowl-jacksonville-force-brook.trycloudflare.com/api/auth/callback"
+  "https://increasing-bm-scientific-tournaments.trycloudflare.com/auth/callback",
+  "https://increasing-bm-scientific-tournaments.trycloudflare.com/auth/shopify/callback",
+  "https://increasing-bm-scientific-tournaments.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
