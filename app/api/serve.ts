@@ -558,7 +558,6 @@ export const GetPendingOrders = async ({ shop }: { shop: string }) => {
     });
 
     const res = response.data.response;
-    console.log(res);
     return res
   } catch (error) {
     console.error("Error fetching user:", error);

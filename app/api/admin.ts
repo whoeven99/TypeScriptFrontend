@@ -1583,7 +1583,6 @@ export const mutationAppSubscriptionCreate = async ({
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  console.log(shop);
   try {
     // 执行 API 请求
     const response = await axios({

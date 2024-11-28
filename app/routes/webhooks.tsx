@@ -25,8 +25,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       break;
     case "APP_PURCHASES_ONE_TIME_UPDATE":
       const ids: string[] = await GetPendingOrders({ shop });
+      console.log("ids: ", ids);
       for (const id of ids) {
+        console.log("id: ", id);
         const data = await queryOrders({ request, id });
+        console.log("data: ", data);
         await InsertOrUpdateOrder({
           id: data?.id,
           status: data?.status,
