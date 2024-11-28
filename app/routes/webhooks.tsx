@@ -27,13 +27,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const ids: string[] = await GetPendingOrders({ shop });
       console.log("ids: ", ids);
       for (const id of ids) {
-        console.log("id: ", id);
-        const data = await queryOrders({ request, id });
-        console.log("data: ", data);
-        await InsertOrUpdateOrder({
-          id: data?.id,
-          status: data?.status,
-        });
+        console.log("Processing order id: ", id);
+        try {
+          const data = await queryOrders({ request, id });
+          console.log("data: ", data);
+
+          if (data) {
+            await InsertOrUpdateOrder({
+              id: data?.id,
+              status: data?.status,
+            });
+            console.log(`Order ${id} processed successfully.`);
+          } else {
+            console.log(`No data found for order id: ${id}`);
+          }
+        } catch (error) {
+          console.error(`Error processing order ${id}:`, error);
+          // 选择继续处理下一个订单或提前中止
+        }
       }
       break;
     case "CUSTOMERS_DATA_REQUEST":
