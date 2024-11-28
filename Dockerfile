@@ -4,10 +4,10 @@ EXPOSE 3000
 
 WORKDIR /app
 
-ENV NODE_ENV=local
-ENV SHOPIFY_APP_URL="https://localhost:3000"
-ENV SHOPIFY_API_KEY="4b05c1caefa9e0761a0538b64159b627"
-ENV SHOPIFY_API_SECRET="ee60a93b498145dd16acfe018d8379ca"
+ENV NODE_ENV=test
+ENV SHOPIFY_APP_URL="https://typescriptfrontend.onrender.com"
+ENV SHOPIFY_API_KEY="7a5eae5811d6629e9b3299748e852a6b"
+ENV SHOPIFY_API_SECRET="bdada26c401b6b2bdc537fc67f001cc6"
 
 COPY package.json package-lock.json* ./
 
