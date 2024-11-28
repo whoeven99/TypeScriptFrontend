@@ -6,8 +6,8 @@ WORKDIR /app
 
 ENV NODE_ENV=test
 ENV SHOPIFY_APP_URL="https://typescriptfrontend.onrender.com"
-ENV SHOPIFY_API_KEY="7a5eae5811d6629e9b3299748e852a6b"
-ENV SHOPIFY_API_SECRET="bdada26c401b6b2bdc537fc67f001cc6"
+ENV SHOPIFY_API_KEY="dec512b68e658e4f21588e3d4de0e748"
+ENV SHOPIFY_API_SECRET="33c771fde1fb426020ae1a441cce56c4"
 
 COPY package.json package-lock.json* ./
 

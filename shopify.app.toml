@@ -1,6 +1,6 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "7a5eae5811d6629e9b3299748e852a6b"
+client_id = "dec512b68e658e4f21588e3d4de0e748"
 name = "Ciwi.ai:FAT(Test)"
 handle = "ciwi_test"
 application_url = "https://typescriptfrontend.onrender.com/"
