@@ -9,6 +9,8 @@ import {
   Outlet,
   useFetcher,
   useLoaderData,
+  useLocation,
+  useParams,
   useRouteError,
 } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
@@ -28,10 +30,11 @@ import {
   GetUserWords,
   GetTranslationItemsInfo,
   UpdateUser,
+  InsertShopTranslateInfo,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import { queryShop, queryShopLanguages } from "~/api/admin";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { updateData } from "~/store/modules/languageItemsData";
 
@@ -86,7 +89,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         const words = await GetUserWords({ shop });
         const plan = await GetUserSubscriptionPlan({ shop, accessToken });
-        const languages = await GetLanguageList({ shop, accessToken });
         const shopPrimaryLanguage = shopLanguagesIndex.filter(
           (language) => language.primary,
         );
@@ -99,6 +101,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const languageLocaleInfo = await GetLanguageLocaleInfo({
           locale: shopLocalesIndex,
         });
+        for (const target of shopLocalesIndex) {
+          try {
+            await InsertShopTranslateInfo({
+              request,
+              source: shopPrimaryLanguage[0].locale,
+              target,
+            });
+          } catch (error) {
+            console.error("Error insert languageInfo:", error);
+            return json(
+              { error: "Error insert languageInfo" },
+              { status: 500 },
+            );
+          }
+        }
+        const languages = await GetLanguageList({ shop, accessToken });
         const languageData = shopLanguagesWithoutPrimaryIndex.map(
           (lang, i) => ({
             key: i,
@@ -112,7 +130,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             published: lang.published,
           }),
         );
-
         const user = {
           name: shopData.name,
           plan: plan,
@@ -122,6 +139,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
+        console.log("user: ", user);
 
         return json({
           languageData,
@@ -167,6 +185,7 @@ export default function App() {
   const loadingFetcher = useFetcher<LoadingFetchType>();
   const dispatch = useDispatch();
   const fetcher = useFetcher();
+  // const location = useLocation();
 
   useEffect(() => {
     shopify.loading(true);

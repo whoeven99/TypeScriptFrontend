@@ -17,18 +17,76 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const shopData = await queryShop({ request });
-    await axios({
+    const addUserInfoResponse = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/user/add`,
       method: "POST",
       data: {
         shopName: shop,
         accessToken: accessToken,
-        email: shopData.email,
+        email: shopData.contactEmail,
       },
     });
+    const insertCharsByShopNameResponse = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translationCounter/insertCharsByShopName`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+      },
+    });
+    const addUserFreeSubscriptionResponse = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/addUserFreeSubscription`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+      },
+    });
+
+    console.log("addUserInfoResponse: ", addUserInfoResponse.data);
+    console.log(
+      "insertCharsByShopNameResponse: ",
+      insertCharsByShopNameResponse.data,
+    );
+    console.log(
+      "addUserFreeSubscriptionResponse: ",
+      addUserFreeSubscriptionResponse.data,
+    );
   } catch (error) {
     console.error("Error fetching user:", error);
     throw new Error("Error fetching user");
+  }
+};
+
+//更新语言数据
+export const InsertShopTranslateInfo = async ({
+  request,
+  source,
+  target,
+}: {
+  request: Request;
+  source: string;
+  target: string;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/insertShopTranslateInfo`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        source: source,
+        target: target,
+      },
+    });
+
+    const res = response.data;
+    console.log("languageInfo: ", res);
+  } catch (error) {
+    console.error("Error insert languageInfo:", error);
+    throw new Error("Error insert languageInfo");
   }
 };
 
@@ -259,7 +317,7 @@ export const GetTranslate = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   console.log(source, target);
-  
+
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/clickTranslation`,
@@ -273,7 +331,7 @@ export const GetTranslate = async ({
     });
 
     const res = { ...response.data, target: target };
-    
+
     console.log(res);
     return res;
   } catch (error) {

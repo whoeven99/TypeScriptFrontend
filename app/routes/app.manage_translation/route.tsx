@@ -14,6 +14,7 @@ import React from "react";
 import { GetUserWords } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import { WordsType } from "../app._index/route";
+import DefaultManage from "./components/defaultManage";
 const ManageTranslationsCard = React.lazy(
   () => import("./components/manageTranslationsCard"),
 );
@@ -312,7 +313,7 @@ const Index = () => {
   }, [words]);
 
   useEffect(() => {
-    if (shopLanguages) {
+    if (shopLanguages && shopLanguages?.length) {
       const newArray = shopLanguages
         .filter((language) => !language.primary)
         .map((language) => ({
@@ -320,7 +321,7 @@ const Index = () => {
           key: language.locale,
         }));
       setMenuData(newArray);
-      setCurrent(newArray[0].key);
+      setCurrent(newArray[0]?.key);
     }
   }, [shopLanguages]);
 
@@ -345,6 +346,8 @@ const Index = () => {
       <TitleBar title="Manage Translation" />
       {loading ? (
         <div>loading...</div>
+      ) : !menuData.length ? (
+        <DefaultManage />
       ) : (
         <div>
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>

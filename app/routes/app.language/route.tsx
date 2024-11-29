@@ -374,7 +374,6 @@ const Index = () => {
           >
             Translate
           </Button>
-
           <Button
             onClick={() => {
               navigate("/app/manage_translation", {
