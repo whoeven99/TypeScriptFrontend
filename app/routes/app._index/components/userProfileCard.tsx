@@ -37,6 +37,18 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
           </div>
         </div>
         <div className="user_profilecard_right">
+          <img
+            src="https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/openai-min.png"
+            alt="GPT 4o"
+          />
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/openai-min.png"
+          />
+          <Text type="secondary">Powered by GPT 4o</Text>
         </div>
       </div>
     </Card>

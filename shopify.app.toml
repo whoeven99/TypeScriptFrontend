@@ -3,7 +3,7 @@
 client_id = "4b05c1caefa9e0761a0538b64159b627"
 name = "Ciwi.ai:FAT(Local)"
 handle = "ciwi_local"
-application_url = "https://paying-randy-agriculture-neighborhood.trycloudflare.com"
+application_url = "https://letting-helmet-small-fda.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://paying-randy-agriculture-neighborhood.trycloudflare.com/auth/callback",
-  "https://paying-randy-agriculture-neighborhood.trycloudflare.com/auth/shopify/callback",
-  "https://paying-randy-agriculture-neighborhood.trycloudflare.com/api/auth/callback"
+  "https://letting-helmet-small-fda.trycloudflare.com/auth/callback",
+  "https://letting-helmet-small-fda.trycloudflare.com/auth/shopify/callback",
+  "https://letting-helmet-small-fda.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

@@ -413,7 +413,7 @@ const Index = () => {
         item.success === false;
       });
       if (!errorItem) {
-        message.success("Save success");
+        message.success("Saved successfully");
       } else {
         message.error(errorItem?.errorMsg);
       }

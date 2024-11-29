@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Button, Card, message, Space, Typography } from "antd";
-import { useFetcher, useNavigate, useSubmit } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setStatuState } from "~/store/modules/languageTableData";
 import TranslatedIcon from "~/components/translateIcon";
@@ -73,33 +73,37 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
 
   useEffect(() => {
     if (statusFetcher.data) {
-      if (statusFetcher.data.data[0].status === 2) {
-        // 加入10秒的延时
-        const delayTimeout = setTimeout(() => {
-          const formData = new FormData();
-          formData.append(
-            "statusData",
-            JSON.stringify({
-              source: primaryLanguageCode,
-              target: [statusFetcher.data.data[0].target],
+      if (statusFetcher.data.data.success) {
+        if (statusFetcher.data.data[0].status === 2) {
+          // 加入10秒的延时
+          const delayTimeout = setTimeout(() => {
+            const formData = new FormData();
+            formData.append(
+              "statusData",
+              JSON.stringify({
+                source: primaryLanguageCode,
+                target: [statusFetcher.data.data[0].target],
+              }),
+            );
+
+            statusFetcher.submit(formData, {
+              method: "post",
+              action: "/app",
+            });
+          }, 10000); // 10秒延时（10000毫秒）
+
+          // 清除超时定时器，以防组件卸载后仍然尝试执行
+          return () => clearTimeout(delayTimeout);
+        } else {
+          dispatch(
+            setStatuState({
+              target: statusFetcher.data.data[0].target,
+              status: statusFetcher.data.data[0].status,
             }),
           );
-
-          statusFetcher.submit(formData, {
-            method: "post",
-            action: "/app",
-          });
-        }, 10000); // 10秒延时（10000毫秒）
-
-        // 清除超时定时器，以防组件卸载后仍然尝试执行
-        return () => clearTimeout(delayTimeout);
-      } else {
-        dispatch(
-          setStatuState({
-            target: statusFetcher.data.data[0].target,
-            status: statusFetcher.data.data[0].status,
-          }),
-        );
+        }
+      }else{
+        console.log(statusFetcher.data.data);
       }
     }
   }, [statusFetcher.data]);
