@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Button, Card, message, Space, Typography } from "antd";
-import { useFetcher, useNavigate, useSubmit } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setStatuState } from "~/store/modules/languageTableData";
 import TranslatedIcon from "~/components/translateIcon";

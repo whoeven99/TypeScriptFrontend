@@ -47,7 +47,6 @@ interface LoadingFetchType {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     await authenticate.admin(request);
-    console.log(process.env.SHOPIFY_API_KEY);
     return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
   } catch (error) {
     console.error("Error load app:", error);
@@ -64,7 +63,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const loading = JSON.parse(formData.get("loading") as string);
     const index = JSON.parse(formData.get("index") as string);
     const translation = JSON.parse(formData.get("translation") as string);
-    const target = JSON.parse(formData.get("target") as string);
+    const targets = JSON.parse(formData.get("targets") as string);
+    const syncData = JSON.parse(formData.get("syncData") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
     const payInfo = JSON.parse(formData.get("payInfo") as string);
@@ -142,14 +142,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           target: selectedLanguage,
         });
         return json({ data: translateResponse });
-      case !!target:
+      case !!targets:
         const targetData = await GetItemsInSqlByShopName({
           shop,
           accessToken,
-          target,
+          targets,
         });
-        await GetTranslationItemsInfo({ shop, accessToken, target });
+        await GetTranslationItemsInfo({ shop, accessToken, targets });
         return json({ data: targetData });
+      case !!syncData:
+        try {
+          console.log("syncData: ", syncData);
+          await GetTranslationItemsInfo({
+            shop,
+            accessToken,
+            targets: syncData,
+          });
+        } catch (error) {
+          console.error("Error GetTranslationItemsInfo:", error);
+          return json(
+            { error: "Error GetTranslationItemsInfo" },
+            { status: 500 },
+          );
+        }
       case !!statusData:
         const statusResponse = await GetLanguageStatus({
           shop,
@@ -203,6 +218,7 @@ export default function App() {
   const loadingFetcher = useFetcher<LoadingFetchType>();
   const dispatch = useDispatch();
   const fetcher = useFetcher();
+  const syncFetcher = useFetcher<any>();
 
   useEffect(() => {
     shopify.loading(true);
@@ -215,9 +231,9 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (shopLocales) {
+    if (shopLocales.length) {
       const formData = new FormData();
-      formData.append("target", JSON.stringify(shopLocales[0]));
+      formData.append("target", JSON.stringify(shopLocales));
       fetcher.submit(formData, {
         method: "post",
         action: "/app",
@@ -235,6 +251,14 @@ export default function App() {
         100000;
       dispatch(updateData(items));
       dispatch(updateNumber(totalCharacters));
+    }
+    if (fetcher.data && shopLocales.length) {
+      const formData = new FormData();
+      formData.append("syncData", JSON.stringify(shopLocales));
+      syncFetcher.submit(formData, {
+        method: "post",
+        action: "/app",
+      }); // 提交表单请求
     }
   }, [fetcher.data]);
 

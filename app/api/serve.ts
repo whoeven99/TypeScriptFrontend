@@ -48,41 +48,42 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
   }
 };
 
-//更新数据库各项翻译状态
+//更新各项翻译状态
 export const GetTranslationItemsInfo = async ({
   shop,
   accessToken,
-  target,
+  targets,
 }: {
   shop: string;
   accessToken: string | undefined;
-  target: string;
+  targets: string[];
 }) => {
   try {
-    await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
-      method: "POST",
-      data: {
-        shopName: shop,
-        accessToken: accessToken,
-        target: target,
-      },
-    });
+    for (const target of targets) {
+      await axios({
+        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          accessToken: accessToken,
+          target: target,
+        },
+      });
+    }
   } catch (error) {
     console.error("Error fetching updating translation items:", error);
     throw new Error("Error fetching updating translation items");
   }
 };
-
 //获取各项翻译状态
 export const GetItemsInSqlByShopName = async ({
   shop,
   accessToken,
-  target,
+  targets,
 }: {
   shop: string;
   accessToken: string | undefined;
-  target: string;
+  targets: string[];
 }) => {
   let res: {
     language: string;
@@ -91,28 +92,30 @@ export const GetItemsInSqlByShopName = async ({
     totalNumber: number;
   }[] = [];
   try {
-    const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getItemsInSqlByShopName`,
-      method: "POST",
-      data: {
-        shopName: shop,
-        accessToken: accessToken,
-        target: target,
-      },
-    });
-
-    const data = response.data.response;
-    res = [
-      ...res,
-      ...Object.keys(data).map((key) => {
-        return {
-          language: target,
-          type: data[key].itemName,
-          translatedNumber: data[key].translatedNumber,
-          totalNumber: data[key].totalNumber,
-        };
-      }),
-    ];
+    for (const target of targets) {
+      const response = await axios({
+        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getItemsInSqlByShopName`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          accessToken: accessToken,
+          target: target,
+        },
+      });
+      const data = response.data.response;
+      res = [
+        ...res,
+        ...Object.keys(data).map((key) => {
+          return {
+            language: target,
+            type: data[key].itemName,
+            translatedNumber: data[key].translatedNumber,
+            totalNumber: data[key].totalNumber,
+          };
+        }),
+      ];
+    }
+    console.log(res);
 
     return res;
   } catch (error) {

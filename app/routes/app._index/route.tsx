@@ -10,6 +10,7 @@ import { setTableData } from "~/store/modules/languageTableData";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { authenticate } from "~/shopify.server";
 import PaymentModal from "~/components/paymentModal";
+import NoLanguageSetCard from "~/components/noLanguageSetCard";
 
 const UserProfileCard = lazy(() => import("./components/userProfileCard"));
 const UserLanguageCard = lazy(() => import("./components/userLanguageCard"));
@@ -112,7 +113,7 @@ const Index = () => {
             >
               <div style={{ paddingLeft: "8px" }}>
                 <Title level={3}>
-                  Faster, higher-quality localization translation tool.
+                  Faster, higher-quality localization translation tool
                 </Title>
               </div>
               <Suspense fallback={<Skeleton active />}>
@@ -140,23 +141,29 @@ const Index = () => {
                   )}
                 </div>
               </div>
-              <Row gutter={[16, 16]}>
-                {languageData.map((language: any, index: number) => (
-                  <Col span={8} key={index}>
-                    <Suspense fallback={<Skeleton active />}>
-                      {user && (
-                        <UserLanguageCard
-                          flagUrl={language.src.slice(0, 4)}
-                          primaryLanguage={user.primaryLanguage}
-                          primaryLanguageCode={user.primaryLanguageCode}
-                          languageName={language.name}
-                          languageCode={language.locale}
-                        />
-                      )}
-                    </Suspense>
-                  </Col>
-                ))}
-              </Row>
+              {languageData.length ? (
+                <div>
+                  <Row gutter={[16, 16]}>
+                    {languageData.map((language: any, index: number) => (
+                      <Col span={8} key={index}>
+                        <Suspense fallback={<Skeleton active />}>
+                          {user && (
+                            <UserLanguageCard
+                              flagUrl={language.src.slice(0, 4)}
+                              primaryLanguage={user.primaryLanguage}
+                              primaryLanguageCode={user.primaryLanguageCode}
+                              languageName={language.name}
+                              languageCode={language.locale}
+                            />
+                          )}
+                        </Suspense>
+                      </Col>
+                    ))}
+                  </Row>
+                </div>
+              ) : (
+                <NoLanguageSetCard />
+              )}
             </Space>
             <PaymentModal
               visible={paymentModalVisible}

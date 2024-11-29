@@ -15,7 +15,7 @@ import { GetUserWords } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import { WordsType } from "../app._index/route";
 import { updateData } from "~/store/modules/languageItemsData";
-import DefaultManage from "./components/defaultManage";
+import NoLanguageSetCard from "~/components/noLanguageSetCard";
 const ManageTranslationsCard = React.lazy(
   () => import("./components/manageTranslationsCard"),
 );
@@ -352,7 +352,7 @@ const Index = () => {
     const findItem = items.find((item: any) => item.language === e.key);
     if (!findItem) {
       const formData = new FormData();
-      formData.append("target", JSON.stringify(e.key));
+      formData.append("target", JSON.stringify([e.key]));
       currentFetcher.submit(formData, {
         method: "post",
         action: "/app",
@@ -366,7 +366,7 @@ const Index = () => {
       {loading ? (
         <div>loading...</div>
       ) : !menuData.length ? (
-        <DefaultManage />
+        <NoLanguageSetCard />
       ) : (
         <div>
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
