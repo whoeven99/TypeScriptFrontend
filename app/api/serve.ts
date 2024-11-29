@@ -279,6 +279,45 @@ export const GetLanguageList = async ({
   }
 };
 
+//翻译中语言状态返回
+export const GetLanguageStatus = async ({
+  shop,
+  source,
+  target,
+}: {
+  shop: string;
+  source: string;
+  target: string[];
+}) => {
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readTranslateDOByArray`,
+      method: "Post",
+      data: [
+        {
+          shopName: shop,
+          source: source,
+          target: target[0],
+        },
+      ],
+    });
+    console.log([
+      {
+        shopName: shop,
+        source: source,
+        target: target[0],
+      },
+    ]);
+    
+    const res = response.data.response;
+    console.log(res);
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the languageStatus:", error);
+    throw new Error("Error occurred in the languageStatus");
+  }
+};
+
 //查询语言待翻译字符数
 export const GetTotalWords = async ({
   request,

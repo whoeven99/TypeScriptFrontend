@@ -1,5 +1,6 @@
-import { Avatar, Button, Card } from "antd";
+import { Card } from "antd";
 import { Typography } from "antd";
+import "../styles.css";
 
 const { Text } = Typography;
 
@@ -37,18 +38,14 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
           </div>
         </div>
         <div className="user_profilecard_right">
-          <img
-            src="https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/openai-min.png"
-            alt="GPT 4o"
-          />
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/openai-min.png"
-          />
-          <Text type="secondary">Powered by GPT 4o</Text>
+          <div className="gpttip">
+            <img
+              src="https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/openai.png"
+              alt="GPT 4o"
+              style={{ width: "20px", height: "auto", marginRight: "5px" }}
+            />
+            <Text type="secondary">Powered by GPT 4o</Text>
+          </div>
         </div>
       </div>
     </Card>

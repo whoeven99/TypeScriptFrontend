@@ -14,6 +14,11 @@
   flex-direction: column;
   margin-left: auto;
   align-items: flex-end; /* 使所有内容右对齐 */
+  justify-content: flex-end; /* 将内容推到最底部 */
+}
+
+.gpttip {
+  max-height: 20px;
 }
 
 .character_usage_label {
@@ -44,5 +49,3 @@
   justify-content: center; /* 横向居中 */
   gap: 10px; /* 设置图片间距 */
 }
-
-

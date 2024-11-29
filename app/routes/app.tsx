@@ -31,6 +31,7 @@ import {
   GetTranslationItemsInfo,
   UpdateUser,
   InsertShopTranslateInfo,
+  GetLanguageStatus,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import { queryShop, queryShopLanguages } from "~/api/admin";
@@ -138,6 +139,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           chars: words?.chars,
           totalChars: words?.totalChars,
           primaryLanguage: shopPrimaryLanguage[0].name,
+          primaryLanguageCode:shopPrimaryLanguage[0].locale,
           shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
