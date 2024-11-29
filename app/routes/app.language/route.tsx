@@ -328,15 +328,31 @@ const Index = () => {
       locale: lang.locale,
       primary: lang.primary,
       status:
-        languagesLoad.find((statu: any) => statu.target === lang.locale)
+        languagesLoad.find((language: any) => language.target === lang.locale)
           ?.status || 0,
       auto_update_translation: false,
       published: lang.published,
       loading: false,
     }));
 
+    const findItem = data.find((data: any) => data.status === 2);
+    if (findItem) {
+      const formData = new FormData();
+      formData.append(
+        "statusData",
+        JSON.stringify({
+          source: primaryLanguage?.locale,
+          target: [findItem.locale],
+        }),
+      );
+      statusFetcher.submit(formData, {
+        method: "post",
+        action: "/app",
+      });
+    } 
     dispatch(setTableData(data));
   }, [shopLanguagesLoad, languagesLoad]); // 依赖 shopLanguagesLoad 和 status
+
 
   useEffect(() => {
     setData(dataSource);

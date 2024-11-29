@@ -66,6 +66,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const targets = JSON.parse(formData.get("targets") as string);
     const syncData = JSON.parse(formData.get("syncData") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
+    const statusData = JSON.parse(formData.get("statusData") as string);
 
     switch (true) {
       case !!loading:
@@ -176,6 +177,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             { status: 500 },
           );
         }
+
+      case !!statusData:
+        const statusResponse = await GetLanguageStatus({
+          shop,
+          source: statusData.source,
+          target: statusData.target,
+        });
+        return json({ data: statusResponse });
+
       case !!languageCode:
         const totalWords = await GetTotalWords({
           request,
