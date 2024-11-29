@@ -7,7 +7,7 @@ const NoLanguageSetCard = () => {
   const navigate = useNavigate(); // 用来处理路由跳转
 
   return (
-    <Card style={{ width: 400, textAlign: "center" }} bordered={false}>
+    <Card style={{ textAlign: "center", padding: "20px" }} bordered={false}>
       <Title level={4}>No languages to translate.</Title>
       <Paragraph>
         Your store currently has no languages requiring translation. Please try

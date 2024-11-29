@@ -112,7 +112,7 @@ const Index = () => {
             >
               <div style={{ paddingLeft: "8px" }}>
                 <Title level={3}>
-                  Faster, higher-quality localization translation tool.
+                  Faster, higher-quality localization translation tool
                 </Title>
               </div>
               <Suspense fallback={<Skeleton active />}>
@@ -124,23 +124,23 @@ const Index = () => {
                   />
                 )}
               </Suspense>
+              <div style={{ paddingLeft: "8px" }}>
+                <Title level={3}>
+                  {languageData.length} alternative languages
+                </Title>
+                <div>
+                  <Text>Your store’s default language: </Text>
+                  {user && (
+                    <Text strong>
+                      {user.primaryLanguage
+                        ? user.primaryLanguage
+                        : "No primary language set"}
+                    </Text>
+                  )}
+                </div>
+              </div>
               {languageData.length ? (
                 <div>
-                  <div style={{ paddingLeft: "8px" }}>
-                    <Title level={3}>
-                      {languageData.length} alternative languages
-                    </Title>
-                    <div>
-                      <Text>Your store’s default language: </Text>
-                      {user && (
-                        <Text strong>
-                          {user.primaryLanguage
-                            ? user.primaryLanguage
-                            : "No primary language set"}
-                        </Text>
-                      )}
-                    </div>
-                  </div>
                   <Row gutter={[16, 16]}>
                     {languageData.map((language: any, index: number) => (
                       <Col span={8} key={index}>
@@ -160,15 +160,7 @@ const Index = () => {
                   </Row>
                 </div>
               ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <NoLanguageSetCard />
-                </div>
+                <NoLanguageSetCard />
               )}
             </Space>
           </div>
