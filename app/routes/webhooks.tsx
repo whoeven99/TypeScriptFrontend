@@ -34,7 +34,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           if (data) {
             await InsertOrUpdateOrder({
-              id: data?.id,
+              id: id,
               status: data?.status,
             });
             console.log(`Order ${id} processed successfully.`);

@@ -3,7 +3,7 @@
 client_id = "4b05c1caefa9e0761a0538b64159b627"
 name = "Ciwi.ai:FAT(Local)"
 handle = "ciwi_local"
-application_url = "https://increasing-bm-scientific-tournaments.trycloudflare.com"
+application_url = "https://projects-hayes-tea-fri.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,16 +17,16 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://increasing-bm-scientific-tournaments.trycloudflare.com/auth/callback",
-  "https://increasing-bm-scientific-tournaments.trycloudflare.com/auth/shopify/callback",
-  "https://increasing-bm-scientific-tournaments.trycloudflare.com/api/auth/callback"
+  "https://projects-hayes-tea-fri.trycloudflare.com/auth/callback",
+  "https://projects-hayes-tea-fri.trycloudflare.com/auth/shopify/callback",
+  "https://projects-hayes-tea-fri.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
   [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled","app_purchases_one_time/update" ]
+  topics = [ "app_purchases_one_time/update", "app/uninstalled" ]
   uri = "/webhooks"
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 

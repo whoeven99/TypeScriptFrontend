@@ -26,6 +26,22 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         email: shopData.email,
       },
     });
+    await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translationCounter/insertCharsByShopName`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+      },
+    });
+    await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/addUserFreeSubscription`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+      },
+    });
   } catch (error) {
     console.error("Error fetching user:", error);
     throw new Error("Error fetching user");
