@@ -14,7 +14,7 @@ import React from "react";
 import { GetUserWords } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import { WordsType } from "../app._index/route";
-import DefaultManage from "./components/defaultManage";
+import NoLanguageSetCard from "~/components/noLanguageSetCard";
 const ManageTranslationsCard = React.lazy(
   () => import("./components/manageTranslationsCard"),
 );
@@ -347,7 +347,16 @@ const Index = () => {
       {loading ? (
         <div>loading...</div>
       ) : !menuData.length ? (
-        <DefaultManage />
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "90vh",
+          }}
+        >
+          <NoLanguageSetCard />
+        </div>
       ) : (
         <div>
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>

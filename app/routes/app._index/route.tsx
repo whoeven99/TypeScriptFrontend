@@ -9,6 +9,7 @@ import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { authenticate } from "~/shopify.server";
+import NoLanguageSetCard from "~/components/noLanguageSetCard";
 
 const UserProfileCard = lazy(() => import("./components/userProfileCard"));
 const UserLanguageCard = lazy(() => import("./components/userLanguageCard"));
@@ -123,38 +124,52 @@ const Index = () => {
                   />
                 )}
               </Suspense>
-              <div style={{ paddingLeft: "8px" }}>
-                <Title level={3}>
-                  {languageData.length} alternative languages
-                </Title>
+              {languageData.length ? (
                 <div>
-                  <Text>Your store’s default language: </Text>
-                  {user && (
-                    <Text strong>
-                      {user.primaryLanguage
-                        ? user.primaryLanguage
-                        : "No primary language set"}
-                    </Text>
-                  )}
-                </div>
-              </div>
-              <Row gutter={[16, 16]}>
-                {languageData.map((language: any, index: number) => (
-                  <Col span={8} key={index}>
-                    <Suspense fallback={<Skeleton active />}>
+                  <div style={{ paddingLeft: "8px" }}>
+                    <Title level={3}>
+                      {languageData.length} alternative languages
+                    </Title>
+                    <div>
+                      <Text>Your store’s default language: </Text>
                       {user && (
-                        <UserLanguageCard
-                          flagUrl={language.src.slice(0, 4)}
-                          primaryLanguage={user.primaryLanguage}
-                          primaryLanguageCode={user.primaryLanguageCode}
-                          languageName={language.name}
-                          languageCode={language.locale}
-                        />
+                        <Text strong>
+                          {user.primaryLanguage
+                            ? user.primaryLanguage
+                            : "No primary language set"}
+                        </Text>
                       )}
-                    </Suspense>
-                  </Col>
-                ))}
-              </Row>
+                    </div>
+                  </div>
+                  <Row gutter={[16, 16]}>
+                    {languageData.map((language: any, index: number) => (
+                      <Col span={8} key={index}>
+                        <Suspense fallback={<Skeleton active />}>
+                          {user && (
+                            <UserLanguageCard
+                              flagUrl={language.src.slice(0, 4)}
+                              primaryLanguage={user.primaryLanguage}
+                              primaryLanguageCode={user.primaryLanguageCode}
+                              languageName={language.name}
+                              languageCode={language.locale}
+                            />
+                          )}
+                        </Suspense>
+                      </Col>
+                    ))}
+                  </Row>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <NoLanguageSetCard />
+                </div>
+              )}
             </Space>
           </div>
         )}
