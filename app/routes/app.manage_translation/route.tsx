@@ -15,6 +15,7 @@ import { GetUserWords } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import { WordsType } from "../app._index/route";
 import { updateData } from "~/store/modules/languageItemsData";
+import DefaultManage from "./components/defaultManage";
 const ManageTranslationsCard = React.lazy(
   () => import("./components/manageTranslationsCard"),
 );
@@ -364,6 +365,8 @@ const Index = () => {
       <TitleBar title="Manage Translation" />
       {loading ? (
         <div>loading...</div>
+      ) : !menuData.length ? (
+        <DefaultManage />
       ) : (
         <div>
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
