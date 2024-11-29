@@ -264,7 +264,6 @@ export default function App() {
 
   useEffect(() => {
     if (fetcher.data) {
-      console.log(fetcher.data.data);
       dispatch(updateData(fetcher.data.data));
     }
     shopify.loading(false);

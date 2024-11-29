@@ -19,7 +19,7 @@ const languageTableDataSlice = createSlice({
     updateTableData: (state, action: PayloadAction<LanguagesDataType[]>) => {
       action.payload.forEach((newData) => {
         // 检查新数据是否已经存在于 state.rows 中
-        const index = state.rows.findIndex((row) => row.key === newData.key);
+        const index = state.rows.findIndex((row) => row.locale === newData.locale);
 
         if (index !== -1) {
           // 如果已存在，更新该行的数据

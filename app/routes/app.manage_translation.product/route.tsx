@@ -698,8 +698,6 @@ const Index = () => {
       }
     });
   };
-  console.log(productData);
-
   const transBeforeData = ({
     products,
     options,
