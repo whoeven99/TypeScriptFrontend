@@ -13,20 +13,25 @@ const languageTableDataSlice = createSlice({
   name: "languageTableData",
   initialState,
   reducers: {
-    setTableData: (state, action: PayloadAction<LanguagesDataType[]>) => {
+    setTableData: (state, action: PayloadAction<any[]>) => {
       state.rows = action.payload;
     },
     updateTableData: (state, action: PayloadAction<LanguagesDataType[]>) => {
       action.payload.forEach((newData) => {
         // 检查新数据是否已经存在于 state.rows 中
-        const index = state.rows.findIndex((row) => row.locale === newData.locale);
+        const index = state.rows.findIndex(
+          (row) => row.locale === newData.locale,
+        );
 
         if (index !== -1) {
           // 如果已存在，更新该行的数据
           state.rows[index] = newData;
         } else {
           // 如果不存在，新增数据
-          state.rows.push(newData);
+          const dataWithKey = { ...newData, key: state.rows.length };
+
+          // 将包含 key 的 newData 添加到 rows
+          state.rows.push(dataWithKey);
         }
       });
     },
