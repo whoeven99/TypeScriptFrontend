@@ -244,7 +244,7 @@ const Index = () => {
   const exMenuData = (products: any) => {
     const data = products.nodes.map((product: any) => ({
       key: product?.resourceId,
-      label: product.translatableContent.find(
+      label: product?.translatableContent.find(
         (item: any) => item.key === "title",
       ).value,
     }));
@@ -698,6 +698,7 @@ const Index = () => {
       }
     });
   };
+  console.log(productData);
 
   const transBeforeData = ({
     products,
@@ -754,61 +755,59 @@ const Index = () => {
       (metafield: any) => metafield?.resourceId === selectProductKey,
     );
     data.id = product?.resourceId;
-    data.title = product.translatableContent.find(
+    data.title = product?.translatableContent.find(
       (item: any) => item.key === "title",
     )?.value;
-    data.descriptionHtml = product.translatableContent.find(
+    data.descriptionHtml = product?.translatableContent.find(
       (item: any) => item.key === "body_html",
     )?.value;
-    data.productType = product.translatableContent.find(
+    data.productType = product?.translatableContent.find(
       (item: any) => item.key === "product_type",
     )?.value;
-    data.handle = product.translatableContent.find(
+    data.handle = product?.translatableContent.find(
       (item: any) => item.key === "handle",
     )?.value;
-    data.seo.title = product.translatableContent.find(
+    data.seo.title = product?.translatableContent.find(
       (item: any) => item.key === "meta_title",
     )?.value;
-    data.seo.description = product.translatableContent.find(
+    data.seo.description = product?.translatableContent.find(
       (item: any) => item.key === "meta_description",
     )?.value;
     data.translations.id = product?.resourceId;
-    data.translations.title = product.translations.find(
+    data.translations.title = product?.translations.find(
       (item: any) => item.key === "title",
     )?.value;
-    data.translations.descriptionHtml = product.translations.find(
+    data.translations.descriptionHtml = product?.translations.find(
       (item: any) => item.key === "body_html",
     )?.value;
-    data.translations.productType = product.translations.find(
+    data.translations.productType = product?.translations.find(
       (item: any) => item.key === "product_type",
     )?.value;
-    data.translations.handle = product.translations.find(
+    data.translations.handle = product?.translations.find(
       (item: any) => item.key === "handle",
     )?.value;
-    data.translations.seo.title = product.translations.find(
+    data.translations.seo.title = product?.translations.find(
       (item: any) => item.key === "meta_title",
     )?.value;
-    data.translations.seo.description = product.translations.find(
+    data.translations.seo.description = product?.translations.find(
       (item: any) => item.key === "meta_description",
     )?.value;
-    data.options = productOption.nestedTranslatableResources.nodes.map(
-      (item: any) => {
+    data.options =
+      productOption?.nestedTranslatableResources.nodes.map((item: any) => {
         return {
           id: item?.resourceId,
-          name: item.translatableContent[0]?.value,
-          translation: item.translations[0]?.value,
+          name: item?.translatableContent[0]?.value,
+          translation: item?.translations[0]?.value,
         };
-      },
-    );
-    data.metafields = productMetafield.nestedTranslatableResources.nodes.map(
-      (item: any) => {
+      }) || [];
+    data.metafields =
+      productMetafield?.nestedTranslatableResources.nodes.map((item: any) => {
         return {
           id: item?.resourceId,
-          name: item.translatableContent[0]?.value,
-          translation: item.translations[0]?.value,
+          name: item?.translatableContent[0]?.value,
+          translation: item?.translations[0]?.value,
         };
-      },
-    );
+      }) || [];
 
     return data;
   };

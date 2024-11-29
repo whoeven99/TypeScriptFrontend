@@ -221,14 +221,14 @@ const Index = () => {
 
   const generateMenuItemsArray = (items: any) => {
     return items.nodes.flatMap((item: any, index: number) => {
-      if (item.translatableContent.length !== 0) {
+      if (item?.translatableContent.length !== 0) {
         // 创建当前项的对象
         const currentItem = {
           key: `${item?.resourceId}`, // 使用 id 生成唯一的 key
           index: index,
           resource: "value", // 资源字段固定为 "Menu Items"
-          default_language: item.translatableContent[0]?.value, // 默认语言为 item 的标题
-          translated: item.translations[0]?.value, // 翻译字段初始化为空字符串
+          default_language: item?.translatableContent[0]?.value, // 默认语言为 item 的标题
+          translated: item?.translations[0]?.value, // 翻译字段初始化为空字符串
         };
         return currentItem.default_language !== "" ? [currentItem] : [];
       }

@@ -138,7 +138,7 @@ const Index = () => {
   const exMenuData = (pages: any) => {
     const data = pages.nodes.map((page: any) => ({
       key: page?.resourceId,
-      label: page.translatableContent.find((item: any) => item.key === "title")
+      label: page?.translatableContent.find((item: any) => item.key === "title")
         .value,
     }));
     return data;
@@ -373,36 +373,36 @@ const Index = () => {
       (page: any) => page?.resourceId === selectPageKey,
     );
     data.id = page?.resourceId;
-    data.title = page.translatableContent.find(
+    data.title = page?.translatableContent.find(
       (item: any) => item.key === "title",
     )?.value;
-    data.body = page.translatableContent.find(
+    data.body = page?.translatableContent.find(
       (item: any) => item.key === "body_html",
     )?.value;
     data.seo.title =
-      page.translatableContent.find((item: any) => item.key === "meta_title")
+      page?.translatableContent.find((item: any) => item.key === "meta_title")
         ?.value ||
-      page.translatableContent.find((item: any) => item.key === "title")?.value;
+      page?.translatableContent.find((item: any) => item.key === "title")?.value;
     data.seo.description =
-      page.translatableContent.find(
+      page?.translatableContent.find(
         (item: any) => item.key === "meta_description",
       )?.value ||
-      page.translatableContent.find((item: any) => item.key === "body_html")
+      page?.translatableContent.find((item: any) => item.key === "body_html")
         ?.value;
     data.translations.id = page?.resourceId;
-    data.translations.title = page.translations.find(
+    data.translations.title = page?.translations.find(
       (item: any) => item.key === "title",
     )?.value;
-    data.translations.title = page.translations.find(
+    data.translations.title = page?.translations.find(
       (item: any) => item.key === "body_html",
     )?.value;
     data.translations.seo.title =
-      page.translations.find((item: any) => item.key === "meta_title")?.value ||
-      page.translations.find((item: any) => item.key === "title")?.value;
+      page?.translations.find((item: any) => item.key === "meta_title")?.value ||
+      page?.translations.find((item: any) => item.key === "title")?.value;
     data.translations.seo.description =
-      page.translations.find((item: any) => item.key === "meta_description")
+      page?.translations.find((item: any) => item.key === "meta_description")
         ?.value ||
-      page.translations.find((item: any) => item.key === "body_html")?.value;
+      page?.translations.find((item: any) => item.key === "body_html")?.value;
     return data;
   };
 

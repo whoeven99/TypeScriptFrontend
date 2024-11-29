@@ -1345,6 +1345,7 @@ export const mutationShopLocaleEnable = async ({
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  let shopLanguages: any[] = [];
   let success = true;
   try {
     // 遍历语言数组并逐个执行 GraphQL mutation
@@ -1363,7 +1364,7 @@ export const mutationShopLocaleEnable = async ({
       `;
 
       // 执行 API 请求
-      const serveResponse = await axios({
+      const shopifyResponse = await axios({
         url: `https://${shop}/admin/api/2024-10/graphql.json`,
         method: "POST",
         headers: {
@@ -1373,7 +1374,7 @@ export const mutationShopLocaleEnable = async ({
         data: JSON.stringify({ query: mutation }),
       });
 
-      const shopifyResponse = await axios({
+      const serveResponse = await axios({
         url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/insertShopTranslateInfo`,
         method: "Post",
         data: {
@@ -1383,13 +1384,15 @@ export const mutationShopLocaleEnable = async ({
           target: language,
         },
       });
+      console.log("shopifyResponse: ", shopifyResponse.data.data.shopLocaleEnable);
 
       if (serveResponse.status !== 200 || shopifyResponse.status !== 200) {
         success = false;
         // 这里可以放置你希望执行的代码
       }
+      shopLanguages.push(shopifyResponse.data.data.shopLocaleEnable.shopLocale)
     }
-    return success;
+    return shopLanguages;
   } catch (error) {
     console.error("Error mutating shop languages:", error);
     throw error;

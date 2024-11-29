@@ -87,8 +87,8 @@ const Index = () => {
       key: "body",
       index: index,
       resource: "Label",
-      default_language: node.translatableContent[0].value,
-      translated: node.translations[0]?.value,
+      default_language: node?.translatableContent[0].value,
+      translated: node?.translations[0]?.value,
     }));
     setResourceData(Data);
   }, []);

@@ -359,12 +359,12 @@ const Index = () => {
       return {
         id: menu?.resourceId,
         label:
-          menu.translatableContent.find((item: any) => item.key === "title")
+          menu?.translatableContent.find((item: any) => item.key === "title")
             ?.value || "",
         translations: {
           id: menu?.resourceId,
           label:
-            menu.translations.find((item: any) => item.key === "title")
+            menu?.translations.find((item: any) => item.key === "title")
               ?.value || "",
         },
       };
@@ -390,7 +390,7 @@ const Index = () => {
         index: index,
         resource: "label", // 资源字段固定为 "Menu Items"
         default_language: item?.label, // 默认语言为 item 的标题
-        translated: item.translations?.label, // 翻译字段初始化为空字符串
+        translated: item?.translations?.label, // 翻译字段初始化为空字符串
       };
 
       // 如果没有子项，只返回当前项

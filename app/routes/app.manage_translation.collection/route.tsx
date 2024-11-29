@@ -138,7 +138,7 @@ const Index = () => {
   const exMenuData = (collections: any) => {
     const data = collections.nodes.map((collection: any) => ({
       key: collection?.resourceId,
-      label: collection.translatableContent.find(
+      label: collection?.translatableContent.find(
         (item: any) => item.key === "title",
       ).value,
     }));
@@ -378,46 +378,46 @@ const Index = () => {
       (collection: any) => collection?.resourceId === selectCollectionKey,
     );
     data.id = collection?.resourceId;
-    data.title = collection.translatableContent.find(
+    data.title = collection?.translatableContent.find(
       (item: any) => item.key === "title",
     )?.value;
-    data.descriptionHtml = collection.translatableContent.find(
+    data.descriptionHtml = collection?.translatableContent.find(
       (item: any) => item.key === "body_html",
     )?.value;
-    data.handle = collection.translatableContent.find(
+    data.handle = collection?.translatableContent.find(
       (item: any) => item.key === "handle",
     )?.value;
     data.seo.title =
-      collection.translatableContent.find(
+      collection?.translatableContent.find(
         (item: any) => item.key === "meta_title",
       )?.value ||
-      collection.translatableContent.find((item: any) => item.key === "title")
+      collection?.translatableContent.find((item: any) => item.key === "title")
         ?.value;
     data.seo.description =
-      collection.translatableContent.find(
+      collection?.translatableContent.find(
         (item: any) => item.key === "meta_description",
       )?.value ||
-      collection.translatableContent.find(
+      collection?.translatableContent.find(
         (item: any) => item.key === "body_html",
       )?.value;
-    data.translations.title = collection.translations.find(
+    data.translations.title = collection?.translations.find(
       (item: any) => item.key === "title",
     )?.value;
-    data.translations.descriptionHtml = collection.translations.find(
+    data.translations.descriptionHtml = collection?.translations.find(
       (item: any) => item.key === "body_html",
     )?.value;
-    data.translations.handle = collection.translations.find(
+    data.translations.handle = collection?.translations.find(
       (item: any) => item.key === "handle",
     )?.value;
     data.translations.seo.title =
-      collection.translations.find((item: any) => item.key === "meta_title")
+      collection?.translations.find((item: any) => item.key === "meta_title")
         ?.value ||
-      collection.translations.find((item: any) => item.key === "title")?.value;
+      collection?.translations.find((item: any) => item.key === "title")?.value;
     data.translations.seo.description =
-      collection.translations.find(
+      collection?.translations.find(
         (item: any) => item.key === "meta_description",
       )?.value ||
-      collection.translations.find((item: any) => item.key === "body_html")
+      collection?.translations.find((item: any) => item.key === "body_html")
         ?.value;
     return data;
   };

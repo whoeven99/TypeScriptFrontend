@@ -159,8 +159,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           user,
         });
       case !!translation:
-        const source = translation.primaryLanguage.locale;
+        const source = translation.primaryLanguageCode;
         const selectedLanguage = translation.selectedLanguage;
+        console.log("source: ", source);
+        console.log("selectedLanguage: ", selectedLanguage);
         const statu = await GetTranslate({
           request,
           source,
@@ -168,13 +170,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         return json({ statu: statu });
       case !!getData:
-        console.log("getData: ", getData);
         const data = await GetItemsInSqlByShopName({
           shop,
           accessToken,
           source: getData.source,
           targets: getData.targets,
         });
+        console.log("getData: ", data);
         return json({ data: data });
       case !!syncData:
         try {
@@ -243,6 +245,9 @@ export default function App() {
       setShopLoacles(loadingFetcher.data.shopLocales);
       setPrimaryLanguage(loadingFetcher.data.primaryLanguage);
     }
+  }, [loadingFetcher.data]);
+
+  useEffect(() => {
     if (shopLocales.length && primaryLanguage.length) {
       console.log("shopLocales:", shopLocales);
       const formData = new FormData();
@@ -255,11 +260,12 @@ export default function App() {
         action: "/app",
       }); // 提交表单请求
     }
-  }, [loadingFetcher.data]);
+  }, [shopLocales, primaryLanguage]);
 
   useEffect(() => {
-    if (fetcher.data && Array.isArray((fetcher.data as { data: any[] }).data)) {
-      dispatch(updateData((fetcher.data as { data: any[] }).data));
+    if (fetcher.data) {
+      console.log(fetcher.data.data);
+      dispatch(updateData(fetcher.data.data));
     }
     shopify.loading(false);
     if (loadingFetcher.data && fetcher.data && shopLocales.length) {

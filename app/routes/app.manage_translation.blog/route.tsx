@@ -128,7 +128,7 @@ const Index = () => {
   const exMenuData = (blogs: any) => {
     const data = blogs.nodes.map((blog: any) => ({
       key: blog?.resourceId,
-      label: blog.translatableContent.find((item: any) => item.key === "title")
+      label: blog?.translatableContent.find((item: any) => item.key === "title")
         .value,
     }));
     return data;
@@ -296,17 +296,17 @@ const Index = () => {
       (blog: any) => blog?.resourceId === selectBlogKey,
     );
     data.id = blog?.resourceId;
-    data.title = blog.translatableContent.find(
+    data.title = blog?.translatableContent.find(
       (item: any) => item.key === "title",
     )?.value;
-    data.handle = blog.translatableContent.find(
+    data.handle = blog?.translatableContent.find(
       (item: any) => item.key === "handle",
     )?.value;
     data.translations.id = blog?.resourceId;
-    data.translations.title = blog.translations.find(
+    data.translations.title = blog?.translations.find(
       (item: any) => item.key === "title",
     )?.value;
-    data.translations.handle = blog.translations.find(
+    data.translations.handle = blog?.translations.find(
       (item: any) => item.key === "handle",
     )?.value;
 

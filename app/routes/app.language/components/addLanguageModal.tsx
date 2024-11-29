@@ -9,7 +9,7 @@ import {
 } from "~/routes/app.language/route";
 import { FetcherWithComponents, SubmitFunction } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import { setTableData } from "~/store/modules/languageTableData";
+import { updateTableData } from "~/store/modules/languageTableData";
 
 interface LanguageModalProps {
   isVisible: boolean;
@@ -64,29 +64,24 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
 
   useEffect(() => {
     if (addFetcher.data) {
-      if (addFetcher.data.success) {
-        message.success("Add success");
-        const newdata = addFetcher.data.shopLanguages.filter(
-          (language: any) => !language.primary,
-        );
-        const data = newdata.map((lang: any, i: any) => ({
-          key: i,
-          language: lang.name,
-          localeName: languageLocaleInfo[newdata[i].locale].Local,
-          locale: lang.locale,
-          primary: lang.primary,
-          status: 0,
-          auto_update_translation: false,
-          published: lang.published,
-          loading: false,
-        }));
+      message.success("Add success");
+      const data = addFetcher.data.shopLanguages.map((lang: any, i: any) => ({
+        key: i,
+        language: lang.name,
+        localeName:
+          languageLocaleInfo[addFetcher.data.shopLanguages[i].locale].Local,
+        locale: lang.locale,
+        primary: lang.primary,
+        status: 0,
+        auto_update_translation: false,
+        published: lang.published,
+        loading: false,
+      }));
 
-        dispatch(setTableData(data));
-      } else {
-        message.error("error");
-      }
-      setIsModalOpen(false);
-    }
+      dispatch(updateTableData(data));
+    } 
+    setIsModalOpen(false);
+    setConfirmButtonDisable(false);
   }, [addFetcher.data]);
 
   useEffect(() => {

@@ -16,9 +16,27 @@ const languageTableDataSlice = createSlice({
     setTableData: (state, action: PayloadAction<LanguagesDataType[]>) => {
       state.rows = action.payload;
     },
+    updateTableData: (state, action: PayloadAction<LanguagesDataType[]>) => {
+      action.payload.forEach((newData) => {
+        // 检查新数据是否已经存在于 state.rows 中
+        const index = state.rows.findIndex((row) => row.key === newData.key);
+
+        if (index !== -1) {
+          // 如果已存在，更新该行的数据
+          state.rows[index] = newData;
+        } else {
+          // 如果不存在，新增数据
+          state.rows.push(newData);
+        }
+      });
+    },
     setPublishConfirmState: (
       state,
-      action: PayloadAction<{ key: number; published: boolean; loading: boolean }>,
+      action: PayloadAction<{
+        key: number;
+        published: boolean;
+        loading: boolean;
+      }>,
     ) => {
       const row = state.rows.find((item) => item.key === action.payload.key);
       if (row) {
@@ -48,7 +66,9 @@ const languageTableDataSlice = createSlice({
       state,
       action: PayloadAction<{ target: string; status: number }>,
     ) => {
-      const row = state.rows.find((item) => item.locale === action.payload.target);
+      const row = state.rows.find(
+        (item) => item.locale === action.payload.target,
+      );
       if (row) {
         row.status = action.payload.status;
       }
@@ -56,7 +76,14 @@ const languageTableDataSlice = createSlice({
   },
 });
 
-export const { setTableData, setPublishConfirmState, setPublishLoadingState, setPublishState, setStatuState } = languageTableDataSlice.actions;
+export const {
+  setTableData,
+  updateTableData,
+  setPublishConfirmState,
+  setPublishLoadingState,
+  setPublishState,
+  setStatuState,
+} = languageTableDataSlice.actions;
 
 const reducer = languageTableDataSlice.reducer;
 export default reducer;

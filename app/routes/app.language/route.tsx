@@ -155,17 +155,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           words: words,
         });
       case !!addLanguages:
-        const success = await mutationShopLocaleEnable({
+        const shopLanguages = await mutationShopLocaleEnable({
           request,
           addLanguages,
         }); // 处理逻辑
-        const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-          shop,
-          accessToken,
-        });
-        console.log("success: ",success);
-        return json({ success: success, shopLanguages });
-
+        console.log(shopLanguages);
+        
+        return json({ shopLanguages: shopLanguages });
       case !!translation:
         const source = translation.primaryLanguage.locale;
         const target = translation.selectedLanguage.locale;
@@ -269,7 +265,6 @@ const Index = () => {
   useEffect(() => {
     if (translateFetcher.data && translateFetcher.data.statu) {
       if (translateFetcher.data.statu.success) {
-        
       } else {
         message.error(translateFetcher.data.statu.errorMsg);
         dispatch(
@@ -350,10 +345,9 @@ const Index = () => {
         method: "post",
         action: "/app",
       });
-    } 
+    }
     dispatch(setTableData(data));
   }, [shopLanguagesLoad, languagesLoad]); // 依赖 shopLanguagesLoad 和 status
-
 
   useEffect(() => {
     setData(dataSource);

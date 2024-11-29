@@ -145,7 +145,6 @@ const Index = () => {
                           {user && (
                             <UserLanguageCard
                               flagUrl={language.src.slice(0, 4)}
-                              primaryLanguage={user.primaryLanguage}
                               primaryLanguageCode={user.primaryLanguageCode}
                               languageName={language.name}
                               languageCode={language.locale}

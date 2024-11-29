@@ -10,7 +10,6 @@ interface UserLanguageCardProps {
   flagUrl: string[]; // 国旗图片的 URL
   languageName: string; // 语言名称
   languageCode: string; //语言代码
-  primaryLanguage: string; //用户默认语言
   primaryLanguageCode: string;
 }
 
@@ -22,7 +21,6 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   flagUrl,
   languageName,
   languageCode,
-  primaryLanguage,
   primaryLanguageCode,
 }) => {
   const data = useSelector((state: any) =>
@@ -30,7 +28,6 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
       (item: any) => item.locale === languageCode,
     ),
   );
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const translateFetcher = useFetcher<any>();
@@ -119,12 +116,12 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
     }
   }, [translateFetcher.data]);
 
-  const handleTranslate = async (key: number) => {
+  const handleTranslate = async (key: number) => {    
     const formData = new FormData();
     formData.append(
       "translation",
       JSON.stringify({
-        primaryLanguage: primaryLanguage,
+        primaryLanguageCode: primaryLanguageCode,
         selectedLanguage: languageCode,
       }),
     ); // 将选中的语言作为字符串发送

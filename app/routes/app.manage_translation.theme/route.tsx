@@ -229,7 +229,7 @@ const Index = () => {
   };
 
   const generateMenuItemsArray = (items: any) => {
-    return items.nodes[0].translatableContent.flatMap(
+    return items.nodes[0]?.translatableContent.flatMap(
       (item: any, index: number) => {
         // 创建当前项的对象
         const currentItem = {

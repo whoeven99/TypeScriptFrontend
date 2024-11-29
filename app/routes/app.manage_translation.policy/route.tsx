@@ -65,11 +65,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         title: title.title,
         id: title.id,
         body: title.body,
-        locale: body.translatableContent[0].locale,
-        digest: body.translatableContent[0].digest,
+        locale: body?.translatableContent[0].locale,
+        digest: body?.translatableContent[0].digest,
         translations: {
           id: body?.resourceId,
-          value: body.translations[0]?.value,
+          value: body?.translations[0]?.value,
         },
       };
     });
@@ -134,7 +134,7 @@ const Index = () => {
     );
     setConfirmData([
       {
-        resourceId: data.translations.id,
+        resourceId: data?.translations.id,
         locale: data.locale,
         key: "body",
         value: "",
@@ -152,7 +152,7 @@ const Index = () => {
         key: "body",
         resource: "Content",
         default_language: policyData?.body,
-        translated: policyData.translations?.body,
+        translated: policyData?.translations?.body,
       },
     ]);
   }, [policyData]);

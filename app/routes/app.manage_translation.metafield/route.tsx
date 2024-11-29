@@ -222,8 +222,8 @@ const Index = () => {
         key: `${item?.resourceId}`, // 使用 id 生成唯一的 key
         index: index,
         resource: "value", // 资源字段固定为 "Menu Items"
-        default_language: item.translatableContent[0]?.value, // 默认语言为 item 的标题
-        translated: item.translations[0]?.value, // 翻译字段初始化为空字符串
+        default_language: item?.translatableContent[0]?.value, // 默认语言为 item 的标题
+        translated: item?.translations[0]?.value, // 翻译字段初始化为空字符串
       };
       return [currentItem];
     });
