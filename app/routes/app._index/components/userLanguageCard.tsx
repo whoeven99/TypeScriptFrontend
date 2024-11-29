@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Button, Card, message, Space, Typography } from "antd";
 import { useFetcher, useNavigate, useSubmit } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
@@ -11,6 +11,7 @@ interface UserLanguageCardProps {
   languageName: string; // 语言名称
   languageCode: string; //语言代码
   primaryLanguage: string; //用户默认语言
+  primaryLanguageCode: string;
 }
 
 // interface FetchType {
@@ -22,36 +23,19 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   languageName,
   languageCode,
   primaryLanguage,
+  primaryLanguageCode,
 }) => {
-  const data = useSelector((state: any) => state.languageTableData.rows);
-  const [result, setResult] = useState<
-    {
-      key: number;
-      language: string;
-      locale: string;
-      primary: boolean;
-      status: number;
-      auto_update_translation: boolean;
-      published: boolean;
-      loading: boolean;
-    }[]
-  >([
-    {
-      key: 2,
-      language: "en",
-      locale: "en-US",
-      primary: true,
-      status: 0,
-      auto_update_translation: true,
-      published: true,
-      loading: false,
-    },
-  ]);
+  const data = useSelector((state: any) =>
+    state.languageTableData.rows.find(
+      (item: any) => item.locale === languageCode,
+    ),
+  );
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const translateFetcher = useFetcher<any>();
   // const fetcher = useFetcher<FetchType>();
+  const statusFetcher = useFetcher<any>();
 
   // useEffect(() => {
   //   const formData = new FormData();
@@ -71,20 +55,63 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   // }, [fetcher.data]);
 
   useEffect(() => {
-    const filteredData = data.filter(
-      (item: any) => item.locale === languageCode,
-    );
-    setResult(filteredData);
-  }, [data, languageCode]);
+    if (data && data.status === 2) {
+      const formData = new FormData();
+      formData.append(
+        "statusData",
+        JSON.stringify({
+          source: primaryLanguageCode,
+          target: [data.locale],
+        }),
+      );
+      statusFetcher.submit(formData, {
+        method: "post",
+        action: "/app",
+      });
+    }
+  }, []);
 
   useEffect(() => {
-    if (translateFetcher.data && translateFetcher.data.statu) {
-      if (translateFetcher.data.statu.success) {
+    if (statusFetcher.data) {
+      if (statusFetcher.data.data[0].status === 2) {
+        // 加入10秒的延时
+        const delayTimeout = setTimeout(() => {
+          const formData = new FormData();
+          formData.append(
+            "statusData",
+            JSON.stringify({
+              source: primaryLanguageCode,
+              target: [statusFetcher.data.data[0].target],
+            }),
+          );
+
+          statusFetcher.submit(formData, {
+            method: "post",
+            action: "/app",
+          });
+        }, 10000); // 10秒延时（10000毫秒）
+
+        // 清除超时定时器，以防组件卸载后仍然尝试执行
+        return () => clearTimeout(delayTimeout);
       } else {
-        message.error(translateFetcher.data.statu.errorMsg);
         dispatch(
           setStatuState({
-            target: translateFetcher.data.statu.target,
+            target: statusFetcher.data.data[0].target,
+            status: statusFetcher.data.data[0].status,
+          }),
+        );
+      }
+    }
+  }, [statusFetcher.data]);
+
+  useEffect(() => {
+    if (translateFetcher.data && translateFetcher.data.data) {
+      if (translateFetcher.data.data.success) {
+      } else {
+        message.error(translateFetcher.data.data.errorMsg);
+        dispatch(
+          setStatuState({
+            target: translateFetcher.data.data.target,
             status: 3,
           }),
         );
@@ -118,7 +145,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   return (
     <Card style={{ textAlign: "center", padding: "20px" }}>
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <div className="flag-container">
+        <div className="flag_container">
           {flagUrl.map((url, index) => (
             <img
               key={index}
@@ -137,11 +164,11 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
 
         <Title level={4}>{languageName}</Title>
         <div className="language_statu">
-          {result ? <TranslatedIcon status={result[0].status} /> : <>...</>}
+          {data ? <TranslatedIcon status={data?.status} /> : <>...</>}
         </div>
         <Space direction="horizontal">
           <Button
-            onClick={() => handleTranslate(result[0].key)}
+            onClick={() => handleTranslate(data?.key)}
             style={{ width: "100px" }}
             type="primary"
           >

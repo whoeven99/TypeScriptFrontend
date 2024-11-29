@@ -1,21 +1,12 @@
 .user_profile_wrapper {
   display: flex;
+  justify-content: space-around; /* 元素之间有均等的间距，且两端有间距 */
 }
 
 .user_profilecard_left {
   display: flex;
-}
-
-.plan_overview {
-  margin-left: 16px; /* 头像和计划概述之间的间距 */
-  display: flex;
-  flex-direction: column; /* 纵向排列 */
-}
-
-.plan_action {
-  display: flex;
-  margin-top: 30px;
-  gap: 8px; /* 按钮之间的间距 */
+  flex-direction: column; /* 使整个布局变为上下结构 */
+  align-items: flex-start; /* 让所有内容左对齐 */
 }
 
 .user_profilecard_right {
@@ -35,25 +26,9 @@
 .characters_statistical {
   display: flex;
   gap: 4px; /* 控制各字符使用项的间距 */
-  margin-top: 30px;
+  margin-top: 20px;
   justify-content: center; /* 水平居中对齐 */
   align-items: center; /* 垂直居中对齐 */
-}
-
-.characters_all {
-  color: #0f0f0f;
-}
-
-.language_cards {
-  display: flex;
-  overflow-x: auto;
-  width: 100%;
-  white-space: nowrap;
-}
-
-.language_cards .ant-col {
-  display: inline-block;
-  margin-right: 10px; /* Optional, for spacing between cards */
 }
 
 .language_statu {
@@ -64,8 +39,10 @@
   text-align: center; /* 使文本水平居中 */
 }
 
-.flag-container {
+.flag_container {
   display: flex;
   justify-content: center; /* 横向居中 */
   gap: 10px; /* 设置图片间距 */
 }
+
+
