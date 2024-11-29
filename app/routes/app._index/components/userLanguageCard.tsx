@@ -125,7 +125,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
     formData.append(
       "translation",
       JSON.stringify({
-        primaryLanguage: primaryLanguage,
+        primaryLanguage: primaryLanguageCode,
         selectedLanguage: languageCode,
       }),
     ); // 将选中的语言作为字符串发送

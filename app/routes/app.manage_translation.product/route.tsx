@@ -243,7 +243,7 @@ const Index = () => {
 
   const exMenuData = (products: any) => {
     const data = products.nodes.map((product: any) => ({
-      key: product.resourceId,
+      key: product?.resourceId,
       label: product.translatableContent.find(
         (item: any) => item.key === "title",
       ).value,
@@ -265,7 +265,7 @@ const Index = () => {
   const [metafieldsData, setMetafieldsData] = useState<TableDataType[]>([]);
   // const [variantsData, setVariantsData] = useState<TableDataType[]>([]);
   const [selectProductKey, setSelectProductKey] = useState(
-    products.nodes[0].resourceId,
+    products.nodes[0]?.resourceId,
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
@@ -387,7 +387,7 @@ const Index = () => {
       setProductsData(actionData.nextProducts);
       setProductOptionsData(actionData.nextOptions);
       setProductMetafieldsData(actionData.nextMetafields);
-      setSelectProductKey(actionData.nextProducts.nodes[0].resourceId);
+      setSelectProductKey(actionData.nextProducts.nodes[0]?.resourceId);
     } else if (
       actionData &&
       "previousProducts" in actionData &&
@@ -400,7 +400,7 @@ const Index = () => {
       setProductsData(actionData.previousProducts);
       setProductOptionsData(actionData.previousOptions);
       setProductMetafieldsData(actionData.previousMetafields);
-      setSelectProductKey(actionData.previousProducts.nodes[0].resourceId);
+      setSelectProductKey(actionData.previousProducts.nodes[0]?.resourceId);
     } else {
       // 如果不存在 nextProducts，可以执行其他逻辑
       console.log("nextProducts end");
@@ -633,10 +633,10 @@ const Index = () => {
           const count: number = Number(index.toString().slice(1));
           const newItem = {
             resourceId: productMetafieldsData.nodes.find(
-              (item: any) => item.resourceId === selectProductKey,
+              (item: any) => item?.resourceId === selectProductKey,
             )?.nestedTranslatableResources.nodes[count]?.resourceId,
             locale: productMetafieldsData.nodes
-              .find((item: any) => item.resourceId === selectProductKey)
+              .find((item: any) => item?.resourceId === selectProductKey)
               ?.nestedTranslatableResources.nodes[
                 count
               ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
@@ -644,7 +644,7 @@ const Index = () => {
             key: key,
             value: value, // 初始为空字符串
             translatableContentDigest: productMetafieldsData.nodes
-              .find((item: any) => item.resourceId === selectProductKey)
+              .find((item: any) => item?.resourceId === selectProductKey)
               ?.nestedTranslatableResources.nodes[
                 count
               ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
@@ -656,10 +656,10 @@ const Index = () => {
           const count: number = Number(index.toString().slice(1));
           const newItem = {
             resourceId: productOptionsData.nodes.find(
-              (item: any) => item.resourceId === selectProductKey,
+              (item: any) => item?.resourceId === selectProductKey,
             )?.nestedTranslatableResources.nodes[count]?.resourceId,
             locale: productOptionsData.nodes
-              .find((item: any) => item.resourceId === selectProductKey)
+              .find((item: any) => item?.resourceId === selectProductKey)
               ?.nestedTranslatableResources.nodes[
                 count
               ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
@@ -667,7 +667,7 @@ const Index = () => {
             key: key,
             value: value, // 初始为空字符串
             translatableContentDigest: productOptionsData.nodes
-              .find((item: any) => item.resourceId === selectProductKey)
+              .find((item: any) => item?.resourceId === selectProductKey)
               ?.nestedTranslatableResources.nodes[
                 count
               ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
@@ -678,16 +678,16 @@ const Index = () => {
         } else {
           const newItem = {
             resourceId: productsData.nodes.find(
-              (item: any) => item.resourceId === selectProductKey,
+              (item: any) => item?.resourceId === selectProductKey,
             )?.resourceId,
             locale: productsData.nodes
-              .find((item: any) => item.resourceId === selectProductKey)
+              .find((item: any) => item?.resourceId === selectProductKey)
               ?.translatableContent.find((item: any) => item.key === key)
               ?.locale,
             key: key,
             value: value, // 初始为空字符串
             translatableContentDigest: products.nodes
-              .find((item: any) => item.resourceId === selectProductKey)
+              .find((item: any) => item?.resourceId === selectProductKey)
               ?.translatableContent.find((item: any) => item.key === key)
               ?.digest,
             target: searchTerm || "",
@@ -745,15 +745,15 @@ const Index = () => {
       },
     };
     const product = products.nodes.find(
-      (product: any) => product.resourceId === selectProductKey,
+      (product: any) => product?.resourceId === selectProductKey,
     );
     const productOption = options.nodes.find(
-      (option: any) => option.resourceId === selectProductKey,
+      (option: any) => option?.resourceId === selectProductKey,
     );
     const productMetafield = metafields.nodes.find(
-      (metafield: any) => metafield.resourceId === selectProductKey,
+      (metafield: any) => metafield?.resourceId === selectProductKey,
     );
-    data.id = product.resourceId;
+    data.id = product?.resourceId;
     data.title = product.translatableContent.find(
       (item: any) => item.key === "title",
     )?.value;
@@ -772,7 +772,7 @@ const Index = () => {
     data.seo.description = product.translatableContent.find(
       (item: any) => item.key === "meta_description",
     )?.value;
-    data.translations.id = product.resourceId;
+    data.translations.id = product?.resourceId;
     data.translations.title = product.translations.find(
       (item: any) => item.key === "title",
     )?.value;
@@ -794,7 +794,7 @@ const Index = () => {
     data.options = productOption.nestedTranslatableResources.nodes.map(
       (item: any) => {
         return {
-          id: item.resourceId,
+          id: item?.resourceId,
           name: item.translatableContent[0]?.value,
           translation: item.translations[0]?.value,
         };
@@ -803,7 +803,7 @@ const Index = () => {
     data.metafields = productMetafield.nestedTranslatableResources.nodes.map(
       (item: any) => {
         return {
-          id: item.resourceId,
+          id: item?.resourceId,
           name: item.translatableContent[0]?.value,
           translation: item.translations[0]?.value,
         };
@@ -886,7 +886,7 @@ const Index = () => {
           <Sider style={{ background: colorBgContainer }} width={200}>
             <Menu
               mode="inline"
-              defaultSelectedKeys={[productsData.nodes[0].resourceId]}
+              defaultSelectedKeys={[productsData.nodes[0]?.resourceId]}
               defaultOpenKeys={["sub1"]}
               style={{ height: "100%" }}
               items={menuData}

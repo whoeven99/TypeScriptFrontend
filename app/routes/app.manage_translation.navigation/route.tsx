@@ -357,12 +357,12 @@ const Index = () => {
     data = menus.nodes.map((menu: any) => {
       // 返回修改后的 menu，确保返回类型是 ItemType
       return {
-        id: menu.resourceId,
+        id: menu?.resourceId,
         label:
           menu.translatableContent.find((item: any) => item.key === "title")
             ?.value || "",
         translations: {
-          id: menu.resourceId,
+          id: menu?.resourceId,
           label:
             menu.translations.find((item: any) => item.key === "title")
               ?.value || "",

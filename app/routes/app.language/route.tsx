@@ -163,6 +163,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop,
           accessToken,
         });
+        console.log("success: ",success);
         return json({ success: success, shopLanguages });
 
       case !!translation:

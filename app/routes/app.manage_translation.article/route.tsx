@@ -139,7 +139,7 @@ const Index = () => {
 
   const exMenuData = (articles: any) => {
     const data = articles.nodes.map((article: any) => ({
-      key: article.resourceId,
+      key: article?.resourceId,
       label: article.translatableContent.find(
         (item: any) => item.key === "title",
       ).value,
@@ -155,7 +155,7 @@ const Index = () => {
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [SeoData, setSeoData] = useState<TableDataType[]>([]);
   const [selectArticleKey, setSelectArticleKey] = useState(
-    articles.nodes[0].resourceId,
+    articles.nodes[0]?.resourceId,
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
@@ -238,13 +238,13 @@ const Index = () => {
       // 在这里处理 nextArticles
       setMenuData(nextArticles);
       setArticlesData(actionData.nextArticles);
-      setSelectArticleKey(actionData.nextArticles.nodes[0].resourceId);
+      setSelectArticleKey(actionData.nextArticles.nodes[0]?.resourceId);
     } else if (actionData && "previousArticles" in actionData) {
       const previousArticles = exMenuData(actionData.previousArticles);
       // 在这里处理 previousArticles
       setMenuData(previousArticles);
       setArticlesData(actionData.previousArticles);
-      setSelectArticleKey(actionData.previousArticles.nodes[0].resourceId);
+      setSelectArticleKey(actionData.previousArticles.nodes[0]?.resourceId);
     } else {
       // 如果不存在 nextArticles，可以执行其他逻辑
       console.log("nextArticles end");
@@ -341,15 +341,15 @@ const Index = () => {
         // 如果 key 不存在，新增一条数据
         const newItem = {
           resourceId: articles.nodes.find(
-            (item: any) => item.resourceId === selectArticleKey,
+            (item: any) => item?.resourceId === selectArticleKey,
           )?.resourceId,
           locale: articles.nodes
-            .find((item: any) => item.resourceId === selectArticleKey)
+            .find((item: any) => item?.resourceId === selectArticleKey)
             ?.translatableContent.find((item: any) => item.key === key)?.locale,
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest: articles.nodes
-            .find((item: any) => item.resourceId === selectArticleKey)
+            .find((item: any) => item?.resourceId === selectArticleKey)
             ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",
         };
@@ -383,9 +383,9 @@ const Index = () => {
       },
     };
     const article = articles.nodes.find(
-      (article: any) => article.resourceId === selectArticleKey,
+      (article: any) => article?.resourceId === selectArticleKey,
     );
-    data.id = article.resourceId;
+    data.id = article?.resourceId;
     data.handle = article.translatableContent.find(
       (item: any) => item.key === "handle",
     )?.value;
@@ -409,7 +409,7 @@ const Index = () => {
       )?.value ||
       article.translatableContent.find((item: any) => item.key === "body_html")
         ?.value;
-    data.translations.id = article.resourceId;
+    data.translations.id = article?.resourceId;
     data.translations.title = article.translations.find(
       (item: any) => item.key === "title",
     )?.value;
@@ -502,7 +502,7 @@ const Index = () => {
           <Sider style={{ background: colorBgContainer }} width={200}>
             <Menu
               mode="inline"
-              defaultSelectedKeys={[articlesData.nodes[0].resourceId]}
+              defaultSelectedKeys={[articlesData.nodes[0]?.resourceId]}
               defaultOpenKeys={["sub1"]}
               style={{ height: "100%" }}
               items={menuData}

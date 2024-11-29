@@ -191,7 +191,7 @@ const Index = () => {
     }));
     setConfirmData((prevData) => {
       const existingItemIndex = prevData.findIndex(
-        (item) => item.resourceId === key,
+        (item) => item?.resourceId === key,
       );
 
       if (existingItemIndex !== -1) {
@@ -224,7 +224,7 @@ const Index = () => {
       if (item.translatableContent.length !== 0) {
         // 创建当前项的对象
         const currentItem = {
-          key: `${item.resourceId}`, // 使用 id 生成唯一的 key
+          key: `${item?.resourceId}`, // 使用 id 生成唯一的 key
           index: index,
           resource: "value", // 资源字段固定为 "Menu Items"
           default_language: item.translatableContent[0]?.value, // 默认语言为 item 的标题

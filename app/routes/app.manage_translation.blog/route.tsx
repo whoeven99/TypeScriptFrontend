@@ -127,7 +127,7 @@ const Index = () => {
 
   const exMenuData = (blogs: any) => {
     const data = blogs.nodes.map((blog: any) => ({
-      key: blog.resourceId,
+      key: blog?.resourceId,
       label: blog.translatableContent.find((item: any) => item.key === "title")
         .value,
     }));
@@ -140,7 +140,7 @@ const Index = () => {
   const [blogsData, setBlogsData] = useState(blogs);
   const [blogData, setBlogData] = useState<BlogType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [selectBlogKey, setSelectBlogKey] = useState(blogs.nodes[0].resourceId);
+  const [selectBlogKey, setSelectBlogKey] = useState(blogs.nodes[0]?.resourceId);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
@@ -195,13 +195,13 @@ const Index = () => {
       // 在这里处理 nextBlogs
       setMenuData(nextBlogs);
       setBlogsData(actionData.nextBlogs);
-      setSelectBlogKey(actionData.nextBlogs.nodes[0].resourceId);
+      setSelectBlogKey(actionData.nextBlogs.nodes[0]?.resourceId);
     } else if (actionData && "previousBlogs" in actionData) {
       const previousBlogs = exMenuData(actionData.previousBlogs);
       // 在这里处理 previousBlogs
       setMenuData(previousBlogs);
       setBlogsData(actionData.previousBlogs);
-      setSelectBlogKey(actionData.previousBlogs.nodes[0].resourceId);
+      setSelectBlogKey(actionData.previousBlogs.nodes[0]?.resourceId);
     } else {
       // 如果不存在 nextBlogs，可以执行其他逻辑
       console.log("nextBlogs end");
@@ -263,15 +263,15 @@ const Index = () => {
         // 如果 key 不存在，新增一条数据
         const newItem = {
           resourceId: blogs.nodes.find(
-            (item: any) => item.resourceId === selectBlogKey,
+            (item: any) => item?.resourceId === selectBlogKey,
           )?.resourceId,
           locale: blogs.nodes
-            .find((item: any) => item.resourceId === selectBlogKey)
+            .find((item: any) => item?.resourceId === selectBlogKey)
             ?.translatableContent.find((item: any) => item.key === key)?.locale,
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest: blogs.nodes
-            .find((item: any) => item.resourceId === selectBlogKey)
+            .find((item: any) => item?.resourceId === selectBlogKey)
             ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",
         };
@@ -293,16 +293,16 @@ const Index = () => {
       },
     };
     const blog = blogs.nodes.find(
-      (blog: any) => blog.resourceId === selectBlogKey,
+      (blog: any) => blog?.resourceId === selectBlogKey,
     );
-    data.id = blog.resourceId;
+    data.id = blog?.resourceId;
     data.title = blog.translatableContent.find(
       (item: any) => item.key === "title",
     )?.value;
     data.handle = blog.translatableContent.find(
       (item: any) => item.key === "handle",
     )?.value;
-    data.translations.id = blog.resourceId;
+    data.translations.id = blog?.resourceId;
     data.translations.title = blog.translations.find(
       (item: any) => item.key === "title",
     )?.value;

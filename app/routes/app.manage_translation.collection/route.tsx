@@ -137,7 +137,7 @@ const Index = () => {
 
   const exMenuData = (collections: any) => {
     const data = collections.nodes.map((collection: any) => ({
-      key: collection.resourceId,
+      key: collection?.resourceId,
       label: collection.translatableContent.find(
         (item: any) => item.key === "title",
       ).value,
@@ -153,7 +153,7 @@ const Index = () => {
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [SeoData, setSeoData] = useState<TableDataType[]>([]);
   const [selectCollectionKey, setSelectCollectionKey] = useState(
-    collections.nodes[0].resourceId,
+    collections.nodes[0]?.resourceId,
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
@@ -230,14 +230,14 @@ const Index = () => {
       // 在这里处理 nextCollections
       setMenuData(nextCollections);
       setCollectionsData(actionData.nextCollections);
-      setSelectCollectionKey(actionData.nextCollections.nodes[0].resourceId);
+      setSelectCollectionKey(actionData.nextCollections.nodes[0]?.resourceId);
     } else if (actionData && "previousCollections" in actionData) {
       const previousCollections = exMenuData(actionData.previousCollections);
       // 在这里处理 previousCollections
       setMenuData(previousCollections);
       setCollectionsData(actionData.previousCollections);
       setSelectCollectionKey(
-        actionData.previousCollections.nodes[0].resourceId,
+        actionData.previousCollections.nodes[0]?.resourceId,
       );
     } else {
       // 如果不存在 nextCollections，可以执行其他逻辑
@@ -335,15 +335,15 @@ const Index = () => {
         // 如果 key 不存在，新增一条数据
         const newItem = {
           resourceId: collections.nodes.find(
-            (item: any) => item.resourceId === selectCollectionKey,
+            (item: any) => item?.resourceId === selectCollectionKey,
           )?.resourceId,
           locale: collections.nodes
-            .find((item: any) => item.resourceId === selectCollectionKey)
+            .find((item: any) => item?.resourceId === selectCollectionKey)
             ?.translatableContent.find((item: any) => item.key === key)?.locale,
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest: collections.nodes
-            .find((item: any) => item.resourceId === selectCollectionKey)
+            .find((item: any) => item?.resourceId === selectCollectionKey)
             ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",
         };
@@ -375,9 +375,9 @@ const Index = () => {
       },
     };
     const collection = collections.nodes.find(
-      (collection: any) => collection.resourceId === selectCollectionKey,
+      (collection: any) => collection?.resourceId === selectCollectionKey,
     );
-    data.id = collection.resourceId;
+    data.id = collection?.resourceId;
     data.title = collection.translatableContent.find(
       (item: any) => item.key === "title",
     )?.value;

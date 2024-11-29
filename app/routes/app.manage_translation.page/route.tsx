@@ -137,7 +137,7 @@ const Index = () => {
 
   const exMenuData = (pages: any) => {
     const data = pages.nodes.map((page: any) => ({
-      key: page.resourceId,
+      key: page?.resourceId,
       label: page.translatableContent.find((item: any) => item.key === "title")
         .value,
     }));
@@ -151,7 +151,7 @@ const Index = () => {
   const [pageData, setPageData] = useState<PageType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [SeoData, setSeoData] = useState<TableDataType[]>([]);
-  const [selectPageKey, setSelectPageKey] = useState(pages.nodes[0].resourceId);
+  const [selectPageKey, setSelectPageKey] = useState(pages.nodes[0]?.resourceId);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
@@ -227,13 +227,13 @@ const Index = () => {
       // 在这里处理 nextPages
       setMenuData(nextPages);
       setPagesData(actionData.nextPages);
-      setSelectPageKey(actionData.nextPages.nodes[0].resourceId);
+      setSelectPageKey(actionData.nextPages.nodes[0]?.resourceId);
     } else if (actionData && "previousPages" in actionData) {
       const previousPages = exMenuData(actionData.previousPages);
       // 在这里处理 previousPages
       setMenuData(previousPages);
       setPagesData(actionData.previousPages);
-      setSelectPageKey(actionData.previousPages.nodes[0].resourceId);
+      setSelectPageKey(actionData.previousPages.nodes[0]?.resourceId);
     } else {
       // 如果不存在 nextPages，可以执行其他逻辑
       console.log("nextPages end");
@@ -330,15 +330,15 @@ const Index = () => {
         // 如果 key 不存在，新增一条数据
         const newItem = {
           resourceId: pages.nodes.find(
-            (item: any) => item.resourceId === selectPageKey,
+            (item: any) => item?.resourceId === selectPageKey,
           )?.resourceId,
           locale: pages.nodes
-            .find((item: any) => item.resourceId === selectPageKey)
+            .find((item: any) => item?.resourceId === selectPageKey)
             ?.translatableContent.find((item: any) => item.key === key)?.locale,
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest: pages.nodes
-            .find((item: any) => item.resourceId === selectPageKey)
+            .find((item: any) => item?.resourceId === selectPageKey)
             ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",
         };
@@ -370,9 +370,9 @@ const Index = () => {
       },
     };
     const page = pages.nodes.find(
-      (page: any) => page.resourceId === selectPageKey,
+      (page: any) => page?.resourceId === selectPageKey,
     );
-    data.id = page.resourceId;
+    data.id = page?.resourceId;
     data.title = page.translatableContent.find(
       (item: any) => item.key === "title",
     )?.value;
@@ -389,7 +389,7 @@ const Index = () => {
       )?.value ||
       page.translatableContent.find((item: any) => item.key === "body_html")
         ?.value;
-    data.translations.id = page.resourceId;
+    data.translations.id = page?.resourceId;
     data.translations.title = page.translations.find(
       (item: any) => item.key === "title",
     )?.value;

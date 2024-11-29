@@ -68,7 +68,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         locale: body.translatableContent[0].locale,
         digest: body.translatableContent[0].digest,
         translations: {
-          id: body.resourceId,
+          id: body?.resourceId,
           value: body.translations[0]?.value,
         },
       };
