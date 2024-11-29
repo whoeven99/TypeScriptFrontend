@@ -53,9 +53,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const Index = () => {
   const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
-  const [paymentModalVisible, setPaymentModalVisible] =
-    useState<boolean>(false);
-
   const [user, setUser] = useState<UserType>();
   const [loading, setLoading] = useState<boolean>(true);
   const dispatch = useDispatch();

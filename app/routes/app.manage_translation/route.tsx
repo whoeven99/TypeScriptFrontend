@@ -74,7 +74,7 @@ const Index = () => {
   // const { shopLanguagesLoad, words } = useLoaderData<typeof loader>();
   const [words, setWords] = useState<WordsType>();
   const [shopLanguages, setShopLanguages] = useState<ShopLocalesType[]>();
-  const [menuData, setMenuData] = useState<ManageMenuDataType[]>([]);
+  const [menuData, setMenuData] = useState<ManageMenuDataType[]>();
   const [current, setCurrent] = useState<string>("");
   const [disable, setDisable] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
@@ -326,7 +326,7 @@ const Index = () => {
   }, [shopLanguages]);
 
   useEffect(() => {
-    const foundItem = menuData.find((item) => item.key === key);
+    const foundItem = menuData?.find((item) => item.key === key);
     if (foundItem) {
       setCurrent(key);
     }
@@ -346,7 +346,7 @@ const Index = () => {
       <TitleBar title="Manage Translation" />
       {loading ? (
         <div>loading...</div>
-      ) : !menuData.length ? (
+      ) : menuData && !menuData?.length ? (
         <div
           style={{
             display: "flex",

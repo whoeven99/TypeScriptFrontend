@@ -63,7 +63,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const loading = JSON.parse(formData.get("loading") as string);
     const index = JSON.parse(formData.get("index") as string);
     const translation = JSON.parse(formData.get("translation") as string);
-    const target = JSON.parse(formData.get("target") as string);
+    const targets = JSON.parse(formData.get("targets") as string);
+    const syncData = JSON.parse(formData.get("syncData") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
 
     switch (true) {
@@ -140,7 +141,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
         console.log("user: ", user);
-
         return json({
           languageData,
           user,
@@ -154,14 +154,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           target: selectedLanguage,
         });
         return json({ statu: statu });
-      case !!target:
+      case !!targets:
         const data = await GetItemsInSqlByShopName({
           shop,
           accessToken,
-          target,
+          targets,
         });
-        await GetTranslationItemsInfo({ shop, accessToken, target });
         return json({ data: data });
+      case !!syncData:
+        try {
+          console.log("syncData: ", syncData);
+          await GetTranslationItemsInfo({
+            shop,
+            accessToken,
+            targets: syncData,
+          });
+        } catch (error) {
+          console.error("Error GetTranslationItemsInfo:", error);
+          return json(
+            { error: "Error GetTranslationItemsInfo" },
+            { status: 500 },
+          );
+        }
       case !!languageCode:
         const totalWords = await GetTotalWords({
           request,
@@ -184,7 +198,8 @@ export default function App() {
 
   const loadingFetcher = useFetcher<LoadingFetchType>();
   const dispatch = useDispatch();
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<any>();
+  const syncFetcher = useFetcher<any>();
   // const location = useLocation();
 
   useEffect(() => {
@@ -198,15 +213,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (shopLocales) {
-      for (const target of shopLocales) {
-        const formData = new FormData();
-        formData.append("target", JSON.stringify(target));
-        fetcher.submit(formData, {
-          method: "post",
-          action: "/app",
-        }); // 提交表单请求
-      }
+    if (shopLocales.length) {
+      console.log(shopLocales);
+      const formData = new FormData();
+      formData.append("targets", JSON.stringify(shopLocales));
+      fetcher.submit(formData, {
+        method: "post",
+        action: "/app",
+      }); // 提交表单请求
     }
   }, [shopLocales]);
 
@@ -218,6 +232,14 @@ export default function App() {
       dispatch(updateData((fetcher.data as { data: any[] }).data));
     }
     shopify.loading(false);
+    if (loadingFetcher.data && fetcher.data && shopLocales.length) {
+      const formData = new FormData();
+      formData.append("syncData", JSON.stringify(shopLocales));
+      syncFetcher.submit(formData, {
+        method: "post",
+        action: "/app",
+      }); // 提交表单请求
+    }
   }, [fetcher.data, loadingFetcher.data]);
 
   return (
