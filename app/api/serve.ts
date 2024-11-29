@@ -94,10 +94,12 @@ export const InsertShopTranslateInfo = async ({
 export const GetTranslationItemsInfo = async ({
   shop,
   accessToken,
+  source,
   targets,
 }: {
   shop: string;
   accessToken: string | undefined;
+  source: string[];
   targets: string[];
 }) => {
   try {
@@ -108,6 +110,7 @@ export const GetTranslationItemsInfo = async ({
         data: {
           shopName: shop,
           accessToken: accessToken,
+          source: source[0],
           target: target,
         },
       });
@@ -122,10 +125,12 @@ export const GetTranslationItemsInfo = async ({
 export const GetItemsInSqlByShopName = async ({
   shop,
   accessToken,
+  source,
   targets,
 }: {
   shop: string;
   accessToken: string | undefined;
+  source: string[];
   targets: string[];
 }) => {
   let res: {
@@ -142,6 +147,7 @@ export const GetItemsInSqlByShopName = async ({
         data: {
           shopName: shop,
           accessToken: accessToken,
+          source: source[0],
           target: target,
         },
       });
@@ -308,7 +314,7 @@ export const GetLanguageStatus = async ({
         target: target[0],
       },
     ]);
-    
+
     const res = response.data.response;
     console.log(res);
     return res;

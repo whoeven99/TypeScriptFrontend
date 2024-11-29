@@ -120,19 +120,18 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   }, [translateFetcher.data]);
 
   const handleTranslate = async (key: number) => {
-    const selectedItem = data.find((item: { key: number }) => item.key === key);
     const formData = new FormData();
     formData.append(
       "translation",
       JSON.stringify({
-        primaryLanguage: primaryLanguageCode,
+        primaryLanguage: primaryLanguage,
         selectedLanguage: languageCode,
       }),
     ); // 将选中的语言作为字符串发送
     translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
     dispatch(
       setStatuState({
-        target: selectedItem.locale,
+        target: data.locale,
         status: 2,
       }),
     );
