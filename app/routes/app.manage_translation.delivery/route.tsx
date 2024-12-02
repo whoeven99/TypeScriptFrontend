@@ -1,4 +1,13 @@
-import { Button, Layout, message, Modal, Result, Space, Table, theme } from "antd";
+import {
+  Button,
+  Layout,
+  message,
+  Modal,
+  Result,
+  Space,
+  Table,
+  theme,
+} from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
@@ -42,38 +51,22 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
+  return json({
+    searchTerm,
+  });
+};
+
+export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      shop,
-      accessToken,
-    });
-    const deliverys = await queryNextTransType({
-      request,
-      resourceType: "DELIVERY_METHOD_DEFINITION",
-      endCursor: "",
-      locale: searchTerm || shopLanguagesLoad[0].locale,
-    });
-
-    return json({
-      searchTerm,
-      shopLanguagesLoad,
-      deliverys,
-    });
-  } catch (error) {
-    console.error("Error load delivery:", error);
-    throw new Response("Error load delivery", { status: 500 });
-  }
-};
-
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
-  try {
     const formData = await request.formData();
+
+    const loading: string = JSON.parse(formData.get("loading") as string);
     const startCursor: string = JSON.parse(
       formData.get("startCursor") as string,
     );
@@ -82,6 +75,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("confirmData") as string,
     );
     switch (true) {
+      case !!loading:
+        try {
+          const data = await queryNextTransType({
+            request,
+            resourceType: "DELIVERY_METHOD_DEFINITION",
+            endCursor: "",
+            locale: searchTerm || "",
+          });
+
+          return json({
+            data: data,
+          });
+        } catch (error) {
+          console.error("Error load delivery:", error);
+          throw new Response("Error load delivery", { status: 500 });
+        }
+
       case !!startCursor:
         const previousDeliverys = await queryPreviousTransType({
           request,
@@ -115,37 +125,45 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { searchTerm, shopLanguagesLoad, deliverys } =
-    useLoaderData<typeof loader>();
+  const { searchTerm } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [deliverysData, setDeliverysData] = useState(deliverys);
+  const [deliverysData, setDeliverysData] = useState<any>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
-  const [hasPrevious, setHasPrevious] = useState<boolean>(
-    deliverysData.pageInfo.hasPreviousPage,
-  );
-  const [hasNext, setHasNext] = useState<boolean>(
-    deliverysData.pageInfo.hasNextPage,
-  );
+  const [hasPrevious, setHasPrevious] = useState<boolean>();
+  const [hasNext, setHasNext] = useState<boolean>();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const loadingFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
   useEffect(() => {
-    setHasPrevious(deliverysData.pageInfo.hasPreviousPage);
-    setHasNext(deliverysData.pageInfo.hasNextPage);
-    const data = generateMenuItemsArray(deliverysData);
-    setResourceData(data);
+    const formData = new FormData();
+    formData.append("loading", JSON.stringify(true));
+    loadingFetcher.submit(formData, {
+      method: "post",
+      action: "/app/manage_translation/delivery",
+    });
+    shopify.loading(true);
+  }, []);
+
+  useEffect(() => {
+    if (deliverysData) {
+      setHasPrevious(deliverysData.pageInfo.hasPreviousPage);
+      setHasNext(deliverysData.pageInfo.hasNextPage);
+      const data = generateMenuItemsArray(deliverysData);
+      setResourceData(data);
+    }
   }, [deliverysData]);
 
   useEffect(() => {
@@ -161,6 +179,15 @@ const Index = () => {
   }, [actionData]);
 
   useEffect(() => {
+    if (loadingFetcher.data && loadingFetcher.data.data) {
+      console.log(loadingFetcher.data);
+      setDeliverysData(loadingFetcher.data.data);
+    }
+    setConfirmLoading(false);
+    shopify.loading(false);
+  }, [loadingFetcher.data]);
+
+  useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
       const errorItem = confirmFetcher.data.data.find((item) => {
         item.success === false;
@@ -170,7 +197,7 @@ const Index = () => {
       } else {
         message.error(errorItem?.errorMsg);
       }
-      setConfirmData([])
+      setConfirmData([]);
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
@@ -210,10 +237,6 @@ const Index = () => {
     },
   ];
 
-  useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
-
   const handleInputChange = (key: string, value: string, index: number) => {
     setTranslatedValues((prev) => ({
       ...prev,
@@ -235,12 +258,12 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: deliverys.nodes[index]?.resourceId,
-          locale: deliverys.nodes[index]?.translatableContent[0]?.locale,
+          resourceId: deliverysData.nodes[index]?.resourceId,
+          locale: deliverysData.nodes[index]?.translatableContent[0]?.locale,
           key: "value",
           value: value, // 初始为空字符串
           translatableContentDigest:
-            deliverys.nodes[index]?.translatableContent[0]?.digest,
+            deliverysData.nodes[index]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
 
@@ -307,53 +330,69 @@ const Index = () => {
       open={isVisible}
       onCancel={onCancel}
       width={"100%"}
+      style={{
+        height: "900px",
+      }}
       footer={[
         <div
+          key="footer-buttons" // 给容器 div 也加上一个 key
           style={{ display: "flex", justifyContent: "center", width: "100%" }}
         >
-          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={onCancel}
+            style={{ marginRight: "10px" }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleConfirm} type="primary" disabled={confirmLoading} loading={confirmLoading}>
+          <Button
+            onClick={handleConfirm}
+            key={"manage_confirm_button"}
+            type="primary"
+            disabled={confirmLoading}
+            loading={confirmLoading}
+          >
             Save
           </Button>
         </div>,
       ]}
     >
-      {deliverys.nodes.length ? (
-        <Layout
-          style={{
-            padding: "24px 0",
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
-        >
-          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-            <Space
-              direction="vertical"
-              size="middle"
-              style={{ display: "flex" }}
-            >
-              <Table
-                columns={resourceColumns}
-                dataSource={resourceData}
-                pagination={false}
-              />
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <Pagination
-                  hasPrevious={hasPrevious}
-                  onPrevious={onPrevious}
-                  hasNext={hasNext}
-                  onNext={onNext}
+      {deliverysData ? (
+        deliverysData.nodes.length ? (
+          <Layout
+            style={{
+              padding: "24px 0",
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
+          >
+            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ display: "flex" }}
+              >
+                <Table
+                  columns={resourceColumns}
+                  dataSource={resourceData}
+                  pagination={false}
                 />
-              </div>
-            </Space>
-          </Content>
-        </Layout>
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Pagination
+                    hasPrevious={hasPrevious}
+                    onPrevious={onPrevious}
+                    hasNext={hasNext}
+                    onNext={onNext}
+                  />
+                </div>
+              </Space>
+            </Content>
+          </Layout>
+        ) : (
+          <Result title="No items found here" />
+        )
       ) : (
-        <Result
-          title="No items found here"
-        />
+        <>loading</>
       )}
     </Modal>
   );
