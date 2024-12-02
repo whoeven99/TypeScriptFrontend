@@ -162,8 +162,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.log(translation);
         const source = translation.primaryLanguage.locale;
         const target = translation.selectedLanguage.locale;
-        const statu = await GetTranslate({ request, source, target });
-        return json({ statu: statu });
+        const status = await GetTranslate({ request, source, target });
+        return json({ status: status });
 
       case !!publishInfo:
         await mutationShopLocalePublish({
@@ -269,13 +269,14 @@ const Index = () => {
   }, [shopLanguagesLoad]);
 
   useEffect(() => {
-    if (translateFetcher.data && translateFetcher.data.statu) {
-      if (translateFetcher.data.statu.success) {
+    if (translateFetcher.data && translateFetcher.data.status) {
+      if (translateFetcher.data.status.success) {
+
       } else {
-        message.error(translateFetcher.data.statu.errorMsg);
+        message.error(translateFetcher.data.status.errorMsg);
         dispatch(
           setStatuState({
-            target: translateFetcher.data.statu.target,
+            target: translateFetcher.data.status.target,
             status: 3,
           }),
         );

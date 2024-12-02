@@ -375,6 +375,13 @@ export const GetTranslate = async ({
         target: target,
       },
     });
+    console.log( {
+      shopName: shop,
+      accessToken: accessToken,
+      source: source,
+      target: target,
+    });
+    
     const res = { ...response.data, target: target };
     console.log(res);
     return res;
