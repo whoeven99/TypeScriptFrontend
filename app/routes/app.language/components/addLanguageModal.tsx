@@ -63,12 +63,11 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   );
 
   useEffect(() => {
-    if (addFetcher.data) {
+    if (addFetcher.data && addFetcher.data.data.length) {
       message.success("Add success");
-      const data = addFetcher.data.shopLanguages.map((lang: any, i: any) => ({
+      const data = addFetcher.data.data.map((lang: any, i: any) => ({
         language: lang.name,
-        localeName:
-          languageLocaleInfo[addFetcher.data.shopLanguages[i].locale].Local,
+        localeName: languageLocaleInfo[addFetcher.data.data[i].locale].Local,
         locale: lang.locale,
         primary: lang.primary,
         status: 0,
@@ -77,7 +76,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
         loading: false,
       }));
       dispatch(updateTableData(data));
-    } 
+    }
     setIsModalOpen(false);
     setConfirmButtonDisable(false);
   }, [addFetcher.data]);
@@ -293,12 +292,17 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       open={isVisible}
       onCancel={handleCloseModal}
       footer={[
-        <div>
-          <Button onClick={handleCloseModal} style={{ marginRight: "10px" }}>
+        <div key={"footer_buttons"}>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={handleCloseModal}
+            style={{ marginRight: "10px" }}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleConfirm}
+            key={"manage_confirm_button"}
             type="primary"
             disabled={confirmButtonDisable}
             loading={confirmButtonDisable}

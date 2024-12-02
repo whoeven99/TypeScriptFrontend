@@ -118,9 +118,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const unPublishInfo: UnpublishInfoType = JSON.parse(
       formData.get("unPublishInfo") as string,
     );
-    const deleteData: LanguagesDataType[] = JSON.parse(
-      formData.get("deleteData") as string,
-    );
+    const deleteData = JSON.parse(formData.get("deleteData") as string);
 
     switch (true) {
       case !!loading:
@@ -155,18 +153,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           words: words,
         });
       case !!addLanguages:
-        const shopLanguages = await mutationShopLocaleEnable({
+        const data = await mutationShopLocaleEnable({
           request,
           addLanguages,
         }); // 处理逻辑
-        console.log(shopLanguages);
-        
-        return json({ shopLanguages: shopLanguages });
+        return json({ data: data });
       case !!translation:
+        console.log(translation);
         const source = translation.primaryLanguage.locale;
         const target = translation.selectedLanguage.locale;
-        const statu = await GetTranslate({ request, source, target });
-        return json({ statu: statu });
+        const status = await GetTranslate({ request, source, target });
+        return json({ status: status });
 
       case !!publishInfo:
         await mutationShopLocalePublish({
@@ -183,7 +180,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return null;
 
       case !!deleteData:
-        await mutationShopLocaleDisable({ request, languages: deleteData });
+        await mutationShopLocaleDisable({
+          request,
+          languages: deleteData.deleteData,
+          primaryLanguageCode: deleteData.primaryLanguageCode,
+        });
         return null;
 
       default:
@@ -199,6 +200,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [shop, setShop] = useState<string>("");
   const [allCountryCode, setAllCountryCode] = useState<string[]>([]);
+  const [primaryLanguage, setPrimaryLanguage] = useState<ShopLocalesType>();
   const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>(
     [],
   );
@@ -233,10 +235,6 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const primaryLanguage: ShopLocalesType | undefined = shopLanguagesLoad?.find(
-    (lang) => lang.primary,
-  );
-
   useEffect(() => {
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
@@ -263,13 +261,22 @@ const Index = () => {
   }, [fetcher.data]);
 
   useEffect(() => {
-    if (translateFetcher.data && translateFetcher.data.statu) {
-      if (translateFetcher.data.statu.success) {
+    if (shopLanguagesLoad) {
+      setPrimaryLanguage(
+        shopLanguagesLoad?.find((lang) => lang.primary === true),
+      );
+    }
+  }, [shopLanguagesLoad]);
+
+  useEffect(() => {
+    if (translateFetcher.data && translateFetcher.data.status) {
+      if (translateFetcher.data.status.success) {
+
       } else {
-        message.error(translateFetcher.data.statu.errorMsg);
+        message.error(translateFetcher.data.status.errorMsg);
         dispatch(
           setStatuState({
-            target: translateFetcher.data.statu.target,
+            target: translateFetcher.data.status.target,
             status: 3,
           }),
         );
@@ -400,7 +407,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Switch
           checked={record.published}
-          onChange={(checked) => handlePublishChange(record.key, checked)}
+          onChange={(checked) => handlePublishChange(record.locale, checked)}
           loading={record.loading} // 使用每个项的 loading 状态
         />
       ),
@@ -413,7 +420,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button
-            onClick={() => handleTranslate(record.key)}
+            onClick={() => handleTranslate(record.locale)}
             style={{ width: "100px" }}
             type="primary"
           >
@@ -437,15 +444,15 @@ const Index = () => {
     setIsLanguageModalOpen(true); // 打开Modal
   };
 
-  const handlePublishChange = (key: number, checked: boolean) => {
-    const row = data.find((item: any) => item.key === key);
+  const handlePublishChange = (locale: string, checked: boolean) => {
+    const row = data.find((item: any) => item.locale === locale);
 
     if (checked) {
-      dispatch(setPublishLoadingState({ key, loading: checked }));
+      dispatch(setPublishLoadingState({ locale, loading: checked }));
       setSelectedRow(row);
       setIsPublishModalOpen(true);
     } else {
-      dispatch(setPublishState({ key, published: checked }));
+      dispatch(setPublishState({ locale, published: checked }));
       if (row)
         setUnpublishInfo({
           locale: row.locale,
@@ -454,26 +461,24 @@ const Index = () => {
     }
   };
 
-  const handleTranslate = async (key: number) => {
-    const selectedItem = data.find((item: { key: number }) => item.key === key);
-    if (selectedItem && shopLanguagesLoad) {
-      const selectedLanguage = shopLanguagesLoad.find(
-        (item) => item.name === selectedItem.language,
-      );
-      if (selectedLanguage) {
-        const formData = new FormData();
-        formData.append(
-          "translation",
-          JSON.stringify({
-            primaryLanguage: primaryLanguage,
-            selectedLanguage: selectedLanguage,
-          }),
-        ); // 将选中的语言作为字符串发送
-        translateFetcher.submit(formData, {
-          method: "post",
-          action: "/app/language",
-        }); // 提交表单请求
-      }
+  const handleTranslate = async (locale: string) => {
+    const selectedItem = data.find(
+      (item: LanguagesDataType) => item.locale === locale,
+    );
+    if (selectedItem) {
+      const formData = new FormData();
+      formData.append(
+        "translation",
+        JSON.stringify({
+          primaryLanguage: primaryLanguage,
+          selectedLanguage: selectedItem,
+        }),
+      ); // 将选中的语言作为字符串发送
+      translateFetcher.submit(formData, {
+        method: "post",
+        action: "/app/language",
+      }); // 提交表单请求
+
       message.success("The translation task is in progress.");
       dispatch(
         setStatuState({
@@ -483,12 +488,11 @@ const Index = () => {
       );
     }
   };
-
   const handleConfirmPublishModal = () => {
     if (selectedRow) {
       dispatch(
         setPublishConfirmState({
-          key: selectedRow?.key,
+          locale: selectedRow?.locale,
           published: true,
           loading: false,
         }),
@@ -506,7 +510,7 @@ const Index = () => {
   const handleClosePublishModal = () => {
     if (selectedRow) {
       dispatch(
-        setPublishLoadingState({ key: selectedRow?.key, loading: false }),
+        setPublishLoadingState({ locale: selectedRow?.locale, loading: false }),
         setSelectedRow(undefined),
       );
     }
@@ -523,7 +527,13 @@ const Index = () => {
     );
 
     const formData = new FormData();
-    formData.append("deleteData", JSON.stringify(deleteData)); // 将选中的语言作为字符串发送
+    formData.append(
+      "deleteData",
+      JSON.stringify({
+        deleteData: deleteData,
+        primaryLanguage: primaryLanguage?.locale,
+      }),
+    ); // 将选中的语言作为字符串发送
     submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
 
     dispatch(setTableData(newData)); // 更新表格数据
@@ -558,7 +568,7 @@ const Index = () => {
               <Title style={{ fontSize: "1.25rem", display: "inline" }}>
                 Languages
               </Title>
-              <PrimaryLanguage shopLanguages={shopLanguagesLoad} />{" "}
+              <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
             </div>
             <AttentionCard
               title="Translation word credits have been exhausted."

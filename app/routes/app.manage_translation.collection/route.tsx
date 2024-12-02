@@ -3,6 +3,7 @@ import {
   Layout,
   Menu,
   MenuProps,
+  message,
   Modal,
   Result,
   Table,
@@ -11,6 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import {
   useActionData,
+  useFetcher,
   useLoaderData,
   useNavigate,
   useSubmit,
@@ -29,9 +31,21 @@ import { authenticate } from "~/shopify.server";
 
 const { Sider, Content } = Layout;
 
+interface ConfirmFetcherType {
+  data: {
+    success: boolean;
+    errorMsg: string;
+    data: {
+      resourceId: string;
+      key: string;
+      value?: string;
+    };
+  }[];
+}
+
 interface CollectionType {
   handle: string;
-  id: string;
+  key: string;
   descriptionHtml: string | undefined;
   title: string;
   seo: {
@@ -40,7 +54,7 @@ interface CollectionType {
   };
   translations: {
     handle: string;
-    id: string;
+    key: string;
     descriptionHtml: string | undefined;
     title: string;
     seo: {
@@ -115,11 +129,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }); // 处理逻辑
         return json({ nextCollections: nextCollections });
       case !!confirmData:
-        await updateManageTranslation({
+        // 
+        const data = await updateManageTranslation({
           request,
           confirmData,
         });
-        return null;
+        return json({ data: data });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -156,6 +171,7 @@ const Index = () => {
     collections.nodes[0]?.resourceId,
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -171,8 +187,8 @@ const Index = () => {
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
-  
   useEffect(() => {
     setHasPrevious(collectionsData.pageInfo.hasPreviousPage);
     setHasNext(collectionsData.pageInfo.hasNextPage);
@@ -188,40 +204,44 @@ const Index = () => {
   }, [selectCollectionKey]);
 
   useEffect(() => {
-    setResourceData([
-      {
-        key: "title",
-        resource: "Title",
-        default_language: collectionData?.title,
-        translated: collectionData?.translations?.title,
-      },
-      {
-        key: "description",
-        resource: "Description",
-        default_language: collectionData?.descriptionHtml,
-        translated: collectionData?.translations?.descriptionHtml,
-      },
-    ]);
-    setSeoData([
-      {
-        key: "handle",
-        resource: "URL handle",
-        default_language: collectionData?.handle,
-        translated: collectionData?.translations?.handle,
-      },
-      {
-        key: "meta_title",
-        resource: "Meta title",
-        default_language: collectionData?.seo.title,
-        translated: collectionData?.translations?.seo.title,
-      },
-      {
-        key: "meta_description",
-        resource: "Meta description",
-        default_language: collectionData?.seo.description,
-        translated: collectionData?.translations?.seo.description,
-      },
-    ]);
+    setResourceData(
+      [
+        {
+          key: "title",
+          resource: "Title",
+          default_language: collectionData?.title,
+          translated: collectionData?.translations?.title,
+        },
+        {
+          key: "body_html",
+          resource: "Description",
+          default_language: collectionData?.descriptionHtml,
+          translated: collectionData?.translations?.descriptionHtml,
+        },
+      ].filter((item) => item.default_language),
+    );
+    setSeoData(
+      [
+        {
+          key: "handle",
+          resource: "URL handle",
+          default_language: collectionData?.handle,
+          translated: collectionData?.translations?.handle,
+        },
+        {
+          key: "meta_title",
+          resource: "Meta title",
+          default_language: collectionData?.seo.title,
+          translated: collectionData?.translations?.seo.title,
+        },
+        {
+          key: "meta_description",
+          resource: "Meta description",
+          default_language: collectionData?.seo.description,
+          translated: collectionData?.translations?.seo.description,
+        },
+      ].filter((item) => item.default_language),
+    );
   }, [collectionData]);
 
   useEffect(() => {
@@ -244,6 +264,21 @@ const Index = () => {
       console.log("nextCollections end");
     }
   }, [actionData]);
+
+  useEffect(() => {
+    if (confirmFetcher.data && confirmFetcher.data.data) {
+      const errorItem = confirmFetcher.data.data.find((item) => {
+        item.success === false;
+      });
+      if (!errorItem) {
+        message.success("Saved successfully");
+      } else {
+        message.error(errorItem?.errorMsg);
+      }
+      setConfirmData([])
+    }
+    setConfirmLoading(false);
+  }, [confirmFetcher.data]);
 
   const resourceColumns = [
     {
@@ -356,7 +391,7 @@ const Index = () => {
   const transBeforeData = ({ collections }: { collections: any }) => {
     let data: CollectionType = {
       handle: "",
-      id: "",
+      key: "",
       descriptionHtml: "",
       seo: {
         description: "",
@@ -365,7 +400,7 @@ const Index = () => {
       title: "",
       translations: {
         handle: "",
-        id: "",
+        key: "",
         descriptionHtml: "",
         seo: {
           description: "",
@@ -377,7 +412,7 @@ const Index = () => {
     const collection = collections.nodes.find(
       (collection: any) => collection?.resourceId === selectCollectionKey,
     );
-    data.id = collection?.resourceId;
+    data.key = collection?.resourceId;
     data.title = collection?.translatableContent.find(
       (item: any) => item.key === "title",
     )?.value;
@@ -387,19 +422,12 @@ const Index = () => {
     data.handle = collection?.translatableContent.find(
       (item: any) => item.key === "handle",
     )?.value;
-    data.seo.title =
-      collection?.translatableContent.find(
-        (item: any) => item.key === "meta_title",
-      )?.value ||
-      collection?.translatableContent.find((item: any) => item.key === "title")
-        ?.value;
-    data.seo.description =
-      collection?.translatableContent.find(
-        (item: any) => item.key === "meta_description",
-      )?.value ||
-      collection?.translatableContent.find(
-        (item: any) => item.key === "body_html",
-      )?.value;
+    data.seo.title = collection?.translatableContent.find(
+      (item: any) => item.key === "meta_title",
+    )?.value;
+    data.seo.description = collection?.translatableContent.find(
+      (item: any) => item.key === "meta_description",
+    )?.value;
     data.translations.title = collection?.translations.find(
       (item: any) => item.key === "title",
     )?.value;
@@ -409,16 +437,12 @@ const Index = () => {
     data.translations.handle = collection?.translations.find(
       (item: any) => item.key === "handle",
     )?.value;
-    data.translations.seo.title =
-      collection?.translations.find((item: any) => item.key === "meta_title")
-        ?.value ||
-      collection?.translations.find((item: any) => item.key === "title")?.value;
-    data.translations.seo.description =
-      collection?.translations.find(
-        (item: any) => item.key === "meta_description",
-      )?.value ||
-      collection?.translations.find((item: any) => item.key === "body_html")
-        ?.value;
+    data.translations.seo.title = collection?.translations.find(
+      (item: any) => item.key === "meta_title",
+    )?.value;
+    data.translations.seo.description = collection?.translations.find(
+      (item: any) => item.key === "meta_description",
+    )?.value;
     return data;
   };
 
@@ -448,9 +472,10 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
+    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
-    submit(formData, {
+    confirmFetcher.submit(formData, {
       method: "post",
       action: `/app/manage_translation/collection?language=${searchTerm}`,
     }); // 提交表单请求
@@ -467,12 +492,23 @@ const Index = () => {
       width={"100%"}
       footer={[
         <div
+          key={"footer_buttons"}
           style={{ display: "flex", justifyContent: "center", width: "100%" }}
         >
-          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={onCancel}
+            style={{ marginRight: "10px" }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleConfirm} type="primary">
+          <Button
+            onClick={handleConfirm}
+            key={"manage_confirm_button"}
+            type="primary"
+            disabled={confirmLoading}
+            loading={confirmLoading}
+          >
             Save
           </Button>
         </div>,
@@ -489,7 +525,7 @@ const Index = () => {
           <Sider style={{ background: colorBgContainer }} width={200}>
             <Menu
               mode="inline"
-              defaultSelectedKeys={[collectionsData.nodes[0].id]}
+              defaultSelectedKeys={[collectionsData.nodes[0].key]}
               defaultOpenKeys={["sub1"]}
               style={{ height: "100%" }}
               items={menuData}
@@ -521,7 +557,6 @@ const Index = () => {
       ) : (
         <Result
           title="No items found here"
-          extra={<Button type="primary">back</Button>}
         />
       )}
     </Modal>

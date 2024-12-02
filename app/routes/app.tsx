@@ -85,7 +85,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             .filter((language) => !language.primary)
             .map((item) => item.locale);
           await UpdateUser({ request });
-
+          console.log("primaryLanguage: ", primaryLanguage);
+          console.log("shopLocales: ", shopLocales);
           return json({
             shopLocales: shopLocales,
             primaryLanguage: primaryLanguage,
@@ -161,8 +162,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!translation:
         const source = translation.primaryLanguageCode;
         const selectedLanguage = translation.selectedLanguage;
-        console.log("source: ", source);
-        console.log("selectedLanguage: ", selectedLanguage);
         const statu = await GetTranslate({
           request,
           source,
@@ -170,13 +169,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         return json({ statu: statu });
       case !!getData:
+        console.log("getData: ", getData);
         const data = await GetItemsInSqlByShopName({
           shop,
           accessToken,
-          source: getData.source,
+          source: getData.source[0],
           targets: getData.targets,
         });
-        console.log("getData: ", data);
         return json({ data: data });
       case !!syncData:
         try {
@@ -194,15 +193,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             { status: 500 },
           );
         }
-
       case !!statusData:
-        const statusResponse = await GetLanguageStatus({
-          shop,
-          source: statusData.source,
-          target: statusData.target,
-        });
-        return json({ data: statusResponse });
-
+        try {
+          console.log("statusData:", statusData);
+          const data = await GetLanguageStatus({
+            shop,
+            source: statusData.source,
+            target: statusData.target,
+          });
+          return json({ data: data });
+        } catch (error) {
+          console.error("Error GetLanguageStatus:", error);
+          return json({ error: "Error GetLanguageStatus" }, { status: 500 });
+        }
       case !!languageCode:
         const totalWords = await GetTotalWords({
           request,
@@ -249,7 +252,6 @@ export default function App() {
 
   useEffect(() => {
     if (shopLocales.length && primaryLanguage.length) {
-      console.log("shopLocales:", shopLocales);
       const formData = new FormData();
       formData.append(
         "getData",

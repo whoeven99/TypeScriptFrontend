@@ -1,5 +1,6 @@
-import { Link } from "@remix-run/react";
-import { Card, Space, Button, Typography, Table } from "antd";
+import { useNavigate } from "@remix-run/react";
+import { Card, Space, Button, Typography, Table, Modal, Result } from "antd";
+import { useState } from "react";
 
 const { Title } = Typography;
 
@@ -23,6 +24,9 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   dataSource,
   current,
 }) => {
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const navigate = useNavigate();
+
   const columns = [
     {
       title: cardTitle,
@@ -38,8 +42,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       render: (_: any, record: any) => {
         return record.allItems === undefined ||
           record.allTranslatedItems === undefined ||
-          record.allItems === 0 &&
-          record.allTranslatedItems === 0 ? (
+          (record.allItems === 0 && record.allTranslatedItems === 0) ? (
           <div>--</div>
         ) : (
           <div>
@@ -55,17 +58,27 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       width: "40%",
       render: (_: any, record: DataType) => {
         return (
-          <Button>
-            <Link
-              to={`/app/manage_translation/${record.navigation}?language=${current}`}
-            >
-              Edit
-            </Link>
+          <Button
+            onClick={() => {
+              if (record.allItems) {
+                navigate(
+                  `/app/manage_translation/${record.navigation}?language=${current}`,
+                );
+              } else {
+                setIsModalVisible(true)
+              }
+            }}
+          >
+            Edit
           </Button>
         );
       },
     },
   ];
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
 
   return (
     <div>
@@ -77,6 +90,16 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
           <Table columns={columns} dataSource={dataSource} pagination={false} />
         </Space>
       </Card>
+      <Modal open={isModalVisible} footer={null} onCancel={handleCancel}>
+        <Result
+          title="No items found here"
+          extra={
+            <Button type="primary" onClick={handleCancel}>
+              OK
+            </Button>
+          }
+        />
+      </Modal>
     </div>
   );
 };

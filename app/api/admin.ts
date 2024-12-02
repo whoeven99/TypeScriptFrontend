@@ -1384,13 +1384,19 @@ export const mutationShopLocaleEnable = async ({
           target: language,
         },
       });
-      console.log("shopifyResponse: ", shopifyResponse.data.data.shopLocaleEnable);
-
-      if (serveResponse.status !== 200 || shopifyResponse.status !== 200) {
+      console.log("serveResponse: ", serveResponse.data.response);
+      if (
+        serveResponse.status >= 200 &&
+        serveResponse.status < 300 &&
+        shopifyResponse.status >= 200 &&
+        shopifyResponse.status < 300
+      ) {
+        shopLanguages.push(
+          shopifyResponse.data.data.shopLocaleEnable.shopLocale,
+        );
+      } else {
         success = false;
-        // 这里可以放置你希望执行的代码
       }
-      shopLanguages.push(shopifyResponse.data.data.shopLocaleEnable.shopLocale)
     }
     return shopLanguages;
   } catch (error) {
@@ -1402,9 +1408,11 @@ export const mutationShopLocaleEnable = async ({
 export const mutationShopLocaleDisable = async ({
   request,
   languages,
+  primaryLanguageCode,
 }: {
   request: Request;
   languages: LanguagesDataType[]; // 接受语言数组
+  primaryLanguageCode:string;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -1429,6 +1437,16 @@ export const mutationShopLocaleDisable = async ({
           "Content-Type": "application/json",
         },
         data: JSON.stringify({ query: mutation }),
+      });
+
+      await axios({
+        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/deleteFromTranslates`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          source: primaryLanguageCode,
+          target: language.locale,
+        },
       });
     }
   } catch (error) {

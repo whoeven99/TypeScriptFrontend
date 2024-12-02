@@ -1,7 +1,8 @@
-import { Button, Layout, Modal, Result, Space, Table, theme } from "antd";
+import { Button, Layout, message, Modal, Result, Space, Table, theme } from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
+  useFetcher,
   useLoaderData,
   useNavigate,
   useSubmit,
@@ -19,6 +20,18 @@ import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 
 const { Content } = Layout;
+
+interface ConfirmFetcherType {
+  data: {
+    success: boolean;
+    errorMsg: string;
+    data: {
+      resourceId: string;
+      key: string;
+      value?: string;
+    };
+  }[];
+}
 
 type TableDataType = {
   key: string;
@@ -86,11 +99,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }); // 处理逻辑
         return json({ nextFilters: nextFilters });
       case !!confirmData:
-        await updateManageTranslation({
+        const data = await updateManageTranslation({
           request,
           confirmData,
         });
-        return null;
+        return json({ data: data });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -110,6 +123,7 @@ const Index = () => {
   const [filtersData, setFiltersData] = useState(filters);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -125,8 +139,8 @@ const Index = () => {
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
-  
   useEffect(() => {
     setHasPrevious(filtersData.pageInfo.hasPreviousPage);
     setHasNext(filtersData.pageInfo.hasNextPage);
@@ -145,6 +159,21 @@ const Index = () => {
       console.log("action end");
     }
   }, [actionData]);
+  
+  useEffect(() => {
+    if (confirmFetcher.data && confirmFetcher.data.data) {
+      const errorItem = confirmFetcher.data.data.find((item) => {
+        item.success === false;
+      });
+      if (!errorItem) {
+        message.success("Saved successfully");
+      } else {
+        message.error(errorItem?.errorMsg);
+      }
+      setConfirmData([])
+    }
+    setConfirmLoading(false);
+  }, [confirmFetcher.data]);
 
   const resourceColumns = [
     {
@@ -187,7 +216,9 @@ const Index = () => {
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item?.resourceId === key);
+      const existingItemIndex = prevData.findIndex(
+        (item) => item?.resourceId === key,
+      );
 
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
@@ -202,7 +233,7 @@ const Index = () => {
         const newItem = {
           resourceId: filters.nodes[index]?.resourceId,
           locale: filters.nodes[index]?.translatableContent[0]?.locale,
-          key: key,
+          key: "label",
           value: value, // 初始为空字符串
           translatableContentDigest:
             filters.nodes[index]?.translatableContent[0]?.digest,
@@ -218,7 +249,7 @@ const Index = () => {
     return items.nodes.flatMap((item: any, index: number) => {
       // 创建当前项的对象
       const currentItem = {
-        key: `${item?.resourceId}`, // 使用 id 生成唯一的 key
+        key: `${item?.resourceId}`, // 使用 key 生成唯一的 key
         index: index,
         resource: "label", // 资源字段固定为 "Menu Items"
         default_language: item?.translatableContent[0]?.value, // 默认语言为 item 的标题
@@ -250,9 +281,10 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
+    setConfirmLoading(true)
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
-    submit(formData, {
+    confirmFetcher.submit(formData, {
       method: "post",
       action: `/app/manage_translation/filter?language=${searchTerm}`,
     }); // 提交表单请求
@@ -270,12 +302,23 @@ const Index = () => {
       width={"100%"}
       footer={[
         <div
+          key={"footer_buttons"}
           style={{ display: "flex", justifyContent: "center", width: "100%" }}
         >
-          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={onCancel}
+            style={{ marginRight: "10px" }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleConfirm} type="primary">
+          <Button
+            onClick={handleConfirm}
+            key={"manage_confirm_button"}
+            type="primary"
+            disabled={confirmLoading}
+            loading={confirmLoading}
+          >
             Save
           </Button>
         </div>,
@@ -314,7 +357,6 @@ const Index = () => {
       ) : (
         <Result
           title="No items found here"
-          extra={<Button type="primary">back</Button>}
         />
       )}
     </Modal>

@@ -130,7 +130,7 @@ export const GetItemsInSqlByShopName = async ({
 }: {
   shop: string;
   accessToken: string | undefined;
-  source: string[];
+  source: string;
   targets: string[];
 }) => {
   let res: {
@@ -147,7 +147,7 @@ export const GetItemsInSqlByShopName = async ({
         data: {
           shopName: shop,
           accessToken: accessToken,
-          source: source[0],
+          source: source,
           target: target,
         },
       });
@@ -164,8 +164,6 @@ export const GetItemsInSqlByShopName = async ({
         }),
       ];
     }
-    console.log(res);
-
     return res;
   } catch (error) {
     console.error("Error fetching search translation items:", error);
@@ -377,9 +375,14 @@ export const GetTranslate = async ({
         target: target,
       },
     });
-
+    console.log( {
+      shopName: shop,
+      accessToken: accessToken,
+      source: source,
+      target: target,
+    });
+    
     const res = { ...response.data, target: target };
-
     console.log(res);
     return res;
   } catch (error) {
@@ -404,38 +407,91 @@ export const updateManageTranslation = async ({
     data: {
       resourceId: string;
       key: string;
-      value: string;
+      value?: string;
     };
   }[] = [];
   try {
     // 遍历 confirmData 数组
     for (const item of confirmData) {
       if (item.translatableContentDigest && item.locale) {
-        const response = await axios({
-          url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/updateShopifyDataByTranslateTextRequest`,
-          method: "POST",
-          data: {
-            shopName: shop,
-            accessToken: accessToken,
-            locale: item.locale,
-            key: item.key,
-            value: item.value,
-            translatableContentDigest: item.translatableContentDigest,
-            resourceId: item.resourceId,
-            target: item.target,
-          },
-        });
-        res.push({
-          success: response.data.success,
-          errorMsg: response.data.errorMsg,
-          data: {
-            resourceId: item.resourceId,
-            key: item.key,
-            value: item.value,
-          },
-        });
+        if (item.value) {
+          const response = await axios({
+            url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/updateShopifyDataByTranslateTextRequest`,
+            method: "POST",
+            data: {
+              shopName: shop,
+              accessToken: accessToken,
+              locale: item.locale,
+              key: item.key,
+              value: item.value,
+              translatableContentDigest: item.translatableContentDigest,
+              resourceId: item.resourceId,
+              target: item.target,
+            },
+          });
+          res.push({
+            success: response.data.success,
+            errorMsg: response.data.errorMsg,
+            data: {
+              resourceId: item.resourceId,
+              key: item.key,
+              value: item.value,
+            },
+          });
+        } else {
+          const response = await axios({
+            url: `https://${shop}/admin/api/2024-10/graphql.json`,
+            method: "POST",
+            headers: {
+              "X-Shopify-Access-Token": accessToken,
+              "Content-Type": "application/json",
+            },
+            data: {
+              query: `mutation translationsRemove($resourceId: ID!, $translationKeys: [String!]!, $locales: [String!]!) {
+                translationsRemove(resourceId: $resourceId, translationKeys: $translationKeys, locales: $locales) {
+                  userErrors {
+                    message
+                    field
+                  }
+                  translations {
+                    key
+                    value
+                  }
+                }
+              }`,
+              variables: {
+                resourceId: item.resourceId,
+                locales: [item.target],
+                translationKeys: [item.key],
+              },
+            },
+          });
+
+          if (response.data.data.translationsRemove.translations) {
+            res.push({
+              success: true,
+              errorMsg: "",
+              data: {
+                resourceId: item.resourceId,
+                key: item.key,
+              },
+            });
+          } else {
+            res.push({
+              success: false,
+              errorMsg:
+                response.data.data.translationsRemove.userErrors[0].message,
+              data: {
+                resourceId: item.resourceId,
+                key: item.key,
+              },
+            });
+          }
+        }
       }
     }
+    console.log(res);
+    
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);

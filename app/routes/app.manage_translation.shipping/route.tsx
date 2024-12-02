@@ -1,6 +1,6 @@
-import { Layout, Modal, Table, theme, Result, Button } from "antd";
+import { Layout, Modal, Table, theme, Result, Button, message } from "antd";
 import { useEffect, useState } from "react";
-import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react"; // 引入 useNavigate
+import { useFetcher, useLoaderData, useNavigate, useSubmit } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
@@ -11,6 +11,18 @@ import { authenticate } from "~/shopify.server";
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 const { Content } = Layout;
+
+interface ConfirmFetcherType {
+  data: {
+    success: boolean;
+    errorMsg: string;
+    data: {
+      resourceId: string;
+      key: string;
+      value?: string;
+    };
+  }[];
+}
 
 type TableDataType = {
   key: string;
@@ -55,12 +67,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
-    if (confirmData)
-      await updateManageTranslation({
-        request,
-        confirmData,
-      });
-    return null;
+    switch (true) {
+      case !!confirmData:
+        const data = await updateManageTranslation({
+          request,
+          confirmData,
+        });
+        return json({ data: data });
+    }
   } catch (error) {
     console.error("Error action shipping:", error);
     throw new Response("Error action shipping", { status: 500 });
@@ -75,12 +89,14 @@ const Index = () => {
   const [shippingsData, setShippingsData] = useState(shippings);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
   useEffect(() => {
     const Data = shippingsData.nodes.map((node: any, index: number) => ({
@@ -92,6 +108,21 @@ const Index = () => {
     }));
     setResourceData(Data);
   }, []);
+
+  useEffect(() => {
+    if (confirmFetcher.data && confirmFetcher.data.data) {
+      const errorItem = confirmFetcher.data.data.find((item) => {
+        item.success === false;
+      });
+      if (!errorItem) {
+        message.success("Saved successfully");
+      } else {
+        message.error(errorItem?.errorMsg);
+      }
+      setConfirmData([])
+    }
+    setConfirmLoading(false);
+  }, [confirmFetcher.data]);
 
   const resourceColumns = [
     {
@@ -166,9 +197,10 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
+    setConfirmLoading(true)
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
-    submit(formData, {
+    confirmFetcher.submit(formData, {
       method: "post",
       action: `/app/manage_translation/shipping?language=${searchTerm}`,
     }); // 提交表单请求
@@ -186,12 +218,23 @@ const Index = () => {
       width={"100%"}
       footer={[
         <div
+          key={"footer_buttons"}
           style={{ display: "flex", justifyContent: "center", width: "100%" }}
         >
-          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={onCancel}
+            style={{ marginRight: "10px" }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleConfirm} type="primary">
+          <Button
+            onClick={handleConfirm}
+            key={"manage_confirm_button"}
+            type="primary"
+            disabled={confirmLoading}
+            loading={confirmLoading}
+          >
             Save
           </Button>
         </div>,
@@ -216,7 +259,6 @@ const Index = () => {
       ) : (
         <Result
           title="No items found here"
-          extra={<Button type="primary">back</Button>}
         />
       )}
     </Modal>

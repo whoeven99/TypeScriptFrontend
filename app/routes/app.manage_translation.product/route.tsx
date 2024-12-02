@@ -33,21 +33,21 @@ import { authenticate } from "~/shopify.server";
 
 const { Sider, Content } = Layout;
 
-interface FetcherType {
+interface ConfirmFetcherType {
   data: {
     success: boolean;
     errorMsg: string;
     data: {
       resourceId: string;
       key: string;
-      value: string;
+      value?: string;
     };
   }[];
 }
 
 interface ProductType {
   handle: string;
-  id: string;
+  key: string;
   descriptionHtml: string | undefined;
   seo: {
     description: string | undefined;
@@ -56,7 +56,7 @@ interface ProductType {
   productType: string;
   options: [
     {
-      id: string;
+      key: string;
       name: string | undefined;
       // values: string[] | undefined;
       translation: string | undefined;
@@ -64,7 +64,7 @@ interface ProductType {
   ];
   metafields: [
     {
-      id: string;
+      key: string;
       name: string | undefined;
       // values: string[] | undefined;
       translation: string | undefined;
@@ -73,7 +73,7 @@ interface ProductType {
   title: string;
   translations: {
     handle: string | undefined;
-    id: string;
+    key: string;
     descriptionHtml: string | undefined;
     seo: {
       description: string | undefined;
@@ -208,7 +208,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             typeof item.key === "string" &&
             item.key.includes("_") &&
             item.key.split("_")[1] !== "type" &&
-            item.key.split("_")[0] !== "meta"
+            item.key.split("_")[0] !== "meta" &&
+            item.key.split("_")[0] !== "body"
           ) {
             // 将 key 修改为下划线前的部分
             item.key = item.key.split("_")[0]; // 取下划线前的部分
@@ -284,7 +285,7 @@ const Index = () => {
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
-  const confirmFetcher = useFetcher<FetcherType>();
+  const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
   useEffect(() => {
     setHasPrevious(productsData.pageInfo.hasPreviousPage);
@@ -417,6 +418,7 @@ const Index = () => {
       } else {
         message.error(errorItem?.errorMsg);
       }
+      setConfirmData([]);
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
@@ -709,7 +711,7 @@ const Index = () => {
   }) => {
     let data: ProductType = {
       handle: "",
-      id: "",
+      key: "",
       descriptionHtml: "",
       seo: {
         description: "",
@@ -718,14 +720,14 @@ const Index = () => {
       productType: "",
       options: [
         {
-          id: "",
+          key: "",
           name: "",
           translation: "",
         },
       ],
       metafields: [
         {
-          id: "",
+          key: "",
           name: "",
           translation: "",
         },
@@ -733,7 +735,7 @@ const Index = () => {
       title: "",
       translations: {
         handle: "",
-        id: "",
+        key: "",
         descriptionHtml: "",
         seo: {
           description: "",
@@ -752,7 +754,7 @@ const Index = () => {
     const productMetafield = metafields.nodes.find(
       (metafield: any) => metafield?.resourceId === selectProductKey,
     );
-    data.id = product?.resourceId;
+    data.key = product?.resourceId;
     data.title = product?.translatableContent.find(
       (item: any) => item.key === "title",
     )?.value;
@@ -771,7 +773,7 @@ const Index = () => {
     data.seo.description = product?.translatableContent.find(
       (item: any) => item.key === "meta_description",
     )?.value;
-    data.translations.id = product?.resourceId;
+    data.translations.key = product?.resourceId;
     data.translations.title = product?.translations.find(
       (item: any) => item.key === "title",
     )?.value;
@@ -793,7 +795,7 @@ const Index = () => {
     data.options =
       productOption?.nestedTranslatableResources.nodes.map((item: any) => {
         return {
-          id: item?.resourceId,
+          key: item?.resourceId,
           name: item?.translatableContent[0]?.value,
           translation: item?.translations[0]?.value,
         };
@@ -801,7 +803,7 @@ const Index = () => {
     data.metafields =
       productMetafield?.nestedTranslatableResources.nodes.map((item: any) => {
         return {
-          id: item?.resourceId,
+          key: item?.resourceId,
           name: item?.translatableContent[0]?.value,
           translation: item?.translations[0]?.value,
         };
@@ -856,13 +858,19 @@ const Index = () => {
       width={"100%"}
       footer={[
         <div
+          key={"footer_buttons"}
           style={{ display: "flex", justifyContent: "center", width: "100%" }}
         >
-          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={onCancel}
+            style={{ marginRight: "10px" }}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleConfirm}
+            key={"manage_confirm_button"}
             type="primary"
             disabled={confirmLoading}
             loading={confirmLoading}

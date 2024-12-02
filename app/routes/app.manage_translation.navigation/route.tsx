@@ -4,6 +4,7 @@ import {
   Layout,
   Menu,
   MenuProps,
+  message,
   Modal,
   Table,
   theme,
@@ -11,6 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import {
   useActionData,
+  useFetcher,
   useLoaderData,
   useNavigate,
   useSubmit,
@@ -28,11 +30,23 @@ import { authenticate } from "~/shopify.server";
 
 const { Sider, Content } = Layout;
 
+interface ConfirmFetcherType {
+  data: {
+    success: boolean;
+    errorMsg: string;
+    data: {
+      resourceId: string;
+      key: string;
+      value?: string;
+    };
+  }[];
+}
+
 interface ItemType {
-  id: string;
+  key: string;
   label: string | undefined;
   translations: {
-    id: string;
+    key: string;
     label: string | undefined;
   };
 }
@@ -142,11 +156,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
 
       case !!confirmData:
-        await updateManageTranslation({
+        const data = await updateManageTranslation({
           request,
           confirmData,
         });
-        return null;
+        return json({ data: data });
 
       default: {
         // 如果没有符合条件的 cursor，则抛出错误
@@ -182,6 +196,7 @@ const Index = () => {
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [selectNavigationKey, setSelectNavigationKey] = useState("names");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -197,6 +212,7 @@ const Index = () => {
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
   useEffect(() => {
     setHasPrevious(navigationsData.pageInfo.hasPreviousPage);
@@ -262,6 +278,21 @@ const Index = () => {
     }
   }, [actionData]);
 
+  useEffect(() => {
+    if (confirmFetcher.data && confirmFetcher.data.data) {
+      const errorItem = confirmFetcher.data.data.find((item) => {
+        item.success === false;
+      });
+      if (!errorItem) {
+        message.success("Saved successfully");
+      } else {
+        message.error(errorItem?.errorMsg);
+      }
+      setConfirmData([]);
+    }
+    setConfirmLoading(false);
+  }, [confirmFetcher.data]);
+
   const resourceColumns = [
     {
       title: "Resource",
@@ -304,7 +335,9 @@ const Index = () => {
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+      const existingItemIndex = prevData.findIndex(
+        (item) => item.resourceId === key,
+      );
 
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
@@ -319,7 +352,7 @@ const Index = () => {
         const newItem = {
           resourceId: navigations.nodes[index]?.resourceId,
           locale: navigations.nodes[index]?.translatableContent[0]?.locale,
-          key: key,
+          key: "title",
           value: value, // 初始为空字符串
           translatableContentDigest:
             navigations.nodes[index]?.translatableContent[0]?.digest,
@@ -331,7 +364,7 @@ const Index = () => {
         const newItem = {
           resourceId: navigationItems.nodes[index]?.resourceId,
           locale: navigationItems.nodes[index]?.translatableContent[0]?.locale,
-          key: key,
+          key: "title",
           value: value, // 初始为空字符串
           translatableContentDigest:
             navigationItems.nodes[index]?.translatableContent[0]?.digest,
@@ -346,10 +379,10 @@ const Index = () => {
   const transBeforeData = ({ menus }: { menus: any }) => {
     let data: ItemType[] = [
       {
-        id: "",
+        key: "",
         label: "",
         translations: {
-          id: "",
+          key: "",
           label: "",
         },
       },
@@ -357,23 +390,17 @@ const Index = () => {
     data = menus.nodes.map((menu: any) => {
       // 返回修改后的 menu，确保返回类型是 ItemType
       return {
-        id: menu?.resourceId,
-        label:
-          menu?.translatableContent.find((item: any) => item.key === "title")
-            ?.value || "",
+        key: menu?.resourceId,
+        label: menu?.translatableContent[0]?.value || "",
         translations: {
-          id: menu?.resourceId,
-          label:
-            menu?.translations.find((item: any) => item.key === "title")
-              ?.value || "",
+          key: menu?.resourceId,
+          label: menu?.translations[0]?.value || "",
         },
       };
     });
     return data;
   };
-  useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
+
   const generateMenuItemsArray = (
     items: ItemType[],
   ): Array<{
@@ -386,13 +413,16 @@ const Index = () => {
     return items.map((item: ItemType, index: number) => {
       // 创建当前项的对象
       const currentItem = {
-        key: `menu_item_${item.id}`, // 使用 id 生成唯一的 key
+        key: item.key, // 使用 key 生成唯一的 key
         index: index,
         resource: "label", // 资源字段固定为 "Menu Items"
         default_language: item?.label, // 默认语言为 item 的标题
         translated: item?.translations?.label, // 翻译字段初始化为空字符串
       };
-
+      setTranslatedValues((prev) => ({
+        ...prev,
+        [item.key]: item.translations?.label || "", // 更新翻译值
+      }));
       // 如果没有子项，只返回当前项
       return currentItem;
     });
@@ -443,9 +473,10 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
+    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
-    submit(formData, {
+    confirmFetcher.submit(formData, {
       method: "post",
       action: `/app/manage_translation/navigation?language=${searchTerm}`,
     }); // 提交表单请求
@@ -465,12 +496,23 @@ const Index = () => {
       width={"100%"}
       footer={[
         <div
+          key={"footer_buttons"}
           style={{ display: "flex", justifyContent: "center", width: "100%" }}
         >
-          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={onCancel}
+            style={{ marginRight: "10px" }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleConfirm} type="primary">
+          <Button
+            onClick={handleConfirm}
+            key={"manage_confirm_button"}
+            type="primary"
+            disabled={confirmLoading}
+            loading={confirmLoading}
+          >
             Save
           </Button>
         </div>,
@@ -486,7 +528,7 @@ const Index = () => {
         <Sider style={{ background: colorBgContainer }} width={200}>
           <Menu
             mode="inline"
-            defaultSelectedKeys={[navigationsData.nodes[0].id]}
+            defaultSelectedKeys={[navigationsData.nodes[0].key]}
             defaultOpenKeys={["sub1"]}
             style={{ height: "100%" }}
             items={menuData}
