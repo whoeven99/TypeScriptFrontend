@@ -1,9 +1,9 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "4b05c1caefa9e0761a0538b64159b627"
-name = "Ciwi.ai:FAT(Local)"
-handle = "ciwi_local"
-application_url = "https://implementation-wiki-sellers-hurricane.trycloudflare.com"
+client_id = "dec512b68e658e4f21588e3d4de0e748"
+name = "Ciwi.ai:FAT(Test)"
+handle = "ciwi_test"
+application_url = "https://typescriptfrontend.onrender.com"
 embedded = true
 
 [build]
@@ -17,18 +17,19 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://implementation-wiki-sellers-hurricane.trycloudflare.com/auth/callback",
-  "https://implementation-wiki-sellers-hurricane.trycloudflare.com/auth/shopify/callback",
-  "https://implementation-wiki-sellers-hurricane.trycloudflare.com/api/auth/callback"
+  "https://typescriptfrontend.onrender.com/auth/callback",
+  "https://typescriptfrontend.onrender.com/auth/shopify/callback",
+  "https://typescriptfrontend.onrender.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
-  [[webhooks.subscriptions]]
-  topics = [ "app_purchases_one_time/update", "app/uninstalled" ]
-  uri = "/webhooks"
-  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
-
-[pos]
-embedded = false
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled", "app_purchases_one_time/update"]
+uri = "/webhooks"
+compliance_topics = [
+  "customers/data_request",
+  "customers/redact",
+  "shop/redact"
+]
