@@ -87,7 +87,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       endCursor: "",
       locale: searchTerm || shopLanguagesLoad[0].locale,
     });
-    console.log(pages);
     return json({
       searchTerm,
       shopLanguagesLoad,
@@ -186,14 +185,6 @@ const Index = () => {
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const confirmFetcher = useFetcher<ConfirmFetcherType>();
-
-  useEffect(() => {
-    console.log(confirmData);
-    console.log(pagesData);
-    console.log(selectPageKey);
-    console.log(pageData);
-    
-  }, [confirmData]);
 
   useEffect(() => {
     setHasPrevious(pagesData.pageInfo.hasPreviousPage);

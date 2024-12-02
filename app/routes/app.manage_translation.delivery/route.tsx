@@ -210,10 +210,6 @@ const Index = () => {
     },
   ];
 
-  useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
-
   const handleInputChange = (key: string, value: string, index: number) => {
     setTranslatedValues((prev) => ({
       ...prev,

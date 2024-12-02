@@ -151,10 +151,6 @@ const Index = () => {
   const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
   useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
-
-  useEffect(() => {
     setHasPrevious(metafieldsData.pageInfo.hasPreviousPage);
     setHasNext(metafieldsData.pageInfo.hasNextPage);
     const data = generateMenuItemsArray(metafieldsData);

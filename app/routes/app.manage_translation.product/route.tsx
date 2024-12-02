@@ -208,7 +208,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             typeof item.key === "string" &&
             item.key.includes("_") &&
             item.key.split("_")[1] !== "type" &&
-            item.key.split("_")[0] !== "meta"
+            item.key.split("_")[0] !== "meta" &&
+            item.key.split("_")[0] !== "body"
           ) {
             // 将 key 修改为下划线前的部分
             item.key = item.key.split("_")[0]; // 取下划线前的部分
@@ -285,10 +286,6 @@ const Index = () => {
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const confirmFetcher = useFetcher<ConfirmFetcherType>();
-
-  useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
 
   useEffect(() => {
     setHasPrevious(productsData.pageInfo.hasPreviousPage);

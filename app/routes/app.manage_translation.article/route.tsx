@@ -192,10 +192,6 @@ const Index = () => {
   const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
   useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
-
-  useEffect(() => {
     const data = transBeforeData({
       articles: articlesData,
     });
