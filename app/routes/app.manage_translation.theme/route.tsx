@@ -2,6 +2,7 @@ import {
   Button,
   Input,
   Layout,
+  message,
   Modal,
   Select,
   Space,
@@ -11,6 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import {
   useActionData,
+  useFetcher,
   useLoaderData,
   useLocation,
   useNavigate,
@@ -29,6 +31,18 @@ import { authenticate } from "~/shopify.server";
 
 const { Header, Content } = Layout;
 const { TextArea } = Input;
+
+interface ConfirmFetcherType {
+  data: {
+    success: boolean;
+    errorMsg: string;
+    data: {
+      resourceId: string;
+      key: string;
+      value?: string;
+    };
+  }[];
+}
 
 interface SelectType {
   label: string;
@@ -100,11 +114,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         return json({ nextThemes: nextThemes });
       case !!confirmData:
-        await updateManageTranslation({
+        const data = await updateManageTranslation({
           request,
           confirmData,
         });
-        return null;
+        return json({ data: data });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -125,6 +139,7 @@ const Index = () => {
   const [themesData, setThemesData] = useState([]);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -135,6 +150,7 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
   useEffect(() => {
     setThemesData(generateMenuItemsArray(themes));
@@ -153,6 +169,21 @@ const Index = () => {
       }));
     setSelectData(newArray);
   }, [shopLanguagesLoad]);
+
+  useEffect(() => {
+    if (confirmFetcher.data && confirmFetcher.data.data) {
+      const errorItem = confirmFetcher.data.data.find((item) => {
+        item.success === false;
+      });
+      if (!errorItem) {
+        message.success("Saved successfully");
+      } else {
+        message.error(errorItem?.errorMsg);
+      }
+      setConfirmData([])
+    }
+    setConfirmLoading(false);
+  }, [confirmFetcher.data]);
 
   const resourceColumns = [
     {
@@ -233,7 +264,7 @@ const Index = () => {
       (item: any, index: number) => {
         // 创建当前项的对象
         const currentItem = {
-          key: `${item.key}`, // 使用 id 生成唯一的 key
+          key: `${item.key}`, // 使用 key 生成唯一的 key
           resource: item.key, // 资源字段固定为 "Menu Items"
           default_language: item.value, // 默认语言为 item 的标题
           translated:
@@ -255,15 +286,11 @@ const Index = () => {
     setResourceData(filteredData);
   };
 
-  const onChange = (e: any) => {
-    const currentPath = location.pathname;
-    navigate(`${currentPath}?language=${e}`);
-  };
-
   const handleConfirm = () => {
+    setConfirmLoading(true)
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
-    submit(formData, {
+    confirmFetcher.submit(formData, {
       method: "post",
       action: `/app/manage_translation/theme?language=${searchTerm}`,
     }); // 提交表单请求
@@ -286,7 +313,7 @@ const Index = () => {
           <Button onClick={onCancel} style={{ marginRight: "10px" }}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm} type="primary">
+          <Button onClick={handleConfirm} type="primary"  disabled={confirmLoading} loading={confirmLoading}>
             Save
           </Button>
         </div>,

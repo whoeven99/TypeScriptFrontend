@@ -155,13 +155,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           words: words,
         });
       case !!addLanguages:
-        const shopLanguages = await mutationShopLocaleEnable({
+        const data = await mutationShopLocaleEnable({
           request,
           addLanguages,
         }); // 处理逻辑
-        console.log(shopLanguages);
-        
-        return json({ shopLanguages: shopLanguages });
+        console.log(data);
+        return json({ data: data });
       case !!translation:
         const source = translation.primaryLanguage.locale;
         const target = translation.selectedLanguage.locale;
@@ -400,7 +399,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Switch
           checked={record.published}
-          onChange={(checked) => handlePublishChange(record.key, checked)}
+          onChange={(checked) => handlePublishChange(record.locale, checked)}
           loading={record.loading} // 使用每个项的 loading 状态
         />
       ),
@@ -413,7 +412,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button
-            onClick={() => handleTranslate(record.key)}
+            onClick={() => handleTranslate(record.locale)}
             style={{ width: "100px" }}
             type="primary"
           >
@@ -437,15 +436,15 @@ const Index = () => {
     setIsLanguageModalOpen(true); // 打开Modal
   };
 
-  const handlePublishChange = (key: number, checked: boolean) => {
-    const row = data.find((item: any) => item.key === key);
+  const handlePublishChange = (locale: string, checked: boolean) => {
+    const row = data.find((item: any) => item.locale === locale);
 
     if (checked) {
-      dispatch(setPublishLoadingState({ key, loading: checked }));
+      dispatch(setPublishLoadingState({ locale, loading: checked }));
       setSelectedRow(row);
       setIsPublishModalOpen(true);
     } else {
-      dispatch(setPublishState({ key, published: checked }));
+      dispatch(setPublishState({ locale, published: checked }));
       if (row)
         setUnpublishInfo({
           locale: row.locale,
@@ -454,8 +453,8 @@ const Index = () => {
     }
   };
 
-  const handleTranslate = async (key: number) => {
-    const selectedItem = data.find((item: { key: number }) => item.key === key);
+  const handleTranslate = async (locale: string) => {
+    const selectedItem = data.find((item: LanguagesDataType) => item.locale === locale);
     if (selectedItem && shopLanguagesLoad) {
       const selectedLanguage = shopLanguagesLoad.find(
         (item) => item.name === selectedItem.language,
@@ -488,7 +487,7 @@ const Index = () => {
     if (selectedRow) {
       dispatch(
         setPublishConfirmState({
-          key: selectedRow?.key,
+          locale: selectedRow?.locale,
           published: true,
           loading: false,
         }),
@@ -506,7 +505,7 @@ const Index = () => {
   const handleClosePublishModal = () => {
     if (selectedRow) {
       dispatch(
-        setPublishLoadingState({ key: selectedRow?.key, loading: false }),
+        setPublishLoadingState({ locale: selectedRow?.locale, loading: false }),
         setSelectedRow(undefined),
       );
     }

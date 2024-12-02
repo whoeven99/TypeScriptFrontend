@@ -3,6 +3,7 @@ import {
   Layout,
   Menu,
   MenuProps,
+  message,
   Modal,
   Result,
   Table,
@@ -11,6 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import {
   useActionData,
+  useFetcher,
   useLoaderData,
   useNavigate,
   useSubmit,
@@ -29,9 +31,21 @@ import { authenticate } from "~/shopify.server";
 
 const { Sider, Content } = Layout;
 
+interface ConfirmFetcherType {
+  data: {
+    success: boolean;
+    errorMsg: string;
+    data: {
+      resourceId: string;
+      key: string;
+      value?: string;
+    };
+  }[];
+}
+
 interface ArticleType {
   handle: string;
-  id: string;
+  key: string;
   title: string;
   body: string | undefined;
   summary: string | undefined;
@@ -41,7 +55,7 @@ interface ArticleType {
   };
   translations: {
     handle: string | undefined;
-    id: string;
+    key: string;
     title: string | undefined;
     body: string | undefined;
     summary: string | undefined;
@@ -117,11 +131,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }); // 处理逻辑
         return json({ nextArticles: nextArticles });
       case !!confirmData:
-        await updateManageTranslation({
+        const data = await updateManageTranslation({
           request,
           confirmData,
         });
-        return null;
+        return json({ data: data });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -158,6 +172,7 @@ const Index = () => {
     articles.nodes[0]?.resourceId,
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -174,6 +189,11 @@ const Index = () => {
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const confirmFetcher = useFetcher<ConfirmFetcherType>();
+
+  useEffect(() => {
+    console.log(confirmData);
+  }, [confirmData]);
 
   useEffect(() => {
     const data = transBeforeData({
@@ -190,46 +210,50 @@ const Index = () => {
   }, [articlesData]);
 
   useEffect(() => {
-    setResourceData([
-      {
-        key: "title",
-        resource: "Title",
-        default_language: articleData?.title,
-        translated: articleData?.translations?.title,
-      },
-      {
-        key: "body_html",
-        resource: "Description",
-        default_language: articleData?.body,
-        translated: articleData?.translations?.body,
-      },
-      {
-        key: "summary",
-        resource: "Summary",
-        default_language: articleData?.summary,
-        translated: articleData?.translations?.summary,
-      },
-    ]);
-    setSeoData([
-      {
-        key: "handle",
-        resource: "URL handle",
-        default_language: articleData?.handle,
-        translated: articleData?.translations?.handle,
-      },
-      {
-        key: "meta_title",
-        resource: "Meta title",
-        default_language: articleData?.seo.title,
-        translated: articleData?.translations?.seo.title,
-      },
-      {
-        key: "meta_description",
-        resource: "Meta description",
-        default_language: articleData?.seo.description,
-        translated: articleData?.translations?.seo.description,
-      },
-    ]);
+    setResourceData(
+      [
+        {
+          key: "title",
+          resource: "Title",
+          default_language: articleData?.title,
+          translated: articleData?.translations?.title,
+        },
+        {
+          key: "body_html",
+          resource: "Description",
+          default_language: articleData?.body,
+          translated: articleData?.translations?.body,
+        },
+        {
+          key: "summary",
+          resource: "Summary",
+          default_language: articleData?.summary,
+          translated: articleData?.translations?.summary,
+        },
+      ].filter((item) => item.default_language),
+    );
+    setSeoData(
+      [
+        {
+          key: "handle",
+          resource: "URL handle",
+          default_language: articleData?.handle,
+          translated: articleData?.translations?.handle,
+        },
+        {
+          key: "meta_title",
+          resource: "Meta title",
+          default_language: articleData?.seo.title,
+          translated: articleData?.translations?.seo.title,
+        },
+        {
+          key: "meta_description",
+          resource: "Meta description",
+          default_language: articleData?.seo.description,
+          translated: articleData?.translations?.seo.description,
+        },
+      ].filter((item) => item.default_language),
+    );
   }, [articleData]);
 
   useEffect(() => {
@@ -250,6 +274,21 @@ const Index = () => {
       console.log("nextArticles end");
     }
   }, [actionData]);
+
+  useEffect(() => {
+    if (confirmFetcher.data && confirmFetcher.data.data) {
+      const errorItem = confirmFetcher.data.data.find((item) => {
+        item.success === false;
+      });
+      if (!errorItem) {
+        message.success("Saved successfully");
+      } else {
+        message.error(errorItem?.errorMsg);
+      }
+      setConfirmData([])
+    }
+    setConfirmLoading(false);
+  }, [confirmFetcher.data]);
 
   const resourceColumns = [
     {
@@ -362,7 +401,7 @@ const Index = () => {
   const transBeforeData = ({ articles }: { articles: any }) => {
     let data: ArticleType = {
       handle: "",
-      id: "",
+      key: "",
       title: "",
       body: "",
       summary: "",
@@ -372,7 +411,7 @@ const Index = () => {
       },
       translations: {
         handle: "",
-        id: "",
+        key: "",
         title: "",
         body: "",
         summary: "",
@@ -385,7 +424,7 @@ const Index = () => {
     const article = articles.nodes.find(
       (article: any) => article?.resourceId === selectArticleKey,
     );
-    data.id = article?.resourceId;
+    data.key = article?.resourceId;
     data.handle = article?.translatableContent.find(
       (item: any) => item.key === "handle",
     )?.value;
@@ -398,18 +437,13 @@ const Index = () => {
     data.summary = article?.translatableContent.find(
       (item: any) => item.key === "summary_html",
     )?.value;
-    data.seo.title =
-      article?.translatableContent.find((item: any) => item.key === "meta_title")
-        ?.value ||
-      article?.translatableContent.find((item: any) => item.key === "title")
-        ?.value;
-    data.seo.description =
-      article?.translatableContent.find(
-        (item: any) => item.key === "meta_description",
-      )?.value ||
-      article?.translatableContent.find((item: any) => item.key === "body_html")
-        ?.value;
-    data.translations.id = article?.resourceId;
+    data.seo.title = article?.translatableContent.find(
+      (item: any) => item.key === "meta_title",
+    )?.value;
+    data.seo.description = article?.translatableContent.find(
+      (item: any) => item.key === "meta_description",
+    )?.value;
+    data.translations.key = article?.resourceId;
     data.translations.title = article?.translations.find(
       (item: any) => item.key === "title",
     )?.value;
@@ -422,15 +456,12 @@ const Index = () => {
     data.translations.summary = article?.translations.find(
       (item: any) => item.key === "summary_html",
     )?.value;
-    data.translations.seo.title =
-      article?.translations.find((item: any) => item.key === "meta_title")
-        ?.value ||
-      article?.translations.find((item: any) => item.key === "title")?.value;
-    data.translations.seo.description =
-      article?.translations.find((item: any) => item.key === "meta_description")
-        ?.value ||
-      article?.translations.find((item: any) => item.key === "body_html")?.value;
-
+    data.translations.seo.title = article?.translations.find(
+      (item: any) => item.key === "meta_title",
+    )?.value;
+    data.translations.seo.description = article?.translations.find(
+      (item: any) => item.key === "meta_description",
+    )?.value;
     return data;
   };
 
@@ -460,9 +491,10 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
+    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
-    submit(formData, {
+    confirmFetcher.submit(formData, {
       method: "post",
       action: `/app/manage_translation/article?language=${searchTerm}`,
     }); // 提交表单请求
@@ -485,7 +517,12 @@ const Index = () => {
           <Button onClick={onCancel} style={{ marginRight: "10px" }}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm} type="primary">
+          <Button
+            onClick={handleConfirm}
+            type="primary"
+            disabled={confirmLoading}
+            loading={confirmLoading}
+          >
             Save
           </Button>
         </div>,
@@ -535,7 +572,6 @@ const Index = () => {
       ) : (
         <Result
           title="No items found here"
-          extra={<Button type="primary">back</Button>}
         />
       )}
     </Modal>
