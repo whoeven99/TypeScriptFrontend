@@ -159,6 +159,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }); // 处理逻辑
         return json({ data: data });
       case !!translation:
+        console.log(translation);
         const source = translation.primaryLanguage.locale;
         const target = translation.selectedLanguage.locale;
         const statu = await GetTranslate({ request, source, target });
@@ -199,6 +200,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [shop, setShop] = useState<string>("");
   const [allCountryCode, setAllCountryCode] = useState<string[]>([]);
+  const [primaryLanguage, setPrimaryLanguage] = useState<ShopLocalesType>();
   const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>(
     [],
   );
@@ -233,10 +235,6 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const primaryLanguage: ShopLocalesType | undefined = shopLanguagesLoad?.find(
-    (lang) => lang.primary,
-  );
-
   useEffect(() => {
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
@@ -261,6 +259,14 @@ const Index = () => {
       setLoading(false);
     }
   }, [fetcher.data]);
+
+  useEffect(() => {
+    if (shopLanguagesLoad) {
+      setPrimaryLanguage(
+        shopLanguagesLoad?.find((lang) => lang.primary === true),
+      );
+    }
+  }, [shopLanguagesLoad]);
 
   useEffect(() => {
     if (translateFetcher.data && translateFetcher.data.statu) {
@@ -458,24 +464,20 @@ const Index = () => {
     const selectedItem = data.find(
       (item: LanguagesDataType) => item.locale === locale,
     );
-    if (selectedItem && shopLanguagesLoad) {
-      const selectedLanguage = shopLanguagesLoad.find(
-        (item) => item.name === selectedItem.language,
-      );
-      if (selectedLanguage) {
-        const formData = new FormData();
-        formData.append(
-          "translation",
-          JSON.stringify({
-            primaryLanguage: primaryLanguage,
-            selectedLanguage: selectedLanguage,
-          }),
-        ); // 将选中的语言作为字符串发送
-        translateFetcher.submit(formData, {
-          method: "post",
-          action: "/app/language",
-        }); // 提交表单请求
-      }
+    if (selectedItem) {
+      const formData = new FormData();
+      formData.append(
+        "translation",
+        JSON.stringify({
+          primaryLanguage: primaryLanguage,
+          selectedLanguage: selectedItem,
+        }),
+      ); // 将选中的语言作为字符串发送
+      translateFetcher.submit(formData, {
+        method: "post",
+        action: "/app/language",
+      }); // 提交表单请求
+
       message.success("The translation task is in progress.");
       dispatch(
         setStatuState({
@@ -485,7 +487,6 @@ const Index = () => {
       );
     }
   };
-
   const handleConfirmPublishModal = () => {
     if (selectedRow) {
       dispatch(
@@ -566,7 +567,7 @@ const Index = () => {
               <Title style={{ fontSize: "1.25rem", display: "inline" }}>
                 Languages
               </Title>
-              <PrimaryLanguage shopLanguages={shopLanguagesLoad} />{" "}
+              <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
             </div>
             <AttentionCard
               title="Translation word credits have been exhausted."

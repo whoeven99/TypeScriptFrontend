@@ -129,6 +129,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }); // 处理逻辑
         return json({ nextCollections: nextCollections });
       case !!confirmData:
+        // 
         const data = await updateManageTranslation({
           request,
           confirmData,
@@ -212,7 +213,7 @@ const Index = () => {
           translated: collectionData?.translations?.title,
         },
         {
-          key: "description",
+          key: "body_html",
           resource: "Description",
           default_language: collectionData?.descriptionHtml,
           translated: collectionData?.translations?.descriptionHtml,

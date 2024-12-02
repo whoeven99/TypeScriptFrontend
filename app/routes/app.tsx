@@ -85,7 +85,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             .filter((language) => !language.primary)
             .map((item) => item.locale);
           await UpdateUser({ request });
-
+          console.log("primaryLanguage: ", primaryLanguage);
+          console.log("shopLocales: ", shopLocales);
+        
           return json({
             shopLocales: shopLocales,
             primaryLanguage: primaryLanguage,
@@ -252,8 +254,9 @@ export default function App() {
   }, [loadingFetcher.data]);
 
   useEffect(() => {
+    console.log(shopLocales);
+    console.log(primaryLanguage);
     if (shopLocales.length && primaryLanguage.length) {
-      console.log("shopLocales:", shopLocales);
       const formData = new FormData();
       formData.append(
         "getData",
