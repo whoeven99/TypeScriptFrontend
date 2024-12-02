@@ -1384,16 +1384,18 @@ export const mutationShopLocaleEnable = async ({
           target: language,
         },
       });
-      console.log("shopifyResponse: ", shopifyResponse.data.data.shopLocaleEnable);
-
-      if (serveResponse.status !== 200 || shopifyResponse.status !== 200) {
+      console.log(
+        "serveResponse: ",
+        serveResponse.data.response,
+      );
+      if (serveResponse.status >= 200 && serveResponse.status < 300 && shopifyResponse.status >= 200 && shopifyResponse.status < 300) {
+        shopLanguages.push(
+          shopifyResponse.data.data.shopLocaleEnable.shopLocale,
+        );
+      }else{
         success = false;
-        // 这里可以放置你希望执行的代码
       }
-      shopLanguages.push(shopifyResponse.data.data.shopLocaleEnable.shopLocale)
     }
-    console.log(shopLanguages);
-    
     return shopLanguages;
   } catch (error) {
     console.error("Error mutating shop languages:", error);

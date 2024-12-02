@@ -158,8 +158,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = await mutationShopLocaleEnable({
           request,
           addLanguages,
-        }); // 处理逻辑
-        console.log(data);
+        }); // 处理逻辑        
         return json({ data: data });
       case !!translation:
         const source = translation.primaryLanguage.locale;

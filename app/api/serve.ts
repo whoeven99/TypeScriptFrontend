@@ -130,7 +130,7 @@ export const GetItemsInSqlByShopName = async ({
 }: {
   shop: string;
   accessToken: string | undefined;
-  source: string[];
+  source: string;
   targets: string[];
 }) => {
   let res: {
@@ -147,7 +147,7 @@ export const GetItemsInSqlByShopName = async ({
         data: {
           shopName: shop,
           accessToken: accessToken,
-          source: source[0],
+          source: source,
           target: target,
         },
       });

@@ -170,10 +170,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         return json({ statu: statu });
       case !!getData:
+        console.log("getData: ", getData);
         const data = await GetItemsInSqlByShopName({
           shop,
           accessToken,
-          source: getData.source,
+          source: getData.source[0],
           targets: getData.targets,
         });
         return json({ data: data });
@@ -193,15 +194,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             { status: 500 },
           );
         }
-
       case !!statusData:
-        const statusResponse = await GetLanguageStatus({
-          shop,
-          source: statusData.source,
-          target: statusData.target,
-        });
-        return json({ data: statusResponse });
-
+        try {
+          console.log("statusData:", statusData);
+          const data = await GetLanguageStatus({
+            shop,
+            source: statusData.source,
+            target: statusData.target,
+          });
+          return json({ data: data });
+        } catch (error) {
+          console.error("Error GetLanguageStatus:", error);
+          return json({ error: "Error GetLanguageStatus" }, { status: 500 });
+        }
       case !!languageCode:
         const totalWords = await GetTotalWords({
           request,
