@@ -294,6 +294,12 @@ export const GetLanguageStatus = async ({
   target: string[];
 }) => {
   try {
+    console.log({
+      shopName: shop,
+      source: source,
+      target: target[0],
+    },);
+    
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readTranslateDOByArray`,
       method: "Post",

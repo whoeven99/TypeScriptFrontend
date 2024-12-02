@@ -287,7 +287,8 @@ const Index = () => {
   useEffect(() => {
     if (statusFetcher.data) {
       const items = statusFetcher.data.data.map((item: any) => {
-        if (item.status === 2) {
+        console.log(item);
+        if (item?.status === 2) {
           return item;
         } else {
           dispatch(setStatuState({ target: item.target, status: item.status }));
@@ -339,7 +340,7 @@ const Index = () => {
     }));
 
     const findItem = data.find((data: any) => data.status === 2);
-    if (findItem) {
+    if (findItem && primaryLanguage) {
       const formData = new FormData();
       formData.append(
         "statusData",
