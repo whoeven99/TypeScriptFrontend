@@ -394,13 +394,19 @@ const Index = () => {
       width={"100%"}
       footer={[
         <div
+          key={"footer_buttons"}
           style={{ display: "flex", justifyContent: "center", width: "100%" }}
         >
-          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={onCancel}
+            style={{ marginRight: "10px" }}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleConfirm}
+            key={"manage_confirm_button"}
             type="primary"
             disabled={confirmLoading}
             loading={confirmLoading}

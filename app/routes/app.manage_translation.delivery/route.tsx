@@ -237,7 +237,7 @@ const Index = () => {
         const newItem = {
           resourceId: deliverys.nodes[index]?.resourceId,
           locale: deliverys.nodes[index]?.translatableContent[0]?.locale,
-          key: "value",
+          key: "name",
           value: value, // 初始为空字符串
           translatableContentDigest:
             deliverys.nodes[index]?.translatableContent[0]?.digest,
@@ -256,7 +256,7 @@ const Index = () => {
         const currentItem = {
           key: `${item?.resourceId}`, // 使用 key 生成唯一的 key
           index: index,
-          resource: "value", // 资源字段固定为 "Menu Items"
+          resource: "name", // 资源字段固定为 "Menu Items"
           default_language: item?.translatableContent[0]?.value, // 默认语言为 item 的标题
           translated: item?.translations[0]?.value, // 翻译字段初始化为空字符串
         };
@@ -309,12 +309,23 @@ const Index = () => {
       width={"100%"}
       footer={[
         <div
+          key={"footer_buttons"}
           style={{ display: "flex", justifyContent: "center", width: "100%" }}
         >
-          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={onCancel}
+            style={{ marginRight: "10px" }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleConfirm} type="primary" disabled={confirmLoading} loading={confirmLoading}>
+          <Button
+            onClick={handleConfirm}
+            key={"manage_confirm_button"}
+            type="primary"
+            disabled={confirmLoading}
+            loading={confirmLoading}
+          >
             Save
           </Button>
         </div>,

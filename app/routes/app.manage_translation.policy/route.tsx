@@ -81,7 +81,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       const body = policyBody.nodes[index];
       return {
         title: title.title,
-        key: title.key,
+        key: title.id,
         body: title.body,
         locale: body?.translatableContent[0].locale,
         digest: body?.translatableContent[0].digest,
@@ -147,7 +147,6 @@ const Index = () => {
   } = theme.useToken();
 
   const navigate = useNavigate();
-  const submit = useSubmit(); // 使用 useSubmit 钩子
   const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
   useEffect(() => {
@@ -267,13 +266,19 @@ const Index = () => {
       width={"100%"}
       footer={[
         <div
+          key={"footer_buttons"}
           style={{ display: "flex", justifyContent: "center", width: "100%" }}
         >
-          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={onCancel}
+            style={{ marginRight: "10px" }}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleConfirm}
+            key={"manage_confirm_button"}
             type="primary"
             disabled={confirmLoading}
             loading={confirmLoading}
@@ -294,7 +299,7 @@ const Index = () => {
           <Sider style={{ background: colorBgContainer }} width={200}>
             <Menu
               mode="inline"
-              defaultSelectedKeys={[policies[0].key]}
+              defaultSelectedKeys={[policies[0].id]}
               defaultOpenKeys={["sub1"]}
               style={{ height: "100%" }}
               items={menuData}

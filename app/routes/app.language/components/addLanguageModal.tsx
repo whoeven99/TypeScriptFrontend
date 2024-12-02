@@ -294,7 +294,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       open={isVisible}
       onCancel={handleCloseModal}
       footer={[
-        <div key={"footer_button"}>
+        <div key={"footer_buttons"}>
           <Button
             key={"manage_cancel_button"}
             onClick={handleCloseModal}

@@ -87,7 +87,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       endCursor: "",
       locale: searchTerm || shopLanguagesLoad[0].locale,
     });
-
+    console.log(pages);
     return json({
       searchTerm,
       shopLanguagesLoad,
@@ -165,7 +165,9 @@ const Index = () => {
   const [pageData, setPageData] = useState<PageType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [SeoData, setSeoData] = useState<TableDataType[]>([]);
-  const [selectPageKey, setSelectPageKey] = useState(pages.nodes[0]?.resourceId);
+  const [selectPageKey, setSelectPageKey] = useState(
+    pages.nodes[0]?.resourceId,
+  );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [translatedValues, setTranslatedValues] = useState<{
@@ -184,7 +186,15 @@ const Index = () => {
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const confirmFetcher = useFetcher<ConfirmFetcherType>();
-  
+
+  useEffect(() => {
+    console.log(confirmData);
+    console.log(pagesData);
+    console.log(selectPageKey);
+    console.log(pageData);
+    
+  }, [confirmData]);
+
   useEffect(() => {
     setHasPrevious(pagesData.pageInfo.hasPreviousPage);
     setHasNext(pagesData.pageInfo.hasNextPage);
@@ -200,40 +210,44 @@ const Index = () => {
   }, [selectPageKey]);
 
   useEffect(() => {
-    setResourceData([
-      {
-        key: "title",
-        resource: "Title",
-        default_language: pageData?.title,
-        translated: pageData?.translations?.title,
-      },
-      {
-        key: "body",
-        resource: "Description",
-        default_language: pageData?.body,
-        translated: pageData?.translations?.body,
-      },
-    ].filter((item) => item.default_language));
-    setSeoData([
-      {
-        key: "handle",
-        resource: "URL handle",
-        default_language: pageData?.handle,
-        translated: pageData?.translations?.handle,
-      },
-      {
-        key: "meta_title",
-        resource: "Meta title",
-        default_language: pageData?.seo.title,
-        translated: pageData?.translations?.seo.title,
-      },
-      {
-        key: "meta_description",
-        resource: "Meta description",
-        default_language: pageData?.seo.description,
-        translated: pageData?.translations?.seo.description,
-      },
-    ].filter((item) => item.default_language));
+    setResourceData(
+      [
+        {
+          key: "title",
+          resource: "Title",
+          default_language: pageData?.title,
+          translated: pageData?.translations?.title,
+        },
+        {
+          key: "body",
+          resource: "Description",
+          default_language: pageData?.body,
+          translated: pageData?.translations?.body,
+        },
+      ].filter((item) => item.default_language),
+    );
+    setSeoData(
+      [
+        {
+          key: "handle",
+          resource: "URL handle",
+          default_language: pageData?.handle,
+          translated: pageData?.translations?.handle,
+        },
+        {
+          key: "meta_title",
+          resource: "Meta title",
+          default_language: pageData?.seo.title,
+          translated: pageData?.translations?.seo.title,
+        },
+        {
+          key: "meta_description",
+          resource: "Meta description",
+          default_language: pageData?.seo.description,
+          translated: pageData?.translations?.seo.description,
+        },
+      ].filter((item) => item.default_language),
+    );
   }, [pageData]);
 
   useEffect(() => {
@@ -265,7 +279,7 @@ const Index = () => {
       } else {
         message.error(errorItem?.errorMsg);
       }
-      setConfirmData([])
+      setConfirmData([]);
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
@@ -409,25 +423,31 @@ const Index = () => {
     data.body = page?.translatableContent.find(
       (item: any) => item.key === "body_html",
     )?.value;
-    data.seo.title =
-      page?.translatableContent.find((item: any) => item.key === "meta_title")
-        ?.value 
-    data.seo.description =
-      page?.translatableContent.find(
-        (item: any) => item.key === "meta_description",
-      )?.value 
+    data.handle = page?.translatableContent.find(
+      (item: any) => item.key === "handle",
+    )?.value;
+    data.seo.title = page?.translatableContent.find(
+      (item: any) => item.key === "meta_title",
+    )?.value;
+    data.seo.description = page?.translatableContent.find(
+      (item: any) => item.key === "meta_description",
+    )?.value;
     data.translations.key = page?.resourceId;
     data.translations.title = page?.translations.find(
       (item: any) => item.key === "title",
     )?.value;
-    data.translations.title = page?.translations.find(
+    data.translations.body = page?.translations.find(
       (item: any) => item.key === "body_html",
     )?.value;
-    data.translations.seo.title =
-      page?.translations.find((item: any) => item.key === "meta_title")?.value 
-    data.translations.seo.description =
-      page?.translations.find((item: any) => item.key === "meta_description")
-        ?.value 
+    data.translations.handle = page?.translations.find(
+      (item: any) => item.key === "handle",
+    )?.value;
+    data.translations.seo.title = page?.translations.find(
+      (item: any) => item.key === "meta_title",
+    )?.value;
+    data.translations.seo.description = page?.translations.find(
+      (item: any) => item.key === "meta_description",
+    )?.value;
     return data;
   };
 
@@ -456,7 +476,7 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
-    setConfirmLoading(true)
+    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
@@ -477,12 +497,23 @@ const Index = () => {
       width={"100%"}
       footer={[
         <div
+          key={"footer_buttons"}
           style={{ display: "flex", justifyContent: "center", width: "100%" }}
         >
-          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={onCancel}
+            style={{ marginRight: "10px" }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleConfirm} type="primary" disabled={confirmLoading} loading={confirmLoading}>
+          <Button
+            onClick={handleConfirm}
+            key={"manage_confirm_button"}
+            type="primary"
+            disabled={confirmLoading}
+            loading={confirmLoading}
+          >
             Save
           </Button>
         </div>,
@@ -530,9 +561,7 @@ const Index = () => {
           </Content>
         </Layout>
       ) : (
-        <Result
-          title="No items found here"
-        />
+        <Result title="No items found here" />
       )}
     </Modal>
   );
