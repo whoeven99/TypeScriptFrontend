@@ -28,7 +28,10 @@ const languageTableDataSlice = createSlice({
           state.rows[index] = newData;
         } else {
           // 如果不存在，新增数据
-          const dataWithKey = { ...newData, key: state.rows.length };
+          const dataWithKey = {
+            ...newData,
+            key: state.rows.slice(-1)[0]?.key + 1,
+          };
 
           // 将包含 key 的 newData 添加到 rows
           state.rows.push(dataWithKey);
@@ -38,12 +41,14 @@ const languageTableDataSlice = createSlice({
     setPublishConfirmState: (
       state,
       action: PayloadAction<{
-        key: number;
+        locale: string;
         published: boolean;
         loading: boolean;
       }>,
     ) => {
-      const row = state.rows.find((item) => item.key === action.payload.key);
+      const row = state.rows.find(
+        (item) => item.locale === action.payload.locale,
+      );
       if (row) {
         row.loading = action.payload.loading;
         row.published = action.payload.published;
@@ -51,18 +56,22 @@ const languageTableDataSlice = createSlice({
     },
     setPublishState: (
       state,
-      action: PayloadAction<{ key: number; published: boolean }>,
+      action: PayloadAction<{ locale: string; published: boolean }>,
     ) => {
-      const row = state.rows.find((item) => item.key === action.payload.key);
+      const row = state.rows.find(
+        (item) => item.locale === action.payload.locale,
+      );
       if (row) {
         row.published = action.payload.published;
       }
     },
     setPublishLoadingState: (
       state,
-      action: PayloadAction<{ key: number; loading: boolean }>,
+      action: PayloadAction<{ locale: string; loading: boolean }>,
     ) => {
-      const row = state.rows.find((item) => item.key === action.payload.key);
+      const row = state.rows.find(
+        (item) => item.locale === action.payload.locale,
+      );
       if (row) {
         row.loading = action.payload.loading;
       }

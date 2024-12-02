@@ -3,6 +3,7 @@ import {
   Layout,
   Menu,
   MenuProps,
+  message,
   Modal,
   Result,
   Table,
@@ -11,6 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import {
   useActionData,
+  useFetcher,
   useLoaderData,
   useNavigate,
   useSubmit,
@@ -29,12 +31,24 @@ import { authenticate } from "~/shopify.server";
 
 const { Sider, Content } = Layout;
 
+interface ConfirmFetcherType {
+  data: {
+    success: boolean;
+    errorMsg: string;
+    data: {
+      resourceId: string;
+      key: string;
+      value?: string;
+    };
+  }[];
+}
+
 interface BlogType {
-  id: string;
+  key: string;
   handle: string;
   title: string;
   translations: {
-    id: string;
+    key: string;
     handle: string | undefined;
     title: string | undefined;
   };
@@ -105,11 +119,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }); // 处理逻辑
         return json({ nextBlogs: nextBlogs });
       case !!confirmData:
-        await updateManageTranslation({
+        const data = await updateManageTranslation({
           request,
           confirmData,
         });
-        return null;
+        return json({ data: data });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -140,8 +154,11 @@ const Index = () => {
   const [blogsData, setBlogsData] = useState(blogs);
   const [blogData, setBlogData] = useState<BlogType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [selectBlogKey, setSelectBlogKey] = useState(blogs.nodes[0]?.resourceId);
+  const [selectBlogKey, setSelectBlogKey] = useState(
+    blogs.nodes[0]?.resourceId,
+  );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -157,6 +174,7 @@ const Index = () => {
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
   useEffect(() => {
     const data = transBeforeData({
@@ -173,20 +191,22 @@ const Index = () => {
   }, [blogsData]);
 
   useEffect(() => {
-    setResourceData([
-      {
-        key: "title",
-        resource: "Title",
-        default_language: blogData?.title,
-        translated: blogData?.translations?.title,
-      },
-      {
-        key: "handle",
-        resource: "Handle",
-        default_language: blogData?.handle,
-        translated: blogData?.translations?.handle,
-      },
-    ]);
+    setResourceData(
+      [
+        {
+          key: "title",
+          resource: "Title",
+          default_language: blogData?.title,
+          translated: blogData?.translations?.title,
+        },
+        {
+          key: "handle",
+          resource: "Handle",
+          default_language: blogData?.handle,
+          translated: blogData?.translations?.handle,
+        },
+      ].filter((item) => item.default_language),
+    );
   }, [blogData]);
 
   useEffect(() => {
@@ -207,6 +227,21 @@ const Index = () => {
       console.log("nextBlogs end");
     }
   }, [actionData]);
+
+  useEffect(() => {
+    if (confirmFetcher.data && confirmFetcher.data.data) {
+      const errorItem = confirmFetcher.data.data.find((item) => {
+        item.success === false;
+      });
+      if (!errorItem) {
+        message.success("Saved successfully");
+      } else {
+        message.error(errorItem?.errorMsg);
+      }
+      setConfirmData([]);
+    }
+    setConfirmLoading(false);
+  }, [confirmFetcher.data]);
 
   const resourceColumns = [
     {
@@ -284,25 +319,25 @@ const Index = () => {
   const transBeforeData = ({ blogs }: { blogs: any }) => {
     let data: BlogType = {
       handle: "",
-      id: "",
+      key: "",
       title: "",
       translations: {
         handle: "",
-        id: "",
+        key: "",
         title: "",
       },
     };
     const blog = blogs.nodes.find(
       (blog: any) => blog?.resourceId === selectBlogKey,
     );
-    data.id = blog?.resourceId;
+    data.key = blog?.resourceId;
     data.title = blog?.translatableContent.find(
       (item: any) => item.key === "title",
     )?.value;
     data.handle = blog?.translatableContent.find(
       (item: any) => item.key === "handle",
     )?.value;
-    data.translations.id = blog?.resourceId;
+    data.translations.key = blog?.resourceId;
     data.translations.title = blog?.translations.find(
       (item: any) => item.key === "title",
     )?.value;
@@ -339,9 +374,10 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
+    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
-    submit(formData, {
+    confirmFetcher.submit(formData, {
       method: "post",
       action: `/app/manage_translation/blog?language=${searchTerm}`,
     }); // 提交表单请求
@@ -363,7 +399,12 @@ const Index = () => {
           <Button onClick={onCancel} style={{ marginRight: "10px" }}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm} type="primary">
+          <Button
+            onClick={handleConfirm}
+            type="primary"
+            disabled={confirmLoading}
+            loading={confirmLoading}
+          >
             Save
           </Button>
         </div>,
@@ -380,7 +421,7 @@ const Index = () => {
           <Sider style={{ background: colorBgContainer }} width={200}>
             <Menu
               mode="inline"
-              defaultSelectedKeys={[blogsData.nodes[0].id]}
+              defaultSelectedKeys={[blogsData.nodes[0].key]}
               defaultOpenKeys={["sub1"]}
               style={{ height: "100%" }}
               items={menuData}
@@ -406,10 +447,7 @@ const Index = () => {
           </Content>
         </Layout>
       ) : (
-        <Result
-          title="No items found here"
-          extra={<Button type="primary">back</Button>}
-        />
+        <Result title="No items found here" />
       )}
     </Modal>
   );

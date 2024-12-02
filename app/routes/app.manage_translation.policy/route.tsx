@@ -3,13 +3,19 @@ import {
   Layout,
   Menu,
   MenuProps,
+  message,
   Modal,
   Result,
   Table,
   theme,
 } from "antd";
 import { useEffect, useState } from "react";
-import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react"; // 引入 useNavigate
+import {
+  useFetcher,
+  useLoaderData,
+  useNavigate,
+  useSubmit,
+} from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryShop, queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
@@ -21,14 +27,26 @@ const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 const { Sider, Content } = Layout;
 
+interface ConfirmFetcherType {
+  data: {
+    success: boolean;
+    errorMsg: string;
+    data: {
+      resourceId: string;
+      key: string;
+      value?: string;
+    };
+  }[];
+}
+
 interface PolicyType {
-  id: string;
+  key: string;
   body: string;
   title: string;
   locale: string;
   digest: string;
   translations: {
-    id: string;
+    key: string;
     body: string | undefined;
   };
 }
@@ -50,7 +68,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       shop,
       accessToken,
     });
-    const shopData = await queryShop({request});
+    const shopData = await queryShop({ request });
     const policyTitle = shopData.shopPolicies;
     const policyBody = await queryNextTransType({
       request,
@@ -63,12 +81,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       const body = policyBody.nodes[index];
       return {
         title: title.title,
-        id: title.id,
+        key: title.key,
         body: title.body,
         locale: body?.translatableContent[0].locale,
         digest: body?.translatableContent[0].digest,
         translations: {
-          id: body?.resourceId,
+          key: body?.resourceId,
           value: body?.translations[0]?.value,
         },
       };
@@ -91,12 +109,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("confirmData") as string,
     );
 
-    if (confirmData)
-      await updateManageTranslation({
-        request,
-        confirmData,
-      });
-    return null;
+    switch (true) {
+      case !!confirmData:
+        const data = await updateManageTranslation({
+          request,
+          confirmData,
+        });
+        return json({ data: data });
+    }
   } catch (error) {
     console.error("Error action policy:", error);
     throw new Response("Error action policy", { status: 500 });
@@ -109,7 +129,7 @@ const Index = () => {
 
   const exMenuData = (policies: any) => {
     const data = policies.map((policy: PolicyType) => ({
-      key: policy.id,
+      key: policy.key,
       label: policy.title,
     }));
     return data;
@@ -119,22 +139,24 @@ const Index = () => {
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [policyData, setPolicyData] = useState<PolicyType>(policies);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [selectPolicyKey, setSelectPolicyKey] = useState(policies[0].id);
+  const [selectPolicyKey, setSelectPolicyKey] = useState(policies[0].key);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
   useEffect(() => {
     const data: PolicyType = policies.find(
-      (policy: any) => policy.id === selectPolicyKey,
+      (policy: any) => policy.key === selectPolicyKey,
     );
     setConfirmData([
       {
-        resourceId: data?.translations.id,
+        resourceId: data?.translations.key,
         locale: data.locale,
         key: "body",
         value: "",
@@ -156,6 +178,21 @@ const Index = () => {
       },
     ]);
   }, [policyData]);
+
+  useEffect(() => {
+    if (confirmFetcher.data && confirmFetcher.data.data) {
+      const errorItem = confirmFetcher.data.data.find((item) => {
+        item.success === false;
+      });
+      if (!errorItem) {
+        message.success("Saved successfully");
+      } else {
+        message.error(errorItem?.errorMsg);
+      }
+      setConfirmData([]);
+    }
+    setConfirmLoading(false);
+  }, [confirmFetcher.data]);
 
   const menuData: MenuProps["items"] = items;
 
@@ -209,9 +246,10 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
+    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
-    submit(formData, {
+    confirmFetcher.submit(formData, {
       method: "post",
       action: `/app/manage_translation/policy?language=${searchTerm}`,
     }); // 提交表单请求
@@ -234,7 +272,12 @@ const Index = () => {
           <Button onClick={onCancel} style={{ marginRight: "10px" }}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm} type="primary">
+          <Button
+            onClick={handleConfirm}
+            type="primary"
+            disabled={confirmLoading}
+            loading={confirmLoading}
+          >
             Save
           </Button>
         </div>,
@@ -251,7 +294,7 @@ const Index = () => {
           <Sider style={{ background: colorBgContainer }} width={200}>
             <Menu
               mode="inline"
-              defaultSelectedKeys={[policies[0].id]}
+              defaultSelectedKeys={[policies[0].key]}
               defaultOpenKeys={["sub1"]}
               style={{ height: "100%" }}
               items={menuData}
@@ -269,10 +312,7 @@ const Index = () => {
           </Content>
         </Layout>
       ) : (
-        <Result
-          title="No items found here"
-          extra={<Button type="primary">back</Button>}
-        />
+        <Result title="No items found here" />
       )}
     </Modal>
   );

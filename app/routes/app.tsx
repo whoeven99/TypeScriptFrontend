@@ -176,7 +176,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source: getData.source,
           targets: getData.targets,
         });
-        console.log("getData: ", data);
         return json({ data: data });
       case !!syncData:
         try {

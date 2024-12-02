@@ -65,10 +65,12 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   useEffect(() => {
     if (addFetcher.data) {
       message.success("Add success");
-      const data = addFetcher.data.shopLanguages.map((lang: any, i: any) => ({
+      console.log(addFetcher.data.data);
+      
+      const data = addFetcher.data.data.map((lang: any, i: any) => ({
         language: lang.name,
         localeName:
-          languageLocaleInfo[addFetcher.data.shopLanguages[i].locale].Local,
+          languageLocaleInfo[addFetcher.data.data[i].locale].Local,
         locale: lang.locale,
         primary: lang.primary,
         status: 0,

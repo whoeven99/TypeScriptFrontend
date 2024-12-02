@@ -1392,6 +1392,8 @@ export const mutationShopLocaleEnable = async ({
       }
       shopLanguages.push(shopifyResponse.data.data.shopLocaleEnable.shopLocale)
     }
+    console.log(shopLanguages);
+    
     return shopLanguages;
   } catch (error) {
     console.error("Error mutating shop languages:", error);
