@@ -118,9 +118,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const unPublishInfo: UnpublishInfoType = JSON.parse(
       formData.get("unPublishInfo") as string,
     );
-    const deleteData: LanguagesDataType[] = JSON.parse(
-      formData.get("deleteData") as string,
-    );
+    const deleteData = JSON.parse(formData.get("deleteData") as string);
 
     switch (true) {
       case !!loading:
@@ -158,7 +156,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = await mutationShopLocaleEnable({
           request,
           addLanguages,
-        }); // 处理逻辑        
+        }); // 处理逻辑
         return json({ data: data });
       case !!translation:
         const source = translation.primaryLanguage.locale;
@@ -181,7 +179,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return null;
 
       case !!deleteData:
-        await mutationShopLocaleDisable({ request, languages: deleteData });
+        await mutationShopLocaleDisable({
+          request,
+          languages: deleteData.deleteData,
+          primaryLanguageCode: deleteData.primaryLanguageCode,
+        });
         return null;
 
       default:
@@ -453,7 +455,9 @@ const Index = () => {
   };
 
   const handleTranslate = async (locale: string) => {
-    const selectedItem = data.find((item: LanguagesDataType) => item.locale === locale);
+    const selectedItem = data.find(
+      (item: LanguagesDataType) => item.locale === locale,
+    );
     if (selectedItem && shopLanguagesLoad) {
       const selectedLanguage = shopLanguagesLoad.find(
         (item) => item.name === selectedItem.language,
@@ -521,7 +525,13 @@ const Index = () => {
     );
 
     const formData = new FormData();
-    formData.append("deleteData", JSON.stringify(deleteData)); // 将选中的语言作为字符串发送
+    formData.append(
+      "deleteData",
+      JSON.stringify({
+        deleteData: deleteData,
+        primaryLanguage: primaryLanguage?.locale,
+      }),
+    ); // 将选中的语言作为字符串发送
     submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
 
     dispatch(setTableData(newData)); // 更新表格数据

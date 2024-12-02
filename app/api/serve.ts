@@ -483,6 +483,8 @@ export const updateManageTranslation = async ({
         }
       }
     }
+    console.log(res);
+    
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
