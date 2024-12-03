@@ -298,8 +298,8 @@ export const GetLanguageStatus = async ({
       shopName: shop,
       source: source,
       target: target[0],
-    },);
-    
+    });
+
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readTranslateDOByArray`,
       method: "Post",
@@ -381,13 +381,13 @@ export const GetTranslate = async ({
         target: target,
       },
     });
-    console.log( {
+    console.log({
       shopName: shop,
       accessToken: accessToken,
       source: source,
       target: target,
     });
-    
+
     const res = { ...response.data, target: target };
     console.log(res);
     return res;
@@ -497,7 +497,7 @@ export const updateManageTranslation = async ({
       }
     }
     console.log(res);
-    
+
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
@@ -611,8 +611,8 @@ export const UpdateCurrency = async ({
     const res = response.data;
     return res;
   } catch (error) {
-    console.error("Error delete currency:", error);
-    throw new Error("Error delete currency");
+    console.error("Error update currency:", error);
+    throw new Error("Error update currency");
   }
 };
 
@@ -630,17 +630,20 @@ export const GetCurrency = async ({ request }: { request: Request }) => {
     });
 
     const res = response.data.response;
-    const data = res.map((item: any) => ({
-      key: item.id, // 将 id 转换为 key
-      currency: item.countryName, // 将 countryName 作为 currency
-      rounding: item.rounding,
-      exchangeRate: item.exchangeRate,
-      currencyCode: item.currencyCode,
-    }));
-
-    return data;
+    if (res) {
+      const data = res.map((item: any) => ({
+        key: item.id, // 将 id 转换为 key
+        currency: item.countryName, // 将 countryName 作为 currency
+        rounding: item.rounding,
+        exchangeRate: item.exchangeRate,
+        currencyCode: item.currencyCode,
+      }));
+      return data;
+    } else {
+      return undefined;
+    }
   } catch (error) {
-    console.error("Error delete currency:", error);
-    throw new Error("Error delete currency");
+    console.error("Error get currency:", error);
+    throw new Error("Error get currency");
   }
 };

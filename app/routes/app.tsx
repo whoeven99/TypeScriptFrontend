@@ -196,12 +196,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!statusData:
         try {
           console.log("statusData:", statusData);
-          const data = await GetLanguageStatus({
-            shop,
-            source: statusData.source,
-            target: statusData.target,
-          });
-          return json({ data: data });
+          if (statusData) {
+            const data = await GetLanguageStatus({
+              shop,
+              source: statusData.source,
+              target: statusData.target,
+            });
+            return json({ data: data });
+          }
         } catch (error) {
           console.error("Error GetLanguageStatus:", error);
           return json({ error: "Error GetLanguageStatus" }, { status: 500 });
@@ -297,6 +299,7 @@ export default function App() {
           </Link>
           <Link to="/app/language">Language</Link>
           <Link to="/app/manage_translation">Manage Translation</Link>
+          <Link to="/app/currency">Currency</Link>
         </NavMenu>
         <Outlet />
       </ConfigProvider>
