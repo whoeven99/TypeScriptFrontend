@@ -237,6 +237,10 @@ const Index = () => {
     },
   ];
 
+  useEffect(() => {
+    console.log(confirmData);
+  }, [confirmData]);
+
   const handleInputChange = (key: string, value: string, index: number) => {
     setTranslatedValues((prev) => ({
       ...prev,
@@ -258,8 +262,8 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: deliverysData.nodes[index]?.resourceId,
-          locale: deliverysData.nodes[index]?.translatableContent[0]?.locale,
+          resourceId: deliverys.nodes[index]?.resourceId,
+          locale: deliverys.nodes[index]?.translatableContent[0]?.locale,
           key: "value",
           value: value, // 初始为空字符串
           translatableContentDigest:
@@ -279,7 +283,7 @@ const Index = () => {
         const currentItem = {
           key: `${item?.resourceId}`, // 使用 key 生成唯一的 key
           index: index,
-          resource: "value", // 资源字段固定为 "Menu Items"
+          resource: "name", // 资源字段固定为 "Menu Items"
           default_language: item?.translatableContent[0]?.value, // 默认语言为 item 的标题
           translated: item?.translations[0]?.value, // 翻译字段初始化为空字符串
         };
@@ -335,7 +339,6 @@ const Index = () => {
       }}
       footer={[
         <div
-          key="footer-buttons" // 给容器 div 也加上一个 key
           style={{ display: "flex", justifyContent: "center", width: "100%" }}
         >
           <Button

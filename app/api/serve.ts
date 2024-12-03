@@ -130,7 +130,7 @@ export const GetItemsInSqlByShopName = async ({
 }: {
   shop: string;
   accessToken: string | undefined;
-  source: string[];
+  source: string;
   targets: string[];
 }) => {
   let res: {
@@ -147,7 +147,7 @@ export const GetItemsInSqlByShopName = async ({
         data: {
           shopName: shop,
           accessToken: accessToken,
-          source: source[0],
+          source: source,
           target: target,
         },
       });
@@ -294,6 +294,12 @@ export const GetLanguageStatus = async ({
   target: string[];
 }) => {
   try {
+    console.log({
+      shopName: shop,
+      source: source,
+      target: target[0],
+    },);
+    
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readTranslateDOByArray`,
       method: "Post",
@@ -375,6 +381,13 @@ export const GetTranslate = async ({
         target: target,
       },
     });
+    console.log( {
+      shopName: shop,
+      accessToken: accessToken,
+      source: source,
+      target: target,
+    });
+    
     const res = { ...response.data, target: target };
     console.log(res);
     return res;
@@ -483,6 +496,8 @@ export const updateManageTranslation = async ({
         }
       }
     }
+    console.log(res);
+    
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);

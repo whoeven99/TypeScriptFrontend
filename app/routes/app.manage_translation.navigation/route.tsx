@@ -288,7 +288,7 @@ const Index = () => {
       } else {
         message.error(errorItem?.errorMsg);
       }
-      setConfirmData([])
+      setConfirmData([]);
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
@@ -335,7 +335,9 @@ const Index = () => {
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+      const existingItemIndex = prevData.findIndex(
+        (item) => item.resourceId === key,
+      );
 
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
@@ -350,7 +352,7 @@ const Index = () => {
         const newItem = {
           resourceId: navigations.nodes[index]?.resourceId,
           locale: navigations.nodes[index]?.translatableContent[0]?.locale,
-          key: key,
+          key: "title",
           value: value, // 初始为空字符串
           translatableContentDigest:
             navigations.nodes[index]?.translatableContent[0]?.digest,
@@ -362,7 +364,7 @@ const Index = () => {
         const newItem = {
           resourceId: navigationItems.nodes[index]?.resourceId,
           locale: navigationItems.nodes[index]?.translatableContent[0]?.locale,
-          key: key,
+          key: "title",
           value: value, // 初始为空字符串
           translatableContentDigest:
             navigationItems.nodes[index]?.translatableContent[0]?.digest,
@@ -389,22 +391,16 @@ const Index = () => {
       // 返回修改后的 menu，确保返回类型是 ItemType
       return {
         key: menu?.resourceId,
-        label:
-          menu?.translatableContent.find((item: any) => item.key === "title")
-            ?.value || "",
+        label: menu?.translatableContent[0]?.value || "",
         translations: {
           key: menu?.resourceId,
-          label:
-            menu?.translations.find((item: any) => item.key === "title")
-              ?.value || "",
+          label: menu?.translations[0]?.value || "",
         },
       };
     });
     return data;
   };
-  useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
+
   const generateMenuItemsArray = (
     items: ItemType[],
   ): Array<{
@@ -417,13 +413,16 @@ const Index = () => {
     return items.map((item: ItemType, index: number) => {
       // 创建当前项的对象
       const currentItem = {
-        key: `menu_item_${item.key}`, // 使用 key 生成唯一的 key
+        key: item.key, // 使用 key 生成唯一的 key
         index: index,
         resource: "label", // 资源字段固定为 "Menu Items"
         default_language: item?.label, // 默认语言为 item 的标题
         translated: item?.translations?.label, // 翻译字段初始化为空字符串
       };
-
+      setTranslatedValues((prev) => ({
+        ...prev,
+        [item.key]: item.translations?.label || "", // 更新翻译值
+      }));
       // 如果没有子项，只返回当前项
       return currentItem;
     });
@@ -474,7 +473,7 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
-    setConfirmLoading(true)
+    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
@@ -497,12 +496,23 @@ const Index = () => {
       width={"100%"}
       footer={[
         <div
+          key={"footer_buttons"}
           style={{ display: "flex", justifyContent: "center", width: "100%" }}
         >
-          <Button onClick={onCancel} style={{ marginRight: "10px" }}>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={onCancel}
+            style={{ marginRight: "10px" }}
+          >
             Cancel
           </Button>
-          <Button onClick={handleConfirm} type="primary" disabled={confirmLoading} loading={confirmLoading}>
+          <Button
+            onClick={handleConfirm}
+            key={"manage_confirm_button"}
+            type="primary"
+            disabled={confirmLoading}
+            loading={confirmLoading}
+          >
             Save
           </Button>
         </div>,

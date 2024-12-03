@@ -95,7 +95,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
           title="No items found here"
           extra={
             <Button type="primary" onClick={handleCancel}>
-              Ok
+              OK
             </Button>
           }
         />
