@@ -91,6 +91,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         },
       };
     });
+    console.log("policies: ", policies);
+
     return json({
       searchTerm,
       shopLanguagesLoad,
@@ -137,8 +139,8 @@ const Index = () => {
 
   const items: MenuProps["items"] = exMenuData(policies);
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [policyData, setPolicyData] = useState<PolicyType>(policies);
-  const [resourceData, setResourceData] = useState<TableDataType[]>([]);
+  const [policyData, setPolicyData] = useState<PolicyType>();
+  const [resourceData, setResourceData] = useState<TableDataType[]>();
   const [selectPolicyKey, setSelectPolicyKey] = useState(policies[0].key);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
@@ -168,14 +170,16 @@ const Index = () => {
   }, [selectPolicyKey]);
 
   useEffect(() => {
-    setResourceData([
-      {
-        key: "body",
-        resource: "Content",
-        default_language: policyData?.body,
-        translated: policyData?.translations?.body,
-      },
-    ]);
+    if (policyData) {
+      setResourceData([
+        {
+          key: "body",
+          resource: "Content",
+          default_language: policyData?.body,
+          translated: policyData?.translations?.body,
+        },
+      ]);
+    }
   }, [policyData]);
 
   useEffect(() => {
@@ -299,7 +303,7 @@ const Index = () => {
           <Sider style={{ background: colorBgContainer }} width={200}>
             <Menu
               mode="inline"
-              defaultSelectedKeys={[policies[0].id]}
+              defaultSelectedKeys={[policies[0].key]}
               defaultOpenKeys={["sub1"]}
               style={{ height: "100%" }}
               items={menuData}
