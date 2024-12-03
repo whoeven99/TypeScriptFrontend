@@ -33,12 +33,18 @@ import {
   InsertShopTranslateInfo,
   GetLanguageStatus,
   userCharsInitialization,
+  InsertOrUpdateOrder,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
-import { queryShop, queryShopLanguages } from "~/api/admin";
+import {
+  mutationAppSubscriptionCreate,
+  queryShop,
+  queryShopLanguages,
+} from "~/api/admin";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { updateData } from "~/store/modules/languageItemsData";
+import { updateNumber } from "~/store/modules/totalCharacters";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -71,6 +77,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const syncData = JSON.parse(formData.get("syncData") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
+    const payInfo = JSON.parse(formData.get("payInfo") as string);
+    const orderInfo = JSON.parse(formData.get("orderInfo") as string);
 
     switch (true) {
       case !!initialization:
@@ -111,7 +119,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ error: "Error action app" }, { status: 500 });
         }
       case !!index:
-        const shopData = await queryShop({ request });
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,
@@ -160,9 +167,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }),
         );
         const user = {
-          name: shopData.name,
-          chars: words?.chars || 0,
-          totalChars: words?.totalChars || 0,
+          plan: plan,
+          chars: words?.chars,
+          totalChars: words?.totalChars,
           primaryLanguage: shopPrimaryLanguage[0].name,
           primaryLanguageCode: shopPrimaryLanguage[0].locale,
           shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
@@ -177,12 +184,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!translation:
         const source = translation.primaryLanguageCode;
         const selectedLanguage = translation.selectedLanguage;
-        const statu = await GetTranslate({
+        const translateResponse = await GetTranslate({
           request,
           source,
           target: selectedLanguage,
         });
-        return json({ statu: statu });
+        return json({ statu: translateResponse });
       case !!getData:
         console.log("getData: ", getData);
         const data = await GetItemsInSqlByShopName({
@@ -229,6 +236,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           target: languageCode,
         });
         return json({ totalWords: totalWords });
+      case !!payInfo:
+        const returnUrl: URL = new URL(
+          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
+        );
+        console.log(returnUrl);
+        const payData = await mutationAppSubscriptionCreate({
+          request,
+          name: payInfo.name,
+          price: payInfo.price,
+          returnUrl,
+        });
+        return json({ data: payData });
+      case !!orderInfo:
+        const orderData = await InsertOrUpdateOrder({
+          shop: shop,
+          id: orderInfo.id,
+          amount: orderInfo.amount,
+          name: orderInfo.name,
+          createdAt: orderInfo.createdAt,
+          status: orderInfo.status,
+          confirmationUrl: orderInfo.confirmationUrl,
+        });
+        return json({ data: orderData });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -248,7 +278,6 @@ export default function App() {
   const dispatch = useDispatch();
   const fetcher = useFetcher<any>();
   const syncFetcher = useFetcher<any>();
-  // const location = useLocation();
 
   useEffect(() => {
     shopify.loading(true);

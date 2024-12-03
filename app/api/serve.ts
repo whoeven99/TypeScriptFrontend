@@ -150,7 +150,6 @@ export const GetTranslationItemsInfo = async ({
     throw new Error("Error fetching updating translation items");
   }
 };
-
 //获取各项翻译状态
 export const GetItemsInSqlByShopName = async ({
   shop,
@@ -219,7 +218,7 @@ export const GetUserWords = async ({ shop }: { shop: string }) => {
   }
 };
 
-//获取国旗图片链接
+//获取本地化信息
 export const GetLanguageLocaleInfo = async ({
   locale,
 }: {
@@ -299,12 +298,6 @@ export const GetLanguageStatus = async ({
   target: string[];
 }) => {
   try {
-    console.log({
-      shopName: shop,
-      source: source,
-      target: target[0],
-    });
-
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readTranslateDOByArray`,
       method: "Post",
@@ -316,14 +309,6 @@ export const GetLanguageStatus = async ({
         },
       ],
     });
-    console.log([
-      {
-        shopName: shop,
-        source: source,
-        target: target[0],
-      },
-    ]);
-
     const res = response.data.response;
     console.log(res);
     return res;
@@ -650,5 +635,67 @@ export const GetCurrency = async ({ request }: { request: Request }) => {
   } catch (error) {
     console.error("Error get currency:", error);
     throw new Error("Error get currency");
+  }
+};
+
+//更新订单数据
+export const InsertOrUpdateOrder = async ({
+  shop,
+  id,
+  amount,
+  name,
+  createdAt,
+  status,
+  confirmationUrl,
+}: {
+  shop?: string;
+  id: string;
+  amount?: number;
+  name?: string;
+  createdAt?: string;
+  status: string;
+  confirmationUrl?: URL;
+}) => {
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/orders/insertOrUpdateOrder`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        id: id,
+        amount: amount,
+        name: name,
+        createdAt: createdAt,
+        status: status,
+        confirmationUrl: confirmationUrl,
+      },
+    });
+    const res = response.data;
+    console.log(res);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    throw new Error("Error fetching user");
+  }
+};
+
+//获取订单id
+export const GetPendingOrders = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/orders/getPendingOrders`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    console.log({
+      shopName: shop,
+    });
+
+    const res = response.data.response;
+    return res
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    throw new Error("Error fetching user");
   }
 };

@@ -9,6 +9,7 @@ import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { authenticate } from "~/shopify.server";
+import PaymentModal from "~/components/paymentModal";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 
 const UserProfileCard = lazy(() => import("./components/userProfileCard"));
@@ -53,6 +54,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const Index = () => {
   const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
+  const [paymentModalVisible, setPaymentModalVisible] =
+    useState<boolean>(false);
+
   const [user, setUser] = useState<UserType>();
   const [loading, setLoading] = useState<boolean>(true);
   const [newUserModal, setNewUserModal] = useState<boolean>(false);
@@ -142,6 +146,7 @@ const Index = () => {
               <Suspense fallback={<Skeleton active />}>
                 {user && (
                   <UserProfileCard
+                    setPaymentModalVisible={setPaymentModalVisible}
                     chars={user.chars}
                     totalChars={user.totalChars}
                   />
@@ -185,27 +190,10 @@ const Index = () => {
                 <NoLanguageSetCard />
               )}
             </Space>
-            <Modal
-              open={newUserModal}
-              footer={
-                <Button
-                  onClick={onClick}
-                  loading={newUserModalLoading}
-                  disabled={newUserModalLoading}
-                >
-                  OK
-                </Button>
-              }
-              closable={false} // 禁用关闭按钮
-              maskClosable={false} // 禁用点击遮罩关闭
-              keyboard={false} // 禁用按 Esc 键关闭
-            >
-              <Title level={4}>Congratulations!</Title>
-              <Text>
-                You have received 20,000 characters, enabling you to translate
-                into over 137 languages.
-              </Text>
-            </Modal>
+            <PaymentModal
+              visible={paymentModalVisible}
+              setVisible={setPaymentModalVisible}
+            />
           </div>
         )}
       </BlockStack>

@@ -224,10 +224,10 @@ const Index = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   const dispatch = useDispatch();
-  const fetcher = useFetcher<FetchType>();
-  const addFetcher = useFetcher<any>();
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const fetcher = useFetcher<FetchType>();
+  const addFetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
 

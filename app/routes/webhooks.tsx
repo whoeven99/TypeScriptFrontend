@@ -1,6 +1,8 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
+import { GetPendingOrders, InsertOrUpdateOrder } from "~/api/serve";
+import { queryOrders } from "~/api/admin";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop, session, admin } = await authenticate.webhook(request);
@@ -20,6 +22,30 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         await db.session.deleteMany({ where: { shop } });
       }
 
+      break;
+    case "APP_PURCHASES_ONE_TIME_UPDATE":
+      const ids: string[] = await GetPendingOrders({ shop });
+      console.log("ids: ", ids);
+      for (const id of ids) {
+        console.log("Processing order id: ", id);
+        try {
+          const data = await queryOrders({ request, id });
+          console.log("data: ", data);
+
+          if (data) {
+            await InsertOrUpdateOrder({
+              id: id,
+              status: data?.status,
+            });
+            console.log(`Order ${id} processed successfully.`);
+          } else {
+            console.log(`No data found for order id: ${id}`);
+          }
+        } catch (error) {
+          console.error(`Error processing order ${id}:`, error);
+          // 选择继续处理下一个订单或提前中止
+        }
+      }
       break;
     case "CUSTOMERS_DATA_REQUEST":
     case "CUSTOMERS_REDACT":
