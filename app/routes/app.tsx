@@ -32,6 +32,7 @@ import {
   UpdateUser,
   InsertShopTranslateInfo,
   GetLanguageStatus,
+  userCharsInitialization,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import { queryShop, queryShopLanguages } from "~/api/admin";
@@ -62,6 +63,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const formData = await request.formData();
+    const initialization = JSON.parse(formData.get("initialization") as string);
     const loading = JSON.parse(formData.get("loading") as string);
     const index = JSON.parse(formData.get("index") as string);
     const translation = JSON.parse(formData.get("translation") as string);
@@ -71,6 +73,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const statusData = JSON.parse(formData.get("statusData") as string);
 
     switch (true) {
+      case !!initialization:
+        try {
+          const data: boolean = await userCharsInitialization({
+            shop,
+          });
+          return json({
+            data: data,
+          });
+        } catch (error) {
+          console.error("Error userCharsInitialization:", error);
+          return json(
+            { error: "Error userCharsInitialization" },
+            { status: 500 },
+          );
+        }
       case !!loading:
         try {
           const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
@@ -85,8 +102,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             .filter((language) => !language.primary)
             .map((item) => item.locale);
           await UpdateUser({ request });
-          console.log("primaryLanguage: ", primaryLanguage);
-          console.log("shopLocales: ", shopLocales);
           return json({
             shopLocales: shopLocales,
             primaryLanguage: primaryLanguage,
@@ -101,8 +116,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop,
           accessToken,
         });
-        const words = await GetUserWords({ shop });
-        const plan = await GetUserSubscriptionPlan({ shop, accessToken });
         const shopPrimaryLanguage = shopLanguagesIndex.filter(
           (language) => language.primary,
         );
@@ -115,6 +128,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const languageLocaleInfo = await GetLanguageLocaleInfo({
           locale: shopLocalesIndex,
         });
+        const plan = await GetUserSubscriptionPlan({ shop });
+        const words = await GetUserWords({ shop });
         for (const target of shopLocalesIndex) {
           try {
             await InsertShopTranslateInfo({
@@ -146,18 +161,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
         const user = {
           name: shopData.name,
-          plan: plan,
-          chars: words?.chars,
-          totalChars: words?.totalChars,
+          chars: words?.chars || 0,
+          totalChars: words?.totalChars || 0,
           primaryLanguage: shopPrimaryLanguage[0].name,
           primaryLanguageCode: shopPrimaryLanguage[0].locale,
           shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
-        console.log("user: ", user);
+        console.log("plan: ", plan);
         return json({
           languageData,
           user,
+          plan,
         });
       case !!translation:
         const source = translation.primaryLanguageCode;

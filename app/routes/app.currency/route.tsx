@@ -2,7 +2,12 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import { Button, Flex, Input, Space, Table, Typography } from "antd";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useNavigate,
+  useSubmit,
+} from "@remix-run/react";
 import { json } from "@remix-run/node";
 import { useEffect, useState } from "react";
 // import { SearchOutlined } from "@ant-design/icons"
@@ -49,10 +54,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const { shop } = adminAuthResult.session;
     const shopLoad = await queryShop({ request });
     const currencyList = await GetCurrency({ request });
+    console.log("currencyList: ", currencyList);
+
     const moneyFormat = shopLoad.currencyFormats.moneyFormat;
     const moneyWithCurrencyFormat =
       shopLoad.currencyFormats.moneyWithCurrencyFormat;
-    console.log("currency: ", shop);
 
     // 返回包含 userId 的 json 响应
     return json({
@@ -73,57 +79,44 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
+
     const addCurrencies: CurrencyType[] = JSON.parse(
       formData.get("addcurrencies") as string,
     );
     const deleteCurrencies: string[] = JSON.parse(
       formData.get("deletecurrencies") as string,
     );
-    const deleteCurrency: string = JSON.parse(
-      formData.get("deletecurrency") as string,
-    );
     const updateCurrencies = JSON.parse(
       formData.get("updatecurrencies") as string,
     );
 
-    if (addCurrencies) {
-      await Promise.all(
-        addCurrencies.map(async (currency) => {
-          // 调用 addCurrency 函数
-          await addCurrency({
-            request,
-            countryName: currency.currency,
-            currencyCode: currency.currencyCode,
-          });
-        }),
-      );
-    }
-
-    if (deleteCurrencies) {
-      await Promise.all(
-        deleteCurrencies.map(async (currency) => {
-          // 调用 addCurrency 函数
-          await DeleteCurrency({
-            request,
-            id: currency,
-          });
-        }),
-      );
-    }
-
-    if (deleteCurrency) {
-      // 调用 addCurrency 函数
-      await DeleteCurrency({
-        request,
-        id: deleteCurrency,
-      });
-    }
-
-    if (updateCurrencies) {
-      await UpdateCurrency({
-        request,
-        updateCurrencies: updateCurrencies,
-      });
+    switch (true) {
+      case !!addCurrencies:
+        await Promise.all(
+          addCurrencies.map(async (currency) => {
+            // 调用 addCurrency 函数
+            await addCurrency({
+              request,
+              countryName: currency.currency,
+              currencyCode: currency.currencyCode,
+            });
+          }),
+        );
+      case !!deleteCurrencies:
+        await Promise.all(
+          deleteCurrencies.map(async (currency) => {
+            // 调用 addCurrency 函数
+            await DeleteCurrency({
+              request,
+              id: currency,
+            });
+          }),
+        );
+      case !!updateCurrencies:
+        await UpdateCurrency({
+          request,
+          updateCurrencies: updateCurrencies,
+        });
     }
 
     return null;
@@ -138,6 +131,7 @@ const Index = () => {
     useLoaderData<typeof loader>();
 
   const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
+  // const [loading,setLoading]
   const [searchInput, setSearchInput] = useState("");
   const [deleteloading, setDeleteLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -164,6 +158,7 @@ const Index = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const deleteFetcher = useFetcher();
 
   useEffect(() => {
     const parser = new DOMParser();
@@ -264,36 +259,28 @@ const Index = () => {
     onChange: onSelectChange,
   };
 
-  const handleDelete = (key: React.Key) => {
+  const handleDelete = (key?: React.Key) => {
     const formData = new FormData();
-    formData.append("deletecurrency", JSON.stringify(key)); // 将选中的语言作为字符串发送
-    submit(formData, {
-      method: "post",
-      action: "/app/currency",
-    }); // 提交表单请求
-
-    // 过滤掉被删除的项
-    const newData = dataSource.filter(
-      (item: CurrencyDataType) => item.key !== key,
-    );
-    dispatch(setTableData(newData)); // 更新表格数据
-    setSelectedRowKeys([]); // 清空已选中项
-    setOriginalData(newData);
-    setFilteredData(newData); // 确保当前显示的数据也更新
-  };
-
-  const handleAllDelete = () => {
-    const formData = new FormData();
-    formData.append("deletecurrencies", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
-    submit(formData, {
-      method: "post",
-      action: "/app/currency",
-    }); // 提交表单请求
-
-    const newData = dataSource.filter(
-      (item: CurrencyDataType) => !selectedRowKeys.includes(item.key),
-    );
-    dispatch(setTableData(newData)); // 更新表格数据
+    let newData: CurrencyDataType[] | undefined;
+    if (key) {
+      formData.append("deletecurrencies", JSON.stringify(key)); // 将选中的语言作为字符串发送
+      deleteFetcher.submit(formData, {
+        method: "post",
+        action: "/app/currency",
+      }); // 提交表单请求
+      newData = dataSource.filter((item: CurrencyDataType) => item.key !== key);
+      dispatch(setTableData(newData)); // 更新表格数据
+    } else {
+      formData.append("deletecurrencies", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
+      deleteFetcher.submit(formData, {
+        method: "post",
+        action: "/app/currency",
+      }); // 提交表单请求
+      newData = dataSource.filter(
+        (item: CurrencyDataType) => !selectedRowKeys.includes(item.key),
+      );
+      dispatch(setTableData(newData)); // 更新表格数据
+    }
     setSelectedRowKeys([]); // 清空已选中项
     setOriginalData(newData);
     setFilteredData(newData); // 确保当前显示的数据也更新
@@ -331,7 +318,7 @@ const Index = () => {
           <Flex align="center" gap="middle">
             <Button
               type="primary"
-              onClick={handleAllDelete}
+              onClick={() => handleDelete}
               disabled={!hasSelected}
               loading={deleteloading}
             >

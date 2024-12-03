@@ -1,9 +1,9 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "fb9fc15cbec02bd735e2a5b491cf8409"
-name = "Ciwi.ai:Faster AI Translator"
-handle = "ciwi-translator"
-application_url = "https://typescriptfrontendprod.onrender.com"
+client_id = "4b05c1caefa9e0761a0538b64159b627"
+name = "Ciwi.ai:FAT(Local)"
+handle = "ciwi_local"
+application_url = "https://representatives-semiconductor-cell-nodes.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,16 +17,16 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://typescriptfrontendprod.onrender.com/auth/callback",
-  "https://typescriptfrontendprod.onrender.com/auth/shopify/callback",
-  "https://typescriptfrontendprod.onrender.com/api/auth/callback"
+  "https://representatives-semiconductor-cell-nodes.trycloudflare.com/auth/callback",
+  "https://representatives-semiconductor-cell-nodes.trycloudflare.com/auth/shopify/callback",
+  "https://representatives-semiconductor-cell-nodes.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
   [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled" ]
+  topics = [ "app_purchases_one_time/update", "app/uninstalled" ]
   uri = "/webhooks"
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 

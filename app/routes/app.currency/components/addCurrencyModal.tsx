@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Modal, Input, Table, Space } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import SelectedLanguageTag from "../../../components/selectedLanguageTag";
-import { SubmitFunction } from "@remix-run/react";
+import { SubmitFunction, useFetcher } from "@remix-run/react";
 
 interface CurrencyType {
   key: number;
@@ -40,6 +40,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   const [allSelectedCurrency, setAllSelectedCurrency] = useState<
     CurrencyType[]
   >([]);
+  const addFetcher = useFetcher();
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -75,10 +76,9 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     const formData = new FormData();
     formData.append("addcurrencies", JSON.stringify(allSelectedCurrency)); // 将选中的语言作为字符串发送
 
-    submit(formData, {
+    addFetcher.submit(formData, {
       method: "post",
       action: "/app/currency",
-      replace: true,
     }); // 提交表单请求
     setIsModalOpen(false); // 选择后关闭Modal
   };

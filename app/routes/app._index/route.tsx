@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Col, Row, Skeleton, Space, Typography } from "antd";
+import { Col, Modal, Row, Skeleton, Space, Typography, Button } from "antd";
 import { useFetcher } from "@remix-run/react";
 import "./styles.css";
 import { ShopLocalesType } from "../app.language/route";
@@ -27,7 +27,6 @@ interface LanguageDataType {
 }
 
 interface UserType {
-  plan: string;
   chars: number;
   totalChars: number;
   primaryLanguage: string;
@@ -39,6 +38,7 @@ interface UserType {
 interface FetchType {
   languageData: LanguageDataType[];
   user: UserType;
+  plan: boolean;
 }
 
 export interface WordsType {
@@ -55,13 +55,17 @@ const Index = () => {
   const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
   const [user, setUser] = useState<UserType>();
   const [loading, setLoading] = useState<boolean>(true);
+  const [newUserModal, setNewUserModal] = useState<boolean>(false);
+  const [newUserModalLoading, setNewUserModalLoading] =
+    useState<boolean>(false);
   const dispatch = useDispatch();
-  const fetcher = useFetcher<FetchType>();
+  const loadingFetcher = useFetcher<FetchType>();
+  const initializationFetcher = useFetcher<any>();
 
   useEffect(() => {
     const formData = new FormData();
     formData.append("index", JSON.stringify(true));
-    fetcher.submit(formData, {
+    loadingFetcher.submit(formData, {
       method: "post",
       action: "/app",
     });
@@ -69,13 +73,26 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (fetcher.data) {
-      setLanguageData(fetcher.data.languageData);
-      setUser(fetcher.data.user);
+    if (loadingFetcher.data) {
+      setLanguageData(loadingFetcher.data.languageData);
+      setUser(loadingFetcher.data.user);
       shopify.loading(false);
       setLoading(false);
+      if (!loadingFetcher.data.plan) {
+        setNewUserModal(true);
+      }
     }
-  }, [fetcher.data]);
+  }, [loadingFetcher.data]);
+
+  useEffect(() => {
+    if (initializationFetcher.data && user) {
+      if (initializationFetcher.data?.data) {
+        setNewUserModal(false);
+        setNewUserModalLoading(false);
+        setUser({ ...user, totalChars: 20000 });
+      }
+    }
+  }, [initializationFetcher.data]);
 
   useEffect(() => {
     if (languageData.length) {
@@ -93,6 +110,16 @@ const Index = () => {
       dispatch(setTableData(data)); // 只在组件首次渲染时触
     }
   }, [dispatch, languageData]);
+
+  const onClick = async () => {
+    setNewUserModalLoading(true);
+    const formData = new FormData();
+    formData.append("initialization", JSON.stringify(true));
+    initializationFetcher.submit(formData, {
+      method: "post",
+      action: "/app",
+    });
+  };
 
   return (
     <Page>
@@ -115,7 +142,6 @@ const Index = () => {
               <Suspense fallback={<Skeleton active />}>
                 {user && (
                   <UserProfileCard
-                    plan={user.plan}
                     chars={user.chars}
                     totalChars={user.totalChars}
                   />
@@ -159,6 +185,27 @@ const Index = () => {
                 <NoLanguageSetCard />
               )}
             </Space>
+            <Modal
+              open={newUserModal}
+              footer={
+                <Button
+                  onClick={onClick}
+                  loading={newUserModalLoading}
+                  disabled={newUserModalLoading}
+                >
+                  OK
+                </Button>
+              }
+              closable={false} // 禁用关闭按钮
+              maskClosable={false} // 禁用点击遮罩关闭
+              keyboard={false} // 禁用按 Esc 键关闭
+            >
+              <Title level={4}>Congratulations!</Title>
+              <Text>
+                You have received 20,000 characters, enabling you to translate
+                into over 137 languages.
+              </Text>
+            </Modal>
           </div>
         )}
       </BlockStack>
