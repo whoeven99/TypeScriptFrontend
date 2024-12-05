@@ -25,7 +25,6 @@ import {
   GetLanguageList,
   GetTotalWords,
   GetTranslate,
-  GetItemsInSqlByShopName,
   GetUserSubscriptionPlan,
   GetUserWords,
   GetTranslationItemsInfo,
@@ -65,8 +64,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const loading = JSON.parse(formData.get("loading") as string);
     const index = JSON.parse(formData.get("index") as string);
     const translation = JSON.parse(formData.get("translation") as string);
-    const getData = JSON.parse(formData.get("getData") as string);
-    const syncData = JSON.parse(formData.get("syncData") as string);
+    // const getData = JSON.parse(formData.get("getData") as string);
+    const itemsInfo = JSON.parse(formData.get("itemsInfo") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
 
@@ -168,24 +167,33 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           target: selectedLanguage,
         });
         return json({ statu: statu });
-      case !!getData:
-        console.log("getData: ", getData);
-        const data = await GetItemsInSqlByShopName({
-          shop,
-          accessToken,
-          source: getData.source[0],
-          targets: getData.targets,
-        });
-        return json({ data: data });
-      case !!syncData:
+      // case !!getData:
+      //   console.log("getData: ", getData);
+      //   const data = await GetItemsInSqlByShopName({
+      //     shop,
+      //     accessToken,
+      //     source: getData.source[0],
+      //     targets: getData.targets,
+      //   });
+      //   return json({ data: data });
+      case !!itemsInfo:
         try {
-          console.log("syncData: ", syncData);
-          await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: syncData.source,
-            targets: syncData.targets,
-          });
+          const promises = itemsInfo.resourceTypes.map(
+            (resourceType: string) => {
+              return GetTranslationItemsInfo({
+                shop,
+                accessToken,
+                source: itemsInfo.source,
+                target: itemsInfo.target,
+                resourceType: resourceType,
+              });
+            },
+          );
+
+          // 等待所有请求并发完成
+          const res = await Promise.all(promises);
+          console.log("All translations fetched:", res);
+          return json({ data: res });
         } catch (error) {
           console.error("Error GetTranslationItemsInfo:", error);
           return json(
@@ -230,8 +238,23 @@ export default function App() {
   const loadingFetcher = useFetcher<LoadingFetchType>();
   const dispatch = useDispatch();
   const fetcher = useFetcher<any>();
-  const syncFetcher = useFetcher<any>();
   // const location = useLocation();
+  const resourceTypes = [
+    "Collection",
+    "Theme",
+    "Article",
+    "Blog titles",
+    "Filters",
+    "Metaobjects",
+    "Pages",
+    "Policies",
+    "Products",
+    "Navigation",
+    "Store metadata",
+    "Shop",
+    "Shipping",
+    "Delivery",
+  ];
 
   useEffect(() => {
     shopify.loading(true);
@@ -254,8 +277,12 @@ export default function App() {
     if (shopLocales.length && primaryLanguage.length) {
       const formData = new FormData();
       formData.append(
-        "getData",
-        JSON.stringify({ source: primaryLanguage, targets: shopLocales }),
+        "itemsInfo",
+        JSON.stringify({
+          source: primaryLanguage,
+          target: shopLocales[0],
+          resourceTypes: resourceTypes,
+        }),
       );
       fetcher.submit(formData, {
         method: "post",
@@ -265,20 +292,8 @@ export default function App() {
   }, [shopLocales, primaryLanguage]);
 
   useEffect(() => {
-    if (fetcher.data) {
+    if (fetcher.data) {      
       dispatch(updateData(fetcher.data.data));
-    }
-    shopify.loading(false);
-    if (loadingFetcher.data && fetcher.data && shopLocales.length) {
-      const formData = new FormData();
-      formData.append(
-        "syncData",
-        JSON.stringify({ source: primaryLanguage, targets: shopLocales }),
-      );
-      syncFetcher.submit(formData, {
-        method: "post",
-        action: "/app",
-      }); // 提交表单请求
     }
   }, [fetcher.data]);
 

@@ -15,6 +15,7 @@ import { GetUserWords } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import { WordsType } from "../app._index/route";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
+import { updateData } from "~/store/modules/languageItemsData";
 const ManageTranslationsCard = React.lazy(
   () => import("./components/manageTranslationsCard"),
 );
@@ -75,26 +76,44 @@ const Index = () => {
   const [words, setWords] = useState<WordsType>();
   const [shopLanguages, setShopLanguages] = useState<ShopLocalesType[]>();
   const [menuData, setMenuData] = useState<ManageMenuDataType[]>();
+  const [primaryLanguage, setPrimaryLanguage] = useState<string>();
   const [current, setCurrent] = useState<string>("");
   const [disable, setDisable] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
   const location = useLocation();
   const { key } = location.state || {}; // 提取传递的状态
-  const fetcher = useFetcher<FetchType>();
   const items = useSelector((state: any) => state.languageItemsData);
+  const fetcher = useFetcher<FetchType>();
+  const currentFetcher = useFetcher<any>();
 
+  const resourceTypes = [
+    "Collection",
+    "Theme",
+    "Article",
+    "Blog titles",
+    "Filters",
+    "Metaobjects",
+    "Pages",
+    "Policies",
+    "Products",
+    "Navigation",
+    "Store metadata",
+    "Shop",
+    "Shipping",
+    "Delivery",
+  ];
   const productsDataSource: TableDataType[] = [
     {
       key: "products",
       title: "Products",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Products",
+          (item: any) => item.language === current && item.type === "PRODUCT",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Products",
+          (item: any) => item.language === current && item.type === "PRODUCT",
         )?.totalNumber ?? undefined,
       sync_status: true,
       navigation: "product",
@@ -105,12 +124,12 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "Collection",
+            item.language === current && item.type === "COLLECTION",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "Collection",
+            item.language === current && item.type === "COLLECTION",
         )?.totalNumber ?? undefined,
       sync_status: true,
       navigation: "collection",
@@ -122,11 +141,11 @@ const Index = () => {
       title: "Articles",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Article",
+          (item: any) => item.language === current && item.type === "ARTICLE",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Article",
+          (item: any) => item.language === current && item.type === "ARTICLE",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "article",
@@ -136,13 +155,11 @@ const Index = () => {
       title: "Blog titles",
       allTranslatedItems:
         items.find(
-          (item: any) =>
-            item.language === current && item.type === "Blog titles",
+          (item: any) => item.language === current && item.type === "BLOG",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) =>
-            item.language === current && item.type === "Blog titles",
+          (item: any) => item.language === current && item.type === "BLOG",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "blog",
@@ -152,11 +169,11 @@ const Index = () => {
       title: "Pages",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Pages",
+          (item: any) => item.language === current && item.type === "PAGE",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Pages",
+          (item: any) => item.language === current && item.type === "PAGE",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "page",
@@ -166,11 +183,11 @@ const Index = () => {
       title: "Filters",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Filters",
+          (item: any) => item.language === current && item.type === "FILTER",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Filters",
+          (item: any) => item.language === current && item.type === "FILTER",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "filter",
@@ -181,12 +198,12 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "Metaobjects",
+            item.language === current && item.type === "METAOBJECT",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "Metaobjects",
+            item.language === current && item.type === "METAOBJECT",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "metaobject",
@@ -196,13 +213,11 @@ const Index = () => {
       title: "Navigation",
       allTranslatedItems:
         items.find(
-          (item: any) =>
-            item.language === current && item.type === "Navigation",
+          (item: any) => item.language === current && item.type === "LINK",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) =>
-            item.language === current && item.type === "Navigation",
+          (item: any) => item.language === current && item.type === "LINK",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "navigation",
@@ -212,11 +227,13 @@ const Index = () => {
       title: "Policies",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Policies",
+          (item: any) =>
+            item.language === current && item.type === "SHOP_POLICY",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Policies",
+          (item: any) =>
+            item.language === current && item.type === "SHOP_POLICY",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "policy",
@@ -226,11 +243,11 @@ const Index = () => {
       title: "Shop",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Shop",
+          (item: any) => item.language === current && item.type === "SHOP",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Shop",
+          (item: any) => item.language === current && item.type === "SHOP",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "shop",
@@ -240,13 +257,11 @@ const Index = () => {
       title: "Store metadata",
       allTranslatedItems:
         items.find(
-          (item: any) =>
-            item.language === current && item.type === "Store metadata",
+          (item: any) => item.language === current && item.type === "METAFIELD",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) =>
-            item.language === current && item.type === "Store metadata",
+          (item: any) => item.language === current && item.type === "METAFIELD",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "metafield",
@@ -256,11 +271,13 @@ const Index = () => {
       title: "Theme",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Theme",
+          (item: any) =>
+            item.language === current && item.type === "ONLINE_STORE_THEME",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Theme",
+          (item: any) =>
+            item.language === current && item.type === "ONLINE_STORE_THEME",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "theme",
@@ -272,11 +289,15 @@ const Index = () => {
       title: "Delivery",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "delivery",
+          (item: any) =>
+            item.language === current &&
+            item.type === "DELIVERY_METHOD_DEFINITION",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "delivery",
+          (item: any) =>
+            item.language === current &&
+            item.type === "DELIVERY_METHOD_DEFINITION",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "delivery",
@@ -286,11 +307,13 @@ const Index = () => {
       title: "Shipping",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Shipping",
+          (item: any) =>
+            item.language === current && item.type === "PACKING_SLIP_TEMPLATE",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "Shipping",
+          (item: any) =>
+            item.language === current && item.type === "PACKING_SLIP_TEMPLATE",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "shipping",
@@ -315,8 +338,15 @@ const Index = () => {
   }, [fetcher.data]);
 
   useEffect(() => {
+    if (currentFetcher.data) {   
+      console.log(currentFetcher.data);
+         
+      dispatch(updateData(currentFetcher.data.data));
+    }
+  }, [currentFetcher.data]);
+
+  useEffect(() => {
     if (shopLanguages && words) {
-    } else {
       shopify.loading(false);
       setLoading(false);
     }
@@ -328,6 +358,10 @@ const Index = () => {
 
   useEffect(() => {
     if (shopLanguages && shopLanguages?.length) {
+      const primaryLanguage = shopLanguages.filter(
+        (language) => language.primary,
+      );
+      setPrimaryLanguage(primaryLanguage[0].locale);
       const newArray = shopLanguages
         .filter((language) => !language.primary)
         .map((language) => ({
@@ -351,8 +385,23 @@ const Index = () => {
   }, [current]);
 
   const onClick = (e: any) => {
-    // 将 e.key 转换为字符串以确保 current 始终为 string
     setCurrent(e.key);
+    const findItem = items.find((item: any) => item.language === e.key);
+    if (!findItem && primaryLanguage) {
+      const formData = new FormData();
+      formData.append(
+        "itemsInfo",
+        JSON.stringify({
+          source: primaryLanguage,
+          target: e.key,
+          resourceTypes: resourceTypes,
+        }),
+      );
+      currentFetcher.submit(formData, {
+        method: "post",
+        action: "/app",
+      }); // 提交表单请求
+    }
   };
 
   return (

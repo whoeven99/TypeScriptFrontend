@@ -95,26 +95,47 @@ export const GetTranslationItemsInfo = async ({
   shop,
   accessToken,
   source,
-  targets,
+  target,
+  resourceType,
 }: {
   shop: string;
   accessToken: string | undefined;
   source: string[];
-  targets: string[];
+  target: string;
+  resourceType: string;
 }) => {
+  let res: {
+    language: string;
+    type: string;
+    translatedNumber: number;
+    totalNumber: number;
+  }[] = [];
   try {
-    for (const target of targets) {
-      await axios({
-        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
-        method: "POST",
-        data: {
-          shopName: shop,
-          accessToken: accessToken,
-          source: source[0],
-          target: target,
-        },
-      });
-    }
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        source: source[0],
+        target: target,
+        resourceType: resourceType,
+      },
+    });
+    const data = response.data.response;
+    res = [
+      ...res,
+      ...Object.keys(data).map((key) => {
+        return {
+          language: target,
+          type: data[key].itemName,
+          translatedNumber: data[key].translatedNumber,
+          totalNumber: data[key].totalNumber,
+        };
+      }),
+    ];
+    console.log(res);
+    return res;
   } catch (error) {
     console.error("Error fetching updating translation items:", error);
     throw new Error("Error fetching updating translation items");
@@ -298,8 +319,8 @@ export const GetLanguageStatus = async ({
       shopName: shop,
       source: source,
       target: target[0],
-    },);
-    
+    });
+
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readTranslateDOByArray`,
       method: "Post",
@@ -381,13 +402,13 @@ export const GetTranslate = async ({
         target: target,
       },
     });
-    console.log( {
+    console.log({
       shopName: shop,
       accessToken: accessToken,
       source: source,
       target: target,
     });
-    
+
     const res = { ...response.data, target: target };
     console.log(res);
     return res;
@@ -497,7 +518,7 @@ export const updateManageTranslation = async ({
       }
     }
     console.log(res);
-    
+
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);

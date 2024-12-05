@@ -218,7 +218,7 @@ const Index = () => {
 
   return (
     <div>
-      {shippingsData.nodes.length ? (
+      {resourceData.length ? (
         <Modal
           open={isVisible}
           onCancel={onCancel}

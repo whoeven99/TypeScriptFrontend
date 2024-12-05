@@ -39,8 +39,9 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       width: "30%",
       render: (_: any, record: any) => {
         return record.allItems === undefined ||
-          record.allTranslatedItems === undefined ||
-          (record.allItems === 0 && record.allTranslatedItems === 0) ? (
+          record.allTranslatedItems === undefined ? (
+          <div>Syncing</div>
+        ) : record.allItems === 0 && record.allTranslatedItems === 0 ? (
           <div>--</div>
         ) : (
           <div>
