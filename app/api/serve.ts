@@ -125,26 +125,47 @@ export const GetTranslationItemsInfo = async ({
   shop,
   accessToken,
   source,
-  targets,
+  target,
+  resourceType,
 }: {
   shop: string;
   accessToken: string | undefined;
   source: string[];
-  targets: string[];
+  target: string;
+  resourceType: string;
 }) => {
+  let res: {
+    language: string;
+    type: string;
+    translatedNumber: number;
+    totalNumber: number;
+  }[] = [];
   try {
-    for (const target of targets) {
-      await axios({
-        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
-        method: "POST",
-        data: {
-          shopName: shop,
-          accessToken: accessToken,
-          source: source[0],
-          target: target,
-        },
-      });
-    }
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        source: source[0],
+        target: target,
+        resourceType: resourceType,
+      },
+    });
+    const data = response.data.response;
+    res = [
+      ...res,
+      ...Object.keys(data).map((key) => {
+        return {
+          language: target,
+          type: data[key].itemName,
+          translatedNumber: data[key].translatedNumber,
+          totalNumber: data[key].totalNumber,
+        };
+      }),
+    ];
+    console.log(res);
+    return res;
   } catch (error) {
     console.error("Error fetching updating translation items:", error);
     throw new Error("Error fetching updating translation items");

@@ -1,6 +1,11 @@
 import { Layout, Modal, Table, theme, Result, Button, message } from "antd";
 import { useEffect, useState } from "react";
-import { useFetcher, useLoaderData, useNavigate, useSubmit } from "@remix-run/react"; // 引入 useNavigate
+import {
+  useFetcher,
+  useLoaderData,
+  useNavigate,
+  useSubmit,
+} from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
@@ -119,7 +124,7 @@ const Index = () => {
       } else {
         message.error(errorItem?.errorMsg);
       }
-      setConfirmData([])
+      setConfirmData([]);
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
@@ -197,7 +202,7 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
-    setConfirmLoading(true)
+    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
@@ -212,56 +217,69 @@ const Index = () => {
   };
 
   return (
-    <Modal
-      open={isVisible}
-      onCancel={onCancel}
-      width={"100%"}
-      footer={[
-        <div
-          key={"footer_buttons"}
-          style={{ display: "flex", justifyContent: "center", width: "100%" }}
+    <div>
+      {resourceData.length ? (
+        <Modal
+          open={isVisible}
+          onCancel={onCancel}
+          width={"100%"}
+          footer={[
+            <div
+              key={"footer_buttons"}
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+              }}
+            >
+              <Button
+                key={"manage_cancel_button"}
+                onClick={onCancel}
+                style={{ marginRight: "10px" }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirm}
+                key={"manage_confirm_button"}
+                type="primary"
+                disabled={confirmLoading}
+                loading={confirmLoading}
+              >
+                Save
+              </Button>
+            </div>,
+          ]}
         >
-          <Button
-            key={"manage_cancel_button"}
-            onClick={onCancel}
-            style={{ marginRight: "10px" }}
+          <Layout
+            style={{
+              padding: "24px 0",
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
           >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            key={"manage_confirm_button"}
-            type="primary"
-            disabled={confirmLoading}
-            loading={confirmLoading}
-          >
-            Save
-          </Button>
-        </div>,
-      ]}
-    >
-      {shippingsData.nodes.length ? (
-        <Layout
-          style={{
-            padding: "24px 0",
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
-        >
-          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-            <Table
-              columns={resourceColumns}
-              dataSource={resourceData}
-              pagination={false}
-            />
-          </Content>
-        </Layout>
+            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
+              />
+            </Content>
+          </Layout>
+        </Modal>
       ) : (
-        <Result
-          title="No items found here"
-        />
+        <Modal open={isVisible} footer={null} onCancel={onCancel}>
+          <Result
+            title="No items found here"
+            extra={
+              <Button type="primary" onClick={onCancel}>
+                OK
+              </Button>
+            }
+          />
+        </Modal>
       )}
-    </Modal>
+    </div>
   );
 };
 

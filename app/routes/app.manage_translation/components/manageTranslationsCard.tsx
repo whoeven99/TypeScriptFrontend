@@ -1,6 +1,5 @@
 import { useNavigate } from "@remix-run/react";
 import { Card, Space, Button, Typography, Table, Modal, Result } from "antd";
-import { useState } from "react";
 
 const { Title } = Typography;
 
@@ -24,7 +23,6 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   dataSource,
   current,
 }) => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
   const navigate = useNavigate();
 
   const columns = [
@@ -41,8 +39,9 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       width: "30%",
       render: (_: any, record: any) => {
         return record.allItems === undefined ||
-          record.allTranslatedItems === undefined ||
-          (record.allItems === 0 && record.allTranslatedItems === 0) ? (
+          record.allTranslatedItems === undefined ? (
+          <div>Syncing</div>
+        ) : record.allItems === 0 && record.allTranslatedItems === 0 ? (
           <div>--</div>
         ) : (
           <div>
@@ -60,13 +59,9 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
         return (
           <Button
             onClick={() => {
-              if (record.allItems) {
-                navigate(
-                  `/app/manage_translation/${record.navigation}?language=${current}`,
-                );
-              } else {
-                setIsModalVisible(true)
-              }
+              navigate(
+                `/app/manage_translation/${record.navigation}?language=${current}`,
+              );
             }}
           >
             Edit
@@ -75,10 +70,6 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       },
     },
   ];
-
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
 
   return (
     <div>
@@ -90,16 +81,6 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
           <Table columns={columns} dataSource={dataSource} pagination={false} />
         </Space>
       </Card>
-      <Modal open={isModalVisible} footer={null} onCancel={handleCancel}>
-        <Result
-          title="No items found here"
-          extra={
-            <Button type="primary" onClick={handleCancel}>
-              OK
-            </Button>
-          }
-        />
-      </Modal>
     </div>
   );
 };
