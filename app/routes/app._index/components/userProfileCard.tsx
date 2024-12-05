@@ -33,7 +33,10 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
               {Intl.NumberFormat().format(chars)}
             </Text>
             <Text type="secondary" style={{ fontSize: "20px" }}>
-              / {Intl.NumberFormat().format(totalChars)}
+              /{" "}
+              {totalChars >= 5000000
+                ? "Unlimited"
+                : Intl.NumberFormat().format(totalChars)}
             </Text>
           </div>
         </div>

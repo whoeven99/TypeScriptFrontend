@@ -222,6 +222,20 @@ const Index = () => {
       navigation: "policy",
     },
     {
+      key: "shop",
+      title: "Shop",
+      allTranslatedItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Shop",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) => item.language === current && item.type === "Shop",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "shop",
+    },
+    {
       key: "store_metadata",
       title: "Store metadata",
       allTranslatedItems:
@@ -366,23 +380,23 @@ const Index = () => {
               buttonContent="Get more word credits"
               show={disable}
             />
-            <div className="manage-header">
-              <Menu
-                onClick={onClick}
-                selectedKeys={[current]}
-                mode="horizontal"
-                items={menuData}
-                style={{
-                  backgroundColor: "transparent", // 背景透明
-                  borderBottom: "none", // 去掉底部边框
-                  color: "#000", // 文本颜色
-                  minWidth: "80%",
-                }}
-              ></Menu>
-            </div>
-            <div className="manage-content-wrap">
-              <div className="manage-content-left">
-                <Suspense fallback={<div>loading...</div>}>
+            <Suspense fallback={<div>loading...</div>}>
+              <div className="manage-header">
+                <Menu
+                  onClick={onClick}
+                  selectedKeys={[current]}
+                  mode="horizontal"
+                  items={menuData}
+                  style={{
+                    backgroundColor: "transparent", // 背景透明
+                    borderBottom: "none", // 去掉底部边框
+                    color: "#000", // 文本颜色
+                    minWidth: "80%",
+                  }}
+                />
+              </div>
+              <div className="manage-content-wrap">
+                <div className="manage-content-left">
                   <Space
                     direction="vertical"
                     size="middle"
@@ -406,10 +420,10 @@ const Index = () => {
                       current={current}
                     />
                   </Space>
-                </Suspense>
+                </div>
+                <div className="manage-content-right"></div>
               </div>
-              <div className="manage-content-right"></div>
-            </div>
+            </Suspense>
           </Space>
           <Outlet />
         </div>
