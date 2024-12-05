@@ -338,9 +338,9 @@ const Index = () => {
   }, [fetcher.data]);
 
   useEffect(() => {
-    if (currentFetcher.data) {   
+    if (currentFetcher.data) {
       console.log(currentFetcher.data);
-         
+
       dispatch(updateData(currentFetcher.data.data));
     }
   }, [currentFetcher.data]);
@@ -375,8 +375,21 @@ const Index = () => {
 
   useEffect(() => {
     const foundItem = menuData?.find((item) => item.key === key);
-    if (foundItem) {
+    if (foundItem && primaryLanguage) {
       setCurrent(key);
+      const formData = new FormData();
+      formData.append(
+        "itemsInfo",
+        JSON.stringify({
+          source: primaryLanguage,
+          target: key,
+          resourceTypes: resourceTypes,
+        }),
+      );
+      currentFetcher.submit(formData, {
+        method: "post",
+        action: "/app",
+      }); // 提交表单请求
     }
   }, [key, menuData]);
 
