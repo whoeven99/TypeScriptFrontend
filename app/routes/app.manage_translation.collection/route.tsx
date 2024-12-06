@@ -261,7 +261,6 @@ const Index = () => {
       );
     } else {
       // 如果不存在 nextCollections，可以执行其他逻辑
-      console.log("nextCollections end");
     }
   }, [actionData]);
 

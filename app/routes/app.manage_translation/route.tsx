@@ -339,8 +339,6 @@ const Index = () => {
 
   useEffect(() => {
     if (currentFetcher.data) {
-      console.log(currentFetcher.data);
-
       dispatch(updateData(currentFetcher.data.data));
     }
   }, [currentFetcher.data]);

@@ -91,7 +91,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         },
       };
     });
-    console.log(policies);
     return json({
       searchTerm,
       shopLanguagesLoad,

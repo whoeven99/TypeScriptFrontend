@@ -272,7 +272,6 @@ const Index = () => {
     if (translateFetcher.data && translateFetcher.data.status) {
       if (translateFetcher.data.status.success) {
       } else {
-        console.log(translateFetcher.data);
         message.error(translateFetcher.data.status.errorMsg);
         dispatch(
           setStatuState({
@@ -287,7 +286,6 @@ const Index = () => {
   useEffect(() => {
     if (statusFetcher.data) {
       const items = statusFetcher.data.data.map((item: any) => {
-        console.log(item);
         if (item?.status === 2) {
           return item;
         } else {

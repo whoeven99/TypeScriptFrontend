@@ -155,7 +155,6 @@ const Index = () => {
       setMetaobjectsData(actionData.previousMetaobjects);
     } else {
       // 如果不存在 nextProducts，可以执行其他逻辑
-      console.log("action end");
     }
   }, [actionData]);
 
