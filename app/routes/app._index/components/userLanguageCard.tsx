@@ -4,6 +4,7 @@ import { useFetcher, useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setStatuState } from "~/store/modules/languageTableData";
 import TranslatedIcon from "~/components/translateIcon";
+import { LanguagesDataType } from "~/routes/app.language/route";
 const { Title } = Typography;
 
 interface UserLanguageCardProps {
@@ -27,6 +28,9 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
     state.languageTableData.rows.find(
       (item: any) => item.locale === languageCode,
     ),
+  );
+  const datas = useSelector(
+    (state: any) => state.languageTableData.rows,
   );
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -102,7 +106,6 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   }, [statusFetcher.data]);
 
   useEffect(() => {
-    console.log(translateFetcher.data);
     if (translateFetcher.data && translateFetcher.data.statu) {
       if (translateFetcher.data.statu.success) {
       } else {
@@ -117,22 +120,31 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
     }
   }, [translateFetcher.data]);
 
-  const handleTranslate = async (key: number) => {    
-    const formData = new FormData();
-    formData.append(
-      "translation",
-      JSON.stringify({
-        primaryLanguageCode: primaryLanguageCode,
-        selectedLanguage: languageCode,
-      }),
-    ); // 将选中的语言作为字符串发送
-    translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
-    dispatch(
-      setStatuState({
-        target: data.locale,
-        status: 2,
-      }),
+  const handleTranslate = async () => {
+    const selectedTranslatingItem = datas.find(
+      (item: LanguagesDataType) => item.status === 2,
     );
+    if (!selectedTranslatingItem) {
+      const formData = new FormData();
+      formData.append(
+        "translation",
+        JSON.stringify({
+          primaryLanguageCode: primaryLanguageCode,
+          selectedLanguage: languageCode,
+        }),
+      ); // 将选中的语言作为字符串发送
+      translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
+      dispatch(
+        setStatuState({
+          target: data.locale,
+          status: 2,
+        }),
+      );
+    } else {
+      message.error(
+        "The translation task is in progress. Please try translating again later.",
+      );
+    }
   };
 
   const onClick = () => {
@@ -165,7 +177,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         </div>
         <Space direction="horizontal">
           <Button
-            onClick={() => handleTranslate(data?.key)}
+            onClick={() => handleTranslate()}
             style={{ width: "100px" }}
             type="primary"
           >
