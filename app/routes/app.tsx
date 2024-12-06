@@ -46,10 +46,7 @@ interface LoadingFetchType {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
-    const authStart = Date.now(); // 记录开始时间
     await authenticate.admin(request);
-    const authEnd = Date.now(); // 记录结束时间
-    console.log(`UpdateUser took ${authEnd - authStart}ms`);
     return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
   } catch (error) {
     console.error("Error load app:", error);
