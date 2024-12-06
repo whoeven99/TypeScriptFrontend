@@ -137,7 +137,7 @@ const Index = () => {
 
   const items: MenuProps["items"] = exMenuData(policies);
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [policyData, setPolicyData] = useState<PolicyType>(policies);
+  const [policyData, setPolicyData] = useState<PolicyType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [selectPolicyKey, setSelectPolicyKey] = useState(policies[0].key);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
