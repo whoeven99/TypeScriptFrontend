@@ -404,7 +404,6 @@ const Index = () => {
       setSelectProductKey(actionData.previousProducts.nodes[0]?.resourceId);
     } else {
       // 如果不存在 nextProducts，可以执行其他逻辑
-      console.log("nextProducts end");
     }
   }, [actionData]);
 

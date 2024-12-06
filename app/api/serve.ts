@@ -17,6 +17,7 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const shopData = await queryShop({ request });
+    const Start1 = Date.now(); // 记录结束时间
     const addUserInfoResponse = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/user/add`,
       method: "POST",
@@ -26,6 +27,9 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         email: shopData.contactEmail,
       },
     });
+    const End1 = Date.now(); // 记录结束时间
+    console.log(`UpdateUser took ${End1 - Start1}ms`);
+    const Start2 = Date.now(); // 记录结束时间
     const insertCharsByShopNameResponse = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translationCounter/insertCharsByShopName`,
       method: "POST",
@@ -34,6 +38,9 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         accessToken: accessToken,
       },
     });
+    const End2 = Date.now(); // 记录结束时间
+    console.log(`UpdateUser took ${End2 - Start2}ms`);
+    const Start3 = Date.now(); // 记录结束时间
     const addUserFreeSubscriptionResponse = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/addUserFreeSubscription`,
       method: "POST",
@@ -42,7 +49,8 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         accessToken: accessToken,
       },
     });
-
+    const End3 = Date.now(); // 记录结束时间
+    console.log(`UpdateUser took ${End3 - Start3}ms`);
     console.log("addUserInfoResponse: ", addUserInfoResponse.data);
     console.log(
       "insertCharsByShopNameResponse: ",
@@ -195,10 +203,8 @@ export const GetItemsInSqlByShopName = async ({
 //获取用户的计划
 export const GetUserSubscriptionPlan = async ({
   shop,
-  accessToken,
 }: {
   shop: string;
-  accessToken: string | undefined;
 }) => {
   try {
     const response = await axios({
@@ -206,7 +212,6 @@ export const GetUserSubscriptionPlan = async ({
       method: "Post",
       data: {
         shopName: shop,
-        accessToken: accessToken,
       },
     });
     const res = response.data.response;
@@ -410,7 +415,7 @@ export const GetTranslate = async ({
     });
 
     const res = { ...response.data, target: target };
-    console.log(res);
+    console.log("translation: ", res);
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);

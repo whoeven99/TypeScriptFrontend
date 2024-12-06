@@ -224,7 +224,6 @@ const Index = () => {
       setSelectBlogKey(actionData.previousBlogs.nodes[0]?.resourceId);
     } else {
       // 如果不存在 nextBlogs，可以执行其他逻辑
-      console.log("nextBlogs end");
     }
   }, [actionData]);
 

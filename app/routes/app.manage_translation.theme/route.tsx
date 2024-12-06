@@ -29,6 +29,7 @@ import { ShopLocalesType } from "../app.language/route";
 import { SearchOutlined } from "@ant-design/icons";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
+import ManageTableInput from "~/components/manageTableInput";
 
 const { Header, Content } = Layout;
 const { TextArea } = Input;
@@ -199,13 +200,7 @@ const Index = () => {
       key: "default_language",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return (
-          <TextArea
-            disabled
-            value={record?.default_language}
-            autoSize={{ minRows: 1, maxRows: 6 }}
-          />
-        );
+        return <ManageTableInput record={record} textarea={true} />;
       },
     },
     {
@@ -216,10 +211,12 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           record && (
-            <TextArea
-              value={translatedValues[record?.key] || record?.translated}
-              autoSize={{ minRows: 1, maxRows: 6 }}
-              onChange={(e) => handleInputChange(record.key, e.target.value)}
+            <ManageTableInput
+              record={record}
+              translatedValues={translatedValues}
+              setTranslatedValues={setTranslatedValues}
+              handleInputChange={handleInputChange}
+              textarea={true}
             />
           )
         );

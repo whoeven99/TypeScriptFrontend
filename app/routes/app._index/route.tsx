@@ -72,8 +72,17 @@ const Index = () => {
     if (fetcher.data) {
       setLanguageData(fetcher.data.languageData);
       setUser(fetcher.data.user);
-      shopify.loading(false);
-      setLoading(false);
+      if (fetcher.data.user.plan) {
+        shopify.loading(false);
+        setLoading(false);
+      } else {
+        const formData = new FormData();
+        formData.append("index", JSON.stringify(true));
+        fetcher.submit(formData, {
+          method: "post",
+          action: "/app",
+        });
+      }
     }
   }, [fetcher.data]);
 
@@ -115,7 +124,6 @@ const Index = () => {
               <Suspense fallback={<Skeleton active />}>
                 {user && (
                   <UserProfileCard
-                    plan={user.plan}
                     chars={user.chars}
                     totalChars={user.totalChars}
                   />
