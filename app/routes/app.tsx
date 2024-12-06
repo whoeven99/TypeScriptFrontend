@@ -31,10 +31,9 @@ import {
   GetUserSubscriptionPlan,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
-import { queryShop, queryShopLanguages } from "~/api/admin";
+import { queryShopLanguages } from "~/api/admin";
 import { useEffect, useRef, useState } from "react";
-import { useDispatch } from "react-redux";
-import { updateData } from "~/store/modules/languageItemsData";
+
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
