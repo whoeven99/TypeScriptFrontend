@@ -70,29 +70,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     switch (true) {
       case !!loading:
-        try {
-          const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-            shop,
-            accessToken,
-          });
-          const primaryLanguage = shopLanguages
-            .filter((language) => language.primary)
-            .map((item) => item.locale);
+      //   try {
+      //     const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
+      //       shop,
+      //       accessToken,
+      //     });
+      //     const primaryLanguage = shopLanguages
+      //       .filter((language) => language.primary)
+      //       .map((item) => item.locale);
 
-          const shopLocales = shopLanguages
-            .filter((language) => !language.primary)
-            .map((item) => item.locale);
+      //     const shopLocales = shopLanguages
+      //       .filter((language) => !language.primary)
+      //       .map((item) => item.locale);
           await UpdateUser({ request });
-          console.log("primaryLanguage: ", primaryLanguage);
-          console.log("shopLocales: ", shopLocales);
-          return json({
-            shopLocales: shopLocales,
-            primaryLanguage: primaryLanguage,
-          });
-        } catch (error) {
-          console.error("Error action app:", error);
-          return json({ error: "Error action app" }, { status: 500 });
-        }
+      //     console.log("primaryLanguage: ", primaryLanguage);
+      //     console.log("shopLocales: ", shopLocales);
+      //     return json({
+      //       shopLocales: shopLocales,
+      //       primaryLanguage: primaryLanguage,
+      //     });
+      //   } catch (error) {
+      //     console.error("Error action app:", error);
+      //     return json({ error: "Error action app" }, { status: 500 });
+      //   }
       case !!index:
         const plan = await GetUserSubscriptionPlan({ shop });
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
@@ -229,27 +229,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
-  const [shopLocales, setShopLoacles] = useState<string[]>([]);
-  const [primaryLanguage, setPrimaryLanguage] = useState<string[]>([]);
+  // const [shopLocales, setShopLoacles] = useState<string[]>([]);
+  // const [primaryLanguage, setPrimaryLanguage] = useState<string[]>([]);
   const loadingFetcher = useFetcher<LoadingFetchType>();
-  const dispatch = useDispatch();
-  const fetcher = useFetcher<any>();
-  const resourceTypes = [
-    "Collection",
-    "Theme",
-    "Article",
-    "Blog titles",
-    "Filters",
-    "Metaobjects",
-    "Pages",
-    "Policies",
-    "Products",
-    "Navigation",
-    "Store metadata",
-    "Shop",
-    "Shipping",
-    "Delivery",
-  ];
+  // const dispatch = useDispatch();
+  // const fetcher = useFetcher<any>();
+  // const resourceTypes = [
+  //   "Collection",
+  //   "Theme",
+  //   "Article",
+  //   "Blog titles",
+  //   "Filters",
+  //   "Metaobjects",
+  //   "Pages",
+  //   "Policies",
+  //   "Products",
+  //   "Navigation",
+  //   "Store metadata",
+  //   "Shop",
+  //   "Shipping",
+  //   "Delivery",
+  // ];
 
   useEffect(() => {
     shopify.loading(true);
@@ -261,37 +261,36 @@ export default function App() {
     });
   }, []);
 
-  useEffect(() => {
-    if (loadingFetcher.data) {
-      setShopLoacles(loadingFetcher.data.shopLocales);
-      setPrimaryLanguage(loadingFetcher.data.primaryLanguage);
-      shopify.loading(false);
-    }
-  }, [loadingFetcher.data]);
+  // useEffect(() => {
+  //   if (loadingFetcher.data) {
+  //     setShopLoacles(loadingFetcher.data.shopLocales);
+  //     setPrimaryLanguage(loadingFetcher.data.primaryLanguage);
+  //   }
+  // }, [loadingFetcher.data]);
 
-  useEffect(() => {
-    if (shopLocales.length && primaryLanguage.length) {
-      const formData = new FormData();
-      formData.append(
-        "itemsInfo",
-        JSON.stringify({
-          source: primaryLanguage,
-          target: shopLocales[0],
-          resourceTypes: resourceTypes,
-        }),
-      );
-      fetcher.submit(formData, {
-        method: "post",
-        action: "/app",
-      }); // 提交表单请求
-    }
-  }, [shopLocales, primaryLanguage]);
+  // useEffect(() => {
+  //   if (shopLocales.length && primaryLanguage.length) {
+  //     const formData = new FormData();
+  //     formData.append(
+  //       "itemsInfo",
+  //       JSON.stringify({
+  //         source: primaryLanguage,
+  //         target: shopLocales[0],
+  //         resourceTypes: resourceTypes,
+  //       }),
+  //     );
+  //     fetcher.submit(formData, {
+  //       method: "post",
+  //       action: "/app",
+  //     }); // 提交表单请求
+  //   }
+  // }, [shopLocales, primaryLanguage]);
 
-  useEffect(() => {
-    if (fetcher.data) {
-      dispatch(updateData(fetcher.data.data));
-    }
-  }, [fetcher.data]);
+  // useEffect(() => {
+  //   if (fetcher.data) {
+  //     dispatch(updateData(fetcher.data.data));
+  //   }
+  // }, [fetcher.data]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

@@ -395,18 +395,14 @@ const Index = () => {
 
   useEffect(() => {
     dispatch(setSelectLanguageData(current));
-  }, [current]);
-
-  const onClick = (e: any) => {
-    setCurrent(e.key);
-    const findItem = items.find((item: any) => item.language === e.key);
+    const findItem = items.find((item: any) => item.language === current);
     if (!findItem && primaryLanguage) {
       const formData = new FormData();
       formData.append(
         "itemsInfo",
         JSON.stringify({
           source: primaryLanguage,
-          target: e.key,
+          target: current,
           resourceTypes: resourceTypes,
         }),
       );
@@ -415,6 +411,26 @@ const Index = () => {
         action: "/app",
       }); // 提交表单请求
     }
+  }, [current]);
+
+  const onClick = (e: any) => {
+    setCurrent(e.key);
+    // const findItem = items.find((item: any) => item.language === e.key);
+    // if (!findItem && primaryLanguage) {
+    //   const formData = new FormData();
+    //   formData.append(
+    //     "itemsInfo",
+    //     JSON.stringify({
+    //       source: primaryLanguage,
+    //       target: e.key,
+    //       resourceTypes: resourceTypes,
+    //     }),
+    //   );
+    //   currentFetcher.submit(formData, {
+    //     method: "post",
+    //     action: "/app",
+    //   }); // 提交表单请求
+    // }
   };
 
   return (
