@@ -11,7 +11,7 @@ export interface ConfirmDataType {
   target: string;
 }
 
-//用户数据初始化
+//用户数据更新
 export const UpdateUser = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -34,57 +34,28 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         accessToken: accessToken,
       },
     });
-    console.log("addUserInfoResponse: ", addUserInfoResponse.data);
-    console.log(
-      "insertCharsByShopNameResponse: ",
-      insertCharsByShopNameResponse.data,
-    );
-  } catch (error) {
-    console.error("Error user initialization:", error);
-    throw new Error("Error user initialization");
-  }
-};
-
-//新用户判断
-export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
-  try {
-    const getUserSubscriptionPlanResponse = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getUserSubscriptionPlan`,
-      method: "POST",
-      data: {
-        shopName: shop,
-      },
-    });
-    const res = getUserSubscriptionPlanResponse.data.success;
-    console.log(
-      "getUserSubscriptionPlanResponse: ",
-      getUserSubscriptionPlanResponse.data,
-    );
-    return res;
-  } catch (error) {
-    console.error("Error get user:", error);
-    throw new Error("Error get user");
-  }
-};
-
-//用户字数初始化
-export const userCharsInitialization = async ({ shop }: { shop: string }) => {
-  try {
     const addUserFreeSubscriptionResponse = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/addUserFreeSubscription`,
       method: "POST",
       data: {
         shopName: shop,
+        accessToken: accessToken,
       },
     });
+
+    console.log("addUserInfoResponse: ", addUserInfoResponse.data);
+    console.log(
+      "insertCharsByShopNameResponse: ",
+      insertCharsByShopNameResponse.data,
+    );
     console.log(
       "addUserFreeSubscriptionResponse: ",
       addUserFreeSubscriptionResponse.data,
     );
-    return addUserFreeSubscriptionResponse.data.success;
+    return true
   } catch (error) {
-    console.error("Error chars initialization:", error);
-    throw new Error("Error chars initialization");
+    console.error("Error fetching user:", error);
+    throw new Error("Error fetching user");
   }
 };
 
@@ -219,6 +190,31 @@ export const GetItemsInSqlByShopName = async ({
   } catch (error) {
     console.error("Error fetching search translation items:", error);
     throw new Error("Error fetching search translation items");
+  }
+};
+
+//获取用户的计划
+export const GetUserSubscriptionPlan = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string | undefined;
+}) => {
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getUserSubscriptionPlan`,
+      method: "Post",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+      },
+    });
+    const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the userplan:", error);
+    throw new Error("Error occurred in the userplan");
   }
 };
 

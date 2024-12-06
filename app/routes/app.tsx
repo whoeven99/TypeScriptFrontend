@@ -9,8 +9,6 @@ import {
   Outlet,
   useFetcher,
   useLoaderData,
-  useLocation,
-  useParams,
   useRouteError,
 } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
@@ -25,7 +23,6 @@ import {
   GetLanguageList,
   GetTotalWords,
   GetTranslate,
-  GetUserSubscriptionPlan,
   GetUserWords,
   GetTranslationItemsInfo,
   UpdateUser,
@@ -43,6 +40,7 @@ export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 interface LoadingFetchType {
   shopLocales: string[];
   primaryLanguage: string[];
+  initialization: boolean;
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -230,11 +228,9 @@ export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
   const [shopLocales, setShopLoacles] = useState<string[]>([]);
   const [primaryLanguage, setPrimaryLanguage] = useState<string[]>([]);
-
   const loadingFetcher = useFetcher<LoadingFetchType>();
   const dispatch = useDispatch();
   const fetcher = useFetcher<any>();
-  // const location = useLocation();
   const resourceTypes = [
     "Collection",
     "Theme",
@@ -266,6 +262,7 @@ export default function App() {
     if (loadingFetcher.data) {
       setShopLoacles(loadingFetcher.data.shopLocales);
       setPrimaryLanguage(loadingFetcher.data.primaryLanguage);
+      shopify.loading(false);
     }
   }, [loadingFetcher.data]);
 
@@ -288,7 +285,7 @@ export default function App() {
   }, [shopLocales, primaryLanguage]);
 
   useEffect(() => {
-    if (fetcher.data) {      
+    if (fetcher.data) {
       dispatch(updateData(fetcher.data.data));
     }
   }, [fetcher.data]);
