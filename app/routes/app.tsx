@@ -95,13 +95,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ error: "Error action app" }, { status: 500 });
         }
       case !!index:
-        const shopData = await queryShop({ request });
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,
         });
         const words = await GetUserWords({ shop });
-        const plan = await GetUserSubscriptionPlan({ shop, accessToken });
         const shopPrimaryLanguage = shopLanguagesIndex.filter(
           (language) => language.primary,
         );
@@ -144,8 +142,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }),
         );
         const user = {
-          name: shopData.name,
-          plan: plan,
           chars: words?.chars,
           totalChars: words?.totalChars,
           primaryLanguage: shopPrimaryLanguage[0].name,

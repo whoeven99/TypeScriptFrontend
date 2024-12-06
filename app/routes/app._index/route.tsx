@@ -27,7 +27,6 @@ interface LanguageDataType {
 }
 
 interface UserType {
-  plan: string;
   chars: number;
   totalChars: number;
   primaryLanguage: string;
@@ -115,7 +114,6 @@ const Index = () => {
               <Suspense fallback={<Skeleton active />}>
                 {user && (
                   <UserProfileCard
-                    plan={user.plan}
                     chars={user.chars}
                     totalChars={user.totalChars}
                   />
