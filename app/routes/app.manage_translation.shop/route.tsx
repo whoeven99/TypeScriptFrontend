@@ -374,7 +374,8 @@ import {
         ) : (
           <Modal open={isVisible} footer={null} onCancel={onCancel}>
             <Result
-              title="No items found here"
+              title="The specified fields were not found in the store.
+"
               extra={
                 <Button type="primary" onClick={onCancel}>
                   OK
