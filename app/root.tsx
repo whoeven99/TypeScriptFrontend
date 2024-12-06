@@ -12,17 +12,16 @@ import "react-quill/dist/quill.snow.css";
 import { useEffect } from "react";
 
 export default function App() {
-  // useEffect(() => {
-  //   const callback = async (metrics: any) => {
-  //     const monitorUrl = "https://yourserver.com/web-vitals-metrics";
-  //     const data = JSON.stringify(metrics);
+  useEffect(() => {
+    const callback = async (metrics: any) => {
+      const monitorUrl = "https://typescriptfrontend.onrender.com/web-vitals-metrics";
+      const data = JSON.stringify(metrics);
 
-  //     navigator.sendBeacon(monitorUrl, data);
-  //   };
+      navigator.sendBeacon(monitorUrl, data);
+    };
 
-  //   // Register the callback
-  //   shopify.webVitals.onReport(callback);
-  // }, []);
+    // Register the callback
+  }, []);
 
   return (
     <Provider store={store}>
@@ -30,8 +29,8 @@ export default function App() {
         <head>
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
-          {/* <meta name="shopify-debug" content="web-vitals" />
-          <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" /> */}
+          <meta name="shopify-debug" content="web-vitals" />
+          <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" />
           <link rel="preconnect" href="https://cdn.shopify.com/" />
           <link
             rel="stylesheet"
