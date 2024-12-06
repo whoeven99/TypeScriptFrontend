@@ -55,12 +55,12 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
         shopName: shop,
       },
     });
-    const res = getUserSubscriptionPlanResponse.data.success
+    const res = getUserSubscriptionPlanResponse.data.success;
     console.log(
       "getUserSubscriptionPlanResponse: ",
       getUserSubscriptionPlanResponse.data,
     );
-    return res
+    return res;
   } catch (error) {
     console.error("Error get user:", error);
     throw new Error("Error get user");
@@ -560,6 +560,14 @@ export const addCurrency = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   try {
+    console.log("data: ", {
+      shopName: shop,
+      countryName: countryName, // 国家
+      currencyCode: currencyCode, // 货币代码
+      rounding: "Disable",
+      exchangeRate: "Auto",
+    });
+
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/addCurrency`,
       method: "POST",

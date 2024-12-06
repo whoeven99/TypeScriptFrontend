@@ -326,7 +326,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
           return (
             <SelectedLanguageTag
               key={key}
-              language={language!}
+              item={language!}
               onRemove={() => handleRemoveLanguage(key)}
             />
           );
