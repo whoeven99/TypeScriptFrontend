@@ -195,10 +195,8 @@ export const GetItemsInSqlByShopName = async ({
 //获取用户的计划
 export const GetUserSubscriptionPlan = async ({
   shop,
-  accessToken,
 }: {
   shop: string;
-  accessToken: string | undefined;
 }) => {
   try {
     const response = await axios({
@@ -206,7 +204,6 @@ export const GetUserSubscriptionPlan = async ({
       method: "Post",
       data: {
         shopName: shop,
-        accessToken: accessToken,
       },
     });
     const res = response.data.response;

@@ -28,6 +28,7 @@ import {
   UpdateUser,
   InsertShopTranslateInfo,
   GetLanguageStatus,
+  GetUserSubscriptionPlan,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import { queryShop, queryShopLanguages } from "~/api/admin";
@@ -93,6 +94,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ error: "Error action app" }, { status: 500 });
         }
       case !!index:
+        const plan = await GetUserSubscriptionPlan({ shop });
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,
@@ -140,6 +142,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }),
         );
         const user = {
+          plan: plan,
           chars: words?.chars,
           totalChars: words?.totalChars,
           primaryLanguage: shopPrimaryLanguage[0].name,

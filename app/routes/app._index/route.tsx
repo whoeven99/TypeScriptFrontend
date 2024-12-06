@@ -27,6 +27,7 @@ interface LanguageDataType {
 }
 
 interface UserType {
+  plan: string;
   chars: number;
   totalChars: number;
   primaryLanguage: string;
@@ -71,8 +72,17 @@ const Index = () => {
     if (fetcher.data) {
       setLanguageData(fetcher.data.languageData);
       setUser(fetcher.data.user);
-      shopify.loading(false);
-      setLoading(false);
+      if (fetcher.data.user.plan) {
+        shopify.loading(false);
+        setLoading(false);
+      } else {
+        const formData = new FormData();
+        formData.append("index", JSON.stringify(true));
+        fetcher.submit(formData, {
+          method: "post",
+          action: "/app",
+        });
+      }
     }
   }, [fetcher.data]);
 
