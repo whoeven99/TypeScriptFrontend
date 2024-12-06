@@ -52,7 +52,7 @@ interface PolicyType {
 }
 
 type TableDataType = {
-  key: string | number;
+  key: string | number | undefined;
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
@@ -91,6 +91,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         },
       };
     });
+    console.log(policies);
     return json({
       searchTerm,
       shopLanguagesLoad,
@@ -170,7 +171,7 @@ const Index = () => {
   useEffect(() => {
     setResourceData([
       {
-        key: "body",
+        key: policyData?.key,
         resource: "Content",
         default_language: policyData?.body,
         translated: policyData?.translations?.body,
@@ -224,7 +225,7 @@ const Index = () => {
             <ReactQuill
               theme="snow"
               defaultValue={record?.translated}
-              onChange={(content) => handleInputChange(record.key, content)}
+              onChange={(content) => handleInputChange(record?.key, content)}
             />
           )
         );
@@ -232,7 +233,10 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string | number, value: string) => {
+  const handleInputChange = (
+    key: string | number | undefined,
+    value: string,
+  ) => {
     setConfirmData(
       confirmData.map((item) =>
         item.key === key ? { ...item, value: value } : item,
