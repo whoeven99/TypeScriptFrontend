@@ -46,7 +46,10 @@ interface LoadingFetchType {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
+    const authStart = Date.now(); // 记录开始时间
     await authenticate.admin(request);
+    const authEnd = Date.now(); // 记录结束时间
+    console.log(`UpdateUser took ${authEnd - authStart}ms`);
     return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
   } catch (error) {
     console.error("Error load app:", error);
@@ -70,19 +73,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     switch (true) {
       case !!loading:
-      //   try {
-      //     const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-      //       shop,
-      //       accessToken,
-      //     });
-      //     const primaryLanguage = shopLanguages
-      //       .filter((language) => language.primary)
-      //       .map((item) => item.locale);
+        //   try {
+        //     const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
+        //       shop,
+        //       accessToken,
+        //     });
+        //     const primaryLanguage = shopLanguages
+        //       .filter((language) => language.primary)
+        //       .map((item) => item.locale);
 
-      //     const shopLocales = shopLanguages
-      //       .filter((language) => !language.primary)
-      //       .map((item) => item.locale);
-          await UpdateUser({ request });
+        //     const shopLocales = shopLanguages
+        //       .filter((language) => !language.primary)
+        //       .map((item) => item.locale);
+
+        const userStart = Date.now(); // 记录开始时间
+        await UpdateUser({ request });
+        const userEnd = Date.now(); // 记录结束时间
+        console.log(`UpdateUser took ${userEnd - userStart}ms`);
       //     console.log("primaryLanguage: ", primaryLanguage);
       //     console.log("shopLocales: ", shopLocales);
       //     return json({
@@ -94,12 +101,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       //     return json({ error: "Error action app" }, { status: 500 });
       //   }
       case !!index:
+        const planStart = Date.now(); // 记录开始时间
         const plan = await GetUserSubscriptionPlan({ shop });
+        const planEnd = Date.now(); // 记录结束时间
+        console.log(`GetUserSubscriptionPlan took ${planEnd - planStart}ms`);
+
+        const shopLanguagesStart = Date.now(); // 记录开始时间
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,
         });
+        const shopLanguagesEnd = Date.now(); // 记录结束时间
+        console.log(
+          `queryShopLanguages took ${shopLanguagesEnd - shopLanguagesStart}ms`,
+        );
+
+        const wordsStart = Date.now(); // 记录开始时间
         const words = await GetUserWords({ shop });
+        const wordsEnd = Date.now(); // 记录结束时间
+        console.log(`GetUserWords took ${wordsEnd - wordsStart}ms`);
+
         const shopPrimaryLanguage = shopLanguagesIndex.filter(
           (language) => language.primary,
         );
@@ -109,16 +130,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
           (item) => item.locale,
         );
+
+        const languageLocaleInfoStart = Date.now(); // 记录开始时间
         const languageLocaleInfo = await GetLanguageLocaleInfo({
           locale: shopLocalesIndex,
         });
+        const languageLocaleInfoEnd = Date.now(); // 记录结束时间
+        console.log(
+          `GetLanguageLocaleInfo took ${languageLocaleInfoEnd - languageLocaleInfoStart}ms`,
+        );
+
         for (const target of shopLocalesIndex) {
           try {
+            const insertStart = Date.now(); // 记录开始时间
             await InsertShopTranslateInfo({
               request,
               source: shopPrimaryLanguage[0].locale,
               target,
             });
+            const insertEnd = Date.now(); // 记录结束时间
+            console.log(
+              `InsertShopTranslateInfo for ${target} took ${insertEnd - insertStart}ms`,
+            );
           } catch (error) {
             console.error("Error insert languageInfo:", error);
             return json(
@@ -127,7 +160,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             );
           }
         }
+
+        const languagesStart = Date.now(); // 记录开始时间
         const languages = await GetLanguageList({ shop, accessToken });
+        const languagesEnd = Date.now(); // 记录结束时间
+        console.log(`GetLanguageList took ${languagesEnd - languagesStart}ms`);
+
         const languageData = shopLanguagesWithoutPrimaryIndex.map(
           (lang, i) => ({
             key: i,
@@ -141,6 +179,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             published: lang.published,
           }),
         );
+
         const user = {
           plan: plan,
           chars: words?.chars,
@@ -150,11 +189,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
+
         console.log("user: ", user);
+
         return json({
           languageData,
           user,
         });
+
       case !!translation:
         const source = translation.primaryLanguageCode;
         const selectedLanguage = translation.selectedLanguage;
