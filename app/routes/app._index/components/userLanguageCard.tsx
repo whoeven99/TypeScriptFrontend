@@ -102,13 +102,14 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   }, [statusFetcher.data]);
 
   useEffect(() => {
-    if (translateFetcher.data && translateFetcher.data.data) {
-      if (translateFetcher.data.data.success) {
+    console.log(translateFetcher.data);
+    if (translateFetcher.data && translateFetcher.data.statu) {
+      if (translateFetcher.data.statu.success) {
       } else {
-        message.error(translateFetcher.data.data.errorMsg);
+        message.error(translateFetcher.data.statu.errorMsg);
         dispatch(
           setStatuState({
-            target: translateFetcher.data.data.target,
+            target: translateFetcher.data.statu.target,
             status: 3,
           }),
         );

@@ -52,7 +52,6 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
       "addUserFreeSubscriptionResponse: ",
       addUserFreeSubscriptionResponse.data,
     );
-    return true
   } catch (error) {
     console.error("Error fetching user:", error);
     throw new Error("Error fetching user");
@@ -411,7 +410,7 @@ export const GetTranslate = async ({
     });
 
     const res = { ...response.data, target: target };
-    console.log(res);
+    console.log("translation: ", res);
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
