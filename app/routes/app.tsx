@@ -9,8 +9,6 @@ import {
   Outlet,
   useFetcher,
   useLoaderData,
-  useLocation,
-  useParams,
   useRouteError,
 } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
@@ -25,12 +23,12 @@ import {
   GetLanguageList,
   GetTotalWords,
   GetTranslate,
-  GetUserSubscriptionPlan,
   GetUserWords,
   GetTranslationItemsInfo,
   UpdateUser,
   InsertShopTranslateInfo,
   GetLanguageStatus,
+  GetUserSubscriptionPlan,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import { queryShop, queryShopLanguages } from "~/api/admin";
@@ -43,6 +41,7 @@ export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 interface LoadingFetchType {
   shopLocales: string[];
   primaryLanguage: string[];
+  initialization: boolean;
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -95,13 +94,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ error: "Error action app" }, { status: 500 });
         }
       case !!index:
-        const shopData = await queryShop({ request });
+        const plan = await GetUserSubscriptionPlan({ shop });
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,
         });
         const words = await GetUserWords({ shop });
-        const plan = await GetUserSubscriptionPlan({ shop, accessToken });
         const shopPrimaryLanguage = shopLanguagesIndex.filter(
           (language) => language.primary,
         );
@@ -144,7 +142,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }),
         );
         const user = {
-          name: shopData.name,
           plan: plan,
           chars: words?.chars,
           totalChars: words?.totalChars,
@@ -234,11 +231,9 @@ export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
   const [shopLocales, setShopLoacles] = useState<string[]>([]);
   const [primaryLanguage, setPrimaryLanguage] = useState<string[]>([]);
-
   const loadingFetcher = useFetcher<LoadingFetchType>();
   const dispatch = useDispatch();
   const fetcher = useFetcher<any>();
-  // const location = useLocation();
   const resourceTypes = [
     "Collection",
     "Theme",
@@ -270,6 +265,7 @@ export default function App() {
     if (loadingFetcher.data) {
       setShopLoacles(loadingFetcher.data.shopLocales);
       setPrimaryLanguage(loadingFetcher.data.primaryLanguage);
+      shopify.loading(false);
     }
   }, [loadingFetcher.data]);
 
@@ -292,7 +288,7 @@ export default function App() {
   }, [shopLocales, primaryLanguage]);
 
   useEffect(() => {
-    if (fetcher.data) {      
+    if (fetcher.data) {
       dispatch(updateData(fetcher.data.data));
     }
   }, [fetcher.data]);
