@@ -194,6 +194,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
           onClick={onClick}
           disabled={buyButtonLoading}
           loading={buyButtonLoading}
+          style={{ marginRight: "32px" }}
         >
           Buy now
         </Button>,
@@ -225,6 +226,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
             </Col>
           ))}
         </Row>
+        <div className="total_payment">
+          <Text style={{ marginRight: "5px" }}>Total Payment:</Text>
+          <Text strong>${selectedOption?.price.currentPrice || 0}</Text>
+        </div>
       </div>
     </Modal>
   );
