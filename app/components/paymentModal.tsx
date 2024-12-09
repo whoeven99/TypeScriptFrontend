@@ -27,23 +27,23 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   const [recommendOption, setRecommendOption] = useState<OptionType>();
   const [selectedOption, setSelectedOption] = useState<OptionType>();
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
-  const totalCharacters = useSelector(
-    (state: any) => state.TotalCharacters.count,
-  );
+  // const totalCharacters = useSelector(
+  //   (state: any) => state.TotalCharacters.count,
+  // );
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
 
-  useEffect(() => {
-    if (totalCharacters && !selectedOption) {
-      const matchedOption = options.find(
-        (option) => option.characters >= totalCharacters,
-      ); // 找到第一个符合条件的选项
-      if (matchedOption) {
-        setRecommendOption(matchedOption);
-        setSelectedOption(matchedOption);
-      }
-    }
-  }, [totalCharacters]);
+  // useEffect(() => {
+  //   if (totalCharacters && !selectedOption) {
+  //     const matchedOption = options.find(
+  //       (option) => option.characters >= totalCharacters,
+  //     ); // 找到第一个符合条件的选项
+  //     if (matchedOption) {
+  //       setRecommendOption(matchedOption);
+  //       setSelectedOption(matchedOption);
+  //     }
+  //   }
+  // }, [totalCharacters]);
 
   useEffect(() => {
     if (payFetcher.data) {
@@ -195,7 +195,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         </Button>,
       ]}
     >
-      <div style={{ display: "flex" }}>
+      {/* <div style={{ display: "flex" }}>
         <Text style={{ marginRight: "5px" }}>
           Detected number of characters required to translate store:
         </Text>
@@ -204,7 +204,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         ) : (
           <Text>calculating</Text>
         )}
-      </div>
+      </div> */}
       <div className="options_wrapper">
         <Row gutter={[16, 16]}>
           {options.map((option: any) => (

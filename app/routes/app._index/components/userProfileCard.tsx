@@ -34,16 +34,6 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
           </div>
         </div>
         <div className="user_profilecard_right">
-          <div className="gpttip">
-            <img
-              src="https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/openai.png"
-              alt="GPT 4o"
-              style={{ width: "20px", height: "auto", marginRight: "5px" }}
-            />
-            <Text type="secondary">Powered by GPT 4o</Text>
-          </div>
-        </div>
-        <div className="user_profilecard_right">
           <Button type="primary" onClick={() => setPaymentModalVisible(true)} />
           <div className="gpttip">
             <img
