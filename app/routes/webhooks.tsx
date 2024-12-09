@@ -37,22 +37,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           if (payload?.app_purchase_one_time.status === "ACTIVE") {
             console.log("name: ", payload?.app_purchase_one_time.name);
             switch (payload?.app_purchase_one_time.name) {
-              case "200K characters":
+              case "200K Credits":
                 await AddCharsByShopName({ shop, amount: 200000 });
                 break;
-              case "500K characters":
+              case "500K Credits":
                 await AddCharsByShopName({ shop, amount: 500000 });
                 break;
-              case "1M characters":
+              case "1M Credits":
                 await AddCharsByShopName({ shop, amount: 1000000 });
                 break;
-              case "2M characters":
+              case "2M Credits":
                 await AddCharsByShopName({ shop, amount: 2000000 });
                 break;
-              case "3M characters":
+              case "3M Credits":
                 await AddCharsByShopName({ shop, amount: 3000000 });
                 break;
-              case "4M characters":
+              case "4M Credits":
                 await AddCharsByShopName({ shop, amount: 4000000 });
                 break;
             }
