@@ -238,31 +238,31 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       //     targets: getData.targets,
       //   });
       //   return json({ data: data });
-      // case !!syncData:
-      //   try {
-      //     const promises = itemsInfo.resourceTypes.map(
-      //       (resourceType: string) => {
-      //         return GetTranslationItemsInfo({
-      //           shop,
-      //           accessToken,
-      //           source: itemsInfo.source,
-      //           target: itemsInfo.target,
-      //           resourceType: resourceType,
-      //         });
-      //       },
-      //     );
+      case !!itemsInfo:
+        try {
+          const promises = itemsInfo.resourceTypes.map(
+            (resourceType: string) => {
+              return GetTranslationItemsInfo({
+                shop,
+                accessToken,
+                source: itemsInfo.source,
+                target: itemsInfo.target,
+                resourceType: resourceType,
+              });
+            },
+          );
 
-      //     // 等待所有请求并发完成
-      //     const res = await Promise.all(promises);
-      //     console.log("All translations fetched:", res);
-      //     return json({ data: res });
-      //   } catch (error) {
-      //     console.error("Error GetTranslationItemsInfo:", error);
-      //     return json(
-      //       { error: "Error GetTranslationItemsInfo" },
-      //       { status: 500 },
-      //     );
-      //   }
+          // 等待所有请求并发完成
+          const res = await Promise.all(promises);
+          console.log("All translations fetched:", res);
+          return json({ data: res });
+        } catch (error) {
+          console.error("Error GetTranslationItemsInfo:", error);
+          return json(
+            { error: "Error GetTranslationItemsInfo" },
+            { status: 500 },
+          );
+        }
       case !!statusData:
         try {
           console.log("statusData:", statusData);
