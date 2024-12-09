@@ -118,7 +118,7 @@ const Index = () => {
             >
               <div style={{ paddingLeft: "8px" }}>
                 <Title level={3}>
-                  Faster, higher-quality localization translation tool
+                  Faster, higher-quality localization translation tool<br/>
                 </Title>
               </div>
               <Suspense fallback={<Skeleton active />}>
