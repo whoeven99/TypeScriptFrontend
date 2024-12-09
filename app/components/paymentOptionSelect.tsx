@@ -28,7 +28,8 @@ const PaymentOptionSelect: React.FC<PaymentOptionSelectProps> = ({
           checked={JSON.stringify(selectedOption) === JSON.stringify(option)}
           readOnly
         />
-        <span>{option.name}</span>
+        <Text style={{ display: 'block' }}>{Number(option.characters).toLocaleString()}</Text>
+        <Text>characters</Text>
       </div>
       <div className="price">
         <Text strong style={{ marginRight: "5px", color: "#E74C3C" }}>
