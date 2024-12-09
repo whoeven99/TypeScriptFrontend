@@ -261,7 +261,6 @@ const Index = () => {
       );
     } else {
       // 如果不存在 nextCollections，可以执行其他逻辑
-      console.log("nextCollections end");
     }
   }, [actionData]);
 
@@ -563,7 +562,8 @@ const Index = () => {
       ) : (
         <Modal open={isVisible} footer={null} onCancel={onCancel}>
           <Result
-            title="No items found here"
+            title="The specified fields were not found in the store.
+"
             extra={
               <Button type="primary" onClick={onCancel}>
                 OK

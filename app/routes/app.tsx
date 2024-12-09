@@ -9,8 +9,6 @@ import {
   Outlet,
   useFetcher,
   useLoaderData,
-  useLocation,
-  useParams,
   useRouteError,
 } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
@@ -25,25 +23,25 @@ import {
   GetLanguageList,
   GetTotalWords,
   GetTranslate,
-  GetUserSubscriptionPlan,
   GetUserWords,
   GetTranslationItemsInfo,
   UpdateUser,
   InsertShopTranslateInfo,
   GetLanguageStatus,
   userCharsInitialization,
+  GetUserSubscriptionPlan,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
-import { queryShop, queryShopLanguages } from "~/api/admin";
+import { queryShopLanguages } from "~/api/admin";
 import { useEffect, useRef, useState } from "react";
-import { useDispatch } from "react-redux";
-import { updateData } from "~/store/modules/languageItemsData";
+
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 interface LoadingFetchType {
   shopLocales: string[];
   primaryLanguage: string[];
+  initialization: boolean;
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -88,33 +86,54 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           );
         }
       case !!loading:
-        try {
-          const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-            shop,
-            accessToken,
-          });
-          const primaryLanguage = shopLanguages
-            .filter((language) => language.primary)
-            .map((item) => item.locale);
+        //   try {
+        //     const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
+        //       shop,
+        //       accessToken,
+        //     });
+        //     const primaryLanguage = shopLanguages
+        //       .filter((language) => language.primary)
+        //       .map((item) => item.locale);
 
-          const shopLocales = shopLanguages
-            .filter((language) => !language.primary)
-            .map((item) => item.locale);
-          await UpdateUser({ request });
-          return json({
-            shopLocales: shopLocales,
-            primaryLanguage: primaryLanguage,
-          });
-        } catch (error) {
-          console.error("Error action app:", error);
-          return json({ error: "Error action app" }, { status: 500 });
-        }
+        //     const shopLocales = shopLanguages
+        //       .filter((language) => !language.primary)
+        //       .map((item) => item.locale);
+
+        const userStart = Date.now(); // 记录开始时间
+        await UpdateUser({ request });
+        const userEnd = Date.now(); // 记录结束时间
+        console.log(`UpdateUser took ${userEnd - userStart}ms`);
+      //     console.log("primaryLanguage: ", primaryLanguage);
+      //     console.log("shopLocales: ", shopLocales);
+      //     return json({
+      //       shopLocales: shopLocales,
+      //       primaryLanguage: primaryLanguage,
+      //     });
+      //   } catch (error) {
+      //     console.error("Error action app:", error);
+      //     return json({ error: "Error action app" }, { status: 500 });
+      //   }
       case !!index:
-        const shopData = await queryShop({ request });
+        const planStart = Date.now(); // 记录开始时间
+        const plan = await GetUserSubscriptionPlan({ shop });
+        const planEnd = Date.now(); // 记录结束时间
+        console.log(`GetUserSubscriptionPlan took ${planEnd - planStart}ms`);
+
+        const shopLanguagesStart = Date.now(); // 记录开始时间
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,
         });
+        const shopLanguagesEnd = Date.now(); // 记录结束时间
+        console.log(
+          `queryShopLanguages took ${shopLanguagesEnd - shopLanguagesStart}ms`,
+        );
+
+        const wordsStart = Date.now(); // 记录开始时间
+        const words = await GetUserWords({ shop });
+        const wordsEnd = Date.now(); // 记录结束时间
+        console.log(`GetUserWords took ${wordsEnd - wordsStart}ms`);
+
         const shopPrimaryLanguage = shopLanguagesIndex.filter(
           (language) => language.primary,
         );
@@ -124,18 +143,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
           (item) => item.locale,
         );
+
+        const languageLocaleInfoStart = Date.now(); // 记录开始时间
         const languageLocaleInfo = await GetLanguageLocaleInfo({
           locale: shopLocalesIndex,
         });
-        const plan = await GetUserSubscriptionPlan({ shop });
-        const words = await GetUserWords({ shop });
+        const languageLocaleInfoEnd = Date.now(); // 记录结束时间
+        console.log(
+          `GetLanguageLocaleInfo took ${languageLocaleInfoEnd - languageLocaleInfoStart}ms`,
+        );
+
         for (const target of shopLocalesIndex) {
           try {
+            const insertStart = Date.now(); // 记录开始时间
             await InsertShopTranslateInfo({
               request,
               source: shopPrimaryLanguage[0].locale,
               target,
             });
+            const insertEnd = Date.now(); // 记录结束时间
+            console.log(
+              `InsertShopTranslateInfo for ${target} took ${insertEnd - insertStart}ms`,
+            );
           } catch (error) {
             console.error("Error insert languageInfo:", error);
             return json(
@@ -144,7 +173,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             );
           }
         }
+
+        const languagesStart = Date.now(); // 记录开始时间
         const languages = await GetLanguageList({ shop, accessToken });
+        const languagesEnd = Date.now(); // 记录结束时间
+        console.log(`GetLanguageList took ${languagesEnd - languagesStart}ms`);
+
         const languageData = shopLanguagesWithoutPrimaryIndex.map(
           (lang, i) => ({
             key: i,
@@ -158,21 +192,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             published: lang.published,
           }),
         );
+
         const user = {
-          name: shopData.name,
-          chars: words?.chars || 0,
-          totalChars: words?.totalChars || 0,
+          plan: plan,
+          chars: words?.chars,
+          totalChars: words?.totalChars,
           primaryLanguage: shopPrimaryLanguage[0].name,
           primaryLanguageCode: shopPrimaryLanguage[0].locale,
           shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
-        console.log("plan: ", plan);
+
+        console.log("user: ", user);
+
         return json({
           languageData,
           user,
           plan,
         });
+
       case !!translation:
         const source = translation.primaryLanguageCode;
         const selectedLanguage = translation.selectedLanguage;
@@ -249,29 +287,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
-  const [shopLocales, setShopLoacles] = useState<string[]>([]);
-  const [primaryLanguage, setPrimaryLanguage] = useState<string[]>([]);
-
+  // const [shopLocales, setShopLoacles] = useState<string[]>([]);
+  // const [primaryLanguage, setPrimaryLanguage] = useState<string[]>([]);
   const loadingFetcher = useFetcher<LoadingFetchType>();
-  const dispatch = useDispatch();
-  const fetcher = useFetcher<any>();
-  // const location = useLocation();
-  const resourceTypes = [
-    "Collection",
-    "Theme",
-    "Article",
-    "Blog titles",
-    "Filters",
-    "Metaobjects",
-    "Pages",
-    "Policies",
-    "Products",
-    "Navigation",
-    "Store metadata",
-    "Shop",
-    "Shipping",
-    "Delivery",
-  ];
+  // const dispatch = useDispatch();
+  // const fetcher = useFetcher<any>();
+  // const resourceTypes = [
+  //   "Collection",
+  //   "Theme",
+  //   "Article",
+  //   "Blog titles",
+  //   "Filters",
+  //   "Metaobjects",
+  //   "Pages",
+  //   "Policies",
+  //   "Products",
+  //   "Navigation",
+  //   "Store metadata",
+  //   "Shop",
+  //   "Shipping",
+  //   "Delivery",
+  // ];
 
   useEffect(() => {
     shopify.loading(true);
@@ -283,36 +319,36 @@ export default function App() {
     });
   }, []);
 
-  useEffect(() => {
-    if (loadingFetcher.data) {
-      setShopLoacles(loadingFetcher.data.shopLocales);
-      setPrimaryLanguage(loadingFetcher.data.primaryLanguage);
-    }
-  }, [loadingFetcher.data]);
+  // useEffect(() => {
+  //   if (loadingFetcher.data) {
+  //     setShopLoacles(loadingFetcher.data.shopLocales);
+  //     setPrimaryLanguage(loadingFetcher.data.primaryLanguage);
+  //   }
+  // }, [loadingFetcher.data]);
 
-  useEffect(() => {
-    if (shopLocales.length && primaryLanguage.length) {
-      const formData = new FormData();
-      formData.append(
-        "itemsInfo",
-        JSON.stringify({
-          source: primaryLanguage,
-          target: shopLocales[0],
-          resourceTypes: resourceTypes,
-        }),
-      );
-      fetcher.submit(formData, {
-        method: "post",
-        action: "/app",
-      }); // 提交表单请求
-    }
-  }, [shopLocales, primaryLanguage]);
+  // useEffect(() => {
+  //   if (shopLocales.length && primaryLanguage.length) {
+  //     const formData = new FormData();
+  //     formData.append(
+  //       "itemsInfo",
+  //       JSON.stringify({
+  //         source: primaryLanguage,
+  //         target: shopLocales[0],
+  //         resourceTypes: resourceTypes,
+  //       }),
+  //     );
+  //     fetcher.submit(formData, {
+  //       method: "post",
+  //       action: "/app",
+  //     }); // 提交表单请求
+  //   }
+  // }, [shopLocales, primaryLanguage]);
 
-  useEffect(() => {
-    if (fetcher.data) {      
-      dispatch(updateData(fetcher.data.data));
-    }
-  }, [fetcher.data]);
+  // useEffect(() => {
+  //   if (fetcher.data) {
+  //     dispatch(updateData(fetcher.data.data));
+  //   }
+  // }, [fetcher.data]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

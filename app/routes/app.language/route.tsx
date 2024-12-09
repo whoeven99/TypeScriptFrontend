@@ -271,7 +271,6 @@ const Index = () => {
   useEffect(() => {
     if (translateFetcher.data && translateFetcher.data.status) {
       if (translateFetcher.data.status.success) {
-
       } else {
         message.error(translateFetcher.data.status.errorMsg);
         dispatch(
@@ -287,7 +286,6 @@ const Index = () => {
   useEffect(() => {
     if (statusFetcher.data) {
       const items = statusFetcher.data.data.map((item: any) => {
-        console.log(item);
         if (item?.status === 2) {
           return item;
         } else {
@@ -466,7 +464,10 @@ const Index = () => {
     const selectedItem = data.find(
       (item: LanguagesDataType) => item.locale === locale,
     );
-    if (selectedItem) {
+    const selectedTranslatingItem = data.find(
+      (item: LanguagesDataType) => item.status === 2,
+    );
+    if (selectedItem && !selectedTranslatingItem) {
       const formData = new FormData();
       formData.append(
         "translation",
@@ -487,6 +488,8 @@ const Index = () => {
           status: 2,
         }),
       );
+    } else {
+      message.error("The translation task is in progress. Please try translating again later.");
     }
   };
   const handleConfirmPublishModal = () => {

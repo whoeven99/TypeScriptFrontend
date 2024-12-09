@@ -404,7 +404,6 @@ const Index = () => {
       setSelectProductKey(actionData.previousProducts.nodes[0]?.resourceId);
     } else {
       // 如果不存在 nextProducts，可以执行其他逻辑
-      console.log("nextProducts end");
     }
   }, [actionData]);
 
@@ -944,7 +943,8 @@ const Index = () => {
       ) : (
         <Modal open={isVisible} footer={null} onCancel={onCancel}>
           <Result
-            title="No items found here"
+            title="The specified fields were not found in the store.
+"
             extra={
               <Button type="primary" onClick={onCancel}>
                 OK

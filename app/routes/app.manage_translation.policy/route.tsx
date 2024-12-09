@@ -52,7 +52,7 @@ interface PolicyType {
 }
 
 type TableDataType = {
-  key: string | number;
+  key: string | number | undefined;
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
@@ -137,7 +137,7 @@ const Index = () => {
 
   const items: MenuProps["items"] = exMenuData(policies);
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [policyData, setPolicyData] = useState<PolicyType>(policies);
+  const [policyData, setPolicyData] = useState<PolicyType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [selectPolicyKey, setSelectPolicyKey] = useState(policies[0].key);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
@@ -170,7 +170,7 @@ const Index = () => {
   useEffect(() => {
     setResourceData([
       {
-        key: "body",
+        key: policyData?.key,
         resource: "Content",
         default_language: policyData?.body,
         translated: policyData?.translations?.body,
@@ -224,7 +224,7 @@ const Index = () => {
             <ReactQuill
               theme="snow"
               defaultValue={record?.translated}
-              onChange={(content) => handleInputChange(record.key, content)}
+              onChange={(content) => handleInputChange(record?.key, content)}
             />
           )
         );
@@ -232,7 +232,10 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string | number, value: string) => {
+  const handleInputChange = (
+    key: string | number | undefined,
+    value: string,
+  ) => {
     setConfirmData(
       confirmData.map((item) =>
         item.key === key ? { ...item, value: value } : item,
@@ -325,7 +328,8 @@ const Index = () => {
       ) : (
         <Modal open={isVisible} footer={null} onCancel={onCancel}>
           <Result
-            title="No items found here"
+            title="The specified fields were not found in the store.
+"
             extra={
               <Button type="primary" onClick={onCancel}>
                 OK

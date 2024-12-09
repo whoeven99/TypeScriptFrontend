@@ -17,6 +17,7 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const shopData = await queryShop({ request });
+    const Start1 = Date.now(); // 记录结束时间
     const addUserInfoResponse = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/user/add`,
       method: "POST",
@@ -26,6 +27,9 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         email: shopData.contactEmail,
       },
     });
+    const End1 = Date.now(); // 记录结束时间
+    console.log(`UpdateUser took ${End1 - Start1}ms`);
+    const Start2 = Date.now(); // 记录结束时间
     const insertCharsByShopNameResponse = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translationCounter/insertCharsByShopName`,
       method: "POST",
@@ -415,7 +419,7 @@ export const GetTranslate = async ({
     });
 
     const res = { ...response.data, target: target };
-    console.log(res);
+    console.log("translation: ", res);
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
