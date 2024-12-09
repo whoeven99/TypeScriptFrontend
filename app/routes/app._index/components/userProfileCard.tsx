@@ -34,7 +34,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
           </div>
         </div>
         <div className="user_profilecard_right">
-          <Button type="primary" className="buy_button" onClick={() => setPaymentModalVisible(true)} />
+          <Button type="primary" className="buy_button" onClick={() => setPaymentModalVisible(true)} >Buy Credits</Button>
           <div className="gpttip">
             <img
               src="https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/openai.png"

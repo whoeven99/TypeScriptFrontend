@@ -34,8 +34,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.log(
             `Order ${payload.app_purchase_one_time} processed successfully.`,
           );
-          if (payload?.status === "ACTIVE") {
-            switch (payload?.name) {
+          if (payload?.app_purchase_one_time.status === "ACTIVE") {
+            console.log("name: ", payload?.app_purchase_one_time.name);
+            switch (payload?.app_purchase_one_time.name) {
               case "200K characters":
                 await AddCharsByShopName({ shop, amount: 200000 });
                 break;

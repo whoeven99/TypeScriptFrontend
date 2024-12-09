@@ -575,7 +575,7 @@ const Index = () => {
               <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
             </div>
             <AttentionCard
-              title="Translation word credits have been exhausted."
+              title="Translation credits have been exhausted."
               content="The translation cannot be completed due to exhausted credits."
               buttonContent="Get more word credits"
               show={disable}
