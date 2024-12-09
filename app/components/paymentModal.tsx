@@ -15,7 +15,7 @@ interface PaymentModalProps {
 export interface OptionType {
   key: string;
   name: string;
-  characters: number;
+  Credits: number;
   price: {
     currentPrice: number;
     comparedPrice: number;
@@ -37,7 +37,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   // useEffect(() => {
   //   if (totalCharacters && !selectedOption) {
   //     const matchedOption = options.find(
-  //       (option) => option.characters >= totalCharacters,
+  //       (option) => option.Credits >= totalCharacters,
   //     ); // 找到第一个符合条件的选项
   //     if (matchedOption) {
   //       setRecommendOption(matchedOption);
@@ -92,8 +92,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   const options: OptionType[] = [
     {
       key: "option-1",
-      name: "200K characters",
-      characters: 200000,
+      name: "200K Credits",
+      Credits: 200000,
       price: {
         currentPrice: 2.99,
         comparedPrice: 3.99,
@@ -102,8 +102,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     },
     {
       key: "option-2",
-      name: "500K characters",
-      characters: 500000,
+      name: "500K Credits",
+      Credits: 500000,
       price: {
         currentPrice: 5.99,
         comparedPrice: 6.99,
@@ -113,8 +113,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     },
     {
       key: "option-3",
-      name: "1M characters",
-      characters: 1000000,
+      name: "1M Credits",
+      Credits: 1000000,
       price: {
         currentPrice: 8.99,
         comparedPrice: 9.99,
@@ -123,8 +123,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     },
     {
       key: "option-4",
-      name: "2M characters",
-      characters: 2000000,
+      name: "2M Credits",
+      Credits: 2000000,
       price: {
         currentPrice: 15.99,
         comparedPrice: 16.99,
@@ -133,8 +133,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     },
     {
       key: "option-5",
-      name: "3M characters",
-      characters: 3000000,
+      name: "3M Credits",
+      Credits: 3000000,
       price: {
         currentPrice: 23.99,
         comparedPrice: 24.99,
@@ -143,8 +143,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     },
     {
       key: "option-6",
-      name: "4M characters",
-      characters: 4000000,
+      name: "4M Credits",
+      Credits: 4000000,
       price: {
         currentPrice: 30.99,
         comparedPrice: 31.99,
@@ -202,7 +202,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     >
       {/* <div style={{ display: "flex" }}>
         <Text style={{ marginRight: "5px" }}>
-          Detected number of characters required to translate store:
+          Detected number of Credits required to translate store:
         </Text>
         {totalCharacters ? (
           <Text>about {(totalCharacters / 10000).toFixed(0) + "w"}</Text>
