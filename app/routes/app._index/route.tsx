@@ -190,6 +190,27 @@ const Index = () => {
                 <NoLanguageSetCard />
               )}
             </Space>
+            <Modal
+              open={newUserModal}
+              footer={
+                <Button
+                  onClick={onClick}
+                  loading={newUserModalLoading}
+                  disabled={newUserModalLoading}
+                >
+                  OK
+                </Button>
+              }
+              closable={false} // 禁用关闭按钮
+              maskClosable={false} // 禁用点击遮罩关闭
+              keyboard={false} // 禁用按 Esc 键关闭
+            >
+              <Title level={4}>Congratulations!</Title>
+              <Text>
+                You have received 20,000 characters, enabling you to translate
+                into over 137 languages.
+              </Text>
+            </Modal>
             <PaymentModal
               visible={paymentModalVisible}
               setVisible={setPaymentModalVisible}
