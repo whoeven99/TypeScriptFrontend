@@ -4,6 +4,7 @@ import {
   Layout,
   message,
   Modal,
+  Result,
   Select,
   Space,
   Table,
@@ -28,6 +29,7 @@ import { ShopLocalesType } from "../app.language/route";
 import { SearchOutlined } from "@ant-design/icons";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
+import ManageTableInput from "~/components/manageTableInput";
 
 const { Header, Content } = Layout;
 const { TextArea } = Input;
@@ -180,7 +182,7 @@ const Index = () => {
       } else {
         message.error(errorItem?.errorMsg);
       }
-      setConfirmData([])
+      setConfirmData([]);
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
@@ -198,13 +200,7 @@ const Index = () => {
       key: "default_language",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return (
-          <TextArea
-            disabled
-            value={record?.default_language}
-            autoSize={{ minRows: 1, maxRows: 6 }}
-          />
-        );
+        return <ManageTableInput record={record} textarea={true} />;
       },
     },
     {
@@ -215,10 +211,12 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           record && (
-            <TextArea
-              value={translatedValues[record?.key] || record?.translated}
-              autoSize={{ minRows: 1, maxRows: 6 }}
-              onChange={(e) => handleInputChange(record.key, e.target.value)}
+            <ManageTableInput
+              record={record}
+              translatedValues={translatedValues}
+              setTranslatedValues={setTranslatedValues}
+              handleInputChange={handleInputChange}
+              textarea={true}
             />
           )
         );
@@ -287,7 +285,7 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
-    setConfirmLoading(true)
+    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
@@ -302,78 +300,98 @@ const Index = () => {
   };
 
   return (
-    <Modal
-      open={isVisible}
-      onCancel={onCancel}
-      width={"100%"}
-      footer={[
-        <div
-          key={"footer_buttons"}
-          style={{ display: "flex", justifyContent: "center", width: "100%" }}
-        >
-          <Button
-            key={"manage_cancel_button"}
-            onClick={onCancel}
-            style={{ marginRight: "10px" }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            key={"manage_confirm_button"}
-            type="primary"
-            disabled={confirmLoading}
-            loading={confirmLoading}
-          >
-            Save
-          </Button>
-        </div>,
-      ]}
-    >
-      <Layout
-        style={{
-          padding: "24px 0",
-          background: colorBgContainer,
-          borderRadius: borderRadiusLG,
-        }}
-      >
-        <Header
-          style={{
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
-        >
-          <Input
-            placeholder="Search languages..."
-            prefix={<SearchOutlined />}
-            value={searchInput}
-            onChange={handleSearch}
-            style={{ marginBottom: 16 }}
-          />
-        </Header>
-        <Layout
-          style={{
-            padding: "24px 0",
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
-        >
-          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-            <Space
-              direction="vertical"
-              size="middle"
-              style={{ display: "flex" }}
+    <div>
+      {themes.nodes.length ? (
+        <Modal
+          open={isVisible}
+          onCancel={onCancel}
+          width={"100%"}
+          footer={[
+            <div
+              key={"footer_buttons"}
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+              }}
             >
-              <Table
-                columns={resourceColumns}
-                dataSource={resourceData}
-                pagination={{ position: ["bottomCenter"] }}
+              <Button
+                key={"manage_cancel_button"}
+                onClick={onCancel}
+                style={{ marginRight: "10px" }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirm}
+                key={"manage_confirm_button"}
+                type="primary"
+                disabled={confirmLoading}
+                loading={confirmLoading}
+              >
+                Save
+              </Button>
+            </div>,
+          ]}
+        >
+          <Layout
+            style={{
+              padding: "24px 0",
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
+          >
+            <Header
+              style={{
+                background: colorBgContainer,
+                borderRadius: borderRadiusLG,
+              }}
+            >
+              <Input
+                placeholder="Search languages..."
+                prefix={<SearchOutlined />}
+                value={searchInput}
+                onChange={handleSearch}
+                style={{ marginBottom: 16 }}
               />
-            </Space>
-          </Content>
-        </Layout>
-      </Layout>
-    </Modal>
+            </Header>
+            <Layout
+              style={{
+                padding: "24px 0",
+                background: colorBgContainer,
+                borderRadius: borderRadiusLG,
+              }}
+            >
+              <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+                <Space
+                  direction="vertical"
+                  size="middle"
+                  style={{ display: "flex" }}
+                >
+                  <Table
+                    columns={resourceColumns}
+                    dataSource={resourceData}
+                    pagination={{ position: ["bottomCenter"] }}
+                  />
+                </Space>
+              </Content>
+            </Layout>
+          </Layout>
+        </Modal>
+      ) : (
+        <Modal open={isVisible} footer={null} onCancel={onCancel}>
+          <Result
+            title="The specified fields were not found in the store.
+"
+            extra={
+              <Button type="primary" onClick={onCancel}>
+                OK
+              </Button>
+            }
+          />
+        </Modal>
+      )}
+    </div>
   );
 };
 

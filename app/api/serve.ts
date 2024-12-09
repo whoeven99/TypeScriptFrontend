@@ -17,6 +17,7 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const shopData = await queryShop({ request });
+    const Start1 = Date.now(); // 记录结束时间
     const addUserInfoResponse = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/user/add`,
       method: "POST",
@@ -26,6 +27,9 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         email: shopData.contactEmail,
       },
     });
+    const End1 = Date.now(); // 记录结束时间
+    console.log(`UpdateUser took ${End1 - Start1}ms`);
+    const Start2 = Date.now(); // 记录结束时间
     const insertCharsByShopNameResponse = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translationCounter/insertCharsByShopName`,
       method: "POST",
@@ -55,12 +59,12 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
         shopName: shop,
       },
     });
-    const res = getUserSubscriptionPlanResponse.data.success
+    const res = getUserSubscriptionPlanResponse.data.success;
     console.log(
       "getUserSubscriptionPlanResponse: ",
       getUserSubscriptionPlanResponse.data,
     );
-    return res
+    return res;
   } catch (error) {
     console.error("Error get user:", error);
     throw new Error("Error get user");
@@ -125,26 +129,47 @@ export const GetTranslationItemsInfo = async ({
   shop,
   accessToken,
   source,
-  targets,
+  target,
+  resourceType,
 }: {
   shop: string;
   accessToken: string | undefined;
   source: string[];
-  targets: string[];
+  target: string;
+  resourceType: string;
 }) => {
+  let res: {
+    language: string;
+    type: string;
+    translatedNumber: number;
+    totalNumber: number;
+  }[] = [];
   try {
-    for (const target of targets) {
-      await axios({
-        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
-        method: "POST",
-        data: {
-          shopName: shop,
-          accessToken: accessToken,
-          source: source[0],
-          target: target,
-        },
-      });
-    }
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        source: source[0],
+        target: target,
+        resourceType: resourceType,
+      },
+    });
+    const data = response.data.response;
+    res = [
+      ...res,
+      ...Object.keys(data).map((key) => {
+        return {
+          language: target,
+          type: data[key].itemName,
+          translatedNumber: data[key].translatedNumber,
+          totalNumber: data[key].totalNumber,
+        };
+      }),
+    ];
+    console.log(res);
+    return res;
   } catch (error) {
     console.error("Error fetching updating translation items:", error);
     throw new Error("Error fetching updating translation items");
@@ -379,7 +404,7 @@ export const GetTranslate = async ({
     });
 
     const res = { ...response.data, target: target };
-    console.log(res);
+    console.log("translation: ", res);
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
@@ -524,6 +549,14 @@ export const addCurrency = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   try {
+    console.log("data: ", {
+      shopName: shop,
+      countryName: countryName, // 国家
+      currencyCode: currencyCode, // 货币代码
+      rounding: "Disable",
+      exchangeRate: "Auto",
+    });
+
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/addCurrency`,
       method: "POST",

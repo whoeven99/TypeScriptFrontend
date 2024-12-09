@@ -226,7 +226,7 @@ const Index = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
-  const fetcher = useFetcher<FetchType>();
+  const loadingFetcher = useFetcher<FetchType>();
   const addFetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
@@ -238,7 +238,7 @@ const Index = () => {
   useEffect(() => {
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
-    fetcher.submit(formData, {
+    loadingFetcher.submit(formData, {
       method: "post",
       action: "/app/language",
     });
@@ -246,19 +246,19 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (fetcher.data) {
-      setShop(fetcher.data.shop);
-      setAllCountryCode(fetcher.data.allCountryCode);
-      setShopLanguagesLoad(fetcher.data.shopLanguagesLoad);
-      setAllLanguages(fetcher.data.allLanguages);
-      setAllMarket(fetcher.data.allMarket);
-      setLanguagesLoad(fetcher.data.languagesLoad);
-      setLanguageLocaleInfo(fetcher.data.languageLocaleInfo);
-      setWords(fetcher.data.words);
+    if (loadingFetcher.data) {
+      setShop(loadingFetcher.data.shop);
+      setAllCountryCode(loadingFetcher.data.allCountryCode);
+      setShopLanguagesLoad(loadingFetcher.data.shopLanguagesLoad);
+      setAllLanguages(loadingFetcher.data.allLanguages);
+      setAllMarket(loadingFetcher.data.allMarket);
+      setLanguagesLoad(loadingFetcher.data.languagesLoad);
+      setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
+      setWords(loadingFetcher.data.words);
       shopify.loading(false);
       setLoading(false);
     }
-  }, [fetcher.data]);
+  }, [loadingFetcher.data]);
 
   useEffect(() => {
     if (shopLanguagesLoad) {
@@ -271,7 +271,6 @@ const Index = () => {
   useEffect(() => {
     if (translateFetcher.data && translateFetcher.data.status) {
       if (translateFetcher.data.status.success) {
-
       } else {
         message.error(translateFetcher.data.status.errorMsg);
         dispatch(
@@ -287,7 +286,6 @@ const Index = () => {
   useEffect(() => {
     if (statusFetcher.data) {
       const items = statusFetcher.data.data.map((item: any) => {
-        console.log(item);
         if (item?.status === 2) {
           return item;
         } else {
@@ -466,7 +464,10 @@ const Index = () => {
     const selectedItem = data.find(
       (item: LanguagesDataType) => item.locale === locale,
     );
-    if (selectedItem) {
+    const selectedTranslatingItem = data.find(
+      (item: LanguagesDataType) => item.status === 2,
+    );
+    if (selectedItem && !selectedTranslatingItem) {
       const formData = new FormData();
       formData.append(
         "translation",
@@ -487,6 +488,8 @@ const Index = () => {
           status: 2,
         }),
       );
+    } else {
+      message.error("The translation task is in progress. Please try translating again later.");
     }
   };
   const handleConfirmPublishModal = () => {

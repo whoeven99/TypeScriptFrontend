@@ -256,7 +256,6 @@ const Index = () => {
       setSelectPageKey(actionData.previousPages.nodes[0]?.resourceId);
     } else {
       // 如果不存在 nextPages，可以执行其他逻辑
-      console.log("nextPages end");
     }
   }, [actionData]);
 
@@ -482,79 +481,96 @@ const Index = () => {
   };
 
   return (
-    <Modal
-      open={isVisible}
-      onCancel={onCancel}
-      width={"100%"}
-      footer={[
-        <div
-          key={"footer_buttons"}
-          style={{ display: "flex", justifyContent: "center", width: "100%" }}
-        >
-          <Button
-            key={"manage_cancel_button"}
-            onClick={onCancel}
-            style={{ marginRight: "10px" }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            key={"manage_confirm_button"}
-            type="primary"
-            disabled={confirmLoading}
-            loading={confirmLoading}
-          >
-            Save
-          </Button>
-        </div>,
-      ]}
-    >
+    <div>
+      {" "}
       {pages.nodes.length ? (
-        <Layout
-          style={{
-            padding: "24px 0",
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
+        <Modal
+          open={isVisible}
+          onCancel={onCancel}
+          width={"100%"}
+          footer={[
+            <div
+              key={"footer_buttons"}
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+              }}
+            >
+              <Button
+                key={"manage_cancel_button"}
+                onClick={onCancel}
+                style={{ marginRight: "10px" }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirm}
+                key={"manage_confirm_button"}
+                type="primary"
+                disabled={confirmLoading}
+                loading={confirmLoading}
+              >
+                Save
+              </Button>
+            </div>,
+          ]}
         >
-          <Sider style={{ background: colorBgContainer }} width={200}>
-            <Menu
-              mode="inline"
-              defaultSelectedKeys={[pagesData.nodes[0].key]}
-              defaultOpenKeys={["sub1"]}
-              style={{ height: "100%" }}
-              items={menuData}
-              // onChange={onChange}
-              selectedKeys={[selectPageKey]}
-              onClick={onClick}
-            />
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <Pagination
-                hasPrevious={hasPrevious}
-                onPrevious={onPrevious}
-                hasNext={hasNext}
-                onNext={onNext}
+          <Layout
+            style={{
+              padding: "24px 0",
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
+          >
+            <Sider style={{ background: colorBgContainer }} width={200}>
+              <Menu
+                mode="inline"
+                defaultSelectedKeys={[pagesData.nodes[0].key]}
+                defaultOpenKeys={["sub1"]}
+                style={{ height: "100%" }}
+                items={menuData}
+                // onChange={onChange}
+                selectedKeys={[selectPageKey]}
+                onClick={onClick}
               />
-            </div>
-          </Sider>
-          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-            <Table
-              columns={resourceColumns}
-              dataSource={resourceData}
-              pagination={false}
-            />
-            <Table
-              columns={SEOColumns}
-              dataSource={SeoData}
-              pagination={false}
-            />
-          </Content>
-        </Layout>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Pagination
+                  hasPrevious={hasPrevious}
+                  onPrevious={onPrevious}
+                  hasNext={hasNext}
+                  onNext={onNext}
+                />
+              </div>
+            </Sider>
+            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
+              />
+              <Table
+                columns={SEOColumns}
+                dataSource={SeoData}
+                pagination={false}
+              />
+            </Content>
+          </Layout>
+        </Modal>
       ) : (
-        <Result title="No items found here" />
+        <Modal open={isVisible} footer={null} onCancel={onCancel}>
+          <Result
+            title="The specified fields were not found in the store.
+"
+            extra={
+              <Button type="primary" onClick={onCancel}>
+                OK
+              </Button>
+            }
+          />
+        </Modal>
       )}
-    </Modal>
+    </div>
   );
 };
 

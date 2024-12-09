@@ -13,17 +13,17 @@ const languageItemsDataSlice = createSlice({
   name: "LanguageItemsData",
   initialState,
   reducers: {
-    updateData: (state, action: PayloadAction<LanguageItemsDataState[]>) => {
-      action.payload.forEach((item) => {
+    updateData: (state, action: PayloadAction<any[]>) => {
+      action.payload.forEach((item: LanguageItemsDataState[]) => {
         const index = state.findIndex(
           (existingItem) =>
-            existingItem.language === item.language &&
-            existingItem.type === item.type,
+            existingItem.language === item[0].language &&
+            existingItem.type === item[0].type,
         );
         if (index !== -1) {
-          state[index] = item;
+          state[index] = item[0];
         } else {
-          state.push(item);
+          state.push(item[0]);
         }
       });
     },

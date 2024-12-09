@@ -52,7 +52,7 @@ interface PolicyType {
 }
 
 type TableDataType = {
-  key: string | number;
+  key: string | number | undefined;
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
@@ -137,7 +137,7 @@ const Index = () => {
 
   const items: MenuProps["items"] = exMenuData(policies);
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [policyData, setPolicyData] = useState<PolicyType>(policies);
+  const [policyData, setPolicyData] = useState<PolicyType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [selectPolicyKey, setSelectPolicyKey] = useState(policies[0].key);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
@@ -170,7 +170,7 @@ const Index = () => {
   useEffect(() => {
     setResourceData([
       {
-        key: "body",
+        key: policyData?.key,
         resource: "Content",
         default_language: policyData?.body,
         translated: policyData?.translations?.body,
@@ -224,7 +224,7 @@ const Index = () => {
             <ReactQuill
               theme="snow"
               defaultValue={record?.translated}
-              onChange={(content) => handleInputChange(record.key, content)}
+              onChange={(content) => handleInputChange(record?.key, content)}
             />
           )
         );
@@ -232,7 +232,10 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string | number, value: string) => {
+  const handleInputChange = (
+    key: string | number | undefined,
+    value: string,
+  ) => {
     setConfirmData(
       confirmData.map((item) =>
         item.key === key ? { ...item, value: value } : item,
@@ -260,66 +263,82 @@ const Index = () => {
   };
 
   return (
-    <Modal
-      open={isVisible}
-      onCancel={onCancel}
-      width={"100%"}
-      footer={[
-        <div
-          key={"footer_buttons"}
-          style={{ display: "flex", justifyContent: "center", width: "100%" }}
-        >
-          <Button
-            key={"manage_cancel_button"}
-            onClick={onCancel}
-            style={{ marginRight: "10px" }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            key={"manage_confirm_button"}
-            type="primary"
-            disabled={confirmLoading}
-            loading={confirmLoading}
-          >
-            Save
-          </Button>
-        </div>,
-      ]}
-    >
+    <div>
       {policies.length ? (
-        <Layout
-          style={{
-            padding: "24px 0",
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
+        <Modal
+          open={isVisible}
+          onCancel={onCancel}
+          width={"100%"}
+          footer={[
+            <div
+              key={"footer_buttons"}
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+              }}
+            >
+              <Button
+                key={"manage_cancel_button"}
+                onClick={onCancel}
+                style={{ marginRight: "10px" }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirm}
+                key={"manage_confirm_button"}
+                type="primary"
+                disabled={confirmLoading}
+                loading={confirmLoading}
+              >
+                Save
+              </Button>
+            </div>,
+          ]}
         >
-          <Sider style={{ background: colorBgContainer }} width={200}>
-            <Menu
-              mode="inline"
-              defaultSelectedKeys={[policies[0].id]}
-              defaultOpenKeys={["sub1"]}
-              style={{ height: "100%" }}
-              items={menuData}
-              // onChange={onChange}
-              selectedKeys={[selectPolicyKey]}
-              onClick={onClick}
-            />
-          </Sider>
-          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-            <Table
-              columns={resourceColumns}
-              dataSource={resourceData}
-              pagination={false}
-            />
-          </Content>
-        </Layout>
+          <Layout
+            style={{
+              padding: "24px 0",
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
+          >
+            <Sider style={{ background: colorBgContainer }} width={200}>
+              <Menu
+                mode="inline"
+                defaultSelectedKeys={[policies[0].id]}
+                defaultOpenKeys={["sub1"]}
+                style={{ height: "100%" }}
+                items={menuData}
+                // onChange={onChange}
+                selectedKeys={[selectPolicyKey]}
+                onClick={onClick}
+              />
+            </Sider>
+            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
+              />
+            </Content>
+          </Layout>
+        </Modal>
       ) : (
-        <Result title="No items found here" />
+        <Modal open={isVisible} footer={null} onCancel={onCancel}>
+          <Result
+            title="The specified fields were not found in the store.
+"
+            extra={
+              <Button type="primary" onClick={onCancel}>
+                OK
+              </Button>
+            }
+          />
+        </Modal>
       )}
-    </Modal>
+    </div>
   );
 };
 

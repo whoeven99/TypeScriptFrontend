@@ -6,6 +6,7 @@ import {
   MenuProps,
   message,
   Modal,
+  Result,
   Table,
   theme,
 } from "antd";
@@ -490,70 +491,90 @@ const Index = () => {
   };
 
   return (
-    <Modal
-      open={isVisible}
-      onCancel={onCancel}
-      width={"100%"}
-      footer={[
-        <div
-          key={"footer_buttons"}
-          style={{ display: "flex", justifyContent: "center", width: "100%" }}
+    <div>
+      {navigations.nodes.length && navigationItems.nodes.length ? (
+        <Modal
+          open={isVisible}
+          onCancel={onCancel}
+          width={"100%"}
+          footer={[
+            <div
+              key={"footer_buttons"}
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+              }}
+            >
+              <Button
+                key={"manage_cancel_button"}
+                onClick={onCancel}
+                style={{ marginRight: "10px" }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirm}
+                key={"manage_confirm_button"}
+                type="primary"
+                disabled={confirmLoading}
+                loading={confirmLoading}
+              >
+                Save
+              </Button>
+            </div>,
+          ]}
         >
-          <Button
-            key={"manage_cancel_button"}
-            onClick={onCancel}
-            style={{ marginRight: "10px" }}
+          <Layout
+            style={{
+              padding: "24px 0",
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
           >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            key={"manage_confirm_button"}
-            type="primary"
-            disabled={confirmLoading}
-            loading={confirmLoading}
-          >
-            Save
-          </Button>
-        </div>,
-      ]}
-    >
-      <Layout
-        style={{
-          padding: "24px 0",
-          background: colorBgContainer,
-          borderRadius: borderRadiusLG,
-        }}
-      >
-        <Sider style={{ background: colorBgContainer }} width={200}>
-          <Menu
-            mode="inline"
-            defaultSelectedKeys={[navigationsData.nodes[0].key]}
-            defaultOpenKeys={["sub1"]}
-            style={{ height: "100%" }}
-            items={menuData}
-            // onChange={onChange}
-            selectedKeys={[selectNavigationKey]}
-            onClick={onClick}
+            <Sider style={{ background: colorBgContainer }} width={200}>
+              <Menu
+                mode="inline"
+                defaultSelectedKeys={[navigationsData.nodes[0].key]}
+                defaultOpenKeys={["sub1"]}
+                style={{ height: "100%" }}
+                items={menuData}
+                // onChange={onChange}
+                selectedKeys={[selectNavigationKey]}
+                onClick={onClick}
+              />
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Pagination
+                  hasPrevious={hasPrevious}
+                  onPrevious={onPrevious}
+                  hasNext={hasNext}
+                  onNext={onNext}
+                />
+              </div>
+            </Sider>
+            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
+              />
+            </Content>
+          </Layout>
+        </Modal>
+      ) : (
+        <Modal open={isVisible} footer={null} onCancel={onCancel}>
+          <Result
+            title="The specified fields were not found in the store.
+"
+            extra={
+              <Button type="primary" onClick={onCancel}>
+                OK
+              </Button>
+            }
           />
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <Pagination
-              hasPrevious={hasPrevious}
-              onPrevious={onPrevious}
-              hasNext={hasNext}
-              onNext={onNext}
-            />
-          </div>
-        </Sider>
-        <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-          <Table
-            columns={resourceColumns}
-            dataSource={resourceData}
-            pagination={false}
-          />
-        </Content>
-      </Layout>
-    </Modal>
+        </Modal>
+      )}
+    </div>
   );
 };
 

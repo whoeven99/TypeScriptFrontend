@@ -2,12 +2,7 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import { Button, Flex, Input, Space, Table, Typography } from "antd";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  useFetcher,
-  useLoaderData,
-  useNavigate,
-  useSubmit,
-} from "@remix-run/react";
+import { useFetcher, useLoaderData, useSubmit } from "@remix-run/react";
 import { json } from "@remix-run/node";
 import { useEffect, useState } from "react";
 // import { SearchOutlined } from "@ant-design/icons"
@@ -52,20 +47,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     const adminAuthResult = await authenticate.admin(request);
     const { shop } = adminAuthResult.session;
-    const shopLoad = await queryShop({ request });
-    const currencyList = await GetCurrency({ request });
-    console.log("currencyList: ", currencyList);
-
-    const moneyFormat = shopLoad.currencyFormats.moneyFormat;
-    const moneyWithCurrencyFormat =
-      shopLoad.currencyFormats.moneyWithCurrencyFormat;
 
     // 返回包含 userId 的 json 响应
     return json({
       shop,
-      currencyList,
-      moneyFormat,
-      moneyWithCurrencyFormat,
     });
   } catch (error) {
     // 打印错误信息，方便调试
@@ -80,6 +65,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
 
+    const loading = JSON.parse(formData.get("loading") as string);
     const addCurrencies: CurrencyType[] = JSON.parse(
       formData.get("addcurrencies") as string,
     );
@@ -91,17 +77,57 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
 
     switch (true) {
+      case !!loading:
+        try {
+          const shopLoad = await queryShop({ request });
+          const currencyList = await GetCurrency({ request });
+          const finalCurrencyList =
+            currencyList === undefined ? [] : currencyList;
+          console.log("finalCurrencyList: ", finalCurrencyList);
+          const moneyFormat = shopLoad.currencyFormats.moneyFormat;
+          const moneyWithCurrencyFormat =
+            shopLoad.currencyFormats.moneyWithCurrencyFormat;
+          return json({
+            defaultCurrencyCode: shopLoad.currencyCode,
+            currencyList: finalCurrencyList,
+            moneyFormat,
+            moneyWithCurrencyFormat,
+          });
+        } catch (error) {
+          console.error("Error loading currency:", error);
+          return json({ error: "Error loading currency" }, { status: 500 });
+        }
       case !!addCurrencies:
-        await Promise.all(
-          addCurrencies.map(async (currency) => {
-            // 调用 addCurrency 函数
-            await addCurrency({
+        try {
+          console.log("addCurrencies: ", addCurrencies);
+          console.log("type: ", typeof addCurrencies);
+
+          const promises = addCurrencies.map((currency) => {
+            return addCurrency({
               request,
               countryName: currency.currency,
               currencyCode: currency.currencyCode,
             });
-          }),
-        );
+          });
+          console.log("promises: ", promises);
+
+          // 使用 Promise.allSettled
+          const res = await Promise.allSettled(promises);
+          console.log("result: ", res);
+
+          // 处理每个请求的结果
+          res.forEach((result) => {
+            if (result.status === "fulfilled") {
+              console.log("Request successful:", result.value);
+            } else {
+              console.error("Request failed:", result.reason);
+            }
+          });
+          return json({ data: res });
+        } catch (error) {
+          console.error("Error addCurrency:", error);
+          return json({ error: "Error addCurrency" }, { status: 500 });
+        }
       case !!deleteCurrencies:
         await Promise.all(
           deleteCurrencies.map(async (currency) => {
@@ -118,7 +144,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           updateCurrencies: updateCurrencies,
         });
     }
-
     return null;
   } catch (error) {
     console.error("Error action currency:", error);
@@ -131,7 +156,10 @@ const Index = () => {
     useLoaderData<typeof loader>();
 
   const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
-  // const [loading,setLoading]
+  const [loading, setLoading] = useState<boolean>(true);
+  const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>(
+    "No defaultCurrencyCode set",
+  );
   const [searchInput, setSearchInput] = useState("");
   const [deleteloading, setDeleteLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -146,7 +174,6 @@ const Index = () => {
   const dataSource: CurrencyDataType[] = useSelector(
     (state: any) => state.currencyTableData.rows,
   );
-
   const [originalData, setOriginalData] = useState<
     CurrencyDataType[] | undefined
   >();
@@ -156,29 +183,47 @@ const Index = () => {
   >(dataSource);
 
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
-  const deleteFetcher = useFetcher();
+  const loadingFetcher = useFetcher<any>();
+  const deleteFetcher = useFetcher<any>();
 
   useEffect(() => {
-    const parser = new DOMParser();
-    const parsedMoneyFormat = parser.parseFromString(moneyFormat, "text/html")
-      .documentElement.textContent;
-    const parsedMoneyWithCurrencyFormat = parser.parseFromString(
-      moneyWithCurrencyFormat,
-      "text/html",
-    ).documentElement.textContent;
-
-    setMoneyFormatHtml(parsedMoneyFormat);
-    setMoneyWithCurrencyFormatHtml(parsedMoneyWithCurrencyFormat);
-  }, [moneyFormat, moneyWithCurrencyFormat]);
+    const formData = new FormData();
+    formData.append("loading", JSON.stringify(true));
+    loadingFetcher.submit(formData, {
+      method: "post",
+      action: "/app/currency",
+    });
+    shopify.loading(true);
+  }, []);
 
   useEffect(() => {
-    setOriginalData(currencyList);
-    setFilteredData(currencyList); // 用加载的数据初始化 filteredData
+    if (loadingFetcher.data) {
+      setDefaultCurrencyCode(loadingFetcher.data.defaultCurrencyCode);
+      setOriginalData(loadingFetcher.data.currencyList);
+      setFilteredData(loadingFetcher.data.currencyList); // 用加载的数据初始化 filteredData
+      dispatch(setTableData(loadingFetcher.data.currencyList));
+      const parser = new DOMParser();
+      const parsedMoneyFormat = parser.parseFromString(
+        loadingFetcher.data.moneyFormat,
+        "text/html",
+      ).documentElement.textContent;
+      const parsedMoneyWithCurrencyFormat = parser.parseFromString(
+        loadingFetcher.data.moneyWithCurrencyFormat,
+        "text/html",
+      ).documentElement.textContent;
 
-    dispatch(setTableData(currencyList));
-  }, [currencyList, dispatch]);
+      setMoneyFormatHtml(parsedMoneyFormat);
+      setMoneyWithCurrencyFormatHtml(parsedMoneyWithCurrencyFormat);
+      shopify.loading(false);
+      setLoading(false);
+    }
+  }, [loadingFetcher.data]);
+
+  useEffect(() => {
+    setOriginalData(dataSource);
+    setFilteredData(dataSource); // 用加载的数据初始化 filteredData
+  }, [dataSource]);
 
   const hasSelected = selectedRowKeys.length > 0;
 
@@ -286,6 +331,11 @@ const Index = () => {
     setFilteredData(newData); // 确保当前显示的数据也更新
   };
 
+  const PreviewClick = () => {
+    const shopUrl = `https://${shop}`;
+    window.open(shopUrl, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <Page>
       <TitleBar title="Currency">
@@ -296,64 +346,76 @@ const Index = () => {
           Add Currency
         </button>
       </TitleBar>
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <SwitcherSettingCard
-          settingUrl={settingUrl}
-          moneyFormatHtml={moneyFormatHtml}
-          moneyWithCurrencyFormatHtml={moneyWithCurrencyFormatHtml}
-        />
-        <div className="currency-header">
-          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-            Currency
-          </Title>
-          <div className="currency-action">
-            <Space>
-              <Button type="default">Cart notification</Button>
-              <Button type="primary">Preview Store</Button>
-            </Space>
-          </div>
-        </div>
-        <Text type="secondary">Your store’s default currency:</Text>
-        <Flex gap="middle" vertical>
-          <Flex align="center" gap="middle">
-            <Button
-              type="primary"
-              onClick={() => handleDelete}
-              disabled={!hasSelected}
-              loading={deleteloading}
-            >
-              Delete
-            </Button>
-            {hasSelected ? `Selected ${selectedRowKeys.length} items` : null}
-          </Flex>
-          <Input
-            placeholder="Search currencies..."
-            prefix={<SearchOutlined />}
-            value={searchInput}
-            onChange={handleSearch}
-            style={{ marginBottom: 16 }}
-          />
-          <Table
-            rowSelection={rowSelection}
-            columns={columns}
-            dataSource={filteredData}
-          />
-        </Flex>
-      </Space>
+      {loading ? (
+        <div>loading...</div>
+      ) : (
+        <div>
+          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+            <SwitcherSettingCard
+              settingUrl={settingUrl}
+              moneyFormatHtml={moneyFormatHtml}
+              moneyWithCurrencyFormatHtml={moneyWithCurrencyFormatHtml}
+            />
+            <div className="currency-header">
+              <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+                Currency
+              </Title>
+              <div className="currency-action">
+                <Space>
+                  <Button type="primary" onClick={PreviewClick}>
+                    Preview Store
+                  </Button>
+                </Space>
+              </div>
+            </div>
+            <div>
+              <Text type="secondary">Your store’s default currency: </Text>
+              <Text strong> {defaultCurrencyCode}</Text>
+            </div>
+            <Flex gap="middle" vertical>
+              <Flex align="center" gap="middle">
+                <Button
+                  type="primary"
+                  onClick={() => handleDelete}
+                  disabled={!hasSelected}
+                  loading={deleteloading}
+                >
+                  Delete
+                </Button>
+                {hasSelected
+                  ? `Selected ${selectedRowKeys.length} items`
+                  : null}
+              </Flex>
+              <Input
+                placeholder="Search currencies..."
+                prefix={<SearchOutlined />}
+                value={searchInput}
+                onChange={handleSearch}
+                style={{ marginBottom: 16 }}
+              />
+              <Table
+                rowSelection={rowSelection}
+                columns={columns}
+                dataSource={filteredData}
+              />
+            </Flex>
+          </Space>
 
-      <AddCurrencyModal
-        isVisible={isAddCurrencyModalOpen}
-        setIsModalOpen={setIsAddCurrencyModalOpen}
-        submit={submit}
-      />
-      <CurrencyEditModal
-        isVisible={isCurrencyEditModalOpen}
-        setIsModalOpen={setIsCurrencyEditModalOpen}
-        roundingColumns={roundingColumns}
-        exRateColumns={exRateColumns}
-        selectedRow={selectedRow}
-        submit={submit}
-      />
+          <AddCurrencyModal
+            isVisible={isAddCurrencyModalOpen}
+            setIsModalOpen={setIsAddCurrencyModalOpen}
+            submit={submit}
+          />
+          <CurrencyEditModal
+            isVisible={isCurrencyEditModalOpen}
+            setIsModalOpen={setIsCurrencyEditModalOpen}
+            roundingColumns={roundingColumns}
+            exRateColumns={exRateColumns}
+            selectedRow={selectedRow}
+            submit={submit}
+          />
+        </div>
+      )}
     </Page>
   );
 };

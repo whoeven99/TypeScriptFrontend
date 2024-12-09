@@ -140,7 +140,7 @@ const Index = () => {
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const confirmFetcher = useFetcher<ConfirmFetcherType>();
-  
+
   useEffect(() => {
     setHasPrevious(metaobjectsData.pageInfo.hasPreviousPage);
     setHasNext(metaobjectsData.pageInfo.hasNextPage);
@@ -155,7 +155,6 @@ const Index = () => {
       setMetaobjectsData(actionData.previousMetaobjects);
     } else {
       // 如果不存在 nextProducts，可以执行其他逻辑
-      console.log("action end");
     }
   }, [actionData]);
 
@@ -169,7 +168,7 @@ const Index = () => {
       } else {
         message.error(errorItem?.errorMsg);
       }
-      setConfirmData([])
+      setConfirmData([]);
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
@@ -215,7 +214,9 @@ const Index = () => {
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item?.resourceId === key);
+      const existingItemIndex = prevData.findIndex(
+        (item) => item?.resourceId === key,
+      );
 
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
@@ -277,7 +278,7 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
-    setConfirmLoading(true)
+    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
@@ -292,64 +293,78 @@ const Index = () => {
   };
 
   return (
-    <Modal
-      open={isVisible}
-      onCancel={onCancel}
-      width={"100%"}
-      footer={[
-        <div
-          key={"footer_buttons"}
-          style={{ display: "flex", justifyContent: "center", width: "100%" }}
-        >
-          <Button
-            key={"manage_cancel_button"}
-            onClick={onCancel}
-            style={{ marginRight: "10px" }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            key={"manage_confirm_button"}
-            type="primary"
-            disabled={confirmLoading}
-            loading={confirmLoading}
-          >
-            Save
-          </Button>
-        </div>,
-      ]}
-    >
+    <div>
       {metaobjectsData.nodes.length ? (
-        <Layout
-          style={{
-            padding: "24px 0",
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
+        <Modal
+          open={isVisible}
+          onCancel={onCancel}
+          width={"100%"}
+          footer={[
+            <div
+              key={"footer_buttons"}
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+              }}
+            >
+              <Button
+                key={"manage_cancel_button"}
+                onClick={onCancel}
+                style={{ marginRight: "10px" }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirm}
+                key={"manage_confirm_button"}
+                type="primary"
+                disabled={confirmLoading}
+                loading={confirmLoading}
+              >
+                Save
+              </Button>
+            </div>,
+          ]}
         >
-          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-            <Table
-              columns={resourceColumns}
-              dataSource={resourceData}
-              pagination={false}
-            />
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <Pagination
-                hasPrevious={hasPrevious}
-                onPrevious={onPrevious}
-                hasNext={hasNext}
-                onNext={onNext}
+          <Layout
+            style={{
+              padding: "24px 0",
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
+          >
+            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
               />
-            </div>
-          </Content>
-        </Layout>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Pagination
+                  hasPrevious={hasPrevious}
+                  onPrevious={onPrevious}
+                  hasNext={hasNext}
+                  onNext={onNext}
+                />
+              </div>
+            </Content>
+          </Layout>
+        </Modal>
       ) : (
-        <Result
-          title="No items found here"
-        />
+        <Modal open={isVisible} footer={null} onCancel={onCancel}>
+          <Result
+            title="The specified fields were not found in the store.
+"
+            extra={
+              <Button type="primary" onClick={onCancel}>
+                OK
+              </Button>
+            }
+          />
+        </Modal>
       )}
-    </Modal>
+    </div>
   );
 };
 

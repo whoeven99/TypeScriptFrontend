@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { Modal, Input, Table, Space } from "antd";
+import { useEffect, useState } from "react";
+import { Modal, Input, Table, Space, Button, message } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import SelectedLanguageTag from "../../../components/selectedLanguageTag";
 import { SubmitFunction, useFetcher } from "@remix-run/react";
+import { useSelector } from "react-redux";
+import { CurrencyDataType } from "../route";
 
 interface CurrencyType {
   key: number;
@@ -35,12 +37,36 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     { key: 9, currencyCode: "NZD", currency: "New Zealand Dollar" },
   ];
   const [allSelectedKeys, setAllSelectedKeys] = useState<React.Key[]>([]); // 保存所有选中的key
+  const [confirmButtonDisable, setConfirmButtonDisable] =
+    useState<boolean>(false);
   const [searchInput, setSearchInput] = useState("");
   const [filteredCurrencies, setFilteredCurrencies] = useState(Currencies);
   const [allSelectedCurrency, setAllSelectedCurrency] = useState<
     CurrencyType[]
   >([]);
-  const addFetcher = useFetcher();
+  const selectedCurrency: CurrencyDataType[] = useSelector(
+    (state: any) => state.currencyTableData.rows,
+  );
+  const selectedCurrenciesSet = new Set(
+    selectedCurrency.map((cur) => cur.currencyCode),
+  );
+  const addFetcher = useFetcher<any>();
+
+  useEffect(() => {
+    if (addFetcher.data) {
+      addFetcher.data.data.map((res: any) => {
+        if (res.value.success) {
+          message.success("Add success");
+        } else {
+          message.error(res.value.errorMsg);
+        }
+      });
+    }
+  }, [addFetcher.data]);
+
+  useEffect(() => {
+    console.log(allSelectedCurrency);
+  }, [allSelectedCurrency]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -80,7 +106,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
       method: "post",
       action: "/app/currency",
     }); // 提交表单请求
-    setIsModalOpen(false); // 选择后关闭Modal
+    setConfirmButtonDisable(true); // 选择后关闭Modal
   };
 
   const handleCloseModal = () => {
@@ -117,12 +143,29 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
 
   return (
     <Modal
-      title="Add currency"
+      title="Select Languages"
       open={isVisible}
       onCancel={handleCloseModal}
-      onOk={() => handleConfirm()} // 确定按钮绑定确认逻辑
-      okText="Confirm"
-      cancelText="Cancel"
+      footer={[
+        <div key={"footer_buttons"}>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={handleCloseModal}
+            style={{ marginRight: "10px" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            key={"manage_confirm_button"}
+            type="primary"
+            disabled={confirmButtonDisable}
+            loading={confirmButtonDisable}
+          >
+            Add
+          </Button>
+        </div>,
+      ]}
     >
       <Input
         placeholder="Search languages..."
@@ -134,11 +177,11 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
 
       <Space wrap style={{ marginBottom: 16 }}>
         {allSelectedKeys.map((key) => {
-          const language = Currencies.find((cur) => cur.key === key)?.currency;
+          const currency = Currencies.find((cur) => cur.key === key)?.currency;
           return (
             <SelectedLanguageTag
               key={key}
-              language={language!}
+              item={currency!}
               onRemove={() => handleRemoveCurrency(key)}
             />
           );
