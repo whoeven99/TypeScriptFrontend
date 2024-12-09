@@ -690,6 +690,16 @@ export const InsertOrUpdateOrder = async ({
   confirmationUrl?: URL;
 }) => {
   try {
+    console.log("Order: ", {
+      shopName: shop,
+      id: id,
+      amount: amount,
+      name: name,
+      createdAt: createdAt,
+      status: status,
+      confirmationUrl: confirmationUrl,
+    });
+
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/orders/insertOrUpdateOrder`,
       method: "POST",
@@ -704,31 +714,56 @@ export const InsertOrUpdateOrder = async ({
       },
     });
     const res = response.data;
-    console.log(res);
+    console.log("InsertOrUpdateOrder:", res);
   } catch (error) {
-    console.error("Error fetching user:", error);
-    throw new Error("Error fetching user");
+    console.error("Error fetching insert order:", error);
+    throw new Error("Error fetching insert order");
   }
 };
 
-//获取订单id
-export const GetPendingOrders = async ({ shop }: { shop: string }) => {
+//增加用户字符数
+export const AddCharsByShopName = async ({
+  shop,
+  amount,
+}: {
+  shop: string;
+  amount: number;
+}) => {
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/orders/getPendingOrders`,
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translateCounter/addCharsByShopName`,
       method: "POST",
       data: {
         shopName: shop,
+        chars: amount,
       },
     });
-    console.log({
-      shopName: shop,
-    });
-
-    const res = response.data.response;
-    return res
+    const res = response.data;
+    console.log(res);
   } catch (error) {
-    console.error("Error fetching user:", error);
-    throw new Error("Error fetching user");
+    console.error("Error fetching add chars:", error);
+    throw new Error("Error fetching add chars");
   }
 };
+
+// //获取订单id
+// export const GetPendingOrders = async ({ shop }: { shop: string }) => {
+//   try {
+//     const response = await axios({
+//       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/orders/getPendingOrders`,
+//       method: "POST",
+//       data: {
+//         shopName: shop,
+//       },
+//     });
+//     console.log({
+//       shopName: shop,
+//     });
+
+//     const res = response.data.response;
+//     return res
+//   } catch (error) {
+//     console.error("Error fetching user:", error);
+//     throw new Error("Error fetching user");
+//   }
+// };

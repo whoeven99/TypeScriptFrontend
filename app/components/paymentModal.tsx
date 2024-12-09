@@ -92,18 +92,17 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   const options: OptionType[] = [
     {
       key: "option-1",
-      name: "20w",
+      name: "200K characters",
       characters: 200000,
       price: {
         currentPrice: 2.99,
         comparedPrice: 3.99,
         currencyCode: "USD",
       },
-      test: false,
     },
     {
       key: "option-2",
-      name: "50w",
+      name: "500K characters",
       characters: 500000,
       price: {
         currentPrice: 5.99,
@@ -114,7 +113,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     },
     {
       key: "option-3",
-      name: "100w",
+      name: "1M characters",
       characters: 1000000,
       price: {
         currentPrice: 8.99,
@@ -124,7 +123,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     },
     {
       key: "option-4",
-      name: "200w",
+      name: "2M characters",
       characters: 2000000,
       price: {
         currentPrice: 15.99,
@@ -134,7 +133,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     },
     {
       key: "option-5",
-      name: "300w",
+      name: "3M characters",
       characters: 3000000,
       price: {
         currentPrice: 23.99,
@@ -144,7 +143,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     },
     {
       key: "option-6",
-      name: "400w",
+      name: "4M characters",
       characters: 4000000,
       price: {
         currentPrice: 30.99,
