@@ -83,6 +83,7 @@ export const queryShop = async ({ request }: { request: Request }) => {
       shop {
         name
         contactEmail
+        currencyCode
         myshopifyDomain
         currencyFormats {
           moneyFormat
@@ -1305,6 +1306,43 @@ export const queryAllMarket = async ({ request }: { request: Request }) => {
   }
 };
 
+//查询订单状态
+export const queryOrders = async ({
+  request,
+  id,
+}: {
+  request: Request;
+  id: string;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  const query = `{
+    node(id: "${id}") {
+      ... on AppPurchaseOneTime {
+        id
+        status
+      }
+    }
+  }`;
+  try {
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+    const res = response.data.node;
+    console.log(res);
+    return res;
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    throw error;
+  }
+};
+
 // export const queryAllCustomers = async ({ request }: { request: Request }) => {
 //   const adminAuthResult = await authenticate.admin(request);
 //   const { shop, accessToken } = adminAuthResult.session;
@@ -1412,7 +1450,7 @@ export const mutationShopLocaleDisable = async ({
 }: {
   request: Request;
   languages: LanguagesDataType[]; // 接受语言数组
-  primaryLanguageCode:string;
+  primaryLanguageCode: string;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -1550,15 +1588,21 @@ export const mutationShopLocaleUnpublish = async ({
   }
 };
 
+//创建订单
 export const mutationAppSubscriptionCreate = async ({
   request,
   name,
-  lineItems,
+  price,
+  test,
   returnUrl,
 }: {
   request: Request;
   name: String;
-  lineItems: any;
+  price: {
+    amount: number;
+    currencyCode: string;
+  };
+  test?: boolean;
   returnUrl: URL;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -1573,14 +1617,21 @@ export const mutationAppSubscriptionCreate = async ({
         "Content-Type": "application/json",
       },
       data: {
-        query: `mutation AppSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $returnUrl: URL!) {
-          appSubscriptionCreate(name: $name, returnUrl: $returnUrl, lineItems: $lineItems) {
+        query: `mutation AppPurchaseOneTimeCreate($name: String!, $price: MoneyInput!, $returnUrl: URL! $test: Boolean) {
+          appPurchaseOneTimeCreate(name: $name, returnUrl: $returnUrl, price: $price, test: $test) {
             userErrors {
               field
               message
             }
-            appSubscription {
+            appPurchaseOneTime {
+              createdAt
               id
+              name
+              price {
+                amount
+                currencyCode
+              }
+              status
             }
             confirmationUrl
           }
@@ -1588,14 +1639,19 @@ export const mutationAppSubscriptionCreate = async ({
         variables: {
           name: name,
           returnUrl: returnUrl,
-          lineItems: lineItems,
+          price: {
+            amount: price.amount,
+            currencyCode: price.currencyCode,
+          },
+          test: test || false,
         },
       },
     });
     const res = response.data;
+    console.log(res);
     return res;
   } catch (error) {
-    console.error("Error publish shopLanguage:", error);
+    console.error("Payment failed:", error);
     throw error;
   }
 };

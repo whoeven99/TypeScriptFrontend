@@ -1,15 +1,18 @@
-import { Card } from "antd";
+import { Button, Card } from "antd";
 import { Typography } from "antd";
+import AnimatedText from "./animatedText";
 import "../styles.css";
 
 const { Text } = Typography;
 
 interface UserProfileCardProps {
+  setPaymentModalVisible: React.Dispatch<React.SetStateAction<boolean>>;
   chars: number;
   totalChars: number;
 }
 
 const UserProfileCard: React.FC<UserProfileCardProps> = ({
+  setPaymentModalVisible,
   chars,
   totalChars,
 }) => {
@@ -25,14 +28,13 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
               {Intl.NumberFormat().format(chars)}
             </Text>
             <Text type="secondary" style={{ fontSize: "20px" }}>
-              /{" "}
-              {totalChars >= 5000000
-                ? "Unlimited"
-                : Intl.NumberFormat().format(totalChars)}
+              /
             </Text>
+            <AnimatedText totalChars={totalChars} />
           </div>
         </div>
         <div className="user_profilecard_right">
+          <Button type="primary" className="buy_button" onClick={() => setPaymentModalVisible(true)} />
           <div className="gpttip">
             <img
               src="https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/openai.png"

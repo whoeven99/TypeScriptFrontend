@@ -16,9 +16,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://typescriptfrontendprod.onrender.com/auth/callback",
-  "https://typescriptfrontendprod.onrender.com/auth/shopify/callback",
-  "https://typescriptfrontendprod.onrender.com/api/auth/callback"
+  "https://typescriptfrontend.onrender.com/auth/callback",
+  "https://typescriptfrontend.onrender.com/auth/shopify/callback",
+  "https://typescriptfrontend.onrender.com/api/auth/callback"
 ]
 
 [webhooks]

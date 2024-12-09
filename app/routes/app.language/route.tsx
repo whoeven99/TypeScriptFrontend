@@ -224,10 +224,10 @@ const Index = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   const dispatch = useDispatch();
-  const fetcher = useFetcher<FetchType>();
-  const addFetcher = useFetcher<any>();
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const loadingFetcher = useFetcher<FetchType>();
+  const addFetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
 
@@ -238,7 +238,7 @@ const Index = () => {
   useEffect(() => {
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
-    fetcher.submit(formData, {
+    loadingFetcher.submit(formData, {
       method: "post",
       action: "/app/language",
     });
@@ -246,19 +246,19 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (fetcher.data) {
-      setShop(fetcher.data.shop);
-      setAllCountryCode(fetcher.data.allCountryCode);
-      setShopLanguagesLoad(fetcher.data.shopLanguagesLoad);
-      setAllLanguages(fetcher.data.allLanguages);
-      setAllMarket(fetcher.data.allMarket);
-      setLanguagesLoad(fetcher.data.languagesLoad);
-      setLanguageLocaleInfo(fetcher.data.languageLocaleInfo);
-      setWords(fetcher.data.words);
+    if (loadingFetcher.data) {
+      setShop(loadingFetcher.data.shop);
+      setAllCountryCode(loadingFetcher.data.allCountryCode);
+      setShopLanguagesLoad(loadingFetcher.data.shopLanguagesLoad);
+      setAllLanguages(loadingFetcher.data.allLanguages);
+      setAllMarket(loadingFetcher.data.allMarket);
+      setLanguagesLoad(loadingFetcher.data.languagesLoad);
+      setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
+      setWords(loadingFetcher.data.words);
       shopify.loading(false);
       setLoading(false);
     }
-  }, [fetcher.data]);
+  }, [loadingFetcher.data]);
 
   useEffect(() => {
     if (shopLanguagesLoad) {

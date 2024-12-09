@@ -11,7 +11,7 @@ export interface ConfirmDataType {
   target: string;
 }
 
-//用户数据更新
+//用户数据初始化
 export const UpdateUser = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -38,31 +38,57 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         accessToken: accessToken,
       },
     });
-    const End2 = Date.now(); // 记录结束时间
-    console.log(`UpdateUser took ${End2 - Start2}ms`);
-    const Start3 = Date.now(); // 记录结束时间
-    const addUserFreeSubscriptionResponse = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/addUserFreeSubscription`,
-      method: "POST",
-      data: {
-        shopName: shop,
-        accessToken: accessToken,
-      },
-    });
-    const End3 = Date.now(); // 记录结束时间
-    console.log(`UpdateUser took ${End3 - Start3}ms`);
     console.log("addUserInfoResponse: ", addUserInfoResponse.data);
     console.log(
       "insertCharsByShopNameResponse: ",
       insertCharsByShopNameResponse.data,
     );
+  } catch (error) {
+    console.error("Error user initialization:", error);
+    throw new Error("Error user initialization");
+  }
+};
+
+//新用户判断
+export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
+  try {
+    const getUserSubscriptionPlanResponse = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getUserSubscriptionPlan`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    const res = getUserSubscriptionPlanResponse.data.success;
+    console.log(
+      "getUserSubscriptionPlanResponse: ",
+      getUserSubscriptionPlanResponse.data,
+    );
+    return res;
+  } catch (error) {
+    console.error("Error get user:", error);
+    throw new Error("Error get user");
+  }
+};
+
+//用户字数初始化
+export const userCharsInitialization = async ({ shop }: { shop: string }) => {
+  try {
+    const addUserFreeSubscriptionResponse = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/addUserFreeSubscription`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
     console.log(
       "addUserFreeSubscriptionResponse: ",
       addUserFreeSubscriptionResponse.data,
     );
+    return addUserFreeSubscriptionResponse.data.success;
   } catch (error) {
-    console.error("Error fetching user:", error);
-    throw new Error("Error fetching user");
+    console.error("Error chars initialization:", error);
+    throw new Error("Error chars initialization");
   }
 };
 
@@ -149,7 +175,6 @@ export const GetTranslationItemsInfo = async ({
     throw new Error("Error fetching updating translation items");
   }
 };
-
 //获取各项翻译状态
 export const GetItemsInSqlByShopName = async ({
   shop,
@@ -200,28 +225,6 @@ export const GetItemsInSqlByShopName = async ({
   }
 };
 
-//获取用户的计划
-export const GetUserSubscriptionPlan = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
-  try {
-    const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getUserSubscriptionPlan`,
-      method: "Post",
-      data: {
-        shopName: shop,
-      },
-    });
-    const res = response.data.response;
-    return res;
-  } catch (error) {
-    console.error("Error occurred in the userplan:", error);
-    throw new Error("Error occurred in the userplan");
-  }
-};
-
 //获取用户的额度字符数 和 已使用的字符
 export const GetUserWords = async ({ shop }: { shop: string }) => {
   try {
@@ -240,7 +243,7 @@ export const GetUserWords = async ({ shop }: { shop: string }) => {
   }
 };
 
-//获取国旗图片链接
+//获取本地化信息
 export const GetLanguageLocaleInfo = async ({
   locale,
 }: {
@@ -320,12 +323,6 @@ export const GetLanguageStatus = async ({
   target: string[];
 }) => {
   try {
-    console.log({
-      shopName: shop,
-      source: source,
-      target: target[0],
-    });
-
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readTranslateDOByArray`,
       method: "Post",
@@ -337,14 +334,6 @@ export const GetLanguageStatus = async ({
         },
       ],
     });
-    console.log([
-      {
-        shopName: shop,
-        source: source,
-        target: target[0],
-      },
-    ]);
-
     const res = response.data.response;
     console.log(res);
     return res;
@@ -560,6 +549,14 @@ export const addCurrency = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   try {
+    console.log("data: ", {
+      shopName: shop,
+      countryName: countryName, // 国家
+      currencyCode: currencyCode, // 货币代码
+      rounding: "Disable",
+      exchangeRate: "Auto",
+    });
+
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/addCurrency`,
       method: "POST",
@@ -637,8 +634,8 @@ export const UpdateCurrency = async ({
     const res = response.data;
     return res;
   } catch (error) {
-    console.error("Error delete currency:", error);
-    throw new Error("Error delete currency");
+    console.error("Error update currency:", error);
+    throw new Error("Error update currency");
   }
 };
 
@@ -656,17 +653,82 @@ export const GetCurrency = async ({ request }: { request: Request }) => {
     });
 
     const res = response.data.response;
-    const data = res.map((item: any) => ({
-      key: item.id, // 将 id 转换为 key
-      currency: item.countryName, // 将 countryName 作为 currency
-      rounding: item.rounding,
-      exchangeRate: item.exchangeRate,
-      currencyCode: item.currencyCode,
-    }));
-
-    return data;
+    if (res) {
+      const data = res.map((item: any) => ({
+        key: item.id, // 将 id 转换为 key
+        currency: item.countryName, // 将 countryName 作为 currency
+        rounding: item.rounding,
+        exchangeRate: item.exchangeRate,
+        currencyCode: item.currencyCode,
+      }));
+      return data;
+    } else {
+      return undefined;
+    }
   } catch (error) {
-    console.error("Error delete currency:", error);
-    throw new Error("Error delete currency");
+    console.error("Error get currency:", error);
+    throw new Error("Error get currency");
+  }
+};
+
+//更新订单数据
+export const InsertOrUpdateOrder = async ({
+  shop,
+  id,
+  amount,
+  name,
+  createdAt,
+  status,
+  confirmationUrl,
+}: {
+  shop?: string;
+  id: string;
+  amount?: number;
+  name?: string;
+  createdAt?: string;
+  status: string;
+  confirmationUrl?: URL;
+}) => {
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/orders/insertOrUpdateOrder`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        id: id,
+        amount: amount,
+        name: name,
+        createdAt: createdAt,
+        status: status,
+        confirmationUrl: confirmationUrl,
+      },
+    });
+    const res = response.data;
+    console.log(res);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    throw new Error("Error fetching user");
+  }
+};
+
+//获取订单id
+export const GetPendingOrders = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/orders/getPendingOrders`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    console.log({
+      shopName: shop,
+    });
+
+    const res = response.data.response;
+    return res
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    throw new Error("Error fetching user");
   }
 };

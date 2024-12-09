@@ -1,3 +1,4 @@
+/* translateIcon */
 .icon-container {
   display: flex;
   align-items: center; /* 垂直居中 */
@@ -69,15 +70,15 @@
 }
 
 .partly_translated {
-  background-color: #e0f7e0; 
+  background-color: #e0f7e0;
 }
 
 .partly_translated .circle {
-  border-top-color: #4caf50; 
+  border-top-color: #4caf50;
 }
 
 .partly_translated .text {
-  color: #29845a; 
+  color: #29845a;
 }
 
 /* 动画：旋转 */
@@ -88,4 +89,51 @@
   100% {
     transform: rotate(360deg); /* 旋转360度 */
   }
+}
+
+/* paymentOptionSelect */
+.payment-option-container {
+  display: flex;
+  justify-content: center; /* 水平居中 */
+  align-items: center; /* 垂直居中 */
+  gap: 16px; /* 每个选项之间的间隔 */
+}
+
+.payment-option {
+  width: 100px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center; /* 让文本居中 */
+  transition:
+    border-color 0.3s,
+    background-color 0.3s; /* 添加过渡效果 */
+}
+
+.payment-option.selected {
+  border: 2px solid #1890ff; /* 选中时显示蓝色边框 */
+  background-color: #e6f7ff; /* 选中时背景色变化 */
+}
+
+.payment-option:not(.selected) {
+  border: 2px solid #d9d9d9; /* 默认边框颜色 */
+  background-color: white; /* 默认背景色 */
+}
+
+.payment-option span {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.payment-option input {
+  display: none; /* 隐藏默认的单选框 */
+}
+
+.price {
+  text-align: right;
+}
+
+/* paymentModal */
+.options_wrapper {
+  margin: 20px 32px;
 }
