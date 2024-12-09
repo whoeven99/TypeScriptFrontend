@@ -14,7 +14,7 @@
   flex-direction: column;
   margin-left: auto;
   align-items: flex-end; /* 使所有内容右对齐 */
-  justify-content: flex-end; /* 将内容推到最底部 */
+  justify-content: space-between;
 }
 
 .gpttip {

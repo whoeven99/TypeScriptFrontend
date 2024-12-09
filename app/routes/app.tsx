@@ -32,10 +32,7 @@ import {
   GetUserSubscriptionPlan,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
-import {
-  mutationAppSubscriptionCreate,
-  queryShopLanguages,
-} from "~/api/admin";
+import { mutationAppSubscriptionCreate, queryShopLanguages } from "~/api/admin";
 import { useEffect } from "react";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
@@ -270,6 +267,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           name: payInfo.name,
           price: payInfo.price,
           returnUrl,
+          test: payInfo.test,
         });
         return json({ data: payData });
       case !!orderInfo:
@@ -296,7 +294,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
   const loadingFetcher = useFetcher<LoadingFetchType>();
-
 
   useEffect(() => {
     shopify.loading(true);

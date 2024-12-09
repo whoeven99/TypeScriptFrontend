@@ -21,6 +21,7 @@ export interface OptionType {
     comparedPrice: number;
     currencyCode: string;
   };
+  test?: boolean;
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
@@ -70,7 +71,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
           method: "post",
           action: "/app",
         });
-        open(confirmationUrl, '_top');
+        open(confirmationUrl, "_top");
       }
       if (
         payFetcher.data.data.data.appPurchaseOneTimeCreate.userErrors.length
@@ -98,6 +99,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         comparedPrice: 3.99,
         currencyCode: "USD",
       },
+      test: false,
     },
     {
       key: "option-2",
@@ -108,6 +110,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         comparedPrice: 6.99,
         currencyCode: "USD",
       },
+      test: true,
     },
     {
       key: "option-3",
@@ -159,7 +162,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         amount: selectedOption?.price.currentPrice,
         currencyCode: selectedOption?.price.currencyCode,
       },
+      test: selectedOption?.test,
     };
+    console.log(payInfo);
     const formData = new FormData();
     formData.append("payInfo", JSON.stringify(payInfo));
     payFetcher.submit(formData, {

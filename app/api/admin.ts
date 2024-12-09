@@ -1450,7 +1450,7 @@ export const mutationShopLocaleDisable = async ({
 }: {
   request: Request;
   languages: LanguagesDataType[]; // 接受语言数组
-  primaryLanguageCode:string;
+  primaryLanguageCode: string;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -1593,6 +1593,7 @@ export const mutationAppSubscriptionCreate = async ({
   request,
   name,
   price,
+  test,
   returnUrl,
 }: {
   request: Request;
@@ -1601,6 +1602,7 @@ export const mutationAppSubscriptionCreate = async ({
     amount: number;
     currencyCode: string;
   };
+  test?: boolean;
   returnUrl: URL;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -1615,8 +1617,8 @@ export const mutationAppSubscriptionCreate = async ({
         "Content-Type": "application/json",
       },
       data: {
-        query: `mutation AppPurchaseOneTimeCreate($name: String!, $price: MoneyInput!, $returnUrl: URL!) {
-          appPurchaseOneTimeCreate(name: $name, returnUrl: $returnUrl, price: $price, test: ${true}) {
+        query: `mutation AppPurchaseOneTimeCreate($name: String!, $price: MoneyInput!, $returnUrl: URL! $test: Boolean) {
+          appPurchaseOneTimeCreate(name: $name, returnUrl: $returnUrl, price: $price, test: $test) {
             userErrors {
               field
               message
@@ -1641,6 +1643,7 @@ export const mutationAppSubscriptionCreate = async ({
             amount: price.amount,
             currencyCode: price.currencyCode,
           },
+          test: test || false,
         },
       },
     });
