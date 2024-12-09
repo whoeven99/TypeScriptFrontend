@@ -95,7 +95,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       name: "20w",
       characters: 200000,
       price: {
-        currentPrice: 2.99,
+        currentPrice: 0.8,
         comparedPrice: 3.99,
         currencyCode: "USD",
       },
@@ -106,7 +106,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       name: "50w",
       characters: 500000,
       price: {
-        currentPrice: 5.99,
+        currentPrice: 0.8,
         comparedPrice: 6.99,
         currencyCode: "USD",
       },
@@ -117,7 +117,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       name: "100w",
       characters: 1000000,
       price: {
-        currentPrice: 8.99,
+        currentPrice: 0.8,
         comparedPrice: 9.99,
         currencyCode: "USD",
       },
@@ -127,7 +127,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       name: "200w",
       characters: 2000000,
       price: {
-        currentPrice: 15.99,
+        currentPrice: 0.8,
         comparedPrice: 16.99,
         currencyCode: "USD",
       },
@@ -137,7 +137,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       name: "300w",
       characters: 3000000,
       price: {
-        currentPrice: 23.99,
+        currentPrice: 0.8,
         comparedPrice: 24.99,
         currencyCode: "USD",
       },
@@ -147,7 +147,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       name: "400w",
       characters: 4000000,
       price: {
-        currentPrice: 30.99,
+        currentPrice: 0.8,
         comparedPrice: 31.99,
         currencyCode: "USD",
       },
