@@ -558,7 +558,7 @@ export const addCurrency = async ({
     });
 
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/addCurrency`,
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/insertCurrency`,
       method: "POST",
       data: {
         shopName: shop,
@@ -570,6 +570,7 @@ export const addCurrency = async ({
     });
 
     const res = response.data;
+    console.log("addCurrency: ", res);
     return res;
   } catch (error) {
     console.error("Error add currency:", error);
@@ -583,7 +584,7 @@ export const DeleteCurrency = async ({
   id,
 }: {
   request: Request;
-  id: string;
+  id: number;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
@@ -598,6 +599,8 @@ export const DeleteCurrency = async ({
     });
 
     const res = response.data;
+    console.log(res);
+
     return res;
   } catch (error) {
     console.error("Error delete currency:", error);
@@ -653,6 +656,7 @@ export const GetCurrency = async ({ request }: { request: Request }) => {
     });
 
     const res = response.data.response;
+    console.log("currency: ", res);
     if (res) {
       const data = res.map((item: any) => ({
         key: item.id, // 将 id 转换为 key

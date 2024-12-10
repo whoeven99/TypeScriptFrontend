@@ -47,7 +47,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         exchangeRate: "Auto",
       };
       const formData = new FormData();
-      formData.append("updatecurrencies", JSON.stringify(okdata)); // 将选中的语言作为字符串发送
+      formData.append("updateCurrencies", JSON.stringify(okdata)); // 将选中的语言作为字符串发送
 
       submit(formData, {
         method: "post",
@@ -60,7 +60,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         exchangeRate: exRateValue,
       };
       const formData = new FormData();
-      formData.append("updatecurrencies", JSON.stringify(okdata)); // 将选中的语言作为字符串发送
+      formData.append("updateCurrencies", JSON.stringify(okdata)); // 将选中的语言作为字符串发送
 
       submit(formData, {
         method: "post",

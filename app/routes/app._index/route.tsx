@@ -3,7 +3,6 @@ import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Col, Modal, Row, Skeleton, Space, Typography, Button } from "antd";
 import { useFetcher } from "@remix-run/react";
-import "./styles.css";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
@@ -11,6 +10,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { authenticate } from "~/shopify.server";
 import PaymentModal from "~/components/paymentModal";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
+import "./styles.css";
 
 const UserProfileCard = lazy(() => import("./components/userProfileCard"));
 const UserLanguageCard = lazy(() => import("./components/userLanguageCard"));

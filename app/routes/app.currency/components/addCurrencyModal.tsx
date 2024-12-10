@@ -56,8 +56,10 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     if (addFetcher.data) {
       addFetcher.data.data.map((res: any) => {
         if (res.value.success) {
+          setConfirmButtonDisable(false);
           message.success("Add success");
         } else {
+          setConfirmButtonDisable(false);
           message.error(res.value.errorMsg);
         }
       });
@@ -100,7 +102,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   // 确认选择 -> 触发 action
   const handleConfirm = () => {
     const formData = new FormData();
-    formData.append("addcurrencies", JSON.stringify(allSelectedCurrency)); // 将选中的语言作为字符串发送
+    formData.append("addCurrencies", JSON.stringify(allSelectedCurrency)); // 将选中的语言作为字符串发送
 
     addFetcher.submit(formData, {
       method: "post",
@@ -126,13 +128,16 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     );
   };
 
+  // 表格的行选择配置
   const rowSelection = {
     selectedRowKeys: allSelectedKeys.filter((key) =>
       filteredCurrencies.some((cur) => cur.key === key),
-    ),
+    ), // Filter selected keys based on current filtered languages
     onChange: handleRowSelectionChange,
+    getCheckboxProps: (record: any) => ({
+      disabled: selectedCurrenciesSet.has(record.currencyCode), // Disable checkbox if the language is already selected
+    }),
   };
-
   const columns = [
     {
       title: "Currency",

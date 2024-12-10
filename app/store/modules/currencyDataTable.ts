@@ -10,7 +10,7 @@ const initialState: CurrencyTableDataState = {
 };
 
 const currencyTableDataSlice = createSlice({
-  name: "languageTableData",
+  name: "currencyTableData",
   initialState,
   reducers: {
     setTableData: (state, action: PayloadAction<CurrencyDataType[]>) => {

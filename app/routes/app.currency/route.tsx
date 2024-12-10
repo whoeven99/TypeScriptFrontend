@@ -55,7 +55,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   } catch (error) {
     // 打印错误信息，方便调试
     console.error("Error during authentication:", error);
-
     // 返回带有错误信息的 500 响应
     return new Response("Internal Server Error", { status: 500 });
   }
@@ -67,13 +66,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     const loading = JSON.parse(formData.get("loading") as string);
     const addCurrencies: CurrencyType[] = JSON.parse(
-      formData.get("addcurrencies") as string,
+      formData.get("addCurrencies") as string,
     );
-    const deleteCurrencies: string[] = JSON.parse(
-      formData.get("deletecurrencies") as string,
+    const deleteCurrencies: number[] = JSON.parse(
+      formData.get("deleteCurrencies") as string,
     );
     const updateCurrencies = JSON.parse(
-      formData.get("updatecurrencies") as string,
+      formData.get("updateCurrencies") as string,
     );
 
     switch (true) {
@@ -152,7 +151,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, currencyList, moneyFormat, moneyWithCurrencyFormat } =
+  const { shop } =
     useLoaderData<typeof loader>();
 
   const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
@@ -200,6 +199,8 @@ const Index = () => {
   useEffect(() => {
     if (loadingFetcher.data) {
       setDefaultCurrencyCode(loadingFetcher.data.defaultCurrencyCode);
+      console.log("currencyList: ", loadingFetcher.data.currencyList);
+      
       setOriginalData(loadingFetcher.data.currencyList);
       setFilteredData(loadingFetcher.data.currencyList); // 用加载的数据初始化 filteredData
       dispatch(setTableData(loadingFetcher.data.currencyList));
@@ -308,7 +309,7 @@ const Index = () => {
     const formData = new FormData();
     let newData: CurrencyDataType[] | undefined;
     if (key) {
-      formData.append("deletecurrencies", JSON.stringify(key)); // 将选中的语言作为字符串发送
+      formData.append("deleteCurrencies", JSON.stringify(key)); // 将选中的语言作为字符串发送
       deleteFetcher.submit(formData, {
         method: "post",
         action: "/app/currency",
@@ -316,7 +317,7 @@ const Index = () => {
       newData = dataSource.filter((item: CurrencyDataType) => item.key !== key);
       dispatch(setTableData(newData)); // 更新表格数据
     } else {
-      formData.append("deletecurrencies", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
+      formData.append("deleteCurrencies", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
       deleteFetcher.submit(formData, {
         method: "post",
         action: "/app/currency",
@@ -376,7 +377,7 @@ const Index = () => {
               <Flex align="center" gap="middle">
                 <Button
                   type="primary"
-                  onClick={() => handleDelete}
+                  onClick={() => handleDelete()}
                   disabled={!hasSelected}
                   loading={deleteloading}
                 >
