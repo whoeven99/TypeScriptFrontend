@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
-    "@prisma/client": "^6.0.1",
+    "@prisma/client": "^5.17.0",
     "@react-spring/web": "^9.7.5",
     "@reduxjs/toolkit": "^2.2.7",
     "@remix-run/dev": "^2.7.1",
@@ -42,6 +42,7 @@
     "isbot": "^5.1.0",
     "mockjs": "^1.1.0",
     "next": "^15.0.3",
+    "openssl": "^2.0.0",
     "quill": "^2.0.2",
     "react-quill": "^2.0.0",
     "react-redux": "^9.1.2",
