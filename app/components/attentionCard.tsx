@@ -24,7 +24,7 @@ const AttentionCard: React.FC<AttentionCardProps> = ({
 
   return (
     <div>
-      {!show && (
+      {show && (
         <Banner
           title={title}
           tone="critical"
