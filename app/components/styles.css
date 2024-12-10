@@ -111,8 +111,8 @@
 }
 
 .payment-option.selected {
-  border: 2px solid #1890ff; /* 选中时显示蓝色边框 */
-  background-color: #e6f7ff; /* 选中时背景色变化 */
+  border: 2px solid #75D344; /* 选中时显示蓝色边框 */
+  background-color: #E0F7E0; /* 选中时背景色变化 */
 }
 
 .payment-option:not(.selected) {
