@@ -1,4 +1,4 @@
-import { Button, Col, Modal, Row, Typography } from "antd";
+import { Button, Col, Modal, Row, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 import PaymentOptionSelect from "./paymentOptionSelect";
 import { useSelector } from "react-redux";
@@ -25,7 +25,16 @@ export interface OptionType {
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
-  const [recommendOption, setRecommendOption] = useState<OptionType>();
+  const [recommendOption, setRecommendOption] = useState<OptionType>({
+    key: "option-4",
+    name: "2M Credits",
+    Credits: 2000000,
+    price: {
+      currentPrice: 15.99,
+      comparedPrice: 16.99,
+      currencyCode: "USD",
+    },
+  });
   const [selectedOption, setSelectedOption] = useState<OptionType>();
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   // const totalCharacters = useSelector(
@@ -210,25 +219,27 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         )}
       </div> */}
       <div className="options_wrapper">
-        <Row gutter={[16, 16]}>
-          {options.map((option: any) => (
-            <Col
-              span={8}
-              key={option.name}
-              style={{ display: "flex", justifyContent: "center" }}
-            >
-              <PaymentOptionSelect
-                option={option}
-                selectedOption={selectedOption}
-                onChange={handleChange}
-              />
-            </Col>
-          ))}
-        </Row>
-        <div className="total_payment">
-          <Text style={{ marginRight: "5px" }}>Total Payment:</Text>
-          <Text strong>${selectedOption?.price.currentPrice || 0}</Text>
-        </div>
+        <Space direction="vertical">
+          <Row gutter={[16, 16]}>
+            {options.map((option: any) => (
+              <Col
+                span={8}
+                key={option.name}
+                style={{ display: "flex", justifyContent: "center" }}
+              >
+                <PaymentOptionSelect
+                  option={option}
+                  selectedOption={selectedOption}
+                  onChange={handleChange}
+                />
+              </Col>
+            ))}
+          </Row>
+          <div className="total_payment">
+            <Text style={{ marginRight: "5px" }}>Total Payment:</Text>
+            <Text strong>${selectedOption?.price.currentPrice || 0}</Text>
+          </div>
+        </Space>
       </div>
     </Modal>
   );
