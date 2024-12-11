@@ -539,22 +539,30 @@ export const getRateValue = async () => {
 //添加用户自定义汇率
 export const AddCurrency = async ({
   request,
-  countryName,
+  currencyName,
   currencyCode,
 }: {
   request: Request;
-  countryName: string;
+  currencyName: string;
   currencyCode: string;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
+  console.log("AddCurrency: ", {
+    shopName: shop,
+    currencyName: currencyName, // 国家
+    currencyCode: currencyCode, // 货币代码
+    rounding: "Disable",
+    exchangeRate: "Auto",
+  });
+  
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/insertCurrency`,
       method: "POST",
       data: {
         shopName: shop,
-        countryName: countryName, // 国家
+        currencyName: currencyName, // 国家
         currencyCode: currencyCode, // 货币代码
         rounding: "Disable",
         exchangeRate: "Auto",
@@ -662,7 +670,7 @@ export const GetCurrency = async ({ request }: { request: Request }) => {
     if (res) {
       const data = res.map((item: any) => ({
         key: item.id, // 将 id 转换为 key
-        currency: item.countryName, // 将 countryName 作为 currency
+        currency: item.currencyName, // 将 currencyName 作为 currency
         rounding: item.rounding,
         exchangeRate: item.exchangeRate,
         currencyCode: item.currencyCode,

@@ -39,6 +39,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   const [exRateValue, setExRateValue] = useState<number | null>();
   const [updateFetcherLoading, setUpdateFetcherLoading] =
     useState<boolean>(false);
+  const [saveButtonDisable, setSaveButtonDisable] = useState<boolean>(true);
   const title = `Edit ${selectedRow?.currency}`;
   const dispatch = useDispatch();
   const updateFetcher = useFetcher<any>();
@@ -46,12 +47,11 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
 
   useEffect(() => {
     if (updateFetcher.data) {
-      if (updateFetcher.data.data.success) {
+      if (updateFetcher.data?.data.success) {
         const newData = updateFetcher.data.data.response;
         const oldData: CurrencyDataType = dataSource.find(
-          (row: CurrencyDataType) => (row.key = newData.id),
+          (row: CurrencyDataType) => row.key === newData.id,
         );
-
         const data: CurrencyDataType[] = [
           {
             key: oldData.key,
@@ -63,8 +63,15 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         ];
         dispatch(updateTableData(data));
         message.success("Saved successfully");
+        setIsModalOpen(false);
+        setExRateSelectValue(undefined);
+        setRoundingSelectValue(undefined);
+        setExRateValue(null);
+      } else {
+        message.error(updateFetcher.data?.data.errorMsg);
       }
     }
+    setUpdateFetcherLoading(false);
   }, [updateFetcher.data]);
 
   useEffect(() => {
@@ -76,6 +83,25 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
     }
     setRoundingSelectValue(selectedRow?.rounding);
   }, [isVisible]);
+
+  useEffect(() => {
+    console.log(exRateSelectValue, exRateValue);
+
+    if (
+      exRateSelectValue === "Manual Rate" &&
+      (Number.isNaN(exRateValue) || exRateValue === null)
+    ) {
+      setSaveButtonDisable(true);
+    } else if (
+      (exRateSelectValue === "Manual Rate" &&
+        !Number.isNaN(exRateValue) &&
+        exRateValue !== null &&
+        saveButtonDisable === true) ||
+      (exRateSelectValue === "Auto" && saveButtonDisable === true)
+    ) {
+      setSaveButtonDisable(false);
+    }
+  }, [exRateSelectValue, exRateValue]);
 
   const handleConfirm = () => {
     if (exRateSelectValue === "Auto") {
@@ -110,6 +136,9 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
 
   const handleCloseModal = () => {
     setIsModalOpen(false); // 关闭Modal
+    setExRateSelectValue(undefined);
+    setRoundingSelectValue(undefined);
+    setExRateValue(null);
   };
 
   const handleExRateSelectChange = (value: string) => {
@@ -127,12 +156,13 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   return (
     <Modal
       title={title}
+      onCancel={handleCloseModal}
       open={isVisible}
       style={{
         top: "40%",
       }}
       footer={[
-        <div>
+        <div key={"footer_buttons"}>
           <Button
             key={"manage_cancel_button"}
             onClick={handleCloseModal}
@@ -144,7 +174,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
             onClick={handleConfirm}
             key={"manage_confirm_button"}
             type="primary"
-            disabled={updateFetcherLoading}
+            disabled={saveButtonDisable || updateFetcherLoading}
             loading={updateFetcherLoading}
           >
             Save
@@ -163,7 +193,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
             onChange={handleExRateSelectChange}
           />
           {exRateSelectValue === "Auto" ? (
-            <Text>Australian dollar will fluctuate based on market rates.</Text>
+            <Text>{selectedRow?.currency} will fluctuate based on market rates.</Text>
           ) : (
             <Space className="manual_rate_input">
               <Text>1 {defaultCurrencyCode} =</Text>

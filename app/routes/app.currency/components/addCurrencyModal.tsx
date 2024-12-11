@@ -61,7 +61,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
           const data = [
             {
               key: res.value.response.id, // 将 id 转换为 key
-              currency: res.value.response.countryName, // 将 countryName 作为 currency
+              currency: res.value.response.currencyName, // 将 currencyName 作为 currency
               rounding: res.value.response.rounding,
               exchangeRate: res.value.response.exchangeRate,
               currencyCode: res.value.response.currencyCode,

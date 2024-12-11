@@ -101,7 +101,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const promises = addCurrencies.map((currency) => {
             return AddCurrency({
               request,
-              countryName: currency.currency,
+              currencyName: currency.currency,
               currencyCode: currency.currencyCode,
             });
           });
@@ -226,7 +226,7 @@ const Index = () => {
   }, [loadingFetcher.data]);
 
   useEffect(() => {
-    if (deleteFetcher.data) {
+    if (deleteFetcher.data !== undefined) {
       // 创建一个新数组来存储需要更新的数据
       let newData = [...dataSource];
       // 遍历 deleteFetcher.data
@@ -248,8 +248,6 @@ const Index = () => {
       setOriginalData(newData);
       setFilteredData(newData); // 确保当前显示的数据也更新
     }
-
-    console.log(deleteFetcher.data);
   }, [deleteFetcher.data]);
 
   useEffect(() => {
@@ -282,7 +280,7 @@ const Index = () => {
       key: "currencyCode",
       render: (_: any, record: any) => (
         <Text>
-          {record.currencyName}({record.currencyCode})
+          {record.currency}({record.currencyCode})
         </Text>
       ),
     },
