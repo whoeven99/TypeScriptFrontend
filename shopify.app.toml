@@ -3,7 +3,7 @@
 client_id = "4b05c1caefa9e0761a0538b64159b627"
 name = "Ciwi.ai:FAT(Local)"
 handle = "ciwi_local"
-application_url = "https://titten-asia-happened-blocking.trycloudflare.com"
+application_url = "https://promptly-recipes-pda-ed.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://titten-asia-happened-blocking.trycloudflare.com/auth/callback",
-  "https://titten-asia-happened-blocking.trycloudflare.com/auth/shopify/callback",
-  "https://titten-asia-happened-blocking.trycloudflare.com/api/auth/callback"
+  "https://promptly-recipes-pda-ed.trycloudflare.com/auth/callback",
+  "https://promptly-recipes-pda-ed.trycloudflare.com/auth/shopify/callback",
+  "https://promptly-recipes-pda-ed.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

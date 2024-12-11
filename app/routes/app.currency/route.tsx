@@ -1,8 +1,8 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Button, Flex, Input, Space, Table, Typography } from "antd";
+import { Button, Flex, Input, message, Space, Table, Typography } from "antd";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { useFetcher, useLoaderData, useSubmit } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import { json } from "@remix-run/node";
 import { useEffect, useState } from "react";
 // import { SearchOutlined } from "@ant-design/icons"
@@ -16,7 +16,7 @@ import { SearchOutlined } from "@ant-design/icons";
 import { BaseOptionType, DefaultOptionType } from "antd/es/select";
 import { queryShop } from "~/api/admin";
 import {
-  addCurrency,
+  AddCurrency,
   DeleteCurrency,
   GetCurrency,
   UpdateCurrency,
@@ -32,9 +32,9 @@ const { Title, Text } = Typography;
 export interface CurrencyDataType {
   key: React.Key;
   currency: string;
+  currencyCode: string;
   rounding: string;
   exchangeRate: string | number;
-  currencyCode: string;
 }
 
 interface CurrencyType {
@@ -98,11 +98,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       case !!addCurrencies:
         try {
-          console.log("addCurrencies: ", addCurrencies);
-          console.log("type: ", typeof addCurrencies);
-
           const promises = addCurrencies.map((currency) => {
-            return addCurrency({
+            return AddCurrency({
               request,
               countryName: currency.currency,
               currencyCode: currency.currencyCode,
@@ -124,24 +121,35 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
           return json({ data: res });
         } catch (error) {
-          console.error("Error addCurrency:", error);
-          return json({ error: "Error addCurrency" }, { status: 500 });
+          console.error("Error AddCurrency:", error);
+          return json({ error: "Error AddCurrency" }, { status: 500 });
         }
       case !!deleteCurrencies:
-        await Promise.all(
-          deleteCurrencies.map(async (currency) => {
-            // 调用 addCurrency 函数
-            await DeleteCurrency({
-              request,
-              id: currency,
-            });
-          }),
-        );
+        const promises = deleteCurrencies.map(async (currency) => {
+          return DeleteCurrency({
+            request,
+            id: currency,
+          });
+        });
+        console.log("promises: ", promises);
+        const res = await Promise.allSettled(promises);
+        console.log("result: ", res);
+
+        // 处理每个请求的结果
+        res.forEach((result) => {
+          if (result.status === "fulfilled") {
+            console.log("Request successful:", result.value);
+          } else {
+            console.error("Request failed:", result.reason);
+          }
+        });
+        return json({ data: res });
       case !!updateCurrencies:
-        await UpdateCurrency({
+        const data = await UpdateCurrency({
           request,
           updateCurrencies: updateCurrencies,
         });
+        return json({ data: data });
     }
     return null;
   } catch (error) {
@@ -151,8 +159,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop } =
-    useLoaderData<typeof loader>();
+  const { shop } = useLoaderData<typeof loader>();
 
   const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
   const [loading, setLoading] = useState<boolean>(true);
@@ -182,7 +189,6 @@ const Index = () => {
   >(dataSource);
 
   const dispatch = useDispatch();
-  const submit = useSubmit(); // 使用 useSubmit 钩子
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
 
@@ -199,8 +205,6 @@ const Index = () => {
   useEffect(() => {
     if (loadingFetcher.data) {
       setDefaultCurrencyCode(loadingFetcher.data.defaultCurrencyCode);
-      console.log("currencyList: ", loadingFetcher.data.currencyList);
-      
       setOriginalData(loadingFetcher.data.currencyList);
       setFilteredData(loadingFetcher.data.currencyList); // 用加载的数据初始化 filteredData
       dispatch(setTableData(loadingFetcher.data.currencyList));
@@ -220,6 +224,33 @@ const Index = () => {
       setLoading(false);
     }
   }, [loadingFetcher.data]);
+
+  useEffect(() => {
+    if (deleteFetcher.data) {
+      // 创建一个新数组来存储需要更新的数据
+      let newData = [...dataSource];
+      // 遍历 deleteFetcher.data
+      deleteFetcher.data.data.forEach((res: any) => {
+        if (res.value.success) {
+          // 过滤掉需要删除的项
+          newData = newData.filter(
+            (item: CurrencyDataType) => item.key !== res.value.response,
+          );
+        } else {
+          message.error(res.value.errorMsg);
+        }
+      });
+      // 一次性更新表格数据
+      dispatch(setTableData(newData)); // 更新表格数据
+      message.success("Deleted successfully");
+      setDeleteLoading(false);
+      setSelectedRowKeys([]); // 清空已选中项
+      setOriginalData(newData);
+      setFilteredData(newData); // 确保当前显示的数据也更新
+    }
+
+    console.log(deleteFetcher.data);
+  }, [deleteFetcher.data]);
 
   useEffect(() => {
     setOriginalData(dataSource);
@@ -249,6 +280,11 @@ const Index = () => {
       title: "Currency",
       dataIndex: "currencyCode",
       key: "currencyCode",
+      render: (_: any, record: any) => (
+        <Text>
+          {record.currencyName}({record.currencyCode})
+        </Text>
+      ),
     },
     {
       title: "Rounding",
@@ -307,29 +343,26 @@ const Index = () => {
 
   const handleDelete = (key?: React.Key) => {
     const formData = new FormData();
-    let newData: CurrencyDataType[] | undefined;
     if (key) {
-      formData.append("deleteCurrencies", JSON.stringify(key)); // 将选中的语言作为字符串发送
+      formData.append("deleteCurrencies", JSON.stringify([key])); // 将选中的语言作为字符串发送
       deleteFetcher.submit(formData, {
         method: "post",
         action: "/app/currency",
       }); // 提交表单请求
-      newData = dataSource.filter((item: CurrencyDataType) => item.key !== key);
-      dispatch(setTableData(newData)); // 更新表格数据
+      // newData = dataSource.filter((item: CurrencyDataType) => item.key !== key);
+      // dispatch(setTableData(newData)); // 更新表格数据
     } else {
       formData.append("deleteCurrencies", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
       deleteFetcher.submit(formData, {
         method: "post",
         action: "/app/currency",
       }); // 提交表单请求
-      newData = dataSource.filter(
-        (item: CurrencyDataType) => !selectedRowKeys.includes(item.key),
-      );
-      dispatch(setTableData(newData)); // 更新表格数据
+      // newData = dataSource.filter(
+      //   (item: CurrencyDataType) => !selectedRowKeys.includes(item.key),
+      // );
+      // dispatch(setTableData(newData)); // 更新表格数据
     }
-    setSelectedRowKeys([]); // 清空已选中项
-    setOriginalData(newData);
-    setFilteredData(newData); // 确保当前显示的数据也更新
+    setDeleteLoading(true);
   };
 
   const PreviewClick = () => {
@@ -398,6 +431,7 @@ const Index = () => {
                 rowSelection={rowSelection}
                 columns={columns}
                 dataSource={filteredData}
+                loading={deleteloading}
               />
             </Flex>
           </Space>
@@ -405,7 +439,7 @@ const Index = () => {
           <AddCurrencyModal
             isVisible={isAddCurrencyModalOpen}
             setIsModalOpen={setIsAddCurrencyModalOpen}
-            submit={submit}
+            defaultCurrencyCode={defaultCurrencyCode}
           />
           <CurrencyEditModal
             isVisible={isCurrencyEditModalOpen}
@@ -413,7 +447,7 @@ const Index = () => {
             roundingColumns={roundingColumns}
             exRateColumns={exRateColumns}
             selectedRow={selectedRow}
-            submit={submit}
+            defaultCurrencyCode={defaultCurrencyCode}
           />
         </div>
       )}

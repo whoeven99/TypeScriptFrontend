@@ -537,7 +537,7 @@ export const getRateValue = async () => {
 };
 
 //添加用户自定义汇率
-export const addCurrency = async ({
+export const AddCurrency = async ({
   request,
   countryName,
   currencyCode,
@@ -549,14 +549,6 @@ export const addCurrency = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   try {
-    console.log("data: ", {
-      shopName: shop,
-      countryName: countryName, // 国家
-      currencyCode: currencyCode, // 货币代码
-      rounding: "Disable",
-      exchangeRate: "Auto",
-    });
-
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/insertCurrency`,
       method: "POST",
@@ -568,9 +560,9 @@ export const addCurrency = async ({
         exchangeRate: "Auto",
       },
     });
-
     const res = response.data;
-    console.log("addCurrency: ", res);
+    console.log("AddCurrency: ", res);
+    
     return res;
   } catch (error) {
     console.error("Error add currency:", error);
@@ -623,6 +615,13 @@ export const UpdateCurrency = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   try {
+    console.log("UpdateCurrency: ", {
+      shopName: shop,
+      id: updateCurrencies.id, // 货币代码
+      rounding: updateCurrencies.rounding,
+      exchangeRate: updateCurrencies.exchangeRate,
+    },);
+    
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/updateCurrency`,
       method: "POST",
@@ -635,6 +634,8 @@ export const UpdateCurrency = async ({
     });
 
     const res = response.data;
+    console.log("UpdateCurrency: ", res);
+
     return res;
   } catch (error) {
     console.error("Error update currency:", error);
@@ -646,6 +647,7 @@ export const UpdateCurrency = async ({
 export const GetCurrency = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
+  console.log("GetCurrency: ", shop);
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCurrencyByShopName`,

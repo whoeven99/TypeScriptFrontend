@@ -1,8 +1,18 @@
 import { useEffect, useState } from "react";
-import { Input, InputNumber, Modal, Select, Space, Typography } from "antd";
-import { SubmitFunction } from "@remix-run/react";
+import {
+  Button,
+  InputNumber,
+  message,
+  Modal,
+  Select,
+  Space,
+  Typography,
+} from "antd";
+import { useFetcher } from "@remix-run/react";
 import { BaseOptionType, DefaultOptionType } from "antd/es/select";
 import { CurrencyDataType } from "../route";
+import { useDispatch, useSelector } from "react-redux";
+import { updateTableData } from "~/store/modules/currencyDataTable";
 
 const { Title, Text } = Typography;
 
@@ -10,24 +20,52 @@ interface CurrencyEditModalProps {
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   // allCurrencies: AllLanguagesType[];
-  submit: SubmitFunction;
   exRateColumns: (BaseOptionType | DefaultOptionType)[];
   roundingColumns: (BaseOptionType | DefaultOptionType)[];
   selectedRow: CurrencyDataType | undefined;
+  defaultCurrencyCode: string;
 }
 
 const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   isVisible,
   setIsModalOpen,
-  submit,
   exRateColumns,
   roundingColumns,
   selectedRow,
+  defaultCurrencyCode,
 }) => {
   const [exRateSelectValue, setExRateSelectValue] = useState<string>();
   const [roundingSelectValue, setRoundingSelectValue] = useState<string>();
   const [exRateValue, setExRateValue] = useState<number | null>();
+  const [updateFetcherLoading, setUpdateFetcherLoading] =
+    useState<boolean>(false);
   const title = `Edit ${selectedRow?.currency}`;
+  const dispatch = useDispatch();
+  const updateFetcher = useFetcher<any>();
+  const dataSource = useSelector((state: any) => state.currencyTableData.rows);
+
+  useEffect(() => {
+    if (updateFetcher.data) {
+      if (updateFetcher.data.data.success) {
+        const newData = updateFetcher.data.data.response;
+        const oldData: CurrencyDataType = dataSource.find(
+          (row: CurrencyDataType) => (row.key = newData.id),
+        );
+
+        const data: CurrencyDataType[] = [
+          {
+            key: oldData.key,
+            currency: oldData.currency,
+            currencyCode: oldData.currencyCode,
+            rounding: newData.rounding,
+            exchangeRate: newData.exchangeRate,
+          },
+        ];
+        dispatch(updateTableData(data));
+        message.success("Saved successfully");
+      }
+    }
+  }, [updateFetcher.data]);
 
   useEffect(() => {
     if (selectedRow?.exchangeRate === "Auto") {
@@ -49,7 +87,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
       const formData = new FormData();
       formData.append("updateCurrencies", JSON.stringify(okdata)); // 将选中的语言作为字符串发送
 
-      submit(formData, {
+      updateFetcher.submit(formData, {
         method: "post",
         action: "/app/currency",
       }); // 提交表单请求
@@ -62,13 +100,12 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
       const formData = new FormData();
       formData.append("updateCurrencies", JSON.stringify(okdata)); // 将选中的语言作为字符串发送
 
-      submit(formData, {
+      updateFetcher.submit(formData, {
         method: "post",
         action: "/app/currency",
       }); // 提交表单请求
     }
-
-    setIsModalOpen(false); // 关闭Modal
+    setUpdateFetcherLoading(true);
   };
 
   const handleCloseModal = () => {
@@ -91,13 +128,29 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
     <Modal
       title={title}
       open={isVisible}
-      onCancel={handleCloseModal}
-      onOk={() => handleConfirm()} // 确定按钮绑定确认逻辑
-      okText="Confirm"
-      cancelText="Cancel"
       style={{
         top: "40%",
       }}
+      footer={[
+        <div>
+          <Button
+            key={"manage_cancel_button"}
+            onClick={handleCloseModal}
+            style={{ marginRight: "10px" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            key={"manage_confirm_button"}
+            type="primary"
+            disabled={updateFetcherLoading}
+            loading={updateFetcherLoading}
+          >
+            Save
+          </Button>
+        </div>,
+      ]}
     >
       <Space direction="vertical" size="small" style={{ display: "flex" }}>
         <div>
@@ -113,7 +166,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
             <Text>Australian dollar will fluctuate based on market rates.</Text>
           ) : (
             <Space className="manual_rate_input">
-              <Text>1 EUR =</Text>
+              <Text>1 {defaultCurrencyCode} =</Text>
               <InputNumber
                 defaultValue={Number(selectedRow?.exchangeRate)}
                 style={{ width: 120 }}
