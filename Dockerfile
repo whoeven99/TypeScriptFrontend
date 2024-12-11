@@ -4,7 +4,10 @@ EXPOSE 3000
 
 WORKDIR /app
 
-ENV NODE_ENV=prod
+ENV NODE_ENV="test"
+ENV SHOPIFY_APP_URL="https://typescriptfrontend.onrender.com"
+ENV SHOPIFY_API_KEY="dec512b68e658e4f21588e3d4de0e748"
+ENV SHOPIFY_API_SECRET="33c771fde1fb426020ae1a441cce56c4"
 
 COPY package.json package-lock.json* ./
 
@@ -16,9 +19,5 @@ RUN npm remove @shopify/cli
 COPY . .
 
 RUN npm run build
-
-ENV SHOPIFY_APP_URL="https://typescriptfrontendprod.onrender.com/"
-ENV SHOPIFY_API_KEY="dec512b68e658e4f21588e3d4de0e748"
-ENV SHOPIFY_API_SECRET="33c771fde1fb426020ae1a441cce56c4"
 
 CMD ["npm", "run", "docker-start"]
