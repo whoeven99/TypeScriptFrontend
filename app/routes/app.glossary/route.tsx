@@ -64,6 +64,7 @@ const Index = () => {
     useState<boolean>(false);
   const [isEditGlossaryModalOpen, setIsEditGlossaryModalOpen] =
     useState<boolean>(false);
+  const [editGlossaryId, setEditGlossaryId] = useState<string>();
   const dispatch = useDispatch();
   const loadingFetcher = useFetcher<any>();
   const editFetcher = useFetcher<any>();
@@ -108,10 +109,6 @@ const Index = () => {
     // setSelectedRowKeys([]); // 清空已选中项
   };
 
-  const handleOpenModal = () => {
-    setIsAddGlossaryModalOpen(true); // 打开Modal
-  };
-
   const handleApplication = (id: string) => {
     const row = dataSource.find((item: any) => item.id === id);
     const formData = new FormData();
@@ -120,10 +117,15 @@ const Index = () => {
       method: "post",
       action: "/app/glossary",
     });
-    dispatch(setGLossaryStatusLoadingState({ id, loading:true }))
+    dispatch(setGLossaryStatusLoadingState({ id, loading: true }));
+  };
+
+  const handleAdd = () => {
+    setIsAddGlossaryModalOpen(true); // 打开Modal
   };
 
   const handleEdit = (id: string) => {
+    setEditGlossaryId(id);
     setIsEditGlossaryModalOpen(true); // 打开Modal
   };
 
@@ -224,7 +226,7 @@ const Index = () => {
                 </Flex>
                 <div>
                   <Space>
-                    <Button type="primary" onClick={handleOpenModal}>
+                    <Button type="primary" onClick={() => handleAdd()}>
                       Add rules
                     </Button>
                   </Space>
