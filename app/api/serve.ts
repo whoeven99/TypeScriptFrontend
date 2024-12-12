@@ -750,7 +750,7 @@ export const AddCharsByShopName = async ({
 // export const GetPendingOrders = async ({ shop }: { shop: string }) => {
 //   try {
 //     const response = await axios({
-//       url: `${process.env.SERVER_URL}/orders/getPendingOrders`,
+//       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/orders/getPendingOrders`,
 //       method: "POST",
 //       data: {
 //         shopName: shop,
