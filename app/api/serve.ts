@@ -20,7 +20,7 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
     const shopData = await queryShop({ request });
     const Start1 = Date.now(); // 记录结束时间
     const addUserInfoResponse = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/user/add`,
+      url: `${process.env.SERVER_URL}/user/add`,
       method: "POST",
       data: {
         shopName: shop,
@@ -32,7 +32,7 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
     console.log(`UpdateUser took ${End1 - Start1}ms`);
     const Start2 = Date.now(); // 记录结束时间
     const insertCharsByShopNameResponse = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translationCounter/insertCharsByShopName`,
+      url: `${process.env.SERVER_URL}/translationCounter/insertCharsByShopName`,
       method: "POST",
       data: {
         shopName: shop,
@@ -54,7 +54,7 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
 export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
   try {
     const getUserSubscriptionPlanResponse = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getUserSubscriptionPlan`,
+      url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan`,
       method: "POST",
       data: {
         shopName: shop,
@@ -76,7 +76,7 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
 export const userCharsInitialization = async ({ shop }: { shop: string }) => {
   try {
     const addUserFreeSubscriptionResponse = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/addUserFreeSubscription`,
+      url: `${process.env.SERVER_URL}/shopify/addUserFreeSubscription`,
       method: "POST",
       data: {
         shopName: shop,
@@ -107,7 +107,7 @@ export const InsertShopTranslateInfo = async ({
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/insertShopTranslateInfo`,
+      url: `${process.env.SERVER_URL}/translate/insertShopTranslateInfo`,
       method: "POST",
       data: {
         shopName: shop,
@@ -147,7 +147,7 @@ export const GetTranslationItemsInfo = async ({
   }[] = [];
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTranslationItemsInfo`,
+      url: `${process.env.SERVER_URL}/shopify/getTranslationItemsInfo`,
       method: "POST",
       data: {
         shopName: shop,
@@ -197,7 +197,7 @@ export const GetItemsInSqlByShopName = async ({
   try {
     for (const target of targets) {
       const response = await axios({
-        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getItemsInSqlByShopName`,
+        url: `${process.env.SERVER_URL}/shopify/getItemsInSqlByShopName`,
         method: "POST",
         data: {
           shopName: shop,
@@ -230,7 +230,7 @@ export const GetItemsInSqlByShopName = async ({
 export const GetUserWords = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getUserLimitChars`,
+      url: `${process.env.SERVER_URL}/shopify/getUserLimitChars`,
       method: "Post",
       data: {
         shopName: shop,
@@ -255,7 +255,7 @@ export const GetLanguageLocaleInfo = async ({
 
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getImageInfo`,
+      url: `${process.env.SERVER_URL}/shopify/getImageInfo`,
       method: "Post",
       data: updatedLocales,
     });
@@ -297,7 +297,7 @@ export const GetLanguageList = async ({
 }) => {
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readInfoByShopName`,
+      url: `${process.env.SERVER_URL}/translate/readInfoByShopName`,
       method: "Post",
       data: {
         shopName: shop,
@@ -325,7 +325,7 @@ export const GetLanguageStatus = async ({
 }) => {
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/readTranslateDOByArray`,
+      url: `${process.env.SERVER_URL}/translate/readTranslateDOByArray`,
       method: "Post",
       data: [
         {
@@ -356,7 +356,7 @@ export const GetTotalWords = async ({
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getTotalWords`,
+      url: `${process.env.SERVER_URL}/shopify/getTotalWords`,
       method: "Post",
       data: {
         shopName: shop,
@@ -388,7 +388,7 @@ export const GetTranslate = async ({
   console.log(source, target);
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/clickTranslation`,
+      url: `${process.env.SERVER_URL}/translate/clickTranslation`,
       method: "POST",
       data: {
         shopName: shop,
@@ -438,7 +438,7 @@ export const updateManageTranslation = async ({
       if (item.translatableContentDigest && item.locale) {
         if (item.value) {
           const response = await axios({
-            url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/updateShopifyDataByTranslateTextRequest`,
+            url: `${process.env.SERVER_URL}/shopify/updateShopifyDataByTranslateTextRequest`,
             method: "POST",
             data: {
               shopName: shop,
@@ -525,7 +525,7 @@ export const updateManageTranslation = async ({
 export const getRateValue = async () => {
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/getRateValue`,
+      url: `${process.env.SERVER_URL}/getRateValue`,
       method: "POST",
     });
 
@@ -559,7 +559,7 @@ export const addCurrency = async ({
     });
 
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/addCurrency`,
+      url: `${process.env.SERVER_URL}/currency/addCurrency`,
       method: "POST",
       data: {
         shopName: shop,
@@ -590,7 +590,7 @@ export const DeleteCurrency = async ({
   const { shop } = adminAuthResult.session;
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/deleteCurrency`,
+      url: `${process.env.SERVER_URL}/currency/deleteCurrency`,
       method: "POST",
       data: {
         shopName: shop,
@@ -622,7 +622,7 @@ export const UpdateCurrency = async ({
   const { shop } = adminAuthResult.session;
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/updateCurrency`,
+      url: `${process.env.SERVER_URL}/currency/updateCurrency`,
       method: "POST",
       data: {
         shopName: shop,
@@ -646,7 +646,7 @@ export const GetCurrency = async ({ request }: { request: Request }) => {
   const { shop } = adminAuthResult.session;
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCurrencyByShopName`,
+      url: `${process.env.SERVER_URL}/currency/getCurrencyByShopName`,
       method: "POST",
       data: {
         shopName: shop,
@@ -702,7 +702,7 @@ export const InsertOrUpdateOrder = async ({
     });
 
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/orders/insertOrUpdateOrder`,
+      url: `${process.env.SERVER_URL}/orders/insertOrUpdateOrder`,
       method: "POST",
       data: {
         shopName: shop,
@@ -732,7 +732,7 @@ export const AddCharsByShopName = async ({
 }) => {
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translateCounter/addCharsByShopName`,
+      url: `${process.env.SERVER_URL}/translateCounter/addCharsByShopName`,
       method: "POST",
       data: {
         shopName: shop,
@@ -751,7 +751,7 @@ export const AddCharsByShopName = async ({
 // export const GetPendingOrders = async ({ shop }: { shop: string }) => {
 //   try {
 //     const response = await axios({
-//       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/orders/getPendingOrders`,
+//       url: `${process.env.SERVER_URL}/orders/getPendingOrders`,
 //       method: "POST",
 //       data: {
 //         shopName: shop,
@@ -778,7 +778,7 @@ export const GetGlossaryByShopName = async ({
 }) => {
   try {
     // const response = await axios({
-    //   url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translateCounter/addCharsByShopName`,
+    //   url: `${process.env.SERVER_URL}/translateCounter/addCharsByShopName`,
     //   method: "POST",
     //   data: {
     //     shopName: shop,

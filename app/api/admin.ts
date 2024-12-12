@@ -1413,7 +1413,7 @@ export const mutationShopLocaleEnable = async ({
       });
 
       const serveResponse = await axios({
-        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/insertShopTranslateInfo`,
+        url: `${process.env.SERVER_URL}/translate/insertShopTranslateInfo`,
         method: "Post",
         data: {
           shopName: shop,
@@ -1478,7 +1478,7 @@ export const mutationShopLocaleDisable = async ({
       });
 
       await axios({
-        url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translate/deleteFromTranslates`,
+        url: `${process.env.SERVER_URL}/translate/deleteFromTranslates`,
         method: "POST",
         data: {
           shopName: shop,
