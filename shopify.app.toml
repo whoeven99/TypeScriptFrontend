@@ -3,7 +3,7 @@
 client_id = "4b05c1caefa9e0761a0538b64159b627"
 name = "Ciwi.ai:FAT(Local)"
 handle = "ciwi_local"
-application_url = "https://acne-gossip-reveals-nextel.trycloudflare.com"
+application_url = "https://jones-industry-addressing-computers.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://acne-gossip-reveals-nextel.trycloudflare.com/auth/callback",
-  "https://acne-gossip-reveals-nextel.trycloudflare.com/auth/shopify/callback",
-  "https://acne-gossip-reveals-nextel.trycloudflare.com/api/auth/callback"
+  "https://jones-industry-addressing-computers.trycloudflare.com/auth/callback",
+  "https://jones-industry-addressing-computers.trycloudflare.com/auth/shopify/callback",
+  "https://jones-industry-addressing-computers.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
