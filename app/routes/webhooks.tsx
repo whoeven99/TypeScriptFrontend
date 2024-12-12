@@ -1,7 +1,14 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
-import { AddCharsByShopName, InsertOrUpdateOrder } from "~/api/serve";
+import {
+  AddCharsByShopName,
+  CleanData,
+  DeleteData,
+  InsertOrUpdateOrder,
+  RequestData,
+  Uninstall,
+} from "~/api/serve";
 import { queryOrders } from "~/api/admin";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -19,11 +26,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   // More info: https://shopify.dev/docs/apps/build/cli-for-apps/app-configuration
   switch (topic) {
     case "APP_UNINSTALLED":
-      if (session) {
-        await db.session.deleteMany({ where: { shop } });
+      try {
+        await Uninstall({ shop });
+        break;
+      } catch (error) {
+        console.error("Error APP_UNINSTALLED:", error);
+        throw new Error("Error APP_UNINSTALLED");
       }
-
-      break;
     case "APP_PURCHASES_ONE_TIME_UPDATE":
       try {
         if (payload) {
@@ -69,11 +78,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
       break;
     case "CUSTOMERS_DATA_REQUEST":
-      break;
+      try {
+        await RequestData({ shop });
+        break;
+      } catch (error) {
+        console.error("Error CUSTOMERS_DATA_REQUEST:", error);
+        throw new Error("Error CUSTOMERS_DATA_REQUEST");
+      }
     case "CUSTOMERS_REDACT":
-      break;
+      try {
+        await DeleteData({ shop });
+        break;
+      } catch (error) {
+        console.error("Error CUSTOMERS_REDACT:", error);
+        throw new Error("Error CUSTOMERS_REDACT");
+      }
     case "SHOP_REDACT":
-      break;
+      try {
+        await CleanData({ shop });
+        break;
+      } catch (error) {
+        console.error("Error SHOP_REDACT:", error);
+        throw new Error("Error SHOP_REDACT");
+      }
     default:
       throw new Response("Unhandled webhook topic", { status: 404 });
   }
