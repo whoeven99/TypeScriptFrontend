@@ -93,7 +93,7 @@ const Index = () => {
       if (initializationFetcher.data?.data) {
         setNewUserModal(false);
         setNewUserModalLoading(false);
-        setUser({ ...user, totalChars: 20000 });
+        setUser({ ...user, totalChars: 500000 });
       }
     }
   }, [initializationFetcher.data]);
