@@ -31,7 +31,7 @@ import {
   setPublishConfirmState,
   setPublishLoadingState,
   setPublishState,
-  setStatuState,
+  setStatusState,
   setTableData,
 } from "~/store/modules/languageTableData";
 import AttentionCard from "~/components/attentionCard";
@@ -274,7 +274,7 @@ const Index = () => {
       } else {
         message.error(translateFetcher.data.status.errorMsg);
         dispatch(
-          setStatuState({
+          setStatusState({
             target: translateFetcher.data.status.target,
             status: 3,
           }),
@@ -289,7 +289,7 @@ const Index = () => {
         if (item?.status === 2) {
           return item;
         } else {
-          dispatch(setStatuState({ target: item.target, status: item.status }));
+          dispatch(setStatusState({ target: item.target, status: item.status }));
         }
       });
       if (items[0] !== undefined) {
@@ -483,7 +483,7 @@ const Index = () => {
 
       message.success("The translation task is in progress.");
       dispatch(
-        setStatuState({
+        setStatusState({
           target: selectedItem.locale,
           status: 2,
         }),

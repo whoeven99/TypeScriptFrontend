@@ -5,11 +5,26 @@ import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { Button, Flex, Skeleton, Space, Switch, Table, Typography } from "antd";
 import { useFetcher } from "@remix-run/react";
-import { queryShopLanguages } from "~/api/admin";
-import { ShopLocalesType } from "../app.language/route";
 import { GetGlossaryByShopName } from "~/api/serve";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  setGLossaryStatusLoadingState,
+  setGLossaryStatusState,
+  setGLossaryTableData,
+} from "~/store/modules/glossaryTableData";
 
 const { Title, Text } = Typography;
+
+export interface GLossaryDataType {
+  id: string;
+  sourceText: string;
+  targetText: string;
+  language: string;
+  target: string;
+  type: number;
+  status: number;
+  loading: boolean;
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);
@@ -28,6 +43,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop,
           accessToken,
         });
+        console.log("GetGlossaryByShopName: ", data);
+
         return json({ data: data });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
@@ -47,7 +64,11 @@ const Index = () => {
     useState<boolean>(false);
   const [isEditGlossaryModalOpen, setIsEditGlossaryModalOpen] =
     useState<boolean>(false);
+  const dispatch = useDispatch();
   const loadingFetcher = useFetcher<any>();
+  const editFetcher = useFetcher<any>();
+
+  const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
 
   useEffect(() => {
     const formData = new FormData();
@@ -61,7 +82,7 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data) {
-      console.log(loadingFetcher.data.data);
+      dispatch(setGLossaryTableData(loadingFetcher.data.data));
       shopify.loading(false);
       setLoading(false);
     }
@@ -91,6 +112,17 @@ const Index = () => {
     setIsAddGlossaryModalOpen(true); // 打开Modal
   };
 
+  const handleApplication = (id: string) => {
+    const row = dataSource.find((item: any) => item.id === id);
+    const formData = new FormData();
+    formData.append("loading", JSON.stringify(true));
+    loadingFetcher.submit(formData, {
+      method: "post",
+      action: "/app/glossary",
+    });
+    dispatch(setGLossaryStatusLoadingState({ id, loading:true }))
+  };
+
   const handleEdit = (id: string) => {
     setIsEditGlossaryModalOpen(true); // 打开Modal
   };
@@ -107,8 +139,8 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Switch
           checked={record?.status}
-          // onChange={(checked) => handlePublishChange(record.locale, checked)}
-          // loading={record.loading} // 使用每个项的 loading 状态
+          onClick={() => handleApplication(record.id)}
+          loading={record.loading} // 使用每个项的 loading 状态
         />
       ),
     },
@@ -145,19 +177,6 @@ const Index = () => {
           </Button>
         </Space>
       ),
-    },
-  ];
-
-  const dataSource = [
-    {
-      id: 1,
-      status: false,
-      sourceText: "test",
-      targetText: "test",
-      language: "English",
-      target: "en",
-      disable: false,
-      type: false,
     },
   ];
   const hasSelected = selectedRowKeys.length > 0;

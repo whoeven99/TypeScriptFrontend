@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Button, Card, message, Space, Typography } from "antd";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import { setStatuState } from "~/store/modules/languageTableData";
+import { setStatusState } from "~/store/modules/languageTableData";
 import TranslatedIcon from "~/components/translateIcon";
 import { LanguagesDataType } from "~/routes/app.language/route";
 const { Title } = Typography;
@@ -96,7 +96,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         return () => clearTimeout(delayTimeout);
       } else {
         dispatch(
-          setStatuState({
+          setStatusState({
             target: statusFetcher.data.data[0].target,
             status: statusFetcher.data.data[0].status,
           }),
@@ -111,7 +111,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
       } else {
         message.error(translateFetcher.data.statu.errorMsg);
         dispatch(
-          setStatuState({
+          setStatusState({
             target: translateFetcher.data.statu.target,
             status: 3,
           }),
@@ -135,7 +135,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
       ); // 将选中的语言作为字符串发送
       translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
       dispatch(
-        setStatuState({
+        setStatusState({
           target: data.locale,
           status: 2,
         }),

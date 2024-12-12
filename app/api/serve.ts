@@ -797,6 +797,7 @@ export const GetGlossaryByShopName = async ({
             range_code: "zh-CN",
             case_sensitive: 0,
             status: 0,
+            loading: false,
           },
         ],
       },
@@ -817,11 +818,10 @@ export const GetGlossaryByShopName = async ({
         language: "",
         target: item.range_code,
         type: item.case_sensitive,
-        disable: false,
       };
       if (
         shopLanguagesWithoutPrimaryIndex.find((language: ShopLocalesType) => {
-          language.locale === item.range_code;
+          return language.locale == item.range_code;
         })?.name ||
         item.range_code === "all Languages"
       ) {
@@ -830,17 +830,11 @@ export const GetGlossaryByShopName = async ({
           language:
             shopLanguagesWithoutPrimaryIndex.find(
               (language: ShopLocalesType) => {
-                language.locale === item.range_code;
+                return language.locale === item.range_code;
               },
             )?.name || "all Languages",
         };
-      } else {
-        data = {
-          ...data,
-          disable: true,
-        };
       }
-
       return data;
     });
     return res;
