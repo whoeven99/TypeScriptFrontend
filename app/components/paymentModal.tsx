@@ -104,18 +104,17 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       name: "200K Credits",
       Credits: 200000,
       price: {
-        currentPrice: 0.8,
+        currentPrice: 2.99,
         comparedPrice: 3.99,
         currencyCode: "USD",
       },
-      test: true,
     },
     {
       key: "option-2",
       name: "500K Credits",
       Credits: 500000,
       price: {
-        currentPrice: 0.8,
+        currentPrice: 5.99,
         comparedPrice: 6.99,
         currencyCode: "USD",
       },
@@ -125,7 +124,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       name: "1M Credits",
       Credits: 1000000,
       price: {
-        currentPrice: 0.8,
+        currentPrice: 8.99,
         comparedPrice: 9.99,
         currencyCode: "USD",
       },
@@ -135,7 +134,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       name: "2M Credits",
       Credits: 2000000,
       price: {
-        currentPrice: 0.8,
+        currentPrice: 15.99,
         comparedPrice: 16.99,
         currencyCode: "USD",
       },
@@ -145,7 +144,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       name: "3M Credits",
       Credits: 3000000,
       price: {
-        currentPrice: 0.8,
+        currentPrice: 23.99,
         comparedPrice: 24.99,
         currencyCode: "USD",
       },
@@ -155,7 +154,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       name: "4M Credits",
       Credits: 4000000,
       price: {
-        currentPrice: 0.8,
+        currentPrice: 30.99,
         comparedPrice: 31.99,
         currencyCode: "USD",
       },
