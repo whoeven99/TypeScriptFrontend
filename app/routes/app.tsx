@@ -177,8 +177,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         const user = {
           plan: plan,
-          chars: words?.chars,
-          totalChars: words?.totalChars,
+          chars: words?.chars || 0,
+          totalChars: words?.totalChars || 0,
           primaryLanguage: shopPrimaryLanguage[0].name,
           primaryLanguageCode: shopPrimaryLanguage[0].locale,
           shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
