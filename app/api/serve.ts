@@ -1,6 +1,7 @@
 import axios from "axios";
 import { authenticate } from "~/shopify.server";
-import { queryShop } from "./admin";
+import { queryShop, queryShopLanguages } from "./admin";
+import { ShopLocalesType } from "~/routes/app.language/route";
 
 export interface ConfirmDataType {
   resourceId: string;
@@ -767,3 +768,84 @@ export const AddCharsByShopName = async ({
 //     throw new Error("Error fetching user");
 //   }
 // };
+
+export const GetGlossaryByShopName = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string | undefined;
+}) => {
+  try {
+    // const response = await axios({
+    //   url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/translateCounter/addCharsByShopName`,
+    //   method: "POST",
+    //   data: {
+    //     shopName: shop,
+    //   },
+    // });
+    // const res = response.data;
+    // console.log(res);
+    const response = {
+      data: {
+        response: [
+          {
+            id: 0,
+            shop_name: "quickstart-0f992326.myshopify.com",
+            source_text: "test",
+            target_text: "测试",
+            range_code: "zh-CN",
+            case_sensitive: 0,
+            status: 0,
+          },
+        ],
+      },
+    };
+    const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
+      shop,
+      accessToken,
+    });
+    const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
+      (language) => !language.primary,
+    );
+    const res = response.data.response.map((item: any) => {
+      let data = {
+        id: item.id,
+        status: item.status,
+        sourceText: item.source_text,
+        targetText: item.target_text,
+        language: "",
+        target: item.range_code,
+        type: item.case_sensitive,
+        disable: false,
+      };
+      if (
+        shopLanguagesWithoutPrimaryIndex.find((language: ShopLocalesType) => {
+          language.locale === item.range_code;
+        })?.name ||
+        item.range_code === "all Languages"
+      ) {
+        data = {
+          ...data,
+          language:
+            shopLanguagesWithoutPrimaryIndex.find(
+              (language: ShopLocalesType) => {
+                language.locale === item.range_code;
+              },
+            )?.name || "all Languages",
+        };
+      } else {
+        data = {
+          ...data,
+          disable: true,
+        };
+      }
+
+      return data;
+    });
+    return res;
+  } catch (error) {
+    console.error("Error fetching add chars:", error);
+    throw new Error("Error fetching add chars");
+  }
+};
