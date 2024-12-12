@@ -2,6 +2,7 @@ import axios from "axios";
 import { authenticate } from "~/shopify.server";
 import { queryShop, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
+import { json } from "@remix-run/node";
 
 export interface ConfirmDataType {
   resourceId: string;
@@ -747,28 +748,6 @@ export const AddCharsByShopName = async ({
   }
 };
 
-// //获取订单id
-// export const GetPendingOrders = async ({ shop }: { shop: string }) => {
-//   try {
-//     const response = await axios({
-//       url: `${process.env.SERVER_URL}/orders/getPendingOrders`,
-//       method: "POST",
-//       data: {
-//         shopName: shop,
-//       },
-//     });
-//     console.log({
-//       shopName: shop,
-//     });
-
-//     const res = response.data.response;
-//     return res
-//   } catch (error) {
-//     console.error("Error fetching user:", error);
-//     throw new Error("Error fetching user");
-//   }
-// };
-
 export const GetGlossaryByShopName = async ({
   shop,
   accessToken,
@@ -777,31 +756,29 @@ export const GetGlossaryByShopName = async ({
   accessToken: string | undefined;
 }) => {
   try {
-    // const response = await axios({
-    //   url: `${process.env.SERVER_URL}/translateCounter/addCharsByShopName`,
-    //   method: "POST",
-    //   data: {
-    //     shopName: shop,
-    //   },
-    // });
-    // const res = response.data;
-    // console.log(res);
-    const response = {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/glossary/getGlossaryByShopName`,
+      method: "POST",
       data: {
-        response: [
-          {
-            id: 0,
-            shop_name: "quickstart-0f992326.myshopify.com",
-            source_text: "test",
-            target_text: "测试",
-            range_code: "zh-CN",
-            case_sensitive: 0,
-            status: 0,
-            loading: false,
-          },
-        ],
+        shopName: shop,
       },
-    };
+    });
+    // const response = {
+    //   data: {
+    //     response: [
+    //       {
+    //         id: 0,
+    //         shop_name: "quickstart-0f992326.myshopify.com",
+    //         source_text: "test",
+    //         target_text: "测试",
+    //         range_code: "zh-CN",
+    //         case_sensitive: 0,
+    //         status: 0,
+    //         loading: false,
+    //       },
+    //     ],
+    //   },
+    // };
     const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
       shop,
       accessToken,
@@ -813,11 +790,11 @@ export const GetGlossaryByShopName = async ({
       let data = {
         id: item.id,
         status: item.status,
-        sourceText: item.source_text,
-        targetText: item.target_text,
+        sourceText: item.sourceText,
+        targetText: item.targetText,
         language: "",
-        target: item.range_code,
-        type: item.case_sensitive,
+        rangeCode: item.rangeCode,
+        type: item.caseSensitive,
       };
       if (
         shopLanguagesWithoutPrimaryIndex.find((language: ShopLocalesType) => {
@@ -837,9 +814,138 @@ export const GetGlossaryByShopName = async ({
       }
       return data;
     });
+    return {
+      glossaryTableData: res,
+      shopLocales: shopLanguagesWithoutPrimaryIndex,
+    };
+  } catch (error) {
+    console.error("Error fetching add chars:", error);
+    throw new Error("Error fetching add chars");
+  }
+};
+
+export const UpdateTargetTextById = async ({ data }: { data: any }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/glossary/updateTargetTextById`,
+      method: "POST",
+      data: {
+        id: data.id,
+        sourceText: data.sourceText,
+        targetText: data.targetText,
+        rangeCode: data.rangeCode,
+        caseSensitive: data.caseSensitive,
+        status: data.status,
+      },
+    });
+
+    const res = response.data.response;
+    console.log(res);
     return res;
   } catch (error) {
     console.error("Error fetching add chars:", error);
     throw new Error("Error fetching add chars");
+  }
+};
+
+export const InsertGlossaryInfo = async ({
+  shop,
+  data,
+}: {
+  shop: string;
+  data: any;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/glossary/insertGlossaryInfo`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        sourceText: data.sourceText,
+        targetText: data.targetText,
+        rangeCode: data.rangeCode,
+        caseSensitive: data.caseSensitive,
+        status: 1,
+      },
+    });
+
+    const res = response.data.response;
+    console.log(res);
+    return res;
+  } catch (error) {
+    console.error("Error fetching add chars:", error);
+    throw new Error("Error fetching add chars");
+  }
+};
+
+//用户卸载
+export const Uninstall = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/user/uninstall`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error Uninstall:", error);
+    throw new Error("Error Uninstall");
+  }
+};
+
+//用户卸载应用后48小时后清除数据
+export const CleanData = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/user/cleanData`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error CleanData:", error);
+    throw new Error("Error CleanData");
+  }
+};
+
+//客户可以向店主请求其数据
+export const RequestData = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/user/requestData`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error RequestData:", error);
+    throw new Error("Error RequestData");
+  }
+};
+
+//店主可以代表客户请求删除数据
+export const DeleteData = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/user/deleteData`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error DeleteData:", error);
+    throw new Error("Error DeleteData");
   }
 };

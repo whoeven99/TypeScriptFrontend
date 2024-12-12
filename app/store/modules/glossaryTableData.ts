@@ -38,7 +38,7 @@ const glossaryTableDataSlice = createSlice({
     // },
     setGLossaryStatusLoadingState: (
         state,
-        action: PayloadAction<{ id: string; loading: boolean }>,
+        action: PayloadAction<{ id: number; loading: boolean }>,
       ) => {
         const row = state.rows.find(
           (item) => item.id === action.payload.id,
@@ -49,7 +49,7 @@ const glossaryTableDataSlice = createSlice({
       },
     setGLossaryStatusState: (
       state,
-      action: PayloadAction<{ id: string; status: number }>,
+      action: PayloadAction<{ id: number; status: number }>,
     ) => {
       const row = state.rows.find(
         (item) => item.id === action.payload.id,

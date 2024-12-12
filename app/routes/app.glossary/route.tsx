@@ -5,22 +5,28 @@ import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { Button, Flex, Skeleton, Space, Switch, Table, Typography } from "antd";
 import { useFetcher } from "@remix-run/react";
-import { GetGlossaryByShopName } from "~/api/serve";
+import {
+  GetGlossaryByShopName,
+  InsertGlossaryInfo,
+  UpdateTargetTextById,
+} from "~/api/serve";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setGLossaryStatusLoadingState,
   setGLossaryStatusState,
   setGLossaryTableData,
 } from "~/store/modules/glossaryTableData";
+import { ShopLocalesType } from "../app.language/route";
+import UpdateGlossaryModal from "./components/updateGlossaryModal";
 
 const { Title, Text } = Typography;
 
 export interface GLossaryDataType {
-  id: string;
+  id: number;
   sourceText: string;
   targetText: string;
   language: string;
-  target: string;
+  rangeCode: string;
   type: number;
   status: number;
   loading: boolean;
@@ -37,15 +43,38 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
+    const updateInfo = JSON.parse(formData.get("updateInfo") as string);
     switch (true) {
       case !!loading:
-        const data = await GetGlossaryByShopName({
-          shop,
-          accessToken,
-        });
-        console.log("GetGlossaryByShopName: ", data);
+        try {
+          const data = await GetGlossaryByShopName({
+            shop,
+            accessToken,
+          });
+          console.log("GetGlossaryByShopName: ", data);
 
-        return json({ data: data });
+          return json({ data: data });
+        } catch (error) {
+          console.error("Error glossary loading:", error);
+          throw new Response("Error glossary loading", { status: 500 });
+        }
+      case !!updateInfo:
+        try {
+          if (updateInfo.id >= 0) {
+            const data = await UpdateTargetTextById({ data: updateInfo });
+            return json({ data: data });
+          } else {
+            const data = await InsertGlossaryInfo({
+              shop: shop,
+              data: updateInfo,
+            });
+            return json({ data: data });
+          }
+        } catch (error) {
+          console.error("Error glossary loading:", error);
+          throw new Response("Error glossary loading", { status: 500 });
+        }
+
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -57,17 +86,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
+  const [title, setTitle] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   // const [deleteloading, setDeleteLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
-  const [isAddGlossaryModalOpen, setIsAddGlossaryModalOpen] =
+  const [shopLocales, setShopLocales] = useState<ShopLocalesType[]>([]);
+  const [isGlossaryModalOpen, setIsGlossaryModalOpen] =
     useState<boolean>(false);
-  const [isEditGlossaryModalOpen, setIsEditGlossaryModalOpen] =
-    useState<boolean>(false);
-  const [editGlossaryId, setEditGlossaryId] = useState<string>();
+  const [glossaryModalId, setGlossaryModalId] = useState<number>(-1);
   const dispatch = useDispatch();
   const loadingFetcher = useFetcher<any>();
-  const editFetcher = useFetcher<any>();
+  const statusFetcher = useFetcher<any>();
 
   const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
 
@@ -83,7 +112,10 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data) {
-      dispatch(setGLossaryTableData(loadingFetcher.data.data));
+      dispatch(
+        setGLossaryTableData(loadingFetcher.data.data.glossaryTableData),
+      );
+      setShopLocales(loadingFetcher.data.data.shopLocales);
       shopify.loading(false);
       setLoading(false);
     }
@@ -109,24 +141,21 @@ const Index = () => {
     // setSelectedRowKeys([]); // 清空已选中项
   };
 
-  const handleApplication = (id: string) => {
+  const handleApplication = (id: number) => {
     const row = dataSource.find((item: any) => item.id === id);
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
-    loadingFetcher.submit(formData, {
+    statusFetcher.submit(formData, {
       method: "post",
       action: "/app/glossary",
     });
     dispatch(setGLossaryStatusLoadingState({ id, loading: true }));
   };
 
-  const handleAdd = () => {
-    setIsAddGlossaryModalOpen(true); // 打开Modal
-  };
-
-  const handleEdit = (id: string) => {
-    setEditGlossaryId(id);
-    setIsEditGlossaryModalOpen(true); // 打开Modal
+  const handleIsModalOpen = (title: string, id: number) => {
+    setTitle(title);
+    setGlossaryModalId(id);
+    setIsGlossaryModalOpen(true); // 打开Modal
   };
 
   const onSelectChange = (newSelectedRowKeys: any) => {
@@ -174,7 +203,10 @@ const Index = () => {
       key: "action",
       render: (_: any, record: any) => (
         <Space>
-          <Button onClick={() => handleEdit(record.id)} type="primary">
+          <Button
+            onClick={() => handleIsModalOpen("Edit rules", record.id)}
+            type="primary"
+          >
             Edit
           </Button>
         </Space>
@@ -226,7 +258,10 @@ const Index = () => {
                 </Flex>
                 <div>
                   <Space>
-                    <Button type="primary" onClick={() => handleAdd()}>
+                    <Button
+                      type="primary"
+                      onClick={() => handleIsModalOpen("Add rules", -1)}
+                    >
                       Add rules
                     </Button>
                   </Space>
@@ -242,6 +277,13 @@ const Index = () => {
               </Suspense>
             </div>
           </Space>
+          <UpdateGlossaryModal
+            id={glossaryModalId}
+            title={title}
+            isVisible={isGlossaryModalOpen}
+            setIsModalOpen={setIsGlossaryModalOpen}
+            shopLocales={shopLocales}
+          />
         </div>
       )}
     </Page>
