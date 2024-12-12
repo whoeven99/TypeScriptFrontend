@@ -746,24 +746,91 @@ export const AddCharsByShopName = async ({
   }
 };
 
-// //获取订单id
-// export const GetPendingOrders = async ({ shop }: { shop: string }) => {
-//   try {
-//     const response = await axios({
-//       url: `${process.env.SERVER_URL}/orders/getPendingOrders`,
-//       method: "POST",
-//       data: {
-//         shopName: shop,
-//       },
-//     });
-//     console.log({
-//       shopName: shop,
-//     });
+//用户卸载
+export const Uninstall = async ({
+  shop,
+}: {
+  shop: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/user/uninstall`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    const res = response.data.response;
+    return res
+  } catch (error) {
+    console.error("Error Uninstall:", error);
+    throw new Error("Error Uninstall");
+  }
+};
 
-//     const res = response.data.response;
-//     return res
-//   } catch (error) {
-//     console.error("Error fetching user:", error);
-//     throw new Error("Error fetching user");
-//   }
-// };
+//用户卸载应用后48小时后清除数据
+export const CleanData = async ({
+  shop,
+}: {
+  shop: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/user/cleanData`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    const res = response.data.response;
+    return res
+  } catch (error) {
+    console.error("Error CleanData:", error);
+    throw new Error("Error CleanData");
+  }
+};
+
+//客户可以向店主请求其数据
+export const RequestData = async ({
+  shop,
+}: {
+  shop: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/user/requestData`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    const res = response.data.response;
+    return res
+  } catch (error) {
+    console.error("Error RequestData:", error);
+    throw new Error("Error RequestData");
+  }
+};
+
+//店主可以代表客户请求删除数据
+export const DeleteData = async ({
+  shop,
+}: {
+  shop: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/user/deleteData`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    const res = response.data.response;
+    return res
+  } catch (error) {
+    console.error("Error DeleteData:", error);
+    throw new Error("Error DeleteData");
+  }
+};
+
