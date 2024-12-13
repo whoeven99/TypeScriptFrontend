@@ -78,7 +78,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         try {
           console.log("updateInfo: ", updateInfo);
           if (updateInfo.key >= 0) {
-            const data = await UpdateTargetTextById({ data: updateInfo });
+            const data = await UpdateTargetTextById({
+              shop: shop,
+              data: updateInfo,
+            });
             return json({ data: data });
           } else {
             const data = await InsertGlossaryInfo({
@@ -169,7 +172,7 @@ const Index = () => {
         if (res.value?.success) {
           // 过滤掉需要删除的项
           newData = newData.filter(
-            (item: GLossaryDataType) => item.key !== res.value.response,
+            (item: GLossaryDataType) => item.key !== res.value.response.id,
           );
         } else {
           message.error(res.value.errorMsg);

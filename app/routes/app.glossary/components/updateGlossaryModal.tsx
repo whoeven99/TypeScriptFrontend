@@ -98,12 +98,8 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
         message.success("Saved successfully");
         handleCloseModal();
       } else {
-        if (updateFetcher.data.data.errorCode === 10003) {
-          message.error("You cannot add two conflicting rules.");
-        } else {
-          message.error(updateFetcher.data.data.errorMsg);
-          setConfirmButtonDisable(false);
-        }
+        message.error(updateFetcher.data.data.errorMsg);
+        setConfirmButtonDisable(false);
       }
     }
   }, [updateFetcher.data]);
@@ -155,8 +151,22 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
 
     dataSource.map((item: any) => {
       const string = item.sourceText + item.rangeCode;
-      if (source == string && title === "Add rules") {
-        isSameRuleError = false;
+      if (title === "Add rules") {
+        if (
+          source == string ||
+          (rangeCode == "ALL" && sourceText == item.sourceText)
+        ) {
+          isSameRuleError = false;
+        }
+      } else {
+        if (
+          source == string ||
+          (rangeCode == "ALL" &&
+            sourceText == item.sourceText &&
+            item.key !== id)
+        ) {
+          isSameRuleError = false;
+        }
       }
     });
 
@@ -170,7 +180,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           targetText: targetText,
           rangeCode: rangeCode,
           type: checked ? 1 : 0,
-          status: data?.status || 1,
+          status: data?.status,
         }),
       );
       updateFetcher.submit(formData, {

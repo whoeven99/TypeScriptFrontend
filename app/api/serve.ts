@@ -809,13 +809,20 @@ export const GetGlossaryByShopName = async ({
   }
 };
 
-export const UpdateTargetTextById = async ({ data }: { data: any }) => {
+export const UpdateTargetTextById = async ({
+  shop,
+  data,
+}: {
+  shop: string;
+  data: any;
+}) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/glossary/updateTargetTextById`,
       method: "POST",
       data: {
         id: data.key,
+        shopName: shop,
         sourceText: data.sourceText,
         targetText: data.targetText,
         rangeCode: data.rangeCode,
@@ -884,8 +891,6 @@ export const DeleteGlossaryInfo = async ({ id }: { id: number }) => {
 
     const res = response.data;
     console.log(res);
-
-    
 
     return res;
   } catch (error) {
