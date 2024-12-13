@@ -39,7 +39,12 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   const [targetText, setTargetText] = useState<string>("");
   const [rangeCode, setRangeCode] = useState<string>("");
   const [checked, setChecked] = useState(false);
-  const [options, setOptions] = useState<SelectProps["options"]>();
+  const [options, setOptions] = useState([
+    {
+      value: "ALL",
+      label: "All languages",
+    },
+  ]);
   const [confirmButtonDisable, setConfirmButtonDisable] =
     useState<boolean>(false);
   const [sourceTextStatus, setSourceTextStatus] = useState<
@@ -54,25 +59,12 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
 
   const dispatch = useDispatch();
   const updateFetcher = useFetcher<any>();
+  const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
   const data = useSelector((state: any) =>
     state.glossaryTableData.rows.find(
       (row: GLossaryDataType) => row.key === id,
     ),
   );
-
-  useEffect(() => {
-    if (shopLocales) {
-      const localeOptions = shopLocales.map((shopLocale: ShopLocalesType) => ({
-        value: shopLocale.locale,
-        label: shopLocale.name,
-      }));
-      localeOptions.unshift({
-        value: "ALL",
-        label: "All languages",
-      });
-      setOptions(localeOptions);
-    }
-  }, []);
 
   useEffect(() => {
     if (updateFetcher.data) {
@@ -106,23 +98,40 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
         message.success("Saved successfully");
         handleCloseModal();
       } else {
-        message.error(updateFetcher.data.data.errorMsg);
-        setConfirmButtonDisable(false);
+        if (updateFetcher.data.data.errorCode === 10003) {
+          message.error("You cannot add two conflicting rules.");
+        } else {
+          message.error(updateFetcher.data.data.errorMsg);
+          setConfirmButtonDisable(false);
+        }
       }
     }
   }, [updateFetcher.data]);
 
   useEffect(() => {
-    if (isVisible && data) {
-      setSourceText(data.sourceText);
-      setTargetText(data.targetText);
-      setRangeCode(data.rangeCode);
-      setChecked(data.type);
+    if (isVisible) {
+      if (data) {
+        setSourceText(data.sourceText);
+        setTargetText(data.targetText);
+        setRangeCode(data.rangeCode);
+        setChecked(data.type);
+      }
+      if (shopLocales) {
+        const localeOptions = shopLocales.map(
+          (shopLocale: ShopLocalesType) => ({
+            value: shopLocale.locale,
+            label: shopLocale.name,
+          }),
+        );
+        setOptions([...options, ...localeOptions]);
+      }
     }
   }, [isVisible]);
 
   const handleConfirm = (id: number) => {
     let isValid = true;
+    let isOversizeError = true;
+    let isSameRuleError = true;
     // Reset status
     // Validate fields
     if (!sourceText) {
@@ -133,12 +142,25 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       setTargetTextStatus("warning");
       isValid = false;
     }
-    if (!rangeCode) {
+    if (!rangeCode || !options.find((option) => option.value === rangeCode)) {
       setRangeCodeStatus("warning");
       isValid = false;
     }
 
-    if (isValid) {
+    if (title === "Add rules" && dataSource.length >= 5) {
+      isOversizeError = false;
+    }
+
+    const source = sourceText + rangeCode;
+
+    dataSource.map((item: any) => {
+      const string = item.sourceText + item.rangeCode;
+      if (source == string && title === "Add rules") {
+        isSameRuleError = false;
+      }
+    });
+
+    if (isValid && isSameRuleError && isSameRuleError) {
       const formData = new FormData();
       formData.append(
         "updateInfo",
@@ -148,7 +170,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           targetText: targetText,
           rangeCode: rangeCode,
           type: checked ? 1 : 0,
-          status: data?.status || 0,
+          status: data?.status || 1,
         }),
       );
       updateFetcher.submit(formData, {
@@ -156,10 +178,14 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
         action: "/app/glossary",
       });
       setConfirmButtonDisable(true);
-    } else {
+    } else if (!isValid) {
       message.warning(
         "There are empty fields. Please complete all the required information.",
       );
+    } else if (!isOversizeError) {
+      message.error("You can add up to 5 translation rules");
+    } else {
+      message.error("You cannot add two conflicting rules.");
     }
   };
 
@@ -167,9 +193,18 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
     setSourceText("");
     setTargetText("");
     setRangeCode("");
+    setOptions([
+      {
+        value: "ALL",
+        label: "All languages",
+      },
+    ]);
     setChecked(false);
     setIsModalOpen(false);
     setConfirmButtonDisable(false);
+    setSourceTextStatus("");
+    setTargetTextStatus("");
+    setRangeCodeStatus("");
   };
 
   const onSourceTextChange: InputProps["onChange"] = (e) => {
@@ -260,7 +295,11 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           options={options}
           style={{ width: "200px" }}
           onChange={onRangeCodeChange}
-          value={rangeCode}
+          value={
+            options.some((option) => option.value === rangeCode)
+              ? rangeCode
+              : undefined
+          }
           status={rangeCodeStatus}
         />
         <Checkbox checked={checked} onChange={onCheckboxChange}>

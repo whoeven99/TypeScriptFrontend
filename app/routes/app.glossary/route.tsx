@@ -7,6 +7,7 @@ import {
   Button,
   Flex,
   message,
+  Popover,
   Skeleton,
   Space,
   Switch,
@@ -29,6 +30,7 @@ import {
 } from "~/store/modules/glossaryTableData";
 import { ShopLocalesType } from "../app.language/route";
 import UpdateGlossaryModal from "./components/updateGlossaryModal";
+import { WarningOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
@@ -75,13 +77,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!updateInfo:
         try {
           console.log("updateInfo: ", updateInfo);
-
           if (updateInfo.key >= 0) {
             const data = await UpdateTargetTextById({ data: updateInfo });
             return json({ data: data });
           } else {
-            console.log(1);
-
             const data = await InsertGlossaryInfo({
               shop: shop,
               data: updateInfo,
@@ -164,9 +163,20 @@ const Index = () => {
   useEffect(() => {
     if (deleteFetcher.data) {
       console.log(deleteFetcher.data);
-      // dispatch(
-      //   setGLossaryTableData(loadingFetcher.data.data.glossaryTableData),
-      // );
+      let newData = [...dataSource];
+      // 遍历 deleteFetcher.data
+      deleteFetcher.data.data.forEach((res: any) => {
+        if (res.value?.success) {
+          // 过滤掉需要删除的项
+          newData = newData.filter(
+            (item: GLossaryDataType) => item.key !== res.value.response,
+          );
+        } else {
+          message.error(res.value.errorMsg);
+        }
+      });
+      dispatch(setGLossaryTableData(newData)); // 更新表格数据
+      setSelectedRowKeys([]);
       setDeleteLoading(false);
     }
   }, [deleteFetcher.data]);
@@ -225,9 +235,13 @@ const Index = () => {
   };
 
   const handleIsModalOpen = (title: string, key: number) => {
-    setTitle(title);
-    setGlossaryModalId(key);
-    setIsGlossaryModalOpen(true); // 打开Modal
+    if (title === "Add rules" && dataSource.length >= 5) {
+      message.error("You can add up to 5 translation rules");
+    } else {
+      setTitle(title);
+      setGlossaryModalId(key);
+      setIsGlossaryModalOpen(true); // 打开Modal
+    }
   };
 
   const onSelectChange = (newSelectedRowKeys: any) => {
@@ -257,6 +271,19 @@ const Index = () => {
       title: "Language",
       dataIndex: "language",
       key: "language",
+      render: (_: any, record: any) => {
+        return record.language ? (
+          <Text>{record.language}</Text>
+        ) : (
+          <Popover
+            content={"This language has been deleted. Please edit again."}
+          >
+            <WarningOutlined
+              style={{ color: "#F8B400", fontSize: "18px", width: "100%" }}
+            />
+          </Popover>
+        );
+      },
     },
     {
       title: "Type",

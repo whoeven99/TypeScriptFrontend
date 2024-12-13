@@ -811,15 +811,6 @@ export const GetGlossaryByShopName = async ({
 
 export const UpdateTargetTextById = async ({ data }: { data: any }) => {
   try {
-    console.log({
-      id: data.key,
-      sourceText: data.sourceText,
-      targetText: data.targetText,
-      rangeCode: data.rangeCode,
-      caseSensitive: data.type,
-      status: data.status,
-    });
-
     const response = await axios({
       url: `${process.env.SERVER_URL}/glossary/updateTargetTextById`,
       method: "POST",
@@ -850,6 +841,14 @@ export const InsertGlossaryInfo = async ({
   data: any;
 }) => {
   try {
+    console.log({
+      shopName: shop,
+      sourceText: data.sourceText,
+      targetText: data.targetText,
+      rangeCode: data.rangeCode,
+      caseSensitive: data.type,
+      status: 1,
+    });
     const response = await axios({
       url: `${process.env.SERVER_URL}/glossary/insertGlossaryInfo`,
       method: "POST",
