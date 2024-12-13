@@ -77,8 +77,32 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   useEffect(() => {
     if (updateFetcher.data) {
       if (updateFetcher.data.data.success) {
-        console.log(updateFetcher.data);
-        dispatch(updateGLossaryTableData(updateFetcher.data.data.response));
+        // console.log(updateFetcher.data);
+        const res = updateFetcher.data.data.response;
+        let data = {
+          key: res.id,
+          status: res.status,
+          sourceText: res.sourceText,
+          targetText: res.targetText,
+          language: "",
+          rangeCode: res.rangeCode,
+          type: res.caseSensitive,
+        };
+        if (
+          shopLocales.find((language: ShopLocalesType) => {
+            return language.locale == data.rangeCode;
+          }) ||
+          data.rangeCode === "ALL"
+        ) {
+          data = {
+            ...data,
+            language:
+              shopLocales.find((language: ShopLocalesType) => {
+                return language.locale === data.rangeCode;
+              })?.name || "All Languages",
+          };
+        }
+        dispatch(updateGLossaryTableData(data));
         message.success("Saved successfully");
         handleCloseModal();
       } else {
@@ -91,7 +115,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   useEffect(() => {
     if (isVisible && data) {
       setSourceText(data.sourceText);
-      setTargetText(data.sourceText);
+      setTargetText(data.targetText);
       setRangeCode(data.rangeCode);
       setChecked(data.type);
     }
@@ -123,7 +147,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           sourceText: sourceText,
           targetText: targetText,
           rangeCode: rangeCode,
-          caseSensitive: checked ? 1 : 0,
+          type: checked ? 1 : 0,
           status: data?.status || 0,
         }),
       );

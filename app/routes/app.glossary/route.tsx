@@ -3,7 +3,16 @@ import { Page } from "@shopify/polaris";
 import { Suspense, useEffect, useState } from "react";
 import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { Button, Flex, Skeleton, Space, Switch, Table, Typography } from "antd";
+import {
+  Button,
+  Flex,
+  message,
+  Skeleton,
+  Space,
+  Switch,
+  Table,
+  Typography,
+} from "antd";
 import { useFetcher } from "@remix-run/react";
 import {
   DeleteGlossaryInfo,
@@ -16,6 +25,7 @@ import {
   setGLossaryStatusLoadingState,
   setGLossaryStatusState,
   setGLossaryTableData,
+  updateGLossaryTableData,
 } from "~/store/modules/glossaryTableData";
 import { ShopLocalesType } from "../app.language/route";
 import UpdateGlossaryModal from "./components/updateGlossaryModal";
@@ -64,10 +74,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       case !!updateInfo:
         try {
+          console.log("updateInfo: ", updateInfo);
+
           if (updateInfo.key >= 0) {
             const data = await UpdateTargetTextById({ data: updateInfo });
             return json({ data: data });
           } else {
+            console.log(1);
+
             const data = await InsertGlossaryInfo({
               shop: shop,
               data: updateInfo,
@@ -81,12 +95,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!deleteInfo:
         try {
           if (deleteInfo.length > 0) {
-            const promise = deleteInfo.map((item: number) =>
-              DeleteGlossaryInfo({ id: item }),
-            );
-            const data = Promise.allSettled(promise);
-            
-            return json({ data: data });
+            const promise = deleteInfo.map(async (item: number) => {
+              return DeleteGlossaryInfo({ id: item });
+            });
+            const res = await Promise.allSettled(promise);
+            res.forEach((result) => {
+              if (result.status === "fulfilled") {
+                console.log("Request successful:", result.value);
+              } else {
+                console.error("Request failed:", result.reason);
+              }
+            });
+            return json({ data: res });
           }
         } catch (error) {
           console.error("Error glossary loading:", error);
@@ -131,6 +151,7 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data) {
+      console.log(loadingFetcher.data.data.glossaryTableData);
       dispatch(
         setGLossaryTableData(loadingFetcher.data.data.glossaryTableData),
       );
@@ -146,11 +167,39 @@ const Index = () => {
       // dispatch(
       //   setGLossaryTableData(loadingFetcher.data.data.glossaryTableData),
       // );
-      // setShopLocales(loadingFetcher.data.data.shopLocales);
-      // shopify.loading(false);
-      // setLoading(false);
+      setDeleteLoading(false);
     }
   }, [deleteFetcher.data]);
+
+  useEffect(() => {
+    if (statusFetcher.data) {
+      if (statusFetcher.data.data.success) {
+        console.log(statusFetcher.data);
+        message.success("Saved successfully");
+        console.log({
+          key: statusFetcher.data.data.response.id,
+          loading: false,
+          status: statusFetcher.data.data.response.status,
+        });
+
+        dispatch(
+          setGLossaryStatusLoadingState({
+            key: statusFetcher.data.data.response.id,
+            loading: false,
+            status: statusFetcher.data.data.response.status,
+          }),
+        );
+      } else {
+        message.error(statusFetcher.data.data.errorMsg);
+        dispatch(
+          setGLossaryStatusLoadingState({
+            key: statusFetcher.data.data.response.id,
+            loading: true,
+          }),
+        );
+      }
+    }
+  }, [statusFetcher.data]);
 
   const handleDelete = () => {
     const formData = new FormData();
@@ -162,7 +211,12 @@ const Index = () => {
   const handleApplication = (key: number) => {
     const row = dataSource.find((item: any) => item.key === key);
     const formData = new FormData();
-    formData.append("loading", JSON.stringify(true));
+    const updateInfo = {
+      ...row,
+      type: row.type ? 1 : 0,
+      status: row.status === 0 ? 1 : 0,
+    };
+    formData.append("updateInfo", JSON.stringify(updateInfo));
     statusFetcher.submit(formData, {
       method: "post",
       action: "/app/glossary",

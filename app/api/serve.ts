@@ -779,6 +779,7 @@ export const GetGlossaryByShopName = async ({
         language: "",
         rangeCode: item.rangeCode,
         type: item.caseSensitive,
+        loading: false,
       };
       if (
         shopLanguagesWithoutPrimaryIndex.find((language: ShopLocalesType) => {
@@ -803,13 +804,22 @@ export const GetGlossaryByShopName = async ({
       shopLocales: shopLanguagesWithoutPrimaryIndex,
     };
   } catch (error) {
-    console.error("Error fetching add chars:", error);
-    throw new Error("Error fetching add chars");
+    console.error("Error GetGlossaryByShopName:", error);
+    throw new Error("Error GetGlossaryByShopName");
   }
 };
 
 export const UpdateTargetTextById = async ({ data }: { data: any }) => {
   try {
+    console.log({
+      id: data.key,
+      sourceText: data.sourceText,
+      targetText: data.targetText,
+      rangeCode: data.rangeCode,
+      caseSensitive: data.type,
+      status: data.status,
+    });
+
     const response = await axios({
       url: `${process.env.SERVER_URL}/glossary/updateTargetTextById`,
       method: "POST",
@@ -818,7 +828,7 @@ export const UpdateTargetTextById = async ({ data }: { data: any }) => {
         sourceText: data.sourceText,
         targetText: data.targetText,
         rangeCode: data.rangeCode,
-        caseSensitive: data.caseSensitive,
+        caseSensitive: data.type,
         status: data.status,
       },
     });
@@ -827,8 +837,8 @@ export const UpdateTargetTextById = async ({ data }: { data: any }) => {
     console.log(res);
     return res;
   } catch (error) {
-    console.error("Error fetching add chars:", error);
-    throw new Error("Error fetching add chars");
+    console.error("Error UpdateTargetTextById:", error);
+    throw new Error("Error UpdateTargetTextById");
   }
 };
 
@@ -848,17 +858,18 @@ export const InsertGlossaryInfo = async ({
         sourceText: data.sourceText,
         targetText: data.targetText,
         rangeCode: data.rangeCode,
-        caseSensitive: data.caseSensitive,
+        caseSensitive: data.type,
         status: 1,
       },
     });
 
     const res = response.data;
+
     console.log(res);
     return res;
   } catch (error) {
-    console.error("Error fetching add chars:", error);
-    throw new Error("Error fetching add chars");
+    console.error("Error InsertGlossaryInfo:", error);
+    throw new Error("Error InsertGlossaryInfo");
   }
 };
 
@@ -874,10 +885,13 @@ export const DeleteGlossaryInfo = async ({ id }: { id: number }) => {
 
     const res = response.data;
     console.log(res);
+
+    
+
     return res;
   } catch (error) {
-    console.error("Error fetching add chars:", error);
-    throw new Error("Error fetching add chars");
+    console.error("Error DeleteGlossaryInfo:", error);
+    throw new Error("Error DeleteGlossaryInfo");
   }
 };
 

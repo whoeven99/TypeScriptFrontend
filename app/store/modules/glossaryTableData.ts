@@ -16,10 +16,7 @@ const glossaryTableDataSlice = createSlice({
     setGLossaryTableData: (state, action: PayloadAction<any[]>) => {
       state.rows = action.payload;
     },
-    updateGLossaryTableData: (
-      state,
-      action: PayloadAction<GLossaryDataType>,
-    ) => {
+    updateGLossaryTableData: (state, action: PayloadAction<any>) => {
       // 检查新数据是否已经存在于 state.rows 中
       const index = state.rows.findIndex(
         (row) => row.key === action.payload.key,
@@ -37,11 +34,25 @@ const glossaryTableDataSlice = createSlice({
     },
     setGLossaryStatusLoadingState: (
       state,
-      action: PayloadAction<{ key: number; loading: boolean }>,
+      action: PayloadAction<{
+        key?: number;
+        loading: boolean;
+        status?: number;
+      }>,
     ) => {
-      const row = state.rows.find((item) => item.key === action.payload.key);
-      if (row) {
-        row.loading = action.payload.loading;
+      if (action.payload.key) {
+        const row = state.rows.find((item) => item.key === action.payload.key);
+        if (row) {
+          row.loading = action.payload.loading;
+          if (action.payload.status !== undefined) {
+            row.status = action.payload.status;
+          }
+        }
+      } else {
+        state.rows.map((row) => ({
+          ...row,
+          loading: action.payload.loading,
+        }));
       }
     },
     setGLossaryStatusState: (
