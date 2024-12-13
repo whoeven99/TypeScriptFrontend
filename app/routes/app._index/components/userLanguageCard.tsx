@@ -5,11 +5,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { setStatusState } from "~/store/modules/languageTableData";
 import TranslatedIcon from "~/components/translateIcon";
 import { LanguagesDataType } from "~/routes/app.language/route";
-const { Title } = Typography;
+const { Text } = Typography;
 
 interface UserLanguageCardProps {
   flagUrl: string[]; // 国旗图片的 URL
   languageName: string; // 语言名称
+  languageLocaleName: string;
   languageCode: string; //语言代码
   primaryLanguageCode: string;
 }
@@ -21,6 +22,7 @@ interface UserLanguageCardProps {
 const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   flagUrl,
   languageName,
+  languageLocaleName,
   languageCode,
   primaryLanguageCode,
 }) => {
@@ -29,9 +31,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
       (item: any) => item.locale === languageCode,
     ),
   );
-  const datas = useSelector(
-    (state: any) => state.languageTableData.rows,
-  );
+  const datas = useSelector((state: any) => state.languageTableData.rows);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const translateFetcher = useFetcher<any>();
@@ -153,7 +153,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
 
   return (
     <Card style={{ textAlign: "center", padding: "20px" }}>
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+      <Space direction="vertical" size="small" style={{ display: "flex" }}>
         <div className="flag_container">
           {flagUrl.map((url, index) => (
             <img
@@ -170,8 +170,20 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
             />
           ))}
         </div>
-
-        <Title level={4}>{languageName}</Title>
+        <div>
+          <Text
+            strong
+            style={{
+              display: "block", // 使用 block 或 inline-block
+              maxWidth: "200px", // 限制最大宽度
+              whiteSpace: "nowrap", // 不换行
+              overflow: "hidden", // 超出部分隐藏
+              textOverflow: "ellipsis", // 超出部分显示省略号
+            }}
+          >
+            {languageName}({languageLocaleName})
+          </Text>
+        </div>
         <div className="language_statu">
           {data ? <TranslatedIcon status={data?.status} /> : <>...</>}
         </div>

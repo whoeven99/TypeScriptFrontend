@@ -31,6 +31,7 @@ import {
 import { ShopLocalesType } from "../app.language/route";
 import UpdateGlossaryModal from "./components/updateGlossaryModal";
 import { WarningOutlined } from "@ant-design/icons";
+import NoLanguageSetCard from "~/components/noLanguageSetCard";
 
 const { Title, Text } = Typography;
 
@@ -327,6 +328,17 @@ const Index = () => {
       <TitleBar title="Glossary" />
       {loading ? (
         <div>loading...</div>
+      ) : shopLocales && !shopLocales?.length ? (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            minHeight: "90vh",
+          }}
+        >
+          <NoLanguageSetCard />
+        </div>
       ) : (
         <div>
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>

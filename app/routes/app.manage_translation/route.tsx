@@ -6,7 +6,7 @@ import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import { Outlet, useFetcher, useLocation } from "@remix-run/react";
+import { Outlet, useFetcher, useFetchers, useLocation } from "@remix-run/react";
 import AttentionCard from "~/components/attentionCard";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
@@ -85,7 +85,7 @@ const Index = () => {
   const { key } = location.state || {}; // 提取传递的状态
   const items = useSelector((state: any) => state.languageItemsData);
   const fetcher = useFetcher<FetchType>();
-  const currentFetcher = useFetcher<any>();
+  const productFetcher = useFetcher<any>();
 
   const resourceTypes = [
     "Collection",
@@ -109,11 +109,11 @@ const Index = () => {
       title: "Products",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "PRODUCT",
+          (item: any) => item?.language === current && item?.type === "PRODUCT",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "PRODUCT",
+          (item: any) => item?.language === current && item?.type === "PRODUCT",
         )?.totalNumber ?? undefined,
       sync_status: true,
       navigation: "product",
@@ -124,12 +124,12 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "COLLECTION",
+            item?.language === current && item?.type === "COLLECTION",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "COLLECTION",
+            item?.language === current && item?.type === "COLLECTION",
         )?.totalNumber ?? undefined,
       sync_status: true,
       navigation: "collection",
@@ -141,11 +141,11 @@ const Index = () => {
       title: "Articles",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "ARTICLE",
+          (item: any) => item?.language === current && item?.type === "ARTICLE",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "ARTICLE",
+          (item: any) => item?.language === current && item?.type === "ARTICLE",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "article",
@@ -155,11 +155,11 @@ const Index = () => {
       title: "Blog titles",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "BLOG",
+          (item: any) => item?.language === current && item?.type === "BLOG",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "BLOG",
+          (item: any) => item?.language === current && item?.type === "BLOG",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "blog",
@@ -169,11 +169,11 @@ const Index = () => {
       title: "Pages",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "PAGE",
+          (item: any) => item?.language === current && item?.type === "PAGE",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "PAGE",
+          (item: any) => item?.language === current && item?.type === "PAGE",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "page",
@@ -183,11 +183,11 @@ const Index = () => {
       title: "Filters",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "FILTER",
+          (item: any) => item?.language === current && item?.type === "FILTER",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "FILTER",
+          (item: any) => item?.language === current && item?.type === "FILTER",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "filter",
@@ -198,12 +198,12 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "METAOBJECT",
+            item?.language === current && item?.type === "METAOBJECT",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "METAOBJECT",
+            item?.language === current && item?.type === "METAOBJECT",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "metaobject",
@@ -213,11 +213,11 @@ const Index = () => {
       title: "Navigation",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "LINK",
+          (item: any) => item?.language === current && item?.type === "LINK",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "LINK",
+          (item: any) => item?.language === current && item?.type === "LINK",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "navigation",
@@ -228,12 +228,12 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "SHOP_POLICY",
+            item?.language === current && item?.type === "SHOP_POLICY",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "SHOP_POLICY",
+            item?.language === current && item?.type === "SHOP_POLICY",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "policy",
@@ -243,11 +243,11 @@ const Index = () => {
       title: "Shop",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "SHOP",
+          (item: any) => item?.language === current && item?.type === "SHOP",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "SHOP",
+          (item: any) => item?.language === current && item?.type === "SHOP",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "shop",
@@ -257,11 +257,11 @@ const Index = () => {
       title: "Store metadata",
       allTranslatedItems:
         items.find(
-          (item: any) => item.language === current && item.type === "METAFIELD",
+          (item: any) => item?.language === current && item?.type === "METAFIELD",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item.language === current && item.type === "METAFIELD",
+          (item: any) => item?.language === current && item?.type === "METAFIELD",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "metafield",
@@ -272,12 +272,12 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "ONLINE_STORE_THEME",
+            item?.language === current && item?.type === "ONLINE_STORE_THEME",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "ONLINE_STORE_THEME",
+            item?.language === current && item?.type === "ONLINE_STORE_THEME",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "theme",
@@ -290,14 +290,14 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) =>
-            item.language === current &&
-            item.type === "DELIVERY_METHOD_DEFINITION",
+            item?.language === current &&
+            item?.type === "DELIVERY_METHOD_DEFINITION",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) =>
-            item.language === current &&
-            item.type === "DELIVERY_METHOD_DEFINITION",
+            item?.language === current &&
+            item?.type === "DELIVERY_METHOD_DEFINITION",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "delivery",
@@ -308,12 +308,12 @@ const Index = () => {
       allTranslatedItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "PACKING_SLIP_TEMPLATE",
+            item?.language === current && item?.type === "PACKING_SLIP_TEMPLATE",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
           (item: any) =>
-            item.language === current && item.type === "PACKING_SLIP_TEMPLATE",
+            item?.language === current && item?.type === "PACKING_SLIP_TEMPLATE",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "shipping",
@@ -338,10 +338,10 @@ const Index = () => {
   }, [fetcher.data]);
 
   useEffect(() => {
-    if (currentFetcher.data) {
-      dispatch(updateData(currentFetcher.data.data));
+    if (productFetcher.data) {
+      dispatch(updateData(productFetcher.data.data));
     }
-  }, [currentFetcher.data]);
+  }, [productFetcher.data]);
 
   useEffect(() => {
     if (shopLanguages && words) {
@@ -375,36 +375,23 @@ const Index = () => {
     const foundItem = menuData?.find((item) => item.key === key);
     if (foundItem && primaryLanguage) {
       setCurrent(key);
-      const formData = new FormData();
-      formData.append(
-        "itemsInfo",
-        JSON.stringify({
-          source: primaryLanguage,
-          target: key,
-          resourceTypes: resourceTypes,
-        }),
-      );
-      currentFetcher.submit(formData, {
-        method: "post",
-        action: "/app",
-      }); // 提交表单请求
     }
   }, [key, menuData]);
 
   useEffect(() => {
     dispatch(setSelectLanguageData(current));
-    const findItem = items.find((item: any) => item.language === current);
+    const findItem = items.find((item: any) => item?.language === current);
     if (!findItem && primaryLanguage) {
       const formData = new FormData();
       formData.append(
-        "itemsInfo",
+        "productItems",
         JSON.stringify({
           source: primaryLanguage,
           target: current,
-          resourceTypes: resourceTypes,
+          resourceType: "Products",
         }),
       );
-      currentFetcher.submit(formData, {
+      productFetcher.submit(formData, {
         method: "post",
         action: "/app",
       }); // 提交表单请求
@@ -413,22 +400,6 @@ const Index = () => {
 
   const onClick = (e: any) => {
     setCurrent(e.key);
-    // const findItem = items.find((item: any) => item.language === e.key);
-    // if (!findItem && primaryLanguage) {
-    //   const formData = new FormData();
-    //   formData.append(
-    //     "itemsInfo",
-    //     JSON.stringify({
-    //       source: primaryLanguage,
-    //       target: e.key,
-    //       resourceTypes: resourceTypes,
-    //     }),
-    //   );
-    //   currentFetcher.submit(formData, {
-    //     method: "post",
-    //     action: "/app",
-    //   }); // 提交表单请求
-    // }
   };
 
   return (
