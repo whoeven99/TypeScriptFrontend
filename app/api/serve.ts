@@ -763,22 +763,6 @@ export const GetGlossaryByShopName = async ({
         shopName: shop,
       },
     });
-    // const response = {
-    //   data: {
-    //     response: [
-    //       {
-    //         id: 0,
-    //         shop_name: "quickstart-0f992326.myshopify.com",
-    //         source_text: "test",
-    //         target_text: "测试",
-    //         range_code: "zh-CN",
-    //         case_sensitive: 0,
-    //         status: 0,
-    //         loading: false,
-    //       },
-    //     ],
-    //   },
-    // };
     const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
       shop,
       accessToken,
@@ -788,7 +772,7 @@ export const GetGlossaryByShopName = async ({
     );
     const res = response.data.response.map((item: any) => {
       let data = {
-        id: item.id,
+        key: item.id,
         status: item.status,
         sourceText: item.sourceText,
         targetText: item.targetText,
@@ -798,18 +782,18 @@ export const GetGlossaryByShopName = async ({
       };
       if (
         shopLanguagesWithoutPrimaryIndex.find((language: ShopLocalesType) => {
-          return language.locale == item.range_code;
-        })?.name ||
-        item.range_code === "all Languages"
+          return language.locale == item.rangeCode;
+        }) ||
+        item.rangeCode === "ALL"
       ) {
         data = {
           ...data,
           language:
             shopLanguagesWithoutPrimaryIndex.find(
               (language: ShopLocalesType) => {
-                return language.locale === item.range_code;
+                return language.locale === item.rangeCode;
               },
-            )?.name || "all Languages",
+            )?.name || "All Languages",
         };
       }
       return data;
@@ -830,7 +814,7 @@ export const UpdateTargetTextById = async ({ data }: { data: any }) => {
       url: `${process.env.SERVER_URL}/glossary/updateTargetTextById`,
       method: "POST",
       data: {
-        id: data.id,
+        id: data.key,
         sourceText: data.sourceText,
         targetText: data.targetText,
         rangeCode: data.rangeCode,
@@ -839,7 +823,7 @@ export const UpdateTargetTextById = async ({ data }: { data: any }) => {
       },
     });
 
-    const res = response.data.response;
+    const res = response.data;
     console.log(res);
     return res;
   } catch (error) {
@@ -869,7 +853,26 @@ export const InsertGlossaryInfo = async ({
       },
     });
 
-    const res = response.data.response;
+    const res = response.data;
+    console.log(res);
+    return res;
+  } catch (error) {
+    console.error("Error fetching add chars:", error);
+    throw new Error("Error fetching add chars");
+  }
+};
+
+export const DeleteGlossaryInfo = async ({ id }: { id: number }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/glossary/deleteGlossaryById`,
+      method: "POST",
+      data: {
+        id: id,
+      },
+    });
+
+    const res = response.data;
     console.log(res);
     return res;
   } catch (error) {

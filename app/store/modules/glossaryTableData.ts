@@ -16,44 +16,39 @@ const glossaryTableDataSlice = createSlice({
     setGLossaryTableData: (state, action: PayloadAction<any[]>) => {
       state.rows = action.payload;
     },
-    // updateGLossaryTableData: (state, action: PayloadAction<GLossaryDataType>) => {
-    //   action.payload.forEach((newData) => {
-    //     // 检查新数据是否已经存在于 state.rows 中
-    //     const index = state.rows.findIndex(
-    //       (row) => row.locale === newData.locale,
-    //     );
-    //     if (index !== -1) {
-    //       // 如果已存在，更新该行的数据
-    //       state.rows[index] = newData;
-    //     } else {
-    //       // 如果不存在，新增数据
-    //       const dataWithKey = {
-    //         ...newData,
-    //         key: state.rows.slice(-1)[0]?.key + 1 || 0,
-    //       };
-    //       // 将包含 key 的 newData 添加到 rows
-    //       state.rows.push(dataWithKey);
-    //     }
-    //   });
-    // },
+    updateGLossaryTableData: (
+      state,
+      action: PayloadAction<GLossaryDataType>,
+    ) => {
+      // 检查新数据是否已经存在于 state.rows 中
+      const index = state.rows.findIndex(
+        (row) => row.key === action.payload.key,
+      );
+      if (index !== -1) {
+        // 如果已存在，更新该行的数据
+        state.rows[index] = action.payload;
+      } else {
+        state.rows.push(action.payload);
+      }
+    },
+    deleteGLossaryTableData: (state, action: PayloadAction<number[]>) => {
+      // 检查新数据是否已经存在于 state.rows 中
+      state.rows.filter((row) => !action.payload.includes(row.key));
+    },
     setGLossaryStatusLoadingState: (
-        state,
-        action: PayloadAction<{ id: number; loading: boolean }>,
-      ) => {
-        const row = state.rows.find(
-          (item) => item.id === action.payload.id,
-        );
-        if (row) {
-          row.loading = action.payload.loading;
-        }
-      },
+      state,
+      action: PayloadAction<{ key: number; loading: boolean }>,
+    ) => {
+      const row = state.rows.find((item) => item.key === action.payload.key);
+      if (row) {
+        row.loading = action.payload.loading;
+      }
+    },
     setGLossaryStatusState: (
       state,
-      action: PayloadAction<{ id: number; status: number }>,
+      action: PayloadAction<{ key: number; status: number }>,
     ) => {
-      const row = state.rows.find(
-        (item) => item.id === action.payload.id,
-      );
+      const row = state.rows.find((item) => item.key === action.payload.key);
       if (row) {
         row.status = action.payload.status;
       }
@@ -63,8 +58,8 @@ const glossaryTableDataSlice = createSlice({
 
 export const {
   setGLossaryTableData,
-//   updateGLossaryTableData,
-setGLossaryStatusLoadingState,
+  updateGLossaryTableData,
+  setGLossaryStatusLoadingState,
   setGLossaryStatusState,
 } = glossaryTableDataSlice.actions;
 

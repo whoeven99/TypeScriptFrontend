@@ -2,22 +2,21 @@ import { useEffect, useState } from "react";
 import {
   Modal,
   Input,
-  Table,
   Space,
   message,
   Button,
   Typography,
   Select,
   Checkbox,
-  CheckboxProps,
   InputProps,
   SelectProps,
+  CheckboxProps,
 } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
 import { FetcherWithComponents, useFetcher } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import { GLossaryDataType } from "../route";
+import { updateGLossaryTableData } from "~/store/modules/glossaryTableData";
 
 const { Text } = Typography;
 
@@ -29,14 +28,6 @@ interface GlossaryModalProps {
   shopLocales: ShopLocalesType[];
 }
 
-// interface UpdateGlossaryType {
-//   key: number;
-//   isoCode: string;
-//   src: string[] | null;
-//   name: string;
-//   state: string;
-// }
-
 const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   id,
   title,
@@ -44,49 +35,108 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   setIsModalOpen,
   shopLocales,
 }) => {
-  console.log(id);
-
   const [sourceText, setSourceText] = useState<string>("");
   const [targetText, setTargetText] = useState<string>("");
   const [rangeCode, setRangeCode] = useState<string>("");
   const [checked, setChecked] = useState(false);
-  const [confirmButtonDisable, setConfirmButtonDisable] = useState<boolean>();
+  const [options, setOptions] = useState<SelectProps["options"]>();
+  const [confirmButtonDisable, setConfirmButtonDisable] =
+    useState<boolean>(false);
+  const [sourceTextStatus, setSourceTextStatus] = useState<
+    "" | "warning" | "error"
+  >("");
+  const [targetTextStatus, setTargetTextStatus] = useState<
+    "" | "warning" | "error"
+  >("");
+  const [rangeCodeStatus, setRangeCodeStatus] = useState<
+    "" | "warning" | "error"
+  >("");
+
+  const dispatch = useDispatch();
   const updateFetcher = useFetcher<any>();
   const data = useSelector((state: any) =>
-    state.glossaryTableData.rows.find((row: GLossaryDataType) => row.id === id),
+    state.glossaryTableData.rows.find(
+      (row: GLossaryDataType) => row.key === id,
+    ),
   );
 
   useEffect(() => {
-    if (updateFetcher.data) console.log(updateFetcher.data);
+    if (shopLocales) {
+      const localeOptions = shopLocales.map((shopLocale: ShopLocalesType) => ({
+        value: shopLocale.locale,
+        label: shopLocale.name,
+      }));
+      localeOptions.unshift({
+        value: "ALL",
+        label: "All languages",
+      });
+      setOptions(localeOptions);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (updateFetcher.data) {
+      if (updateFetcher.data.data.success) {
+        console.log(updateFetcher.data);
+        dispatch(updateGLossaryTableData(updateFetcher.data.data.response));
+        message.success("Saved successfully");
+        handleCloseModal();
+      } else {
+        message.error(updateFetcher.data.data.errorMsg);
+        setConfirmButtonDisable(false);
+      }
+    }
   }, [updateFetcher.data]);
 
   useEffect(() => {
     if (isVisible && data) {
       setSourceText(data.sourceText);
       setTargetText(data.sourceText);
-      setRangeCode(data.target);
+      setRangeCode(data.rangeCode);
       setChecked(data.type);
-      console.log(rangeCode);
     }
   }, [isVisible]);
 
   const handleConfirm = (id: number) => {
-    const formData = new FormData();
-    formData.append(
-      "updateInfo",
-      JSON.stringify({
-        id: id,
-        sourceText: sourceText,
-        targetText: targetText,
-        rangeCode: rangeCode,
-        caseSensitive: checked ? 1 : 0,
-        status: data?.status || 0,
-      }),
-    );
-    updateFetcher.submit(formData, {
-      method: "post",
-      action: "/app/glossary",
-    });
+    let isValid = true;
+    // Reset status
+    // Validate fields
+    if (!sourceText) {
+      setSourceTextStatus("warning");
+      isValid = false;
+    }
+    if (!targetText) {
+      setTargetTextStatus("warning");
+      isValid = false;
+    }
+    if (!rangeCode) {
+      setRangeCodeStatus("warning");
+      isValid = false;
+    }
+
+    if (isValid) {
+      const formData = new FormData();
+      formData.append(
+        "updateInfo",
+        JSON.stringify({
+          key: id,
+          sourceText: sourceText,
+          targetText: targetText,
+          rangeCode: rangeCode,
+          caseSensitive: checked ? 1 : 0,
+          status: data?.status || 0,
+        }),
+      );
+      updateFetcher.submit(formData, {
+        method: "post",
+        action: "/app/glossary",
+      });
+      setConfirmButtonDisable(true);
+    } else {
+      message.warning(
+        "There are empty fields. Please complete all the required information.",
+      );
+    }
   };
 
   const handleCloseModal = () => {
@@ -95,36 +145,37 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
     setRangeCode("");
     setChecked(false);
     setIsModalOpen(false);
+    setConfirmButtonDisable(false);
   };
 
   const onSourceTextChange: InputProps["onChange"] = (e) => {
-    // console.log('checked = ', e.target.checked);
-    setSourceText(e.target.value);
+    if (e) {
+      setSourceTextStatus("");
+      setSourceText(e.target.value);
+    }
   };
 
   const onTargetTextChange: InputProps["onChange"] = (e) => {
-    // console.log('checked = ', e.target.checked);
-    setTargetText(e.target.value);
+    if (e) {
+      setTargetTextStatus("");
+      setTargetText(e.target.value);
+    }
   };
 
   const onRangeCodeChange: SelectProps["onChange"] = (e) => {
-    setRangeCode(e);
+    if (e) {
+      setRangeCodeStatus("");
+      setRangeCode(e);
+    }
   };
 
   const onCheckboxChange: CheckboxProps["onChange"] = (e) => {
-    // console.log('checked = ', e.target.checked);
     setChecked(e.target.checked);
   };
-
-  const options = shopLocales.map((shopLocale: ShopLocalesType) => ({
-    value: shopLocale.locale,
-    label: shopLocale.name,
-  }));
 
   return (
     <Modal
       title={title}
-      // width={1000}
       open={isVisible}
       onCancel={handleCloseModal}
       footer={[
@@ -163,6 +214,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             placeholder="Please enter original text"
             value={sourceText}
             onChange={onSourceTextChange}
+            status={sourceTextStatus}
           />
           <Text
             style={{
@@ -176,14 +228,16 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             placeholder="Please enter escaped text"
             value={targetText}
             onChange={onTargetTextChange}
+            status={targetTextStatus}
           />
         </div>
         <Text strong>Language</Text>
         <Select
           options={options}
-          style={{ width: "100px" }}
+          style={{ width: "200px" }}
           onChange={onRangeCodeChange}
           value={rangeCode}
+          status={rangeCodeStatus}
         />
         <Checkbox checked={checked} onChange={onCheckboxChange}>
           {checked ? "Case-sensitive" : "Case-insensitive"}

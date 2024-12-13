@@ -6,6 +6,7 @@ import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { Button, Flex, Skeleton, Space, Switch, Table, Typography } from "antd";
 import { useFetcher } from "@remix-run/react";
 import {
+  DeleteGlossaryInfo,
   GetGlossaryByShopName,
   InsertGlossaryInfo,
   UpdateTargetTextById,
@@ -22,7 +23,7 @@ import UpdateGlossaryModal from "./components/updateGlossaryModal";
 const { Title, Text } = Typography;
 
 export interface GLossaryDataType {
-  id: number;
+  key: number;
   sourceText: string;
   targetText: string;
   language: string;
@@ -44,6 +45,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
     const updateInfo = JSON.parse(formData.get("updateInfo") as string);
+    const deleteInfo: number[] = JSON.parse(
+      formData.get("deleteInfo") as string,
+    );
     switch (true) {
       case !!loading:
         try {
@@ -60,7 +64,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       case !!updateInfo:
         try {
-          if (updateInfo.id >= 0) {
+          if (updateInfo.key >= 0) {
             const data = await UpdateTargetTextById({ data: updateInfo });
             return json({ data: data });
           } else {
@@ -74,7 +78,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.error("Error glossary loading:", error);
           throw new Response("Error glossary loading", { status: 500 });
         }
-
+      case !!deleteInfo:
+        try {
+          if (deleteInfo.length > 0) {
+            const promise = deleteInfo.map((item: number) =>
+              DeleteGlossaryInfo({ id: item }),
+            );
+            const data = Promise.allSettled(promise);
+            
+            return json({ data: data });
+          }
+        } catch (error) {
+          console.error("Error glossary loading:", error);
+          throw new Response("Error glossary loading", { status: 500 });
+        }
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -88,6 +105,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [title, setTitle] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
+  const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
   // const [deleteloading, setDeleteLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [shopLocales, setShopLocales] = useState<ShopLocalesType[]>([]);
@@ -97,6 +115,7 @@ const Index = () => {
   const dispatch = useDispatch();
   const loadingFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
+  const deleteFetcher = useFetcher<any>();
 
   const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
 
@@ -121,44 +140,44 @@ const Index = () => {
     }
   }, [loadingFetcher.data]);
 
+  useEffect(() => {
+    if (deleteFetcher.data) {
+      console.log(deleteFetcher.data);
+      // dispatch(
+      //   setGLossaryTableData(loadingFetcher.data.data.glossaryTableData),
+      // );
+      // setShopLocales(loadingFetcher.data.data.shopLocales);
+      // shopify.loading(false);
+      // setLoading(false);
+    }
+  }, [deleteFetcher.data]);
+
   const handleDelete = () => {
-    // const newData = data.filter(
-    //   (item: LanguagesDataType) => !selectedRowKeys.includes(item.key),
-    // );
-    // const deleteData = data.filter((item: LanguagesDataType) =>
-    //   selectedRowKeys.includes(item.key),
-    // );
-    // const formData = new FormData();
-    // formData.append(
-    //   "deleteData",
-    //   JSON.stringify({
-    //     deleteData: deleteData,
-    //     primaryLanguage: primaryLanguage?.locale,
-    //   }),
-    // ); // 将选中的语言作为字符串发送
-    // submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
-    // dispatch(setTableData(newData)); // 更新表格数据
-    // setSelectedRowKeys([]); // 清空已选中项
+    const formData = new FormData();
+    formData.append("deleteInfo", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
+    deleteFetcher.submit(formData, { method: "post", action: "/app/glossary" }); // 提交表单请求
+    setDeleteLoading(true);
   };
 
-  const handleApplication = (id: number) => {
-    const row = dataSource.find((item: any) => item.id === id);
+  const handleApplication = (key: number) => {
+    const row = dataSource.find((item: any) => item.key === key);
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
     statusFetcher.submit(formData, {
       method: "post",
       action: "/app/glossary",
     });
-    dispatch(setGLossaryStatusLoadingState({ id, loading: true }));
+    dispatch(setGLossaryStatusLoadingState({ key, loading: true }));
   };
 
-  const handleIsModalOpen = (title: string, id: number) => {
+  const handleIsModalOpen = (title: string, key: number) => {
     setTitle(title);
-    setGlossaryModalId(id);
+    setGlossaryModalId(key);
     setIsGlossaryModalOpen(true); // 打开Modal
   };
 
   const onSelectChange = (newSelectedRowKeys: any) => {
+    console.log(selectedRowKeys);
     setSelectedRowKeys(newSelectedRowKeys);
   };
 
@@ -170,7 +189,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Switch
           checked={record?.status}
-          onClick={() => handleApplication(record.id)}
+          onClick={() => handleApplication(record.key)}
           loading={record.loading} // 使用每个项的 loading 状态
         />
       ),
@@ -204,7 +223,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button
-            onClick={() => handleIsModalOpen("Edit rules", record.id)}
+            onClick={() => handleIsModalOpen("Edit rules", record.key)}
             type="primary"
           >
             Edit
@@ -248,7 +267,7 @@ const Index = () => {
                     type="primary"
                     onClick={handleDelete}
                     disabled={!hasSelected}
-                    // loading={deleteloading}
+                    loading={deleteLoading}
                   >
                     Delete
                   </Button>
@@ -271,6 +290,7 @@ const Index = () => {
                 <Table
                   rowSelection={rowSelection}
                   columns={columns}
+                  loading={deleteLoading}
                   dataSource={dataSource}
                   style={{ width: "100%" }}
                 />
