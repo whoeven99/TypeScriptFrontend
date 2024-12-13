@@ -75,7 +75,7 @@ const languageTableDataSlice = createSlice({
         row.loading = action.payload.loading;
       }
     },
-    setStatuState: (
+    setStatusState: (
       state,
       action: PayloadAction<{ target: string; status: number }>,
     ) => {
@@ -95,7 +95,7 @@ export const {
   setPublishConfirmState,
   setPublishLoadingState,
   setPublishState,
-  setStatuState,
+  setStatusState,
 } = languageTableDataSlice.actions;
 
 const reducer = languageTableDataSlice.reducer;

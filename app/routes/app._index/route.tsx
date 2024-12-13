@@ -2,18 +2,17 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Col, Modal, Row, Skeleton, Space, Typography, Button } from "antd";
-import { useFetcher } from "@remix-run/react";
+import { Link, useFetcher } from "@remix-run/react";
 import "./styles.css";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { authenticate } from "~/shopify.server";
 import PaymentModal from "~/components/paymentModal";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
-
-const UserProfileCard = lazy(() => import("./components/userProfileCard"));
-const UserLanguageCard = lazy(() => import("./components/userLanguageCard"));
+import UserProfileCard from "./components/userProfileCard";
+import UserLanguageCard from "./components/userLanguageCard";
 
 const { Title, Text } = Typography;
 
@@ -143,15 +142,15 @@ const Index = () => {
                   Faster, higher-quality localization translation tool
                 </Title>
               </div>
-              <Suspense fallback={<Skeleton active />}>
-                {user && (
-                  <UserProfileCard
-                    setPaymentModalVisible={setPaymentModalVisible}
-                    chars={user.chars}
-                    totalChars={user.totalChars}
-                  />
-                )}
-              </Suspense>
+              {user ? (
+                <UserProfileCard
+                  setPaymentModalVisible={setPaymentModalVisible}
+                  chars={user.chars}
+                  totalChars={user.totalChars}
+                />
+              ) : (
+                <Skeleton active />
+              )}
               <div style={{ paddingLeft: "8px" }}>
                 <Title level={3}>
                   {languageData.length} alternative languages
@@ -172,16 +171,17 @@ const Index = () => {
                   <Row gutter={[16, 16]}>
                     {languageData.map((language: any, index: number) => (
                       <Col span={8} key={index}>
-                        <Suspense fallback={<Skeleton active />}>
-                          {user && (
-                            <UserLanguageCard
-                              flagUrl={language.src.slice(0, 4)}
-                              primaryLanguageCode={user.primaryLanguageCode}
-                              languageName={language.name}
-                              languageCode={language.locale}
-                            />
-                          )}
-                        </Suspense>
+                        {user ? (
+                          <UserLanguageCard
+                            flagUrl={language.src.slice(0, 4)}
+                            primaryLanguageCode={user.primaryLanguageCode}
+                            languageLocaleName={language.localeName}
+                            languageName={language.name}
+                            languageCode={language.locale}
+                          />
+                        ) : (
+                          <Skeleton active />
+                        )}
                       </Col>
                     ))}
                   </Row>
@@ -189,6 +189,29 @@ const Index = () => {
               ) : (
                 <NoLanguageSetCard />
               )}
+              <Text
+                style={{
+                  display: "flex", // 使用 flexbox 来布局
+                  justifyContent: "center", // 水平居中
+                }}
+              >
+                Learn more in
+                <Link
+                  to="http://ciwi.bogdatech.com/help"
+                  target="_blank"
+                  style={{ margin: "0 5px" }}
+                >
+                  Ciwi Help Center
+                </Link>
+                by
+                <Link
+                  to={"http://ciwi.bogdatech.com/"}
+                  target="_blank"
+                  style={{ margin: "0 5px" }}
+                >
+                  Ciwi.ai
+                </Link>
+              </Text>
             </Space>
             <Modal
               open={newUserModal}
@@ -207,8 +230,8 @@ const Index = () => {
             >
               <Title level={4}>Congratulations!</Title>
               <Text>
-                You have received 20,000 Credits, enabling you to translate
-                into over 137 languages.
+                You have received 20,000 Credits, enabling you to translate into
+                over 137 languages.
               </Text>
             </Modal>
             <PaymentModal
