@@ -63,7 +63,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const loading = JSON.parse(formData.get("loading") as string);
     const index = JSON.parse(formData.get("index") as string);
     const translation = JSON.parse(formData.get("translation") as string);
-    const productItems = JSON.parse(formData.get("productItems") as string);
+    const productsItems = JSON.parse(formData.get("productsItems") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
     const payInfo = JSON.parse(formData.get("payInfo") as string);
@@ -211,24 +211,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       //     targets: getData.targets,
       //   });
       //   return json({ data: data });
-      case !!productItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: productItems.source,
-            target: productItems.target,
-            resourceType: productItems.resourceType,
-          });
-
-          return json({ data: data });
-        } catch (error) {
-          console.error("Error GetTranslationItemsInfo productItems:", error);
-          return json(
-            { error: "Error GetTranslationItemsInfo productItems" },
-            { status: 500 },
-          );
-        }
       case !!statusData:
         try {
           console.log("statusData:", statusData);

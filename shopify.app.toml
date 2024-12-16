@@ -3,12 +3,12 @@
 client_id = "4b05c1caefa9e0761a0538b64159b627"
 name = "Ciwi.ai:FAT(Local)"
 handle = "ciwi_local"
-application_url = "https://ten-predicted-had-added.trycloudflare.com"
+application_url = "https://ghana-potato-prevent-overseas.trycloudflare.com"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
-dev_store_url = "quickstart-0f992326.myshopify.com"
+dev_store_url = "ciwishop.myshopify.com"
 include_config_on_deploy = true
 
 [access_scopes]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://ten-predicted-had-added.trycloudflare.com/auth/callback",
-  "https://ten-predicted-had-added.trycloudflare.com/auth/shopify/callback",
-  "https://ten-predicted-had-added.trycloudflare.com/api/auth/callback"
+  "https://ghana-potato-prevent-overseas.trycloudflare.com/auth/callback",
+  "https://ghana-potato-prevent-overseas.trycloudflare.com/auth/shopify/callback",
+  "https://ghana-potato-prevent-overseas.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
