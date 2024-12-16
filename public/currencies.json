@@ -1,0 +1,1073 @@
+[
+  {
+    "key": 0,
+    "currencyName": "Afghan Afghani",
+    "currencyCode": "AFN",
+    "symbol": "؋",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AF.png"
+  },
+  {
+    "key": 1,
+    "currencyName": "Albanian Lek",
+    "currencyCode": "ALL",
+    "symbol": "lek",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AL.png"
+  },
+  {
+    "key": 2,
+    "currencyName": "Algerian Dinar",
+    "currencyCode": "DZD",
+    "symbol": "د.ج",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/DZ.png"
+  },
+  {
+    "key": 3,
+    "currencyName": "Angolan Kwanza",
+    "currencyCode": "AOA",
+    "symbol": "Kz",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AO.png"
+  },
+  {
+    "key": 4,
+    "currencyName": "Argentine Peso",
+    "currencyCode": "ARS",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AR.png"
+  },
+  {
+    "key": 5,
+    "currencyName": "Armenian Dram",
+    "currencyCode": "AMD",
+    "symbol": "֏",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AM.png"
+  },
+  {
+    "key": 6,
+    "currencyName": "Aruban Florin",
+    "currencyCode": "AWG",
+    "symbol": "ƒ",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AW.png"
+  },
+  {
+    "key": 7,
+    "currencyName": "Australian Dollar",
+    "currencyCode": "AUD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AU.png"
+  },
+  {
+    "key": 8,
+    "currencyName": "Barbadian Dollar",
+    "currencyCode": "BBD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BB.png"
+  },
+  {
+    "key": 9,
+    "currencyName": "Azerbaijani Manat",
+    "currencyCode": "AZN",
+    "symbol": "₼",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AZ.png"
+  },
+  {
+    "key": 10,
+    "currencyName": "Bangladeshi Taka",
+    "currencyCode": "BDT",
+    "symbol": "৳",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BD.png"
+  },
+  {
+    "key": 11,
+    "currencyName": "Bahamian Dollar",
+    "currencyCode": "BSD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BS.png"
+  },
+  {
+    "key": 12,
+    "currencyName": "Bahraini Dinar",
+    "currencyCode": "BHD",
+    "symbol": "د.ب",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BH.png"
+  },
+  {
+    "key": 13,
+    "currencyName": "Burundian Franc",
+    "currencyCode": "BIF",
+    "symbol": "Fr",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BI.png"
+  },
+  {
+    "key": 14,
+    "currencyName": "Belarusian Ruble",
+    "currencyCode": "BYN",
+    "symbol": "Br",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BY.png"
+  },
+  {
+    "key": 15,
+    "currencyName": "Belize Dollar",
+    "currencyCode": "BZD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BZ.png"
+  },
+  {
+    "key": 16,
+    "currencyName": "Bermudan Dollar",
+    "currencyCode": "BMD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BM.png"
+  },
+  {
+    "key": 17,
+    "currencyName": "Bhutanese Ngultrum",
+    "currencyCode": "BTN",
+    "symbol": "Nu.",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BT.png"
+  },
+  {
+    "key": 18,
+    "currencyName": "Bosnia-Herzegovina Convertible Mark",
+    "currencyCode": "BAM",
+    "symbol": "KM",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BA.png"
+  },
+  {
+    "key": 19,
+    "currencyName": "Brazilian Real",
+    "currencyCode": "BRL",
+    "symbol": "R$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BR.png"
+  },
+  {
+    "key": 20,
+    "currencyName": "British Pound",
+    "currencyCode": "GBP",
+    "symbol": "£",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/GB.png"
+  },
+  {
+    "key": 21,
+    "currencyName": "Bolivian Boliviano",
+    "currencyCode": "BOB",
+    "symbol": "Bs",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BO.png"
+  },
+  {
+    "key": 22,
+    "currencyName": "Botswanan Pula",
+    "currencyCode": "BWP",
+    "symbol": "P",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BW.png"
+  },
+  {
+    "key": 23,
+    "currencyName": "Brunei Dollar",
+    "currencyCode": "BND",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BN.png"
+  },
+  {
+    "key": 24,
+    "currencyName": "Bulgarian Lev",
+    "currencyCode": "BGN",
+    "symbol": "лв",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/BG.png"
+  },
+  {
+    "key": 25,
+    "currencyName": "Myanmar Kyat",
+    "currencyCode": "MMK",
+    "symbol": "K",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MM.png"
+  },
+  {
+    "key": 26,
+    "currencyName": "Cambodian Riel",
+    "currencyCode": "KHR",
+    "symbol": "៛",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/KH.png"
+  },
+  {
+    "key": 27,
+    "currencyName": "Cape Verdean Escudo",
+    "currencyCode": "CVE",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/CV.png"
+  },
+  {
+    "key": 28,
+    "currencyName": "Canadian Dollar",
+    "currencyCode": "CAD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/CA.png"
+  },
+  {
+    "key": 29,
+    "currencyName": "Cayman Islands Dollar",
+    "currencyCode": "KYD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/KY.png"
+  },
+  {
+    "key": 30,
+    "currencyName": "Central African CFA Franc",
+    "currencyCode": "XAF",
+    "symbol": "FCFA",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/CM.png"
+  },
+  {
+    "key": 31,
+    "currencyName": "Chilean Peso",
+    "currencyCode": "CLP",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/CL.png"
+  },
+  {
+    "key": 32,
+    "currencyName": "Chinese Yuan",
+    "currencyCode": "CNY",
+    "symbol": "¥",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/CN.png"
+  },
+  {
+    "key": 33,
+    "currencyName": "Colombian Peso",
+    "currencyCode": "COP",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/CO.png"
+  },
+  {
+    "key": 34,
+    "currencyName": "Comorian Franc",
+    "currencyCode": "KMF",
+    "symbol": "CF",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/KM.png"
+  },
+  {
+    "key": 35,
+    "currencyName": "Congolese Franc",
+    "currencyCode": "CDF",
+    "symbol": "Fr",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/CD.png"
+  },
+  {
+    "key": 36,
+    "currencyName": "Costa Rican Colón",
+    "currencyCode": "CRC",
+    "symbol": "₡",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/CR.png"
+  },
+  {
+    "key": 37,
+    "currencyName": "Croatian Kuna",
+    "currencyCode": "HRK",
+    "symbol": "kn",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/HR.png"
+  },
+  {
+    "key": 38,
+    "currencyName": "Czech Koruna",
+    "currencyCode": "CZK",
+    "symbol": "Kč",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/CZ.png"
+  },
+  {
+    "key": 39,
+    "currencyName": "Danish Krone",
+    "currencyCode": "DKK",
+    "symbol": "kr",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/DK.png"
+  },
+  {
+    "key": 40,
+    "currencyName": "Djiboutian Franc",
+    "currencyCode": "DJF",
+    "symbol": "FDj",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/DJ.png"
+  },
+  {
+    "key": 41,
+    "currencyName": "Dominican Peso",
+    "currencyCode": "DOP",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/DO.png"
+  },
+  {
+    "key": 42,
+    "currencyName": "East Caribbean Dollar",
+    "currencyCode": "XCD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/EC.png"
+  },
+  {
+    "key": 43,
+    "currencyName": "Egyptian Pound",
+    "currencyCode": "EGP",
+    "symbol": "E£",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/EG.png"
+  },
+  {
+    "key": 44,
+    "currencyName": "Eritrean Nakfa",
+    "currencyCode": "ERN",
+    "symbol": "Nkf",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/ER.png"
+  },
+  {
+    "key": 45,
+    "currencyName": "Ethiopian Birr",
+    "currencyCode": "ETB",
+    "symbol": "Br",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/ET.png"
+  },
+  {
+    "key": 46,
+    "currencyName": "Euro",
+    "currencyCode": "EUR",
+    "symbol": "€",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/EU.png"
+  },
+  {
+    "key": 47,
+    "currencyName": "Falkland Islands Pound",
+    "currencyCode": "FKP",
+    "symbol": "£",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/FK.png"
+  },
+  {
+    "key": 48,
+    "currencyName": "CFP Franc",
+    "currencyCode": "XPF",
+    "symbol": "CFPF",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/PF.png"
+  },
+  {
+    "key": 49,
+    "currencyName": "Fijian Dollar",
+    "currencyCode": "FJD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/FJ.png"
+  },
+  {
+    "key": 50,
+    "currencyName": "Gibraltar Pound",
+    "currencyCode": "GIP",
+    "symbol": "£",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/GI.png"
+  },
+  {
+    "key": 51,
+    "currencyName": "Gambian Dalasi",
+    "currencyCode": "GMD",
+    "symbol": "D",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/GM.png"
+  },
+  {
+    "key": 52,
+    "currencyName": "Ghanaian Cedi",
+    "currencyCode": "GHS",
+    "symbol": "₵",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/GH.png"
+  },
+  {
+    "key": 53,
+    "currencyName": "Guatemalan Quetzal",
+    "currencyCode": "GTQ",
+    "symbol": "Q",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/GT.png"
+  },
+  {
+    "key": 54,
+    "currencyName": "Guyanaese Dollar",
+    "currencyCode": "GYD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/GY.png"
+  },
+  {
+    "key": 55,
+    "currencyName": "Georgian Lari",
+    "currencyCode": "GEL",
+    "symbol": "₾",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/GE.png"
+  },
+  {
+    "key": 56,
+    "currencyName": "Guinean Franc",
+    "currencyCode": "GNF",
+    "symbol": "FG",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/GN.png"
+  },
+  {
+    "key": 57,
+    "currencyName": "Haitian Gourde",
+    "currencyCode": "HTG",
+    "symbol": "G",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/HT.png"
+  },
+  {
+    "key": 58,
+    "currencyName": "Honduran Lempira",
+    "currencyCode": "HNL",
+    "symbol": "L",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/HN.png"
+  },
+  {
+    "key": 59,
+    "currencyName": "Hong Kong Dollar",
+    "currencyCode": "HKD",
+    "symbol": "HK$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/HK.png"
+  },
+  {
+    "key": 60,
+    "currencyName": "Hungarian Forint",
+    "currencyCode": "HUF",
+    "symbol": "Ft",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/HU.png"
+  },
+  {
+    "key": 61,
+    "currencyName": "Icelandic Króna",
+    "currencyCode": "ISK",
+    "symbol": "kr",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/IS.png"
+  },
+  {
+    "key": 62,
+    "currencyName": "Indian Rupee",
+    "currencyCode": "INR",
+    "symbol": "₹",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/IN.png"
+  },
+  {
+    "key": 63,
+    "currencyName": "Indonesian Rupiah",
+    "currencyCode": "IDR",
+    "symbol": "Rp",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/ID.png"
+  },
+  {
+    "key": 64,
+    "currencyName": "Israeli New Shekel",
+    "currencyCode": "ILS",
+    "symbol": "₪",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/IL.png"
+  },
+  {
+    "key": 65,
+    "currencyName": "Iraqi Dinar",
+    "currencyCode": "IQD",
+    "symbol": "د.ع",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/IQ.png"
+  },
+  {
+    "key": 66,
+    "currencyName": "Jamaican Dollar",
+    "currencyCode": "JMD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/JM.png"
+  },
+  {
+    "key": 67,
+    "currencyName": "Japanese Yen",
+    "currencyCode": "JPY",
+    "symbol": "¥",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/JP.png"
+  },
+  {
+    "key": 68,
+    "currencyName": "Jersey Pound",
+    "currencyCode": "JEP",
+    "symbol": "£",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/JE.png"
+  },
+  {
+    "key": 69,
+    "currencyName": "Jordanian Dinar",
+    "currencyCode": "JOD",
+    "symbol": "د.ا",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/JO.png"
+  },
+  {
+    "key": 70,
+    "currencyName": "Kazakhstani Tenge",
+    "currencyCode": "KZT",
+    "symbol": "₸",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/KZ.png"
+  },
+  {
+    "key": 71,
+    "currencyName": "Kenyan Shilling",
+    "currencyCode": "KES",
+    "symbol": "KSh",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/KE.png"
+  },
+  {
+    "key": 72,
+    "currencyName": "Kiribati Dollar",
+    "currencyCode": "KID",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/KI.png"
+  },
+  {
+    "key": 73,
+    "currencyName": "Kuwaiti Dinar",
+    "currencyCode": "KWD",
+    "symbol": "د.ك",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/KW.png"
+  },
+  {
+    "key": 74,
+    "currencyName": "Kyrgystani Som",
+    "currencyCode": "KGS",
+    "symbol": "⃀",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/KG.png"
+  },
+  {
+    "key": 75,
+    "currencyName": "Laotian Kip",
+    "currencyCode": "LAK",
+    "symbol": "₭",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/LA.png"
+  },
+  {
+    "key": 76,
+    "currencyName": "Latvian Lats",
+    "currencyCode": "LVL",
+    "symbol": "Ls",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/LV.png"
+  },
+  {
+    "key": 77,
+    "currencyName": "Lebanese Pound",
+    "currencyCode": "LBP",
+    "symbol": "ل.ل",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/LB.png"
+  },
+  {
+    "key": 78,
+    "currencyName": "Lesotho Loti",
+    "currencyCode": "LSL",
+    "symbol": "M",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/LS.png"
+  },
+  {
+    "key": 79,
+    "currencyName": "Liberian Dollar",
+    "currencyCode": "LRD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/LR.png"
+  },
+  {
+    "key": 80,
+    "currencyName": "Libyan Dinar",
+    "currencyCode": "LYD",
+    "symbol": "د.ل",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/LY.png"
+  },
+  {
+    "key": 81,
+    "currencyName": "Lithuanian Litas",
+    "currencyCode": "LTL",
+    "symbol": "Lt",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/LT.png"
+  },
+  {
+    "key": 82,
+    "currencyName": "Malagasy Ariary",
+    "currencyCode": "MGA",
+    "symbol": "Ar",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MG.png"
+  },
+  {
+    "key": 83,
+    "currencyName": "Macedonian Denar",
+    "currencyCode": "MKD",
+    "symbol": "ден",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MK.png"
+  },
+  {
+    "key": 84,
+    "currencyName": "Macanese Pataca",
+    "currencyCode": "MOP",
+    "symbol": "P",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MO.png"
+  },
+  {
+    "key": 85,
+    "currencyName": "Malawian Kwacha",
+    "currencyCode": "MWK",
+    "symbol": "MK",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MW.png"
+  },
+  {
+    "key": 86,
+    "currencyName": "Maldivian Rufiyaa",
+    "currencyCode": "MVR",
+    "symbol": ".ރ",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MV.png"
+  },
+  {
+    "key": 87,
+    "currencyName": "Mauritanian Ouguiya",
+    "currencyCode": "MRU",
+    "symbol": "UM",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MR.png"
+  },
+  {
+    "key": 88,
+    "currencyName": "Mexican Peso",
+    "currencyCode": "MXN",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MX.png"
+  },
+  {
+    "key": 89,
+    "currencyName": "Malaysian Ringgit",
+    "currencyCode": "MYR",
+    "symbol": "RM",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MY.png"
+  },
+  {
+    "key": 90,
+    "currencyName": "Mauritian Rupee",
+    "currencyCode": "MUR",
+    "symbol": "Rs",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MU.png"
+  },
+  {
+    "key": 91,
+    "currencyName": "Moldovan Leu",
+    "currencyCode": "MDL",
+    "symbol": "L",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MD.png"
+  },
+  {
+    "key": 92,
+    "currencyName": "Moroccan Dirham",
+    "currencyCode": "MAD",
+    "symbol": "د.م",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MA.png"
+  },
+  {
+    "key": 93,
+    "currencyName": "Mongolian Tugrik",
+    "currencyCode": "MNT",
+    "symbol": "₮",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MN.png"
+  },
+  {
+    "key": 94,
+    "currencyName": "Mozambican Metical",
+    "currencyCode": "MZN",
+    "symbol": "MT",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/MZ.png"
+  },
+  {
+    "key": 95,
+    "currencyName": "Namibian Dollar",
+    "currencyCode": "NAD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/NA.png"
+  },
+  {
+    "key": 96,
+    "currencyName": "Nepalese Rupee",
+    "currencyCode": "NPR",
+    "symbol": "Rs",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/NP.png"
+  },
+  {
+    "key": 97,
+    "currencyName": "Netherlands Antillean Guilder",
+    "currencyCode": "ANG",
+    "symbol": "ƒ",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AW.png"
+  },
+  {
+    "key": 98,
+    "currencyName": "New Zealand Dollar",
+    "currencyCode": "NZD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/NZ.png"
+  },
+  {
+    "key": 99,
+    "currencyName": "Nicaraguan Córdoba",
+    "currencyCode": "NIO",
+    "symbol": "C$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/NI.png"
+  },
+  {
+    "key": 100,
+    "currencyName": "Nigerian Naira",
+    "currencyCode": "NGN",
+    "symbol": "₦",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/NG.png"
+  },
+  {
+    "key": 101,
+    "currencyName": "Norwegian Krone",
+    "currencyCode": "NOK",
+    "symbol": "kr",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/NO.png"
+  },
+  {
+    "key": 102,
+    "currencyName": "Omani Rial",
+    "currencyCode": "OMR",
+    "symbol": "ر.ع.",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/OM.png"
+  },
+  {
+    "key": 103,
+    "currencyName": "Panamanian Balboa",
+    "currencyCode": "PAB",
+    "symbol": "B/.",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/PA.png"
+  },
+  {
+    "key": 104,
+    "currencyName": "Pakistani Rupee",
+    "currencyCode": "PKR",
+    "symbol": "Rs",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/PK.png"
+  },
+  {
+    "key": 105,
+    "currencyName": "Papua New Guinean Kina",
+    "currencyCode": "PGK",
+    "symbol": "K",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/PG.png"
+  },
+  {
+    "key": 106,
+    "currencyName": "Paraguayan Guarani",
+    "currencyCode": "PYG",
+    "symbol": "₲",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/PY.png"
+  },
+  {
+    "key": 107,
+    "currencyName": "Peruvian Sol",
+    "currencyCode": "PEN",
+    "symbol": "S/.",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/PE.png"
+  },
+  {
+    "key": 108,
+    "currencyName": "Philippine Piso",
+    "currencyCode": "PHP",
+    "symbol": "₱",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/PH.png"
+  },
+  {
+    "key": 109,
+    "currencyName": "Polish Zloty",
+    "currencyCode": "PLN",
+    "symbol": "zł",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/PL.png"
+  },
+  {
+    "key": 110,
+    "currencyName": "Qatari Rial",
+    "currencyCode": "QAR",
+    "symbol": "ر.ق",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/QA.png"
+  },
+  {
+    "key": 111,
+    "currencyName": "Romanian Leu",
+    "currencyCode": "RON",
+    "symbol": "lei",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/RO.png"
+  },
+  {
+    "key": 112,
+    "currencyName": "Russian Ruble",
+    "currencyCode": "RUB",
+    "symbol": "₽",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/RU.png"
+  },
+  {
+    "key": 113,
+    "currencyName": "Rwandan Franc",
+    "currencyCode": "RWF",
+    "symbol": "RF",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/RW.png"
+  },
+  {
+    "key": 114,
+    "currencyName": "Samoan Tala",
+    "currencyCode": "WST",
+    "symbol": "T",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/WS.png"
+  },
+  {
+    "key": 115,
+    "currencyName": "St. Helena Pound",
+    "currencyCode": "SHP",
+    "symbol": "£",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/SH.png"
+  },
+  {
+    "key": 116,
+    "currencyName": "Saudi Riyal",
+    "currencyCode": "SAR",
+    "symbol": "ر.س",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/SA.png"
+  },
+  {
+    "key": 117,
+    "currencyName": "Serbian Dinar",
+    "currencyCode": "RSD",
+    "symbol": "din",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/RS.png"
+  },
+  {
+    "key": 118,
+    "currencyName": "Seychellois Rupee",
+    "currencyCode": "SCR",
+    "symbol": "₨",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/SC.png"
+  },
+  {
+    "key": 119,
+    "currencyName": "Sierra Leonean Leone",
+    "currencyCode": "SLL",
+    "symbol": "Le",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/SL.png"
+  },
+  {
+    "key": 120,
+    "currencyName": "Singapore Dollar",
+    "currencyCode": "SGD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/SG.png"
+  },
+  {
+    "key": 121,
+    "currencyName": "Sudanese Pound",
+    "currencyCode": "SDG",
+    "symbol": "ج.س",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/SD.png"
+  },
+  {
+    "key": 122,
+    "currencyName": "Somali Shilling",
+    "currencyCode": "SOS",
+    "symbol": "Sh",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/SO.png"
+  },
+  {
+    "key": 123,
+    "currencyName": "South African Rand",
+    "currencyCode": "ZAR",
+    "symbol": "R",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/ZA.png"
+  },
+  {
+    "key": 124,
+    "currencyName": "South Korean Won",
+    "currencyCode": "KRW",
+    "symbol": "₩",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/KR.png"
+  },
+  {
+    "key": 125,
+    "currencyName": "South Sudanese Pound",
+    "currencyCode": "SSP",
+    "symbol": "£",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/SS.png"
+  },
+  {
+    "key": 126,
+    "currencyName": "Solomon Islands Dollar",
+    "currencyCode": "SBD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/SB.png"
+  },
+  {
+    "key": 127,
+    "currencyName": "Sri Lankan Rupee",
+    "currencyCode": "LKR",
+    "symbol": "Rs",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/LK.png"
+  },
+  {
+    "key": 128,
+    "currencyName": "Surinamese Dollar",
+    "currencyCode": "SRD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/SR.png"
+  },
+  {
+    "key": 129,
+    "currencyName": "Swazi Lilangeni",
+    "currencyCode": "SZL",
+    "symbol": "E",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/SZ.png"
+  },
+  {
+    "key": 130,
+    "currencyName": "Swedish Krona",
+    "currencyCode": "SEK",
+    "symbol": "kr",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/SE.png"
+  },
+  {
+    "key": 131,
+    "currencyName": "Swiss Franc",
+    "currencyCode": "CHF",
+    "symbol": "CHF",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/CH.png"
+  },
+  {
+    "key": 132,
+    "currencyName": "New Taiwan Dollar",
+    "currencyCode": "TWD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/TW.png"
+  },
+  {
+    "key": 133,
+    "currencyName": "Thai Baht",
+    "currencyCode": "THB",
+    "symbol": "฿",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/TH.png"
+  },
+  {
+    "key": 134,
+    "currencyName": "Tajikistani Somoni",
+    "currencyCode": "TJS",
+    "symbol": "SM",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/TJ.png"
+  },
+  {
+    "key": 135,
+    "currencyName": "Tanzanian Shilling",
+    "currencyCode": "TZS",
+    "symbol": "Sh",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/TZ.png"
+  },
+  {
+    "key": 136,
+    "currencyName": "Tongan Paʻanga",
+    "currencyCode": "TOP",
+    "symbol": "T$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/TO.png"
+  },
+  {
+    "key": 137,
+    "currencyName": "Trinidad & Tobago Dollar",
+    "currencyCode": "TTD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/TT.png"
+  },
+  {
+    "key": 138,
+    "currencyName": "Tunisian Dinar",
+    "currencyCode": "TND",
+    "symbol": "د.ت",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/TN.png"
+  },
+  {
+    "key": 139,
+    "currencyName": "Turkish Lira",
+    "currencyCode": "TRY",
+    "symbol": "₺",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/TR.png"
+  },
+  {
+    "key": 140,
+    "currencyName": "Turkmenistani Manat",
+    "currencyCode": "TMT",
+    "symbol": "T",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/TM.png"
+  },
+  {
+    "key": 141,
+    "currencyName": "Ugandan Shilling",
+    "currencyCode": "UGX",
+    "symbol": "USh",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/UG.png"
+  },
+  {
+    "key": 142,
+    "currencyName": "Ukrainian Hryvnia",
+    "currencyCode": "UAH",
+    "symbol": "₴",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/UA.png"
+  },
+  {
+    "key": 143,
+    "currencyName": "United Arab Emirates Dirham",
+    "currencyCode": "AED",
+    "symbol": "د.إ",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AE.png"
+  },
+  {
+    "key": 144,
+    "currencyName": "Uruguayan Peso",
+    "currencyCode": "UYU",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/UY.png"
+  },
+  {
+    "key": 145,
+    "currencyName": "US Dollar",
+    "currencyCode": "USD",
+    "symbol": "$",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/US.png"
+  },
+  {
+    "key": 146,
+    "currencyName": "Uzbekistani Som",
+    "currencyCode": "UZS",
+    "symbol": "сўм",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/UZ.png"
+  },
+  {
+    "key": 147,
+    "currencyName": "Vanuatu Vatu",
+    "currencyCode": "VUV",
+    "symbol": "Vt",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/VU.png"
+  },
+  {
+    "key": 148,
+    "currencyName": "Venezuelan Bolívar",
+    "currencyCode": "VES",
+    "symbol": "Bs.S",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/VE.png"
+  },
+  {
+    "key": 149,
+    "currencyName": "Vietnamese Dong",
+    "currencyCode": "VND",
+    "symbol": "₫",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/VN.png"
+  },
+  {
+    "key": 150,
+    "currencyName": "West African CFA Franc",
+    "currencyCode": "XOF",
+    "symbol": "F",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/CM.png"
+  },
+  {
+    "key": 151,
+    "currencyName": "Yemeni Rial",
+    "currencyCode": "YER",
+    "symbol": "ر.ي",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/YE.png"
+  },
+  {
+    "key": 152,
+    "currencyName": "Zambian Kwacha",
+    "currencyCode": "ZMW",
+    "symbol": "ZK",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/ZM.png"
+  }
+]

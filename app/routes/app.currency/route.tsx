@@ -37,10 +37,12 @@ export interface CurrencyDataType {
   exchangeRate: string | number;
 }
 
-interface CurrencyType {
+export interface CurrencyType {
   key: number;
+  currencyName: string;
   currencyCode: string;
-  currency: string;
+  symbol: string;
+  locale: string;
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -65,9 +67,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
 
     const loading = JSON.parse(formData.get("loading") as string);
-    const addCurrencies: CurrencyType[] = JSON.parse(
-      formData.get("addCurrencies") as string,
-    );
+    const addCurrencies = JSON.parse(formData.get("addCurrencies") as string);
     const deleteCurrencies: number[] = JSON.parse(
       formData.get("deleteCurrencies") as string,
     );
@@ -98,7 +98,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       case !!addCurrencies:
         try {
-          const promises = addCurrencies.map((currency) => {
+          const promises = addCurrencies.map((currency: any) => {
             return AddCurrency({
               request,
               currencyName: currency.currency,
@@ -160,16 +160,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { shop } = useLoaderData<typeof loader>();
-
   const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
   const [loading, setLoading] = useState<boolean>(true);
   const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>(
     "No defaultCurrencyCode set",
   );
   const [searchInput, setSearchInput] = useState("");
+  const [currencyData, setCurrencyData] = useState<CurrencyType[]>([]);
+  const [defaultSymbol, setDefaultSymbol] = useState<string>("");
   const [deleteloading, setDeleteLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [isAddCurrencyModalOpen, setIsAddCurrencyModalOpen] = useState(false);
+  const [addCurrencies, setAddCurrencies] = useState<CurrencyType[]>([]);
   const [isCurrencyEditModalOpen, setIsCurrencyEditModalOpen] = useState(false);
   const [moneyFormatHtml, setMoneyFormatHtml] = useState<string | null>("");
   const [moneyWithCurrencyFormatHtml, setMoneyWithCurrencyFormatHtml] =
@@ -199,12 +201,30 @@ const Index = () => {
       method: "post",
       action: "/app/currency",
     });
+    // 使用 fetch 从 public 文件夹加载 JSON 数据
+    fetch("/currencies.json")
+      .then((response) => response.json())
+      .then((data) => {
+        setCurrencyData(data);
+        setAddCurrencies(
+          data.filter(
+            (item: CurrencyType) => item.currencyCode != defaultCurrencyCode,
+          ),
+        );
+      })
+      .catch((error) => console.error("Error loading currencies:", error));
     shopify.loading(true);
   }, []);
 
   useEffect(() => {
     if (loadingFetcher.data) {
       setDefaultCurrencyCode(loadingFetcher.data.defaultCurrencyCode);
+      const symbol = currencyData.find(
+        (item: any) => item.currencyCode === defaultCurrencyCode,
+      )?.symbol;
+      if (symbol) {
+        setDefaultSymbol(symbol);
+      }
       setOriginalData(loadingFetcher.data.currencyList);
       setFilteredData(loadingFetcher.data.currencyList); // 用加载的数据初始化 filteredData
       dispatch(setTableData(loadingFetcher.data.currencyList));
@@ -293,6 +313,15 @@ const Index = () => {
       title: "Exchange rate",
       dataIndex: "exchangeRate",
       key: "exchangeRate",
+      render: (_: any, record: any) =>
+        record.exchangeRate === "Auto" ? (
+          <Text>Auto</Text>
+        ) : (
+          <Text>
+            {defaultSymbol}1 = {record.exchangeRate}{" "}
+            {record.currencyCode}
+          </Text>
+        ),
     },
     {
       title: "Action",
@@ -350,6 +379,8 @@ const Index = () => {
       // newData = dataSource.filter((item: CurrencyDataType) => item.key !== key);
       // dispatch(setTableData(newData)); // 更新表格数据
     } else {
+      console.log(selectedRowKeys);
+
       formData.append("deleteCurrencies", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
       deleteFetcher.submit(formData, {
         method: "post",
@@ -437,6 +468,7 @@ const Index = () => {
           <AddCurrencyModal
             isVisible={isAddCurrencyModalOpen}
             setIsModalOpen={setIsAddCurrencyModalOpen}
+            addCurrencies={addCurrencies}
             defaultCurrencyCode={defaultCurrencyCode}
           />
           <CurrencyEditModal

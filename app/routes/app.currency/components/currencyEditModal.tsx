@@ -85,23 +85,23 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   }, [isVisible]);
 
   useEffect(() => {
-    console.log(exRateSelectValue, exRateValue);
-
-    if (
-      exRateSelectValue === "Manual Rate" &&
-      (Number.isNaN(exRateValue) || exRateValue === null)
-    ) {
-      setSaveButtonDisable(true);
-    } else if (
-      (exRateSelectValue === "Manual Rate" &&
-        !Number.isNaN(exRateValue) &&
-        exRateValue !== null &&
-        saveButtonDisable === true) ||
-      (exRateSelectValue === "Auto" && saveButtonDisable === true)
-    ) {
-      setSaveButtonDisable(false);
+    if (isVisible) {
+      if (
+        exRateSelectValue === "Manual Rate" &&
+        (Number.isNaN(exRateValue) || exRateValue === null)
+      ) {
+        setSaveButtonDisable(true);
+      } else if (
+        (exRateSelectValue === "Manual Rate" &&
+          !Number.isNaN(exRateValue) &&
+          exRateValue !== null &&
+          saveButtonDisable === true) ||
+        (exRateSelectValue === "Auto" && saveButtonDisable === true)
+      ) {
+        setSaveButtonDisable(false);
+      }
     }
-  }, [exRateSelectValue, exRateValue]);
+  }, [exRateSelectValue, exRateValue, isVisible]);
 
   const handleConfirm = () => {
     if (exRateSelectValue === "Auto") {
@@ -193,7 +193,9 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
             onChange={handleExRateSelectChange}
           />
           {exRateSelectValue === "Auto" ? (
-            <Text>{selectedRow?.currency} will fluctuate based on market rates.</Text>
+            <Text>
+              {selectedRow?.currency} will fluctuate based on market rates.
+            </Text>
           ) : (
             <Space className="manual_rate_input">
               <Text>1 {defaultCurrencyCode} =</Text>

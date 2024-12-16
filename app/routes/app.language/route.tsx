@@ -271,6 +271,19 @@ const Index = () => {
   useEffect(() => {
     if (translateFetcher.data && translateFetcher.data.status) {
       if (translateFetcher.data.status.success) {
+        const target = translateFetcher.data.status.target;
+        const formData = new FormData();
+        formData.append(
+          "statusData",
+          JSON.stringify({
+            source: primaryLanguage?.locale,
+            target: [target],
+          }),
+        );
+        statusFetcher.submit(formData, {
+          method: "post",
+          action: "/app",
+        });
       } else {
         message.error(translateFetcher.data.status.errorMsg);
         dispatch(
@@ -289,7 +302,9 @@ const Index = () => {
         if (item?.status === 2) {
           return item;
         } else {
-          dispatch(setStatusState({ target: item.target, status: item.status }));
+          dispatch(
+            setStatusState({ target: item.target, status: item.status }),
+          );
         }
       });
       if (items[0] !== undefined) {
@@ -489,7 +504,9 @@ const Index = () => {
         }),
       );
     } else {
-      message.error("The translation task is in progress. Please try translating again later.");
+      message.error(
+        "The translation task is in progress. Please try translating again later.",
+      );
     }
   };
   const handleConfirmPublishModal = () => {

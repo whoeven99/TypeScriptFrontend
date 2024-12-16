@@ -1,47 +1,34 @@
 import { useEffect, useState } from "react";
-import { Modal, Input, Table, Space, Button, message } from "antd";
+import { Modal, Input, Table, Space, Button, message, Typography } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import SelectedTag from "../../../components/selectedTag";
-import { SubmitFunction, useFetcher } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import { CurrencyDataType } from "../route";
+import { CurrencyDataType, CurrencyType } from "../route";
 import { updateTableData } from "~/store/modules/currencyDataTable";
 
-interface CurrencyType {
-  key: number;
-  currencyCode: string;
-  currency: string;
-}
+const { Text } = Typography;
 
 interface AddCurrencyModalProps {
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
-  // allCurrencies: AllCurrenciesType[];
+  addCurrencies: CurrencyType[];
   defaultCurrencyCode: string;
 }
 
 const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   isVisible,
   setIsModalOpen,
+  addCurrencies,
   defaultCurrencyCode,
 }) => {
-  const addCurrencies: CurrencyType[] = [
-    { key: 0, currencyCode: "USD", currency: "United States Dollar" },
-    { key: 1, currencyCode: "EUR", currency: "Euro" },
-    { key: 2, currencyCode: "GBP", currency: "British Pound Sterling" },
-    { key: 3, currencyCode: "JPY", currency: "Japanese Yen" },
-    { key: 4, currencyCode: "AUD", currency: "Australian Dollar" },
-    { key: 5, currencyCode: "CAD", currency: "Canadian Dollar" },
-    { key: 6, currencyCode: "CHF", currency: "Swiss Franc" },
-    { key: 7, currencyCode: "CNY", currency: "Chinese Yuan" },
-    { key: 8, currencyCode: "SEK", currency: "Swedish Krona" },
-    { key: 9, currencyCode: "NZD", currency: "New Zealand Dollar" },
-  ];
   const [allSelectedKeys, setAllSelectedKeys] = useState<React.Key[]>([]); // 保存所有选中的key
   const [confirmButtonDisable, setConfirmButtonDisable] =
     useState<boolean>(false);
   const [searchInput, setSearchInput] = useState("");
-  const [filteredCurrencies, setFilteredCurrencies] = useState(addCurrencies);
+  const [filteredCurrencies, setFilteredCurrencies] = useState<CurrencyType[]>(
+    [],
+  );
   const [allSelectedCurrency, setAllSelectedCurrency] = useState<
     CurrencyType[]
   >([]);
@@ -55,13 +42,22 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   const addFetcher = useFetcher<any>();
 
   useEffect(() => {
+    if (addCurrencies.length)
+      setFilteredCurrencies(
+        addCurrencies.filter(
+          (item: CurrencyType) => item.currencyCode !== defaultCurrencyCode,
+        ),
+      );
+  }, [addCurrencies]);
+
+  useEffect(() => {
     if (addFetcher.data) {
       addFetcher.data.data.map((res: any) => {
         if (res.value.success) {
           const data = [
             {
               key: res.value.response.id, // 将 id 转换为 key
-              currency: res.value.response.currencyName, // 将 currencyName 作为 currency
+              currency: res.value.response.currencyName, // 将 currencyName 作为 currencyName
               rounding: res.value.response.rounding,
               exchangeRate: res.value.response.exchangeRate,
               currencyCode: res.value.response.currencyCode,
@@ -131,9 +127,19 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
       setFilteredCurrencies(sortedFilteredCurrencies);
       return;
     }
-    const filteredData = addCurrencies.filter((cur) =>
-      cur.currency.toLowerCase().includes(value.toLowerCase()),
-    );
+    const filteredData = addCurrencies
+      .map((cur) => {
+        if (selectedCurrenciesSet.has(cur.currencyCode)) {
+          // 检查是否是默认语言
+          const isPrimary = cur.currencyCode === defaultCurrencyCode;
+
+          return { ...cur, state: isPrimary ? "Primary" : "Added" }; // 根据 primary 设置状态
+        }
+        return { ...cur, state: "" }; // 其他语言的默认状态
+      })
+      .filter((cur) =>
+        cur.currencyName.toLowerCase().includes(value.toLowerCase()),
+      );
     setFilteredCurrencies(filteredData);
   };
 
@@ -203,42 +209,49 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   const columns = [
     {
       title: "Currency",
-      dataIndex: "currency",
-      key: "currency",
-      width: "20%",
+      dataIndex: "currencyName",
+      key: "currencyName",
+      width: "60%",
+      render: (_: any, record: any) => {
+        return (
+          <Text>
+            {record.currencyName}({record.currencyCode})
+          </Text>
+        );
+      },
     },
     {
       title: "Relevant region(s)",
       dataIndex: "src",
       key: "src",
-      width: "60%",
-      // render: (_: any, record: any) => {
-      //   return (
-      //     <div
-      //       style={{
-      //         display: "flex",
-      //         flexWrap: "wrap",
-      //         justifyContent: "left",
-      //         alignItems: "left",
-      //         gap: "10px",
-      //       }}
-      //     >
-      //       {record.src?.map((url: string, index: number) => (
-      //         <img
-      //           key={index} // 为每个 img 标签添加唯一的 key 属性
-      //           src={url}
-      //           alt={`${record.name} flag`}
-      //           style={{
-      //             width: "30px",
-      //             height: "auto",
-      //             border: "1px solid #888",
-      //             borderRadius: "2px",
-      //           }}
-      //         />
-      //       ))}
-      //     </div>
-      //   );
-      // },
+      width: "20%",
+      render: (_: any, record: any) => {
+        return (
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "left",
+              alignItems: "left",
+              gap: "10px",
+            }}
+          >
+            {record.locale && (
+              <img
+                key={record.currencyCode} // 为每个 img 标签添加唯一的 key 属性
+                src={record.locale}
+                alt={`${record.currencyName} flag`}
+                style={{
+                  width: "30px",
+                  height: "auto",
+                  border: "1px solid #888",
+                  borderRadius: "2px",
+                }}
+              />
+            )}
+          </div>
+        );
+      },
     },
     {
       title: "Status",
@@ -250,7 +263,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
 
   return (
     <Modal
-      width={1000}
+      width={500}
       title="Select Currencies"
       open={isVisible}
       onCancel={handleCloseModal}
@@ -287,7 +300,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
         {allSelectedKeys.map((key) => {
           const currency = addCurrencies.find(
             (cur) => cur.key === key,
-          )?.currency;
+          )?.currencyName;
           return (
             <SelectedTag
               key={key}
