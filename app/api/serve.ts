@@ -1,6 +1,8 @@
 import axios from "axios";
 import { authenticate } from "~/shopify.server";
-import { queryShop } from "./admin";
+import { queryShop, queryShopLanguages } from "./admin";
+import { ShopLocalesType } from "~/routes/app.language/route";
+import { json } from "@remix-run/node";
 
 export interface ConfirmDataType {
   resourceId: string;
@@ -760,12 +762,159 @@ export const AddCharsByShopName = async ({
   }
 };
 
-//用户卸载
-export const Uninstall = async ({
+export const GetGlossaryByShopName = async ({
   shop,
+  accessToken,
 }: {
   shop: string;
+  accessToken: string | undefined;
 }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/glossary/getGlossaryByShopName`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
+      shop,
+      accessToken,
+    });
+    const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
+      (language) => !language.primary,
+    );
+    const res = response.data.response.map((item: any) => {
+      let data = {
+        key: item.id,
+        status: item.status,
+        sourceText: item.sourceText,
+        targetText: item.targetText,
+        language: "",
+        rangeCode: item.rangeCode,
+        type: item.caseSensitive,
+        loading: false,
+      };
+      if (
+        shopLanguagesWithoutPrimaryIndex.find((language: ShopLocalesType) => {
+          return language.locale == item.rangeCode;
+        }) ||
+        item.rangeCode === "ALL"
+      ) {
+        data = {
+          ...data,
+          language:
+            shopLanguagesWithoutPrimaryIndex.find(
+              (language: ShopLocalesType) => {
+                return language.locale === item.rangeCode;
+              },
+            )?.name || "All Languages",
+        };
+      }
+      return data;
+    });
+    return {
+      glossaryTableData: res,
+      shopLocales: shopLanguagesWithoutPrimaryIndex,
+    };
+  } catch (error) {
+    console.error("Error GetGlossaryByShopName:", error);
+    throw new Error("Error GetGlossaryByShopName");
+  }
+};
+
+export const UpdateTargetTextById = async ({
+  shop,
+  data,
+}: {
+  shop: string;
+  data: any;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/glossary/updateTargetTextById`,
+      method: "POST",
+      data: {
+        id: data.key,
+        shopName: shop,
+        sourceText: data.sourceText,
+        targetText: data.targetText,
+        rangeCode: data.rangeCode,
+        caseSensitive: data.type,
+        status: data.status,
+      },
+    });
+
+    const res = response.data;
+    console.log(res);
+    return res;
+  } catch (error) {
+    console.error("Error UpdateTargetTextById:", error);
+    throw new Error("Error UpdateTargetTextById");
+  }
+};
+
+export const InsertGlossaryInfo = async ({
+  shop,
+  data,
+}: {
+  shop: string;
+  data: any;
+}) => {
+  try {
+    console.log({
+      shopName: shop,
+      sourceText: data.sourceText,
+      targetText: data.targetText,
+      rangeCode: data.rangeCode,
+      caseSensitive: data.type,
+      status: 1,
+    });
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/glossary/insertGlossaryInfo`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        sourceText: data.sourceText,
+        targetText: data.targetText,
+        rangeCode: data.rangeCode,
+        caseSensitive: data.type,
+        status: 1,
+      },
+    });
+
+    const res = response.data;
+
+    console.log(res);
+    return res;
+  } catch (error) {
+    console.error("Error InsertGlossaryInfo:", error);
+    throw new Error("Error InsertGlossaryInfo");
+  }
+};
+
+export const DeleteGlossaryInfo = async ({ id }: { id: number }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/glossary/deleteGlossaryById`,
+      method: "POST",
+      data: {
+        id: id,
+      },
+    });
+
+    const res = response.data;
+    console.log(res);
+
+    return res;
+  } catch (error) {
+    console.error("Error DeleteGlossaryInfo:", error);
+    throw new Error("Error DeleteGlossaryInfo");
+  }
+};
+
+//用户卸载
+export const Uninstall = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/uninstall`,
@@ -775,7 +924,7 @@ export const Uninstall = async ({
       },
     });
     const res = response.data.response;
-    return res
+    return res;
   } catch (error) {
     console.error("Error Uninstall:", error);
     throw new Error("Error Uninstall");
@@ -783,11 +932,7 @@ export const Uninstall = async ({
 };
 
 //用户卸载应用后48小时后清除数据
-export const CleanData = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
+export const CleanData = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/cleanData`,
@@ -797,7 +942,7 @@ export const CleanData = async ({
       },
     });
     const res = response.data.response;
-    return res
+    return res;
   } catch (error) {
     console.error("Error CleanData:", error);
     throw new Error("Error CleanData");
@@ -805,11 +950,7 @@ export const CleanData = async ({
 };
 
 //客户可以向店主请求其数据
-export const RequestData = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
+export const RequestData = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/requestData`,
@@ -819,7 +960,7 @@ export const RequestData = async ({
       },
     });
     const res = response.data.response;
-    return res
+    return res;
   } catch (error) {
     console.error("Error RequestData:", error);
     throw new Error("Error RequestData");
@@ -827,11 +968,7 @@ export const RequestData = async ({
 };
 
 //店主可以代表客户请求删除数据
-export const DeleteData = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
+export const DeleteData = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/deleteData`,
@@ -841,10 +978,9 @@ export const DeleteData = async ({
       },
     });
     const res = response.data.response;
-    return res
+    return res;
   } catch (error) {
     console.error("Error DeleteData:", error);
     throw new Error("Error DeleteData");
   }
 };
-

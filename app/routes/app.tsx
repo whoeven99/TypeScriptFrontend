@@ -63,7 +63,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const loading = JSON.parse(formData.get("loading") as string);
     const index = JSON.parse(formData.get("index") as string);
     const translation = JSON.parse(formData.get("translation") as string);
-    const itemsInfo = JSON.parse(formData.get("itemsInfo") as string);
+    const productsItems = JSON.parse(formData.get("productsItems") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
     const payInfo = JSON.parse(formData.get("payInfo") as string);
@@ -211,31 +211,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       //     targets: getData.targets,
       //   });
       //   return json({ data: data });
-      case !!itemsInfo:
-        try {
-          const promises = itemsInfo.resourceTypes.map(
-            (resourceType: string) => {
-              return GetTranslationItemsInfo({
-                shop,
-                accessToken,
-                source: itemsInfo.source,
-                target: itemsInfo.target,
-                resourceType: resourceType,
-              });
-            },
-          );
-
-          // 等待所有请求并发完成
-          const res = await Promise.all(promises);
-          console.log("All translations fetched:", res);
-          return json({ data: res });
-        } catch (error) {
-          console.error("Error GetTranslationItemsInfo:", error);
-          return json(
-            { error: "Error GetTranslationItemsInfo" },
-            { status: 500 },
-          );
-        }
       case !!statusData:
         try {
           console.log("statusData:", statusData);
@@ -321,6 +296,7 @@ export default function App() {
           <Link to="/app/language">Language</Link>
           <Link to="/app/manage_translation">Manage Translation</Link>
           <Link to="/app/currency">Currency</Link>
+          <Link to="/app/glossary">Glossary</Link>
         </NavMenu>
         <Outlet />
       </ConfigProvider>
