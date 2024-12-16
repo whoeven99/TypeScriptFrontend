@@ -69,13 +69,6 @@
   window.onload = async function () {
     const { languages, currencies } = await fetchOptions();
 
-    // 填充语言选择框
-    {% comment %} const languageSwitcher = document.getElementById('language-switcher');
-    languages.forEach((lang) => {
-      const option = new Option(lang.text, lang.value);
-      languageSwitcher.add(option);
-    }); {% endcomment %}
-
     // 填充货币选择框
     const currencySwitcher = document.getElementById('currency-switcher');
     currencies.forEach((currency) => {
@@ -84,7 +77,6 @@
     });
 
     // 设置默认值为第一个选项
-    languageSwitcher.value = languages[0].value;
     currencySwitcher.value = currencies[0].value;
 
     // 更新主框显示内容
@@ -104,9 +96,7 @@
 
   // 更新主框的显示文本
   function updateDisplayText() {
-    {% comment %} const language = document.getElementById('language-switcher').selectedOptions[0].text; {% endcomment %}
     const currency = document.getElementById('currency-switcher').selectedOptions[0].text;
-    document.getElementById('display-text').textContent = `${language} / ${currency}`;
   }
 
   // 点击“确定”时更新主框的语言和货币显示
