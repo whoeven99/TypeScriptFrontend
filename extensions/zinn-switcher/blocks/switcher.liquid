@@ -10,8 +10,28 @@
     id="selector-box"
     style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%;"
   >
-    <select id="language-switcher" style="width: 100%;"></select>
-
+    {% if localization.available_languages.size > 1 %}
+      <localization-form>
+        <ul id="LanguageList" role="list" class="disclosure__list" hidden>
+          {% for language in localization.available_languages %}
+            <li class="disclosure__item" tabindex="-1">
+              <a
+                href="#"
+                {% if language.iso_code == localization.language.iso_code %}
+                  aria-current="true"
+                {% endif %}
+                hreflang="{{ language.iso_code }}"
+                lang="{{ language.iso_code }}"
+                data-value="{{ language.iso_code }}"
+              >
+                {{ language.endonym_name | capitalize }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+        <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">
+      </localization-form>
+    {% endif %}
     <select id="currency-switcher" style="margin-top: 10px; width: 100%;"></select>
 
     <button onclick="applyChanges()" style="margin-top: 10px;">确定</button>
@@ -34,11 +54,6 @@
       setTimeout(() => {
         // 模拟的后端数据
         const data = {
-          languages: [
-            { value: 'zh', text: '中文' },
-            { value: 'en', text: '英语' },
-            { value: 'fr', text: '法语' },
-          ],
           currencies: [
             { value: 'CNY', text: '人民币 (CNY)' },
             { value: 'USD', text: '美元 (USD)' },
@@ -55,11 +70,11 @@
     const { languages, currencies } = await fetchOptions();
 
     // 填充语言选择框
-    const languageSwitcher = document.getElementById('language-switcher');
+    {% comment %} const languageSwitcher = document.getElementById('language-switcher');
     languages.forEach((lang) => {
       const option = new Option(lang.text, lang.value);
       languageSwitcher.add(option);
-    });
+    }); {% endcomment %}
 
     // 填充货币选择框
     const currencySwitcher = document.getElementById('currency-switcher');
@@ -89,7 +104,7 @@
 
   // 更新主框的显示文本
   function updateDisplayText() {
-    const language = document.getElementById('language-switcher').selectedOptions[0].text;
+    {% comment %} const language = document.getElementById('language-switcher').selectedOptions[0].text; {% endcomment %}
     const currency = document.getElementById('currency-switcher').selectedOptions[0].text;
     document.getElementById('display-text').textContent = `${language} / ${currency}`;
   }
@@ -106,7 +121,7 @@
 
 {% schema %}
 {
-  "name": "Zinn_Switcher",
+  "name": "Ciwi_Switcher",
   "target": "body",
   "settings": []
 }
