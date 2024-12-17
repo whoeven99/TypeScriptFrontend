@@ -154,14 +154,15 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       if (title === "Add rules") {
         if (
           source == string ||
-          (rangeCode == "ALL" && sourceText == item.sourceText)
+          ((item.rangeCode == "ALL" || rangeCode == "ALL") &&
+            sourceText == item.sourceText)
         ) {
           isSameRuleError = false;
         }
       } else {
         if (
           source == string ||
-          (rangeCode == "ALL" &&
+          ((item.rangeCode == "ALL" || rangeCode == "ALL") &&
             sourceText == item.sourceText &&
             item.key !== id)
         ) {
@@ -313,7 +314,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           status={rangeCodeStatus}
         />
         <Checkbox checked={checked} onChange={onCheckboxChange}>
-          {checked ? "Case-sensitive" : "Case-insensitive"}
+          Case-sensitive
         </Checkbox>
       </Space>
     </Modal>
