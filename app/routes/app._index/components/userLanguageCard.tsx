@@ -2,14 +2,15 @@ import React, { useEffect } from "react";
 import { Button, Card, message, Space, Typography } from "antd";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import { setStatuState } from "~/store/modules/languageTableData";
+import { setStatusState } from "~/store/modules/languageTableData";
 import TranslatedIcon from "~/components/translateIcon";
 import { LanguagesDataType } from "~/routes/app.language/route";
-const { Title } = Typography;
+const { Text } = Typography;
 
 interface UserLanguageCardProps {
   flagUrl: string[]; // 国旗图片的 URL
   languageName: string; // 语言名称
+  languageLocaleName: string;
   languageCode: string; //语言代码
   primaryLanguageCode: string;
 }
@@ -21,6 +22,7 @@ interface UserLanguageCardProps {
 const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   flagUrl,
   languageName,
+  languageLocaleName,
   languageCode,
   primaryLanguageCode,
 }) => {
@@ -29,9 +31,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
       (item: any) => item.locale === languageCode,
     ),
   );
-  const datas = useSelector(
-    (state: any) => state.languageTableData.rows,
-  );
+  const datas = useSelector((state: any) => state.languageTableData.rows);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const translateFetcher = useFetcher<any>();
@@ -96,7 +96,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         return () => clearTimeout(delayTimeout);
       } else {
         dispatch(
-          setStatuState({
+          setStatusState({
             target: statusFetcher.data.data[0].target,
             status: statusFetcher.data.data[0].status,
           }),
@@ -108,10 +108,24 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   useEffect(() => {
     if (translateFetcher.data && translateFetcher.data.statu) {
       if (translateFetcher.data.statu.success) {
+        if (data && data.status === 2) {
+          const formData = new FormData();
+          formData.append(
+            "statusData",
+            JSON.stringify({
+              source: primaryLanguageCode,
+              target: [data.locale],
+            }),
+          );
+          statusFetcher.submit(formData, {
+            method: "post",
+            action: "/app",
+          });
+        }
       } else {
         message.error(translateFetcher.data.statu.errorMsg);
         dispatch(
-          setStatuState({
+          setStatusState({
             target: translateFetcher.data.statu.target,
             status: 3,
           }),
@@ -135,7 +149,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
       ); // 将选中的语言作为字符串发送
       translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
       dispatch(
-        setStatuState({
+        setStatusState({
           target: data.locale,
           status: 2,
         }),
@@ -170,8 +184,31 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
             />
           ))}
         </div>
-
-        <Title level={4}>{languageName}</Title>
+        <div>
+          <Text
+            strong
+            style={{
+              display: "block", // 使用 block 或 inline-block
+              whiteSpace: "nowrap", // 不换行
+              textAlign: "center",
+              overflow: "hidden", // 超出部分隐藏
+              textOverflow: "ellipsis", // 超出部分显示省略号
+            }}
+          >
+            {languageName}
+          </Text>
+          <Text
+            strong
+            style={{
+              display: "block", // 使用 block 或 inline-block
+              whiteSpace: "nowrap", // 不换行
+              overflow: "hidden", // 超出部分隐藏
+              textOverflow: "ellipsis", // 超出部分显示省略号
+            }}
+          >
+            {languageLocaleName}
+          </Text>
+        </div>
         <div className="language_statu">
           {data ? <TranslatedIcon status={data?.status} /> : <>...</>}
         </div>

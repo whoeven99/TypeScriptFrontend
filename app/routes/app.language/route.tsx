@@ -31,7 +31,7 @@ import {
   setPublishConfirmState,
   setPublishLoadingState,
   setPublishState,
-  setStatuState,
+  setStatusState,
   setTableData,
 } from "~/store/modules/languageTableData";
 import AttentionCard from "~/components/attentionCard";
@@ -271,10 +271,23 @@ const Index = () => {
   useEffect(() => {
     if (translateFetcher.data && translateFetcher.data.status) {
       if (translateFetcher.data.status.success) {
+        const target = translateFetcher.data.status.target;
+        const formData = new FormData();
+        formData.append(
+          "statusData",
+          JSON.stringify({
+            source: primaryLanguage?.locale,
+            target: [target],
+          }),
+        );
+        statusFetcher.submit(formData, {
+          method: "post",
+          action: "/app",
+        });
       } else {
         message.error(translateFetcher.data.status.errorMsg);
         dispatch(
-          setStatuState({
+          setStatusState({
             target: translateFetcher.data.status.target,
             status: 3,
           }),
@@ -289,7 +302,9 @@ const Index = () => {
         if (item?.status === 2) {
           return item;
         } else {
-          dispatch(setStatuState({ target: item.target, status: item.status }));
+          dispatch(
+            setStatusState({ target: item.target, status: item.status }),
+          );
         }
       });
       if (items[0] !== undefined) {
@@ -483,13 +498,15 @@ const Index = () => {
 
       message.success("The translation task is in progress.");
       dispatch(
-        setStatuState({
+        setStatusState({
           target: selectedItem.locale,
           status: 2,
         }),
       );
     } else {
-      message.error("The translation task is in progress. Please try translating again later.");
+      message.error(
+        "The translation task is in progress. Please try translating again later.",
+      );
     }
   };
   const handleConfirmPublishModal = () => {
@@ -575,7 +592,7 @@ const Index = () => {
               <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
             </div>
             <AttentionCard
-              title="Translation credits have been exhausted."
+              title="Translation word credits have been exhausted."
               content="The translation cannot be completed due to exhausted credits."
               buttonContent="Get more word credits"
               show={disable}
