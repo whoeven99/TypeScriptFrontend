@@ -148,7 +148,6 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
     }
 
     const source = sourceText + rangeCode;
-
     dataSource.map((item: any) => {
       const string = item.sourceText + item.rangeCode;
       if (title === "Add rules") {
@@ -161,10 +160,10 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
         }
       } else {
         if (
-          source == string ||
-          ((item.rangeCode == "ALL" || rangeCode == "ALL") &&
-            sourceText == item.sourceText &&
-            item.key !== id)
+          (source == string ||
+            ((item.rangeCode == "ALL" || rangeCode == "ALL") &&
+              sourceText == item.sourceText)) &&
+          item.key !== id
         ) {
           isSameRuleError = false;
         }
