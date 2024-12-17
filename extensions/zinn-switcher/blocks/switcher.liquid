@@ -1,112 +1,171 @@
-<link
-  rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-  integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM3Y6D1a2wlO/ZwW5V1ZwP0pPXX4s5bxm8s6o"
-  crossorigin="anonymous"
->
-
-<div id="container" style="position: fixed; bottom: 80px; right: 20px; width: 200px; display: none;">
-  <div
-    id="selector-box"
-    style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%;"
+{% comment %}
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM3Y6D1a2wlO/ZwW5V1ZwP0pPXX4s5bxm8s6o"
+    crossorigin="anonymous"
   >
-    {% if localization.available_languages.size > 1 %}
-      <localization-form>
-        <ul id="LanguageList" role="list" class="disclosure__list" hidden>
-          {% for language in localization.available_languages %}
-            <li class="disclosure__item" tabindex="-1">
-              <a
-                href="#"
-                {% if language.iso_code == localization.language.iso_code %}
-                  aria-current="true"
-                {% endif %}
-                hreflang="{{ language.iso_code }}"
-                lang="{{ language.iso_code }}"
-                data-value="{{ language.iso_code }}"
-              >
-                {{ language.endonym_name | capitalize }}
-              </a>
-            </li>
-          {% endfor %}
-        </ul>
-        <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">
-      </localization-form>
-    {% endif %}
-    <select id="currency-switcher" style="margin-top: 10px; width: 100%;"></select>
 
-    <button onclick="applyChanges()" style="margin-top: 10px;">确定</button>
-    <button onclick="toggleSelector()" style="margin-left: 5px;">关闭</button>
-  </div>
+  <div id="container" style="position: fixed; bottom: 80px; right: 20px; width: 200px; display: none;">
+    <div
+      id="selector-box"
+      style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%;"
+    >
+      <select id="language-switcher" style="width: 100%;"></select>
 
-  <div
-    id="main-box"
-    style="background: #f0f0f0; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center;"
-  >
-    <span id="display-text"></span>
-    <span id="arrow" style="float: right;"><i class="fas fa-chevron-up"></i></span>
+      <select id="currency-switcher" style="margin-top: 10px; width: 100%;"></select>
+
+      <button onclick="applyChanges()" style="margin-top: 10px;">确定</button>
+      <button onclick="toggleSelector()" style="margin-left: 5px;">关闭</button>
+    </div>
+
+    <div
+      id="main-box"
+      style="background: #f0f0f0; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center;"
+    >
+      <span id="display-text"></span>
+      <span id="arrow" style="float: right;"><i class="fas fa-chevron-up"></i></span>
+    </div>
   </div>
+{% endcomment %}
+{%
+  assign available_currencies = [
+  { iso_code: 'USD', symbol: '$' },
+  { iso_code: 'EUR', symbol: '€' },
+  { iso_code: 'JPY', symbol: '¥' },
+  ]
+%}
+{%
+  assign selected_currency = [
+  { iso_code: 'USD', symbol: '$' },
+  ]
+%}
+
+<div class="ciwi__switcher" style="position: fixed; bottom: 4%; right: 6%;">
+  {% if localization.available_languages.size > 1 %}
+    <localization-form>
+      {% form 'localization' %}
+        <div class="language__switcher">
+          <button type="button" class="language__switcher__button" aria-expanded="false" aria-controls="LanguageList">
+            {{ localization.language.endonym_name | capitalize }}
+
+            <svg aria-hidden="true" focusable="false" role="presentation" class="icon icon-caret" viewBox="0 0 10 6">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M9.354.646a.5.5 0 00-.708 0L5 4.293 1.354.646a.5.5 0 00-.708.708l4 4a.5.5 0 00.708 0l4-4a.5.5 0 000-.708z" fill="currentColor">
+            </svg>
+          </button>
+
+          <ul id="LanguageList" role="list" class="language__switcher__list" hidden>
+            {% for language in localization.available_languages %}
+              <li class="language__switcher__item" tabindex="-1">
+                <a
+                  href="#"
+                  {% if language.iso_code == localization.language.iso_code %}
+                    aria-current="true"
+                  {% endif %}
+                  hreflang="{{ language.iso_code }}"
+                  lang="{{ language.iso_code }}"
+                  data-value="{{ language.iso_code }}"
+                >
+                  {{ language.endonym_name | capitalize }}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+
+          <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">
+        </div>
+      {% endform %}
+    </localization-form>
+  {% endif %}
+  {% if available_currencies.size > 1 %}
+    <localization-form>
+      {% form 'localization' %}
+        <div class="currency__switcher">
+          <button type="button" class="currency__switcher__button" aria-expanded="false" aria-controls="CurrencyList">
+            {{ selected_currency | capitalize }}
+
+            <svg aria-hidden="true" focusable="false" role="presentation" class="icon icon-caret" viewBox="0 0 10 6">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M9.354.646a.5.5 0 00-.708 0L5 4.293 1.354.646a.5.5 0 00-.708.708l4 4a.5.5 0 00.708 0l4-4a.5.5 0 000-.708z" fill="currentColor">
+            </svg>
+          </button>
+
+          <ul id="CurrencyList" role="list" class="currency__switcher__list" hidden>
+            {% for currency in available_currencies %}
+              <li class="currency__switcher__item" tabindex="-1">
+                <a
+                  href="#"
+                  {% if currency.iso_code == selected_currency %}
+                    aria-current="true"
+                  {% endif %}
+                  hreflang="{{ currency.iso_code }}"
+                  lang="{{ currency.iso_code }}"
+                  data-value="{{ currency.iso_code }}"
+                >
+                  {{ currency.iso_code | capitalize }}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+          <input type="hidden" name="currency_code" value="{{ selected_currency }}"> }
+        </div>
+      {% endform %}
+    </localization-form>
+  {% endif %}
 </div>
 
 <script>
-  // 模拟从后端获取语言和货币选项
-  function fetchOptions() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // 模拟的后端数据
-        const data = {
-          currencies: [
-            { value: 'CNY', text: '人民币 (CNY)' },
-            { value: 'USD', text: '美元 (USD)' },
-            { value: 'EUR', text: '欧元 (EUR)' },
-          ],
-        };
-        resolve(data);
-      }, 1000); // 模拟网络延迟
-    });
+  class LocalizationForm extends HTMLElement {
+    constructor() {
+      super();
+      this.elements = {
+        input: this.querySelector('input[name="language_code"], input[name="country_code"]'),
+        button: this.querySelector('button'),
+        panel: this.querySelector('ul'),
+      };
+      this.elements.button.addEventListener('click', this.openSelector.bind(this));
+      this.elements.button.addEventListener('focusout', this.closeSelector.bind(this));
+      this.addEventListener('keyup', this.onContainerKeyUp.bind(this));
+
+      this.querySelectorAll('a').forEach((item) => item.addEventListener('click', this.onItemClick.bind(this)));
+    }
+
+    hidePanel() {
+      this.elements.button.setAttribute('aria-expanded', 'false');
+      this.elements.panel.setAttribute('hidden', true);
+    }
+
+    onContainerKeyUp(event) {
+      if (event.code.toUpperCase() !== 'ESCAPE') return;
+
+      this.hidePanel();
+      this.elements.button.focus();
+    }
+
+    onItemClick(event) {
+      event.preventDefault();
+      const form = this.querySelector('form');
+      this.elements.input.value = event.currentTarget.dataset.value;
+      if (form) form.submit();
+    }
+
+    openSelector() {
+      this.elements.button.focus();
+      this.elements.panel.toggleAttribute('hidden');
+      this.elements.button.setAttribute(
+        'aria-expanded',
+        (this.elements.button.getAttribute('aria-expanded') === 'false').toString()
+      );
+    }
+
+    closeSelector(event) {
+      const shouldClose = event.relatedTarget && event.relatedTarget.nodeName === 'BUTTON';
+      if (event.relatedTarget === null || shouldClose) {
+        this.hidePanel();
+      }
+    }
   }
 
-  // 页面加载时获取语言和货币选项
-  window.onload = async function () {
-    const { languages, currencies } = await fetchOptions();
-
-    // 填充货币选择框
-    const currencySwitcher = document.getElementById('currency-switcher');
-    currencies.forEach((currency) => {
-      const option = new Option(currency.text, currency.value);
-      currencySwitcher.add(option);
-    });
-
-    // 设置默认值为第一个选项
-    currencySwitcher.value = currencies[0].value;
-
-    // 更新主框显示内容
-    updateDisplayText();
-
-    // 数据加载完成后显示组件
-    document.getElementById('container').style.display = 'block';
-  };
-
-  function toggleSelector() {
-    const box = document.getElementById('selector-box');
-    box.style.display = box.style.display === 'none' ? 'block' : 'none';
-    const arrow = document.getElementById('arrow');
-    arrow.innerHTML =
-      box.style.display === 'block' ? '<i class="fas fa-chevron-down"></i>' : '<i class="fas fa-chevron-up"></i>';
-  }
-
-  // 更新主框的显示文本
-  function updateDisplayText() {
-    const currency = document.getElementById('currency-switcher').selectedOptions[0].text;
-  }
-
-  // 点击“确定”时更新主框的语言和货币显示
-  function applyChanges() {
-    updateDisplayText(); // 更新显示内容
-    toggleSelector(); // 关闭选择框
-  }
-
-  // 当选择变化时更新主框
-  document.getElementById('main-box').onclick = toggleSelector;
+  customElements.define('localization-form', LocalizationForm);
 </script>
 
 {% schema %}
