@@ -10,7 +10,13 @@
     id="selector-box"
     style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%;"
   >
-    <select id="language-switcher" style="width: 100%;"></select>
+    {% if localization.available_countries.size > 1 %}
+      <select id="language-switcher" style="width: 100%;">
+        {% for language in localization.available_countries %}
+          <option value="{{language.iso_code}}">{{ language.endonym_name | capitalize }}</option>
+        {% endfor %}
+      </select>
+    {% endif %}
 
     <select id="currency-switcher" style="margin-top: 10px; width: 100%;"></select>
 
@@ -34,11 +40,6 @@
       setTimeout(() => {
         // 模拟的后端数据
         const data = {
-          languages: [
-            { value: 'zh', text: '中文' },
-            { value: 'en', text: '英语' },
-            { value: 'fr', text: '法语' },
-          ],
           currencies: [
             { value: 'CNY', text: '人民币 (CNY)' },
             { value: 'USD', text: '美元 (USD)' },
@@ -52,14 +53,7 @@
 
   // 页面加载时获取语言和货币选项
   window.onload = async function () {
-    const { languages, currencies } = await fetchOptions();
-
-    // 填充语言选择框
-    const languageSwitcher = document.getElementById('language-switcher');
-    languages.forEach((lang) => {
-      const option = new Option(lang.text, lang.value);
-      languageSwitcher.add(option);
-    });
+    const { currencies } = await fetchOptions();
 
     // 填充货币选择框
     const currencySwitcher = document.getElementById('currency-switcher');
@@ -69,7 +63,6 @@
     });
 
     // 设置默认值为第一个选项
-    languageSwitcher.value = languages[0].value;
     currencySwitcher.value = currencies[0].value;
 
     // 更新主框显示内容
