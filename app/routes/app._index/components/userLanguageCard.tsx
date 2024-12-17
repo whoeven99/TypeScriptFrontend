@@ -108,6 +108,20 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   useEffect(() => {
     if (translateFetcher.data && translateFetcher.data.statu) {
       if (translateFetcher.data.statu.success) {
+        if (data && data.status === 2) {
+          const formData = new FormData();
+          formData.append(
+            "statusData",
+            JSON.stringify({
+              source: primaryLanguageCode,
+              target: [data.locale],
+            }),
+          );
+          statusFetcher.submit(formData, {
+            method: "post",
+            action: "/app",
+          });
+        }
       } else {
         message.error(translateFetcher.data.statu.errorMsg);
         dispatch(
@@ -153,7 +167,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
 
   return (
     <Card style={{ textAlign: "center", padding: "20px" }}>
-      <Space direction="vertical" size="small" style={{ display: "flex" }}>
+      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <div className="flag_container">
           {flagUrl.map((url, index) => (
             <img
@@ -175,13 +189,24 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
             strong
             style={{
               display: "block", // 使用 block 或 inline-block
-              maxWidth: "200px", // 限制最大宽度
+              whiteSpace: "nowrap", // 不换行
+              textAlign: "center",
+              overflow: "hidden", // 超出部分隐藏
+              textOverflow: "ellipsis", // 超出部分显示省略号
+            }}
+          >
+            {languageName}
+          </Text>
+          <Text
+            strong
+            style={{
+              display: "block", // 使用 block 或 inline-block
               whiteSpace: "nowrap", // 不换行
               overflow: "hidden", // 超出部分隐藏
               textOverflow: "ellipsis", // 超出部分显示省略号
             }}
           >
-            {languageName}({languageLocaleName})
+            {languageLocaleName}
           </Text>
         </div>
         <div className="language_statu">

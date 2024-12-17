@@ -239,7 +239,7 @@ const Index = () => {
   };
 
   const handleIsModalOpen = (title: string, key: number) => {
-    if (title === "Add rules" && dataSource.length >= 5) {
+    if (title === "Create rule" && dataSource.length >= 5) {
       message.error("You can add up to 5 translation rules");
     } else {
       setTitle(title);
@@ -272,7 +272,12 @@ const Index = () => {
       key: "sourceText",
     },
     {
-      title: "Language",
+      title: "Translation text",
+      dataIndex: "targetText",
+      key: "targetText",
+    },
+    {
+      title: "Apply for",
       dataIndex: "language",
       key: "language",
       render: (_: any, record: any) => {
@@ -290,7 +295,7 @@ const Index = () => {
       },
     },
     {
-      title: "Type",
+      title: "Case",
       dataIndex: "type",
       key: "type",
       render: (_: any, record: any) => {
@@ -375,9 +380,9 @@ const Index = () => {
                   <Space>
                     <Button
                       type="primary"
-                      onClick={() => handleIsModalOpen("Add rules", -1)}
+                      onClick={() => handleIsModalOpen("Create rule", -1)}
                     >
-                      Add rules
+                      Create rule
                     </Button>
                   </Space>
                 </div>

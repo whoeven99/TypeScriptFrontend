@@ -143,14 +143,14 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       isValid = false;
     }
 
-    if (title === "Add rules" && dataSource.length >= 5) {
+    if (title === "Create rule" && dataSource.length >= 5) {
       isOversizeError = false;
     }
 
     const source = sourceText + rangeCode;
     dataSource.map((item: any) => {
       const string = item.sourceText + item.rangeCode;
-      if (title === "Add rules") {
+      if (title === "Create rule") {
         if (
           source == string ||
           ((item.rangeCode == "ALL" || rangeCode == "ALL") &&
@@ -300,7 +300,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             status={targetTextStatus}
           />
         </div>
-        <Text strong>Language</Text>
+        <Text strong>Apply for</Text>
         <Select
           options={options}
           style={{ width: "200px" }}
@@ -312,6 +312,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           }
           status={rangeCodeStatus}
         />
+        <Text strong>Match by</Text>
         <Checkbox checked={checked} onChange={onCheckboxChange}>
           Case-sensitive
         </Checkbox>
