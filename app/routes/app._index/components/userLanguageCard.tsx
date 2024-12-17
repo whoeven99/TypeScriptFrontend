@@ -108,6 +108,20 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   useEffect(() => {
     if (translateFetcher.data && translateFetcher.data.statu) {
       if (translateFetcher.data.statu.success) {
+        if (data && data.status === 2) {
+          const formData = new FormData();
+          formData.append(
+            "statusData",
+            JSON.stringify({
+              source: primaryLanguageCode,
+              target: [data.locale],
+            }),
+          );
+          statusFetcher.submit(formData, {
+            method: "post",
+            action: "/app",
+          });
+        }
       } else {
         message.error(translateFetcher.data.statu.errorMsg);
         dispatch(
@@ -153,7 +167,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
 
   return (
     <Card style={{ textAlign: "center", padding: "20px" }}>
-      <Space direction="vertical" size="small" style={{ display: "flex" }}>
+      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <div className="flag_container">
           {flagUrl.map((url, index) => (
             <img

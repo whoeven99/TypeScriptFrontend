@@ -25,7 +25,7 @@ export interface OptionType {
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
-  const [recommendOption, setRecommendOption] = useState<OptionType>({
+  const recommendOption: OptionType = {
     key: "option-4",
     name: "2M Credits",
     Credits: 2000000,
@@ -34,7 +34,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       comparedPrice: 16.99,
       currencyCode: "USD",
     },
-  });
+  };
   const [selectedOption, setSelectedOption] = useState<OptionType>();
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   // const totalCharacters = useSelector(
@@ -54,6 +54,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   //     }
   //   }
   // }, [totalCharacters]);
+
+  useEffect(() => {
+    if (visible) setSelectedOption(recommendOption);
+  }, [visible]);
 
   useEffect(() => {
     if (payFetcher.data) {
