@@ -56,7 +56,7 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
   try {
     const getUserSubscriptionPlanResponse = await axios({
       url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan`,
-      method: "POST",
+      method: "GET",
       data: {
         shopName: shop,
       },
@@ -232,7 +232,7 @@ export const GetUserWords = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/shopify/getUserLimitChars`,
-      method: "Post",
+      method: "GET",
       data: {
         shopName: shop,
       },
@@ -257,7 +257,7 @@ export const GetLanguageLocaleInfo = async ({
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/shopify/getImageInfo`,
-      method: "Post",
+      method: "GET",
       data: updatedLocales,
     });
     const data = response.data.response;
@@ -299,7 +299,7 @@ export const GetLanguageList = async ({
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/readInfoByShopName`,
-      method: "Post",
+      method: "GET",
       data: {
         shopName: shop,
         accessToken: accessToken,
@@ -390,7 +390,7 @@ export const GetTranslate = async ({
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/clickTranslation`,
-      method: "POST",
+      method: "PUT",
       data: {
         shopName: shop,
         accessToken: accessToken,
@@ -577,7 +577,7 @@ export const DeleteCurrency = async ({
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/deleteCurrency`,
-      method: "POST",
+      method: "DELETE",
       data: {
         shopName: shop,
         id: id,
@@ -618,7 +618,7 @@ export const UpdateCurrency = async ({
     
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/updateCurrency`,
-      method: "POST",
+      method: "PUT",
       data: {
         shopName: shop,
         id: updateCurrencies.id, // 货币代码
@@ -756,7 +756,7 @@ export const GetGlossaryByShopName = async ({
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/glossary/getGlossaryByShopName`,
-      method: "POST",
+      method: "GET",
       data: {
         shopName: shop,
       },
@@ -881,7 +881,7 @@ export const DeleteGlossaryInfo = async ({ id }: { id: number }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/glossary/deleteGlossaryById`,
-      method: "POST",
+      method: "DELETE",
       data: {
         id: id,
       },
@@ -902,7 +902,7 @@ export const Uninstall = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/uninstall`,
-      method: "POST",
+      method: "DELETE",
       data: {
         shopName: shop,
       },
@@ -920,7 +920,7 @@ export const CleanData = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/cleanData`,
-      method: "POST",
+      method: "DELETE",
       data: {
         shopName: shop,
       },
@@ -956,7 +956,7 @@ export const DeleteData = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/deleteData`,
-      method: "POST",
+      method: "DELETE",
       data: {
         shopName: shop,
       },
