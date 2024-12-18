@@ -55,11 +55,8 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
 export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
   try {
     const getUserSubscriptionPlanResponse = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan`,
+      url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
       method: "GET",
-      data: {
-        shopName: shop,
-      },
     });
     const res = getUserSubscriptionPlanResponse.data.success;
     console.log(
@@ -231,11 +228,8 @@ export const GetItemsInSqlByShopName = async ({
 export const GetUserWords = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getUserLimitChars`,
+      url: `${process.env.SERVER_URL}/shopify/getUserLimitChars?shopName=${shop}`,
       method: "GET",
-      data: {
-        shopName: shop,
-      },
     });
     const res = response.data.response;
     return res;
@@ -257,7 +251,7 @@ export const GetLanguageLocaleInfo = async ({
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/shopify/getImageInfo`,
-      method: "GET",
+      method: "POST",
       data: updatedLocales,
     });
     const data = response.data.response;
@@ -298,15 +292,13 @@ export const GetLanguageList = async ({
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/readInfoByShopName`,
+      url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}`,
       method: "GET",
-      data: {
-        shopName: shop,
-        accessToken: accessToken,
-      },
     });
 
     const res = response.data.response;
+    console.log("GetLanguageList: ", res);
+
     return res;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);
@@ -541,7 +533,7 @@ export const AddCurrency = async ({
     rounding: "Disable",
     exchangeRate: "Auto",
   });
-  
+
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/insertCurrency`,
@@ -556,7 +548,7 @@ export const AddCurrency = async ({
     });
     const res = response.data;
     console.log("AddCurrency: ", res);
-    
+
     return res;
   } catch (error) {
     console.error("Error add currency:", error);
@@ -614,8 +606,8 @@ export const UpdateCurrency = async ({
       id: updateCurrencies.id, // 货币代码
       rounding: updateCurrencies.rounding,
       exchangeRate: updateCurrencies.exchangeRate,
-    },);
-    
+    });
+
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/updateCurrency`,
       method: "PUT",
@@ -755,11 +747,8 @@ export const GetGlossaryByShopName = async ({
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/glossary/getGlossaryByShopName`,
+      url: `${process.env.SERVER_URL}/glossary/getGlossaryByShopName?shopName=${shop}`,
       method: "GET",
-      data: {
-        shopName: shop,
-      },
     });
     const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
       shop,
