@@ -101,7 +101,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const promises = addCurrencies.map((currency: any) => {
             return AddCurrency({
               request,
-              currencyName: currency.currency,
+              currencyName: currency.currencyName,
               currencyCode: currency.currencyCode,
             });
           });
@@ -208,7 +208,7 @@ const Index = () => {
         setCurrencyData(data);
         setAddCurrencies(
           data.filter(
-            (item: CurrencyType) => item.currencyCode != defaultCurrencyCode,
+            (item: CurrencyType) => item.currencyCode !== defaultCurrencyCode,
           ),
         );
       })
@@ -283,9 +283,9 @@ const Index = () => {
   ];
 
   const roundingColumns: (BaseOptionType | DefaultOptionType)[] = [
-    { value: "Disable", label: "Disable" },
-    { value: "No decimal", label: "No decimal" },
-    { value: "1", label: "1 (Recommend)" },
+    { value: "", label: "Disable" },
+    { value: "0", label: "No decimal" },
+    { value: "1.00", label: "1 (Recommend)" },
     { value: "0.99", label: "0.99" },
     { value: "0.95", label: "0.95" },
     { value: "0.75", label: "0.75" },

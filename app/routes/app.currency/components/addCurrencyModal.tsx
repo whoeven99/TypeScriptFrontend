@@ -65,6 +65,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
           ];
           dispatch(updateTableData(data));
           message.success("Add success");
+          setConfirmButtonDisable(false);
           setAllSelectedKeys([]);
           setSearchInput("");
           setFilteredCurrencies(addCurrencies);
@@ -179,6 +180,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   };
 
   const handleCloseModal = () => {
+    setConfirmButtonDisable(false);
     setAllSelectedKeys([]);
     setSearchInput("");
     setFilteredCurrencies(addCurrencies);

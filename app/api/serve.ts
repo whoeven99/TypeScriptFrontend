@@ -522,22 +522,6 @@ export const updateManageTranslation = async ({
   }
 };
 
-//获取汇率数据
-export const getRateValue = async () => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/getRateValue`,
-      method: "POST",
-    });
-
-    const res = response.data;
-    return res;
-  } catch (error) {
-    console.error("Error get rateValue:", error);
-    throw new Error("User get rateValue");
-  }
-};
-
 //添加用户自定义汇率
 export const AddCurrency = async ({
   request,
