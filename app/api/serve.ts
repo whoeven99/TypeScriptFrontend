@@ -55,11 +55,8 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
 export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
   try {
     const getUserSubscriptionPlanResponse = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan`,
+      url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
       method: "GET",
-      data: {
-        shopName: shop,
-      },
     });
     const res = getUserSubscriptionPlanResponse.data.success;
     console.log(
@@ -231,11 +228,8 @@ export const GetItemsInSqlByShopName = async ({
 export const GetUserWords = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getUserLimitChars`,
+      url: `${process.env.SERVER_URL}/shopify/getUserLimitChars?shopName=${shop}`,
       method: "GET",
-      data: {
-        shopName: shop,
-      },
     });
     const res = response.data.response;
     return res;
@@ -291,19 +285,13 @@ export const GetLanguageLocaleInfo = async ({
 //查询语言状态
 export const GetLanguageList = async ({
   shop,
-  accessToken,
 }: {
   shop: string;
-  accessToken: string | undefined;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/readInfoByShopName`,
+      url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}`,
       method: "GET",
-      data: {
-        shopName: shop,
-        accessToken: accessToken,
-      },
     });
 
     const res = response.data.response;
@@ -757,11 +745,8 @@ export const GetGlossaryByShopName = async ({
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/glossary/getGlossaryByShopName`,
+      url: `${process.env.SERVER_URL}/glossary/getGlossaryByShopName?shopName=${shop}`,
       method: "GET",
-      data: {
-        shopName: shop,
-      },
     });
     const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
       shop,
