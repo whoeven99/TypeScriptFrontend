@@ -10,21 +10,21 @@ async function fetchCurrencies(shop) {
             symbol: "€",
             exchangeRate: null,
             rounding: null,
-            default: 1,
+            primaryStatus: 1,
           },
           {
             currencyCode: "CNY",
             symbol: "￥",
             exchangeRate: 7.15,
             rounding: "",
-            default: 0,
+            primaryStatus: 0,
           },
           {
             currencyCode: "USD",
             symbol: "$",
             exchangeRate: 2.0,
             rounding: "0.99",
-            default: 0,
+            primaryStatus: 0,
           },
         ],
       };
@@ -176,7 +176,7 @@ class CiwiswitcherForm extends HTMLElement {
     if (form) form.submit();
   }
 
-  closeSelector() {
+  closeSelector(event) {
     event.preventDefault(); // 阻止默认行为
     const box = document.getElementById("selector-box");
     box.style.display = box.style.display === "none" ? "block" : "none";
@@ -214,7 +214,7 @@ window.onload = async function () {
   const selectedCurrency = data.find(
     (currency) => currency.currencyCode === value,
   );
-  const isValueInCurrencies = selectedCurrency && !selectedCurrency.default
+  const isValueInCurrencies = selectedCurrency && !selectedCurrency.primaryStatus
   console.log(value, isValueInCurrencies);
 
   const currencySwitcher = document.getElementById("currency-switcher");
@@ -258,7 +258,7 @@ window.onload = async function () {
         `${currency.currencyCode}(${currency.symbol})`,
         currency.currencyCode,
       );
-      if(currency.default){
+      if(currency.primaryStatus){
         option.selected = true;
       }
       currencySwitcher.add(option);
