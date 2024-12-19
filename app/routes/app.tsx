@@ -157,7 +157,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
 
         const languagesStart = Date.now(); // 记录开始时间
-        const languages = await GetLanguageList({ shop, accessToken });
+        const languages = await GetLanguageList({ shop });
         const languagesEnd = Date.now(); // 记录结束时间
         console.log(`GetLanguageList took ${languagesEnd - languagesStart}ms`);
 
