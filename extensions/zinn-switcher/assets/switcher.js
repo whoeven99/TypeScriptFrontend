@@ -17,14 +17,14 @@ async function fetchCurrencies(shop) {
             symbol: "￥",
             exchangeRate: 7.15,
             rounding: "",
-            default: 1,
+            default: 0,
           },
           {
             currencyCode: "USD",
             symbol: "$",
             exchangeRate: 2.0,
             rounding: "0.99",
-            default: 1,
+            default: 0,
           },
         ],
       };
@@ -93,6 +93,9 @@ function transform(price, exchangeRate, symbol, currencyCode, rounding) {
 
 // Rounding function
 function customRounding(number, rounding) {
+  if (!number) {
+    return number;
+  }
   let roundedNumber = number;
   const integerPart = Math.floor(roundedNumber);
 
@@ -174,13 +177,15 @@ class CiwiswitcherForm extends HTMLElement {
   }
 
   closeSelector() {
-    event.preventDefault();  // 阻止默认行为
-    const box = document.getElementById('selector-box');
-    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    event.preventDefault(); // 阻止默认行为
+    const box = document.getElementById("selector-box");
+    box.style.display = box.style.display === "none" ? "block" : "none";
     console.log(box);
-    const arrow = document.getElementById('arrow');
+    const arrow = document.getElementById("arrow");
     arrow.innerHTML =
-      box.style.display === 'block' ? '<i class="fas fa-chevron-down"></i>' : '<i class="fas fa-chevron-up"></i>';
+      box.style.display === "block"
+        ? '<i class="fas fa-chevron-down"></i>'
+        : '<i class="fas fa-chevron-up"></i>';
   }
 
   updateLanguage(event) {
@@ -206,9 +211,10 @@ window.onload = async function () {
   console.log("data: ", data);
 
   let value = localStorage.getItem("selectedCurrency");
-  const isValueInCurrencies = data.find(
+  const selectedCurrency = data.find(
     (currency) => currency.currencyCode === value,
   );
+  const isValueInCurrencies = selectedCurrency && !selectedCurrency.default
   console.log(value, isValueInCurrencies);
 
   const currencySwitcher = document.getElementById("currency-switcher");
@@ -221,10 +227,10 @@ window.onload = async function () {
       const priceText = price.innerText;
       const transformedPrice = transform(
         priceText,
-        isValueInCurrencies.exchangeRate,
-        isValueInCurrencies.symbol,
-        isValueInCurrencies.currencyCode,
-        isValueInCurrencies.rounding,
+        selectedCurrency.exchangeRate,
+        selectedCurrency.symbol,
+        selectedCurrency.currencyCode,
+        selectedCurrency.rounding,
       );
 
       if (transformedPrice) {
@@ -252,6 +258,9 @@ window.onload = async function () {
         `${currency.currencyCode}(${currency.symbol})`,
         currency.currencyCode,
       );
+      if(currency.default){
+        option.selected = true;
+      }
       currencySwitcher.add(option);
     });
   }
