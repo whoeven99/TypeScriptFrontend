@@ -251,7 +251,7 @@ export const GetLanguageLocaleInfo = async ({
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/shopify/getImageInfo`,
-      method: "GET",
+      method: "POST",
       data: updatedLocales,
     });
     const data = response.data.response;
