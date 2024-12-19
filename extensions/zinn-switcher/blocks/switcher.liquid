@@ -1,48 +1,70 @@
-<div id="container" style="position: fixed; bottom: 80px; right: 20px; width: 200px; display: none;">
-  <div
-    id="selector-box"
-    style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%;"
-  >
-    {% if localization.available_languages.size > 1 %}
-      <ciwiswitcher-form>
-        {% form 'localization' %}
-          <select id="language-switcher" style="width: 100%;">
-            {% for language in localization.available_languages %}
-              <option
-                value="{{language.iso_code}}"
-                {% if language.iso_code == localization.language.iso_code %}
-                  selected
-                {% endif %}
-              >
-                {{ language.endonym_name | capitalize }}
-              </option>
-            {% endfor %}
-          </select>
+<link rel="stylesheet" href="{{ 'switcher.css' | asset_url }}">
+
+{% if localization.available_languages.size > 1 %}
+  <ciwiswitcher-form>
+    {% form 'localization' %}
+      <div id="container" style="position: fixed; bottom: 80px; right: 20px; width: 200px; display: none;">
+        <div
+          id="selector-box"
+          style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%;"
+        >
+          <label for="language-switcher" class="language_title">Language</label>
+          <div class="select-wrapper">
+            <select id="language-switcher" class="ciwi_select">
+              {% for language in localization.available_languages %}
+                <option
+                  value="{{language.iso_code}}"
+                  {% if language.iso_code == localization.language.iso_code %}
+                    selected
+                  {% endif %}
+                >
+                  {{ language.endonym_name | capitalize }}
+                </option>
+              {% endfor %}
+            </select>
+            <img
+              id="language-arrow-icon"
+              class="arrow_icon"
+              src="{{ 'arrow.svg' | asset_url }}"
+              alt="Arrow Icon"
+              width="25%"
+              height="25%"
+            >
+          </div>
           <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">
 
-          <select id="currency-switcher" style="margin-top: 10px; width: 100%;"></select>
-
+          <label for="currency-switcher" class="currency_title">Currency</label>
+          <div class="select-wrapper">
+            <select id="currency-switcher" class="ciwi_select"></select>
+            <img
+              id="currency-arrow-icon"
+              class="arrow_icon"
+              src="{{ 'arrow.svg' | asset_url }}"
+              alt="Arrow Icon"
+              width="25%"
+              height="25%"
+            >
+          </div>
           <input type="hidden" name="currency_code" value="">
-
-          <button id="switcher-confirm" style="margin-top: 10px;">确定</button>
-          <button id="switcher-close" style="margin-left: 5px;">关闭</button>
-        {% endform %}
-      </ciwiswitcher-form>
-      <input id="queryCiwiId" hidden value="{{ shop.permanent_domain }}">
-    {% endif %}
-  </div>
-
-  <div
-    id="main-box"
-    style="background: #f0f0f0; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center;"
-  >
-    <span id="display-text">{{ localization.language.endonym_name | capitalize }}</span>
-    <span id="arrow" style="float: right;"><i class="fas fa-chevron-up"></i></span>
-  </div>
-</div>
+          <div class="button_wrapper">
+            <button id="switcher-confirm" class="ciwi_switcher_confirm_button">Confirm</button>
+            <button id="switcher-close" class="ciwi_switcher_cancel_button">Cancel</button>
+          </div>
+        </div>
+        <input id="queryCiwiId" hidden value="{{ shop.permanent_domain }}">
+        <div
+          id="main-box"
+          style="background: #f0f0f0; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center;"
+        >
+          <span id="display-text">{{ localization.language.endonym_name | capitalize }}</span>
+          <span id="arrow" style="float: right;"><i class="fas fa-chevron-up"></i></span>
+        </div>
+      </div>
+    {% endform %}
+  </ciwiswitcher-form>
+{% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" async></script>
-
 <script src="{{ 'switcher.js' | asset_url }}" async></script>
 
 {% schema %}

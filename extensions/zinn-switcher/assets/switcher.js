@@ -26,42 +26,45 @@ async function fetchCurrencies(shop) {
             rounding: "0.99",
             primaryStatus: 0,
           },
+          {
+            currencyCode: "CAD",
+            symbol: "$",
+            exchangeRate: "Auto",
+            rounding: "0.99",
+            primaryStatus: 0,
+          },
         ],
       };
       resolve(data);
     }, 200); // Simulated network delay
   });
 
-  /* Unused backend request
-    const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCurrencyByShopName`,
-      method: "POST",
-      data: {
-        shopName: shop,
-      },
-    });
-  
-    const res = response.data.response;
-    console.log('currency: ', res);
-    if (res) {
-      const data = res.map((item) => ({
-        key: item.id,
-        currency: item.currencyName,
-        rounding: item.rounding,
-        exchangeRate: item.exchangeRate,
-        currencyCode: item.currencyCode,
-      }));
-      return data;
-    } else {
-      return undefined;
-    }
-    */
+  const response = await axios({
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
+    method: "GET",
+  });
+
+  const res = response.data.response;
+  console.log("currency: ", res);
+  if (res) {
+    const data = res.map((item) => ({
+      key: item.id,
+      currency: item.currencyName,
+      rounding: item.rounding,
+      exchangeRate: item.exchangeRate,
+      currencyCode: item.currencyCode,
+    }));
+    return data;
+  } else {
+    return undefined;
+  }
 }
 
 // Function to update the display text
 function updateDisplayText() {
   const currency =
-    document.getElementById("currency-switcher").selectedOptions[0].value;
+    document.getElementById("currency-switcher").selectedOptions[0]?.value ||
+    "undefined";
   const displayTextElement = document.getElementById("display-text");
   displayTextElement.textContent += ` / ${currency}`; // Append currency to display text
 }
@@ -69,6 +72,7 @@ function updateDisplayText() {
 // Function to transform the price according to selected currency
 function transform(price, exchangeRate, symbol, currencyCode, rounding) {
   const numMatch = price.match(/[\d,]+(?:\.\d+)?/);
+
   if (!numMatch) {
     return price;
   }
@@ -81,6 +85,13 @@ function transform(price, exchangeRate, symbol, currencyCode, rounding) {
   let number = parseFloat(cleanedNumberStr);
 
   if (isNaN(number)) {
+    return price;
+  }
+
+  let rate = exchangeRate;
+
+  if (typeof rate != "number") {
+    console.log("the exchangeRate is Auto");
     return price;
   }
 
@@ -139,6 +150,19 @@ function detectNumberFormat(numberStr, transformedPrice, point, rounding) {
       : `${integerPart}`;
 }
 
+function rotateArrow(imgId) {
+  // 获取指定 ID 的图像元素
+  var imgElement = document.getElementById(imgId);
+  console.log(imgElement);
+  // 检查图像元素是否存在
+  if (imgElement) {
+    // 使用 CSS transform 属性进行旋转
+    imgElement.style.transform = "rotate(180deg)"; // 旋转180度
+  } else {
+    console.error("Element with ID '" + imgId + "' not found.");
+  }
+}
+
 // Class to handle form submission and interactions
 class CiwiswitcherForm extends HTMLElement {
   constructor() {
@@ -148,6 +172,7 @@ class CiwiswitcherForm extends HTMLElement {
       currencyInput: this.querySelector('input[name="currency_code"]'),
       confirmButton: this.querySelector("#switcher-confirm"),
       closeButton: this.querySelector("#switcher-close"),
+      mainBox: this.querySelector("#main-box"),
       languageSwitcher: this.querySelector("#language-switcher"),
       currencySwitcher: this.querySelector("#currency-switcher"),
     };
@@ -157,15 +182,39 @@ class CiwiswitcherForm extends HTMLElement {
     );
     this.elements.closeButton.addEventListener(
       "click",
-      this.closeSelector.bind(this),
+      this.toggleSelector.bind(this),
+    );
+    this.elements.mainBox.addEventListener(
+      "click",
+      this.toggleSelector.bind(this),
+    );
+    this.elements.mainBox.addEventListener(
+      "blur",
+      this.toggleSelector.bind(this),
     );
     this.elements.languageSwitcher.addEventListener(
       "change",
       this.updateLanguage.bind(this),
     );
+    this.elements.languageSwitcher.addEventListener(
+      "focus",
+      this.rotateLanguageSwitcherFocus.bind(this),
+    );
+    this.elements.languageSwitcher.addEventListener(
+      "blur",
+      this.rotateLanguageSwitcherBlur.bind(this),
+    );
     this.elements.currencySwitcher.addEventListener(
       "change",
       this.updateCurrency.bind(this),
+    );
+    this.elements.currencySwitcher.addEventListener(
+      "focus",
+      this.rotateCurrencySwitcherFocus.bind(this),
+    );
+    this.elements.currencySwitcher.addEventListener(
+      "blur",
+      this.rotateCurrencySwitcherBlur.bind(this),
     );
   }
 
@@ -176,7 +225,7 @@ class CiwiswitcherForm extends HTMLElement {
     if (form) form.submit();
   }
 
-  closeSelector(event) {
+  toggleSelector(event) {
     event.preventDefault(); // 阻止默认行为
     const box = document.getElementById("selector-box");
     box.style.display = box.style.display === "none" ? "block" : "none";
@@ -194,7 +243,60 @@ class CiwiswitcherForm extends HTMLElement {
     this.elements.languageInput.value = selectedLanguage;
   }
 
+  rotateLanguageSwitcherFocus() {
+    console.log(1);
+    // 获取指定 ID 的图像元素
+    var imgElement = document.getElementById("language-arrow-icon");
+    // 检查图像元素是否存在
+    if (imgElement) {
+      // 使用 CSS transform 属性进行旋转
+      imgElement.style.transform = "rotate(180deg)"; // 旋转180度
+    } else {
+      console.error("Element with ID language-arrow-icon not found.");
+    }
+  }
+
+  rotateLanguageSwitcherBlur() {
+    console.log(2);
+    // 获取指定 ID 的图像元素
+    var imgElement = document.getElementById("language-arrow-icon");
+    // 检查图像元素是否存在
+    if (imgElement) {
+      // 使用 CSS transform 属性进行旋转
+      imgElement.style.transform = "rotate(0deg)"; // 旋转180度
+    } else {
+      console.error("Element with ID language-arrow-icon not found.");
+    }
+  }
+
+  rotateCurrencySwitcherFocus() {
+    console.log(3);
+    // 获取指定 ID 的图像元素
+    var imgElement = document.getElementById("currency-arrow-icon");
+    // 检查图像元素是否存在
+    if (imgElement) {
+      // 使用 CSS transform 属性进行旋转
+      imgElement.style.transform = "rotate(180deg)"; // 旋转180度
+    } else {
+      console.error("Element with ID currency-arrow-icon not found.");
+    }
+  }
+
+  rotateCurrencySwitcherBlur() {
+    console.log(4);
+    // 获取指定 ID 的图像元素
+    var imgElement = document.getElementById("currency-arrow-icon");
+    // 检查图像元素是否存在
+    if (imgElement) {
+      // 使用 CSS transform 属性进行旋转
+      imgElement.style.transform = "rotate(0deg)"; // 旋转180度
+    } else {
+      console.error("Element with ID currency-arrow-icon not found.");
+    }
+  }
+
   updateCurrency(event) {
+    rotateArrow("currency-arrow-icon");
     const selectedCurrency = event.target.value;
     console.log("selectedCurrency: ", selectedCurrency);
     this.elements.currencyInput.value = selectedCurrency;
@@ -207,14 +309,15 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
   const shop = document.getElementById("queryCiwiId");
-  const { data } = await fetchCurrencies(shop.value);
+  const {data} = await fetchCurrencies(shop.value);
   console.log("data: ", data);
 
   let value = localStorage.getItem("selectedCurrency");
   const selectedCurrency = data.find(
-    (currency) => currency.currencyCode === value,
+    (currency) => currency?.currencyCode === value,
   );
-  const isValueInCurrencies = selectedCurrency && !selectedCurrency.primaryStatus
+  const isValueInCurrencies =
+    selectedCurrency && !selectedCurrency.primaryStatus;
   console.log(value, isValueInCurrencies);
 
   const currencySwitcher = document.getElementById("currency-switcher");
@@ -250,19 +353,24 @@ window.onload = async function () {
       }
       currencySwitcher.add(option);
     });
-  } else {
+  } else if (data.length) {
     currencyInput.value = data[0];
-    currencySwitcher.value = data[0].currencyCode;
+    currencySwitcher.value = data[0]?.currencyCode;
     data.forEach((currency) => {
       const option = new Option(
         `${currency.currencyCode}(${currency.symbol})`,
         currency.currencyCode,
       );
-      if(currency.primaryStatus){
+      if (currency.primaryStatus) {
         option.selected = true;
       }
       currencySwitcher.add(option);
     });
+  } else {
+    currencyInput.value = undefined;
+    currencySwitcher.value = undefined;
+    const option = new Option("undefined", undefined);
+    currencySwitcher.add(option);
   }
 
   updateDisplayText();
