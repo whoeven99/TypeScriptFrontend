@@ -357,7 +357,7 @@ const Index = () => {
   const roundingColumns: (BaseOptionType | DefaultOptionType)[] = [
     { value: "", label: "Disable" },
     { value: "0", label: "No decimal" },
-    { value: "1.00", label: "1 (Recommend)" },
+    { value: "1.00", label: "1.00 (Recommend)" },
     { value: "0.99", label: "0.99" },
     { value: "0.95", label: "0.95" },
     { value: "0.75", label: "0.75" },
@@ -383,7 +383,7 @@ const Index = () => {
       render: (_: any, record: any) => {
         switch (record.rounding) {
           case "":
-            return <Text>Default</Text>;
+            return <Text>Disable</Text>;
           case "0":
             return <Text>No decimal</Text>;
           default:

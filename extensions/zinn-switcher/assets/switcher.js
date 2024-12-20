@@ -23,6 +23,10 @@ async function fetchCurrencies(shop) {
 }
 
 async function fetchAutoRate(shop, currencyCode) {
+  console.log("fetchAutoRate: ", {
+    shopName: shop,
+    currencyCode: currencyCode,
+  });
   const response = await axios({
     url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
     method: "POST",
@@ -55,12 +59,14 @@ function transform(
   currencyCode,
   rounding,
 ) {
+  console.log("exchangeRate: ", exchangeRate);
   const formattedPrice = price.replace(/[^0-9,. ]/g, "").trim();
 
-  if (!formattedPrice) {
+  if (!formattedPrice || exchangeRate == "Auto") {
     return price;
   }
 
+  console.log("rounding: ", rounding);
   let number = convertToNumberFromMoneyFormat(moneyFormat, formattedPrice);
 
   console.log("price: ", price);
@@ -71,10 +77,8 @@ function transform(
   number = (number * exchangeRate).toFixed(2);
 
   const transformedPrice = customRounding(number, rounding);
-  console.log("transformedPrice: ", transformedPrice);
 
   number = detectNumberFormat(moneyFormat, transformedPrice);
-  console.log("number: ", number);
 
   return `${symbol}${number} ${currencyCode}`;
 }
@@ -84,8 +88,9 @@ function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
 
   switch (moneyFormat) {
     case "amount":
-      number = number.replace(/\./g, "").replace(",", ".");
+      number = number.replace(/,/g, "");
       return parseFloat(number).toFixed(2);
+
     case "amount_no_decimals":
       return parseFloat(number.replace(/,/g, "")).toFixed(2);
 
@@ -126,6 +131,7 @@ function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
 
 // Rounding function
 function customRounding(number, rounding) {
+  console.log("customRounding: ", number);
   if (parseFloat(number) === 0) {
     return number;
   }
@@ -139,8 +145,10 @@ function customRounding(number, rounding) {
     case "1.00":
       return Math.round(number * 100) / 100;
     case "0.99":
+      console.log(integerPart + 0.99);
       return integerPart + 0.99;
     case "0.95":
+      console.log(integerPart + 0.95);
       return integerPart + 0.95;
     case "0.75":
       return integerPart + 0.75;
@@ -416,6 +424,7 @@ window.onload = async function () {
     selectedCurrency && !selectedCurrency.primaryStatus;
 
   const currencySwitcher = document.getElementById("currency-switcher");
+  console.log("currencySwitcher: ", currencySwitcher);
   const currencyInput = document.querySelector('input[name="currency_code"]');
 
   const regex = /{{(.*?)}}/;
@@ -429,6 +438,9 @@ window.onload = async function () {
     let rate = selectedCurrency.exchangeRate;
     if (selectedCurrency.exchangeRate == "Auto") {
       rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
+      if (typeof rate != "number") {
+        rate = 1;
+      }
     }
     const prices = document.querySelectorAll(".ciwi-money");
     prices.forEach((price) => {
@@ -477,6 +489,7 @@ window.onload = async function () {
     currencySwitcher.value = undefined;
     const option = new Option("undefined", undefined);
     currencySwitcher.add(option);
+    localStorage.removeItem("selectedCurrency");
   }
 
   updateDisplayText();
