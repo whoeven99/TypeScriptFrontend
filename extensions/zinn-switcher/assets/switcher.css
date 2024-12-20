@@ -1,3 +1,24 @@
+.main_box {
+  position: relative;
+  background: #fff;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid rgb(217, 217, 217); /* 边框颜色 */
+  cursor: pointer;
+  text-align: center;
+  align-items: center;
+}
+
+.mainarrow_icon {
+  display: flex;
+  position: absolute;
+  top: 40%; /* 垂直居中 */
+  left: 75%; /* 水平居中 */
+  pointer-events: none; /* 防止图标影响选择框的点击 */
+  transform-origin: center; /* 设置旋转中心为自身中心 */
+  transition: transform 0.3s ease; /* 平滑过渡 */
+}
+
 .button_wrapper {
   display: flex; /* 启用 Flexbox 布局 */
   justify-content: space-between; /* 将按钮分布在两端 */

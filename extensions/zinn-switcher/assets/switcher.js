@@ -1,44 +1,5 @@
 // Function to simulate fetching currencies from the backend
 async function fetchCurrencies(shop) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Simulated backend data
-      const data = {
-        data: [
-          {
-            currencyCode: "EUR",
-            symbol: "€",
-            exchangeRate: null,
-            rounding: null,
-            primaryStatus: 1,
-          },
-          {
-            currencyCode: "CNY",
-            symbol: "￥",
-            exchangeRate: 7.15,
-            rounding: "",
-            primaryStatus: 0,
-          },
-          {
-            currencyCode: "USD",
-            symbol: "$",
-            exchangeRate: 2.0,
-            rounding: "0.99",
-            primaryStatus: 0,
-          },
-          {
-            currencyCode: "CAD",
-            symbol: "$",
-            exchangeRate: "Auto",
-            rounding: "0.99",
-            primaryStatus: 0,
-          },
-        ],
-      };
-      resolve(data);
-    }, 200); // Simulated network delay
-  });
-
   const response = await axios({
     url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
     method: "GET",
@@ -49,15 +10,31 @@ async function fetchCurrencies(shop) {
   if (res) {
     const data = res.map((item) => ({
       key: item.id,
-      currency: item.currencyName,
+      symbol: item.symbol || "$",
       rounding: item.rounding,
       exchangeRate: item.exchangeRate,
       currencyCode: item.currencyCode,
+      primaryStatus: item.primaryStatus,
     }));
     return data;
   } else {
     return undefined;
   }
+}
+
+async function fetchAutoRate(shop, currencyCode) {
+  const response = await axios({
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
+    method: "POST",
+    data: {
+      shopName: shop,
+      currencyCode: currencyCode,
+    },
+  });
+
+  const res = response.data.response;
+  console.log("currency: ", res);
+  return res.exchangeRate;
 }
 
 // Function to update the display text
@@ -70,53 +47,97 @@ function updateDisplayText() {
 }
 
 // Function to transform the price according to selected currency
-function transform(price, exchangeRate, symbol, currencyCode, rounding) {
-  const numMatch = price.match(/[\d,]+(?:\.\d+)?/);
+function transform(
+  price,
+  exchangeRate,
+  moneyFormat,
+  symbol,
+  currencyCode,
+  rounding,
+) {
+  const formattedPrice = price.replace(/[^0-9,. ]/g, "").trim();
 
-  if (!numMatch) {
+  if (!formattedPrice) {
     return price;
   }
 
-  // Extract numeric part from price
-  const numberStr = numMatch[0];
+  let number = convertToNumberFromMoneyFormat(moneyFormat, formattedPrice);
+
+  console.log("price: ", price);
+  console.log("formattedPrice: ", formattedPrice);
+  console.log("number: ", number);
 
   // Remove commas or other unwanted characters
-  const cleanedNumberStr = numberStr.replace(/[,\s']/g, "");
-  let number = parseFloat(cleanedNumberStr);
+  number = (number * exchangeRate).toFixed(2);
 
-  if (isNaN(number)) {
-    return price;
-  }
+  const transformedPrice = customRounding(number, rounding);
+  console.log("transformedPrice: ", transformedPrice);
 
-  let rate = exchangeRate;
-
-  if (typeof rate != "number") {
-    console.log("the exchangeRate is Auto");
-    return price;
-  }
-
-  const transformedPrice = customRounding(number * exchangeRate, rounding);
-
-  number = detectNumberFormat(numberStr, transformedPrice, ".", rounding);
+  number = detectNumberFormat(moneyFormat, transformedPrice);
+  console.log("number: ", number);
 
   return `${symbol}${number} ${currencyCode}`;
 }
 
+function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
+  let number = formattedPrice;
+
+  switch (moneyFormat) {
+    case "amount":
+      number = number.replace(/\./g, "").replace(",", ".");
+      return parseFloat(number).toFixed(2);
+    case "amount_no_decimals":
+      return parseFloat(number.replace(/,/g, "")).toFixed(2);
+
+    case "amount_with_comma_separator":
+      // 处理数字为 1.134,65 格式：首先替换逗号为点，小数点为逗号
+      number = number.replace(/\./g, "").replace(",", ".");
+      return parseFloat(number).toFixed(2);
+
+    case "amount_no_decimals_with_comma_separator":
+      // 同上，去掉逗号，小数点没有
+      return parseFloat(number.replace(/\./g, "").replace(",", "")).toFixed(2);
+
+    case "amount_with_apostrophe_separator":
+      // 处理 1'134.65 格式：去掉撇号
+      number = number.replace(/'/g, "");
+      return parseFloat(number).toFixed(2);
+
+    case "amount_no_decimals_with_space_separator":
+      // 处理 1 135 格式：去掉空格
+      number = number.replace(/\s/g, "");
+      return parseFloat(number).toFixed(2);
+
+    case "amount_with_space_separator":
+      // 处理 1 134,65 格式：去掉空格，小数点用逗号分隔
+      number = number.replace(/\s/g, "").replace(",", ".");
+      return parseFloat(number).toFixed(2);
+
+    case "amount_with_period_and_space_separator":
+      // 处理 1 134.65 格式：去掉空格，小数点是点
+      number = number.replace(/\s/g, "");
+      return parseFloat(number).toFixed(2);
+
+    default:
+      number = number.replace(/\./g, "").replace(",", ".");
+      return parseFloat(number).toFixed(2);
+  }
+}
+
 // Rounding function
 function customRounding(number, rounding) {
-  if (!number) {
+  if (parseFloat(number) === 0) {
     return number;
   }
-  let roundedNumber = number;
-  const integerPart = Math.floor(roundedNumber);
+  const integerPart = Math.floor(number);
 
   switch (rounding) {
     case "":
-      return roundedNumber;
+      return number;
     case "0":
-      return roundedNumber.toFixed(0);
+      return number.toFixed(0);
     case "1.00":
-      return Math.round(roundedNumber * 100) / 100;
+      return Math.round(number * 100) / 100;
     case "0.99":
       return integerPart + 0.99;
     case "0.95":
@@ -128,39 +149,112 @@ function customRounding(number, rounding) {
     case "0.25":
       return integerPart + 0.25;
     default:
-      return roundedNumber;
+      return number;
   }
 }
 
-// Format number with thousands separators
-function detectNumberFormat(numberStr, transformedPrice, point, rounding) {
+function detectNumberFormat(moneyFormat, transformedPrice) {
   let number = transformedPrice.toString();
-  let [integerPart, decimalPart] = number.split(point);
+  let [integerPart, decimalPart] = number.split("."); // 默认以点为小数点分隔符
+  console.log(Number(`0.${decimalPart}`).toFixed(2).slice(2));
 
-  if (/^\d{1,3}(?:,\d{3})*(?:\.\d+)?$/.test(numberStr)) {
-    integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  } else if (/^\d{1,3}(?:\.\d{3})*(?:,\d+)?$/.test(numberStr)) {
-    integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  // 处理不同的格式
+  switch (moneyFormat) {
+    case "amount":
+      // 默认格式，带有逗号作为千位分隔符，保留小数
+      return formatWithComma(
+        integerPart,
+        Number(`0.${decimalPart}`).toFixed(2).slice(2),
+      );
+
+    case "amount_no_decimals":
+      // 无小数，千位分隔符
+      return formatWithComma(integerPart, "");
+
+    case "amount_with_comma_separator":
+      // 使用逗号作为千位分隔符，且使用逗号为小数点
+      return formatWithCommaAndCommaDecimal(
+        integerPart,
+        Number(`0.${decimalPart}`).toFixed(2).slice(2),
+      );
+
+    case "amount_no_decimals_with_comma_separator":
+      // 无小数，千位分隔符，且使用逗号为小数点
+      return formatWithCommaAndCommaDecimal(integerPart, "");
+
+    case "amount_with_apostrophe_separator":
+      // 使用撇号作为千位分隔符
+      return formatWithApostrophe(
+        integerPart,
+        Number(`0.${decimalPart}`).toFixed(2).slice(2),
+      );
+
+    case "amount_no_decimals_with_space_separator":
+      // 无小数，使用空格作为千位分隔符
+      return formatWithSpace(integerPart, "");
+
+    case "amount_with_space_separator":
+      // 使用空格作为千位分隔符，且使用逗号为小数点
+      return formatWithSpace(
+        integerPart,
+        Number(`0.${decimalPart}`).toFixed(2).slice(2),
+      );
+
+    case "amount_with_period_and_space_separator":
+      // 使用空格作为千位分隔符，点作为小数点
+      return formatWithSpaceAndPeriod(
+        integerPart,
+        Number(`0.${decimalPart}`).toFixed(2).slice(2),
+      );
+
+    default:
+      return transformedPrice; // 默认返回原始的转换价格
   }
-
-  return decimalPart
-    ? `${integerPart}.${Number(`0.${decimalPart}`).toFixed(2).slice(2)}`
-    : point && rounding != "0"
-      ? `${integerPart}${point}00`
-      : `${integerPart}`;
 }
 
-function rotateArrow(imgId) {
-  // 获取指定 ID 的图像元素
-  var imgElement = document.getElementById(imgId);
-  console.log(imgElement);
-  // 检查图像元素是否存在
-  if (imgElement) {
-    // 使用 CSS transform 属性进行旋转
-    imgElement.style.transform = "rotate(180deg)"; // 旋转180度
-  } else {
-    console.error("Element with ID '" + imgId + "' not found.");
+function formatWithComma(integerPart, decimalPart) {
+  // 为整数部分加上逗号作为千位分隔符
+  integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  if (decimalPart) {
+    return `${integerPart}.${decimalPart}`;
   }
+  return integerPart;
+}
+
+function formatWithCommaAndCommaDecimal(integerPart, decimalPart) {
+  // 为整数部分加上点作为千位分隔符，且使用逗号为小数点
+  integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  if (decimalPart) {
+    return `${integerPart},${decimalPart}`;
+  }
+  return integerPart;
+}
+
+function formatWithApostrophe(integerPart, decimalPart) {
+  // 为整数部分加上撇号作为千位分隔符
+  integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  if (decimalPart) {
+    return `${integerPart}.${decimalPart}`;
+  }
+  return integerPart;
+}
+
+function formatWithSpace(integerPart, decimalPart) {
+  // 为整数部分加上空格作为千位分隔符
+  integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  if (decimalPart) {
+    return `${integerPart},${decimalPart}`;
+  }
+  return integerPart;
+}
+
+function formatWithSpaceAndPeriod(integerPart, decimalPart) {
+  // 为整数部分加上空格作为千位分隔符，且点作为小数点
+  integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  if (decimalPart) {
+    return `${integerPart}.${decimalPart}`;
+  }
+  return integerPart;
 }
 
 // Class to handle form submission and interactions
@@ -168,6 +262,8 @@ class CiwiswitcherForm extends HTMLElement {
   constructor() {
     super();
     this.elements = {
+      ciwiContainer: this.querySelector("#ciwi-container"),
+      selectorBox: this.querySelector("#selector-box"),
       languageInput: this.querySelector('input[name="language_code"]'),
       currencyInput: this.querySelector('input[name="currency_code"]'),
       confirmButton: this.querySelector("#switcher-confirm"),
@@ -176,9 +272,12 @@ class CiwiswitcherForm extends HTMLElement {
       languageSwitcher: this.querySelector("#language-switcher"),
       currencySwitcher: this.querySelector("#currency-switcher"),
     };
+    this.elements.selectorBox.addEventListener("click", function (event) {
+      event.stopPropagation();
+    });
     this.elements.confirmButton.addEventListener(
       "click",
-      this.openSelector.bind(this),
+      this.submitForm.bind(this),
     );
     this.elements.closeButton.addEventListener(
       "click",
@@ -186,10 +285,6 @@ class CiwiswitcherForm extends HTMLElement {
     );
     this.elements.mainBox.addEventListener(
       "click",
-      this.toggleSelector.bind(this),
-    );
-    this.elements.mainBox.addEventListener(
-      "blur",
       this.toggleSelector.bind(this),
     );
     this.elements.languageSwitcher.addEventListener(
@@ -216,9 +311,10 @@ class CiwiswitcherForm extends HTMLElement {
       "blur",
       this.rotateCurrencySwitcherBlur.bind(this),
     );
+    document.addEventListener("click", this.handleOutsideClick.bind(this));
   }
 
-  openSelector(event) {
+  submitForm(event) {
     event.preventDefault();
     const form = this.querySelector("form");
     localStorage.setItem("selectedCurrency", this.elements.currencyInput.value);
@@ -229,22 +325,18 @@ class CiwiswitcherForm extends HTMLElement {
     event.preventDefault(); // 阻止默认行为
     const box = document.getElementById("selector-box");
     box.style.display = box.style.display === "none" ? "block" : "none";
-    console.log(box);
-    const arrow = document.getElementById("arrow");
-    arrow.innerHTML =
-      box.style.display === "block"
-        ? '<i class="fas fa-chevron-down"></i>'
-        : '<i class="fas fa-chevron-up"></i>';
+    const arrow = document.getElementById("mainbox-arrow-icon");
+    box.style.display === "block"
+      ? (arrow.style.transform = "rotate(180deg)")
+      : (arrow.style.transform = "rotate(0deg)");
   }
 
   updateLanguage(event) {
     const selectedLanguage = event.target.value;
-    console.log("selectedLanguage: ", selectedLanguage);
     this.elements.languageInput.value = selectedLanguage;
   }
 
   rotateLanguageSwitcherFocus() {
-    console.log(1);
     // 获取指定 ID 的图像元素
     var imgElement = document.getElementById("language-arrow-icon");
     // 检查图像元素是否存在
@@ -257,7 +349,6 @@ class CiwiswitcherForm extends HTMLElement {
   }
 
   rotateLanguageSwitcherBlur() {
-    console.log(2);
     // 获取指定 ID 的图像元素
     var imgElement = document.getElementById("language-arrow-icon");
     // 检查图像元素是否存在
@@ -269,8 +360,13 @@ class CiwiswitcherForm extends HTMLElement {
     }
   }
 
+  updateCurrency(event) {
+    console.log(event.target);
+    const selectedCurrency = event.target.value;
+    this.elements.currencyInput.value = selectedCurrency;
+  }
+
   rotateCurrencySwitcherFocus() {
-    console.log(3);
     // 获取指定 ID 的图像元素
     var imgElement = document.getElementById("currency-arrow-icon");
     // 检查图像元素是否存在
@@ -283,7 +379,6 @@ class CiwiswitcherForm extends HTMLElement {
   }
 
   rotateCurrencySwitcherBlur() {
-    console.log(4);
     // 获取指定 ID 的图像元素
     var imgElement = document.getElementById("currency-arrow-icon");
     // 检查图像元素是否存在
@@ -295,11 +390,12 @@ class CiwiswitcherForm extends HTMLElement {
     }
   }
 
-  updateCurrency(event) {
-    rotateArrow("currency-arrow-icon");
-    const selectedCurrency = event.target.value;
-    console.log("selectedCurrency: ", selectedCurrency);
-    this.elements.currencyInput.value = selectedCurrency;
+  handleOutsideClick(event) {
+    if (!this.elements.ciwiContainer.contains(event.target)) {
+      this.elements.selectorBox.style.display = "none";
+      const arrow = document.getElementById("mainbox-arrow-icon");
+      arrow.style.transform = "rotate(0deg)";
+    }
   }
 }
 
@@ -309,8 +405,8 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
   const shop = document.getElementById("queryCiwiId");
-  const {data} = await fetchCurrencies(shop.value);
-  console.log("data: ", data);
+  let moneyFormat = document.getElementById("queryMoneyFormat");
+  const data = await fetchCurrencies(shop.value);
 
   let value = localStorage.getItem("selectedCurrency");
   const selectedCurrency = data.find(
@@ -318,19 +414,29 @@ window.onload = async function () {
   );
   const isValueInCurrencies =
     selectedCurrency && !selectedCurrency.primaryStatus;
-  console.log(value, isValueInCurrencies);
 
   const currencySwitcher = document.getElementById("currency-switcher");
   const currencyInput = document.querySelector('input[name="currency_code"]');
 
-  if (value && isValueInCurrencies) {
-    const prices = document.querySelectorAll(".ciwi-money");
+  const regex = /{{(.*?)}}/;
+  const match = moneyFormat.value.match(regex);
 
+  if (match) {
+    moneyFormat = match[1];
+  }
+
+  if (value && isValueInCurrencies) {
+    let rate = selectedCurrency.exchangeRate;
+    if (selectedCurrency.exchangeRate == "Auto") {
+      rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
+    }
+    const prices = document.querySelectorAll(".ciwi-money");
     prices.forEach((price) => {
       const priceText = price.innerText;
       const transformedPrice = transform(
         priceText,
-        selectedCurrency.exchangeRate,
+        rate,
+        moneyFormat,
         selectedCurrency.symbol,
         selectedCurrency.currencyCode,
         selectedCurrency.rounding,
@@ -374,5 +480,5 @@ window.onload = async function () {
   }
 
   updateDisplayText();
-  document.getElementById("container").style.display = "block";
+  document.getElementById("ciwi-container").style.display = "block";
 };

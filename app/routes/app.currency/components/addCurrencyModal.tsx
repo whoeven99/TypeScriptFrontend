@@ -61,6 +61,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
               rounding: res.value.response.rounding,
               exchangeRate: res.value.response.exchangeRate,
               currencyCode: res.value.response.currencyCode,
+              primaryStatus: res.value.response.primaryStatus,
             },
           ];
           dispatch(updateTableData(data));

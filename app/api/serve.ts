@@ -31,7 +31,6 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
     });
     const End1 = Date.now(); // 记录结束时间
     console.log(`UpdateUser took ${End1 - Start1}ms`);
-    const Start2 = Date.now(); // 记录结束时间
     const insertCharsByShopNameResponse = await axios({
       url: `${process.env.SERVER_URL}/translationCounter/insertCharsByShopName`,
       method: "POST",
@@ -40,10 +39,21 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         accessToken: accessToken,
       },
     });
+    const addDefaultLanguagePackResponse = await axios({
+      url: `${process.env.SERVER_URL}/aiLanguagePacks/addDefaultLanguagePack`,
+      method: "PUT",
+      data: {
+        shopName: shop,
+      },
+    });
     console.log("addUserInfoResponse: ", addUserInfoResponse.data);
     console.log(
       "insertCharsByShopNameResponse: ",
       insertCharsByShopNameResponse.data,
+    );
+    console.log(
+      "addDefaultLanguagePackResponse: ",
+      addDefaultLanguagePackResponse.data,
     );
   } catch (error) {
     console.error("Error user initialization:", error);
@@ -514,15 +524,82 @@ export const updateManageTranslation = async ({
   }
 };
 
+//检测默认货币
+export const InitCurrency = async ({ request }: { request: Request }) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  console.log("InitCurrency: ", {
+    shopName: shop,
+  });
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/currency/initCurrency?shopName=${shop}`,
+      method: "Get",
+    });
+    const res = response.data.response;
+    console.log("InitCurrency: ", res);
+    return res;
+  } catch (error) {
+    console.error("Error InitCurrency:", error);
+    throw new Error("Error InitCurrency");
+  }
+};
+
+//更新默认货币
+export const UpdateDefaultCurrency = async ({
+  request,
+  currencyName,
+  currencyCode,
+  primaryStatus,
+}: {
+  request: Request;
+  currencyName: string;
+  currencyCode: string;
+  primaryStatus: number;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  console.log("UpdateDefaultCurrency: ", {
+    shopName: shop,
+    currencyName: currencyName, // 国家
+    currencyCode: currencyCode, // 货币代码
+    rounding: null,
+    exchangeRate: null,
+    primaryStatus: primaryStatus,
+  });
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/currency/updateDefaultCurrency`,
+      method: "PUT",
+      data: {
+        shopName: shop,
+        currencyName: currencyName, // 国家
+        currencyCode: currencyCode, // 货币代码
+        rounding: null,
+        exchangeRate: null,
+        primaryStatus: primaryStatus,
+      },
+    });
+    const res = response.data.response;
+    console.log("UpdateDefaultCurrency: ", res);
+    return res;
+  } catch (error) {
+    console.error("Error UpdateDefaultCurrency:", error);
+    throw new Error("Error UpdateDefaultCurrency");
+  }
+};
+
 //添加用户自定义汇率
 export const AddCurrency = async ({
   request,
   currencyName,
   currencyCode,
+  primaryStatus,
 }: {
   request: Request;
   currencyName: string;
   currencyCode: string;
+  primaryStatus: number;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
@@ -530,26 +607,44 @@ export const AddCurrency = async ({
     shopName: shop,
     currencyName: currencyName, // 国家
     currencyCode: currencyCode, // 货币代码
-    rounding: "Disable",
+    rounding: "",
     exchangeRate: "Auto",
+    primaryStatus: primaryStatus,
   });
-
   try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/currency/insertCurrency`,
-      method: "POST",
-      data: {
-        shopName: shop,
-        currencyName: currencyName, // 国家
-        currencyCode: currencyCode, // 货币代码
-        rounding: "Disable",
-        exchangeRate: "Auto",
-      },
-    });
-    const res = response.data;
-    console.log("AddCurrency: ", res);
-
-    return res;
+    if (primaryStatus) {
+      const response = await axios({
+        url: `${process.env.SERVER_URL}/currency/insertCurrency`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          currencyName: currencyName, // 国家
+          currencyCode: currencyCode, // 货币代码
+          rounding: null,
+          exchangeRate: null,
+          primaryStatus: primaryStatus,
+        },
+      });
+      const res = response.data;
+      console.log("AddCurrency: ", res);
+      return res;
+    } else {
+      const response = await axios({
+        url: `${process.env.SERVER_URL}/currency/insertCurrency`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          currencyName: currencyName, // 国家
+          currencyCode: currencyCode, // 货币代码
+          rounding: "",
+          exchangeRate: "Auto",
+          primaryStatus: 0,
+        },
+      });
+      const res = response.data;
+      console.log("AddCurrency: ", res);
+      return res;
+    }
   } catch (error) {
     console.error("Error add currency:", error);
     throw new Error("Error add currency");
@@ -630,17 +725,18 @@ export const UpdateCurrency = async ({
 };
 
 //获取用户自定义汇率
-export const GetCurrency = async ({ request }: { request: Request }) => {
+export const GetCurrencyByShopName = async ({
+  request,
+}: {
+  request: Request;
+}) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  console.log("GetCurrency: ", shop);
+  console.log("GetCurrencyByShopName: ", shop);
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/currency/getCurrencyByShopName`,
-      method: "POST",
-      data: {
-        shopName: shop,
-      },
+      url: `${process.env.SERVER_URL}/currency/getCurrencyByShopName?shopName=${shop}`,
+      method: "GET",
     });
 
     const res = response.data.response;
@@ -652,6 +748,7 @@ export const GetCurrency = async ({ request }: { request: Request }) => {
         rounding: item.rounding,
         exchangeRate: item.exchangeRate,
         currencyCode: item.currencyCode,
+        primaryStatus: item.primaryStatus,
       }));
       return data;
     } else {

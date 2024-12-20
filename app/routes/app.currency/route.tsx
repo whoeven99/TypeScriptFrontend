@@ -18,13 +18,18 @@ import { queryShop } from "~/api/admin";
 import {
   AddCurrency,
   DeleteCurrency,
-  GetCurrency,
+  GetCurrencyByShopName,
+  InitCurrency,
   UpdateCurrency,
+  UpdateDefaultCurrency,
 } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import AddCurrencyModal from "./components/addCurrencyModal";
 import CurrencyEditModal from "./components/currencyEditModal";
-import { setTableData } from "~/store/modules/currencyDataTable";
+import {
+  setTableData,
+  updateTableData,
+} from "~/store/modules/currencyDataTable";
 import SwitcherSettingCard from "./components/switcherSettingCard";
 
 const { Title, Text } = Typography;
@@ -67,6 +72,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
 
     const loading = JSON.parse(formData.get("loading") as string);
+    const updateDefaultCurrency = JSON.parse(
+      formData.get("updateDefaultCurrency") as string,
+    );
     const addCurrencies = JSON.parse(formData.get("addCurrencies") as string);
     const deleteCurrencies: number[] = JSON.parse(
       formData.get("deleteCurrencies") as string,
@@ -78,8 +86,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     switch (true) {
       case !!loading:
         try {
+          const primaryCurrency = await InitCurrency({ request });
           const shopLoad = await queryShop({ request });
-          const currencyList = await GetCurrency({ request });
+          const currencyList = await GetCurrencyByShopName({ request });
           const finalCurrencyList =
             currencyList === undefined ? [] : currencyList;
           console.log("finalCurrencyList: ", finalCurrencyList);
@@ -87,6 +96,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const moneyWithCurrencyFormat =
             shopLoad.currencyFormats.moneyWithCurrencyFormat;
           return json({
+            primaryCurrency: primaryCurrency,
             defaultCurrencyCode: shopLoad.currencyCode,
             currencyList: finalCurrencyList,
             moneyFormat,
@@ -96,13 +106,32 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.error("Error loading currency:", error);
           return json({ error: "Error loading currency" }, { status: 500 });
         }
+      case !!updateDefaultCurrency:
+        try {
+          const data = await UpdateDefaultCurrency({
+            request,
+            currencyName: updateDefaultCurrency.currencyName,
+            currencyCode: updateDefaultCurrency.currencyCode,
+            primaryStatus: updateDefaultCurrency.primaryStatus,
+          });
+          return json({ data: data });
+        } catch (error) {
+          console.error("Error updateDefaultCurrency:", error);
+          return json(
+            { error: "Error updateDefaultCurrency" },
+            { status: 500 },
+          );
+        }
+
       case !!addCurrencies:
         try {
+          console.log("addCurrencies: ", addCurrencies);
           const promises = addCurrencies.map((currency: any) => {
             return AddCurrency({
               request,
               currencyName: currency.currencyName,
               currencyCode: currency.currencyCode,
+              primaryStatus: currency?.primaryStatus || 0,
             });
           });
           console.log("promises: ", promises);
@@ -121,8 +150,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
           return json({ data: res });
         } catch (error) {
-          console.error("Error AddCurrency:", error);
-          return json({ error: "Error AddCurrency" }, { status: 500 });
+          console.error("Error addCurrencies:", error);
+          return json({ error: "Error addCurrencies" }, { status: 500 });
         }
       case !!deleteCurrencies:
         const promises = deleteCurrencies.map(async (currency) => {
@@ -193,6 +222,7 @@ const Index = () => {
   const dispatch = useDispatch();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
+  const initCurrencyFetcher = useFetcher<any>();
 
   useEffect(() => {
     const formData = new FormData();
@@ -217,17 +247,24 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (loadingFetcher.data) {
+    if (loadingFetcher.data && currencyData.length) {
       setDefaultCurrencyCode(loadingFetcher.data.defaultCurrencyCode);
-      const symbol = currencyData.find(
-        (item: any) => item.currencyCode === defaultCurrencyCode,
-      )?.symbol;
-      if (symbol) {
-        setDefaultSymbol(symbol);
+      const defaultCurrency = currencyData.find((item: CurrencyType) => {
+        console.log(item.currencyCode, loadingFetcher.data.defaultCurrencyCode);
+        if (item.currencyCode == loadingFetcher.data.defaultCurrencyCode)
+          return item;
+      });
+      if (defaultCurrency) {
+        setDefaultSymbol(defaultCurrency.symbol);
       }
-      setOriginalData(loadingFetcher.data.currencyList);
-      setFilteredData(loadingFetcher.data.currencyList); // 用加载的数据初始化 filteredData
-      dispatch(setTableData(loadingFetcher.data.currencyList));
+      console.log(defaultCurrency);
+
+      const tableData = loadingFetcher.data.currencyList.filter(
+        (item: any) => !item.primaryStatus,
+      );
+      setOriginalData(tableData);
+      setFilteredData(tableData); // 用加载的数据初始化 filteredData
+      dispatch(setTableData(tableData));
       const parser = new DOMParser();
       const parsedMoneyFormat = parser.parseFromString(
         loadingFetcher.data.moneyFormat,
@@ -242,6 +279,42 @@ const Index = () => {
       setMoneyWithCurrencyFormatHtml(parsedMoneyWithCurrencyFormat);
       shopify.loading(false);
       setLoading(false);
+      const primaryCurrency = loadingFetcher.data.primaryCurrency;
+      if (!primaryCurrency && defaultCurrency) {
+        const formData = new FormData();
+        formData.append(
+          "addCurrencies",
+          JSON.stringify([
+            {
+              currencyName: defaultCurrency.currencyName,
+              currencyCode: defaultCurrency.currencyCode,
+              primaryStatus: 1,
+            },
+          ]),
+        ); // 将选中的语言作为字符串发送
+        initCurrencyFetcher.submit(formData, {
+          method: "post",
+          action: "/app/currency",
+        }); // 提交表单请求
+      } else if (
+        primaryCurrency?.currencyCode !=
+          loadingFetcher.data.defaultCurrencyCode &&
+        defaultCurrency
+      ) {
+        const formData = new FormData();
+        formData.append(
+          "updateDefaultCurrency",
+          JSON.stringify({
+            currencyName: defaultCurrency.currencyName,
+            currencyCode: defaultCurrency.currencyCode,
+            primaryStatus: 1,
+          }),
+        ); // 将选中的语言作为字符串发送
+        initCurrencyFetcher.submit(formData, {
+          method: "post",
+          action: "/app/currency",
+        }); // 提交表单请求
+      }
     }
   }, [loadingFetcher.data]);
 
@@ -308,6 +381,16 @@ const Index = () => {
       title: "Rounding",
       dataIndex: "rounding",
       key: "rounding",
+      render: (_: any, record: any) => {
+        switch (record.rounding) {
+          case "":
+            return <Text>Default</Text>;
+          case "0":
+            return <Text>No decimal</Text>;
+          default:
+            return <Text>{record.rounding}</Text>;
+        }
+      },
     },
     {
       title: "Exchange rate",
@@ -318,8 +401,7 @@ const Index = () => {
           <Text>Auto</Text>
         ) : (
           <Text>
-            {defaultSymbol}1 = {record.exchangeRate}{" "}
-            {record.currencyCode}
+            {defaultSymbol}1 = {record.exchangeRate} {record.currencyCode}
           </Text>
         ),
     },
@@ -380,7 +462,6 @@ const Index = () => {
       // dispatch(setTableData(newData)); // 更新表格数据
     } else {
       console.log(selectedRowKeys);
-
       formData.append("deleteCurrencies", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
       deleteFetcher.submit(formData, {
         method: "post",
