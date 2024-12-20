@@ -437,7 +437,8 @@ export const updateManageTranslation = async ({
     // 遍历 confirmData 数组
     for (const item of confirmData) {
       if (item.translatableContentDigest && item.locale) {
-        if (item.value && item.value != "<p></p>") {
+        console.log("updateManageTranslation: ",item.value);
+        if (item.value && item.value != "<p><br></p>") {
           const response = await axios({
             url: `${process.env.SERVER_URL}/shopify/updateShopifyDataByTranslateTextRequest`,
             method: "POST",
