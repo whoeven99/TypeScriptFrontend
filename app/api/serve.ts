@@ -295,10 +295,8 @@ export const GetLanguageLocaleInfo = async ({
 //查询语言状态
 export const GetLanguageList = async ({
   shop,
-  accessToken,
 }: {
   shop: string;
-  accessToken: string | undefined;
 }) => {
   try {
     const response = await axios({

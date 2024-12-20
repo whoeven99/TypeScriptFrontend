@@ -140,7 +140,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
 
         const words = await GetUserWords({ shop });
-        const languagesLoad = await GetLanguageList({ shop, accessToken });
+        const languagesLoad = await GetLanguageList({ shop });
 
         return json({
           shop: shop,
