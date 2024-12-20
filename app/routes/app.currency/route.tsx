@@ -28,7 +28,6 @@ import AddCurrencyModal from "./components/addCurrencyModal";
 import CurrencyEditModal from "./components/currencyEditModal";
 import {
   setTableData,
-  updateTableData,
 } from "~/store/modules/currencyDataTable";
 import SwitcherSettingCard from "./components/switcherSettingCard";
 

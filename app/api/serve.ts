@@ -295,8 +295,10 @@ export const GetLanguageLocaleInfo = async ({
 //查询语言状态
 export const GetLanguageList = async ({
   shop,
+  accessToken,
 }: {
   shop: string;
+  accessToken: string | undefined;
 }) => {
   try {
     const response = await axios({
@@ -655,7 +657,7 @@ export const DeleteCurrency = async ({
   id,
 }: {
   request: Request;
-  id: string;
+  id: number;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
@@ -670,6 +672,8 @@ export const DeleteCurrency = async ({
     });
 
     const res = response.data;
+    console.log(res);
+
     return res;
   } catch (error) {
     console.error("Error delete currency:", error);
@@ -736,6 +740,7 @@ export const GetCurrencyByShopName = async ({
     });
 
     const res = response.data.response;
+    console.log("currency: ", res);
     if (res) {
       const data = res.map((item: any) => ({
         key: item.id, // 将 id 转换为 key
