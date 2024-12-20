@@ -1,112 +1,87 @@
-<link
-  rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-  integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM3Y6D1a2wlO/ZwW5V1ZwP0pPXX4s5bxm8s6o"
-  crossorigin="anonymous"
->
+<link rel="stylesheet" href="{{ 'switcher.css' | asset_url }}">
 
-<div id="container" style="position: fixed; bottom: 80px; right: 20px; width: 200px; display: none;">
-  <div
-    id="selector-box"
-    style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%;"
-  >
-    <select id="language-switcher" style="width: 100%;"></select>
+{% if localization.available_languages.size > 1 %}
+  <ciwiswitcher-form>
+    {% form 'localization' %}
+      <div
+        id="ciwi-container"
+        style="position: fixed; bottom: 80px; left: 20px; width: 200px; display: none;"
+      >
+        <div
+          id="selector-box"
+          style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%; display: none"
+        >
+          <label for="language-switcher" class="language_title">Language</label>
+          <div class="select-wrapper">
+            <select id="language-switcher" class="ciwi_select">
+              {% for language in localization.available_languages %}
+                <option
+                  value="{{language.iso_code}}"
+                  {% if language.iso_code == localization.language.iso_code %}
+                    selected
+                  {% endif %}
+                >
+                  {{ language.endonym_name | capitalize }}
+                </option>
+              {% endfor %}
+            </select>
+            <img
+              id="language-arrow-icon"
+              class="arrow_icon"
+              src="{{ 'arrow.svg' | asset_url }}"
+              alt="Arrow Icon"
+              width="25%"
+              height="25%"
+            >
+          </div>
+          <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">
 
-    <select id="currency-switcher" style="margin-top: 10px; width: 100%;"></select>
+          <label for="currency-switcher" class="currency_title">Currency</label>
+          <div class="select-wrapper">
+            <select id="currency-switcher" class="ciwi_select"></select>
+            <img
+              id="currency-arrow-icon"
+              class="arrow_icon"
+              src="{{ 'arrow.svg' | asset_url }}"
+              alt="Arrow Icon"
+              width="25%"
+              height="25%"
+            >
+          </div>
+          <input type="hidden" name="currency_code" value="">
+          <div class="button_wrapper">
+            <button id="switcher-confirm" class="ciwi_switcher_confirm_button">Confirm</button>
+            <button id="switcher-close" class="ciwi_switcher_cancel_button">Cancel</button>
+          </div>
+        </div>
+        <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
+        <input id="queryMoneyFormat" type="hidden" value="{{ shop.money_format | strip_html }}">
+        <div
+          id="main-box"
+          class="main_box"
+        >
+          <span id="display-text">{{ localization.language.endonym_name | capitalize }}</span>
+          <span id="arrow" style="float: right;"><i class="fas fa-chevron-up"></i></span>
+          <img
+            id="mainbox-arrow-icon"
+            class="mainarrow_icon"
+            src="{{ 'arrow.svg' | asset_url }}"
+            alt="Arrow Icon"
+            width="25%"
+            height="25%"
+          >
+        </div>
+      </div>
+    {% endform %}
+  </ciwiswitcher-form>
+{% endif %}
 
-    <button onclick="applyChanges()" style="margin-top: 10px;">确定</button>
-    <button onclick="toggleSelector()" style="margin-left: 5px;">关闭</button>
-  </div>
-
-  <div
-    id="main-box"
-    style="background: #f0f0f0; padding: 10px; border-radius: 5px; cursor: pointer; text-align: center;"
-  >
-    <span id="display-text"></span>
-    <span id="arrow" style="float: right;"><i class="fas fa-chevron-up"></i></span>
-  </div>
-</div>
-
-<script>
-  // 模拟从后端获取语言和货币选项
-  function fetchOptions() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // 模拟的后端数据
-        const data = {
-          languages: [
-            { value: 'zh', text: '中文' },
-            { value: 'en', text: '英语' },
-            { value: 'fr', text: '法语' },
-          ],
-          currencies: [
-            { value: 'CNY', text: '人民币 (CNY)' },
-            { value: 'USD', text: '美元 (USD)' },
-            { value: 'EUR', text: '欧元 (EUR)' },
-          ],
-        };
-        resolve(data);
-      }, 1000); // 模拟网络延迟
-    });
-  }
-
-  // 页面加载时获取语言和货币选项
-  window.onload = async function () {
-    const { languages, currencies } = await fetchOptions();
-
-    // 填充语言选择框
-    const languageSwitcher = document.getElementById('language-switcher');
-    languages.forEach((lang) => {
-      const option = new Option(lang.text, lang.value);
-      languageSwitcher.add(option);
-    });
-
-    // 填充货币选择框
-    const currencySwitcher = document.getElementById('currency-switcher');
-    currencies.forEach((currency) => {
-      const option = new Option(currency.text, currency.value);
-      currencySwitcher.add(option);
-    });
-
-    // 设置默认值为第一个选项
-    languageSwitcher.value = languages[0].value;
-    currencySwitcher.value = currencies[0].value;
-
-    // 更新主框显示内容
-    updateDisplayText();
-
-    // 数据加载完成后显示组件
-    document.getElementById('container').style.display = 'block';
-  };
-
-  function toggleSelector() {
-    const box = document.getElementById('selector-box');
-    box.style.display = box.style.display === 'none' ? 'block' : 'none';
-    const arrow = document.getElementById('arrow');
-    arrow.innerHTML =
-      box.style.display === 'block' ? '<i class="fas fa-chevron-down"></i>' : '<i class="fas fa-chevron-up"></i>';
-  }
-
-  // 更新主框的显示文本
-  function updateDisplayText() {
-    const language = document.getElementById('language-switcher').selectedOptions[0].text;
-    const currency = document.getElementById('currency-switcher').selectedOptions[0].text;
-    document.getElementById('display-text').textContent = `${language} / ${currency}`;
-  }
-
-  // 点击“确定”时更新主框的语言和货币显示
-  function applyChanges() {
-    updateDisplayText(); // 更新显示内容
-    toggleSelector(); // 关闭选择框
-  }
-
-  // 当选择变化时更新主框
-  document.getElementById('main-box').onclick = toggleSelector;
-</script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" async></script>
+<script src="{{ 'switcher.js' | asset_url }}" async></script>
 
 {% schema %}
 {
-  "name": "Zinn_Switcher",
+  "name": "Ciwi_Switcher",
   "target": "body",
   "settings": []
 }

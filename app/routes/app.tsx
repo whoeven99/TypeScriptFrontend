@@ -295,6 +295,7 @@ export default function App() {
           </Link>
           <Link to="/app/language">Language</Link>
           <Link to="/app/manage_translation">Manage Translation</Link>
+          <Link to="/app/currency">Currency</Link>
           <Link to="/app/glossary">Glossary</Link>
         </NavMenu>
         <Outlet />

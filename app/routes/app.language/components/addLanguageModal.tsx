@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Modal, Input, Table, Space, message, Button } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
-import SelectedLanguageTag from "../../../components/selectedLanguageTag";
+import SelectedTag from "../../../components/selectedTag";
 import {
   AllLanguagesType,
   LanguagesDataType,
@@ -64,7 +64,6 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
 
   useEffect(() => {
     if (addFetcher.data && addFetcher.data.data.length) {
-      message.success("Add success");
       const data = addFetcher.data.data.map((lang: any, i: any) => ({
         language: lang.name,
         localeName: languageLocaleInfo[addFetcher.data.data[i].locale].Local,
@@ -76,6 +75,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
         loading: false,
       }));
       dispatch(updateTableData(data));
+      message.success("Add success");
     }
     setIsModalOpen(false);
     setConfirmButtonDisable(false);
@@ -324,7 +324,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
         {allSelectedKeys.map((key) => {
           const language = allLanguages.find((lang) => lang.key === key)?.name;
           return (
-            <SelectedLanguageTag
+            <SelectedTag
               key={key}
               item={language!}
               onRemove={() => handleRemoveLanguage(key)}
@@ -338,6 +338,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
         dataSource={filteredLanguages}
         columns={columns}
         rowKey="key"
+        loading={confirmButtonDisable}
         pagination={{
           pageSize: 10, // 每页默认显示 10 条
           position: ["bottomCenter"], // 将分页组件居中
