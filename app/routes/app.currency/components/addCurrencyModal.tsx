@@ -103,6 +103,14 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     setFilteredCurrencies(sortedFilteredCurrencies);
   }, [selectedCurrency, isVisible]);
 
+  useEffect(() => {
+    if (allSelectedCurrency) console.log(allSelectedCurrency);
+  }, [allSelectedCurrency]);
+
+  useEffect(() => {
+    if (allSelectedKeys) console.log(allSelectedKeys);
+  }, [allSelectedKeys]);
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchInput(value);
@@ -131,38 +139,49 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     }
     const filteredData = addCurrencies
       .map((cur) => {
-        if (selectedCurrenciesSet.has(cur.currencyCode)) {
-          // 检查是否是默认语言
-          const isPrimary = cur.currencyCode === defaultCurrencyCode;
-
-          return { ...cur, state: isPrimary ? "Primary" : "Added" }; // 根据 primary 设置状态
-        }
-        return { ...cur, state: "" }; // 其他语言的默认状态
+        const isPrimary = selectedCurrenciesSet.has(cur.currencyCode);
+        return {
+          ...cur,
+          state: isPrimary
+            ? cur.currencyCode === defaultCurrencyCode
+              ? "Primary"
+              : "Added"
+            : "",
+        };
       })
-      .filter((cur) =>
-        cur.currencyName.toLowerCase().includes(value.toLowerCase()),
+      .filter(
+        (cur) =>
+          cur.currencyName.toLowerCase().includes(value.toLowerCase()) ||
+          cur.currencyCode.toLowerCase().includes(value.toLowerCase()),
       );
+
     setFilteredCurrencies(filteredData);
   };
 
-  const handleRowSelectionChange = (newSelectedRowKeys: React.Key[]) => {
-    const addedKeys = newSelectedRowKeys.filter(
-      (key) => !allSelectedKeys.includes(key),
-    );
-    const removedKeys = allSelectedKeys.filter(
-      (key) => !newSelectedRowKeys.includes(key),
+  const handleRowSelectionChange = (
+    newSelectedRowKeys: React.Key[],
+    e: CurrencyType[],
+  ) => {
+    console.log("e: ", e);
+    console.log("newSelectedRowKeys: ", newSelectedRowKeys);
+
+    const addKeys = [...new Set([...allSelectedKeys, ...newSelectedRowKeys])];
+    const removedKeys = filteredCurrencies
+      .filter((cur) => !e.includes(cur))
+      .map((cur) => cur.key);
+    console.log(removedKeys);
+
+    const updateKeys = addKeys.filter(
+      (item) => !removedKeys.includes(Number(item)),
     );
 
-    const addedCurrencies = addedKeys
+    setAllSelectedKeys(updateKeys);
+
+    const addedCurrencies = allSelectedKeys
       .map((key) => addCurrencies.find((cur) => cur.key === key))
       .filter(Boolean) as CurrencyType[];
 
-    const updatedSelectedCurrencies = allSelectedCurrency.filter(
-      (cur) => !removedKeys.includes(cur.key),
-    );
-
-    setAllSelectedCurrency([...updatedSelectedCurrencies, ...addedCurrencies]);
-    setAllSelectedKeys(newSelectedRowKeys);
+    setAllSelectedCurrency(addedCurrencies);
   };
 
   // 确认选择 -> 触发 action
@@ -201,7 +220,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   // 表格的行选择配置
   const rowSelection = {
     selectedRowKeys: allSelectedKeys.filter((key) =>
-      filteredCurrencies.some((cur) => cur.key === key),
+      addCurrencies.some((cur) => cur.key === key),
     ), // Filter selected keys based on current filtered languages
     onChange: handleRowSelectionChange,
     getCheckboxProps: (record: any) => ({

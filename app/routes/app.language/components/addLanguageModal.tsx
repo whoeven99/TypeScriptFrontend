@@ -153,7 +153,10 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   };
 
   // 增量更新 allSelectedLanguage
-  const handleRowSelectionChange = (newSelectedRowKeys: React.Key[]) => {
+  const handleRowSelectionChange = (
+    newSelectedRowKeys: React.Key[],
+    e: AddLanguageType[],
+  ) => {
     // 计算已选中的语言数量
     const addedLanguagesCount =
       newSelectedRowKeys.length + selectedLanguagesSet.size;
@@ -165,27 +168,53 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       return;
     }
 
-    const addedKeys = newSelectedRowKeys.filter(
-      (key) => !allSelectedKeys.includes(key),
-    );
-    const removedKeys = allSelectedKeys.filter(
-      (key) => !newSelectedRowKeys.includes(key),
-    );
+    console.log("e: ", e);
+    console.log("newSelectedRowKeys: ", newSelectedRowKeys);
 
-    // 增加新选中的语言
-    const addedLanguages = addedKeys
-      .map((key) => allLanguages.find((lang) => lang.key === key))
-      .filter(Boolean) as AllLanguagesType[];
+    const addKeys = [...new Set([...allSelectedKeys, ...newSelectedRowKeys])];
+    const removedKeys = filteredLanguages
+      .filter((lang) => !e.includes(lang))
+      .map((lang) => lang.key);
+    console.log(removedKeys);
 
-    // 删除取消选中的语言
-    const updatedSelectedLanguages = allSelectedLanguage.filter(
-      (lang) => !removedKeys.includes(lang.key),
+    const updateKeys = addKeys.filter(
+      (item) => !removedKeys.includes(Number(item)),
     );
 
-    // 合并新的选择并更新状态
-    setAllSelectedLanguage([...updatedSelectedLanguages, ...addedLanguages]);
-    setAllSelectedKeys(newSelectedRowKeys);
+    setAllSelectedKeys(updateKeys);
+
+    const addedLanguages = allSelectedKeys
+      .map((key) => addLanguages.find((lang) => lang.key === key))
+      .filter(Boolean) as AddLanguageType[];
+
+    setAllSelectedLanguage(addedLanguages);
   };
+
+  // const handleRowSelectionChange = (
+  //   newSelectedRowKeys: React.Key[],
+  //   e: langrencyType[],
+  // ) => {
+  //   console.log("e: ", e);
+  //   console.log("newSelectedRowKeys: ", newSelectedRowKeys);
+
+  //   const addKeys = [...new Set([...allSelectedKeys, ...newSelectedRowKeys])];
+  //   const removedKeys = filteredlangrencies
+  //     .filter((lang) => !e.includes(lang))
+  //     .map((lang) => lang.key);
+  //   console.log(removedKeys);
+
+  //   const updateKeys = addKeys.filter(
+  //     (item) => !removedKeys.includes(Number(item)),
+  //   );
+
+  //   setAllSelectedKeys(updateKeys);
+
+  //   const addedlangrencies = allSelectedKeys
+  //     .map((key) => addlangrencies.find((lang) => lang.key === key))
+  //     .filter(Boolean) as langrencyType[];
+
+  //   setAllSelectedlangrency(addedlangrencies);
+  // };
 
   // 确认选择 -> 触发 action
   const handleConfirm = () => {
