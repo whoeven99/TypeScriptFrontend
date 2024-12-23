@@ -76,11 +76,12 @@ function transform(
   // Remove commas or other unwanted characters
   number = (number * exchangeRate).toFixed(2);
 
+  number = detectNumberFormat(moneyFormat, number, rounding);
+
   const transformedPrice = customRounding(number, rounding);
+  console.log("transformedPrice: ", transformedPrice);
 
-  number = detectNumberFormat(moneyFormat, transformedPrice);
-
-  return `${symbol}${number} ${currencyCode}`;
+  return `${symbol}${transformedPrice} ${currencyCode}`;
 }
 
 function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
@@ -132,7 +133,7 @@ function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
 // Rounding function
 function customRounding(number, rounding) {
   console.log("customRounding: ", number);
-  if (parseFloat(number) === 0) {
+  if (parseFloat(number) === 0 && rounding != "0") {
     return number;
   }
   const integerPart = Math.floor(number);
@@ -141,7 +142,8 @@ function customRounding(number, rounding) {
     case "":
       return number;
     case "0":
-      return number.toFixed(0);
+      const customRoundingNumber = parseFloat(number).toFixed(0);
+      return customRoundingNumber;
     case "1.00":
       return Math.round(number * 100) / 100;
     case "0.99":
@@ -165,6 +167,7 @@ function detectNumberFormat(moneyFormat, transformedPrice) {
   let number = transformedPrice.toString();
   let [integerPart, decimalPart] = number.split("."); // 默认以点为小数点分隔符
   console.log(Number(`0.${decimalPart}`).toFixed(2).slice(2));
+  console.log();
 
   // 处理不同的格式
   switch (moneyFormat) {

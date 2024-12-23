@@ -249,15 +249,12 @@ const Index = () => {
     if (loadingFetcher.data && currencyData.length) {
       setDefaultCurrencyCode(loadingFetcher.data.defaultCurrencyCode);
       const defaultCurrency = currencyData.find((item: CurrencyType) => {
-        console.log(item.currencyCode, loadingFetcher.data.defaultCurrencyCode);
         if (item.currencyCode == loadingFetcher.data.defaultCurrencyCode)
           return item;
       });
       if (defaultCurrency) {
         setDefaultSymbol(defaultCurrency.symbol);
       }
-      console.log(defaultCurrency);
-
       const tableData = loadingFetcher.data.currencyList.filter(
         (item: any) => !item.primaryStatus,
       );
@@ -425,8 +422,8 @@ const Index = () => {
       // 检查 originalData 是否定义
       if (value) {
         const filtered = originalData.filter((data) =>
-          data.currency.toLowerCase().includes(value.toLowerCase()),
-        );
+          data.currency.toLowerCase().includes(value.toLowerCase()) || data.currencyCode.toLowerCase().includes(value.toLowerCase()),
+      );
         setFilteredData(filtered);
       } else {
         setFilteredData(originalData); // 恢复 originalData
@@ -460,7 +457,6 @@ const Index = () => {
       // newData = dataSource.filter((item: CurrencyDataType) => item.key !== key);
       // dispatch(setTableData(newData)); // 更新表格数据
     } else {
-      console.log(selectedRowKeys);
       formData.append("deleteCurrencies", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
       deleteFetcher.submit(formData, {
         method: "post",
