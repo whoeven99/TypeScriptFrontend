@@ -109,6 +109,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!theme:
         try {
           const data = await queryTheme({ request });
+          console.log("theme: ", data);
           return json({ data: data });
         } catch (error) {
           console.error("Error theme currency:", error);
@@ -349,12 +350,12 @@ const Index = () => {
       console.log(blocks);
       console.log(Object.values(blocks));
       console.log(ciwiSwitcherBlocksId);
-      const switcherJson:any = Object.values(blocks).find(
+      const switcherJson: any = Object.values(blocks).find(
         (block: any) => block.type == ciwiSwitcherBlocksId,
       );
       console.log(switcherJson);
-      if(!switcherJson || switcherJson.disabled){
-        setSwitcherEnableCardOpen(true)
+      if (!switcherJson || switcherJson.disabled) {
+        setSwitcherEnableCardOpen(true);
       }
     }
   }, [themeFetcher.data]);
@@ -545,7 +546,7 @@ const Index = () => {
               ciwiSwitcherId={ciwiSwitcherId}
               isEnable={switcherEnableCardOpen}
             />
-            
+
             <div className="currency-header">
               <Title style={{ fontSize: "1.25rem", display: "inline" }}>
                 Currency
