@@ -14,7 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { SearchOutlined } from "@ant-design/icons";
 import { BaseOptionType, DefaultOptionType } from "antd/es/select";
-import { queryShop } from "~/api/admin";
+import { queryShop, queryTheme } from "~/api/admin";
 import {
   AddCurrency,
   DeleteCurrency,
@@ -26,9 +26,7 @@ import {
 import { authenticate } from "~/shopify.server";
 import AddCurrencyModal from "./components/addCurrencyModal";
 import CurrencyEditModal from "./components/currencyEditModal";
-import {
-  setTableData,
-} from "~/store/modules/currencyDataTable";
+import { setTableData } from "~/store/modules/currencyDataTable";
 import SwitcherSettingCard from "./components/switcherSettingCard";
 
 const { Title, Text } = Typography;
@@ -57,6 +55,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     // 返回包含 userId 的 json 响应
     return json({
       shop,
+      ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID,
+      ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID,
     });
   } catch (error) {
     // 打印错误信息，方便调试
@@ -71,6 +71,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
 
     const loading = JSON.parse(formData.get("loading") as string);
+    const theme = JSON.parse(formData.get("theme") as string);
     const updateDefaultCurrency = JSON.parse(
       formData.get("updateDefaultCurrency") as string,
     );
@@ -105,6 +106,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.error("Error loading currency:", error);
           return json({ error: "Error loading currency" }, { status: 500 });
         }
+      case !!theme:
+        try {
+          const data = await queryTheme({ request });
+          return json({ data: data });
+        } catch (error) {
+          console.error("Error theme currency:", error);
+          return json({ error: "Error theme currency" }, { status: 500 });
+        }
       case !!updateDefaultCurrency:
         try {
           const data = await UpdateDefaultCurrency({
@@ -115,9 +124,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
           return json({ data: data });
         } catch (error) {
-          console.error("Error updateDefaultCurrency:", error);
+          console.error("Error updateDefaultCurrency currency:", error);
           return json(
-            { error: "Error updateDefaultCurrency" },
+            { error: "Error updateDefaultCurrency currency" },
             { status: 500 },
           );
         }
@@ -149,8 +158,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
           return json({ data: res });
         } catch (error) {
-          console.error("Error addCurrencies:", error);
-          return json({ error: "Error addCurrencies" }, { status: 500 });
+          console.error("Error addCurrencies currency:", error);
+          return json(
+            { error: "Error addCurrencies currency" },
+            { status: 500 },
+          );
         }
       case !!deleteCurrencies:
         const promises = deleteCurrencies.map(async (currency) => {
@@ -187,7 +199,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop } = useLoaderData<typeof loader>();
+  const { shop, ciwiSwitcherId, ciwiSwitcherBlocksId } =
+    useLoaderData<typeof loader>();
   const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
   const [loading, setLoading] = useState<boolean>(true);
   const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>(
@@ -204,6 +217,8 @@ const Index = () => {
   const [moneyFormatHtml, setMoneyFormatHtml] = useState<string | null>("");
   const [moneyWithCurrencyFormatHtml, setMoneyWithCurrencyFormatHtml] =
     useState<string | null>("");
+  const [switcherEnableCardOpen, setSwitcherEnableCardOpen] =
+    useState<boolean>(false);
   const [selectedRow, setSelectedRow] = useState<
     CurrencyDataType | undefined
   >();
@@ -220,13 +235,20 @@ const Index = () => {
 
   const dispatch = useDispatch();
   const loadingFetcher = useFetcher<any>();
+  const themeFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
   const initCurrencyFetcher = useFetcher<any>();
 
   useEffect(() => {
-    const formData = new FormData();
-    formData.append("loading", JSON.stringify(true));
-    loadingFetcher.submit(formData, {
+    const loadingFormData = new FormData();
+    loadingFormData.append("loading", JSON.stringify(true));
+    loadingFetcher.submit(loadingFormData, {
+      method: "post",
+      action: "/app/currency",
+    });
+    const themeFormData = new FormData();
+    themeFormData.append("theme", JSON.stringify(true));
+    themeFetcher.submit(themeFormData, {
       method: "post",
       action: "/app/currency",
     });
@@ -313,6 +335,25 @@ const Index = () => {
       }
     }
   }, [loadingFetcher.data]);
+
+  useEffect(() => {
+    if (themeFetcher.data) {
+      const switcherData =
+        themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
+      console.log(switcherData);
+      const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+      console.log(jsonString);
+
+      const blocks = JSON.parse(jsonString).current.blocks;
+      const switcherJson:any = Object.values(blocks).find(
+        (block: any) => block.type === ciwiSwitcherBlocksId,
+      );
+      console.log(switcherJson);
+      if(!switcherJson || switcherJson.disabled){
+        setSwitcherEnableCardOpen(true)
+      }
+    }
+  }, [themeFetcher.data]);
 
   useEffect(() => {
     if (deleteFetcher.data !== undefined) {
@@ -421,9 +462,11 @@ const Index = () => {
     if (originalData) {
       // 检查 originalData 是否定义
       if (value) {
-        const filtered = originalData.filter((data) =>
-          data.currency.toLowerCase().includes(value.toLowerCase()) || data.currencyCode.toLowerCase().includes(value.toLowerCase()),
-      );
+        const filtered = originalData.filter(
+          (data) =>
+            data.currency.toLowerCase().includes(value.toLowerCase()) ||
+            data.currencyCode.toLowerCase().includes(value.toLowerCase()),
+        );
         setFilteredData(filtered);
       } else {
         setFilteredData(originalData); // 恢复 originalData
@@ -494,7 +537,11 @@ const Index = () => {
               settingUrl={settingUrl}
               moneyFormatHtml={moneyFormatHtml}
               moneyWithCurrencyFormatHtml={moneyWithCurrencyFormatHtml}
+              shop={shop}
+              ciwiSwitcherId={ciwiSwitcherId}
+              isEnable={switcherEnableCardOpen}
             />
+            
             <div className="currency-header">
               <Title style={{ fontSize: "1.25rem", display: "inline" }}>
                 Currency

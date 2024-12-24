@@ -76,12 +76,12 @@ function transform(
   // Remove commas or other unwanted characters
   number = (number * exchangeRate).toFixed(2);
 
-  number = detectNumberFormat(moneyFormat, number, rounding);
-
   const transformedPrice = customRounding(number, rounding);
   console.log("transformedPrice: ", transformedPrice);
 
-  return `${symbol}${transformedPrice} ${currencyCode}`;
+  number = detectNumberFormat(moneyFormat, transformedPrice, rounding);
+
+  return `${symbol}${number} ${currencyCode}`;
 }
 
 function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
@@ -163,63 +163,101 @@ function customRounding(number, rounding) {
   }
 }
 
-function detectNumberFormat(moneyFormat, transformedPrice) {
+function detectNumberFormat(moneyFormat, transformedPrice, rounding) {
   let number = transformedPrice.toString();
   let [integerPart, decimalPart] = number.split("."); // 默认以点为小数点分隔符
   console.log(Number(`0.${decimalPart}`).toFixed(2).slice(2));
-  console.log();
 
-  // 处理不同的格式
-  switch (moneyFormat) {
-    case "amount":
-      // 默认格式，带有逗号作为千位分隔符，保留小数
-      return formatWithComma(
-        integerPart,
-        Number(`0.${decimalPart}`).toFixed(2).slice(2),
-      );
+  if ((rounding == "0")) {
+    // 处理不同的格式
+    switch (moneyFormat) {
+      case "amount":
+        // 默认格式，带有逗号作为千位分隔符，保留小数
+        return formatWithComma(integerPart, "");
 
-    case "amount_no_decimals":
-      // 无小数，千位分隔符
-      return formatWithComma(integerPart, "");
+      case "amount_no_decimals":
+        // 无小数，千位分隔符
+        return formatWithComma(integerPart, "");
 
-    case "amount_with_comma_separator":
-      // 使用逗号作为千位分隔符，且使用逗号为小数点
-      return formatWithCommaAndCommaDecimal(
-        integerPart,
-        Number(`0.${decimalPart}`).toFixed(2).slice(2),
-      );
+      case "amount_with_comma_separator":
+        // 使用逗号作为千位分隔符，且使用逗号为小数点
+        return formatWithCommaAndCommaDecimal(integerPart, "");
 
-    case "amount_no_decimals_with_comma_separator":
-      // 无小数，千位分隔符，且使用逗号为小数点
-      return formatWithCommaAndCommaDecimal(integerPart, "");
+      case "amount_no_decimals_with_comma_separator":
+        // 无小数，千位分隔符，且使用逗号为小数点
+        return formatWithCommaAndCommaDecimal(integerPart, "");
 
-    case "amount_with_apostrophe_separator":
-      // 使用撇号作为千位分隔符
-      return formatWithApostrophe(
-        integerPart,
-        Number(`0.${decimalPart}`).toFixed(2).slice(2),
-      );
+      case "amount_with_apostrophe_separator":
+        // 使用撇号作为千位分隔符
+        return formatWithApostrophe(integerPart, "");
 
-    case "amount_no_decimals_with_space_separator":
-      // 无小数，使用空格作为千位分隔符
-      return formatWithSpace(integerPart, "");
+      case "amount_no_decimals_with_space_separator":
+        // 无小数，使用空格作为千位分隔符
+        return formatWithSpace(integerPart, "");
 
-    case "amount_with_space_separator":
-      // 使用空格作为千位分隔符，且使用逗号为小数点
-      return formatWithSpace(
-        integerPart,
-        Number(`0.${decimalPart}`).toFixed(2).slice(2),
-      );
+      case "amount_with_space_separator":
+        // 使用空格作为千位分隔符，且使用逗号为小数点
+        return formatWithSpace(integerPart, "");
 
-    case "amount_with_period_and_space_separator":
-      // 使用空格作为千位分隔符，点作为小数点
-      return formatWithSpaceAndPeriod(
-        integerPart,
-        Number(`0.${decimalPart}`).toFixed(2).slice(2),
-      );
+      case "amount_with_period_and_space_separator":
+        // 使用空格作为千位分隔符，点作为小数点
+        return formatWithSpaceAndPeriod(integerPart, "");
 
-    default:
-      return transformedPrice; // 默认返回原始的转换价格
+      default:
+        return transformedPrice; // 默认返回原始的转换价格
+    }
+  } else {
+    switch (moneyFormat) {
+      case "amount":
+        // 默认格式，带有逗号作为千位分隔符，保留小数
+        return formatWithComma(
+          integerPart,
+          Number(`0.${decimalPart}`).toFixed(2).slice(2),
+        );
+
+      case "amount_no_decimals":
+        // 无小数，千位分隔符
+        return formatWithComma(integerPart, "");
+
+      case "amount_with_comma_separator":
+        // 使用逗号作为千位分隔符，且使用逗号为小数点
+        return formatWithCommaAndCommaDecimal(
+          integerPart,
+          Number(`0.${decimalPart}`).toFixed(2).slice(2),
+        );
+
+      case "amount_no_decimals_with_comma_separator":
+        // 无小数，千位分隔符，且使用逗号为小数点
+        return formatWithCommaAndCommaDecimal(integerPart, "");
+
+      case "amount_with_apostrophe_separator":
+        // 使用撇号作为千位分隔符
+        return formatWithApostrophe(
+          integerPart,
+          Number(`0.${decimalPart}`).toFixed(2).slice(2),
+        );
+
+      case "amount_no_decimals_with_space_separator":
+        // 无小数，使用空格作为千位分隔符
+        return formatWithSpace(integerPart, "");
+
+      case "amount_with_space_separator":
+        // 使用空格作为千位分隔符，且使用逗号为小数点
+        return formatWithSpace(
+          integerPart,
+          Number(`0.${decimalPart}`).toFixed(2).slice(2),
+        );
+
+      case "amount_with_period_and_space_separator":
+        // 使用空格作为千位分隔符，点作为小数点
+        return formatWithSpaceAndPeriod(
+          integerPart,
+          Number(`0.${decimalPart}`).toFixed(2).slice(2),
+        );
+
+      default:
+        return transformedPrice; // 默认返回原始的转换价格
+    }
   }
 }
 

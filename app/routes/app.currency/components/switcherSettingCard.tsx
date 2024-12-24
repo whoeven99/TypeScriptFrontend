@@ -5,16 +5,25 @@ import { useEffect, useState } from "react";
 const { Title, Text, Paragraph } = Typography;
 
 interface SwitcherSettingCardProps {
+  isEnable: boolean;
+  shop: string;
+  ciwiSwitcherId: string;
   settingUrl: string;
   moneyWithCurrencyFormatHtml: string | null; //HTML with currency:
   moneyFormatHtml: string | null; //HTML without currency:
 }
 
 const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
+  isEnable,
+  shop,
+  ciwiSwitcherId,
   settingUrl,
   moneyWithCurrencyFormatHtml,
   moneyFormatHtml,
 }) => {
+  const blockUrl = `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/switcher`;
+  const supportUrl =
+    "http://ciwi.bogdatech.com/help/uncategorized/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/";
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [isWithMoneyVisible, setIsWithMoneyVisible] = useState<boolean>(true);
   const [isWithoutMoneyVisible, setIsWithoutMoneyVisible] =
@@ -52,7 +61,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
 
   return (
     <div>
-      {isVisible && (
+      {isVisible ? (
         <Card>
           <Space direction="vertical" size="small" style={{ display: "flex" }}>
             <div className="card-header">
@@ -108,6 +117,36 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             )}
           </Space>
         </Card>
+      ) : (
+        isEnable && (
+          <Card>
+            <Space
+              direction="vertical"
+              size="small"
+              style={{ display: "flex" }}
+            >
+              <div className="card-header">
+                <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+                  Why does switcher not display on the website？
+                </Title>
+              </div>
+              <Text>
+                Please{" "}
+                <Link url={blockUrl} target="_blank">
+                  Click here
+                </Link>{" "}
+                to go to Shopify theme editor {">>"} enable "Translator Core
+                Snippet" {">>"} click the "Save" button in the right corner.
+              </Text>
+              <Text>
+                Please refer to this {" "}
+                <Link url={supportUrl} target="_blank">
+                  step-by-step guide
+                </Link>
+              </Text>
+            </Space>
+          </Card>
+        )
       )}
     </div>
   );
