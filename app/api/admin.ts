@@ -144,10 +144,11 @@ export const queryTheme = async ({ request }: { request: Request }) => {
       },
       data: JSON.stringify({ query }),
     });
+    console.log("queryTheme: ", response);
     const res = response.data.data.themes;
     return res;
   } catch (error) {
-    console.error("Error fetching themes:", error);
+    console.error("Error queryTheme:", error);
     throw error;
   }
 };
