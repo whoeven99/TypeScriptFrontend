@@ -236,6 +236,7 @@ const Index = () => {
   const dispatch = useDispatch();
   const loadingFetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
+  const rateFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
   const initCurrencyFetcher = useFetcher<any>();
 
@@ -249,6 +250,12 @@ const Index = () => {
     const themeFormData = new FormData();
     themeFormData.append("theme", JSON.stringify(true));
     themeFetcher.submit(themeFormData, {
+      method: "post",
+      action: "/app/currency",
+    });
+    const rateFormData = new FormData();
+    rateFormData.append("theme", JSON.stringify(true));
+    rateFetcher.submit(rateFormData, {
       method: "post",
       action: "/app/currency",
     });
@@ -283,6 +290,11 @@ const Index = () => {
       setOriginalData(tableData);
       setFilteredData(tableData); // 用加载的数据初始化 filteredData
       dispatch(setTableData(tableData));
+      const autoRateData = loadingFetcher.data.currencyList
+        .filter((item: any) => item.exchangeRate == "Auto")
+        .map((item: any) => item.currencyCode);
+      console.log("autoRateData: ", autoRateData);
+        
       const parser = new DOMParser();
       const parsedMoneyFormat = parser.parseFromString(
         loadingFetcher.data.moneyFormat,
@@ -349,12 +361,12 @@ const Index = () => {
       console.log(blocks);
       console.log(Object.values(blocks));
       console.log(ciwiSwitcherBlocksId);
-      const switcherJson:any = Object.values(blocks).find(
+      const switcherJson: any = Object.values(blocks).find(
         (block: any) => block.type == ciwiSwitcherBlocksId,
       );
       console.log(switcherJson);
-      if(!switcherJson || switcherJson.disabled){
-        setSwitcherEnableCardOpen(true)
+      if (!switcherJson || switcherJson.disabled) {
+        setSwitcherEnableCardOpen(true);
       }
     }
   }, [themeFetcher.data]);
@@ -403,7 +415,7 @@ const Index = () => {
     { value: "0.99", label: "0.99" },
     { value: "0.95", label: "0.95" },
     { value: "0.75", label: "0.75" },
-    { value: "0.5", label: "0.5" },
+    { value: "0.5", label: "0.50" },
     { value: "0.25", label: "0.25" },
   ];
 
@@ -545,7 +557,7 @@ const Index = () => {
               ciwiSwitcherId={ciwiSwitcherId}
               isEnable={switcherEnableCardOpen}
             />
-            
+
             <div className="currency-header">
               <Title style={{ fontSize: "1.25rem", display: "inline" }}>
                 Currency

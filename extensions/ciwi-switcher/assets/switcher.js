@@ -133,10 +133,13 @@ function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
 // Rounding function
 function customRounding(number, rounding) {
   console.log("customRounding: ", number);
+
   if (parseFloat(number) === 0 && rounding != "0") {
     return number;
   }
   const integerPart = Math.floor(number);
+  console.log("integerPart: ", integerPart);
+
 
   switch (rounding) {
     case "":
@@ -145,7 +148,7 @@ function customRounding(number, rounding) {
       const customRoundingNumber = parseFloat(number).toFixed(0);
       return customRoundingNumber;
     case "1.00":
-      return Math.round(number * 100) / 100;
+      return integerPart.toFixed(2);
     case "0.99":
       console.log(integerPart + 0.99);
       return integerPart + 0.99;
@@ -155,7 +158,7 @@ function customRounding(number, rounding) {
     case "0.75":
       return integerPart + 0.75;
     case "0.5":
-      return integerPart + 0.5;
+      return (integerPart + 0.5).toFixed(2);
     case "0.25":
       return integerPart + 0.25;
     default:
@@ -168,7 +171,7 @@ function detectNumberFormat(moneyFormat, transformedPrice, rounding) {
   let [integerPart, decimalPart] = number.split("."); // 默认以点为小数点分隔符
   console.log(Number(`0.${decimalPart}`).toFixed(2).slice(2));
 
-  if ((rounding == "0")) {
+  if (rounding == "0") {
     // 处理不同的格式
     switch (moneyFormat) {
       case "amount":
@@ -479,6 +482,7 @@ window.onload = async function () {
     let rate = selectedCurrency.exchangeRate;
     if (selectedCurrency.exchangeRate == "Auto") {
       rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
+      console.log("rate: ", rate);
       if (typeof rate != "number") {
         rate = 1;
       }
