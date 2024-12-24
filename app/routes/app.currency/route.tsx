@@ -56,7 +56,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return json({
       shop,
       ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID,
-      ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID,
+      ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_TYPE,
     });
   } catch (error) {
     // 打印错误信息，方便调试
