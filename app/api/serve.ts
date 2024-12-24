@@ -293,11 +293,7 @@ export const GetLanguageLocaleInfo = async ({
 };
 
 //查询语言状态
-export const GetLanguageList = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
+export const GetLanguageList = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}`,
@@ -437,7 +433,7 @@ export const updateManageTranslation = async ({
     // 遍历 confirmData 数组
     for (const item of confirmData) {
       if (item.translatableContentDigest && item.locale) {
-        console.log("updateManageTranslation: ",item.value);
+        console.log("updateManageTranslation: ", item.value);
         if (item.value && item.value != "<p><br></p>") {
           const response = await axios({
             url: `${process.env.SERVER_URL}/shopify/updateShopifyDataByTranslateTextRequest`,
@@ -756,6 +752,33 @@ export const GetCurrencyByShopName = async ({
   } catch (error) {
     console.error("Error get currency:", error);
     throw new Error("Error get currency");
+  }
+};
+
+//获取自动汇率
+export const GetCacheData = async ({
+  shop,
+  currencyCode,
+}: {
+  shop: string;
+  currencyCode: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        currencyCode: currencyCode,
+      },
+    });
+
+    const res = response.data.response;
+    console.log("currency: ", res);
+    return res.exchangeRate;
+  } catch (error) {
+    console.error("Error GetCacheData:", error);
+    throw new Error("Error GetCacheData");
   }
 };
 

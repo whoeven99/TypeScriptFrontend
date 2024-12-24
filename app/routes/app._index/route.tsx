@@ -217,6 +217,7 @@ const Index = () => {
               open={newUserModal}
               footer={
                 <Button
+                  type="primary"
                   onClick={onClick}
                   loading={newUserModalLoading}
                   disabled={newUserModalLoading}
@@ -230,8 +231,8 @@ const Index = () => {
             >
               <Title level={4}>Congratulations!</Title>
               <Text>
-                You have received 20,000 Credits, enabling you to translate into
-                over 137 languages.
+                You have received 500,000 Credits, enabling you to translate
+                into over 137 languages.
               </Text>
             </Modal>
             <PaymentModal
