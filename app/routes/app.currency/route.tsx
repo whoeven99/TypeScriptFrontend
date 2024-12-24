@@ -338,6 +338,7 @@ const Index = () => {
 
   useEffect(() => {
     if (themeFetcher.data) {
+      console.log(themeFetcher.data);
       const switcherData =
         themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
       console.log(switcherData);
@@ -345,8 +346,11 @@ const Index = () => {
       console.log(jsonString);
 
       const blocks = JSON.parse(jsonString).current.blocks;
+      console.log(blocks);
+      console.log(Object.values(blocks));
+      console.log(ciwiSwitcherBlocksId);
       const switcherJson:any = Object.values(blocks).find(
-        (block: any) => block.type === ciwiSwitcherBlocksId,
+        (block: any) => block.type == ciwiSwitcherBlocksId,
       );
       console.log(switcherJson);
       if(!switcherJson || switcherJson.disabled){
