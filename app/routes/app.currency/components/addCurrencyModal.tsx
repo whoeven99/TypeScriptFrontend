@@ -104,11 +104,11 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   }, [selectedCurrency, isVisible]);
 
   useEffect(() => {
-    if (allSelectedCurrency) console.log(allSelectedCurrency);
-  }, [allSelectedCurrency]);
+    const addedCurrencies = allSelectedKeys
+      .map((key) => addCurrencies.find((cur) => cur.key === key))
+      .filter(Boolean) as CurrencyType[];
 
-  useEffect(() => {
-    if (allSelectedKeys) console.log(allSelectedKeys);
+    setAllSelectedCurrency(addedCurrencies);
   }, [allSelectedKeys]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -176,16 +176,12 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     );
 
     setAllSelectedKeys(updateKeys);
-
-    const addedCurrencies = allSelectedKeys
-      .map((key) => addCurrencies.find((cur) => cur.key === key))
-      .filter(Boolean) as CurrencyType[];
-
-    setAllSelectedCurrency(addedCurrencies);
   };
 
   // 确认选择 -> 触发 action
   const handleConfirm = () => {
+    console.log(allSelectedCurrency);
+
     const formData = new FormData();
     formData.append("addCurrencies", JSON.stringify(allSelectedCurrency)); // 将选中的语言作为字符串发送
 
