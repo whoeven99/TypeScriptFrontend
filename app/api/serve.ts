@@ -755,6 +755,7 @@ export const GetCurrencyByShopName = async ({
   }
 };
 
+//获取自动汇率
 export const GetCacheData = async ({
   shop,
   currencyCode,

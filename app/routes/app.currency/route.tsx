@@ -18,6 +18,7 @@ import { queryShop, queryTheme } from "~/api/admin";
 import {
   AddCurrency,
   DeleteCurrency,
+  GetCacheData,
   GetCurrencyByShopName,
   InitCurrency,
   UpdateCurrency,
@@ -68,10 +69,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop } = adminAuthResult.session;
     const formData = await request.formData();
-
     const loading = JSON.parse(formData.get("loading") as string);
     const theme = JSON.parse(formData.get("theme") as string);
+    const rateData = JSON.parse(formData.get("rateData") as string);
     const updateDefaultCurrency = JSON.parse(
       formData.get("updateDefaultCurrency") as string,
     );
@@ -113,6 +116,34 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         } catch (error) {
           console.error("Error theme currency:", error);
           return json({ error: "Error theme currency" }, { status: 500 });
+        }
+      case !!rateData:
+        try {
+          console.log("rateData: ", rateData);
+          const promises = rateData.map((currency: any) => {
+            return GetCacheData({
+              shop,
+              currencyCode: currency.currencyCode,
+            });
+          });
+          console.log("promises: ", promises);
+
+          // 使用 Promise.allSettled
+          const res = await Promise.allSettled(promises);
+          console.log("result: ", res);
+
+          // 处理每个请求的结果
+          res.forEach((result) => {
+            if (result.status === "fulfilled") {
+              console.log("Request successful:", result.value);
+            } else {
+              console.error("Request failed:", result.reason);
+            }
+          });
+          return json({ data: res });
+        } catch (error) {
+          console.error("Error rateData currency:", error);
+          return json({ error: "Error rateData currency" }, { status: 500 });
         }
       case !!updateDefaultCurrency:
         try {
@@ -253,12 +284,6 @@ const Index = () => {
       method: "post",
       action: "/app/currency",
     });
-    const rateFormData = new FormData();
-    rateFormData.append("theme", JSON.stringify(true));
-    rateFetcher.submit(rateFormData, {
-      method: "post",
-      action: "/app/currency",
-    });
     // 使用 fetch 从 public 文件夹加载 JSON 数据
     fetch("/currencies.json")
       .then((response) => response.json())
@@ -294,7 +319,12 @@ const Index = () => {
         .filter((item: any) => item.exchangeRate == "Auto")
         .map((item: any) => item.currencyCode);
       console.log("autoRateData: ", autoRateData);
-        
+      const rateFormData = new FormData();
+      rateFormData.append("rateData", JSON.stringify(autoRateData));
+      rateFetcher.submit(rateFormData, {
+        method: "post",
+        action: "/app/currency",
+      });
       const parser = new DOMParser();
       const parsedMoneyFormat = parser.parseFromString(
         loadingFetcher.data.moneyFormat,
@@ -350,26 +380,25 @@ const Index = () => {
 
   useEffect(() => {
     if (themeFetcher.data) {
-      console.log(themeFetcher.data);
       const switcherData =
         themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
-      console.log(switcherData);
       const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
-      console.log(jsonString);
-
       const blocks = JSON.parse(jsonString).current.blocks;
-      console.log(blocks);
-      console.log(Object.values(blocks));
-      console.log(ciwiSwitcherBlocksId);
       const switcherJson: any = Object.values(blocks).find(
         (block: any) => block.type == ciwiSwitcherBlocksId,
       );
-      console.log(switcherJson);
       if (!switcherJson || switcherJson.disabled) {
         setSwitcherEnableCardOpen(true);
       }
     }
   }, [themeFetcher.data]);
+
+  useEffect(() => {
+    if (rateFetcher.data) {
+      console.log(rateFetcher.data);
+      
+    }
+  }, [rateFetcher.data]);
 
   useEffect(() => {
     if (deleteFetcher.data !== undefined) {
