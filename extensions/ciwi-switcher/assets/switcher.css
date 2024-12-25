@@ -139,7 +139,7 @@
     position: fixed;
     bottom: 60px;
     width: 50px; /* 只显示左边 50px */
-    background-color: #f0f0f0;
+    background-color: transparent;
     transition: width 0.3s ease; /* 宽度变化时使用过渡效果 */
     z-index: 9999;
     display: none; /* 默认为显示，可以根据需求修改 */
@@ -167,6 +167,7 @@
   .main_box {
     padding: 0%;
     border: 0;
+    background-color: transparent !important;
   }
 
   .mobile_trans_img {
