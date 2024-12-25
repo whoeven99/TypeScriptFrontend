@@ -5,12 +5,13 @@
     {% form 'localization' %}
       <div
         id="ciwi-container"
-        style="position: fixed; bottom: 80px; left: 20px; width: 200px; display: none;"
+        class="ciwi_container"
       >
         <div
           id="selector-box"
           style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%; display: none"
         >
+          <input type="hidden" name="market" value="{{ localization.market.id }}">
           <label for="language-switcher" class="language_title">Language</label>
           <div class="select-wrapper">
             <select id="language-switcher" class="ciwi_select">
@@ -60,8 +61,7 @@
           id="main-box"
           class="main_box"
         >
-          <span id="display-text">{{ localization.language.endonym_name | capitalize }}</span>
-          <span id="arrow" style="float: right;"><i class="fas fa-chevron-up"></i></span>
+          <span id="display-text" class="main_box_text">{{ localization.language.endonym_name | capitalize }}</span>
           <img
             id="mainbox-arrow-icon"
             class="mainarrow_icon"
@@ -69,6 +69,13 @@
             alt="Arrow Icon"
             width="25%"
             height="25%"
+          >
+          <img
+            class="mobile_trans_img"
+            src="{{ 'trans.png' | asset_url }}"
+            alt="Button Image"
+            width="50px"
+            height="50px"
           >
         </div>
       </div>

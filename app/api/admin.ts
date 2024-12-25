@@ -82,6 +82,7 @@ export const queryShop = async ({ request }: { request: Request }) => {
     const query = `{
       shop {
         name
+        shopOwnerName
         contactEmail
         currencyCode
         myshopifyDomain

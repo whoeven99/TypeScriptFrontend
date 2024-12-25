@@ -17,8 +17,14 @@ export interface ConfirmDataType {
 export const UpdateUser = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  console.log("UpdateUser: ", shop);
+
   try {
     const shopData = await queryShop({ request });
+    const shopOwnerName = shopData?.shopOwnerName;
+    const lastSpaceIndex = shopOwnerName.lastIndexOf(" ");
+    const firstName = shopOwnerName.substring(0, lastSpaceIndex);
+    const lastName = shopOwnerName.substring(lastSpaceIndex + 1);
     const Start1 = Date.now(); // 记录结束时间
     const addUserInfoResponse = await axios({
       url: `${process.env.SERVER_URL}/user/add`,
@@ -27,6 +33,9 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         shopName: shop,
         accessToken: accessToken,
         email: shopData.contactEmail,
+        firstName: firstName,
+        lastName: lastName,
+        userTag: shopOwnerName,
       },
     });
     const End1 = Date.now(); // 记录结束时间
@@ -56,8 +65,8 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
       addDefaultLanguagePackResponse.data,
     );
   } catch (error) {
-    console.error("Error user initialization:", error);
-    throw new Error("Error user initialization");
+    console.error("Error UpdateUser:", error);
+    throw new Error("Error UpdateUser");
   }
 };
 
@@ -775,7 +784,10 @@ export const GetCacheData = async ({
 
     const res = response.data.response;
     console.log("currency: ", res);
-    return res.exchangeRate;
+    return {
+      currencyCode: currencyCode,
+      rate: res.exchangeRate,
+    };
   } catch (error) {
     console.error("Error GetCacheData:", error);
     throw new Error("Error GetCacheData");
