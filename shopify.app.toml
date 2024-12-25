@@ -3,7 +3,7 @@
 client_id = "4b05c1caefa9e0761a0538b64159b627"
 name = "Ciwi.ai:FAT(Local)"
 handle = "ciwi_local"
-application_url = "https://objective-regime-vessels-barely.trycloudflare.com"
+application_url = "https://talking-tale-opt-ensemble.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://objective-regime-vessels-barely.trycloudflare.com/auth/callback",
-  "https://objective-regime-vessels-barely.trycloudflare.com/auth/shopify/callback",
-  "https://objective-regime-vessels-barely.trycloudflare.com/api/auth/callback"
+  "https://talking-tale-opt-ensemble.trycloudflare.com/auth/callback",
+  "https://talking-tale-opt-ensemble.trycloudflare.com/auth/shopify/callback",
+  "https://talking-tale-opt-ensemble.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
