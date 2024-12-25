@@ -32,7 +32,11 @@ import {
   GetUserSubscriptionPlan,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
-import { mutationAppSubscriptionCreate, queryShopLanguages } from "~/api/admin";
+import {
+  mutationAppSubscriptionCreate,
+  queryShop,
+  queryShopLanguages,
+} from "~/api/admin";
 import { useEffect } from "react";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
@@ -63,7 +67,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const loading = JSON.parse(formData.get("loading") as string);
     const index = JSON.parse(formData.get("index") as string);
     const translation = JSON.parse(formData.get("translation") as string);
-    const productsItems = JSON.parse(formData.get("productsItems") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
     const payInfo = JSON.parse(formData.get("payInfo") as string);
@@ -88,7 +91,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!loading:
         try {
           const userStart = Date.now(); // 记录开始时间
-          await UpdateUser({ request });
+          await UpdateUser({ request,  });
           const userEnd = Date.now(); // 记录结束时间
           console.log(`UpdateUser took ${userEnd - userStart}ms`);
         } catch (error) {

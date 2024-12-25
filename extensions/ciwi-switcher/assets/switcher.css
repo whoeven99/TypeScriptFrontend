@@ -1,3 +1,11 @@
+.ciwi_container {
+  width: 200px; /* 窄一些 */
+  left: 20px;
+  position: fixed;
+  bottom: 60px;
+  display: none;
+}
+
 .main_box {
   position: relative;
   background: #fff;
@@ -120,4 +128,48 @@
   outline: none;
 
   border-color: rgb(97, 181, 53); /* 鼠标悬停时的边框颜色 */
+}
+
+.mobile_trans_img {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .ciwi_container {
+    position: fixed;
+    bottom: 60px;
+    width: 50px; /* 只显示左边 50px */
+    background-color: #f0f0f0;
+    transition: width 0.3s ease; /* 宽度变化时使用过渡效果 */
+    z-index: 9999;
+    display: none; /* 默认为显示，可以根据需求修改 */
+    height: 50px; /* 设置高度 */
+  }
+
+  .ciwi_container.expanded {
+    width: 200px; /* 展开后显示完整内容 */
+  }
+
+  .arrow_icon,
+  .mainarrow_icon,
+  .main_box_text {
+    display: none;
+  }
+
+  /* 展开时显示选择器框在 ciwi_container 上方 */
+  .ciwi_container.expanded #selector-box {
+    display: block; /* 选择器框可见 */
+    position: absolute;
+    top: -182px; /* 将选择器框置于 ciwi_container 之上 */
+    width: 100%;
+  }
+
+  .main_box {
+    padding: 0%;
+    border: 0;
+  }
+
+  .mobile_trans_img {
+    display: block;
+  }
 }

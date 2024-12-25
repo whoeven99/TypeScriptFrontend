@@ -1,5 +1,5 @@
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Page } from "@shopify/polaris";
+import { Link, Page } from "@shopify/polaris";
 import { Button, Flex, Input, message, Space, Table, Typography } from "antd";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
@@ -120,10 +120,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!rateData:
         try {
           console.log("rateData: ", rateData);
-          const promises = rateData.map((currency: any) => {
+          const promises = rateData.map((currencyCode: any) => {
             return GetCacheData({
               shop,
-              currencyCode: currency.currencyCode,
+              currencyCode: currencyCode,
             });
           });
           console.log("promises: ", promises);
@@ -232,6 +232,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const { shop, ciwiSwitcherId, ciwiSwitcherBlocksId } =
     useLoaderData<typeof loader>();
+  const userShop = `https://${shop}`;
   const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
   const [loading, setLoading] = useState<boolean>(true);
   const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>(
@@ -239,6 +240,7 @@ const Index = () => {
   );
   const [searchInput, setSearchInput] = useState("");
   const [currencyData, setCurrencyData] = useState<CurrencyType[]>([]);
+  const [currencyAutoRate, setCurrencyAutoRate] = useState([]);
   const [defaultSymbol, setDefaultSymbol] = useState<string>("");
   const [deleteloading, setDeleteLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -395,8 +397,19 @@ const Index = () => {
 
   useEffect(() => {
     if (rateFetcher.data) {
-      console.log(rateFetcher.data);
-      
+      console.log(rateFetcher.data?.data);
+      // 创建一个新数组，存放符合条件的 item.value
+      const newRates = rateFetcher.data.data.reduce((acc: any[], item: any) => {
+        if (item.status === "fulfilled" && item.value) {
+          acc.push(item.value); // 将 item.value 添加到数组中
+        }
+        return acc;
+      }, []);
+
+      // 更新状态
+      if (newRates.length > 0) {
+        setCurrencyAutoRate(newRates); // 更新 currencyAutoRates
+      }
     }
   }, [rateFetcher.data]);
 
@@ -453,6 +466,7 @@ const Index = () => {
       title: "Currency",
       dataIndex: "currencyCode",
       key: "currencyCode",
+      width: "20%",
       render: (_: any, record: any) => (
         <Text>
           {record.currency}({record.currencyCode})
@@ -463,6 +477,7 @@ const Index = () => {
       title: "Rounding",
       dataIndex: "rounding",
       key: "rounding",
+      width: "15%",
       render: (_: any, record: any) => {
         switch (record.rounding) {
           case "":
@@ -478,19 +493,33 @@ const Index = () => {
       title: "Exchange rate",
       dataIndex: "exchangeRate",
       key: "exchangeRate",
-      render: (_: any, record: any) =>
-        record.exchangeRate === "Auto" ? (
-          <Text>Auto</Text>
+      width: "35%",
+      render: (_: any, record: any) => {
+        const autoRate: any = currencyAutoRate.find(
+          (item: any) => item?.currencyCode == record.currencyCode,
+        );
+        return record.exchangeRate === "Auto" ? (
+          <div>
+            <Text>Auto</Text>
+            {autoRate && (
+              <Text>
+                ({defaultSymbol}1 = {autoRate.rate.toFixed(4)}{" "}
+                {record.currencyCode})
+              </Text>
+            )}
+          </div>
         ) : (
           <Text>
             {defaultSymbol}1 = {record.exchangeRate} {record.currencyCode}
           </Text>
-        ),
+        );
+      },
     },
     {
       title: "Action",
       dataIndex: "action",
       key: "action",
+      width: "30%",
       render: (_: any, record: any) => (
         <Space>
           <Button onClick={() => handleEdit(record.key)}>Edit</Button>
@@ -558,21 +587,9 @@ const Index = () => {
     setDeleteLoading(true);
   };
 
-  const PreviewClick = () => {
-    const shopUrl = `https://${shop}`;
-    window.open(shopUrl, "_blank", "noopener,noreferrer");
-  };
-
   return (
     <Page>
-      <TitleBar title="Currency">
-        <button
-          variant="primary"
-          onClick={() => setIsAddCurrencyModalOpen(true)}
-        >
-          Add Currency
-        </button>
-      </TitleBar>
+      <TitleBar title="Currency"></TitleBar>
       {loading ? (
         <div>loading...</div>
       ) : (
@@ -593,8 +610,22 @@ const Index = () => {
               </Title>
               <div className="currency-action">
                 <Space>
-                  <Button type="primary" onClick={PreviewClick}>
-                    Preview Store
+                  {hasSelected
+                    ? `Selected ${selectedRowKeys.length} items`
+                    : null}
+                  <Button
+                    type="primary"
+                    onClick={() => handleDelete()}
+                    disabled={!hasSelected}
+                    loading={deleteloading}
+                  >
+                    Delete
+                  </Button>
+                  <Button
+                    type="primary"
+                    onClick={() => setIsAddCurrencyModalOpen(true)}
+                  >
+                    Add Currency
                   </Button>
                 </Space>
               </div>
@@ -605,17 +636,13 @@ const Index = () => {
             </div>
             <Flex gap="middle" vertical>
               <Flex align="center" gap="middle">
-                <Button
-                  type="primary"
-                  onClick={() => handleDelete()}
-                  disabled={!hasSelected}
-                  loading={deleteloading}
-                >
-                  Delete
-                </Button>
-                {hasSelected
-                  ? `Selected ${selectedRowKeys.length} items`
-                  : null}
+                <Text>
+                  After setting, you can{" "}
+                  <Link url={userShop} target="_blank">
+                    Preview
+                  </Link>{" "}
+                  to view the prices in different currencies.
+                </Text>
               </Flex>
               <Input
                 placeholder="Search currencies..."

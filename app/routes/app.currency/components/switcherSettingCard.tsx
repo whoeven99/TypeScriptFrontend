@@ -61,12 +61,12 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
 
   return (
     <div>
-      {isVisible ? (
-        <Card>
+      {isVisible && (
+        <Card >
           <Space direction="vertical" size="small" style={{ display: "flex" }}>
             <div className="card-header">
               <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-                Set up Currency Format
+                Step 1: Set up Currency Format
               </Title>
 
               <Link url={settingUrl} target="_blank">
@@ -117,36 +117,31 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             )}
           </Space>
         </Card>
-      ) : (
-        isEnable && (
-          <Card>
-            <Space
-              direction="vertical"
-              size="small"
-              style={{ display: "flex" }}
-            >
-              <div className="card-header">
-                <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-                  Why does switcher not display on the website？
-                </Title>
-              </div>
-              <Text>
-                Please{" "}
-                <Link url={blockUrl} target="_blank">
-                  Click here
-                </Link>{" "}
-                to go to Shopify theme editor {">>"} enable "Translator Core
-                Snippet" {">>"} click the "Save" button in the right corner.
-              </Text>
-              <Text>
-                Please refer to this {" "}
-                <Link url={supportUrl} target="_blank">
-                  step-by-step guide
-                </Link>
-              </Text>
-            </Space>
-          </Card>
-        )
+      )}
+      {isEnable && (
+        <Card>
+          <Space direction="vertical" size="small" style={{ display: "flex" }}>
+            <div className="card-header">
+              <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+                Step 2: Enable switcher
+              </Title>
+            </div>
+            <Text>
+              Please{" "}
+              <Link url={blockUrl} target="_blank">
+                Click here
+              </Link>{" "}
+              to go to Shopify theme editor {">>"} enable "Ciwi_Switcher" {">>"}{" "}
+              click the "Save" button in the right corner.
+            </Text>
+            <Text>
+              Please refer to this {" "}
+              <Link url={supportUrl} target="_blank">
+                step-by-step guide
+              </Link>
+            </Text>
+          </Space>
+        </Card>
       )}
     </div>
   );
