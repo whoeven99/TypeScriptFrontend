@@ -13,12 +13,33 @@ export interface ConfirmDataType {
   target: string;
 }
 
+//用户数据初始化检测
+export const InitializationDetection = async ({
+  request,
+}: {
+  request: Request;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/user/InitializationDetection?shopName=${shop}`,
+      method: "GET",
+    });
+    const res = response.data;
+    console.log("res: ", res);
+    return res;
+  } catch (error) {
+    console.error("Error UpdateUser:", error);
+    throw new Error("Error UpdateUser");
+  }
+};
+
 //用户数据初始化
-export const UpdateUser = async ({ request }: { request: Request }) => {
+//添加用户
+export const UserAdd = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  console.log("UpdateUser: ", shop);
-
   try {
     const shopData = await queryShop({ request });
     const shopOwnerName = shopData?.shopOwnerName;
@@ -39,7 +60,23 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
       },
     });
     const End1 = Date.now(); // 记录结束时间
-    console.log(`UpdateUser took ${End1 - Start1}ms`);
+    console.log(`UserAdd took ${End1 - Start1}ms`);
+    console.log("addUserInfoResponse: ", addUserInfoResponse.data);
+  } catch (error) {
+    console.error("Error UpdateUser:", error);
+    throw new Error("Error UpdateUser");
+  }
+};
+
+//插入字符
+export const InsertCharsByShopName = async ({
+  request,
+}: {
+  request: Request;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
     const insertCharsByShopNameResponse = await axios({
       url: `${process.env.SERVER_URL}/translationCounter/insertCharsByShopName`,
       method: "POST",
@@ -48,6 +85,25 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         accessToken: accessToken,
       },
     });
+    console.log(
+      "insertCharsByShopNameResponse: ",
+      insertCharsByShopNameResponse.data,
+    );
+  } catch (error) {
+    console.error("Error UpdateUser:", error);
+    throw new Error("Error UpdateUser");
+  }
+};
+
+//添加默认语言包
+export const AddDefaultLanguagePack = async ({
+  request,
+}: {
+  request: Request;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  try {
     const addDefaultLanguagePackResponse = await axios({
       url: `${process.env.SERVER_URL}/aiLanguagePacks/addDefaultLanguagePack`,
       method: "PUT",
@@ -55,11 +111,6 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         shopName: shop,
       },
     });
-    console.log("addUserInfoResponse: ", addUserInfoResponse.data);
-    console.log(
-      "insertCharsByShopNameResponse: ",
-      insertCharsByShopNameResponse.data,
-    );
     console.log(
       "addDefaultLanguagePackResponse: ",
       addDefaultLanguagePackResponse.data,
@@ -90,7 +141,7 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
 };
 
 //用户字数初始化
-export const userCharsInitialization = async ({ shop }: { shop: string }) => {
+export const AddUserFreeSubscription = async ({ shop }: { shop: string }) => {
   try {
     const addUserFreeSubscriptionResponse = await axios({
       url: `${process.env.SERVER_URL}/shopify/addUserFreeSubscription`,
