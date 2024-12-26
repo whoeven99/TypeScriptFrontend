@@ -1,9 +1,13 @@
 .ciwi_container {
   width: 200px; /* 窄一些 */
   left: 20px;
-  position: fixed; /* 改为相对屏幕的位置 */
   bottom: 60px;
+  right: auto;
+  top: auto;
+  position: fixed; /* 改为相对屏幕的位置 */
+  height: auto;
   display: none;
+  z-index: 9999;
 }
 
 .main_box {
@@ -20,8 +24,9 @@
 .mainarrow_icon {
   display: flex;
   position: absolute;
-  width: 25%;
-  height: 25%;
+  width: 25% !important;
+  height: 25% !important;
+  border: 0 !important;
   top: 40%; /* 垂直居中 */
   left: 75%; /* 水平居中 */
   pointer-events: none; /* 防止图标影响选择框的点击 */
@@ -98,8 +103,9 @@
 }
 
 .arrow_icon {
-  width: 25%;
-  height: 25%;
+  width: 25% !important;
+  height: 25% !important;
+  border: 0 !important;
   display: flex;
   position: absolute;
   right: 5%; /* 箭头图标右对齐 */

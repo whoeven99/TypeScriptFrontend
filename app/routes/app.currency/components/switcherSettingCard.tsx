@@ -26,8 +26,41 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   const supportUrl =
     "http://ciwi.bogdatech.com/help/uncategorized/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/";
   const [isVisible, setIsVisible] = useState<boolean>(true);
+  const [isWithMoneyVisible, setIsWithMoneyVisible] = useState<boolean>(true);
+  const [isWithoutMoneyVisible, setIsWithoutMoneyVisible] =
+    useState<boolean>(true);
   const [step1Visible, setStep1Visible] = useState<boolean>(true);
   const [step2Visible, setStep2Visible] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (moneyWithCurrencyFormatHtml && moneyFormatHtml) {
+      const parser = new DOMParser();
+      const moneyWithMoneyDoc = parser.parseFromString(
+        moneyWithCurrencyFormatHtml,
+        "text/html",
+      );
+      const moneyWithoutMoneyDoc = parser.parseFromString(
+        moneyFormatHtml,
+        "text/html",
+      );
+
+      const moneyWithMoneyElement =
+        moneyWithMoneyDoc.querySelector(".ciwi-money");
+      const moneyWithoutMoneyElement =
+        moneyWithoutMoneyDoc.querySelector(".ciwi-money");
+
+      if (moneyWithMoneyElement !== null) {
+        setIsWithMoneyVisible(false);
+      }
+
+      if (moneyWithoutMoneyElement !== null) {
+        setIsWithoutMoneyVisible(false);
+      }
+
+      if (moneyWithMoneyElement && moneyWithoutMoneyElement)
+        setIsVisible(false);
+    }
+  }, [moneyWithCurrencyFormatHtml, moneyFormatHtml]);
 
   return (
     <Space direction="vertical" size="small" style={{ display: "flex" }}>
@@ -87,29 +120,32 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
               2. Under the <strong>’Store defaults‘</strong> section, click
               Change currency formatting, then change with the code below:
             </Text>
-
-            <div>
-              <strong>HTML with currency:</strong>
-              <Paragraph
-                copyable={{
-                  text: `<span class="ciwi-money">${moneyWithCurrencyFormatHtml}</span>`,
-                }}
-              >
-                &lt;span class="ciwi-money"&gt;{moneyWithCurrencyFormatHtml}
-                &lt;/span&gt;
-              </Paragraph>
-            </div>
-            <div>
-              <strong>HTML without currency:</strong>
-              <Paragraph
-                copyable={{
-                  text: `<span class="ciwi-money">${moneyFormatHtml}</span>`,
-                }}
-              >
-                &lt;span class="ciwi-money"&gt;{moneyFormatHtml}
-                &lt;/span&gt;
-              </Paragraph>
-            </div>
+            {isWithMoneyVisible && (
+              <div>
+                <strong>HTML with currency:</strong>
+                <Paragraph
+                  copyable={{
+                    text: `<span class="ciwi-money">${moneyWithCurrencyFormatHtml}</span>`,
+                  }}
+                >
+                  &lt;span class="ciwi-money"&gt;{moneyWithCurrencyFormatHtml}
+                  &lt;/span&gt;
+                </Paragraph>
+              </div>
+            )}
+            {isWithoutMoneyVisible && (
+              <div>
+                <strong>HTML without currency:</strong>
+                <Paragraph
+                  copyable={{
+                    text: `<span class="ciwi-money">${moneyFormatHtml}</span>`,
+                  }}
+                >
+                  &lt;span class="ciwi-money"&gt;{moneyFormatHtml}
+                  &lt;/span&gt;
+                </Paragraph>
+              </div>
+            )}
           </Space>
         </Card>
       )}
