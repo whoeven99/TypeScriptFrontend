@@ -105,6 +105,14 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
     setFilteredLanguages(sortedFilteredLanguages);
   }, [selectedLanguage, allLanguages, isVisible]);
 
+  useEffect(() => {
+    const addedCurrencies = allSelectedKeys
+      .map((key) => addLanguages.find((lang) => lang.key === key))
+      .filter(Boolean) as AllLanguagesType[];
+
+    setAllSelectedLanguage(addedCurrencies);
+  }, [allSelectedKeys]);
+
   // 搜索逻辑
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -219,6 +227,8 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   // 确认选择 -> 触发 action
   const handleConfirm = () => {
     const selectedLanguages = allSelectedLanguage.map((lang) => lang.isoCode);
+    console.log(allSelectedLanguage);
+    
     const formData = new FormData();
     formData.append(
       "addLanguages",

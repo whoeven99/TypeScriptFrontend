@@ -9,7 +9,6 @@ import {
   RequestData,
   Uninstall,
 } from "~/api/serve";
-import { queryOrders } from "~/api/admin";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop, session, admin, payload } =
