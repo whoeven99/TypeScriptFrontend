@@ -25,12 +25,12 @@ export interface OptionType {
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   const recommendOption: OptionType = {
-    key: "option-4",
-    name: "100K Credits",
-    Credits: 100000,
+    key: "option-2",
+    name: "20K Credits",
+    Credits: 20000,
     price: {
-      currentPrice: 79.99,
-      comparedPrice: 100.0,
+      currentPrice: 17.99,
+      comparedPrice: 20.0,
       currencyCode: "USD",
     },
   };
