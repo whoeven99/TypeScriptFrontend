@@ -22,7 +22,6 @@
 }
 
 .mainarrow_icon {
-  display: flex;
   position: absolute;
   width: 25% !important;
   height: 25% !important;

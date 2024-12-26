@@ -526,7 +526,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button onClick={() => handleEdit(record.key)}>Edit</Button>
-          <Button onClick={() => handleDelete(record.key)}>Remove</Button>
+          <Button onClick={() => handleDelete(record.key)}>Delete</Button>
         </Space>
       ),
     },

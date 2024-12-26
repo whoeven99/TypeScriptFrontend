@@ -1,7 +1,6 @@
 import { Button, Col, Modal, Row, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 import PaymentOptionSelect from "./paymentOptionSelect";
-import { useSelector } from "react-redux";
 import "./styles.css";
 import { useFetcher } from "@remix-run/react";
 
@@ -122,7 +121,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         comparedPrice: 20.0,
         currencyCode: "USD",
       },
-      test: true,
     },
     {
       key: "option-3",

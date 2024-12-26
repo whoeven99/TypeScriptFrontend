@@ -120,32 +120,30 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
               2. Under the <strong>’Store defaults‘</strong> section, click
               Change currency formatting, then change with the code below:
             </Text>
-            {isWithMoneyVisible && (
-              <div>
-                <strong>HTML with currency:</strong>
-                <Paragraph
-                  copyable={{
-                    text: `<span class="ciwi-money">${moneyWithCurrencyFormatHtml}</span>`,
-                  }}
-                >
-                  &lt;span class="ciwi-money"&gt;{moneyWithCurrencyFormatHtml}
-                  &lt;/span&gt;
-                </Paragraph>
-              </div>
-            )}
-            {isWithoutMoneyVisible && (
-              <div>
-                <strong>HTML without currency:</strong>
-                <Paragraph
-                  copyable={{
-                    text: `<span class="ciwi-money">${moneyFormatHtml}</span>`,
-                  }}
-                >
-                  &lt;span class="ciwi-money"&gt;{moneyFormatHtml}
-                  &lt;/span&gt;
-                </Paragraph>
-              </div>
-            )}
+
+            <div>
+              <strong>HTML with currency:</strong>
+              <Paragraph
+                copyable={{
+                  text: `<span class="ciwi-money">${moneyWithCurrencyFormatHtml}</span>`,
+                }}
+              >
+                &lt;span class="ciwi-money"&gt;{moneyWithCurrencyFormatHtml}
+                &lt;/span&gt;
+              </Paragraph>
+            </div>
+
+            <div>
+              <strong>HTML without currency:</strong>
+              <Paragraph
+                copyable={{
+                  text: `<span class="ciwi-money">${moneyFormatHtml}</span>`,
+                }}
+              >
+                &lt;span class="ciwi-money"&gt;{moneyFormatHtml}
+                &lt;/span&gt;
+              </Paragraph>
+            </div>
           </Space>
         </Card>
       )}
