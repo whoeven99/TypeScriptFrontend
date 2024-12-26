@@ -857,7 +857,7 @@ export const GetCacheData = async ({
 }) => {
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
+      url: `${process.env.SERVER_URL}/currency/getCacheData`,
       method: "POST",
       data: {
         shopName: shop,
