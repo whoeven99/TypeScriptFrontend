@@ -1,7 +1,7 @@
 .ciwi_container {
   width: 200px; /* 窄一些 */
   left: 20px;
-  position: fixed;
+  position: fixed; /* 改为相对屏幕的位置 */
   bottom: 60px;
   display: none;
 }
@@ -20,6 +20,8 @@
 .mainarrow_icon {
   display: flex;
   position: absolute;
+  width: 25%;
+  height: 25%;
   top: 40%; /* 垂直居中 */
   left: 75%; /* 水平居中 */
   pointer-events: none; /* 防止图标影响选择框的点击 */
@@ -96,6 +98,8 @@
 }
 
 .arrow_icon {
+  width: 25%;
+  height: 25%;
   display: flex;
   position: absolute;
   right: 5%; /* 箭头图标右对齐 */

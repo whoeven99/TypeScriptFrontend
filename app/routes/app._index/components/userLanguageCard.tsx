@@ -106,8 +106,8 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   }, [statusFetcher.data]);
 
   useEffect(() => {
-    if (translateFetcher.data && translateFetcher.data.statu) {
-      if (translateFetcher.data.statu.success) {
+    if (translateFetcher.data && translateFetcher.data.data) {
+      if (translateFetcher.data.data.success) {
         if (data && data.status === 2) {
           const formData = new FormData();
           formData.append(
@@ -117,16 +117,22 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
               target: [data.locale],
             }),
           );
-          statusFetcher.submit(formData, {
-            method: "post",
-            action: "/app",
-          });
+          // 延时提交，设置 2000 毫秒（即 2 秒）的延时
+          const timeoutId = setTimeout(() => {
+            statusFetcher.submit(formData, {
+              method: "post",
+              action: "/app",
+            });
+          }, 2000); // 2秒延时
+
+          // 在组件卸载时清除定时器
+          return () => clearTimeout(timeoutId);
         }
       } else {
-        message.error(translateFetcher.data.statu.errorMsg);
+        message.error(translateFetcher.data.data.errorMsg);
         dispatch(
           setStatusState({
-            target: translateFetcher.data.statu.target,
+            target: translateFetcher.data.data.target,
             status: 3,
           }),
         );

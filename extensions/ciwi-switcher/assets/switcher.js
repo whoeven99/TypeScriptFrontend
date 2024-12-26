@@ -470,92 +470,88 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
 // Page load handling
 window.onload = async function () {
-  const prices = document.querySelectorAll(".ciwi-money");
-  if (!prices.length) {
-    const switcher = document.getElementById("ciwi-container");
-    switcher.style.display = "none";
-  } else {
-    const shop = document.getElementById("queryCiwiId");
-    let moneyFormat = document.getElementById("queryMoneyFormat");
-    const data = await fetchCurrencies(shop.value);
+  const shop = document.getElementById("queryCiwiId");
+  console.log(shop);
+  let moneyFormat = document.getElementById("queryMoneyFormat");
+  const data = await fetchCurrencies(shop.value);
 
-    let value = localStorage.getItem("selectedCurrency");
-    const selectedCurrency = data.find(
-      (currency) => currency?.currencyCode === value,
-    );
-    const isValueInCurrencies =
-      selectedCurrency && !selectedCurrency.primaryStatus;
+  let value = localStorage.getItem("selectedCurrency");
+  const selectedCurrency = data.find(
+    (currency) => currency?.currencyCode === value,
+  );
+  const isValueInCurrencies =
+    selectedCurrency && !selectedCurrency.primaryStatus;
 
-    const currencySwitcher = document.getElementById("currency-switcher");
-    console.log("currencySwitcher: ", currencySwitcher);
-    const currencyInput = document.querySelector('input[name="currency_code"]');
+  const currencySwitcher = document.getElementById("currency-switcher");
+  console.log("currencySwitcher: ", currencySwitcher);
+  const currencyInput = document.querySelector('input[name="currency_code"]');
 
-    const regex = /{{(.*?)}}/;
-    const match = moneyFormat.value.match(regex);
+  const regex = /{{(.*?)}}/;
+  const match = moneyFormat.value.match(regex);
 
-    if (match) {
-      moneyFormat = match[1];
-    }
-
-    if (value && isValueInCurrencies) {
-      let rate = selectedCurrency.exchangeRate;
-      if (selectedCurrency.exchangeRate == "Auto") {
-        rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
-        console.log("rate: ", rate);
-        if (typeof rate != "number") {
-          rate = 1;
-        }
-      }
-      prices.forEach((price) => {
-        const priceText = price.innerText;
-        const transformedPrice = transform(
-          priceText,
-          rate,
-          moneyFormat,
-          selectedCurrency.symbol,
-          selectedCurrency.currencyCode,
-          selectedCurrency.rounding,
-        );
-
-        if (transformedPrice) {
-          price.innerText = transformedPrice;
-        }
-      });
-      currencyInput.value = value;
-      currencySwitcher.value = value;
-
-      data.forEach((currency) => {
-        const option = new Option(
-          `${currency.currencyCode}(${currency.symbol})`,
-          currency.currencyCode,
-        );
-        if (currency.currencyCode == value) {
-          option.selected = true;
-        }
-        currencySwitcher.add(option);
-      });
-    } else if (data.length) {
-      currencyInput.value = data[0];
-      currencySwitcher.value = data[0]?.currencyCode;
-      data.forEach((currency) => {
-        const option = new Option(
-          `${currency.currencyCode}(${currency.symbol})`,
-          currency.currencyCode,
-        );
-        if (currency.primaryStatus) {
-          option.selected = true;
-        }
-        currencySwitcher.add(option);
-      });
-    } else {
-      currencyInput.value = undefined;
-      currencySwitcher.value = undefined;
-      const option = new Option("undefined", undefined);
-      currencySwitcher.add(option);
-      localStorage.removeItem("selectedCurrency");
-    }
-
-    updateDisplayText();
-    document.getElementById("ciwi-container").style.display = "block";
+  if (match) {
+    moneyFormat = match[1];
   }
+
+  if (value && isValueInCurrencies) {
+    let rate = selectedCurrency.exchangeRate;
+    if (selectedCurrency.exchangeRate == "Auto") {
+      rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
+      console.log("rate: ", rate);
+      if (typeof rate != "number") {
+        rate = 1;
+      }
+    }
+    const prices = document.querySelectorAll(".ciwi-money");
+    prices.forEach((price) => {
+      const priceText = price.innerText;
+      const transformedPrice = transform(
+        priceText,
+        rate,
+        moneyFormat,
+        selectedCurrency.symbol,
+        selectedCurrency.currencyCode,
+        selectedCurrency.rounding,
+      );
+
+      if (transformedPrice) {
+        price.innerText = transformedPrice;
+      }
+    });
+    currencyInput.value = value;
+    currencySwitcher.value = value;
+
+    data.forEach((currency) => {
+      const option = new Option(
+        `${currency.currencyCode}(${currency.symbol})`,
+        currency.currencyCode,
+      );
+      if (currency.currencyCode == value) {
+        option.selected = true;
+      }
+      currencySwitcher.add(option);
+    });
+  } else if (data.length) {
+    currencyInput.value = data[0];
+    currencySwitcher.value = data[0]?.currencyCode;
+    data.forEach((currency) => {
+      const option = new Option(
+        `${currency.currencyCode}(${currency.symbol})`,
+        currency.currencyCode,
+      );
+      if (currency.primaryStatus) {
+        option.selected = true;
+      }
+      currencySwitcher.add(option);
+    });
+  } else {
+    currencyInput.value = undefined;
+    currencySwitcher.value = undefined;
+    const option = new Option("undefined", undefined);
+    currencySwitcher.add(option);
+    localStorage.removeItem("selectedCurrency");
+  }
+
+  updateDisplayText();
+  document.getElementById("ciwi-container").style.display = "block";
 };

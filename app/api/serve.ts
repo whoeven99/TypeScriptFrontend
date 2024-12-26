@@ -193,6 +193,38 @@ export const InsertShopTranslateInfo = async ({
   }
 };
 
+//批量更新语言数据
+export const InsertTargets = async ({
+  request,
+  source,
+  targets,
+}: {
+  request: Request;
+  source: string;
+  targets: string[];
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/translate/insertTargets`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        source: source,
+        targetList: targets,
+      },
+    });
+
+    const res = response.data;
+    console.log("languageInfo: ", res);
+  } catch (error) {
+    console.error("Error insert languageInfo:", error);
+    throw new Error("Error insert languageInfo");
+  }
+};
+
 //更新各项翻译状态
 export const GetTranslationItemsInfo = async ({
   shop,

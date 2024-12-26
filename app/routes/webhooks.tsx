@@ -9,7 +9,6 @@ import {
   RequestData,
   Uninstall,
 } from "~/api/serve";
-import { queryOrders } from "~/api/admin";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop, session, admin, payload } =
@@ -27,10 +26,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (topic) {
     case "APP_UNINSTALLED":
       try {
-        if (session) {
-          await db.session.deleteMany({ where: { shop } });
-          await Uninstall({ shop });
-        }
+        await db.session.deleteMany({ where: { shop } });
+        await Uninstall({ shop });
         break;
       } catch (error) {
         console.error("Error APP_UNINSTALLED:", error);
@@ -49,23 +46,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           if (payload?.app_purchase_one_time.status === "ACTIVE") {
             console.log("name: ", payload?.app_purchase_one_time.name);
             switch (payload?.app_purchase_one_time.name) {
+              case "10K Credits":
+                await AddCharsByShopName({ shop, amount: 10000 });
+                break;
+              case "20K Credits":
+                await AddCharsByShopName({ shop, amount: 20000 });
+                break;
+              case "50K Credits":
+                await AddCharsByShopName({ shop, amount: 50000 });
+                break;
+              case "100K Credits":
+                await AddCharsByShopName({ shop, amount: 100000 });
+                break;
               case "200K Credits":
                 await AddCharsByShopName({ shop, amount: 200000 });
                 break;
-              case "500K Credits":
-                await AddCharsByShopName({ shop, amount: 500000 });
-                break;
-              case "1M Credits":
-                await AddCharsByShopName({ shop, amount: 1000000 });
-                break;
-              case "2M Credits":
-                await AddCharsByShopName({ shop, amount: 2000000 });
-                break;
-              case "3M Credits":
-                await AddCharsByShopName({ shop, amount: 3000000 });
-                break;
-              case "4M Credits":
-                await AddCharsByShopName({ shop, amount: 4000000 });
+              case "300K Credits":
+                await AddCharsByShopName({ shop, amount: 300000 });
                 break;
             }
           }
