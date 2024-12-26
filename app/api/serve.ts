@@ -936,6 +936,8 @@ export const AddCharsByShopName = async ({
   amount: number;
 }) => {
   try {
+    console.log("shop: ", shop);
+    console.log("amount: ", amount);
     const response = await axios({
       url: `${process.env.SERVER_URL}/translateCounter/addCharsByShopName`,
       method: "POST",

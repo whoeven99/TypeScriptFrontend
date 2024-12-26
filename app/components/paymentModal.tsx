@@ -25,13 +25,13 @@ export interface OptionType {
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
-  const recommendOption: OptionType =     {
+  const recommendOption: OptionType = {
     key: "option-4",
     name: "100K Credits",
     Credits: 100000,
     price: {
       currentPrice: 79.99,
-      comparedPrice: 100.00,
+      comparedPrice: 100.0,
       currencyCode: "USD",
     },
   };
@@ -109,7 +109,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       Credits: 10000,
       price: {
         currentPrice: 8.99,
-        comparedPrice: 10.00,
+        comparedPrice: 10.0,
         currencyCode: "USD",
       },
     },
@@ -119,9 +119,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       Credits: 20000,
       price: {
         currentPrice: 17.99,
-        comparedPrice: 20.00,
+        comparedPrice: 20.0,
         currencyCode: "USD",
       },
+      test: true,
     },
     {
       key: "option-3",
@@ -129,7 +130,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       Credits: 50000,
       price: {
         currentPrice: 39.99,
-        comparedPrice: 50.00,
+        comparedPrice: 50.0,
         currencyCode: "USD",
       },
     },
@@ -139,7 +140,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       Credits: 100000,
       price: {
         currentPrice: 79.99,
-        comparedPrice: 100.00,
+        comparedPrice: 100.0,
         currencyCode: "USD",
       },
     },
@@ -149,7 +150,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       Credits: 200000,
       price: {
         currentPrice: 159.99,
-        comparedPrice: 200.00,
+        comparedPrice: 200.0,
         currencyCode: "USD",
       },
     },
@@ -159,7 +160,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       Credits: 300000,
       price: {
         currentPrice: 239.99,
-        comparedPrice: 300.00,
+        comparedPrice: 300.0,
         currencyCode: "USD",
       },
     },
