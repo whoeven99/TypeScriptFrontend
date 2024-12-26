@@ -480,12 +480,14 @@ const Index = () => {
       width: "15%",
       render: (_: any, record: any) => {
         switch (record.rounding) {
+          case null:
+            return <Text></Text>;
           case "":
             return <Text>Disable</Text>;
           case "0":
             return <Text>No decimal</Text>;
           default:
-            return <Text>{record.rounding}</Text>;
+            return <Text>{Number(record.rounding).toFixed(2)}</Text>;
         }
       },
     },
