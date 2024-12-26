@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Modal, Input, Table, Space, message, Button } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
-import SelectedLanguageTag from "../../../components/selectedLanguageTag";
+import SelectedTag from "../../../components/selectedTag";
 import {
   AllLanguagesType,
   LanguagesDataType,
@@ -64,7 +64,6 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
 
   useEffect(() => {
     if (addFetcher.data && addFetcher.data.data.length) {
-      message.success("Add success");
       const data = addFetcher.data.data.map((lang: any, i: any) => ({
         language: lang.name,
         localeName: languageLocaleInfo[addFetcher.data.data[i].locale].Local,
@@ -76,6 +75,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
         loading: false,
       }));
       dispatch(updateTableData(data));
+      message.success("Add success");
     }
     setIsModalOpen(false);
     setConfirmButtonDisable(false);
@@ -104,6 +104,14 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
     // 更新过滤后的语言状态
     setFilteredLanguages(sortedFilteredLanguages);
   }, [selectedLanguage, allLanguages, isVisible]);
+
+  useEffect(() => {
+    const addedCurrencies = allSelectedKeys
+      .map((key) => addLanguages.find((lang) => lang.key === key))
+      .filter(Boolean) as AllLanguagesType[];
+
+    setAllSelectedLanguage(addedCurrencies);
+  }, [allSelectedKeys]);
 
   // 搜索逻辑
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,7 +161,10 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   };
 
   // 增量更新 allSelectedLanguage
-  const handleRowSelectionChange = (newSelectedRowKeys: React.Key[]) => {
+  const handleRowSelectionChange = (
+    newSelectedRowKeys: React.Key[],
+    e: AddLanguageType[],
+  ) => {
     // 计算已选中的语言数量
     const addedLanguagesCount =
       newSelectedRowKeys.length + selectedLanguagesSet.size;
@@ -165,31 +176,59 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       return;
     }
 
-    const addedKeys = newSelectedRowKeys.filter(
-      (key) => !allSelectedKeys.includes(key),
-    );
-    const removedKeys = allSelectedKeys.filter(
-      (key) => !newSelectedRowKeys.includes(key),
-    );
+    console.log("e: ", e);
+    console.log("newSelectedRowKeys: ", newSelectedRowKeys);
 
-    // 增加新选中的语言
-    const addedLanguages = addedKeys
-      .map((key) => allLanguages.find((lang) => lang.key === key))
-      .filter(Boolean) as AllLanguagesType[];
+    const addKeys = [...new Set([...allSelectedKeys, ...newSelectedRowKeys])];
+    const removedKeys = filteredLanguages
+      .filter((lang) => !e.includes(lang))
+      .map((lang) => lang.key);
+    console.log(removedKeys);
 
-    // 删除取消选中的语言
-    const updatedSelectedLanguages = allSelectedLanguage.filter(
-      (lang) => !removedKeys.includes(lang.key),
+    const updateKeys = addKeys.filter(
+      (item) => !removedKeys.includes(Number(item)),
     );
 
-    // 合并新的选择并更新状态
-    setAllSelectedLanguage([...updatedSelectedLanguages, ...addedLanguages]);
-    setAllSelectedKeys(newSelectedRowKeys);
+    setAllSelectedKeys(updateKeys);
+
+    const addedLanguages = allSelectedKeys
+      .map((key) => addLanguages.find((lang) => lang.key === key))
+      .filter(Boolean) as AddLanguageType[];
+
+    setAllSelectedLanguage(addedLanguages);
   };
+
+  // const handleRowSelectionChange = (
+  //   newSelectedRowKeys: React.Key[],
+  //   e: langrencyType[],
+  // ) => {
+  //   console.log("e: ", e);
+  //   console.log("newSelectedRowKeys: ", newSelectedRowKeys);
+
+  //   const addKeys = [...new Set([...allSelectedKeys, ...newSelectedRowKeys])];
+  //   const removedKeys = filteredlangrencies
+  //     .filter((lang) => !e.includes(lang))
+  //     .map((lang) => lang.key);
+  //   console.log(removedKeys);
+
+  //   const updateKeys = addKeys.filter(
+  //     (item) => !removedKeys.includes(Number(item)),
+  //   );
+
+  //   setAllSelectedKeys(updateKeys);
+
+  //   const addedlangrencies = allSelectedKeys
+  //     .map((key) => addlangrencies.find((lang) => lang.key === key))
+  //     .filter(Boolean) as langrencyType[];
+
+  //   setAllSelectedlangrency(addedlangrencies);
+  // };
 
   // 确认选择 -> 触发 action
   const handleConfirm = () => {
     const selectedLanguages = allSelectedLanguage.map((lang) => lang.isoCode);
+    console.log(allSelectedLanguage);
+    
     const formData = new FormData();
     formData.append(
       "addLanguages",
@@ -324,7 +363,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
         {allSelectedKeys.map((key) => {
           const language = allLanguages.find((lang) => lang.key === key)?.name;
           return (
-            <SelectedLanguageTag
+            <SelectedTag
               key={key}
               item={language!}
               onRemove={() => handleRemoveLanguage(key)}
@@ -338,6 +377,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
         dataSource={filteredLanguages}
         columns={columns}
         rowKey="key"
+        loading={confirmButtonDisable}
         pagination={{
           pageSize: 10, // 每页默认显示 10 条
           position: ["bottomCenter"], // 将分页组件居中

@@ -82,6 +82,7 @@ export const queryShop = async ({ request }: { request: Request }) => {
     const query = `{
       shop {
         name
+        shopOwnerName
         contactEmail
         currencyCode
         myshopifyDomain
@@ -110,6 +111,44 @@ export const queryShop = async ({ request }: { request: Request }) => {
     return res;
   } catch (error) {
     console.error("Error fetching shop:", error);
+    throw error;
+  }
+};
+
+export const queryTheme = async ({ request }: { request: Request }) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const query = `{
+      themes(roles: MAIN, first: 1) {
+        nodes {
+          files(filenames: "config/settings_data.json") {
+            nodes {
+              body {
+                ... on OnlineStoreThemeFileBodyText {
+                  __typename
+                  content
+                }
+              }
+            }
+          }
+        }
+      }
+    }`;
+
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
+    const res = response.data.data.themes;
+    return res;
+  } catch (error) {
+    console.error("Error queryTheme:", error);
     throw error;
   }
 };

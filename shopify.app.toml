@@ -12,13 +12,13 @@ include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_content,read_legal_policies,read_markets,read_online_store_navigation,read_translations,write_locales,write_markets,write_products,write_translations"
+scopes = "read_content,read_legal_policies,read_markets,read_online_store_navigation,read_themes,read_translations,write_locales,write_markets,write_products,write_translations"
 
 [auth]
 redirect_urls = [
-  "https://typescriptfrontend.onrender.com/auth/callback",
-  "https://typescriptfrontend.onrender.com/auth/shopify/callback",
-  "https://typescriptfrontend.onrender.com/api/auth/callback"
+  "https://typescriptfrontendprod.onrender.com/auth/callback",
+  "https://typescriptfrontendprod.onrender.com/auth/shopify/callback",
+  "https://typescriptfrontendprod.onrender.com/api/auth/callback"
 ]
 
 [webhooks]

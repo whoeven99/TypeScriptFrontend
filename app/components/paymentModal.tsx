@@ -1,7 +1,6 @@
 import { Button, Col, Modal, Row, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 import PaymentOptionSelect from "./paymentOptionSelect";
-import { useSelector } from "react-redux";
 import "./styles.css";
 import { useFetcher } from "@remix-run/react";
 
@@ -27,11 +26,11 @@ export interface OptionType {
 const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   const recommendOption: OptionType = {
     key: "option-4",
-    name: "2M Credits",
-    Credits: 2000000,
+    name: "100K Credits",
+    Credits: 100000,
     price: {
-      currentPrice: 15.99,
-      comparedPrice: 16.99,
+      currentPrice: 79.99,
+      comparedPrice: 100.0,
       currencyCode: "USD",
     },
   };
@@ -105,61 +104,61 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   const options: OptionType[] = [
     {
       key: "option-1",
-      name: "200K Credits",
-      Credits: 200000,
+      name: "10K Credits",
+      Credits: 10000,
       price: {
-        currentPrice: 2.99,
-        comparedPrice: 3.99,
+        currentPrice: 8.99,
+        comparedPrice: 10.0,
         currencyCode: "USD",
       },
     },
     {
       key: "option-2",
-      name: "500K Credits",
-      Credits: 500000,
+      name: "20K Credits",
+      Credits: 20000,
       price: {
-        currentPrice: 5.99,
-        comparedPrice: 6.99,
+        currentPrice: 17.99,
+        comparedPrice: 20.0,
         currencyCode: "USD",
       },
     },
     {
       key: "option-3",
-      name: "1M Credits",
-      Credits: 1000000,
+      name: "50K Credits",
+      Credits: 50000,
       price: {
-        currentPrice: 8.99,
-        comparedPrice: 9.99,
+        currentPrice: 39.99,
+        comparedPrice: 50.0,
         currencyCode: "USD",
       },
     },
     {
       key: "option-4",
-      name: "2M Credits",
-      Credits: 2000000,
+      name: "100K Credits",
+      Credits: 100000,
       price: {
-        currentPrice: 15.99,
-        comparedPrice: 16.99,
+        currentPrice: 79.99,
+        comparedPrice: 100.0,
         currencyCode: "USD",
       },
     },
     {
       key: "option-5",
-      name: "3M Credits",
-      Credits: 3000000,
+      name: "200K Credits",
+      Credits: 200000,
       price: {
-        currentPrice: 23.99,
-        comparedPrice: 24.99,
+        currentPrice: 159.99,
+        comparedPrice: 200.0,
         currencyCode: "USD",
       },
     },
     {
       key: "option-6",
-      name: "4M Credits",
-      Credits: 4000000,
+      name: "300K Credits",
+      Credits: 300000,
       price: {
-        currentPrice: 30.99,
-        comparedPrice: 31.99,
+        currentPrice: 239.99,
+        comparedPrice: 300.0,
         currencyCode: "USD",
       },
     },

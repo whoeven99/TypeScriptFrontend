@@ -13,12 +13,39 @@ export interface ConfirmDataType {
   target: string;
 }
 
+//用户数据初始化检测
+export const InitializationDetection = async ({
+  request,
+}: {
+  request: Request;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/user/InitializationDetection?shopName=${shop}`,
+      method: "GET",
+    });
+    const res = response.data;
+    console.log("res: ", res);
+    return res;
+  } catch (error) {
+    console.error("Error UpdateUser:", error);
+    throw new Error("Error UpdateUser");
+  }
+};
+
 //用户数据初始化
-export const UpdateUser = async ({ request }: { request: Request }) => {
+//添加用户
+export const UserAdd = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const shopData = await queryShop({ request });
+    const shopOwnerName = shopData?.shopOwnerName;
+    const lastSpaceIndex = shopOwnerName.lastIndexOf(" ");
+    const firstName = shopOwnerName.substring(0, lastSpaceIndex);
+    const lastName = shopOwnerName.substring(lastSpaceIndex + 1);
     const Start1 = Date.now(); // 记录结束时间
     const addUserInfoResponse = await axios({
       url: `${process.env.SERVER_URL}/user/add`,
@@ -27,11 +54,29 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         shopName: shop,
         accessToken: accessToken,
         email: shopData.contactEmail,
+        firstName: firstName,
+        lastName: lastName,
+        userTag: shopOwnerName,
       },
     });
     const End1 = Date.now(); // 记录结束时间
-    console.log(`UpdateUser took ${End1 - Start1}ms`);
-    const Start2 = Date.now(); // 记录结束时间
+    console.log(`UserAdd took ${End1 - Start1}ms`);
+    console.log("addUserInfoResponse: ", addUserInfoResponse.data);
+  } catch (error) {
+    console.error("Error UpdateUser:", error);
+    throw new Error("Error UpdateUser");
+  }
+};
+
+//插入字符
+export const InsertCharsByShopName = async ({
+  request,
+}: {
+  request: Request;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
     const insertCharsByShopNameResponse = await axios({
       url: `${process.env.SERVER_URL}/translationCounter/insertCharsByShopName`,
       method: "POST",
@@ -40,14 +85,39 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
         accessToken: accessToken,
       },
     });
-    console.log("addUserInfoResponse: ", addUserInfoResponse.data);
     console.log(
       "insertCharsByShopNameResponse: ",
       insertCharsByShopNameResponse.data,
     );
   } catch (error) {
-    console.error("Error user initialization:", error);
-    throw new Error("Error user initialization");
+    console.error("Error UpdateUser:", error);
+    throw new Error("Error UpdateUser");
+  }
+};
+
+//添加默认语言包
+export const AddDefaultLanguagePack = async ({
+  request,
+}: {
+  request: Request;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  try {
+    const addDefaultLanguagePackResponse = await axios({
+      url: `${process.env.SERVER_URL}/aiLanguagePacks/addDefaultLanguagePack`,
+      method: "PUT",
+      data: {
+        shopName: shop,
+      },
+    });
+    console.log(
+      "addDefaultLanguagePackResponse: ",
+      addDefaultLanguagePackResponse.data,
+    );
+  } catch (error) {
+    console.error("Error UpdateUser:", error);
+    throw new Error("Error UpdateUser");
   }
 };
 
@@ -55,11 +125,8 @@ export const UpdateUser = async ({ request }: { request: Request }) => {
 export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
   try {
     const getUserSubscriptionPlanResponse = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan`,
-      method: "POST",
-      data: {
-        shopName: shop,
-      },
+      url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
+      method: "GET",
     });
     const res = getUserSubscriptionPlanResponse.data.success;
     console.log(
@@ -74,7 +141,7 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
 };
 
 //用户字数初始化
-export const userCharsInitialization = async ({ shop }: { shop: string }) => {
+export const AddUserFreeSubscription = async ({ shop }: { shop: string }) => {
   try {
     const addUserFreeSubscriptionResponse = await axios({
       url: `${process.env.SERVER_URL}/shopify/addUserFreeSubscription`,
@@ -115,6 +182,38 @@ export const InsertShopTranslateInfo = async ({
         accessToken: accessToken,
         source: source,
         target: target,
+      },
+    });
+
+    const res = response.data;
+    console.log("languageInfo: ", res);
+  } catch (error) {
+    console.error("Error insert languageInfo:", error);
+    throw new Error("Error insert languageInfo");
+  }
+};
+
+//批量更新语言数据
+export const InsertTargets = async ({
+  request,
+  source,
+  targets,
+}: {
+  request: Request;
+  source: string;
+  targets: string[];
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/translate/insertTargets`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        source: source,
+        targetList: targets,
       },
     });
 
@@ -231,11 +330,8 @@ export const GetItemsInSqlByShopName = async ({
 export const GetUserWords = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getUserLimitChars`,
-      method: "Post",
-      data: {
-        shopName: shop,
-      },
+      url: `${process.env.SERVER_URL}/shopify/getUserLimitChars?shopName=${shop}`,
+      method: "GET",
     });
     const res = response.data.response;
     return res;
@@ -257,7 +353,7 @@ export const GetLanguageLocaleInfo = async ({
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/shopify/getImageInfo`,
-      method: "Post",
+      method: "POST",
       data: updatedLocales,
     });
     const data = response.data.response;
@@ -289,24 +385,16 @@ export const GetLanguageLocaleInfo = async ({
 };
 
 //查询语言状态
-export const GetLanguageList = async ({
-  shop,
-  accessToken,
-}: {
-  shop: string;
-  accessToken: string | undefined;
-}) => {
+export const GetLanguageList = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/readInfoByShopName`,
-      method: "Post",
-      data: {
-        shopName: shop,
-        accessToken: accessToken,
-      },
+      url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}`,
+      method: "GET",
     });
 
     const res = response.data.response;
+    console.log("GetLanguageList: ", res);
+
     return res;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);
@@ -390,7 +478,7 @@ export const GetTranslate = async ({
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/clickTranslation`,
-      method: "POST",
+      method: "PUT",
       data: {
         shopName: shop,
         accessToken: accessToken,
@@ -437,7 +525,8 @@ export const updateManageTranslation = async ({
     // 遍历 confirmData 数组
     for (const item of confirmData) {
       if (item.translatableContentDigest && item.locale) {
-        if (item.value) {
+        console.log("updateManageTranslation: ", item.value);
+        if (item.value && item.value != "<p><br></p>") {
           const response = await axios({
             url: `${process.env.SERVER_URL}/shopify/updateShopifyDataByTranslateTextRequest`,
             method: "POST",
@@ -522,57 +611,127 @@ export const updateManageTranslation = async ({
   }
 };
 
-//获取汇率数据
-export const getRateValue = async () => {
+//检测默认货币
+export const InitCurrency = async ({ request }: { request: Request }) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  console.log("InitCurrency: ", {
+    shopName: shop,
+  });
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/getRateValue`,
-      method: "POST",
+      url: `${process.env.SERVER_URL}/currency/initCurrency?shopName=${shop}`,
+      method: "Get",
     });
-
-    const res = response.data;
+    const res = response.data.response;
+    console.log("InitCurrency: ", res);
     return res;
   } catch (error) {
-    console.error("Error get rateValue:", error);
-    throw new Error("User get rateValue");
+    console.error("Error InitCurrency:", error);
+    throw new Error("Error InitCurrency");
+  }
+};
+
+//更新默认货币
+export const UpdateDefaultCurrency = async ({
+  request,
+  currencyName,
+  currencyCode,
+  primaryStatus,
+}: {
+  request: Request;
+  currencyName: string;
+  currencyCode: string;
+  primaryStatus: number;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  console.log("UpdateDefaultCurrency: ", {
+    shopName: shop,
+    currencyName: currencyName, // 国家
+    currencyCode: currencyCode, // 货币代码
+    rounding: null,
+    exchangeRate: null,
+    primaryStatus: primaryStatus,
+  });
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/currency/updateDefaultCurrency`,
+      method: "PUT",
+      data: {
+        shopName: shop,
+        currencyName: currencyName, // 国家
+        currencyCode: currencyCode, // 货币代码
+        rounding: null,
+        exchangeRate: null,
+        primaryStatus: primaryStatus,
+      },
+    });
+    const res = response.data.response;
+    console.log("UpdateDefaultCurrency: ", res);
+    return res;
+  } catch (error) {
+    console.error("Error UpdateDefaultCurrency:", error);
+    throw new Error("Error UpdateDefaultCurrency");
   }
 };
 
 //添加用户自定义汇率
-export const addCurrency = async ({
+export const AddCurrency = async ({
   request,
-  countryName,
+  currencyName,
   currencyCode,
+  primaryStatus,
 }: {
   request: Request;
-  countryName: string;
+  currencyName: string;
   currencyCode: string;
+  primaryStatus: number;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
+  console.log("AddCurrency: ", {
+    shopName: shop,
+    currencyName: currencyName, // 国家
+    currencyCode: currencyCode, // 货币代码
+    rounding: "",
+    exchangeRate: "Auto",
+    primaryStatus: primaryStatus,
+  });
   try {
-    console.log("data: ", {
-      shopName: shop,
-      countryName: countryName, // 国家
-      currencyCode: currencyCode, // 货币代码
-      rounding: "Disable",
-      exchangeRate: "Auto",
-    });
-
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/currency/addCurrency`,
-      method: "POST",
-      data: {
-        shopName: shop,
-        countryName: countryName, // 国家
-        currencyCode: currencyCode, // 货币代码
-        rounding: "Disable",
-        exchangeRate: "Auto",
-      },
-    });
-
-    const res = response.data;
-    return res;
+    if (primaryStatus) {
+      const response = await axios({
+        url: `${process.env.SERVER_URL}/currency/insertCurrency`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          currencyName: currencyName, // 国家
+          currencyCode: currencyCode, // 货币代码
+          rounding: null,
+          exchangeRate: null,
+          primaryStatus: primaryStatus,
+        },
+      });
+      const res = response.data;
+      console.log("AddCurrency: ", res);
+      return res;
+    } else {
+      const response = await axios({
+        url: `${process.env.SERVER_URL}/currency/insertCurrency`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          currencyName: currencyName, // 国家
+          currencyCode: currencyCode, // 货币代码
+          rounding: "",
+          exchangeRate: "Auto",
+          primaryStatus: 0,
+        },
+      });
+      const res = response.data;
+      console.log("AddCurrency: ", res);
+      return res;
+    }
   } catch (error) {
     console.error("Error add currency:", error);
     throw new Error("Error add currency");
@@ -585,14 +744,14 @@ export const DeleteCurrency = async ({
   id,
 }: {
   request: Request;
-  id: string;
+  id: number;
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/deleteCurrency`,
-      method: "POST",
+      method: "DELETE",
       data: {
         shopName: shop,
         id: id,
@@ -600,6 +759,8 @@ export const DeleteCurrency = async ({
     });
 
     const res = response.data;
+    console.log(res);
+
     return res;
   } catch (error) {
     console.error("Error delete currency:", error);
@@ -622,9 +783,16 @@ export const UpdateCurrency = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   try {
+    console.log("UpdateCurrency: ", {
+      shopName: shop,
+      id: updateCurrencies.id, // 货币代码
+      rounding: updateCurrencies.rounding,
+      exchangeRate: updateCurrencies.exchangeRate,
+    });
+
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/updateCurrency`,
-      method: "POST",
+      method: "PUT",
       data: {
         shopName: shop,
         id: updateCurrencies.id, // 货币代码
@@ -634,6 +802,8 @@ export const UpdateCurrency = async ({
     });
 
     const res = response.data;
+    console.log("UpdateCurrency: ", res);
+
     return res;
   } catch (error) {
     console.error("Error update currency:", error);
@@ -642,26 +812,30 @@ export const UpdateCurrency = async ({
 };
 
 //获取用户自定义汇率
-export const GetCurrency = async ({ request }: { request: Request }) => {
+export const GetCurrencyByShopName = async ({
+  request,
+}: {
+  request: Request;
+}) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
+  console.log("GetCurrencyByShopName: ", shop);
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/currency/getCurrencyByShopName`,
-      method: "POST",
-      data: {
-        shopName: shop,
-      },
+      url: `${process.env.SERVER_URL}/currency/getCurrencyByShopName?shopName=${shop}`,
+      method: "GET",
     });
 
     const res = response.data.response;
+    console.log("currency: ", res);
     if (res) {
       const data = res.map((item: any) => ({
         key: item.id, // 将 id 转换为 key
-        currency: item.countryName, // 将 countryName 作为 currency
+        currency: item.currencyName, // 将 currencyName 作为 currency
         rounding: item.rounding,
         exchangeRate: item.exchangeRate,
         currencyCode: item.currencyCode,
+        primaryStatus: item.primaryStatus,
       }));
       return data;
     } else {
@@ -670,6 +844,36 @@ export const GetCurrency = async ({ request }: { request: Request }) => {
   } catch (error) {
     console.error("Error get currency:", error);
     throw new Error("Error get currency");
+  }
+};
+
+//获取自动汇率
+export const GetCacheData = async ({
+  shop,
+  currencyCode,
+}: {
+  shop: string;
+  currencyCode: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        currencyCode: currencyCode,
+      },
+    });
+
+    const res = response.data.response;
+    console.log("currency: ", res);
+    return {
+      currencyCode: currencyCode,
+      rate: res.exchangeRate,
+    };
+  } catch (error) {
+    console.error("Error GetCacheData:", error);
+    throw new Error("Error GetCacheData");
   }
 };
 
@@ -732,8 +936,10 @@ export const AddCharsByShopName = async ({
   amount: number;
 }) => {
   try {
+    console.log("shop: ", shop);
+    console.log("amount: ", amount);
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translateCounter/addCharsByShopName`,
+      url: `${process.env.SERVER_URL}/translationCounter/addCharsByShopName`,
       method: "POST",
       data: {
         shopName: shop,
@@ -757,11 +963,8 @@ export const GetGlossaryByShopName = async ({
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/glossary/getGlossaryByShopName`,
-      method: "POST",
-      data: {
-        shopName: shop,
-      },
+      url: `${process.env.SERVER_URL}/glossary/getGlossaryByShopName?shopName=${shop}`,
+      method: "GET",
     });
     const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
       shop,
@@ -883,7 +1086,7 @@ export const DeleteGlossaryInfo = async ({ id }: { id: number }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/glossary/deleteGlossaryById`,
-      method: "POST",
+      method: "DELETE",
       data: {
         id: id,
       },
@@ -904,7 +1107,7 @@ export const Uninstall = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/uninstall`,
-      method: "POST",
+      method: "DELETE",
       data: {
         shopName: shop,
       },
@@ -922,7 +1125,7 @@ export const CleanData = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/cleanData`,
-      method: "POST",
+      method: "DELETE",
       data: {
         shopName: shop,
       },
@@ -958,7 +1161,7 @@ export const DeleteData = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/deleteData`,
-      method: "POST",
+      method: "DELETE",
       data: {
         shopName: shop,
       },

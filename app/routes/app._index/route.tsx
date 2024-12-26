@@ -26,19 +26,16 @@ interface LanguageDataType {
   published: boolean;
 }
 
-interface UserType {
-  chars: number;
-  totalChars: number;
+interface LanguageSettingType {
   primaryLanguage: string;
   primaryLanguageCode: string;
   shopLanguagesWithoutPrimary: ShopLocalesType[];
   shopLanguageCodesWithoutPrimary: string[];
 }
 
-interface FetchType {
-  languageData: LanguageDataType[];
-  user: UserType;
-  plan: boolean;
+interface UserType {
+  chars: number;
+  totalChars: number;
 }
 
 export interface WordsType {
@@ -53,22 +50,29 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const Index = () => {
   const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
+  const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
+  const [user, setUser] = useState<UserType>();
+  const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
   const [paymentModalVisible, setPaymentModalVisible] =
     useState<boolean>(false);
-
-  const [user, setUser] = useState<UserType>();
-  const [loading, setLoading] = useState<boolean>(true);
   const [newUserModal, setNewUserModal] = useState<boolean>(false);
   const [newUserModalLoading, setNewUserModalLoading] =
     useState<boolean>(false);
   const dispatch = useDispatch();
-  const loadingFetcher = useFetcher<FetchType>();
+  const loadingLanguageFetcher = useFetcher<any>();
+  const loadingUserFetcher = useFetcher<any>();
   const initializationFetcher = useFetcher<any>();
 
   useEffect(() => {
-    const formData = new FormData();
-    formData.append("index", JSON.stringify(true));
-    loadingFetcher.submit(formData, {
+    const languageFormData = new FormData();
+    languageFormData.append("languageData", JSON.stringify(true));
+    loadingLanguageFetcher.submit(languageFormData, {
+      method: "post",
+      action: "/app",
+    });
+    const userFormData = new FormData();
+    userFormData.append("userData", JSON.stringify(true));
+    loadingUserFetcher.submit(userFormData, {
       method: "post",
       action: "/app",
     });
@@ -76,23 +80,29 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (loadingFetcher.data) {
-      setLanguageData(loadingFetcher.data.languageData);
-      setUser(loadingFetcher.data.user);
+    if (loadingLanguageFetcher.data) {
+      setLanguageData(loadingLanguageFetcher.data.data);
+      setLanguageSetting(loadingLanguageFetcher.data.languageSetting);
+      setLoadingLanguage(false);
       shopify.loading(false);
-      setLoading(false);
-      if (!loadingFetcher.data.plan) {
+    }
+  }, [loadingLanguageFetcher.data]);
+
+  useEffect(() => {
+    if (loadingUserFetcher.data) {
+      setUser(loadingUserFetcher.data.data);
+      if (!loadingUserFetcher.data.data?.plan) {
         setNewUserModal(true);
       }
     }
-  }, [loadingFetcher.data]);
+  }, [loadingUserFetcher.data]);
 
   useEffect(() => {
     if (initializationFetcher.data && user) {
       if (initializationFetcher.data?.data) {
         setNewUserModal(false);
         setNewUserModalLoading(false);
-        setUser({ ...user, totalChars: 500000 });
+        setUser({ ...user, totalChars: 1000 });
       }
     }
   }, [initializationFetcher.data]);
@@ -114,6 +124,11 @@ const Index = () => {
     }
   }, [dispatch, languageData]);
 
+  useEffect(() => {
+    console.log(languageData);
+    console.log(languageData.length);
+  }, [languageData]);
+
   const onClick = async () => {
     setNewUserModalLoading(true);
     const formData = new FormData();
@@ -128,118 +143,113 @@ const Index = () => {
     <Page>
       <TitleBar title="Dashboard" />
       <BlockStack gap="500">
-        {loading ? (
-          <div>loading...</div>
-        ) : (
-          <div>
-            <Space
-              direction="vertical"
-              size="middle"
-              style={{ display: "flex" }}
+        <div>
+          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+            <div style={{ paddingLeft: "8px" }}>
+              <Title level={3}>
+                Faster, higher-quality localization translation tool
+              </Title>
+            </div>
+            {user ? (
+              <UserProfileCard
+                setPaymentModalVisible={setPaymentModalVisible}
+                chars={user.chars}
+                totalChars={user.totalChars}
+              />
+            ) : (
+              <Skeleton active />
+            )}
+            <div style={{ paddingLeft: "8px" }}>
+              <Title level={3}>
+                {languageData.length} alternative languages
+              </Title>
+              <div>
+                <Text>Your store’s default language: </Text>
+                {languageSetting && (
+                  <Text strong>
+                    {languageSetting.primaryLanguage
+                      ? languageSetting.primaryLanguage
+                      : "No primary language set"}
+                  </Text>
+                )}
+              </div>
+            </div>
+            {loadingLanguage ? (
+              <Skeleton active />
+            ) : languageData.length != 0 ? (
+              <div>
+                <Row gutter={[16, 16]}>
+                  {languageData.map((language: any, index: number) => (
+                    <Col span={8} key={index}>
+                      {languageSetting && (
+                        <UserLanguageCard
+                          flagUrl={language.src.slice(0, 4)}
+                          primaryLanguageCode={
+                            languageSetting.primaryLanguageCode
+                          }
+                          languageLocaleName={language.localeName}
+                          languageName={language.name}
+                          languageCode={language.locale}
+                        />
+                      )}
+                    </Col>
+                  ))}
+                </Row>
+              </div>
+            ) : (
+              <NoLanguageSetCard />
+            )}
+            <Text
+              style={{
+                display: "flex", // 使用 flexbox 来布局
+                justifyContent: "center", // 水平居中
+              }}
             >
-              <div style={{ paddingLeft: "8px" }}>
-                <Title level={3}>
-                  Faster, higher-quality localization translation tool<br/>
-                </Title>
-              </div>
-              {user ? (
-                <UserProfileCard
-                  setPaymentModalVisible={setPaymentModalVisible}
-                  chars={user.chars}
-                  totalChars={user.totalChars}
-                />
-              ) : (
-                <Skeleton active />
-              )}
-              <div style={{ paddingLeft: "8px" }}>
-                <Title level={3}>
-                  {languageData.length} alternative languages
-                </Title>
-                <div>
-                  <Text>Your store’s default language: </Text>
-                  {user && (
-                    <Text strong>
-                      {user.primaryLanguage
-                        ? user.primaryLanguage
-                        : "No primary language set"}
-                    </Text>
-                  )}
-                </div>
-              </div>
-              {languageData.length ? (
-                <div>
-                  <Row gutter={[16, 16]}>
-                    {languageData.map((language: any, index: number) => (
-                      <Col span={8} key={index}>
-                        {user ? (
-                          <UserLanguageCard
-                            flagUrl={language.src.slice(0, 4)}
-                            primaryLanguageCode={user.primaryLanguageCode}
-                            languageLocaleName={language.localeName}
-                            languageName={language.name}
-                            languageCode={language.locale}
-                          />
-                        ) : (
-                          <Skeleton active />
-                        )}
-                      </Col>
-                    ))}
-                  </Row>
-                </div>
-              ) : (
-                <NoLanguageSetCard />
-              )}
-              <Text
-                style={{
-                  display: "flex", // 使用 flexbox 来布局
-                  justifyContent: "center", // 水平居中
-                }}
+              Learn more in
+              <Link
+                to="http://ciwi.bogdatech.com/help"
+                target="_blank"
+                style={{ margin: "0 5px" }}
               >
-                Learn more in
-                <Link
-                  to="http://ciwi.bogdatech.com/help"
-                  target="_blank"
-                  style={{ margin: "0 5px" }}
-                >
-                  Ciwi Help Center
-                </Link>
-                by
-                <Link
-                  to={"http://ciwi.bogdatech.com/"}
-                  target="_blank"
-                  style={{ margin: "0 5px" }}
-                >
-                  Ciwi.ai
-                </Link>
-              </Text>
-            </Space>
-            <Modal
-              open={newUserModal}
-              footer={
-                <Button
-                  onClick={onClick}
-                  loading={newUserModalLoading}
-                  disabled={newUserModalLoading}
-                >
-                  OK
-                </Button>
-              }
-              closable={false} // 禁用关闭按钮
-              maskClosable={false} // 禁用点击遮罩关闭
-              keyboard={false} // 禁用按 Esc 键关闭
-            >
-              <Title level={4}>Congratulations!</Title>
-              <Text>
-                You have received 20,000 Credits, enabling you to translate into
-                over 137 languages.
-              </Text>
-            </Modal>
-            <PaymentModal
-              visible={paymentModalVisible}
-              setVisible={setPaymentModalVisible}
-            />
-          </div>
-        )}
+                Ciwi Help Center
+              </Link>
+              by
+              <Link
+                to={"http://ciwi.bogdatech.com/"}
+                target="_blank"
+                style={{ margin: "0 5px" }}
+              >
+                Ciwi.ai
+              </Link>
+            </Text>
+          </Space>
+          <Modal
+            open={newUserModal}
+            footer={
+              <Button
+                type="primary"
+                onClick={onClick}
+                loading={newUserModalLoading}
+                disabled={newUserModalLoading}
+              >
+                OK
+              </Button>
+            }
+            closable={false} // 禁用关闭按钮
+            maskClosable={false} // 禁用点击遮罩关闭
+            keyboard={false} // 禁用按 Esc 键关闭
+          >
+            <Title level={4}>Congratulations!</Title>
+            <Text>
+              You have received 1,000 Credits, enabling you to translate into
+              over 137 languages.
+            </Text>
+          </Modal>
+          <PaymentModal
+            visible={paymentModalVisible}
+            setVisible={setPaymentModalVisible}
+          />
+        </div>
       </BlockStack>
     </Page>
   );
