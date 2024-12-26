@@ -471,6 +471,7 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
   const shop = document.getElementById("queryCiwiId");
+  console.log(shop);
   let moneyFormat = document.getElementById("queryMoneyFormat");
   const data = await fetchCurrencies(shop.value);
 

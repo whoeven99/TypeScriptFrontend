@@ -223,7 +223,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source,
           target: selectedLanguage,
         });
-        return json({ statu: translateResponse });
+        return json({ data: translateResponse });
 
       case !!statusData:
         try {

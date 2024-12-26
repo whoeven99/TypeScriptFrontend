@@ -26,10 +26,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (topic) {
     case "APP_UNINSTALLED":
       try {
-        if (session) {
-          await db.session.deleteMany({ where: { shop } });
-          await Uninstall({ shop });
-        }
+        await db.session.deleteMany({ where: { shop } });
+        await Uninstall({ shop });
         break;
       } catch (error) {
         console.error("Error APP_UNINSTALLED:", error);
