@@ -79,18 +79,6 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                 <Text
                   strong
                   style={{
-                    backgroundColor: "rgb(224,247,224)",
-                    color: "rgb(76,175,80)",
-                    padding: "2px 10px",
-                    borderRadius: "20px",
-                  }}
-                >
-                  Completed
-                </Text>
-              ) : (
-                <Text
-                  strong
-                  style={{
                     backgroundColor: "rgb(254,211,209)",
                     color: "rgb(142, 31, 11)",
                     padding: "2px 10px",
@@ -98,6 +86,18 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                   }}
                 >
                   Uncompleted
+                </Text>
+              ) : (
+                <Text
+                  strong
+                  style={{
+                    backgroundColor: "rgb(224,247,224)",
+                    color: "rgb(76,175,80)",
+                    padding: "2px 10px",
+                    borderRadius: "20px",
+                  }}
+                >
+                  Completed
                 </Text>
               )}
               <Link url={settingUrl} target="_blank">
@@ -164,18 +164,6 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                 <Text
                   strong
                   style={{
-                    backgroundColor: "rgb(224,247,224)",
-                    color: "rgb(76,175,80)",
-                    padding: "2px 10px",
-                    borderRadius: "20px",
-                  }}
-                >
-                  Completed
-                </Text>
-              ) : (
-                <Text
-                  strong
-                  style={{
                     backgroundColor: "rgb(254,211,209)",
                     color: "rgb(142, 31, 11)",
                     padding: "2px 10px",
@@ -183,6 +171,18 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                   }}
                 >
                   Uncompleted
+                </Text>
+              ) : (
+                <Text
+                  strong
+                  style={{
+                    backgroundColor: "rgb(224,247,224)",
+                    color: "rgb(76,175,80)",
+                    padding: "2px 10px",
+                    borderRadius: "20px",
+                  }}
+                >
+                  Completed
                 </Text>
               )}
             </div>
