@@ -939,7 +939,7 @@ export const AddCharsByShopName = async ({
     console.log("shop: ", shop);
     console.log("amount: ", amount);
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translateCounter/addCharsByShopName`,
+      url: `${process.env.SERVER_URL}/translationCounter/addCharsByShopName`,
       method: "POST",
       data: {
         shopName: shop,
