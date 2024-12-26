@@ -1,3 +1,4 @@
+import { CloseOutlined } from "@ant-design/icons";
 import { Link } from "@shopify/polaris";
 import { Card, Space, Button, Typography } from "antd";
 import { useEffect, useState } from "react";
@@ -28,6 +29,8 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   const [isWithMoneyVisible, setIsWithMoneyVisible] = useState<boolean>(true);
   const [isWithoutMoneyVisible, setIsWithoutMoneyVisible] =
     useState<boolean>(true);
+  const [step1Visible, setStep1Visible] = useState<boolean>(true);
+  const [step2Visible, setStep2Visible] = useState<boolean>(true);
 
   useEffect(() => {
     if (moneyWithCurrencyFormatHtml && moneyFormatHtml) {
@@ -60,15 +63,43 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   }, [moneyWithCurrencyFormatHtml, moneyFormatHtml]);
 
   return (
-    <div>
-      {isVisible && (
-        <Card >
+    <Space direction="vertical" size="small" style={{ display: "flex" }}>
+      {step1Visible && (
+        <Card
+          title="Step 1: Set up Currency Format"
+          extra={
+            <Button type="text" onClick={() => setStep1Visible(false)}>
+              <CloseOutlined />
+            </Button>
+          }
+        >
           <Space direction="vertical" size="small" style={{ display: "flex" }}>
             <div className="card-header">
-              <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-                Step 1: Set up Currency Format
-              </Title>
-
+              {isVisible ? (
+                <Text
+                  strong
+                  style={{
+                    backgroundColor: "rgb(224,247,224)",
+                    color: "rgb(76,175,80)",
+                    padding: "2px 10px",
+                    borderRadius: "20px",
+                  }}
+                >
+                  Completed
+                </Text>
+              ) : (
+                <Text
+                  strong
+                  style={{
+                    backgroundColor: "rgb(254,211,209)",
+                    color: "rgb(142, 31, 11)",
+                    padding: "2px 10px",
+                    borderRadius: "20px",
+                  }}
+                >
+                  Uncompleted
+                </Text>
+              )}
               <Link url={settingUrl} target="_blank">
                 <Button type="primary" className="currency-action">
                   Setup
@@ -118,13 +149,42 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
           </Space>
         </Card>
       )}
-      {isEnable && (
-        <Card>
+      {step2Visible && (
+        <Card
+          title="Step 2: Enable switcher"
+          extra={
+            <Button type="text" onClick={() => setStep2Visible(false)}>
+              <CloseOutlined />
+            </Button>
+          }
+        >
           <Space direction="vertical" size="small" style={{ display: "flex" }}>
             <div className="card-header">
-              <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-                Step 2: Enable switcher
-              </Title>
+              {isEnable ? (
+                <Text
+                  strong
+                  style={{
+                    backgroundColor: "rgb(224,247,224)",
+                    color: "rgb(76,175,80)",
+                    padding: "2px 10px",
+                    borderRadius: "20px",
+                  }}
+                >
+                  Completed
+                </Text>
+              ) : (
+                <Text
+                  strong
+                  style={{
+                    backgroundColor: "rgb(254,211,209)",
+                    color: "rgb(142, 31, 11)",
+                    padding: "2px 10px",
+                    borderRadius: "20px",
+                  }}
+                >
+                  Uncompleted
+                </Text>
+              )}
             </div>
             <Text>
               Please{" "}
@@ -143,7 +203,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
           </Space>
         </Card>
       )}
-    </div>
+    </Space>
   );
 };
 

@@ -24,12 +24,15 @@ import {
   GetTranslate,
   GetUserWords,
   GetTranslationItemsInfo,
-  UpdateUser,
   InsertShopTranslateInfo,
   GetLanguageStatus,
-  userCharsInitialization,
+  AddUserFreeSubscription,
   InsertOrUpdateOrder,
   GetUserSubscriptionPlan,
+  InitializationDetection,
+  UserAdd,
+  AddDefaultLanguagePack,
+  InsertCharsByShopName,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -75,7 +78,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     switch (true) {
       case !!initialization:
         try {
-          const data: boolean = await userCharsInitialization({
+          const data: boolean = await AddUserFreeSubscription({
             shop,
           });
           return json({
@@ -91,9 +94,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!loading:
         try {
           const userStart = Date.now(); // 记录开始时间
-          await UpdateUser({ request,  });
+          const data = await InitializationDetection({ request });
+          switch (false) {
+            case data?.add:
+              await UserAdd({ request });
+            case data?.insertCharsByShopName:
+              await InsertCharsByShopName({ request });
+            case data?.addDefaultLanguagePack:
+              await AddDefaultLanguagePack({ request });
+            default:
+              console.log("Initialization has been completed");
+          }
           const userEnd = Date.now(); // 记录结束时间
-          console.log(`UpdateUser took ${userEnd - userStart}ms`);
+          console.log(`InitializationDetection took ${userEnd - userStart}ms`);
         } catch (error) {
           console.error("Error loading app:", error);
           return json({ error: "Error loading app" }, { status: 500 });

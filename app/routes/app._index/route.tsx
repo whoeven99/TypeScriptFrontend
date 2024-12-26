@@ -92,7 +92,7 @@ const Index = () => {
       if (initializationFetcher.data?.data) {
         setNewUserModal(false);
         setNewUserModalLoading(false);
-        setUser({ ...user, totalChars: 500000 });
+        setUser({ ...user, totalChars: 1000 });
       }
     }
   }, [initializationFetcher.data]);
@@ -231,7 +231,7 @@ const Index = () => {
             >
               <Title level={4}>Congratulations!</Title>
               <Text>
-                You have received 500,000 Credits, enabling you to translate
+                You have received 1,000 Credits, enabling you to translate
                 into over 137 languages.
               </Text>
             </Modal>

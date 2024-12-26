@@ -145,9 +145,6 @@ export const queryTheme = async ({ request }: { request: Request }) => {
       },
       data: JSON.stringify({ query }),
     });
-    console.log("queryTheme: ", response);
-    console.log("queryTheme: ", response.data);
-    console.log("queryTheme: ", response.data.data);
     const res = response.data.data.themes;
     return res;
   } catch (error) {
