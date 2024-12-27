@@ -104,7 +104,7 @@ export const AddDefaultLanguagePack = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   console.log("AddDefaultLanguagePackData: ", shop);
-  
+
   try {
     const addDefaultLanguagePackResponse = await axios({
       url: `${process.env.SERVER_URL}/aiLanguagePacks/addDefaultLanguagePack?shopName=${shop}`,
@@ -376,6 +376,7 @@ export const GetLanguageLocaleInfo = async ({
       },
       {},
     );
+    console.log("GetLanguageLocaleInfo: ", res);
     return res;
   } catch (error) {
     console.error("Error occurred in the languageData:", error);
