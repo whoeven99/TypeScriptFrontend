@@ -36,14 +36,18 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   languageLocaleInfo,
   primaryLanguage,
 }) => {
-  const updatedLocales = allLanguages.map((item) => item.isoCode);
-  const addLanguages: AddLanguageType[] = allLanguages.map((lang, i) => ({
-    key: lang.key,
-    isoCode: lang.isoCode,
-    src: languageLocaleInfo[updatedLocales[i]].countries,
-    name: `${lang.name}(${languageLocaleInfo[updatedLocales[i]].Local})`,
-    state: "", // 默认值为 false
-  }));
+  const updatedLocales = allLanguages
+    .filter((lang) => lang.isoCode != primaryLanguage?.locale)
+    .map((item) => item.isoCode);
+  const addLanguages: AddLanguageType[] = allLanguages
+    .filter((lang) => lang.isoCode != primaryLanguage?.locale)
+    .map((lang, i) => ({
+      key: lang.key,
+      isoCode: lang.isoCode,
+      src: languageLocaleInfo[updatedLocales[i]].countries,
+      name: `${lang.name}(${languageLocaleInfo[updatedLocales[i]].Local})`,
+      state: "", // 默认值为 false
+    }));
   const [allSelectedKeys, setAllSelectedKeys] = useState<React.Key[]>([]); // 保存所有选中的key
   const [searchInput, setSearchInput] = useState("");
   const [filteredLanguages, setFilteredLanguages] =
@@ -175,16 +179,10 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       message.error("Your have reach your shopify plan limit(Max<=20)");
       return;
     }
-
-    console.log("e: ", e);
-    console.log("newSelectedRowKeys: ", newSelectedRowKeys);
-
     const addKeys = [...new Set([...allSelectedKeys, ...newSelectedRowKeys])];
     const removedKeys = filteredLanguages
       .filter((lang) => !e.includes(lang))
       .map((lang) => lang.key);
-    console.log(removedKeys);
-
     const updateKeys = addKeys.filter(
       (item) => !removedKeys.includes(Number(item)),
     );
@@ -198,37 +196,9 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
     setAllSelectedLanguage(addedLanguages);
   };
 
-  // const handleRowSelectionChange = (
-  //   newSelectedRowKeys: React.Key[],
-  //   e: langrencyType[],
-  // ) => {
-  //   console.log("e: ", e);
-  //   console.log("newSelectedRowKeys: ", newSelectedRowKeys);
-
-  //   const addKeys = [...new Set([...allSelectedKeys, ...newSelectedRowKeys])];
-  //   const removedKeys = filteredlangrencies
-  //     .filter((lang) => !e.includes(lang))
-  //     .map((lang) => lang.key);
-  //   console.log(removedKeys);
-
-  //   const updateKeys = addKeys.filter(
-  //     (item) => !removedKeys.includes(Number(item)),
-  //   );
-
-  //   setAllSelectedKeys(updateKeys);
-
-  //   const addedlangrencies = allSelectedKeys
-  //     .map((key) => addlangrencies.find((lang) => lang.key === key))
-  //     .filter(Boolean) as langrencyType[];
-
-  //   setAllSelectedlangrency(addedlangrencies);
-  // };
-
   // 确认选择 -> 触发 action
   const handleConfirm = () => {
     const selectedLanguages = allSelectedLanguage.map((lang) => lang.isoCode);
-    console.log(allSelectedLanguage);
-    
     const formData = new FormData();
     formData.append(
       "addLanguages",

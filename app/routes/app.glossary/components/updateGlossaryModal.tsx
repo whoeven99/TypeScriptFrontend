@@ -69,7 +69,6 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   useEffect(() => {
     if (updateFetcher.data) {
       if (updateFetcher.data.data.success) {
-        // console.log(updateFetcher.data);
         const res = updateFetcher.data.data.response;
         let data = {
           key: res.id,

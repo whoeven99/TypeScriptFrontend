@@ -280,10 +280,14 @@ const Index = () => {
             target: [target],
           }),
         );
-        statusFetcher.submit(formData, {
-          method: "post",
-          action: "/app",
-        });
+        const timeoutId = setTimeout(() => {
+          statusFetcher.submit(formData, {
+            method: "post",
+            action: "/app",
+          });
+        }, 2000); // 2秒延时
+        // 在组件卸载时清除定时器
+        return () => clearTimeout(timeoutId);
       } else {
         message.error(translateFetcher.data.status.errorMsg);
         dispatch(
@@ -476,37 +480,41 @@ const Index = () => {
   };
 
   const handleTranslate = async (locale: string) => {
-    const selectedItem = data.find(
-      (item: LanguagesDataType) => item.locale === locale,
-    );
-    const selectedTranslatingItem = data.find(
-      (item: LanguagesDataType) => item.status === 2,
-    );
-    if (selectedItem && !selectedTranslatingItem) {
-      const formData = new FormData();
-      formData.append(
-        "translation",
-        JSON.stringify({
-          primaryLanguage: primaryLanguage,
-          selectedLanguage: selectedItem,
-        }),
-      ); // 将选中的语言作为字符串发送
-      translateFetcher.submit(formData, {
-        method: "post",
-        action: "/app/language",
-      }); // 提交表单请求
-
-      message.success("The translation task is in progress.");
-      dispatch(
-        setStatusState({
-          target: selectedItem.locale,
-          status: 2,
-        }),
-      );
+    if (words && words.chars > words.totalChars) {
+      message.error("Character Limit Reached");
     } else {
-      message.error(
-        "The translation task is in progress. Please try translating again later.",
+      const selectedItem = data.find(
+        (item: LanguagesDataType) => item.locale === locale,
       );
+      const selectedTranslatingItem = data.find(
+        (item: LanguagesDataType) => item.status === 2,
+      );
+      if (selectedItem && !selectedTranslatingItem) {
+        const formData = new FormData();
+        formData.append(
+          "translation",
+          JSON.stringify({
+            primaryLanguage: primaryLanguage,
+            selectedLanguage: selectedItem,
+          }),
+        ); // 将选中的语言作为字符串发送
+        translateFetcher.submit(formData, {
+          method: "post",
+          action: "/app/language",
+        }); // 提交表单请求
+
+        message.success("The translation task is in progress.");
+        dispatch(
+          setStatusState({
+            target: selectedItem.locale,
+            status: 2,
+          }),
+        );
+      } else {
+        message.error(
+          "The translation task is in progress. Please try translating again later.",
+        );
+      }
     }
   };
   const handleConfirmPublishModal = () => {

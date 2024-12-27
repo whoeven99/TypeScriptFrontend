@@ -22,6 +22,9 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   addCurrencies,
   defaultCurrencyCode,
 }) => {
+  const defaultData = addCurrencies.filter(
+    (item: CurrencyType) => item.currencyCode != defaultCurrencyCode,
+  );
   const [allSelectedKeys, setAllSelectedKeys] = useState<React.Key[]>([]); // 保存所有选中的key
   const [confirmButtonDisable, setConfirmButtonDisable] =
     useState<boolean>(false);
@@ -42,13 +45,14 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   const addFetcher = useFetcher<any>();
 
   useEffect(() => {
-    if (addCurrencies.length)
-      setFilteredCurrencies(
-        addCurrencies.filter(
-          (item: CurrencyType) => item.currencyCode !== defaultCurrencyCode,
-        ),
-      );
+    if (addCurrencies.length) {
+      setFilteredCurrencies(defaultData);
+    }
   }, [addCurrencies]);
+
+  // useEffect(() => {
+  //   console.log(filteredCurrencies);
+  // }, [filteredCurrencies]);
 
   useEffect(() => {
     if (addFetcher.data) {
@@ -66,10 +70,10 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
           ];
           dispatch(updateTableData(data));
           message.success("Add success");
+          setFilteredCurrencies(defaultData);
           setConfirmButtonDisable(false);
           setAllSelectedKeys([]);
           setSearchInput("");
-          setFilteredCurrencies(addCurrencies);
           setAllSelectedCurrency([]);
           setIsModalOpen(false);
         } else {
@@ -82,7 +86,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
 
   useEffect(() => {
     // 更新语言状态
-    const updatedCurrencies = addCurrencies.map((cur) => {
+    const updatedCurrencies = defaultData.map((cur) => {
       if (selectedCurrenciesSet.has(cur.currencyCode)) {
         // 检查是否是默认语言
         const isPrimary = cur.currencyCode === defaultCurrencyCode;
@@ -105,7 +109,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
 
   useEffect(() => {
     const addedCurrencies = allSelectedKeys
-      .map((key) => addCurrencies.find((cur) => cur.key === key))
+      .map((key) => defaultData.find((cur) => cur.key === key))
       .filter(Boolean) as CurrencyType[];
 
     setAllSelectedCurrency(addedCurrencies);
@@ -116,7 +120,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     setSearchInput(value);
     if (value.trim() === "") {
       // 当搜索框为空时，恢复初始排序
-      const updatedCurrencies = addCurrencies.map((cur) => {
+      const updatedCurrencies = defaultData.map((cur) => {
         const isPrimary = selectedCurrency.some(
           (sl) => sl.currencyCode === defaultCurrencyCode,
         );
@@ -137,7 +141,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
       setFilteredCurrencies(sortedFilteredCurrencies);
       return;
     }
-    const filteredData = addCurrencies
+    const filteredData = defaultData
       .map((cur) => {
         const isPrimary = selectedCurrenciesSet.has(cur.currencyCode);
         return {
@@ -162,15 +166,10 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     newSelectedRowKeys: React.Key[],
     e: CurrencyType[],
   ) => {
-    console.log("e: ", e);
-    console.log("newSelectedRowKeys: ", newSelectedRowKeys);
-
     const addKeys = [...new Set([...allSelectedKeys, ...newSelectedRowKeys])];
     const removedKeys = filteredCurrencies
       .filter((cur) => !e.includes(cur))
       .map((cur) => cur.key);
-    console.log(removedKeys);
-
     const updateKeys = addKeys.filter(
       (item) => !removedKeys.includes(Number(item)),
     );
@@ -180,8 +179,6 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
 
   // 确认选择 -> 触发 action
   const handleConfirm = () => {
-    console.log(allSelectedCurrency);
-
     const formData = new FormData();
     formData.append("addCurrencies", JSON.stringify(allSelectedCurrency)); // 将选中的语言作为字符串发送
 
@@ -199,7 +196,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     setConfirmButtonDisable(false);
     setAllSelectedKeys([]);
     setSearchInput("");
-    setFilteredCurrencies(addCurrencies);
+    setFilteredCurrencies(defaultData);
     setAllSelectedCurrency([]);
     setIsModalOpen(false);
   };
@@ -216,7 +213,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   // 表格的行选择配置
   const rowSelection = {
     selectedRowKeys: allSelectedKeys.filter((key) =>
-      addCurrencies.some((cur) => cur.key === key),
+      defaultData.some((cur) => cur.key === key),
     ), // Filter selected keys based on current filtered languages
     onChange: handleRowSelectionChange,
     getCheckboxProps: (record: any) => ({
@@ -316,7 +313,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
 
       <Space wrap style={{ marginBottom: 16 }}>
         {allSelectedKeys.map((key) => {
-          const currency = addCurrencies.find(
+          const currency = defaultData.find(
             (cur) => cur.key === key,
           )?.currencyName;
           return (

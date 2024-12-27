@@ -27,7 +27,7 @@ export const InitializationDetection = async ({
       method: "GET",
     });
     const res = response.data.response;
-    console.log("res: ", res);
+    console.log("InitializationDetection: ", res);
     return res;
   } catch (error) {
     console.error("Error UpdateUser:", error);
@@ -103,17 +103,16 @@ export const AddDefaultLanguagePack = async ({
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
+  console.log("AddDefaultLanguagePackData: ", shop);
+  
   try {
     const addDefaultLanguagePackResponse = await axios({
-      url: `${process.env.SERVER_URL}/aiLanguagePacks/addDefaultLanguagePack`,
+      url: `${process.env.SERVER_URL}/aiLanguagePacks/addDefaultLanguagePack?shopName=${shop}`,
       method: "PUT",
-      data: {
-        shopName: shop,
-      },
     });
     console.log(
-      "addDefaultLanguagePackResponse: ",
-      addDefaultLanguagePackResponse.data,
+      "addDefaultLanguagePackResponse:",
+      addDefaultLanguagePackResponse,
     );
   } catch (error) {
     console.error("Error UpdateUser:", error);
