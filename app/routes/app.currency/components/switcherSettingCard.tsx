@@ -12,6 +12,7 @@ interface SwitcherSettingCardProps {
   settingUrl: string;
   moneyWithCurrencyFormatHtml: string | null; //HTML with currency:
   moneyFormatHtml: string | null; //HTML without currency:
+  defaultCurrencyCode: string;
 }
 
 const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
@@ -21,14 +22,14 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   settingUrl,
   moneyWithCurrencyFormatHtml,
   moneyFormatHtml,
+  defaultCurrencyCode,
 }) => {
   const blockUrl = `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/switcher`;
   const supportUrl =
     "http://ciwi.bogdatech.com/help/uncategorized/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/";
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [isWithMoneyVisible, setIsWithMoneyVisible] = useState<boolean>(true);
-  const [isWithoutMoneyVisible, setIsWithoutMoneyVisible] =
-    useState<boolean>(true);
+  const [withMoneyValue, setWithMoneyValue] = useState<string>("");
+  const [withoutMoneyValue, setWithoutMoneyValue] = useState<string>("");
   const [step1Visible, setStep1Visible] = useState<boolean>(true);
   const [step2Visible, setStep2Visible] = useState<boolean>(true);
 
@@ -49,16 +50,24 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
       const moneyWithoutMoneyElement =
         moneyWithoutMoneyDoc.querySelector(".ciwi-money");
 
-      if (moneyWithMoneyElement !== null) {
-        setIsWithMoneyVisible(false);
-      }
-
-      if (moneyWithoutMoneyElement !== null) {
-        setIsWithoutMoneyVisible(false);
-      }
-
       if (moneyWithMoneyElement && moneyWithoutMoneyElement)
         setIsVisible(false);
+
+      const spansWithMoney = moneyWithMoneyDoc.querySelectorAll("span"); // 获取所有 span 元素
+
+      spansWithMoney.forEach((span) => {
+        if (span.textContent && span.textContent.trim()) {
+          setWithMoneyValue(span.textContent.trim());
+        }
+      });
+
+      const spansWithoutMoney = moneyWithoutMoneyDoc.querySelectorAll("span"); // 获取所有 span 元素
+
+      spansWithoutMoney.forEach((span) => {
+        if (span.textContent && span.textContent.trim()) {
+          setWithoutMoneyValue(span.textContent.trim());
+        }
+      });
     }
   }, [moneyWithCurrencyFormatHtml, moneyFormatHtml]);
 
@@ -123,26 +132,46 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
 
             <div>
               <strong>HTML with currency:</strong>
-              <Paragraph
-                copyable={{
-                  text: `<span class="ciwi-money">${moneyWithCurrencyFormatHtml}</span>`,
-                }}
-              >
-                &lt;span class="ciwi-money"&gt;{moneyWithCurrencyFormatHtml}
-                &lt;/span&gt;
-              </Paragraph>
+              {isVisible ? (
+                <Paragraph
+                  copyable={{
+                    text: `<span class="ciwi-money">${withoutMoneyValue} ${defaultCurrencyCode}</span>`,
+                  }}
+                >
+                  &lt;span class="ciwi-money"&gt;{withoutMoneyValue} {defaultCurrencyCode}
+                  &lt;/span&gt;
+                </Paragraph>
+              ) : (
+                <Paragraph
+                  copyable={{
+                    text: `${withMoneyValue}`,
+                  }}
+                >
+                  {withMoneyValue}
+                </Paragraph>
+              )}
             </div>
 
             <div>
               <strong>HTML without currency:</strong>
-              <Paragraph
-                copyable={{
-                  text: `<span class="ciwi-money">${moneyFormatHtml}</span>`,
-                }}
-              >
-                &lt;span class="ciwi-money"&gt;{moneyFormatHtml}
-                &lt;/span&gt;
-              </Paragraph>
+              {isVisible ? (
+                <Paragraph
+                  copyable={{
+                    text: `<span class="ciwi-money">${withoutMoneyValue}</span>`,
+                  }}
+                >
+                  &lt;span class="ciwi-money"&gt;{withoutMoneyValue}
+                  &lt;/span&gt;
+                </Paragraph>
+              ) : (
+                <Paragraph
+                  copyable={{
+                    text: `${withoutMoneyValue}`,
+                  }}
+                >
+                  {withoutMoneyValue}
+                </Paragraph>
+              )}
             </div>
           </Space>
         </Card>
