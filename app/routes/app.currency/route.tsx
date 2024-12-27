@@ -603,6 +603,7 @@ const Index = () => {
               shop={shop}
               ciwiSwitcherId={ciwiSwitcherId}
               isEnable={switcherEnableCardOpen}
+              defaultCurrencyCode={defaultCurrencyCode}
             />
 
             <div className="currency-header">
