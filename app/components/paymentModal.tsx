@@ -76,7 +76,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
           status: order.status,
           confirmationUrl: confirmationUrl,
         };
-        console.log(orderInfo);
         const formData = new FormData();
         formData.append("orderInfo", JSON.stringify(orderInfo));
         orderFetcher.submit(formData, {
@@ -96,10 +95,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       }
     }
   }, [payFetcher.data]);
-
-  useEffect(() => {
-    if (orderFetcher.data) console.log(orderFetcher.data);
-  }, [orderFetcher.data]);
 
   const options: OptionType[] = [
     {
@@ -174,7 +169,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
       },
       test: selectedOption?.test,
     };
-    console.log(payInfo);
     const formData = new FormData();
     formData.append("payInfo", JSON.stringify(payInfo));
     payFetcher.submit(formData, {
@@ -190,7 +184,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
 
   const handleChange = (value: OptionType) => {
     setSelectedOption(value);
-    console.log(`Selected: ${value}`);
   };
 
   return (

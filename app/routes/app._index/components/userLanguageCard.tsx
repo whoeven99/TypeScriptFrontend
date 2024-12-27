@@ -13,6 +13,7 @@ interface UserLanguageCardProps {
   languageLocaleName: string;
   languageCode: string; //语言代码
   primaryLanguageCode: string;
+  limited: boolean;
 }
 
 // interface FetchType {
@@ -25,6 +26,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   languageLocaleName,
   languageCode,
   primaryLanguageCode,
+  limited,
 }) => {
   const data = useSelector((state: any) =>
     state.languageTableData.rows.find(
@@ -141,29 +143,33 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   }, [translateFetcher.data]);
 
   const handleTranslate = async () => {
-    const selectedTranslatingItem = datas.find(
-      (item: LanguagesDataType) => item.status === 2,
-    );
-    if (!selectedTranslatingItem) {
-      const formData = new FormData();
-      formData.append(
-        "translation",
-        JSON.stringify({
-          primaryLanguageCode: primaryLanguageCode,
-          selectedLanguage: languageCode,
-        }),
-      ); // 将选中的语言作为字符串发送
-      translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
-      dispatch(
-        setStatusState({
-          target: data.locale,
-          status: 2,
-        }),
-      );
+    if (limited) {
+      message.error("Character Limit Reached");
     } else {
-      message.error(
-        "The translation task is in progress. Please try translating again later.",
+      const selectedTranslatingItem = datas.find(
+        (item: LanguagesDataType) => item.status === 2,
       );
+      if (!selectedTranslatingItem) {
+        const formData = new FormData();
+        formData.append(
+          "translation",
+          JSON.stringify({
+            primaryLanguageCode: primaryLanguageCode,
+            selectedLanguage: languageCode,
+          }),
+        ); // 将选中的语言作为字符串发送
+        translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
+        dispatch(
+          setStatusState({
+            target: data.locale,
+            status: 2,
+          }),
+        );
+      } else {
+        message.error(
+          "The translation task is in progress. Please try translating again later.",
+        );
+      }
     }
   };
 

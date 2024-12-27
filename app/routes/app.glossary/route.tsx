@@ -188,14 +188,7 @@ const Index = () => {
   useEffect(() => {
     if (statusFetcher.data) {
       if (statusFetcher.data.data.success) {
-        console.log(statusFetcher.data);
         message.success("Saved successfully");
-        console.log({
-          key: statusFetcher.data.data.response.id,
-          loading: false,
-          status: statusFetcher.data.data.response.status,
-        });
-
         dispatch(
           setGLossaryStatusLoadingState({
             key: statusFetcher.data.data.response.id,

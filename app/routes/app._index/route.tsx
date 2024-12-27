@@ -53,6 +53,7 @@ const Index = () => {
   const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
   const [user, setUser] = useState<UserType>();
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
+  const [limited, setLimited] = useState<boolean>(false);
   const [paymentModalVisible, setPaymentModalVisible] =
     useState<boolean>(false);
   const [newUserModal, setNewUserModal] = useState<boolean>(false);
@@ -98,6 +99,12 @@ const Index = () => {
   }, [loadingUserFetcher.data]);
 
   useEffect(() => {
+    if (user && user.chars >= user.totalChars) {
+      setLimited(true);
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (initializationFetcher.data && user) {
       if (initializationFetcher.data?.data) {
         setNewUserModal(false);
@@ -123,11 +130,6 @@ const Index = () => {
       dispatch(setTableData(data)); // 只在组件首次渲染时触
     }
   }, [dispatch, languageData]);
-
-  useEffect(() => {
-    console.log(languageData);
-    console.log(languageData.length);
-  }, [languageData]);
 
   const onClick = async () => {
     setNewUserModalLoading(true);
@@ -190,6 +192,7 @@ const Index = () => {
                           languageLocaleName={language.localeName}
                           languageName={language.name}
                           languageCode={language.locale}
+                          limited={limited}
                         />
                       )}
                     </Col>
