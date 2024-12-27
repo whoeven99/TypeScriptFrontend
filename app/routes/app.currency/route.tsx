@@ -321,7 +321,6 @@ const Index = () => {
       const autoRateData = loadingFetcher.data.currencyList
         .filter((item: any) => item.exchangeRate == "Auto")
         .map((item: any) => item.currencyCode);
-      console.log("autoRateData: ", autoRateData);
       const rateFormData = new FormData();
       rateFormData.append("rateData", JSON.stringify(autoRateData));
       rateFetcher.submit(rateFormData, {
@@ -398,7 +397,6 @@ const Index = () => {
 
   useEffect(() => {
     if (rateFetcher.data) {
-      console.log(rateFetcher.data?.data);
       // 创建一个新数组，存放符合条件的 item.value
       const newRates = rateFetcher.data.data.reduce((acc: any[], item: any) => {
         if (item.status === "fulfilled" && item.value) {

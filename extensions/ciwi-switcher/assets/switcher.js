@@ -6,7 +6,6 @@ async function fetchCurrencies(shop) {
   });
 
   const res = response.data.response;
-  console.log("currency: ", res);
   if (res) {
     const data = res.map((item) => ({
       key: item.id,
@@ -23,10 +22,6 @@ async function fetchCurrencies(shop) {
 }
 
 async function fetchAutoRate(shop, currencyCode) {
-  console.log("fetchAutoRate: ", {
-    shopName: shop,
-    currencyCode: currencyCode,
-  });
   const response = await axios({
     url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
     method: "POST",
@@ -37,7 +32,6 @@ async function fetchAutoRate(shop, currencyCode) {
   });
 
   const res = response.data.response;
-  console.log("currency: ", res);
   return res.exchangeRate;
 }
 
@@ -59,25 +53,18 @@ function transform(
   currencyCode,
   rounding,
 ) {
-  console.log("exchangeRate: ", exchangeRate);
   const formattedPrice = price.replace(/[^0-9,. ]/g, "").trim();
 
   if (!formattedPrice || exchangeRate == "Auto") {
     return price;
   }
 
-  console.log("rounding: ", rounding);
   let number = convertToNumberFromMoneyFormat(moneyFormat, formattedPrice);
-
-  console.log("price: ", price);
-  console.log("formattedPrice: ", formattedPrice);
-  console.log("number: ", number);
 
   // Remove commas or other unwanted characters
   number = (number * exchangeRate).toFixed(2);
 
   const transformedPrice = customRounding(number, rounding);
-  console.log("transformedPrice: ", transformedPrice);
 
   number = detectNumberFormat(moneyFormat, transformedPrice, rounding);
 
@@ -132,13 +119,11 @@ function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
 
 // Rounding function
 function customRounding(number, rounding) {
-  console.log("customRounding: ", number);
 
   if (parseFloat(number) === 0 && rounding != "0") {
     return number;
   }
   const integerPart = Math.floor(number);
-  console.log("integerPart: ", integerPart);
 
   switch (rounding) {
     case "":
@@ -149,10 +134,8 @@ function customRounding(number, rounding) {
     case "1.00":
       return integerPart.toFixed(2);
     case "0.99":
-      console.log(integerPart + 0.99);
       return integerPart + 0.99;
     case "0.95":
-      console.log(integerPart + 0.95);
       return integerPart + 0.95;
     case "0.75":
       return integerPart + 0.75;
@@ -168,7 +151,6 @@ function customRounding(number, rounding) {
 function detectNumberFormat(moneyFormat, transformedPrice, rounding) {
   let number = transformedPrice.toString();
   let [integerPart, decimalPart] = number.split("."); // 默认以点为小数点分隔符
-  console.log(Number(`0.${decimalPart}`).toFixed(2).slice(2));
 
   if (rounding == "0") {
     // 处理不同的格式
@@ -422,7 +404,6 @@ class CiwiswitcherForm extends HTMLElement {
   }
 
   updateCurrency(event) {
-    console.log(event.target);
     const selectedCurrency = event.target.value;
     this.elements.currencyInput.value = selectedCurrency;
   }
@@ -471,7 +452,6 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
   const shop = document.getElementById("queryCiwiId");
-  console.log(shop);
   let moneyFormat = document.getElementById("queryMoneyFormat");
   const data = await fetchCurrencies(shop.value);
 
@@ -483,7 +463,6 @@ window.onload = async function () {
     selectedCurrency && !selectedCurrency.primaryStatus;
 
   const currencySwitcher = document.getElementById("currency-switcher");
-  console.log("currencySwitcher: ", currencySwitcher);
   const currencyInput = document.querySelector('input[name="currency_code"]');
 
   const regex = /{{(.*?)}}/;
@@ -497,7 +476,6 @@ window.onload = async function () {
     let rate = selectedCurrency.exchangeRate;
     if (selectedCurrency.exchangeRate == "Auto") {
       rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
-      console.log("rate: ", rate);
       if (typeof rate != "number") {
         rate = 1;
       }
