@@ -26,7 +26,7 @@ export const InitializationDetection = async ({
       url: `${process.env.SERVER_URL}/user/InitializationDetection?shopName=${shop}`,
       method: "GET",
     });
-    const res = response.data;
+    const res = response.data.response;
     console.log("res: ", res);
     return res;
   } catch (error) {
