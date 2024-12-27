@@ -53,21 +53,31 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
       if (moneyWithMoneyElement && moneyWithoutMoneyElement)
         setIsVisible(false);
 
-      const spansWithMoney = moneyWithMoneyDoc.querySelectorAll("span"); // 获取所有 span 元素
+      const spansWithMoney = moneyWithMoneyDoc.querySelectorAll("span");
 
-      spansWithMoney.forEach((span) => {
-        if (span.textContent && span.textContent.trim()) {
-          setWithMoneyValue(span.textContent.trim());
-        }
-      });
+      if (spansWithMoney.length) {
+        spansWithMoney.forEach((span) => {
+          if (span.textContent && span.textContent.trim()) {
+            setWithMoneyValue(span.textContent.trim());
+          }
+        });
+      } else {
+        console.log(moneyWithCurrencyFormatHtml);
+        setWithMoneyValue(moneyWithCurrencyFormatHtml);
+      }
 
-      const spansWithoutMoney = moneyWithoutMoneyDoc.querySelectorAll("span"); // 获取所有 span 元素
+      const spansWithoutMoney = moneyWithoutMoneyDoc.querySelectorAll("span");
 
-      spansWithoutMoney.forEach((span) => {
-        if (span.textContent && span.textContent.trim()) {
-          setWithoutMoneyValue(span.textContent.trim());
-        }
-      });
+      if (spansWithoutMoney.length) {
+        spansWithoutMoney.forEach((span) => {
+          if (span.textContent && span.textContent.trim()) {
+            setWithoutMoneyValue(span.textContent.trim());
+          }
+        });
+      } else {
+        console.log(moneyFormatHtml);
+        setWithoutMoneyValue(moneyFormatHtml);
+      }
     }
   }, [moneyWithCurrencyFormatHtml, moneyFormatHtml]);
 
@@ -138,40 +148,31 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                     text: `<span class="ciwi-money">${withoutMoneyValue} ${defaultCurrencyCode}</span>`,
                   }}
                 >
-                  &lt;span class="ciwi-money"&gt;{withoutMoneyValue} {defaultCurrencyCode}
+                  &lt;span class="ciwi-money"&gt;{withoutMoneyValue}{" "}
+                  {defaultCurrencyCode}
                   &lt;/span&gt;
                 </Paragraph>
               ) : (
                 <Paragraph
                   copyable={{
-                    text: `${withMoneyValue}`,
+                    text: `<span class="ciwi-money">${withMoneyValue}</span>`,
                   }}
                 >
-                  {withMoneyValue}
+                  &lt;span class="ciwi-money"&gt;{withMoneyValue}&lt;/span&gt;
                 </Paragraph>
               )}
             </div>
 
             <div>
               <strong>HTML without currency:</strong>
-              {isVisible ? (
-                <Paragraph
-                  copyable={{
-                    text: `<span class="ciwi-money">${withoutMoneyValue}</span>`,
-                  }}
-                >
-                  &lt;span class="ciwi-money"&gt;{withoutMoneyValue}
-                  &lt;/span&gt;
-                </Paragraph>
-              ) : (
-                <Paragraph
-                  copyable={{
-                    text: `${withoutMoneyValue}`,
-                  }}
-                >
-                  {withoutMoneyValue}
-                </Paragraph>
-              )}
+              <Paragraph
+                copyable={{
+                  text: `<span class="ciwi-money">${withoutMoneyValue}</span>`,
+                }}
+              >
+                &lt;span class="ciwi-money"&gt;{withoutMoneyValue}
+                &lt;/span&gt;
+              </Paragraph>
             </div>
           </Space>
         </Card>

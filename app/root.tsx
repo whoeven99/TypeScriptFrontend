@@ -11,23 +11,17 @@ import "./styles.css";
 import "react-quill/dist/quill.snow.css";
 import { useEffect } from "react";
 
-
 export default function App() {
   // useEffect(() => {
-  //   // Create the script element for Shopify App Bridge
-  //   const script = document.createElement("script");
-  //   script.src = "https://cdn.shopify.com/shopifycloud/app-bridge.js";
-  //   script.async = true;
-  //   script.onload = () => {
-  //     // Define the processWebVitals function after the script is loaded
-  //     const processWebVitals = (metrics: any) => {
-  //       const monitorUrl =
-  //         "https://sorry-lbs-abraham-barn.trycloudflare.com/web-vitals-metrics";
-  //       const data = JSON.stringify(metrics);
-  //       navigator.sendBeacon(monitorUrl, data);
-  //     };
+  //   console.log(shopify.config.debug);
+  //   // Define the processWebVitals function after the script is loaded
+  //   const processWebVitals = (metrics: any) => {
+  //     const monitorUrl =
+  //       "https://numeric-mailto-increasing-more.trycloudflare.com/web-vitals-metrics";
+  //     const data = JSON.stringify(metrics);
+  //     console.log(metrics);
+  //     navigator.sendBeacon(monitorUrl, data);
   //   };
-  //   document.head.appendChild(script);
   // }, []);
 
   return (
@@ -37,6 +31,7 @@ export default function App() {
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
           {/* <meta name="shopify-debug" content="web-vitals" />
+          <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" />
           <meta
             name="shopify-api-key"
             content="4b05c1caefa9e0761a0538b64159b627"
