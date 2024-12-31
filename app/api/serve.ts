@@ -457,7 +457,7 @@ export const GetTotalWords = async ({
     const res = response.data.response;
     return res;
   } catch (error) {
-    console.error("Error occurred in the totalWords:", error);
+    console.error("Error GetTotalWords:", error);
     return { status: "error", error: "Failed to fetch total words" }; // 错误时返回默认值和错误信息
   }
 };

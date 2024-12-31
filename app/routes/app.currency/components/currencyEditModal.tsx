@@ -13,6 +13,7 @@ import { BaseOptionType, DefaultOptionType } from "antd/es/select";
 import { CurrencyDataType } from "../route";
 import { useDispatch, useSelector } from "react-redux";
 import { updateTableData } from "~/store/modules/currencyDataTable";
+import { useTranslation } from "react-i18next";
 
 const { Title, Text } = Typography;
 
@@ -40,10 +41,11 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   const [updateFetcherLoading, setUpdateFetcherLoading] =
     useState<boolean>(false);
   const [saveButtonDisable, setSaveButtonDisable] = useState<boolean>(true);
-  const title = `Edit ${selectedRow?.currency}`;
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const updateFetcher = useFetcher<any>();
   const dataSource = useSelector((state: any) => state.currencyTableData.rows);
+  const title = `${t("Edit")} ${selectedRow?.currency}`;
 
   useEffect(() => {
     if (updateFetcher.data) {
@@ -62,7 +64,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
           },
         ];
         dispatch(updateTableData(data));
-        message.success("Saved successfully");
+        message.success(t("Saved successfully"));
         setIsModalOpen(false);
         setExRateSelectValue(undefined);
         setRoundingSelectValue(undefined);
@@ -184,7 +186,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
     >
       <Space direction="vertical" size="small" style={{ display: "flex" }}>
         <div>
-          <Title level={5}>Exchange rate</Title>
+          <Title level={5}>{t("Exchange rate")}</Title>
           <Select
             defaultValue={selectedRow?.exchangeRate.toString()}
             value={exRateSelectValue}
@@ -194,7 +196,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
           />
           {exRateSelectValue === "Auto" ? (
             <Text>
-              {selectedRow?.currency} will fluctuate based on market rates.
+              {selectedRow?.currency}{t("will fluctuate based on market rates")}.
             </Text>
           ) : (
             <Space className="manual_rate_input">
@@ -211,7 +213,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
           )}
         </div>
         <div>
-          <Title level={5}>Rounding</Title>
+          <Title level={5}>{t("Rounding")}</Title>
           <Select
             defaultValue={selectedRow?.rounding}
             value={roundingSelectValue}

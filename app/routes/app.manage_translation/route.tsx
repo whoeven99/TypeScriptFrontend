@@ -16,6 +16,7 @@ import { authenticate } from "~/shopify.server";
 import { WordsType } from "../app._index/route";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { updateData } from "~/store/modules/languageItemsData";
+import { useTranslation } from "react-i18next";
 const ManageTranslationsCard = React.lazy(
   () => import("./components/manageTranslationsCard"),
 );
@@ -347,6 +348,7 @@ const Index = () => {
   const [disable, setDisable] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const location = useLocation();
   const { key } = location.state || {}; // 提取传递的状态
   const items = useSelector((state: any) => state.languageItemsData);
@@ -369,7 +371,7 @@ const Index = () => {
   const productsDataSource: TableDataType[] = [
     {
       key: "products",
-      title: "Products",
+      title: t("Products"),
       allTranslatedItems:
         items.find(
           (item: any) => item?.language === current && item?.type === "PRODUCT",
@@ -383,7 +385,7 @@ const Index = () => {
     },
     {
       key: "collections",
-      title: "Collections",
+      title: t("Collections"),
       allTranslatedItems:
         items.find(
           (item: any) =>
@@ -401,7 +403,7 @@ const Index = () => {
   const onlineStoreDataSource: TableDataType[] = [
     {
       key: "articles",
-      title: "Articles",
+      title: t("Articles"),
       allTranslatedItems:
         items.find(
           (item: any) => item?.language === current && item?.type === "ARTICLE",
@@ -415,7 +417,7 @@ const Index = () => {
     },
     {
       key: "blog_titles",
-      title: "Blog titles",
+      title: t("Blog titles"),
       allTranslatedItems:
         items.find(
           (item: any) => item?.language === current && item?.type === "BLOG",
@@ -429,7 +431,7 @@ const Index = () => {
     },
     {
       key: "pages",
-      title: "Pages",
+      title: t("Pages"),
       allTranslatedItems:
         items.find(
           (item: any) => item?.language === current && item?.type === "PAGE",
@@ -443,7 +445,7 @@ const Index = () => {
     },
     {
       key: "filters",
-      title: "Filters",
+      title: t("Filters"),
       allTranslatedItems:
         items.find(
           (item: any) => item?.language === current && item?.type === "FILTER",
@@ -457,7 +459,7 @@ const Index = () => {
     },
     {
       key: "metaobjects",
-      title: "Metaobjects",
+      title: t("Metaobjects"),
       allTranslatedItems:
         items.find(
           (item: any) =>
@@ -473,7 +475,7 @@ const Index = () => {
     },
     {
       key: "navigation",
-      title: "Navigation",
+      title: t("Navigation"),
       allTranslatedItems:
         items.find(
           (item: any) => item?.language === current && item?.type === "LINK",
@@ -487,7 +489,7 @@ const Index = () => {
     },
     {
       key: "policies",
-      title: "Policies",
+      title: t("Policies"),
       allTranslatedItems:
         items.find(
           (item: any) =>
@@ -503,7 +505,7 @@ const Index = () => {
     },
     {
       key: "shop",
-      title: "Shop",
+      title: t("Shop"),
       allTranslatedItems:
         items.find(
           (item: any) => item?.language === current && item?.type === "SHOP",
@@ -517,7 +519,7 @@ const Index = () => {
     },
     {
       key: "store_metadata",
-      title: "Store metadata",
+      title: t("Store metadata"),
       allTranslatedItems:
         items.find(
           (item: any) =>
@@ -533,7 +535,7 @@ const Index = () => {
     },
     {
       key: "theme",
-      title: "Theme",
+      title: t("Theme"),
       allTranslatedItems:
         items.find(
           (item: any) =>
@@ -551,7 +553,7 @@ const Index = () => {
   const settingsDataSource: TableDataType[] = [
     {
       key: "delivery",
-      title: "Delivery",
+      title: t("Delivery"),
       allTranslatedItems:
         items.find(
           (item: any) =>
@@ -569,7 +571,7 @@ const Index = () => {
     },
     {
       key: "shipping",
-      title: "Shipping",
+      title: t("Shipping"),
       allTranslatedItems:
         items.find(
           (item: any) =>
@@ -918,9 +920,9 @@ const Index = () => {
 
   return (
     <Page>
-      <TitleBar title="Manage Translation" />
+      <TitleBar title={t("Manage Translation")} />
       {loading ? (
-        <div>loading...</div>
+        <div>{t("loading")}...</div>
       ) : menuData && !menuData?.length ? (
         <div
           style={{
@@ -936,12 +938,12 @@ const Index = () => {
         <div>
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
             <AttentionCard
-              title="Translation credits have been exhausted."
-              content="The translation cannot be completed due to exhausted credits."
-              buttonContent="Get more word credits"
+              title={t("Translation credits have been exhausted.")}
+              content={t("The translation cannot be completed due to exhausted credits.")}
+              buttonContent={t("Get more word credits")}
               show={disable}
             />
-            <Suspense fallback={<div>loading...</div>}>
+            <Suspense fallback={<div>{t("loading")}...</div>}>
               <div className="manage-header">
                 <Menu
                   onClick={onClick}
@@ -966,17 +968,17 @@ const Index = () => {
                     <div className="search-input"></div>
                     {/* 使用 Suspense 包裹懒加载组件 */}
                     <ManageTranslationsCard
-                      cardTitle="Products"
+                      cardTitle={t("Products")}
                       dataSource={productsDataSource}
                       current={current}
                     />
                     <ManageTranslationsCard
-                      cardTitle="Online Store"
+                      cardTitle={t("Online Store")}
                       dataSource={onlineStoreDataSource}
                       current={current}
                     />
                     <ManageTranslationsCard
-                      cardTitle="Settings"
+                      cardTitle={t("Settings")}
                       dataSource={settingsDataSource}
                       current={current}
                     />

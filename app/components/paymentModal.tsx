@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import PaymentOptionSelect from "./paymentOptionSelect";
 import "./styles.css";
 import { useFetcher } from "@remix-run/react";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -39,6 +40,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   // const totalCharacters = useSelector(
   //   (state: any) => state.TotalCharacters.count,
   // );
+  const { t } = useTranslation();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
 
@@ -189,7 +191,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   return (
     <Modal
       open={visible}
-      title={"Extend your quota usage"}
+      title={t("Extend your quota usage")}
       onCancel={onCancel}
       footer={[
         <Button
@@ -200,7 +202,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
           loading={buyButtonLoading}
           style={{ marginRight: "32px" }}
         >
-          Buy now
+          {t("Buy now")}
         </Button>,
       ]}
     >
@@ -232,7 +234,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
             ))}
           </Row>
           <div className="total_payment">
-            <Text style={{ marginRight: "5px" }}>Total Payment:</Text>
+            <Text style={{ marginRight: "5px" }}>{t("Total Payment:")}</Text>
             <Text strong>${selectedOption?.price.currentPrice || 0}</Text>
           </div>
         </Space>

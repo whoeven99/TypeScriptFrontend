@@ -9,33 +9,20 @@ import { Provider } from "react-redux";
 import store from "./store";
 import "./styles.css";
 import "react-quill/dist/quill.snow.css";
-import { useEffect } from "react";
 
 export default function App() {
-  // useEffect(() => {
-  //   console.log(shopify.config.debug);
-  //   // Define the processWebVitals function after the script is loaded
-  //   const processWebVitals = (metrics: any) => {
-  //     const monitorUrl =
-  //       "https://numeric-mailto-increasing-more.trycloudflare.com/web-vitals-metrics";
-  //     const data = JSON.stringify(metrics);
-  //     console.log(metrics);
-  //     navigator.sendBeacon(monitorUrl, data);
-  //   };
-  // }, []);
-
   return (
     <Provider store={store}>
-      <html>
+      <html lang="zh">
         <head>
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
-          {/* <meta name="shopify-debug" content="web-vitals" />
+          <meta name="shopify-debug" content="web-vitals" />
           <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" />
           <meta
             name="shopify-api-key"
             content="4b05c1caefa9e0761a0538b64159b627"
-          /> */}
+          />
           <link rel="preconnect" href="https://cdn.shopify.com/" />
           <link
             rel="stylesheet"

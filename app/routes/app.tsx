@@ -36,6 +36,7 @@ import {
 import { ShopLocalesType } from "./app.language/route";
 import { mutationAppSubscriptionCreate, queryShopLanguages } from "~/api/admin";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 // import i18n from "~/i18n";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
@@ -49,23 +50,8 @@ interface LoadingFetchType {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     await authenticate.admin(request);
-    // const language =
-    //   request.headers.get("Accept-Language")?.split(",")[0] || "en";
-    // console.log("trans: ", language);
-    // let i18nCode;
-
-    // switch (true) {
-    //   case language == "en-US":
-    //     //     // i18n.changeLanguage("zh");
-    //     i18nCode = "zh";
-    //   case language == "zh-CN":
-    //     //     // i18n.changeLanguage("zh");
-    //     i18nCode = "zh";
-    // }
-
     return json({
       apiKey: process.env.SHOPIFY_API_KEY || "",
-      // i18nCode: i18nCode,
     });
   } catch (error) {
     console.error("Error during authentication:", error);
@@ -304,6 +290,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
   const loadingFetcher = useFetcher<LoadingFetchType>();
+  const { t } = useTranslation();
 
   useEffect(() => {
     shopify.loading(true);
@@ -314,10 +301,6 @@ export default function App() {
       action: "/app",
     });
   }, []);
-
-  // useEffect(() => {
-  //   if (i18nCode) i18n.changeLanguage(i18nCode);
-  // }, [i18nCode]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
@@ -332,10 +315,10 @@ export default function App() {
           <Link to="/app" rel="home">
             Home
           </Link>
-          <Link to="/app/language">Language</Link>
-          <Link to="/app/manage_translation">Manage Translation</Link>
-          <Link to="/app/currency">Currency</Link>
-          <Link to="/app/glossary">Glossary</Link>
+          <Link to="/app/language">{t("Language")}</Link>
+          <Link to="/app/manage_translation">{t("Manage Translation")}</Link>
+          <Link to="/app/currency">{t("Currency")}</Link>
+          <Link to="/app/glossary">{t("Glossary")}</Link>
         </NavMenu>
         <Outlet />
       </ConfigProvider>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./styles.css";
+import { useTranslation } from "react-i18next";
 
 interface TranslatedIconProps {
   status: number; // 状态 0、1、2 或 3
@@ -10,6 +11,7 @@ const TranslatedIcon: React.FC<TranslatedIconProps> = ({ status, value }) => {
   const [isTranslated, setIsTranslated] = useState<boolean>(false);
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [isPartlyTranslated, setIsPartlyTranslated] = useState<boolean>(false);
+  const { t } = useTranslation();
 
   // 当状态为 1、2 或 3 时更新相应的状态
   useEffect(() => {
@@ -27,12 +29,12 @@ const TranslatedIcon: React.FC<TranslatedIconProps> = ({ status, value }) => {
       />
       <span className="text">
         {isTranslated
-          ? "Translated"
+          ? t("Translated")
           : isTranslating
-          ? "Translating"
+          ? t("Translating")
           : isPartlyTranslated
-          ? "Partly Translated"
-          : "Untranslated"}
+          ? t("Partly Translated")
+          : t("Untranslated")}
       </span>
       {value !== undefined && (
         <div className="value-display">

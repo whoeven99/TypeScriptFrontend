@@ -30,6 +30,7 @@ import AddCurrencyModal from "./components/addCurrencyModal";
 import CurrencyEditModal from "./components/currencyEditModal";
 import { setTableData } from "~/store/modules/currencyDataTable";
 import SwitcherSettingCard from "./components/switcherSettingCard";
+import { useTranslation } from "react-i18next";
 
 const { Title, Text } = Typography;
 
@@ -270,6 +271,7 @@ const Index = () => {
   >(dataSource);
 
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const loadingFetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
   const rateFetcher = useFetcher<any>();
@@ -443,7 +445,7 @@ const Index = () => {
       });
       // 一次性更新表格数据
       dispatch(setTableData(newData)); // 更新表格数据
-      message.success("Deleted successfully");
+      message.success(t("Deleted successfully"));
       setDeleteLoading(false);
       setSelectedRowKeys([]); // 清空已选中项
       setOriginalData(newData);
@@ -459,14 +461,14 @@ const Index = () => {
   const hasSelected = selectedRowKeys.length > 0;
 
   const exRateColumns: (BaseOptionType | DefaultOptionType)[] = [
-    { value: "Auto", label: "Auto" },
-    { value: "Manual Rate", label: "Manual Rate" },
+    { value: "Auto", label: t("Auto") },
+    { value: "Manual Rate", label: t("Manual Rate") },
   ];
 
   const roundingColumns: (BaseOptionType | DefaultOptionType)[] = [
-    { value: "", label: "Disable" },
-    { value: "0", label: "No decimal" },
-    { value: "1.00", label: "1.00 (Recommend)" },
+    { value: "", label: t("Disable") },
+    { value: "0", label: t("No decimal") },
+    { value: "1.00", label: `1.00 (${t("Recommend")})` },
     { value: "0.99", label: "0.99" },
     { value: "0.95", label: "0.95" },
     { value: "0.75", label: "0.75" },
@@ -476,7 +478,7 @@ const Index = () => {
 
   const columns: ColumnsType<any> = [
     {
-      title: "Currency",
+      title: t("Currency"),
       dataIndex: "currencyCode",
       key: "currencyCode",
       width: "20%",
@@ -487,7 +489,7 @@ const Index = () => {
       ),
     },
     {
-      title: "Rounding",
+      title: t("Rounding"),
       dataIndex: "rounding",
       key: "rounding",
       width: "15%",
@@ -496,16 +498,16 @@ const Index = () => {
           case null:
             return <Text></Text>;
           case "":
-            return <Text>Disable</Text>;
+            return <Text>{t("Disable")}</Text>;
           case "0":
-            return <Text>No decimal</Text>;
+            return <Text>{t("No decimal")}</Text>;
           default:
             return <Text>{Number(record.rounding).toFixed(2)}</Text>;
         }
       },
     },
     {
-      title: "Exchange rate",
+      title: t("Exchange rate"),
       dataIndex: "exchangeRate",
       key: "exchangeRate",
       width: "35%",
@@ -515,7 +517,7 @@ const Index = () => {
         );
         return record.exchangeRate === "Auto" ? (
           <div>
-            <Text>Auto</Text>
+            <Text>{t("Auto")}</Text>
             {autoRate && (
               <Text>
                 ({defaultSymbol}1 = {autoRate.rate.toFixed(4)}{" "}
@@ -531,7 +533,7 @@ const Index = () => {
       },
     },
     {
-      title: "Action",
+      title: t("Action"),
       dataIndex: "action",
       key: "action",
       width: "30%",
@@ -604,9 +606,9 @@ const Index = () => {
 
   return (
     <Page>
-      <TitleBar title="Currency"></TitleBar>
+      <TitleBar title={t("Currency")}></TitleBar>
       {loading ? (
-        <div>loading...</div>
+        <div>{t("loading")}...</div>
       ) : (
         <div>
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
@@ -622,7 +624,7 @@ const Index = () => {
 
             <div className="currency-header">
               <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-                Currency
+                {t("Currency")}
               </Title>
               <div className="currency-action">
                 <Space>
@@ -635,33 +637,35 @@ const Index = () => {
                     disabled={!hasSelected}
                     loading={deleteloading}
                   >
-                    Delete
+                    {t("Delete")}
                   </Button>
                   <Button
                     type="primary"
                     onClick={() => setIsAddCurrencyModalOpen(true)}
                   >
-                    Add Currency
+                    {t("Add Currency")}
                   </Button>
                 </Space>
               </div>
             </div>
             <div>
-              <Text type="secondary">Your store’s default currency: </Text>
+              <Text type="secondary">
+                {t("Your store’s default currency:")}
+              </Text>
               <Text strong> {defaultCurrencyCode}</Text>
             </div>
             <Flex gap="middle" vertical>
               <Flex align="center" gap="middle">
                 <Text>
-                  After setting, you can{" "}
+                  {t("After setting, you can")}
                   <Link url={userShop} target="_blank">
-                    Preview
-                  </Link>{" "}
-                  to view the prices in different currencies.
+                    {t("Preview")}
+                  </Link>
+                  {t("to view the prices in different currencies.")}
                 </Text>
               </Flex>
               <Input
-                placeholder="Search currencies..."
+                placeholder={t("Search currencies...")}
                 prefix={<SearchOutlined />}
                 value={searchInput}
                 onChange={handleSearch}

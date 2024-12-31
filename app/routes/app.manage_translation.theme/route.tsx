@@ -30,6 +30,7 @@ import { SearchOutlined } from "@ant-design/icons";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
+import { useTranslation } from "react-i18next";
 
 const { Header, Content } = Layout;
 const { TextArea } = Input;
@@ -150,8 +151,7 @@ const Index = () => {
   } = theme.useToken();
 
   const navigate = useNavigate();
-  const location = useLocation();
-  const submit = useSubmit(); // 使用 useSubmit 钩子
+  const { t } = useTranslation();
   const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
   useEffect(() => {
@@ -189,13 +189,13 @@ const Index = () => {
 
   const resourceColumns = [
     {
-      title: "Resource",
+      title: t("Resource"),
       dataIndex: "resource",
       key: "resource",
       width: "10%",
     },
     {
-      title: "Default Language",
+      title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
       width: "45%",
@@ -204,7 +204,7 @@ const Index = () => {
       },
     },
     {
-      title: "Translated",
+      title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
       width: "45%",
@@ -348,7 +348,7 @@ const Index = () => {
               }}
             >
               <Input
-                placeholder="Search languages..."
+                placeholder={t("Search...")}
                 prefix={<SearchOutlined />}
                 value={searchInput}
                 onChange={handleSearch}

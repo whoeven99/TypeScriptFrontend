@@ -43,6 +43,7 @@ import {
 } from "~/api/serve";
 import TranslatedIcon from "~/components/translateIcon";
 import { WordsType } from "../app._index/route";
+import { useTranslation } from "react-i18next";
 
 const PrimaryLanguage = lazy(() => import("./components/primaryLanguage"));
 const AddLanguageModal = lazy(() => import("./components/addLanguageModal"));
@@ -224,6 +225,7 @@ const Index = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const loadingFetcher = useFetcher<FetchType>();
@@ -396,7 +398,7 @@ const Index = () => {
 
   const columns = [
     {
-      title: "Language",
+      title: t("Language"),
       dataIndex: "language",
       key: "language",
       width: "30%",
@@ -409,7 +411,7 @@ const Index = () => {
       },
     },
     {
-      title: "Status",
+      title: t("Status"),
       dataIndex: "status",
       key: "status",
       width: "20%",
@@ -418,7 +420,7 @@ const Index = () => {
       },
     },
     {
-      title: "Publish",
+      title: t("Publish"),
       dataIndex: "published",
       key: "published",
       width: "20%",
@@ -431,7 +433,7 @@ const Index = () => {
       ),
     },
     {
-      title: "Action",
+      title: t("Action"),
       dataIndex: "action",
       key: "action",
       width: "30%",
@@ -442,7 +444,7 @@ const Index = () => {
             style={{ width: "100px" }}
             type="primary"
           >
-            Translate
+            {t("Translate")}
           </Button>
           <Button
             onClick={() => {
@@ -451,7 +453,7 @@ const Index = () => {
               });
             }}
           >
-            Manage
+            {t("Manage")}
           </Button>
         </Space>
       ),
@@ -481,7 +483,7 @@ const Index = () => {
 
   const handleTranslate = async (locale: string) => {
     if (words && words.chars > words.totalChars) {
-      message.error("Character Limit Reached");
+      message.error(t("Character Limit Reached"));
     } else {
       const selectedItem = data.find(
         (item: LanguagesDataType) => item.locale === locale,
@@ -503,7 +505,7 @@ const Index = () => {
           action: "/app/language",
         }); // 提交表单请求
 
-        message.success("The translation task is in progress.");
+        message.success(t("The translation task is in progress."));
         dispatch(
           setStatusState({
             target: selectedItem.locale,
@@ -512,7 +514,7 @@ const Index = () => {
         );
       } else {
         message.error(
-          "The translation task is in progress. Please try translating again later.",
+          t("The translation task is in progress. Please try translating again later."),
         );
       }
     }
@@ -587,22 +589,22 @@ const Index = () => {
 
   return (
     <Page>
-      <TitleBar title="Language" />
+      <TitleBar title={t("Language")} />
       {loading ? (
-        <div>loading...</div>
+        <div>{t("loading")}...</div>
       ) : (
         <div>
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
             <div>
               <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-                Languages
+                {t("Languages")}
               </Title>
               <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
             </div>
             <AttentionCard
-              title="Translation word credits have been exhausted."
-              content="The translation cannot be completed due to exhausted credits."
-              buttonContent="Get more word credits"
+              title={t("Translation word credits have been exhausted.")}
+              content={t("The translation cannot be completed due to exhausted credits.")}
+              buttonContent={t("Get more word credits")}
               show={disable}
             />
             <div className="languageTable_action">
@@ -618,19 +620,19 @@ const Index = () => {
                     disabled={!hasSelected}
                     loading={deleteloading}
                   >
-                    Delete
+                    {t("Delete")}
                   </Button>
                   {hasSelected
-                    ? `Selected ${selectedRowKeys.length} items`
+                    ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
                     : null}
                 </Flex>
                 <div>
                   <Space>
                     <Button type="default" onClick={PreviewClick}>
-                      Preview store
+                      {t("Preview store")}
                     </Button>
                     <Button type="primary" onClick={handleOpenModal}>
-                      Add Language
+                      {t("Add Language")}
                     </Button>
                   </Space>
                 </div>

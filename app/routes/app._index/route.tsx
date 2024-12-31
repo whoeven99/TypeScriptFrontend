@@ -144,7 +144,7 @@ const Index = () => {
   };
 
   return (
-    <Suspense fallback={<div>loading</div>}>
+    <Suspense fallback={<div>{t("loading")}</div>}>
       <Page>
         <TitleBar title={t("Dashboard")} />
         <BlockStack gap="500">
@@ -250,10 +250,9 @@ const Index = () => {
               maskClosable={false} // 禁用点击遮罩关闭
               keyboard={false} // 禁用按 Esc 键关闭
             >
-              <Title level={4}>Congratulations!</Title>
+              <Title level={4}>{t("Congratulations!")}</Title>
               <Text>
-                You have received 1,000 Credits, enabling you to translate into
-                over 137 languages.
+                {t("You have received 1,000 Credits, enabling you to translate into over 137 languages.")}
               </Text>
             </Modal>
             <PaymentModal
