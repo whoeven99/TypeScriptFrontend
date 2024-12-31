@@ -280,7 +280,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
 
   return (
     <Modal
-      width={500}
+      width={800}
       title={t("Select Currencies")}
       open={isVisible}
       onCancel={handleCloseModal}

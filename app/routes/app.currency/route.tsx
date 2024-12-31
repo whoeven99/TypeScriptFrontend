@@ -295,6 +295,7 @@ const Index = () => {
     fetch("/currencies.json")
       .then((response) => response.json())
       .then((data) => {
+        setCurrencyData(data);
         setAddCurrencies(
           data.filter(
             (item: CurrencyType) => item.currencyCode !== defaultCurrencyCode,
@@ -316,11 +317,11 @@ const Index = () => {
       // }));
       // setCurrencyData(currencyArray);
       setDefaultCurrencyCode(loadingFetcher.data.defaultCurrencyCode);
-      setAddCurrencies(
-        loadingFetcher.data.currencyLocaleInfo.filter(
-          (item: CurrencyType) => item.currencyCode !== defaultCurrencyCode,
-        ),
-      );
+      // setAddCurrencies(
+      //   loadingFetcher.data.currencyLocaleInfo.filter(
+      //     (item: CurrencyType) => item.currencyCode !== defaultCurrencyCode,
+      //   ),
+      // );
       const defaultCurrency = currencyData.find((item: CurrencyType) => {
         if (item.currencyCode == loadingFetcher.data.defaultCurrencyCode)
           return item;
@@ -539,8 +540,8 @@ const Index = () => {
       width: "30%",
       render: (_: any, record: any) => (
         <Space>
-          <Button onClick={() => handleEdit(record.key)}>Edit</Button>
-          <Button onClick={() => handleDelete(record.key)}>Delete</Button>
+          <Button onClick={() => handleEdit(record.key)}>{t("Edit")}</Button>
+          <Button onClick={() => handleDelete(record.key)}>{t("Delete")}</Button>
         </Space>
       ),
     },
