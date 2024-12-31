@@ -285,7 +285,7 @@ const Index = () => {
                 onClick={onCancel}
                 style={{ marginRight: "10px" }}
               >
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button
                 onClick={handleConfirm}
@@ -294,7 +294,7 @@ const Index = () => {
                 disabled={confirmLoading}
                 loading={confirmLoading}
               >
-                Save
+                {t("Save")}
               </Button>
             </div>,
           ]}
