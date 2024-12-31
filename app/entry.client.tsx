@@ -1,4 +1,4 @@
-import { RemixBrowser } from "@remix-run/react";
+import { RemixBrowser, useLoaderData } from "@remix-run/react";
 import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import i18n from "./i18n";
@@ -9,9 +9,9 @@ import Backend from "i18next-http-backend";
 
 async function hydrate() {
   await i18next
-    .use(initReactI18next) // Tell i18next to use the react-i18next plugin
-    .use(LanguageDetector) // Setup a client-side language detector
     .use(Backend) // Setup your backend
+    .use(LanguageDetector)
+    .use(initReactI18next) // Tell i18next to use the react-i18next plugin
     .init({
       ...i18n, // spread the configuration
       // This function detects the namespaces your routes rendered while SSR use
@@ -34,7 +34,7 @@ async function hydrate() {
         <StrictMode>
           <RemixBrowser />
         </StrictMode>
-      </I18nextProvider>
+      </I18nextProvider>,
     );
   });
 }

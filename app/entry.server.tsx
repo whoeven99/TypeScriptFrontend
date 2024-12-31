@@ -29,15 +29,38 @@ export default async function handleRequest(
   let i18nCode;
 
   switch (true) {
-    case language == "en-US":
-      //     // i18n.changeLanguage("zh");
-      i18nCode = "en";
-    case language == "en-GB":
-      //     // i18n.changeLanguage("zh");
-      i18nCode = "en";
+    case language == "fr":
+      i18nCode = "fr";
+      break;
+    case language == "de":
+      i18nCode = "de";
+      break;
+    case language == "es":
+      i18nCode = "es";
+      break;
+    case language == "it":
+      i18nCode = "it";
+      break;
+    case language == "nl":
+      i18nCode = "nl";
+      break;
+    case language == "pt":
+      i18nCode = "pt";
+      break;
+    case language == "sv":
+      i18nCode = "sv";
+      break;
+    case language == "ja":
+      i18nCode = "ja";
+      break;
+    case language == "zh-TW":
+      i18nCode = "zh-TW";
+      break;
     case language == "zh-CN":
-      //     // i18n.changeLanguage("zh");
       i18nCode = "zh";
+      break;
+    default:
+      i18nCode = "en";
   }
 
   addDocumentResponseHeaders(request, responseHeaders);
