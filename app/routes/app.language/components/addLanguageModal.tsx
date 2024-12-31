@@ -10,6 +10,7 @@ import {
 import { FetcherWithComponents } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateTableData } from "~/store/modules/languageTableData";
+import { useTranslation } from "react-i18next";
 
 interface LanguageModalProps {
   isVisible: boolean;
@@ -61,6 +62,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
     (state: any) => state.languageTableData.rows,
   );
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   const selectedLanguagesSet = new Set(
     selectedLanguage.map((lang) => lang.locale),
@@ -248,13 +250,13 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
 
   const columns = [
     {
-      title: "Language",
+      title: t("Language"),
       dataIndex: "name",
       key: "name",
       width: "20%",
     },
     {
-      title: "Relevant region(s)",
+      title: t("Relevant region(s)"),
       dataIndex: "src",
       key: "src",
       width: "60%",
@@ -287,7 +289,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       },
     },
     {
-      title: "Status",
+      title: t("Status"),
       dataIndex: "state",
       key: "state",
       width: "20%",
@@ -296,7 +298,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
 
   return (
     <Modal
-      title="Select Languages"
+      title={t("Select Languages")}
       width={1000}
       open={isVisible}
       onCancel={handleCloseModal}
@@ -307,7 +309,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
             onClick={handleCloseModal}
             style={{ marginRight: "10px" }}
           >
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button
             onClick={handleConfirm}
@@ -316,13 +318,13 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
             disabled={confirmButtonDisable}
             loading={confirmButtonDisable}
           >
-            Add
+            {t("Add")}
           </Button>
         </div>,
       ]}
     >
       <Input
-        placeholder="Search languages..."
+        placeholder={t("Search languages...")}
         prefix={<SearchOutlined />}
         value={searchInput}
         onChange={handleSearch}

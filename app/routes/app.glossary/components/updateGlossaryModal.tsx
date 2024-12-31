@@ -17,6 +17,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import { GLossaryDataType } from "../route";
 import { updateGLossaryTableData } from "~/store/modules/glossaryTableData";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -58,6 +59,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   >("");
 
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const updateFetcher = useFetcher<any>();
   const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
   const data = useSelector((state: any) =>
@@ -189,12 +191,12 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       setConfirmButtonDisable(true);
     } else if (!isValid) {
       message.warning(
-        "There are empty fields. Please complete all the required information.",
+        t("There are empty fields. Please complete all the required information."),
       );
     } else if (!isOversizeError) {
-      message.error("You can add up to 5 translation rules");
+      message.error(t("You can add up to 5 translation rules"));
     } else {
-      message.error("You cannot add two conflicting rules.");
+      message.error(t("You cannot add two conflicting rules."));
     }
   };
 
@@ -253,7 +255,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             onClick={handleCloseModal}
             style={{ marginRight: "10px" }}
           >
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button
             onClick={() => handleConfirm(id)}
@@ -262,13 +264,13 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             disabled={confirmButtonDisable}
             loading={confirmButtonDisable}
           >
-            Save
+            {t("Save")}
           </Button>
         </div>,
       ]}
     >
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <Text strong>Always translate</Text>
+        <Text strong>{t("Always translate")}</Text>
         <div
           style={{
             display: "flex",
@@ -279,7 +281,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
         >
           <Input
             style={{ flex: 1 }}
-            placeholder="Please enter original text"
+            placeholder={t("Please enter original text")}
             value={sourceText}
             onChange={onSourceTextChange}
             status={sourceTextStatus}
@@ -289,17 +291,17 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
               margin: "0 8px",
             }}
           >
-            to
+            {t("to")}
           </Text>
           <Input
             style={{ flex: 1 }}
-            placeholder="Please enter escaped text"
+            placeholder={t("Please enter escaped text")}
             value={targetText}
             onChange={onTargetTextChange}
             status={targetTextStatus}
           />
         </div>
-        <Text strong>Apply for</Text>
+        <Text strong>{t("Apply for")}</Text>
         <Select
           options={options}
           style={{ width: "200px" }}
@@ -311,9 +313,9 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           }
           status={rangeCodeStatus}
         />
-        <Text strong>Match by</Text>
+        <Text strong>{t("Match by")}</Text>
         <Checkbox checked={checked} onChange={onCheckboxChange}>
-          Case-sensitive
+          {t("Case-sensitive")}
         </Checkbox>
       </Space>
     </Modal>

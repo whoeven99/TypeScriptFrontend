@@ -1,6 +1,7 @@
 import React from "react";
 import { OptionType } from "./paymentModal";
 import { Typography } from "antd";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -15,6 +16,8 @@ const PaymentOptionSelect: React.FC<PaymentOptionSelectProps> = ({
   selectedOption,
   onChange,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div>
       <div
@@ -29,7 +32,7 @@ const PaymentOptionSelect: React.FC<PaymentOptionSelectProps> = ({
           readOnly
         />
         <Text style={{ display: 'block' }}>{Number(option.Credits).toLocaleString()}</Text>
-        <Text>Credits</Text>
+        <Text>{t("Credits")}</Text>
       </div>
       <div className="price">
         <Text strong style={{ marginRight: "5px", color: "#E74C3C" }}>

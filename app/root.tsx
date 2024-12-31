@@ -4,29 +4,67 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "@remix-run/react";
 import { Provider } from "react-redux";
 import store from "./store";
 import "./styles.css";
 import "react-quill/dist/quill.snow.css";
-import { useEffect } from "react";
+import { json, LoaderFunctionArgs } from "@remix-run/node";
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  try {
+    const language =
+      request.headers.get("Accept-Language")?.split(",")[0] || "en";
+    console.log("trans: ", language);
+    let i18nCode;
+    switch (true) {
+      case language == "fr":
+        i18nCode = "fr";
+        break;
+      case language == "de":
+        i18nCode = "de";
+        break;
+      case language == "es":
+        i18nCode = "es";
+        break;
+      case language == "it":
+        i18nCode = "it";
+        break;
+      case language == "nl":
+        i18nCode = "nl";
+        break;
+      case language == "pt":
+        i18nCode = "pt";
+        break;
+      case language == "sv":
+        i18nCode = "sv";
+        break;
+      case language == "ja":
+        i18nCode = "ja";
+        break;
+      case language == "zh-TW":
+        i18nCode = "zh-TW";
+        break;
+      case language == "zh-CN":
+        i18nCode = "zh";
+        break;
+      default:
+        i18nCode = "en";
+    }
+    return json({ i18nCode: i18nCode });
+  } catch (error) {
+    console.error("Error during authentication:", error);
+    throw new Response("Error during authentication", { status: 500 });
+  }
+};
 
 export default function App() {
-  // useEffect(() => {
-  //   console.log(shopify.config.debug);
-  //   // Define the processWebVitals function after the script is loaded
-  //   const processWebVitals = (metrics: any) => {
-  //     const monitorUrl =
-  //       "https://numeric-mailto-increasing-more.trycloudflare.com/web-vitals-metrics";
-  //     const data = JSON.stringify(metrics);
-  //     console.log(metrics);
-  //     navigator.sendBeacon(monitorUrl, data);
-  //   };
-  // }, []);
+  const { i18nCode } = useLoaderData<typeof loader>();
 
   return (
     <Provider store={store}>
-      <html>
+      <html lang={i18nCode}>
         <head>
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />

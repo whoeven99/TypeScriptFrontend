@@ -1,5 +1,6 @@
 import { useNavigate } from "@remix-run/react";
 import { Card, Space, Button, Typography, Table, Modal, Result } from "antd";
+import { useTranslation } from "react-i18next";
 
 const { Title } = Typography;
 
@@ -24,6 +25,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   current,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const columns = [
     {
@@ -33,14 +35,14 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       width: "30%",
     },
     {
-      title: "Items Translated",
+      title: t("Items Translated"),
       dataIndex: "items",
       key: "items",
       width: "30%",
       render: (_: any, record: any) => {
         return record.allItems === undefined ||
           record.allTranslatedItems === undefined ? (
-          <div>Syncing</div>
+          <div>{t("Syncing")}</div>
         ) : record.allItems === 0 && record.allTranslatedItems === 0 ? (
           <div>--</div>
         ) : (
@@ -51,7 +53,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       },
     },
     {
-      title: "Action",
+      title: t("Action"),
       dataIndex: "operation",
       key: "operation",
       width: "40%",
@@ -64,7 +66,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
               );
             }}
           >
-            Edit
+            {t("Edit")}
           </Button>
         );
       },

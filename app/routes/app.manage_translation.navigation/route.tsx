@@ -28,6 +28,7 @@ import {
 import { ShopLocalesType } from "../app.language/route";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
+import { useTranslation } from "react-i18next";
 
 const { Sider, Content } = Layout;
 
@@ -212,6 +213,7 @@ const Index = () => {
   } = theme.useToken();
 
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
@@ -296,13 +298,13 @@ const Index = () => {
 
   const resourceColumns = [
     {
-      title: "Resource",
+      title: t("Resource"),
       dataIndex: "resource",
       key: "resource",
       width: "10%",
     },
     {
-      title: "Default Language",
+      title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
       width: "45%",
@@ -311,7 +313,7 @@ const Index = () => {
       },
     },
     {
-      title: "Translated",
+      title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
       width: "45%",

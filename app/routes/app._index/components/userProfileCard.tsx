@@ -2,6 +2,7 @@ import { Button, Card } from "antd";
 import { Typography } from "antd";
 import AnimatedText from "./animatedText";
 import "../styles.css";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -16,12 +17,14 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
   chars,
   totalChars,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Card>
       <div className="user_profile_wrapper">
         <div className="user_profilecard_left">
           <span className="character_usage_label">
-            One-time character credits:
+            {t("One-time character credits:")}
           </span>
           <div className="characters_statistical">
             <Text strong style={{ fontSize: "28px", lineHeight: "28px" }}>
@@ -34,14 +37,14 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
           </div>
         </div>
         <div className="user_profilecard_right">
-          <Button type="primary" className="buy_button" onClick={() => setPaymentModalVisible(true)} >Buy Credits</Button>
+          <Button type="primary" className="buy_button" onClick={() => setPaymentModalVisible(true)} >{t("Buy Credits")}</Button>
           <div className="gpttip">
             <img
               src="https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/openai.png"
               alt="GPT 4o"
               style={{ width: "20px", height: "auto", marginRight: "5px" }}
             />
-            <Text type="secondary">Powered by GPT 4o</Text>
+            <Text type="secondary">{t("Powered by GPT 4o")}</Text>
           </div>
         </div>
       </div>

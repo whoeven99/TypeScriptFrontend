@@ -104,7 +104,7 @@ export const AddDefaultLanguagePack = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   console.log("AddDefaultLanguagePackData: ", shop);
-  
+
   try {
     const addDefaultLanguagePackResponse = await axios({
       url: `${process.env.SERVER_URL}/aiLanguagePacks/addDefaultLanguagePack?shopName=${shop}`,
@@ -376,6 +376,7 @@ export const GetLanguageLocaleInfo = async ({
       },
       {},
     );
+    console.log("GetLanguageLocaleInfo: ", res);
     return res;
   } catch (error) {
     console.error("Error occurred in the languageData:", error);
@@ -456,7 +457,7 @@ export const GetTotalWords = async ({
     const res = response.data.response;
     return res;
   } catch (error) {
-    console.error("Error occurred in the totalWords:", error);
+    console.error("Error GetTotalWords:", error);
     return { status: "error", error: "Failed to fetch total words" }; // 错误时返回默认值和错误信息
   }
 };
@@ -843,6 +844,46 @@ export const GetCurrencyByShopName = async ({
   } catch (error) {
     console.error("Error get currency:", error);
     throw new Error("Error get currency");
+  }
+};
+
+//获取货币本地化数据
+export const GetCurrencyLocaleInfo = async () => {
+  try {
+    const data = {
+      "AFN": {
+        "currencyName": "Afghan Afghani",
+        "currencyCode": "AFN",
+        "symbol": "؋",
+        "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AF.png"
+      },
+      "USD": {
+        "currencyName": "United States Dollar",
+        "currencyCode": "USD",
+        "symbol": "$",
+        "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/US.png"
+      },
+      "EUR": {
+        "currencyName": "Euro",
+        "currencyCode": "EUR",
+        "symbol": "€",
+        "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/EU.png"
+      },
+      // 你可以继续添加其他货币数据
+    };
+
+    // 模拟返回的数据
+    return data;
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/currency/getCurrencyByShopName`,
+      method: "GET",
+    });
+
+    const res = response.data.response;
+    return res;
+  } catch (error) {
+    console.error("Error GetCurrencyLocaleInfo:", error);
+    throw new Error("Error GetCurrencyLocaleInfo");
   }
 };
 

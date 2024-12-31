@@ -6,6 +6,7 @@ import { useFetcher } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { CurrencyDataType, CurrencyType } from "../route";
 import { updateTableData } from "~/store/modules/currencyDataTable";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -42,6 +43,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     selectedCurrency.map((cur) => cur.currencyCode),
   );
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const addFetcher = useFetcher<any>();
 
   useEffect(() => {
@@ -69,7 +71,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
             },
           ];
           dispatch(updateTableData(data));
-          message.success("Add success");
+          message.success(t("Add success"));
           setFilteredCurrencies(defaultData);
           setConfirmButtonDisable(false);
           setAllSelectedKeys([]);
@@ -223,7 +225,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
 
   const columns = [
     {
-      title: "Currency",
+      title: t("Currency"),
       dataIndex: "currencyName",
       key: "currencyName",
       width: "60%",
@@ -236,7 +238,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
       },
     },
     {
-      title: "Relevant region(s)",
+      title: t("Relevant region(s)"),
       dataIndex: "src",
       key: "src",
       width: "20%",
@@ -269,7 +271,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
       },
     },
     {
-      title: "Status",
+      title: t("Status"),
       dataIndex: "state",
       key: "state",
       width: "20%",
@@ -278,8 +280,8 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
 
   return (
     <Modal
-      width={500}
-      title="Select Currencies"
+      width={800}
+      title={t("Select Currencies")}
       open={isVisible}
       onCancel={handleCloseModal}
       footer={[
@@ -289,7 +291,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
             onClick={handleCloseModal}
             style={{ marginRight: "10px" }}
           >
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button
             onClick={handleConfirm}
@@ -298,13 +300,13 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
             disabled={confirmButtonDisable}
             loading={confirmButtonDisable}
           >
-            Add
+            {t("Add")}
           </Button>
         </div>,
       ]}
     >
       <Input
-        placeholder="Search languages..."
+        placeholder={t("Search currencies...")}
         prefix={<SearchOutlined />}
         value={searchInput}
         onChange={handleSearch}
