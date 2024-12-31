@@ -170,7 +170,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
             onClick={handleCloseModal}
             style={{ marginRight: "10px" }}
           >
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button
             onClick={handleConfirm}
@@ -179,7 +179,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
             disabled={saveButtonDisable || updateFetcherLoading}
             loading={updateFetcherLoading}
           >
-            Save
+            {t("Save")}
           </Button>
         </div>,
       ]}

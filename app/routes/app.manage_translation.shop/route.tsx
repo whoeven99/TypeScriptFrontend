@@ -329,7 +329,7 @@ import { useTranslation } from "react-i18next";
                   onClick={onCancel}
                   style={{ marginRight: "10px" }}
                 >
-                  Cancel
+                  {t("Cancel")}
                 </Button>
                 <Button
                   onClick={handleConfirm}
@@ -338,7 +338,7 @@ import { useTranslation } from "react-i18next";
                   disabled={confirmLoading}
                   loading={confirmLoading}
                 >
-                  Save
+                  {t("Save")}
                 </Button>
               </div>,
             ]}
