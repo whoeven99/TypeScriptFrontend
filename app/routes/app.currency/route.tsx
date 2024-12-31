@@ -20,6 +20,7 @@ import {
   DeleteCurrency,
   GetCacheData,
   GetCurrencyByShopName,
+  GetCurrencyLocaleInfo,
   InitCurrency,
   UpdateCurrency,
   UpdateDefaultCurrency,
@@ -92,6 +93,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const primaryCurrency = await InitCurrency({ request });
           const shopLoad = await queryShop({ request });
           const currencyList = await GetCurrencyByShopName({ request });
+          // const currencyLocaleInfo = await GetCurrencyLocaleInfo();
           const finalCurrencyList =
             currencyList === undefined ? [] : currencyList;
           console.log("finalCurrencyList: ", finalCurrencyList);
@@ -100,6 +102,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             shopLoad.currencyFormats.moneyWithCurrencyFormat;
           return json({
             primaryCurrency: primaryCurrency,
+            // currencyLocaleInfo: currencyLocaleInfo,
             defaultCurrencyCode: shopLoad.currencyCode,
             currencyList: finalCurrencyList,
             moneyFormat,
@@ -290,7 +293,6 @@ const Index = () => {
     fetch("/currencies.json")
       .then((response) => response.json())
       .then((data) => {
-        setCurrencyData(data);
         setAddCurrencies(
           data.filter(
             (item: CurrencyType) => item.currencyCode !== defaultCurrencyCode,
@@ -303,7 +305,20 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data && currencyData.length) {
+      // const currencyArray = Object.keys(loadingFetcher.data.currencyLocaleInfo).map((key, index) => ({
+      //   key: index + 1,
+      //   currencyName: loadingFetcher.data.currencyLocaleInfo[key].currencyName,
+      //   currencyCode: loadingFetcher.data.currencyLocaleInfo[key].currencyCode,
+      //   symbol: loadingFetcher.data.currencyLocaleInfo[key].symbol,
+      //   locale: loadingFetcher.data.currencyLocaleInfo[key].locale,
+      // }));
+      // setCurrencyData(currencyArray);
       setDefaultCurrencyCode(loadingFetcher.data.defaultCurrencyCode);
+      setAddCurrencies(
+        loadingFetcher.data.currencyLocaleInfo.filter(
+          (item: CurrencyType) => item.currencyCode !== defaultCurrencyCode,
+        ),
+      );
       const defaultCurrency = currencyData.find((item: CurrencyType) => {
         if (item.currencyCode == loadingFetcher.data.defaultCurrencyCode)
           return item;

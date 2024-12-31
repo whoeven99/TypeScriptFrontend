@@ -36,6 +36,7 @@ import {
 import { ShopLocalesType } from "./app.language/route";
 import { mutationAppSubscriptionCreate, queryShopLanguages } from "~/api/admin";
 import { useEffect } from "react";
+// import i18n from "~/i18n";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -48,7 +49,24 @@ interface LoadingFetchType {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     await authenticate.admin(request);
-    return json({ apiKey: process.env.SHOPIFY_API_KEY || "" });
+    // const language =
+    //   request.headers.get("Accept-Language")?.split(",")[0] || "en";
+    // console.log("trans: ", language);
+    // let i18nCode;
+
+    // switch (true) {
+    //   case language == "en-US":
+    //     //     // i18n.changeLanguage("zh");
+    //     i18nCode = "zh";
+    //   case language == "zh-CN":
+    //     //     // i18n.changeLanguage("zh");
+    //     i18nCode = "zh";
+    // }
+
+    return json({
+      apiKey: process.env.SHOPIFY_API_KEY || "",
+      // i18nCode: i18nCode,
+    });
   } catch (error) {
     console.error("Error during authentication:", error);
     throw new Response("Error during authentication", { status: 500 });
@@ -168,9 +186,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
             key: i,
-            src: languageLocaleInfo[shopLocalesIndex[i]].countries || "error",
+            src: languageLocaleInfo[lang.locale].countries,
             name: lang.name,
-            localeName: languageLocaleInfo[shopLocalesIndex[i]].Local,
+            localeName: languageLocaleInfo[lang.locale].Local,
             locale: lang.locale,
             status:
               languages.find((language: any) => language.target === lang.locale)
@@ -296,6 +314,10 @@ export default function App() {
       action: "/app",
     });
   }, []);
+
+  // useEffect(() => {
+  //   if (i18nCode) i18n.changeLanguage(i18nCode);
+  // }, [i18nCode]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
