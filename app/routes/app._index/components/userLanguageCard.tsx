@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setStatusState } from "~/store/modules/languageTableData";
 import TranslatedIcon from "~/components/translateIcon";
 import { LanguagesDataType } from "~/routes/app.language/route";
+import { useTranslation } from "react-i18next";
 const { Text } = Typography;
 
 interface UserLanguageCardProps {
@@ -35,6 +36,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   );
   const datas = useSelector((state: any) => state.languageTableData.rows);
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const translateFetcher = useFetcher<any>();
   // const fetcher = useFetcher<FetchType>();
@@ -222,7 +224,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
           </Text>
         </div>
         <div className="language_statu">
-          {data ? <TranslatedIcon status={data?.status} /> : <>...</>}
+          {data ? <TranslatedIcon status={data?.status} /> : <Text>...</Text>}
         </div>
         <Space direction="horizontal">
           <Button
@@ -230,9 +232,9 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
             style={{ width: "100px" }}
             type="primary"
           >
-            Translate
+            {t("Translate")}
           </Button>
-          <Button onClick={onClick}>Manage</Button>
+          <Button onClick={onClick}>{t("Manage")}</Button>
         </Space>
       </Space>
     </Card>

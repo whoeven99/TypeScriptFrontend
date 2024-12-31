@@ -12,6 +12,7 @@ import { ShopLocalesType } from "../app.language/route";
 import dynamic from "next/dynamic";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
+import { useTranslation } from "react-i18next";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
@@ -100,7 +101,7 @@ const Index = () => {
   } = theme.useToken();
 
   const navigate = useNavigate();
-  const submit = useSubmit(); // 使用 useSubmit 钩子
+  const { t } = useTranslation();
   const confirmFetcher = useFetcher<ConfirmFetcherType>();
 
   useEffect(() => {
@@ -131,13 +132,13 @@ const Index = () => {
 
   const resourceColumns = [
     {
-      title: "Resource",
+      title: t("Resource"),
       dataIndex: "resource",
       key: "resource",
       width: "10%",
     },
     {
-      title: "Default Language",
+      title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
       width: "45%",
@@ -152,7 +153,7 @@ const Index = () => {
       },
     },
     {
-      title: "Translated",
+      title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
       width: "45%",
@@ -237,7 +238,7 @@ const Index = () => {
                 onClick={onCancel}
                 style={{ marginRight: "10px" }}
               >
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button
                 onClick={handleConfirm}
@@ -246,7 +247,7 @@ const Index = () => {
                 disabled={confirmLoading}
                 loading={confirmLoading}
               >
-                Save
+                {t("Save")}
               </Button>
             </div>,
           ]}

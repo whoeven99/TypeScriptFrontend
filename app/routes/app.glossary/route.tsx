@@ -32,6 +32,7 @@ import { ShopLocalesType } from "../app.language/route";
 import UpdateGlossaryModal from "./components/updateGlossaryModal";
 import { WarningOutlined } from "@ant-design/icons";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
+import { useTranslation } from "react-i18next";
 
 const { Title, Text } = Typography;
 
@@ -136,6 +137,7 @@ const Index = () => {
     useState<boolean>(false);
   const [glossaryModalId, setGlossaryModalId] = useState<number>(-1);
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const loadingFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
@@ -188,7 +190,7 @@ const Index = () => {
   useEffect(() => {
     if (statusFetcher.data) {
       if (statusFetcher.data.data.success) {
-        message.success("Saved successfully");
+        message.success(t("Saved successfully"));
         dispatch(
           setGLossaryStatusLoadingState({
             key: statusFetcher.data.data.response.id,
@@ -233,9 +235,9 @@ const Index = () => {
 
   const handleIsModalOpen = (title: string, key: number) => {
     if (title === "Create rule" && dataSource.length >= 5) {
-      message.error("You can add up to 5 translation rules");
+      message.error(t("You can add up to 5 translation rules"));
     } else {
-      setTitle(title);
+      setTitle(t(title));
       setGlossaryModalId(key);
       setIsGlossaryModalOpen(true); // 打开Modal
     }
@@ -248,7 +250,7 @@ const Index = () => {
 
   const columns = [
     {
-      title: "Status",
+      title: t("Status"),
       dataIndex: "status",
       key: "status",
       render: (_: any, record: any) => (
@@ -265,12 +267,12 @@ const Index = () => {
       key: "sourceText",
     },
     {
-      title: "Translation text",
+      title: t("Translation text"),
       dataIndex: "targetText",
       key: "targetText",
     },
     {
-      title: "Apply for",
+      title: t("Apply for"),
       dataIndex: "language",
       key: "language",
       render: (_: any, record: any) => {
@@ -278,7 +280,7 @@ const Index = () => {
           <Text>{record.language}</Text>
         ) : (
           <Popover
-            content={"This language has been deleted. Please edit again."}
+            content={t("This language has been deleted. Please edit again.")}
           >
             <WarningOutlined
               style={{ color: "#F8B400", fontSize: "18px", width: "100%" }}
@@ -288,19 +290,19 @@ const Index = () => {
       },
     },
     {
-      title: "Case",
+      title: t("Case"),
       dataIndex: "type",
       key: "type",
       render: (_: any, record: any) => {
         return record.type ? (
-          <Text>Case-sensitive</Text>
+          <Text>{t("Case-sensitive")}</Text>
         ) : (
-          <Text>Case-insensitive</Text>
+          <Text>{t("Case-insensitive")}</Text>
         );
       },
     },
     {
-      title: "Action",
+      title: t("Action"),
       dataIndex: "action",
       key: "action",
       render: (_: any, record: any) => (
@@ -309,7 +311,7 @@ const Index = () => {
             onClick={() => handleIsModalOpen("Edit rules", record.key)}
             type="primary"
           >
-            Edit
+            {t("Edit")}
           </Button>
         </Space>
       ),
@@ -323,9 +325,9 @@ const Index = () => {
 
   return (
     <Page>
-      <TitleBar title="Glossary" />
+      <TitleBar title={t("Glossary")} />
       {loading ? (
-        <div>loading...</div>
+        <div>{t("loading")}...</div>
       ) : shopLocales && !shopLocales?.length ? (
         <div
           style={{
@@ -342,11 +344,11 @@ const Index = () => {
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
             <div>
               <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-                Glossary
+                {t("Glossary")}
               </Title>
               <div>
                 <Text>
-                  Create translation rules for certain words and phrases
+                  {t("Create translation rules for certain words and phrases")}
                 </Text>
               </div>
             </div>
@@ -363,10 +365,10 @@ const Index = () => {
                     disabled={!hasSelected}
                     loading={deleteLoading}
                   >
-                    Delete
+                    {t("Delete")}
                   </Button>
                   {hasSelected
-                    ? `Selected ${selectedRowKeys.length} items`
+                    ? `${t("Selected")}${selectedRowKeys.length}${t("items")}`
                     : null}
                 </Flex>
                 <div>
@@ -375,7 +377,7 @@ const Index = () => {
                       type="primary"
                       onClick={() => handleIsModalOpen("Create rule", -1)}
                     >
-                      Create rule
+                      {t("Create rule")}
                     </Button>
                   </Space>
                 </div>

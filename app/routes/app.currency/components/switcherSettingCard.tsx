@@ -2,6 +2,7 @@ import { CloseOutlined } from "@ant-design/icons";
 import { Link } from "@shopify/polaris";
 import { Card, Space, Button, Typography } from "antd";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -32,6 +33,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   const [withoutMoneyValue, setWithoutMoneyValue] = useState<string>("");
   const [step1Visible, setStep1Visible] = useState<boolean>(true);
   const [step2Visible, setStep2Visible] = useState<boolean>(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (moneyWithCurrencyFormatHtml && moneyFormatHtml) {
@@ -85,7 +87,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
     <Space direction="vertical" size="small" style={{ display: "flex" }}>
       {step1Visible && (
         <Card
-          title="Step 1: Set up Currency Format"
+          title={t("Step 1: Set up Currency Format")}
           extra={
             <Button type="text" onClick={() => setStep1Visible(false)}>
               <CloseOutlined />
@@ -104,7 +106,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                     borderRadius: "20px",
                   }}
                 >
-                  Uncompleted
+                  {t("Uncompleted")}
                 </Text>
               ) : (
                 <Text
@@ -116,28 +118,32 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                     borderRadius: "20px",
                   }}
                 >
-                  Completed
+                  {t("Completed")}
                 </Text>
               )}
               <Link url={settingUrl} target="_blank">
                 <Button type="primary" className="currency-action">
-                  Setup
+                  {t("Setup")}
                 </Button>
               </Link>
             </div>
             <Text>
-              To display currency switcher, please follow the instructions
-              below:
+              {t(
+                "To display currency switcher, please follow the instructions below:",
+              )}
             </Text>
             <div>
-              <Text>1. Go to </Text>
+              <Text>{t("1. Go to")}</Text>
               <Link url={settingUrl} target="_blank">
-                Settings {">>"} General
+                {t("Settings >> General")}
               </Link>
             </div>
             <Text>
-              2. Under the <strong>’Store defaults‘</strong> section, click
-              Change currency formatting, then change with the code below:
+              {t("2. Under the")}
+              <strong>{t("’Store defaults‘")}</strong>
+              {t(
+                "section, click Change currency formatting, then change with the code below:",
+              )}
             </Text>
 
             <div>
@@ -179,7 +185,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
       )}
       {step2Visible && (
         <Card
-          title="Step 2: Enable switcher"
+          title={t("Step 2: Enable switcher")}
           extra={
             <Button type="text" onClick={() => setStep2Visible(false)}>
               <CloseOutlined />
@@ -198,7 +204,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                     borderRadius: "20px",
                   }}
                 >
-                  Uncompleted
+                  {t("Uncompleted")}
                 </Text>
               ) : (
                 <Text
@@ -210,22 +216,23 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                     borderRadius: "20px",
                   }}
                 >
-                  Completed
+                  {t("Completed")}
                 </Text>
               )}
             </div>
             <Text>
-              Please{" "}
+              {t("Please")}
               <Link url={blockUrl} target="_blank">
-                Click here
-              </Link>{" "}
-              to go to Shopify theme editor {">>"} enable "Ciwi_Switcher" {">>"}{" "}
-              click the "Save" button in the right corner.
+                {t("Click here")}
+              </Link>
+              {t(
+                "to go to Shopify theme editor >> enable Ciwi_Switcher >> click the Save button in the right corner.",
+              )}
             </Text>
             <Text>
-              Please refer to this {" "}
+              {t("Please refer to this")}
               <Link url={supportUrl} target="_blank">
-                step-by-step guide
+                {t("step-by-step guide")}
               </Link>
             </Text>
           </Space>

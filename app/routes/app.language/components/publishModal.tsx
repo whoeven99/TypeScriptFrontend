@@ -2,6 +2,7 @@ import { Checkbox, Modal, Space, Typography } from "antd";
 import { LanguagesDataType, MarketType } from "~/routes/app.language/route";
 import "../styles.css";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -33,6 +34,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
   const [primaryState, setPrimaryState] = useState<boolean>();
   const [primaryMarket, setPrimaryMarket] = useState<MarketType | undefined>();
   const [isChecked, setIsChecked] = useState<boolean>(false); // 新增状态
+  const { t } = useTranslation();
 
   useEffect(() => {
     const res = allMarket.find((item) => item.primary === true);
@@ -62,9 +64,9 @@ const PublishModal: React.FC<PublishModalProps> = ({
       okText="Publish"
     >
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <Text strong={true}>Language:</Text>
+        <Text strong={true}>{t("Language:")}</Text>
         <Text>{selectedRow?.language}</Text>
-        <Text strong={true}>Active Market:</Text>
+        <Text strong={true}>{t("Active Market:")}</Text>
         {primaryState && (
           <Checkbox onChange={onChange}>{primaryMarket?.name}</Checkbox>
         )}
