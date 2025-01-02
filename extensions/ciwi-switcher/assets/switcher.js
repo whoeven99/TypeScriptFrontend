@@ -531,5 +531,4 @@ window.onload = async function () {
   }
 
   updateDisplayText();
-  document.getElementById("ciwi-container").style.display = "block";
 };

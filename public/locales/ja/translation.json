@@ -44,7 +44,7 @@
     "to": "へ",
     "Apply for": "申し込む",
     "Match by": "一致させる",
-    "Language:": "言語：",
+    "Language_colon": "言語：",
     "Search languages...": "言語を検索...",
     "Search...": "検索...",
     "Please enter original text": "元のテキストを入力してください",
@@ -127,6 +127,7 @@
     "Default Language": "デフォルト言語",
     "Resource": "リソース",
     "This language has been deleted. Please edit again.": "この言語は削除されました。もう一度編集してください。",
-    "Edit rule": "ルールを編集"
+    "Edit rules": "ルールを編集",
+    "Select markets for display": "表示する市場を選択"
 }
   

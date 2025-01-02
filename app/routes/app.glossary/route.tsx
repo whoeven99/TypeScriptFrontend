@@ -308,7 +308,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button
-            onClick={() => handleIsModalOpen("Edit rules", record.key)}
+            onClick={() => handleIsModalOpen(t("Edit rules"), record.key)}
             type="primary"
           >
             {t("Edit")}

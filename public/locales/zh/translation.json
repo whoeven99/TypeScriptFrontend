@@ -44,7 +44,7 @@
   "to": "到",
   "Apply for": "适用",
   "Match by": "匹配方式",
-  "Language:": "语言：",
+  "Language_colon": "语言：",
   "Search languages...": "搜索语言...",
   "Search...": "搜索...",
   "Please enter original text": "请输入原文",
@@ -127,6 +127,7 @@
   "Default Language": "默认语言",
   "Resource": "资源",
   "This language has been deleted. Please edit again.": "该语言已被删除，请重新编辑。",
-  "Edit rule": "编辑规则"
+  "Edit rules": "编辑规则",
+  "Select markets for display": "选择要显示的市场"
 }
 

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Banner, Button } from "@shopify/polaris";
 import PaymentModal from "./paymentModal";
+import { useTranslation } from "react-i18next";
 
 interface AttentionCardProps {
   title: string;
@@ -17,6 +18,7 @@ const AttentionCard: React.FC<AttentionCardProps> = ({
 }) => {
   const [visible, setVisible] = useState(true);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const { t } = useTranslation();
 
   if (!visible) {
     return null; // 如果不可见，返回 null
@@ -35,7 +37,7 @@ const AttentionCard: React.FC<AttentionCardProps> = ({
           <div className="banner_content">
             <p>{content}</p>
             <Button onClick={() => setPaymentModalVisible(true)}>
-              Buy Credits
+              {t("Buy Credits")}
             </Button>
           </div>
         </Banner>
