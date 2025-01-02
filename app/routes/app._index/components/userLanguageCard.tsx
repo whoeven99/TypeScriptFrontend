@@ -169,7 +169,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         );
       } else {
         message.error(
-          "The translation task is in progress. Please try translating again later.",
+          t("The translation task is in progress. Please try translating again later."),
         );
       }
     }

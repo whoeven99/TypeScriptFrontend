@@ -196,7 +196,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
           />
           {exRateSelectValue === "Auto" ? (
             <Text>
-              {selectedRow?.currency}{t("will fluctuate based on market rates")}.
+              {selectedRow?.currency}{t("will fluctuate based on market rates.")}.
             </Text>
           ) : (
             <Space className="manual_rate_input">

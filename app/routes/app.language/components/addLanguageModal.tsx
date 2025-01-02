@@ -81,7 +81,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
         loading: false,
       }));
       dispatch(updateTableData(data));
-      message.success("Add success");
+      message.success(t("Add success"));
     }
     setIsModalOpen(false);
     setConfirmButtonDisable(false);
