@@ -57,14 +57,15 @@ const PublishModal: React.FC<PublishModalProps> = ({
       onCancel={onCancel}
       onOk={onOk}
       okButtonProps={{ disabled: !isChecked }} // 禁用确认按钮
-      title="Select markets for display"
+      title={t("Select markets for display")}
       style={{
         top: "40%",
       }}
-      okText="Publish"
+      okText={t("Publish")}
+      cancelText={t("Cancel")}
     >
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <Text strong={true}>{t("Language:")}</Text>
+        <Text strong={true}>{t("Language_colon")}</Text>
         <Text>{selectedRow?.language}</Text>
         <Text strong={true}>{t("Active Market:")}</Text>
         {primaryState && (

@@ -44,7 +44,7 @@
     "to": "naar",
     "Apply for": "Aanvragen",
     "Match by": "Overeenkomen op",
-    "Language:": "Taal:",
+    "Language_colon": "Taal:",
     "Search languages...": "Zoek talen...",
     "Search...": "Zoeken...",
     "Please enter original text": "Voer de originele tekst in",
@@ -127,6 +127,7 @@
     "Default Language": "Standaardtaal",
     "Resource": "Bron",
     "This language has been deleted. Please edit again.": "Deze taal is verwijderd. Bewerk het opnieuw.",
-    "Edit rule": "Bewerk regel"
+    "Edit rules": "Bewerk regel",
+    "Select markets for display": "Selecteer markten om weer te geven"
 }
   

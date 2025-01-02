@@ -44,7 +44,7 @@
     "to": "zu",
     "Apply for": "Bewerben für",
     "Match by": "Übereinstimmen mit",
-    "Language:": "Sprache:",
+    "Language_colon": "Sprache:",
     "Search languages...": "Sprachen suchen...",
     "Search...": "Suchen...",
     "Please enter original text": "Bitte geben Sie den Originaltext ein",
@@ -127,5 +127,6 @@
     "Default Language": "Standardsprache",
     "Resource": "Ressource",
     "This language has been deleted. Please edit again.": "Diese Sprache wurde gelöscht. Bitte bearbeiten Sie erneut.",
-    "Edit rule": "Regel bearbeiten"
+    "Edit rules": "Regel bearbeiten",
+    "Select markets for display": "Märkte zur Anzeige auswählen"
 }

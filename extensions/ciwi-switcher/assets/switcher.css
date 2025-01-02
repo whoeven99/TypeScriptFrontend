@@ -1,12 +1,12 @@
 .ciwi_container {
   width: 200px; /* 窄一些 */
-  left: 20px;
+  /* left: 20px; */
   bottom: 60px;
   right: auto;
   top: auto;
   position: fixed; /* 改为相对屏幕的位置 */
   height: auto;
-  display: none;
+  display: block;
   z-index: 9999;
 }
 
@@ -155,7 +155,7 @@
     background-color: transparent;
     transition: width 0.3s ease; /* 宽度变化时使用过渡效果 */
     z-index: 9999;
-    display: none; /* 默认为显示，可以根据需求修改 */
+    display: block; /* 默认为显示，可以根据需求修改 */
     height: 50px; /* 设置高度 */
   }
 
@@ -186,4 +186,29 @@
   .mobile_trans_img {
     display: block;
   }
+}
+
+body > .skiptranslate {
+  display: none;
+}
+.goog-logo-link {
+  display: none !important;
+}
+.goog-te-gadget {
+  color: transparent !important;
+}
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+}
+a[href="https://translate.google.com"]
+{
+  display: none !important;
+}
+.goog-te-gadget-simple {
+  visibility: hidden !important;
+}
+[class^="VIpgJd-"], /* 匹配所有以 'VIpgJd-' 开头的类名 */
+[class*="VIpgJd-"] {
+  /* 匹配所有包含 'VIpgJd-' 的类名 */
+  display: none !important;
 }
