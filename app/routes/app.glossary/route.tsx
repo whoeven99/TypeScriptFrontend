@@ -262,7 +262,7 @@ const Index = () => {
       ),
     },
     {
-      title: "Text",
+      title: t("Text"),
       dataIndex: "sourceText",
       key: "sourceText",
     },
