@@ -111,7 +111,7 @@ const Index = () => {
       if (initializationFetcher.data?.data) {
         setNewUserModal(false);
         setNewUserModalLoading(false);
-        setUser({ ...user, totalChars: 10000 });
+        setUser({ ...user, totalChars: 50000 });
       }
     }
   }, [initializationFetcher.data]);
@@ -252,7 +252,7 @@ const Index = () => {
             >
               <Title level={4}>{t("Congratulations!")}</Title>
               <Text>
-                {t("You have received 1,000 Credits, enabling you to translate into over 137 languages.")}
+                {t("You have received 50,000 Credits, enabling you to translate into over 137 languages.")}
               </Text>
             </Modal>
             <PaymentModal
