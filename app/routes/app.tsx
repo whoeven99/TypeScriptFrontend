@@ -62,7 +62,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-
+  console.log("app: ", accessToken);
+  
   try {
     const formData = await request.formData();
     const initialization = JSON.parse(formData.get("initialization") as string);
@@ -307,7 +308,7 @@ export default function App() {
       <ConfigProvider
         theme={{
           token: {
-            colorPrimary: "rgb(117,211,68)", // 设置主色
+            colorPrimary: "#007F61", // 设置主色
           },
         }}
       >

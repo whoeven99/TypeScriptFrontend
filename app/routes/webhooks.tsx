@@ -7,6 +7,7 @@ import {
   DeleteData,
   InsertOrUpdateOrder,
   RequestData,
+  SendPurchaseSuccessEmail,
   Uninstall,
 } from "~/api/serve";
 
@@ -26,8 +27,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (topic) {
     case "APP_UNINSTALLED":
       try {
-        await db.session.deleteMany({ where: { shop } });
-        await Uninstall({ shop });
+        if (session) {
+          await db.session.deleteMany({ where: { shop } });
+          await Uninstall({ shop });
+        }
         break;
       } catch (error) {
         console.error("Error APP_UNINSTALLED:", error);
@@ -48,21 +51,51 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             switch (payload?.app_purchase_one_time.name) {
               case "10K Credits":
                 await AddCharsByShopName({ shop, amount: 10000 });
+                await SendPurchaseSuccessEmail({
+                  shop,
+                  credit: 10000,
+                  price: 8.99,
+                });
                 break;
               case "20K Credits":
                 await AddCharsByShopName({ shop, amount: 20000 });
+                await SendPurchaseSuccessEmail({
+                  shop,
+                  credit: 10000,
+                  price: 17.99,
+                });
                 break;
               case "50K Credits":
                 await AddCharsByShopName({ shop, amount: 50000 });
+                await SendPurchaseSuccessEmail({
+                  shop,
+                  credit: 10000,
+                  price: 39.99,
+                });
                 break;
               case "100K Credits":
                 await AddCharsByShopName({ shop, amount: 100000 });
+                await SendPurchaseSuccessEmail({
+                  shop,
+                  credit: 10000,
+                  price: 79.99,
+                });
                 break;
               case "200K Credits":
                 await AddCharsByShopName({ shop, amount: 200000 });
+                await SendPurchaseSuccessEmail({
+                  shop,
+                  credit: 10000,
+                  price: 159.99,
+                });
                 break;
               case "300K Credits":
                 await AddCharsByShopName({ shop, amount: 300000 });
+                await SendPurchaseSuccessEmail({
+                  shop,
+                  credit: 10000,
+                  price: 239.99,
+                });
                 break;
             }
           }

@@ -851,23 +851,26 @@ export const GetCurrencyByShopName = async ({
 export const GetCurrencyLocaleInfo = async () => {
   try {
     const data = {
-      "AFN": {
-        "currencyName": "Afghan Afghani",
-        "currencyCode": "AFN",
-        "symbol": "؋",
-        "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AF.png"
+      AFN: {
+        currencyName: "Afghan Afghani",
+        currencyCode: "AFN",
+        symbol: "؋",
+        locale:
+          "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AF.png",
       },
-      "USD": {
-        "currencyName": "United States Dollar",
-        "currencyCode": "USD",
-        "symbol": "$",
-        "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/US.png"
+      USD: {
+        currencyName: "United States Dollar",
+        currencyCode: "USD",
+        symbol: "$",
+        locale:
+          "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/US.png",
       },
-      "EUR": {
-        "currencyName": "Euro",
-        "currencyCode": "EUR",
-        "symbol": "€",
-        "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/EU.png"
+      EUR: {
+        currencyName: "Euro",
+        currencyCode: "EUR",
+        symbol: "€",
+        locale:
+          "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/EU.png",
       },
       // 你可以继续添加其他货币数据
     };
@@ -988,6 +991,34 @@ export const AddCharsByShopName = async ({
     });
     const res = response.data;
     console.log(res);
+  } catch (error) {
+    console.error("Error fetching add chars:", error);
+    throw new Error("Error fetching add chars");
+  }
+};
+
+//增加用户字符数
+export const SendPurchaseSuccessEmail = async ({
+  shop,
+  price,
+  credit,
+}: {
+  shop: string;
+  price: number;
+  credit: number;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/orders/sendPurchaseSuccessEmail`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        amount: price,
+        credit: credit,
+      },
+    });
+    const res = response.data;
+    console.log("SendPurchaseSuccessEmail: ", res);
   } catch (error) {
     console.error("Error fetching add chars:", error);
     throw new Error("Error fetching add chars");
