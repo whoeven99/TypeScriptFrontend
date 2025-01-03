@@ -63,7 +63,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   console.log("app: ", accessToken);
-  
+
   try {
     const formData = await request.formData();
     const initialization = JSON.parse(formData.get("initialization") as string);
@@ -320,6 +320,7 @@ export default function App() {
           <Link to="/app/manage_translation">{t("Manage Translation")}</Link>
           <Link to="/app/currency">{t("Currency")}</Link>
           <Link to="/app/glossary">{t("Glossary")}</Link>
+          <Link to="/app/pricing">{t("Pricing")}</Link>
         </NavMenu>
         <Outlet />
       </ConfigProvider>

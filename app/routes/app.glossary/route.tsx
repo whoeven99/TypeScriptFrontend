@@ -47,8 +47,7 @@ export interface GLossaryDataType {
   loading: boolean;
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+export const loader = async () => {
   return null;
 };
 
