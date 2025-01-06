@@ -34,7 +34,7 @@ import {
   InsertTargets,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
-import { mutationAppSubscriptionCreate, queryShopLanguages } from "~/api/admin";
+import { mutationAppPurchaseOneTimeCreate, queryShopLanguages } from "~/api/admin";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 // import i18n from "~/i18n";
@@ -62,6 +62,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  console.log("app: ", accessToken);
 
   try {
     const formData = await request.formData();
@@ -256,7 +257,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
         );
         console.log(returnUrl);
-        const payData = await mutationAppSubscriptionCreate({
+        const payData = await mutationAppPurchaseOneTimeCreate({
           request,
           name: payInfo.name,
           price: payInfo.price,
@@ -307,7 +308,7 @@ export default function App() {
       <ConfigProvider
         theme={{
           token: {
-            colorPrimary: "rgb(117,211,68)", // 设置主色
+            colorPrimary: "#007F61", // 设置主色
           },
         }}
       >
@@ -319,6 +320,8 @@ export default function App() {
           <Link to="/app/manage_translation">{t("Manage Translation")}</Link>
           <Link to="/app/currency">{t("Currency")}</Link>
           <Link to="/app/glossary">{t("Glossary")}</Link>
+          <Link to="/app/test1">{t("test1")}</Link>
+          <Link to="/app/test2">{t("test2")}</Link>
         </NavMenu>
         <Outlet />
       </ConfigProvider>

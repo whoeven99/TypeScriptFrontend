@@ -47,8 +47,7 @@ export interface GLossaryDataType {
   loading: boolean;
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+export const loader = async () => {
   return null;
 };
 
@@ -102,15 +101,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             const promise = deleteInfo.map(async (item: number) => {
               return DeleteGlossaryInfo({ id: item });
             });
-            const res = await Promise.allSettled(promise);
-            res.forEach((result) => {
+            const data = await Promise.allSettled(promise);
+            data.forEach((result) => {
               if (result.status === "fulfilled") {
                 console.log("Request successful:", result.value);
               } else {
                 console.error("Request failed:", result.reason);
               }
             });
-            return json({ data: res });
+            return json({ data: data });
           }
         } catch (error) {
           console.error("Error glossary loading:", error);

@@ -100,8 +100,6 @@ interface FetchType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-
   return null;
 };
 
@@ -120,6 +118,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("unPublishInfo") as string,
     );
     const deleteData = JSON.parse(formData.get("deleteData") as string);
+    console.log("deleteData: ", deleteData);
+    console.log("true: ", !!deleteData);
 
     switch (true) {
       case !!loading:
@@ -181,13 +181,33 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return null;
 
       case !!deleteData:
-        await mutationShopLocaleDisable({
-          request,
-          languages: deleteData.deleteData,
-          primaryLanguageCode: deleteData.primaryLanguageCode,
-        });
-        return null;
-
+        try {
+          if (deleteData.targets.length > 0) {
+            const promise = deleteData.targets.map(
+              async (item: LanguagesDataType) => {
+                return mutationShopLocaleDisable({
+                  shop,
+                  accessToken,
+                  language: item,
+                  primaryLanguageCode: deleteData.primaryLanguageCode,
+                });
+              },
+            );
+            const data = await Promise.allSettled(promise);
+            data.forEach((result) => {
+              if (result.status === "fulfilled") {
+                console.log("Request successful:", result.value);
+              } else {
+                console.error("Request failed:", result.reason);
+              }
+            });
+            console.log("deleteData: ", data);
+            return json({ data: data });
+          }
+        } catch (error) {
+          console.error("Error deleteData language:", error);
+          return json({ error: "Error deleteData language" }, { status: 500 });
+        }
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -230,6 +250,7 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const loadingFetcher = useFetcher<FetchType>();
   const addFetcher = useFetcher<any>();
+  const deleteFetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
 
@@ -301,6 +322,32 @@ const Index = () => {
       }
     }
   }, [translateFetcher.data]);
+
+  useEffect(() => {
+    if (deleteFetcher.data) {
+      const deleteData = deleteFetcher.data.data.reduce(
+        (acc: any[], item: any) => {
+          if (item.status === "fulfilled") {
+            acc.push(item.value);
+          } else {
+            message.error(`Deletion failed for "${item.value}"`);
+          }
+          return acc;
+        },
+        [],
+      );
+
+      // 从 data 中过滤掉成功删除的数据
+      const newData = data.filter((item) => !deleteData.includes(item.locale));
+
+      // 更新表格数据
+      dispatch(setTableData(newData));
+      // 清空已选中项
+      setSelectedRowKeys([]);
+      // 结束加载状态
+      setDeleteLoading(false);
+    }
+  }, [deleteFetcher.data]);
 
   useEffect(() => {
     if (statusFetcher.data) {
@@ -514,7 +561,9 @@ const Index = () => {
         );
       } else {
         message.error(
-          t("The translation task is in progress. Please try translating again later."),
+          t(
+            "The translation task is in progress. Please try translating again later.",
+          ),
         );
       }
     }
@@ -550,10 +599,7 @@ const Index = () => {
 
   //表格编辑
   const handleDelete = () => {
-    const newData = data.filter(
-      (item: LanguagesDataType) => !selectedRowKeys.includes(item.key),
-    );
-    const deleteData = data.filter((item: LanguagesDataType) =>
+    const targets = data.filter((item: LanguagesDataType) =>
       selectedRowKeys.includes(item.key),
     );
 
@@ -561,14 +607,12 @@ const Index = () => {
     formData.append(
       "deleteData",
       JSON.stringify({
-        deleteData: deleteData,
+        targets: targets,
         primaryLanguage: primaryLanguage?.locale,
       }),
     ); // 将选中的语言作为字符串发送
-    submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
-
-    dispatch(setTableData(newData)); // 更新表格数据
-    setSelectedRowKeys([]); // 清空已选中项
+    deleteFetcher.submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
+    setDeleteLoading(true);
   };
 
   const onSelectChange = (newSelectedRowKeys: any) => {
@@ -603,7 +647,9 @@ const Index = () => {
             </div>
             <AttentionCard
               title={t("Translation word credits have been exhausted.")}
-              content={t("The translation cannot be completed due to exhausted credits.")}
+              content={t(
+                "The translation cannot be completed due to exhausted credits.",
+              )}
               buttonContent={t("Get more word credits")}
               show={disable}
             />
@@ -643,6 +689,7 @@ const Index = () => {
                   columns={columns}
                   dataSource={data}
                   style={{ width: "100%" }}
+                  loading={deleteloading}
                 />
               </Suspense>
             </div>

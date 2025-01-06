@@ -15,6 +15,7 @@ async function fetchCurrencies(shop) {
       currencyCode: item.currencyCode,
       primaryStatus: item.primaryStatus,
     }));
+    console.log("fetchCurrencies: ", data);
     return data;
   } else {
     return undefined;
@@ -119,7 +120,6 @@ function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
 
 // Rounding function
 function customRounding(number, rounding) {
-
   if (parseFloat(number) === 0 && rounding != "0") {
     return number;
   }
@@ -463,6 +463,7 @@ window.onload = async function () {
     selectedCurrency && !selectedCurrency.primaryStatus;
 
   const currencySwitcher = document.getElementById("currency-switcher");
+  const currencyTitleLabel = document.getElementById("currency-title");
   const currencyInput = document.querySelector('input[name="currency_code"]');
 
   const regex = /{{(.*?)}}/;
@@ -472,7 +473,11 @@ window.onload = async function () {
     moneyFormat = match[1];
   }
 
+  console.log(data);
+
   if (value && isValueInCurrencies) {
+    currencySwitcher.style.display = "block";
+    currencyTitleLabel.style.display = "block";
     let rate = selectedCurrency.exchangeRate;
     if (selectedCurrency.exchangeRate == "Auto") {
       rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
@@ -509,7 +514,10 @@ window.onload = async function () {
       }
       currencySwitcher.add(option);
     });
+    updateDisplayText();
   } else if (data.length) {
+    currencySwitcher.style.display = "block";
+    currencyTitleLabel.style.display = "block";
     currencyInput.value = data[0];
     currencySwitcher.value = data[0]?.currencyCode;
     data.forEach((currency) => {
@@ -522,13 +530,6 @@ window.onload = async function () {
       }
       currencySwitcher.add(option);
     });
-  } else {
-    currencyInput.value = undefined;
-    currencySwitcher.value = undefined;
-    const option = new Option("undefined", undefined);
-    currencySwitcher.add(option);
-    localStorage.removeItem("selectedCurrency");
+    updateDisplayText();
   }
-
-  updateDisplayText();
 };

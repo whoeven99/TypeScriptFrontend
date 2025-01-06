@@ -134,18 +134,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.log("promises: ", promises);
 
           // 使用 Promise.allSettled
-          const res = await Promise.allSettled(promises);
-          console.log("result: ", res);
+          const data = await Promise.allSettled(promises);
+          console.log("result: ", data);
 
           // 处理每个请求的结果
-          res.forEach((result) => {
+          data.forEach((result) => {
             if (result.status === "fulfilled") {
               console.log("Request successful:", result.value);
             } else {
               console.error("Request failed:", result.reason);
             }
           });
-          return json({ data: res });
+          return json({ data: data });
         } catch (error) {
           console.error("Error rateData currency:", error);
           return json({ error: "Error rateData currency" }, { status: 500 });
@@ -181,18 +181,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.log("promises: ", promises);
 
           // 使用 Promise.allSettled
-          const res = await Promise.allSettled(promises);
-          console.log("result: ", res);
+          const data = await Promise.allSettled(promises);
+          console.log("result: ", data);
 
           // 处理每个请求的结果
-          res.forEach((result) => {
+          data.forEach((result) => {
             if (result.status === "fulfilled") {
               console.log("Request successful:", result.value);
             } else {
               console.error("Request failed:", result.reason);
             }
           });
-          return json({ data: res });
+          return json({ data: data });
         } catch (error) {
           console.error("Error addCurrencies currency:", error);
           return json(
@@ -208,24 +208,32 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
         });
         console.log("promises: ", promises);
-        const res = await Promise.allSettled(promises);
-        console.log("result: ", res);
+        const data = await Promise.allSettled(promises);
+        console.log("result: ", data);
 
         // 处理每个请求的结果
-        res.forEach((result) => {
+        data.forEach((result) => {
           if (result.status === "fulfilled") {
             console.log("Request successful:", result.value);
           } else {
             console.error("Request failed:", result.reason);
           }
         });
-        return json({ data: res });
-      case !!updateCurrencies:
-        const data = await UpdateCurrency({
-          request,
-          updateCurrencies: updateCurrencies,
-        });
         return json({ data: data });
+      case !!updateCurrencies:
+        try {
+          const data = await UpdateCurrency({
+            request,
+            updateCurrencies: updateCurrencies,
+          });
+          return json({ data: data });
+        } catch (error) {
+          console.error("Error updateCurrencies currency:", error);
+          return json(
+            { error: "Error updateCurrencies currency" },
+            { status: 500 },
+          );
+        }
     }
     return null;
   } catch (error) {
@@ -435,14 +443,14 @@ const Index = () => {
       // 创建一个新数组来存储需要更新的数据
       let newData = [...dataSource];
       // 遍历 deleteFetcher.data
-      deleteFetcher.data.data.forEach((res: any) => {
-        if (res.value.success) {
+      deleteFetcher.data.data.forEach((data: any) => {
+        if (data.value.success) {
           // 过滤掉需要删除的项
           newData = newData.filter(
-            (item: CurrencyDataType) => item.key !== res.value.response,
+            (item: CurrencyDataType) => item.key !== data.value.response,
           );
         } else {
-          message.error(res.value.errorMsg);
+          message.error(data.value.errorMsg);
         }
       });
       // 一次性更新表格数据
@@ -542,7 +550,9 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button onClick={() => handleEdit(record.key)}>{t("Edit")}</Button>
-          <Button onClick={() => handleDelete(record.key)}>{t("Delete")}</Button>
+          <Button onClick={() => handleDelete(record.key)}>
+            {t("Delete")}
+          </Button>
         </Space>
       ),
     },
