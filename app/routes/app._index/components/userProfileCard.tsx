@@ -24,7 +24,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
       <div className="user_profile_wrapper">
         <div className="user_profilecard_left">
           <span className="character_usage_label">
-            {t("mycredits_colon")}
+            {t("Mycredits_colon")}
           </span>
           <div className="characters_statistical">
             <Text strong style={{ fontSize: "28px", lineHeight: "28px" }}>
