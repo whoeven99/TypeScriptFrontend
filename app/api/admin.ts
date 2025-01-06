@@ -1483,21 +1483,19 @@ export const mutationShopLocaleEnable = async ({
 };
 
 export const mutationShopLocaleDisable = async ({
-  request,
-  languages,
+  shop,
+  accessToken,
+  language,
   primaryLanguageCode,
 }: {
-  request: Request;
-  languages: LanguagesDataType[]; // 接受语言数组
+  shop: string;
+  accessToken: string | undefined;
+  language: LanguagesDataType; // 接受语言数组
   primaryLanguageCode: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-
   try {
     // 遍历语言数组并逐个执行 GraphQL mutation
-    for (const language of languages) {
-      const mutation = `
+    const mutation = `
         mutation {
           shopLocaleDisable(locale: "${language.locale}") {
             locale
@@ -1505,27 +1503,30 @@ export const mutationShopLocaleDisable = async ({
         }
       `;
 
-      // 执行 API 请求
-      await axios({
-        url: `https://${shop}/admin/api/2024-10/graphql.json`,
-        method: "POST",
-        headers: {
-          "X-Shopify-Access-Token": accessToken,
-          "Content-Type": "application/json",
-        },
-        data: JSON.stringify({ query: mutation }),
-      });
+    // 执行 API 请求
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query: mutation }),
+    });
 
-      await axios({
-        url: `${process.env.SERVER_URL}/translate/deleteFromTranslates`,
-        method: "POST",
-        data: {
-          shopName: shop,
-          source: primaryLanguageCode,
-          target: language.locale,
-        },
-      });
-    }
+    await axios({
+      url: `${process.env.SERVER_URL}/translate/deleteFromTranslates`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        source: primaryLanguageCode,
+        target: language.locale,
+      },
+    });
+
+    console.log(response.data.data.shopLocaleDisable.locale);
+    const res = response.data.data.shopLocaleDisable.locale;
+    return res || language.locale;
   } catch (error) {
     console.error("Error mutating shop languages:", error);
     throw error;
