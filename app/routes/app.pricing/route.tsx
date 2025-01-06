@@ -278,7 +278,7 @@ const Index = () => {
       <style>
         {`
           .translation-row {
-            background-color: rgb(250,250,250); /* 浅蓝色背景 */
+            background-color: rgb(250,250,250);
           }
         `}
       </style>

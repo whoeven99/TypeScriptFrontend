@@ -34,7 +34,7 @@ import {
   InsertTargets,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
-import { mutationAppSubscriptionCreate, queryShopLanguages } from "~/api/admin";
+import { mutationAppPurchaseOneTimeCreate, queryShopLanguages } from "~/api/admin";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 // import i18n from "~/i18n";
@@ -257,7 +257,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
         );
         console.log(returnUrl);
-        const payData = await mutationAppSubscriptionCreate({
+        const payData = await mutationAppPurchaseOneTimeCreate({
           request,
           name: payInfo.name,
           price: payInfo.price,
