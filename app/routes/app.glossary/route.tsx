@@ -120,8 +120,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
-    console.error("Error action manage_translation:", error);
-    throw new Response("Error action manage_translation", { status: 500 });
+    console.error("Error action glossary:", error);
+    throw new Response("Error action glossary", { status: 500 });
   }
 };
 
@@ -321,36 +321,47 @@ const Index = () => {
     selectedRowKeys,
     onChange: onSelectChange,
   };
+  console.log(shopLocales);
 
   return (
     <Page>
       <TitleBar title={t("Glossary")} />
-      {loading ? (
-        <div>{t("loading")}...</div>
-      ) : shopLocales && !shopLocales?.length ? (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: "90vh",
-          }}
-        >
-          <NoLanguageSetCard />
-        </div>
-      ) : (
-        <div>
-          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+      <div>
+        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+          <div>
+            <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+              {t("Glossary")}
+            </Title>
             <div>
-              <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-                {t("Glossary")}
-              </Title>
-              <div>
-                <Text>
-                  {t("Create translation rules for certain words and phrases")}
-                </Text>
-              </div>
+              <Text>
+                {t("Create translation rules for certain words and phrases")}
+              </Text>
             </div>
+          </div>
+          {loading ? (
+            <div className="languageTable_action">
+              <Flex
+                align="center"
+                justify="space-between" // 使按钮左右分布
+                style={{ width: "100%", marginBottom: "16px" }}
+              >
+                <Skeleton.Button active />
+                <Skeleton.Button active />
+              </Flex>
+              <Table columns={columns} loading style={{ width: "100%" }} />
+            </div>
+          ) : !shopLocales?.length ? (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                minHeight: "90vh",
+              }}
+            >
+              <NoLanguageSetCard />
+            </div>
+          ) : (
             <div className="languageTable_action">
               <Flex
                 align="center"
@@ -385,22 +396,22 @@ const Index = () => {
                 <Table
                   rowSelection={rowSelection}
                   columns={columns}
-                  loading={deleteLoading}
+                  loading={deleteLoading || loading}
                   dataSource={dataSource}
                   style={{ width: "100%" }}
                 />
               </Suspense>
             </div>
-          </Space>
-          <UpdateGlossaryModal
-            id={glossaryModalId}
-            title={title}
-            isVisible={isGlossaryModalOpen}
-            setIsModalOpen={setIsGlossaryModalOpen}
-            shopLocales={shopLocales}
-          />
-        </div>
-      )}
+          )}
+        </Space>
+        <UpdateGlossaryModal
+          id={glossaryModalId}
+          title={title}
+          isVisible={isGlossaryModalOpen}
+          setIsModalOpen={setIsGlossaryModalOpen}
+          shopLocales={shopLocales}
+        />
+      </div>
     </Page>
   );
 };

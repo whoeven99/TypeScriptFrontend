@@ -74,7 +74,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         action: "/app",
       });
     }
-  }, []);
+  }, [data]);
 
   useEffect(() => {
     if (statusFetcher.data) {

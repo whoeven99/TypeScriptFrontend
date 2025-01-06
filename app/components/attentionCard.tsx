@@ -6,14 +6,12 @@ import { useTranslation } from "react-i18next";
 interface AttentionCardProps {
   title: string;
   content: string;
-  buttonContent: string | undefined;
   show: boolean;
 }
 
 const AttentionCard: React.FC<AttentionCardProps> = ({
   title,
   content,
-  buttonContent,
   show,
 }) => {
   const [visible, setVisible] = useState(true);

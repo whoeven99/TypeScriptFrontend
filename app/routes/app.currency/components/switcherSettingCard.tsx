@@ -1,6 +1,6 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Link } from "@shopify/polaris";
-import { Card, Space, Button, Typography } from "antd";
+import { Card, Space, Button, Typography, Skeleton } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -64,7 +64,6 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
           }
         });
       } else {
-        console.log(moneyWithCurrencyFormatHtml);
         setWithMoneyValue(moneyWithCurrencyFormatHtml);
       }
 
@@ -77,7 +76,6 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
           }
         });
       } else {
-        console.log(moneyFormatHtml);
         setWithoutMoneyValue(moneyFormatHtml);
       }
     }
@@ -148,37 +146,45 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
 
             <div>
               <strong>HTML with currency:</strong>
-              {isVisible ? (
-                <Paragraph
-                  copyable={{
-                    text: `<span class="ciwi-money">${withoutMoneyValue} ${defaultCurrencyCode}</span>`,
-                  }}
-                >
-                  &lt;span class="ciwi-money"&gt;{withoutMoneyValue}{" "}
-                  {defaultCurrencyCode}
-                  &lt;/span&gt;
-                </Paragraph>
+              {withMoneyValue ? (
+                isVisible ? (
+                  <Paragraph
+                    copyable={{
+                      text: `<span class="ciwi-money">${withoutMoneyValue} ${defaultCurrencyCode}</span>`,
+                    }}
+                  >
+                    &lt;span class="ciwi-money"&gt;{withoutMoneyValue}{" "}
+                    {defaultCurrencyCode}
+                    &lt;/span&gt;
+                  </Paragraph>
+                ) : (
+                  <Paragraph
+                    copyable={{
+                      text: `<span class="ciwi-money">${withMoneyValue}</span>`,
+                    }}
+                  >
+                    &lt;span class="ciwi-money"&gt;{withMoneyValue}&lt;/span&gt;
+                  </Paragraph>
+                )
               ) : (
-                <Paragraph
-                  copyable={{
-                    text: `<span class="ciwi-money">${withMoneyValue}</span>`,
-                  }}
-                >
-                  &lt;span class="ciwi-money"&gt;{withMoneyValue}&lt;/span&gt;
-                </Paragraph>
+                <Skeleton active paragraph={{ rows: 0 }}/>
               )}
             </div>
 
             <div>
               <strong>HTML without currency:</strong>
-              <Paragraph
-                copyable={{
-                  text: `<span class="ciwi-money">${withoutMoneyValue}</span>`,
-                }}
-              >
-                &lt;span class="ciwi-money"&gt;{withoutMoneyValue}
-                &lt;/span&gt;
-              </Paragraph>
+              {withoutMoneyValue ? (
+                <Paragraph
+                  copyable={{
+                    text: `<span class="ciwi-money">${withoutMoneyValue}</span>`,
+                  }}
+                >
+                  &lt;span class="ciwi-money"&gt;{withoutMoneyValue}
+                  &lt;/span&gt;
+                </Paragraph>
+              ) : (
+                <Skeleton active paragraph={{ rows: 0 }}/>
+              )}
             </div>
           </Space>
         </Card>

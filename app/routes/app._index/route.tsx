@@ -169,9 +169,11 @@ const Index = () => {
               <Text>{t("Your store’s default language:")}</Text>
               {languageSetting && (
                 <Text strong>
-                  {languageSetting.primaryLanguage
-                    ? languageSetting.primaryLanguage
-                    : t("No primary language set")}
+                  {languageSetting.primaryLanguage ? (
+                    languageSetting.primaryLanguage
+                  ) : (
+                    <Skeleton active paragraph={{ rows: 0 }}/>
+                  )}
                 </Text>
               )}
             </div>
