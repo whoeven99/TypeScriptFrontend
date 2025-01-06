@@ -1,12 +1,12 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Menu, Space } from "antd";
-import { Suspense, useEffect, useState } from "react";
+import { Menu, Space, Skeleton } from "antd";
+import { useEffect, useState } from "react";
 import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import { Outlet, useFetcher, useFetchers, useLocation } from "@remix-run/react";
+import { Outlet, useFetcher, useLocation } from "@remix-run/react";
 import AttentionCard from "~/components/attentionCard";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
@@ -17,9 +17,7 @@ import { WordsType } from "../app._index/route";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { updateData } from "~/store/modules/languageItemsData";
 import { useTranslation } from "react-i18next";
-const ManageTranslationsCard = React.lazy(
-  () => import("./components/manageTranslationsCard"),
-);
+import ManageTranslationsCard from "./components/manageTranslationsCard";
 
 interface ManageMenuDataType {
   label: string;
@@ -52,16 +50,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
     const productsItems = JSON.parse(formData.get("productsItems") as string);
-    const collectionsItems = JSON.parse(formData.get("collectionsItems") as string);
+    const collectionsItems = JSON.parse(
+      formData.get("collectionsItems") as string,
+    );
     const articlesItems = JSON.parse(formData.get("articlesItems") as string);
-    const blog_titlesItems = JSON.parse(formData.get("blog_titlesItems") as string);
+    const blog_titlesItems = JSON.parse(
+      formData.get("blog_titlesItems") as string,
+    );
     const pagesItems = JSON.parse(formData.get("pagesItems") as string);
     const filtersItems = JSON.parse(formData.get("filtersItems") as string);
-    const metaobjectsItems = JSON.parse(formData.get("metaobjectsItems") as string);
-    const navigationItems = JSON.parse(formData.get("navigationItems") as string);
+    const metaobjectsItems = JSON.parse(
+      formData.get("metaobjectsItems") as string,
+    );
+    const navigationItems = JSON.parse(
+      formData.get("navigationItems") as string,
+    );
     const policiesItems = JSON.parse(formData.get("policiesItems") as string);
     const shopItems = JSON.parse(formData.get("shopItems") as string);
-    const store_metadataItems = JSON.parse(formData.get("store_metadataItems") as string);
+    const store_metadataItems = JSON.parse(
+      formData.get("store_metadataItems") as string,
+    );
     const themeItems = JSON.parse(formData.get("themeItems") as string);
     const deliveryItems = JSON.parse(formData.get("deliveryItems") as string);
     const shippingItems = JSON.parse(formData.get("shippingItems") as string);
@@ -106,7 +114,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           return json({ data: data });
         } catch (error) {
-          console.error("Error GetTranslationItemsInfo collectionsItems:", error);
+          console.error(
+            "Error GetTranslationItemsInfo collectionsItems:",
+            error,
+          );
           return json(
             { error: "Error GetTranslationItemsInfo collectionsItems" },
             { status: 500 },
@@ -142,7 +153,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           return json({ data: data });
         } catch (error) {
-          console.error("Error GetTranslationItemsInfo blog_titlesItems:", error);
+          console.error(
+            "Error GetTranslationItemsInfo blog_titlesItems:",
+            error,
+          );
           return json(
             { error: "Error GetTranslationItemsInfo blog_titlesItems" },
             { status: 500 },
@@ -196,7 +210,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           return json({ data: data });
         } catch (error) {
-          console.error("Error GetTranslationItemsInfo metaobjectsItems:", error);
+          console.error(
+            "Error GetTranslationItemsInfo metaobjectsItems:",
+            error,
+          );
           return json(
             { error: "Error GetTranslationItemsInfo metaobjectsItems" },
             { status: 500 },
@@ -214,7 +231,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           return json({ data: data });
         } catch (error) {
-          console.error("Error GetTranslationItemsInfo navigationItems:", error);
+          console.error(
+            "Error GetTranslationItemsInfo navigationItems:",
+            error,
+          );
           return json(
             { error: "Error GetTranslationItemsInfo navigationItems" },
             { status: 500 },
@@ -268,7 +288,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           return json({ data: data });
         } catch (error) {
-          console.error("Error GetTranslationItemsInfo store_metadataItems:", error);
+          console.error(
+            "Error GetTranslationItemsInfo store_metadataItems:",
+            error,
+          );
           return json(
             { error: "Error GetTranslationItemsInfo store_metadataItems" },
             { status: 500 },
@@ -342,7 +365,7 @@ const Index = () => {
   // const { shopLanguagesLoad, words } = useLoaderData<typeof loader>();
   const [words, setWords] = useState<WordsType>();
   const [shopLanguages, setShopLanguages] = useState<ShopLocalesType[]>();
-  const [menuData, setMenuData] = useState<ManageMenuDataType[]>();
+  const [menuData, setMenuData] = useState<ManageMenuDataType[]>([]);
   const [primaryLanguage, setPrimaryLanguage] = useState<string>();
   const [current, setCurrent] = useState<string>("");
   const [disable, setDisable] = useState<boolean>(false);
@@ -602,7 +625,6 @@ const Index = () => {
     if (fetcher.data) {
       setShopLanguages(fetcher.data.shopLanguagesLoad);
       setWords(fetcher.data.words);
-      setLoading(false);
     }
   }, [fetcher.data]);
 
@@ -691,13 +713,6 @@ const Index = () => {
   }, [shippingFetcher.data]);
 
   useEffect(() => {
-    if (shopLanguages && words) {
-      shopify.loading(false);
-      setLoading(false);
-    }
-  }, [shopLanguages, words]);
-
-  useEffect(() => {
     if (words && words.chars > words.totalChars) setDisable(true);
   }, [words]);
 
@@ -715,6 +730,8 @@ const Index = () => {
         }));
       setMenuData(newArray);
       setCurrent(newArray[0]?.key);
+      shopify.loading(false);
+      setLoading(false);
     }
   }, [shopLanguages]);
 
@@ -921,9 +938,7 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Manage Translation")} />
-      {loading ? (
-        <div>{t("loading")}...</div>
-      ) : menuData && !menuData?.length ? (
+      {!loading && !menuData?.length ? (
         <div
           style={{
             display: "flex",
@@ -939,11 +954,12 @@ const Index = () => {
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
             <AttentionCard
               title={t("Translation credits have been exhausted.")}
-              content={t("The translation cannot be completed due to exhausted credits.")}
-              buttonContent={t("Get more word credits")}
+              content={t(
+                "The translation cannot be completed due to exhausted credits.",
+              )}
               show={disable}
             />
-            <Suspense fallback={<div>{t("loading")}...</div>}>
+            {menuData?.length ? (
               <div className="manage-header">
                 <Menu
                   onClick={onClick}
@@ -958,35 +974,37 @@ const Index = () => {
                   }}
                 />
               </div>
-              <div className="manage-content-wrap">
-                <div className="manage-content-left">
-                  <Space
-                    direction="vertical"
-                    size="middle"
-                    style={{ display: "flex" }}
-                  >
-                    <div className="search-input"></div>
-                    {/* 使用 Suspense 包裹懒加载组件 */}
-                    <ManageTranslationsCard
-                      cardTitle={t("Products")}
-                      dataSource={productsDataSource}
-                      current={current}
-                    />
-                    <ManageTranslationsCard
-                      cardTitle={t("Online Store")}
-                      dataSource={onlineStoreDataSource}
-                      current={current}
-                    />
-                    <ManageTranslationsCard
-                      cardTitle={t("Settings")}
-                      dataSource={settingsDataSource}
-                      current={current}
-                    />
-                  </Space>
-                </div>
-                <div className="manage-content-right"></div>
+            ) : (
+              <Skeleton.Button active block/>
+            )}
+
+            <div className="manage-content-wrap">
+              <div className="manage-content-left">
+                <Space
+                  direction="vertical"
+                  size="middle"
+                  style={{ display: "flex" }}
+                >
+                  <div className="search-input"></div>
+                  <ManageTranslationsCard
+                    cardTitle={t("Products")}
+                    dataSource={productsDataSource}
+                    current={current}
+                  />
+                  <ManageTranslationsCard
+                    cardTitle={t("Online Store")}
+                    dataSource={onlineStoreDataSource}
+                    current={current}
+                  />
+                  <ManageTranslationsCard
+                    cardTitle={t("Settings")}
+                    dataSource={settingsDataSource}
+                    current={current}
+                  />
+                </Space>
               </div>
-            </Suspense>
+              <div className="manage-content-right"></div>
+            </div>
           </Space>
           <Outlet />
         </div>
