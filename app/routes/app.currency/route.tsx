@@ -14,13 +14,10 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { json } from "@remix-run/node";
 import { useEffect, useState } from "react";
-// import { SearchOutlined } from "@ant-design/icons"
 import "./styles.css";
 import { ColumnsType } from "antd/es/table";
 import { TableRowSelection } from "antd/es/table/interface";
-// import { updateUserInfo } from "~/api/serve";
 import { useDispatch, useSelector } from "react-redux";
-
 import { SearchOutlined } from "@ant-design/icons";
 import { BaseOptionType, DefaultOptionType } from "antd/es/select";
 import { queryShop, queryTheme } from "~/api/admin";
@@ -29,7 +26,6 @@ import {
   DeleteCurrency,
   GetCacheData,
   GetCurrencyByShopName,
-  GetCurrencyLocaleInfo,
   InitCurrency,
   UpdateCurrency,
   UpdateDefaultCurrency,
@@ -64,16 +60,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const adminAuthResult = await authenticate.admin(request);
     const { shop } = adminAuthResult.session;
 
-    // 返回包含 userId 的 json 响应
     return json({
       shop,
       ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID,
       ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID,
     });
   } catch (error) {
-    // 打印错误信息，方便调试
     console.error("Error during authentication:", error);
-    // 返回带有错误信息的 500 响应
     return new Response("Internal Server Error", { status: 500 });
   }
 };
@@ -103,16 +96,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const primaryCurrency = await InitCurrency({ request });
           const shopLoad = await queryShop({ request });
           const currencyList = await GetCurrencyByShopName({ request });
-          // const currencyLocaleInfo = await GetCurrencyLocaleInfo();
-          const finalCurrencyList =
-            currencyList === undefined ? [] : currencyList;
-          console.log("finalCurrencyList: ", finalCurrencyList);
+          const finalCurrencyList = currencyList || [];
           const moneyFormat = shopLoad.currencyFormats.moneyFormat;
           const moneyWithCurrencyFormat =
             shopLoad.currencyFormats.moneyWithCurrencyFormat;
           return json({
-            primaryCurrency: primaryCurrency,
-            // currencyLocaleInfo: currencyLocaleInfo,
+            primaryCurrency,
             defaultCurrencyCode: shopLoad.currencyCode,
             currencyList: finalCurrencyList,
             moneyFormat,
@@ -125,36 +114,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!theme:
         try {
           const data = await queryTheme({ request });
-          console.log("theme: ", data);
-          return json({ data: data });
+          return json({ data });
         } catch (error) {
           console.error("Error theme currency:", error);
           return json({ error: "Error theme currency" }, { status: 500 });
         }
       case !!rateData:
         try {
-          console.log("rateData: ", rateData);
-          const promises = rateData.map((currencyCode: any) => {
-            return GetCacheData({
-              shop,
-              currencyCode: currencyCode,
-            });
-          });
-          console.log("promises: ", promises);
-
-          // 使用 Promise.allSettled
+          const promises = rateData.map((currencyCode: any) =>
+            GetCacheData({ shop, currencyCode }),
+          );
           const data = await Promise.allSettled(promises);
-          console.log("result: ", data);
-
-          // 处理每个请求的结果
-          data.forEach((result) => {
-            if (result.status === "fulfilled") {
-              console.log("Request successful:", result.value);
-            } else {
-              console.error("Request failed:", result.reason);
-            }
-          });
-          return json({ data: data });
+          return json({ data });
         } catch (error) {
           console.error("Error rateData currency:", error);
           return json({ error: "Error rateData currency" }, { status: 500 });
@@ -167,7 +138,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             currencyCode: updateDefaultCurrency.currencyCode,
             primaryStatus: updateDefaultCurrency.primaryStatus,
           });
-          return json({ data: data });
+          return json({ data });
         } catch (error) {
           console.error("Error updateDefaultCurrency currency:", error);
           return json(
@@ -175,33 +146,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             { status: 500 },
           );
         }
-
       case !!addCurrencies:
         try {
-          console.log("addCurrencies: ", addCurrencies);
-          const promises = addCurrencies.map((currency: any) => {
-            return AddCurrency({
+          const promises = addCurrencies.map((currency: any) =>
+            AddCurrency({
               request,
               currencyName: currency.currencyName,
               currencyCode: currency.currencyCode,
               primaryStatus: currency?.primaryStatus || 0,
-            });
-          });
-          console.log("promises: ", promises);
-
-          // 使用 Promise.allSettled
+            }),
+          );
           const data = await Promise.allSettled(promises);
-          console.log("result: ", data);
-
-          // 处理每个请求的结果
-          data.forEach((result) => {
-            if (result.status === "fulfilled") {
-              console.log("Request successful:", result.value);
-            } else {
-              console.error("Request failed:", result.reason);
-            }
-          });
-          return json({ data: data });
+          return json({ data });
         } catch (error) {
           console.error("Error addCurrencies currency:", error);
           return json(
@@ -210,32 +166,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           );
         }
       case !!deleteCurrencies:
-        const promises = deleteCurrencies.map(async (currency) => {
-          return DeleteCurrency({
-            request,
-            id: currency,
-          });
-        });
-        console.log("promises: ", promises);
+        const promises = deleteCurrencies.map((currency) =>
+          DeleteCurrency({ request, id: currency }),
+        );
         const data = await Promise.allSettled(promises);
-        console.log("result: ", data);
-
-        // 处理每个请求的结果
-        data.forEach((result) => {
-          if (result.status === "fulfilled") {
-            console.log("Request successful:", result.value);
-          } else {
-            console.error("Request failed:", result.reason);
-          }
-        });
-        return json({ data: data });
+        return json({ data });
       case !!updateCurrencies:
         try {
           const data = await UpdateCurrency({
             request,
-            updateCurrencies: updateCurrencies,
+            updateCurrencies,
           });
-          return json({ data: data });
+          return json({ data });
         } catch (error) {
           console.error("Error updateCurrencies currency:", error);
           return json(
@@ -281,7 +223,6 @@ const Index = () => {
   const [originalData, setOriginalData] = useState<
     CurrencyDataType[] | undefined
   >();
-  // 当前显示的数据源
   const [filteredData, setFilteredData] = useState<
     CurrencyDataType[] | undefined
   >(dataSource);
@@ -301,14 +242,14 @@ const Index = () => {
       method: "post",
       action: "/app/currency",
     });
+
     const themeFormData = new FormData();
     themeFormData.append("theme", JSON.stringify(true));
     themeFetcher.submit(themeFormData, {
       method: "post",
       action: "/app/currency",
     });
-    // 使用 fetch 从 public 文件夹加载 JSON 数据
-    const fetchStart = Date.now(); // 记录开始时间
+
     fetch("/currencies.json")
       .then((response) => response.json())
       .then((data) => {
@@ -320,32 +261,16 @@ const Index = () => {
         );
       })
       .catch((error) => console.error("Error loading currencies:", error));
-    const fetchEnd = Date.now(); // 记录开始时间
-    console.log(`InitializationDetection took ${fetchEnd - fetchStart}ms`);
 
     shopify.loading(true);
   }, []);
 
   useEffect(() => {
     if (loadingFetcher.data && currencyData.length) {
-      // const currencyArray = Object.keys(loadingFetcher.data.currencyLocaleInfo).map((key, index) => ({
-      //   key: index + 1,
-      //   currencyName: loadingFetcher.data.currencyLocaleInfo[key].currencyName,
-      //   currencyCode: loadingFetcher.data.currencyLocaleInfo[key].currencyCode,
-      //   symbol: loadingFetcher.data.currencyLocaleInfo[key].symbol,
-      //   locale: loadingFetcher.data.currencyLocaleInfo[key].locale,
-      // }));
-      // setCurrencyData(currencyArray);
       setDefaultCurrencyCode(loadingFetcher.data.defaultCurrencyCode);
-      // setAddCurrencies(
-      //   loadingFetcher.data.currencyLocaleInfo.filter(
-      //     (item: CurrencyType) => item.currencyCode !== defaultCurrencyCode,
-      //   ),
-      // );
-      const defaultCurrency = currencyData.find((item: CurrencyType) => {
-        if (item.currencyCode == loadingFetcher.data.defaultCurrencyCode)
-          return item;
-      });
+      const defaultCurrency = currencyData.find(
+        (item) => item.currencyCode === loadingFetcher.data.defaultCurrencyCode,
+      );
       if (defaultCurrency) {
         setDefaultSymbol(defaultCurrency.symbol);
       }
@@ -353,7 +278,7 @@ const Index = () => {
         (item: any) => !item.primaryStatus,
       );
       setOriginalData(tableData);
-      setFilteredData(tableData); // 用加载的数据初始化 filteredData
+      setFilteredData(tableData);
       dispatch(setTableData(tableData));
       const autoRateData = loadingFetcher.data.currencyList
         .filter((item: any) => item.exchangeRate == "Auto")
@@ -365,17 +290,16 @@ const Index = () => {
         action: "/app/currency",
       });
       const parser = new DOMParser();
-      const parsedMoneyFormat = parser.parseFromString(
-        loadingFetcher.data.moneyFormat,
-        "text/html",
-      ).documentElement.textContent;
-      const parsedMoneyWithCurrencyFormat = parser.parseFromString(
-        loadingFetcher.data.moneyWithCurrencyFormat,
-        "text/html",
-      ).documentElement.textContent;
-
-      setMoneyFormatHtml(parsedMoneyFormat);
-      setMoneyWithCurrencyFormatHtml(parsedMoneyWithCurrencyFormat);
+      setMoneyFormatHtml(
+        parser.parseFromString(loadingFetcher.data.moneyFormat, "text/html")
+          .documentElement.textContent,
+      );
+      setMoneyWithCurrencyFormatHtml(
+        parser.parseFromString(
+          loadingFetcher.data.moneyWithCurrencyFormat,
+          "text/html",
+        ).documentElement.textContent,
+      );
       shopify.loading(false);
       setLoading(false);
       const primaryCurrency = loadingFetcher.data.primaryCurrency;
@@ -390,13 +314,13 @@ const Index = () => {
               primaryStatus: 1,
             },
           ]),
-        ); // 将选中的语言作为字符串发送
+        );
         initCurrencyFetcher.submit(formData, {
           method: "post",
           action: "/app/currency",
-        }); // 提交表单请求
+        });
       } else if (
-        primaryCurrency?.currencyCode !=
+        primaryCurrency?.currencyCode !==
           loadingFetcher.data.defaultCurrencyCode &&
         defaultCurrency
       ) {
@@ -408,11 +332,11 @@ const Index = () => {
             currencyCode: defaultCurrency.currencyCode,
             primaryStatus: 1,
           }),
-        ); // 将选中的语言作为字符串发送
+        );
         initCurrencyFetcher.submit(formData, {
           method: "post",
           action: "/app/currency",
-        }); // 提交表单请求
+        });
       }
     }
   }, [loadingFetcher.data]);
@@ -424,7 +348,7 @@ const Index = () => {
       const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
       const blocks = JSON.parse(jsonString).current.blocks;
       const switcherJson: any = Object.values(blocks).find(
-        (block: any) => block.type == ciwiSwitcherBlocksId,
+        (block: any) => block.type === ciwiSwitcherBlocksId,
       );
       if (!switcherJson || switcherJson.disabled) {
         setSwitcherEnableCardOpen(true);
@@ -434,49 +358,41 @@ const Index = () => {
 
   useEffect(() => {
     if (rateFetcher.data) {
-      // 创建一个新数组，存放符合条件的 item.value
       const newRates = rateFetcher.data.data.reduce((acc: any[], item: any) => {
         if (item.status === "fulfilled" && item.value) {
-          acc.push(item.value); // 将 item.value 添加到数组中
+          acc.push(item.value);
         }
         return acc;
       }, []);
-
-      // 更新状态
       if (newRates.length > 0) {
-        setCurrencyAutoRate(newRates); // 更新 currencyAutoRates
+        setCurrencyAutoRate(newRates);
       }
     }
   }, [rateFetcher.data]);
 
   useEffect(() => {
     if (deleteFetcher.data !== undefined) {
-      // 创建一个新数组来存储需要更新的数据
       let newData = [...dataSource];
       // 遍历 deleteFetcher.data
       deleteFetcher.data.data.forEach((data: any) => {
         if (data.value.success) {
-          // 过滤掉需要删除的项
-          newData = newData.filter(
-            (item: CurrencyDataType) => item.key !== data.value.response,
-          );
+          newData = newData.filter((item) => item.key !== data.value.response);
         } else {
           message.error(data.value.errorMsg);
         }
       });
-      // 一次性更新表格数据
-      dispatch(setTableData(newData)); // 更新表格数据
+      dispatch(setTableData(newData));
       message.success(t("Deleted successfully"));
       setDeleteLoading(false);
-      setSelectedRowKeys([]); // 清空已选中项
+      setSelectedRowKeys([]);
       setOriginalData(newData);
-      setFilteredData(newData); // 确保当前显示的数据也更新
+      setFilteredData(newData);
     }
   }, [deleteFetcher.data]);
 
   useEffect(() => {
     setOriginalData(dataSource);
-    setFilteredData(dataSource); // 用加载的数据初始化 filteredData
+    setFilteredData(dataSource);
   }, [dataSource]);
 
   const hasSelected = selectedRowKeys.length > 0;
@@ -574,7 +490,6 @@ const Index = () => {
     setSearchInput(value);
 
     if (originalData) {
-      // 检查 originalData 是否定义
       if (value) {
         const filtered = originalData.filter(
           (data) =>
@@ -583,13 +498,13 @@ const Index = () => {
         );
         setFilteredData(filtered);
       } else {
-        setFilteredData(originalData); // 恢复 originalData
+        setFilteredData(originalData);
       }
     }
   };
 
   const handleEdit = (key: number) => {
-    const row = dataSource.find((item: any) => item.key === key);
+    const row = dataSource.find((item) => item.key === key);
     setSelectedRow(row);
     setIsCurrencyEditModalOpen(true);
   };
@@ -606,23 +521,17 @@ const Index = () => {
   const handleDelete = (key?: React.Key) => {
     const formData = new FormData();
     if (key) {
-      formData.append("deleteCurrencies", JSON.stringify([key])); // 将选中的语言作为字符串发送
+      formData.append("deleteCurrencies", JSON.stringify([key]));
       deleteFetcher.submit(formData, {
         method: "post",
         action: "/app/currency",
-      }); // 提交表单请求
-      // newData = dataSource.filter((item: CurrencyDataType) => item.key !== key);
-      // dispatch(setTableData(newData)); // 更新表格数据
+      });
     } else {
-      formData.append("deleteCurrencies", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
+      formData.append("deleteCurrencies", JSON.stringify(selectedRowKeys));
       deleteFetcher.submit(formData, {
         method: "post",
         action: "/app/currency",
-      }); // 提交表单请求
-      // newData = dataSource.filter(
-      //   (item: CurrencyDataType) => !selectedRowKeys.includes(item.key),
-      // );
-      // dispatch(setTableData(newData)); // 更新表格数据
+      });
     }
     setDeleteLoading(true);
   };
@@ -670,7 +579,7 @@ const Index = () => {
             <Text strong> {defaultCurrencyCode}</Text>
           </div>
         ) : (
-          <Skeleton active paragraph={{ rows: 0 }}/>
+          <Skeleton active paragraph={{ rows: 0 }} />
         )}
         <Flex gap="middle" vertical>
           <Flex align="center" gap="middle">

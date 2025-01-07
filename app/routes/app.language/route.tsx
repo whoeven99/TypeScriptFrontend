@@ -268,11 +268,7 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    console.log(dataSource, primaryLanguage);
-
     if (dataSource && primaryLanguage) {
-      console.log(dataSource, primaryLanguage);
-
       dataSource.map((data) => {
         if (data && data.status === 2) {
           const formData = new FormData();
@@ -283,10 +279,14 @@ const Index = () => {
               target: [data.locale],
             }),
           );
-          statusFetcher.submit(formData, {
-            method: "post",
-            action: "/app",
-          });
+          const timeoutId = setTimeout(() => {
+            statusFetcher.submit(formData, {
+              method: "post",
+              action: "/app",
+            });
+          }, 2000); // 2秒延时
+          // 在组件卸载时清除定时器
+          return () => clearTimeout(timeoutId);
         }
       });
     }
