@@ -39,7 +39,6 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const translateFetcher = useFetcher<any>();
-  // const fetcher = useFetcher<FetchType>();
   const statusFetcher = useFetcher<any>();
 
   // useEffect(() => {
@@ -69,10 +68,14 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
           target: [data.locale],
         }),
       );
-      statusFetcher.submit(formData, {
-        method: "post",
-        action: "/app",
-      });
+      const timeoutId = setTimeout(() => {
+        statusFetcher.submit(formData, {
+          method: "post",
+          action: "/app",
+        });
+      }, 2000); // 2秒延时
+      // 在组件卸载时清除定时器
+      return () => clearTimeout(timeoutId);
     }
   }, [data]);
 
@@ -169,7 +172,9 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         );
       } else {
         message.error(
-          t("The translation task is in progress. Please try translating again later."),
+          t(
+            "The translation task is in progress. Please try translating again later.",
+          ),
         );
       }
     }

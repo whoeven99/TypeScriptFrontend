@@ -43,7 +43,7 @@ export interface WordsType {
   totalChars: number;
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async () => {
   return null;
 };
 
@@ -172,7 +172,7 @@ const Index = () => {
                   {languageSetting.primaryLanguage ? (
                     languageSetting.primaryLanguage
                   ) : (
-                    <Skeleton active paragraph={{ rows: 0 }}/>
+                    <Skeleton active paragraph={{ rows: 0 }} />
                   )}
                 </Text>
               )}
@@ -247,7 +247,7 @@ const Index = () => {
           <Title level={4}>{t("Congratulations!")}</Title>
           <Text>
             {t(
-              "You have received 1,000 Credits, enabling you to translate into over 137 languages.",
+              "You have received 50,000 Credits, enabling you to translate into over 137 languages.",
             )}
           </Text>
         </Modal>
