@@ -1,6 +1,15 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Link, Page } from "@shopify/polaris";
-import { Button, Flex, Input, message, Space, Table, Typography } from "antd";
+import {
+  Button,
+  Flex,
+  Input,
+  message,
+  Space,
+  Table,
+  Typography,
+  Skeleton,
+} from "antd";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { json } from "@remix-run/node";
@@ -134,18 +143,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.log("promises: ", promises);
 
           // 使用 Promise.allSettled
-          const res = await Promise.allSettled(promises);
-          console.log("result: ", res);
+          const data = await Promise.allSettled(promises);
+          console.log("result: ", data);
 
           // 处理每个请求的结果
-          res.forEach((result) => {
+          data.forEach((result) => {
             if (result.status === "fulfilled") {
               console.log("Request successful:", result.value);
             } else {
               console.error("Request failed:", result.reason);
             }
           });
-          return json({ data: res });
+          return json({ data: data });
         } catch (error) {
           console.error("Error rateData currency:", error);
           return json({ error: "Error rateData currency" }, { status: 500 });
@@ -181,18 +190,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.log("promises: ", promises);
 
           // 使用 Promise.allSettled
-          const res = await Promise.allSettled(promises);
-          console.log("result: ", res);
+          const data = await Promise.allSettled(promises);
+          console.log("result: ", data);
 
           // 处理每个请求的结果
-          res.forEach((result) => {
+          data.forEach((result) => {
             if (result.status === "fulfilled") {
               console.log("Request successful:", result.value);
             } else {
               console.error("Request failed:", result.reason);
             }
           });
-          return json({ data: res });
+          return json({ data: data });
         } catch (error) {
           console.error("Error addCurrencies currency:", error);
           return json(
@@ -208,24 +217,32 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
         });
         console.log("promises: ", promises);
-        const res = await Promise.allSettled(promises);
-        console.log("result: ", res);
+        const data = await Promise.allSettled(promises);
+        console.log("result: ", data);
 
         // 处理每个请求的结果
-        res.forEach((result) => {
+        data.forEach((result) => {
           if (result.status === "fulfilled") {
             console.log("Request successful:", result.value);
           } else {
             console.error("Request failed:", result.reason);
           }
         });
-        return json({ data: res });
-      case !!updateCurrencies:
-        const data = await UpdateCurrency({
-          request,
-          updateCurrencies: updateCurrencies,
-        });
         return json({ data: data });
+      case !!updateCurrencies:
+        try {
+          const data = await UpdateCurrency({
+            request,
+            updateCurrencies: updateCurrencies,
+          });
+          return json({ data: data });
+        } catch (error) {
+          console.error("Error updateCurrencies currency:", error);
+          return json(
+            { error: "Error updateCurrencies currency" },
+            { status: 500 },
+          );
+        }
     }
     return null;
   } catch (error) {
@@ -240,9 +257,7 @@ const Index = () => {
   const userShop = `https://${shop}`;
   const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
   const [loading, setLoading] = useState<boolean>(true);
-  const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>(
-    "No defaultCurrencyCode set",
-  );
+  const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>("");
   const [searchInput, setSearchInput] = useState("");
   const [currencyData, setCurrencyData] = useState<CurrencyType[]>([]);
   const [currencyAutoRate, setCurrencyAutoRate] = useState([]);
@@ -293,6 +308,7 @@ const Index = () => {
       action: "/app/currency",
     });
     // 使用 fetch 从 public 文件夹加载 JSON 数据
+    const fetchStart = Date.now(); // 记录开始时间
     fetch("/currencies.json")
       .then((response) => response.json())
       .then((data) => {
@@ -304,6 +320,9 @@ const Index = () => {
         );
       })
       .catch((error) => console.error("Error loading currencies:", error));
+    const fetchEnd = Date.now(); // 记录开始时间
+    console.log(`InitializationDetection took ${fetchEnd - fetchStart}ms`);
+
     shopify.loading(true);
   }, []);
 
@@ -435,14 +454,14 @@ const Index = () => {
       // 创建一个新数组来存储需要更新的数据
       let newData = [...dataSource];
       // 遍历 deleteFetcher.data
-      deleteFetcher.data.data.forEach((res: any) => {
-        if (res.value.success) {
+      deleteFetcher.data.data.forEach((data: any) => {
+        if (data.value.success) {
           // 过滤掉需要删除的项
           newData = newData.filter(
-            (item: CurrencyDataType) => item.key !== res.value.response,
+            (item: CurrencyDataType) => item.key !== data.value.response,
           );
         } else {
-          message.error(res.value.errorMsg);
+          message.error(data.value.errorMsg);
         }
       });
       // 一次性更新表格数据
@@ -542,7 +561,9 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button onClick={() => handleEdit(record.key)}>{t("Edit")}</Button>
-          <Button onClick={() => handleDelete(record.key)}>{t("Delete")}</Button>
+          <Button onClick={() => handleDelete(record.key)}>
+            {t("Delete")}
+          </Button>
         </Space>
       ),
     },
@@ -609,95 +630,87 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Currency")}></TitleBar>
-      {loading ? (
-        <div>{t("loading")}...</div>
-      ) : (
-        <div>
-          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-            <SwitcherSettingCard
-              settingUrl={settingUrl}
-              moneyFormatHtml={moneyFormatHtml}
-              moneyWithCurrencyFormatHtml={moneyWithCurrencyFormatHtml}
-              shop={shop}
-              ciwiSwitcherId={ciwiSwitcherId}
-              isEnable={switcherEnableCardOpen}
-              defaultCurrencyCode={defaultCurrencyCode}
-            />
-
-            <div className="currency-header">
-              <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-                {t("Currency")}
-              </Title>
-              <div className="currency-action">
-                <Space>
-                  {hasSelected
-                    ? `Selected ${selectedRowKeys.length} items`
-                    : null}
-                  <Button
-                    type="primary"
-                    onClick={() => handleDelete()}
-                    disabled={!hasSelected}
-                    loading={deleteloading}
-                  >
-                    {t("Delete")}
-                  </Button>
-                  <Button
-                    type="primary"
-                    onClick={() => setIsAddCurrencyModalOpen(true)}
-                  >
-                    {t("Add Currency")}
-                  </Button>
-                </Space>
-              </div>
-            </div>
-            <div>
-              <Text type="secondary">
-                {t("Your store’s default currency:")}
-              </Text>
-              <Text strong> {defaultCurrencyCode}</Text>
-            </div>
-            <Flex gap="middle" vertical>
-              <Flex align="center" gap="middle">
-                <Text>
-                  {t("After setting, you can")}
-                  <Link url={userShop} target="_blank">
-                    {t("Preview")}
-                  </Link>
-                  {t("to view the prices in different currencies.")}
-                </Text>
-              </Flex>
-              <Input
-                placeholder={t("Search currencies...")}
-                prefix={<SearchOutlined />}
-                value={searchInput}
-                onChange={handleSearch}
-                style={{ marginBottom: 16 }}
-              />
-              <Table
-                rowSelection={rowSelection}
-                columns={columns}
-                dataSource={filteredData}
+      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <SwitcherSettingCard
+          settingUrl={settingUrl}
+          moneyFormatHtml={moneyFormatHtml}
+          moneyWithCurrencyFormatHtml={moneyWithCurrencyFormatHtml}
+          shop={shop}
+          ciwiSwitcherId={ciwiSwitcherId}
+          isEnable={switcherEnableCardOpen}
+          defaultCurrencyCode={defaultCurrencyCode}
+        />
+        <div className="currency-header">
+          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+            {t("Currency")}
+          </Title>
+          <div className="currency-action">
+            <Space>
+              {hasSelected ? `Selected ${selectedRowKeys.length} items` : null}
+              <Button
+                type="primary"
+                onClick={() => handleDelete()}
+                disabled={!hasSelected}
                 loading={deleteloading}
-              />
-            </Flex>
-          </Space>
-
-          <AddCurrencyModal
-            isVisible={isAddCurrencyModalOpen}
-            setIsModalOpen={setIsAddCurrencyModalOpen}
-            addCurrencies={addCurrencies}
-            defaultCurrencyCode={defaultCurrencyCode}
-          />
-          <CurrencyEditModal
-            isVisible={isCurrencyEditModalOpen}
-            setIsModalOpen={setIsCurrencyEditModalOpen}
-            roundingColumns={roundingColumns}
-            exRateColumns={exRateColumns}
-            selectedRow={selectedRow}
-            defaultCurrencyCode={defaultCurrencyCode}
-          />
+              >
+                {t("Delete")}
+              </Button>
+              <Button
+                type="primary"
+                onClick={() => setIsAddCurrencyModalOpen(true)}
+              >
+                {t("Add Currency")}
+              </Button>
+            </Space>
+          </div>
         </div>
-      )}
+        {defaultCurrencyCode ? (
+          <div>
+            <Text type="secondary">{t("Your store’s default currency:")}</Text>
+            <Text strong> {defaultCurrencyCode}</Text>
+          </div>
+        ) : (
+          <Skeleton active paragraph={{ rows: 0 }}/>
+        )}
+        <Flex gap="middle" vertical>
+          <Flex align="center" gap="middle">
+            <Text>
+              {t("After setting, you can")}
+              <Link url={userShop} target="_blank">
+                {t("Preview")}
+              </Link>
+              {t("to view the prices in different currencies.")}
+            </Text>
+          </Flex>
+          <Input
+            placeholder={t("Search currencies...")}
+            prefix={<SearchOutlined />}
+            value={searchInput}
+            onChange={handleSearch}
+            style={{ marginBottom: 16 }}
+          />
+          <Table
+            rowSelection={rowSelection}
+            columns={columns}
+            dataSource={filteredData}
+            loading={deleteloading || loading}
+          />
+        </Flex>
+      </Space>
+      <AddCurrencyModal
+        isVisible={isAddCurrencyModalOpen}
+        setIsModalOpen={setIsAddCurrencyModalOpen}
+        addCurrencies={addCurrencies}
+        defaultCurrencyCode={defaultCurrencyCode}
+      />
+      <CurrencyEditModal
+        isVisible={isCurrencyEditModalOpen}
+        setIsModalOpen={setIsCurrencyEditModalOpen}
+        roundingColumns={roundingColumns}
+        exRateColumns={exRateColumns}
+        selectedRow={selectedRow}
+        defaultCurrencyCode={defaultCurrencyCode}
+      />
     </Page>
   );
 };

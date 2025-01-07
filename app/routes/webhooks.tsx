@@ -7,6 +7,7 @@ import {
   DeleteData,
   InsertOrUpdateOrder,
   RequestData,
+  SendPurchaseSuccessEmail,
   Uninstall,
 } from "~/api/serve";
 
@@ -50,21 +51,51 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             switch (payload?.app_purchase_one_time.name) {
               case "10K Credits":
                 await AddCharsByShopName({ shop, amount: 10000 });
+                await SendPurchaseSuccessEmail({
+                  shop,
+                  credit: 10000,
+                  price: 8.99,
+                });
                 break;
               case "20K Credits":
                 await AddCharsByShopName({ shop, amount: 20000 });
+                await SendPurchaseSuccessEmail({
+                  shop,
+                  credit: 20000,
+                  price: 17.99,
+                });
                 break;
               case "50K Credits":
                 await AddCharsByShopName({ shop, amount: 50000 });
+                await SendPurchaseSuccessEmail({
+                  shop,
+                  credit: 50000,
+                  price: 39.99,
+                });
                 break;
               case "100K Credits":
                 await AddCharsByShopName({ shop, amount: 100000 });
+                await SendPurchaseSuccessEmail({
+                  shop,
+                  credit: 100000,
+                  price: 79.99,
+                });
                 break;
               case "200K Credits":
                 await AddCharsByShopName({ shop, amount: 200000 });
+                await SendPurchaseSuccessEmail({
+                  shop,
+                  credit: 200000,
+                  price: 159.99,
+                });
                 break;
               case "300K Credits":
                 await AddCharsByShopName({ shop, amount: 300000 });
+                await SendPurchaseSuccessEmail({
+                  shop,
+                  credit: 300000,
+                  price: 239.99,
+                });
                 break;
             }
           }

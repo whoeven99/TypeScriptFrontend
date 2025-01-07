@@ -109,7 +109,7 @@
   "Language": "Language",
   "Active Market:": "Active Market:",
   "Manage": "Manage",
-  "Mycredits_colon": "My credits:",
+  "My credits:": "My credits:",
   "Powered by GPT 4o": "Powered by GPT 4o",
   "Buy Credits": "Buy Credits",
   "Select Currencies": "Select Currencies",
@@ -128,5 +128,6 @@
   "Resource": "Resource",
   "This language has been deleted. Please edit again.": "This language has been deleted. Please edit again.",
   "Edit rules": "Edit rules",
-  "Select markets for display": "Select markets for display"
+  "Select markets for display": "Select markets for display",
+  "Pricing": "Pricing"
 }

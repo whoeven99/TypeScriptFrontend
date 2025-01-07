@@ -52,10 +52,6 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     }
   }, [addCurrencies]);
 
-  // useEffect(() => {
-  //   console.log(filteredCurrencies);
-  // }, [filteredCurrencies]);
-
   useEffect(() => {
     if (addFetcher.data) {
       addFetcher.data.data.map((res: any) => {

@@ -1483,21 +1483,19 @@ export const mutationShopLocaleEnable = async ({
 };
 
 export const mutationShopLocaleDisable = async ({
-  request,
-  languages,
+  shop,
+  accessToken,
+  language,
   primaryLanguageCode,
 }: {
-  request: Request;
-  languages: LanguagesDataType[]; // 接受语言数组
+  shop: string;
+  accessToken: string | undefined;
+  language: LanguagesDataType; // 接受语言数组
   primaryLanguageCode: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-
   try {
     // 遍历语言数组并逐个执行 GraphQL mutation
-    for (const language of languages) {
-      const mutation = `
+    const mutation = `
         mutation {
           shopLocaleDisable(locale: "${language.locale}") {
             locale
@@ -1505,27 +1503,30 @@ export const mutationShopLocaleDisable = async ({
         }
       `;
 
-      // 执行 API 请求
-      await axios({
-        url: `https://${shop}/admin/api/2024-10/graphql.json`,
-        method: "POST",
-        headers: {
-          "X-Shopify-Access-Token": accessToken,
-          "Content-Type": "application/json",
-        },
-        data: JSON.stringify({ query: mutation }),
-      });
+    // 执行 API 请求
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query: mutation }),
+    });
 
-      await axios({
-        url: `${process.env.SERVER_URL}/translate/deleteFromTranslates`,
-        method: "POST",
-        data: {
-          shopName: shop,
-          source: primaryLanguageCode,
-          target: language.locale,
-        },
-      });
-    }
+    await axios({
+      url: `${process.env.SERVER_URL}/translate/deleteFromTranslates`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        source: primaryLanguageCode,
+        target: language.locale,
+      },
+    });
+
+    console.log(response.data.data.shopLocaleDisable.locale);
+    const res = response.data.data.shopLocaleDisable.locale;
+    return res || language.locale;
   } catch (error) {
     console.error("Error mutating shop languages:", error);
     throw error;
@@ -1627,8 +1628,8 @@ export const mutationShopLocaleUnpublish = async ({
   }
 };
 
-//创建订单
-export const mutationAppSubscriptionCreate = async ({
+//创建一次性订单
+export const mutationAppPurchaseOneTimeCreate = async ({
   request,
   name,
   price,
@@ -1682,6 +1683,91 @@ export const mutationAppSubscriptionCreate = async ({
             amount: price.amount,
             currencyCode: price.currencyCode,
           },
+          test: test || false,
+        },
+      },
+    });
+    const res = response.data;
+    console.log(res);
+    return res;
+  } catch (error) {
+    console.error("Payment failed:", error);
+    throw error;
+  }
+};
+
+//创建月度订阅订单
+export const mutationAppSubscriptionCreate = async ({
+  request,
+  name,
+  price,
+  test,
+  trialDays,
+  returnUrl,
+}: {
+  request: Request;
+  name: String;
+  price: {
+    amount: number;
+    currencyCode: string;
+  };
+  test?: boolean;
+  trialDays: number;
+  returnUrl: URL;
+}) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  try {
+    // 执行 API 请求
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+        "Content-Type": "application/json",
+      },
+      data: {
+        query: `mutation AppSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $returnUrl: URL!, $trialDays: Int!, $test: Boolean) {
+          appSubscriptionCreate(
+            name: $name
+            returnUrl: $returnUrl
+            lineItems: $lineItems
+            trialDays: $trialDays
+            test: $test
+          ) {
+            userErrors {
+              field
+              message
+            }
+            appSubscription {
+              id
+              createdAt
+              currentPeriodEnd
+              name
+              returnUrl
+              status
+              test
+              trialDays
+            }
+            confirmationUrl
+          }
+        }`,
+        variables: {
+          name: name,
+          returnUrl: returnUrl,
+          lineItems: [
+            {
+              plan: {
+                appRecurringPricingDetails: {
+                  price: {
+                    amount: price.amount,
+                    currencyCode: price.currencyCode,
+                  },
+                },
+              },
+            },
+          ],
+          trialDays: trialDays,
           test: test || false,
         },
       },

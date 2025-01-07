@@ -11,12 +11,12 @@ import { FetcherWithComponents } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateTableData } from "~/store/modules/languageTableData";
 import { useTranslation } from "react-i18next";
+import { useFetcher } from "@remix-run/react";
 
 interface LanguageModalProps {
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   allLanguages: AllLanguagesType[];
-  addFetcher: FetcherWithComponents<any>;
   languageLocaleInfo: any;
   primaryLanguage: ShopLocalesType | undefined;
 }
@@ -33,7 +33,6 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   isVisible,
   setIsModalOpen,
   allLanguages,
-  addFetcher,
   languageLocaleInfo,
   primaryLanguage,
 }) => {
@@ -45,7 +44,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
     .map((lang, i) => ({
       key: lang.key,
       isoCode: lang.isoCode,
-      src: languageLocaleInfo[updatedLocales[i]].countries,
+      src: [],
       name: `${lang.name}(${languageLocaleInfo[updatedLocales[i]].Local})`,
       state: "", // 默认值为 false
     }));
@@ -62,6 +61,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
     (state: any) => state.languageTableData.rows,
   );
   const dispatch = useDispatch();
+  const addFetcher = useFetcher<any>();
   const { t } = useTranslation();
 
   const selectedLanguagesSet = new Set(

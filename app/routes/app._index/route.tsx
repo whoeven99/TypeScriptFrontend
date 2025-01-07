@@ -8,7 +8,6 @@ import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
 import { Suspense, useEffect, useState } from "react";
-import { authenticate } from "~/shopify.server";
 import PaymentModal from "~/components/paymentModal";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import UserProfileCard from "./components/userProfileCard";
@@ -45,7 +44,6 @@ export interface WordsType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
   return null;
 };
 
@@ -147,120 +145,116 @@ const Index = () => {
     <Suspense fallback={<div>{t("loading")}</div>}>
       <Page>
         <TitleBar title={t("Dashboard")} />
-        <BlockStack gap="500">
-          <div>
-            <Space
-              direction="vertical"
-              size="middle"
-              style={{ display: "flex" }}
-            >
-              <div style={{ paddingLeft: "8px" }}>
-                <Title level={3}>
-                  {t("Faster, higher-quality localization translation tool")}
-                </Title>
-              </div>
-              {user ? (
-                <UserProfileCard
-                  setPaymentModalVisible={setPaymentModalVisible}
-                  chars={user.chars}
-                  totalChars={user.totalChars}
-                />
-              ) : (
-                <Skeleton active />
-              )}
-              <div style={{ paddingLeft: "8px" }}>
-                <Title level={3}>
-                  {languageData.length}
-                  {t("available languages")}
-                </Title>
-                <div>
-                  <Text>{t("Your store’s default language:")}</Text>
-                  {languageSetting && (
-                    <Text strong>
-                      {languageSetting.primaryLanguage
-                        ? languageSetting.primaryLanguage
-                        : t("No primary language set")}
-                    </Text>
-                  )}
-                </div>
-              </div>
-              {loadingLanguage ? (
-                <Skeleton active />
-              ) : languageData.length != 0 ? (
-                <div>
-                  <Row gutter={[16, 16]}>
-                    {languageData.map((language: any, index: number) => (
-                      <Col span={8} key={index}>
-                        {languageSetting && (
-                          <UserLanguageCard
-                            flagUrl={language.src.slice(0, 4)}
-                            primaryLanguageCode={
-                              languageSetting.primaryLanguageCode
-                            }
-                            languageLocaleName={language.localeName}
-                            languageName={language.name}
-                            languageCode={language.locale}
-                            limited={limited}
-                          />
-                        )}
-                      </Col>
-                    ))}
-                  </Row>
-                </div>
-              ) : (
-                <NoLanguageSetCard />
-              )}
-              <Text
-                style={{
-                  display: "flex", // 使用 flexbox 来布局
-                  justifyContent: "center", // 水平居中
-                }}
-              >
-                {t("Learn more in")}
-                <Link
-                  to="http://ciwi.bogdatech.com/help"
-                  target="_blank"
-                  style={{ margin: "0 5px" }}
-                >
-                  {t("Ciwi Help Center")}
-                </Link>
-                {t("by")}
-                <Link
-                  to={"http://ciwi.bogdatech.com/"}
-                  target="_blank"
-                  style={{ margin: "0 5px" }}
-                >
-                  {t("Ciwi.ai")}
-                </Link>
-              </Text>
-            </Space>
-            <Modal
-              open={newUserModal}
-              footer={
-                <Button
-                  type="primary"
-                  onClick={onClick}
-                  loading={newUserModalLoading}
-                  disabled={newUserModalLoading}
-                >
-                  {t("OK")}
-                </Button>
-              }
-              closable={false} // 禁用关闭按钮
-              maskClosable={false} // 禁用点击遮罩关闭
-              keyboard={false} // 禁用按 Esc 键关闭
-            >
-              <Title level={4}>{t("Congratulations!")}</Title>
-              <Text>
-                {t("You have received 50,000 Credits, enabling you to translate into over 137 languages.")}
-              </Text>
-            </Modal>
-            <PaymentModal
-              visible={paymentModalVisible}
-              setVisible={setPaymentModalVisible}
-            />
+        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+          <div style={{ paddingLeft: "8px" }}>
+            <Title level={3}>
+              {t("Faster, higher-quality localization translation tool")}
+            </Title>
           </div>
-        </BlockStack>
+          {user ? (
+            <UserProfileCard
+              setPaymentModalVisible={setPaymentModalVisible}
+              chars={user.chars}
+              totalChars={user.totalChars}
+            />
+          ) : (
+            <Skeleton active />
+          )}
+          <div style={{ paddingLeft: "8px" }}>
+            <Title level={3}>
+              {languageData.length}
+              {t("available languages")}
+            </Title>
+            <div>
+              <Text>{t("Your store’s default language:")}</Text>
+              {languageSetting && (
+                <Text strong>
+                  {languageSetting.primaryLanguage ? (
+                    languageSetting.primaryLanguage
+                  ) : (
+                    <Skeleton active paragraph={{ rows: 0 }}/>
+                  )}
+                </Text>
+              )}
+            </div>
+          </div>
+          {loadingLanguage ? (
+            <Skeleton active />
+          ) : languageData.length != 0 ? (
+            <div>
+              <Row gutter={[16, 16]}>
+                {languageData.map((language: any, index: number) => (
+                  <Col span={8} key={index}>
+                    {languageSetting && (
+                      <UserLanguageCard
+                        flagUrl={language.src.slice(0, 4)}
+                        primaryLanguageCode={
+                          languageSetting.primaryLanguageCode
+                        }
+                        languageLocaleName={language.localeName}
+                        languageName={language.name}
+                        languageCode={language.locale}
+                        limited={limited}
+                      />
+                    )}
+                  </Col>
+                ))}
+              </Row>
+            </div>
+          ) : (
+            <NoLanguageSetCard />
+          )}
+          <Text
+            style={{
+              display: "flex", // 使用 flexbox 来布局
+              justifyContent: "center", // 水平居中
+            }}
+          >
+            {t("Learn more in")}
+            <Link
+              to="http://ciwi.bogdatech.com/help"
+              target="_blank"
+              style={{ margin: "0 5px" }}
+            >
+              {t("Ciwi Help Center")}
+            </Link>
+            {t("by")}
+            <Link
+              to={"http://ciwi.bogdatech.com/"}
+              target="_blank"
+              style={{ margin: "0 5px" }}
+            >
+              {t("Ciwi.ai")}
+            </Link>
+          </Text>
+        </Space>
+        <Modal
+          open={newUserModal}
+          footer={
+            <Button
+              type="primary"
+              onClick={onClick}
+              loading={newUserModalLoading}
+              disabled={newUserModalLoading}
+            >
+              {t("OK")}
+            </Button>
+          }
+          closable={false} // 禁用关闭按钮
+          maskClosable={false} // 禁用点击遮罩关闭
+          keyboard={false} // 禁用按 Esc 键关闭
+        >
+          <Title level={4}>{t("Congratulations!")}</Title>
+          <Text>
+            {t(
+              "You have received 1,000 Credits, enabling you to translate into over 137 languages.",
+            )}
+          </Text>
+        </Modal>
+        <PaymentModal
+          visible={paymentModalVisible}
+          setVisible={setPaymentModalVisible}
+        />
       </Page>
     </Suspense>
   );
