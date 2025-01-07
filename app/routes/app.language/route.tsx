@@ -9,6 +9,7 @@ import {
   Switch,
   Skeleton,
   message,
+  Popconfirm,
 } from "antd";
 import { lazy, Suspense, useEffect, useState, startTransition } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
@@ -700,7 +701,6 @@ const Index = () => {
             <Flex align="center" gap="middle">
               <Button
                 type="primary"
-                onClick={handleDelete}
                 disabled={!hasSelected}
                 loading={deleteloading}
               >
