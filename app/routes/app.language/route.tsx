@@ -654,6 +654,22 @@ const Index = () => {
     window.open(shopUrl, "_blank", "noopener,noreferrer");
   };
 
+  useEffect(() => {
+    console.log("isLanguageModalOpen: ", isLanguageModalOpen);
+  }, [isLanguageModalOpen]);
+  useEffect(() => {
+    console.log("setIsLanguageModalOpen: ", setIsLanguageModalOpen);
+  }, [setIsLanguageModalOpen]);
+  useEffect(() => {
+    console.log("allLanguages: ", allLanguages);
+  }, [allLanguages]);
+  useEffect(() => {
+    console.log("languageLocaleInfo: ", languageLocaleInfo);
+  }, [languageLocaleInfo]);
+  useEffect(() => {
+    console.log("primaryLanguage: ", primaryLanguage);
+  }, [primaryLanguage]);
+
   return (
     <Page>
       <TitleBar title={t("Language")} />
