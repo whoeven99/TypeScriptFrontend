@@ -112,40 +112,40 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
     }
   }, [statusFetcher.data]);
 
-  useEffect(() => {
-    if (translateFetcher.data && translateFetcher.data.data) {
-      if (translateFetcher.data.data.success) {
-        if (data && data.status === 2) {
-          const formData = new FormData();
-          formData.append(
-            "statusData",
-            JSON.stringify({
-              source: primaryLanguageCode,
-              target: [data.locale],
-            }),
-          );
-          // 延时提交，设置 2000 毫秒（即 2 秒）的延时
-          const timeoutId = setTimeout(() => {
-            statusFetcher.submit(formData, {
-              method: "post",
-              action: "/app",
-            });
-          }, 2000); // 2秒延时
+  // useEffect(() => {
+  //   if (translateFetcher.data && translateFetcher.data.data) {
+  //     if (translateFetcher.data.data.success) {
+  //       if (data && data.status === 2) {
+  //         const formData = new FormData();
+  //         formData.append(
+  //           "statusData",
+  //           JSON.stringify({
+  //             source: primaryLanguageCode,
+  //             target: [data.locale],
+  //           }),
+  //         );
+  //         // 延时提交，设置 2000 毫秒（即 2 秒）的延时
+  //         const timeoutId = setTimeout(() => {
+  //           statusFetcher.submit(formData, {
+  //             method: "post",
+  //             action: "/app",
+  //           });
+  //         }, 2000); // 2秒延时
 
-          // 在组件卸载时清除定时器
-          return () => clearTimeout(timeoutId);
-        }
-      } else {
-        message.error(translateFetcher.data.data.errorMsg);
-        dispatch(
-          setStatusState({
-            target: translateFetcher.data.data.target,
-            status: 3,
-          }),
-        );
-      }
-    }
-  }, [translateFetcher.data]);
+  //         // 在组件卸载时清除定时器
+  //         return () => clearTimeout(timeoutId);
+  //       }
+  //     } else {
+  //       message.error(translateFetcher.data.data.errorMsg);
+  //       dispatch(
+  //         setStatusState({
+  //           target: translateFetcher.data.data.target,
+  //           status: 3,
+  //         }),
+  //       );
+  //     }
+  //   }
+  // }, [translateFetcher.data]);
 
   const handleTranslate = async () => {
     if (limited) {
