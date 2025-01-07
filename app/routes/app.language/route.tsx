@@ -312,37 +312,37 @@ const Index = () => {
     }
   }, [loadingFetcher.data]);
 
-  useEffect(() => {
-    if (translateFetcher.data && translateFetcher.data.status) {
-      if (translateFetcher.data.status.success) {
-        const target = translateFetcher.data.status.target;
-        const formData = new FormData();
-        formData.append(
-          "statusData",
-          JSON.stringify({
-            source: primaryLanguage?.locale,
-            target: [target],
-          }),
-        );
-        const timeoutId = setTimeout(() => {
-          statusFetcher.submit(formData, {
-            method: "post",
-            action: "/app",
-          });
-        }, 2000); // 2秒延时
-        // 在组件卸载时清除定时器
-        return () => clearTimeout(timeoutId);
-      } else {
-        message.error(translateFetcher.data.status.errorMsg);
-        dispatch(
-          setStatusState({
-            target: translateFetcher.data.status.target,
-            status: 3,
-          }),
-        );
-      }
-    }
-  }, [translateFetcher.data]);
+  // useEffect(() => {
+  //   if (translateFetcher.data && translateFetcher.data.status) {
+  //     if (translateFetcher.data.status.success) {
+  //       const target = translateFetcher.data.status.target;
+  //       const formData = new FormData();
+  //       formData.append(
+  //         "statusData",
+  //         JSON.stringify({
+  //           source: primaryLanguage?.locale,
+  //           target: [target],
+  //         }),
+  //       );
+  //       const timeoutId = setTimeout(() => {
+  //         statusFetcher.submit(formData, {
+  //           method: "post",
+  //           action: "/app",
+  //         });
+  //       }, 2000); // 2秒延时
+  //       // 在组件卸载时清除定时器
+  //       return () => clearTimeout(timeoutId);
+  //     } else {
+  //       message.error(translateFetcher.data.status.errorMsg);
+  //       dispatch(
+  //         setStatusState({
+  //           target: translateFetcher.data.status.target,
+  //           status: 3,
+  //         }),
+  //       );
+  //     }
+  //   }
+  // }, [translateFetcher.data]);
 
   useEffect(() => {
     if (deleteFetcher.data) {
