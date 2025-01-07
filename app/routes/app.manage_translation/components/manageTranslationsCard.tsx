@@ -74,16 +74,18 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   ];
 
   return (
-    <div>
-      <Card>
-        <Space direction="vertical" size="small" style={{ display: "flex" }}>
-          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-            {cardTitle}
-          </Title>
-          <Table columns={columns} dataSource={dataSource} pagination={false} />
-        </Space>
-      </Card>
-    </div>
+    <Card>
+      <Space direction="vertical" size="small" style={{ display: "flex" }}>
+        <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+          {cardTitle}
+        </Title>
+        <Table
+          columns={columns}
+          dataSource={dataSource}
+          pagination={false}
+        />
+      </Space>
+    </Card>
   );
 };
 

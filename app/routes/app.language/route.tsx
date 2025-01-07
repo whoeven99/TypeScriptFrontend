@@ -10,7 +10,7 @@ import {
   Skeleton,
   message,
 } from "antd";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState, startTransition } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useNavigate, useSubmit } from "@remix-run/react";
 import "./styles.css";
@@ -118,6 +118,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("unPublishInfo") as string,
     );
     const deleteData = JSON.parse(formData.get("deleteData") as string);
+    console.log("deleteData: ", deleteData);
+    console.log("true: ", !!deleteData);
 
     switch (true) {
       case !!loading:
@@ -179,13 +181,33 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return null;
 
       case !!deleteData:
-        await mutationShopLocaleDisable({
-          request,
-          languages: deleteData.deleteData,
-          primaryLanguageCode: deleteData.primaryLanguageCode,
-        });
-        return null;
-
+        try {
+          if (deleteData.targets.length > 0) {
+            const promise = deleteData.targets.map(
+              async (item: LanguagesDataType) => {
+                return mutationShopLocaleDisable({
+                  shop,
+                  accessToken,
+                  language: item,
+                  primaryLanguageCode: deleteData.primaryLanguageCode,
+                });
+              },
+            );
+            const data = await Promise.allSettled(promise);
+            data.forEach((result) => {
+              if (result.status === "fulfilled") {
+                console.log("Request successful:", result.value);
+              } else {
+                console.error("Request failed:", result.reason);
+              }
+            });
+            console.log("deleteData: ", data);
+            return json({ data: data });
+          }
+        } catch (error) {
+          console.error("Error deleteData language:", error);
+          return json({ error: "Error deleteData language" }, { status: 500 });
+        }
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -227,7 +249,7 @@ const Index = () => {
   const navigate = useNavigate();
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const loadingFetcher = useFetcher<FetchType>();
-  const addFetcher = useFetcher<any>();
+  const deleteFetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
 
@@ -246,6 +268,31 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    console.log(dataSource, primaryLanguage);
+
+    if (dataSource && primaryLanguage) {
+      console.log(dataSource, primaryLanguage);
+
+      dataSource.map((data) => {
+        if (data && data.status === 2) {
+          const formData = new FormData();
+          formData.append(
+            "statusData",
+            JSON.stringify({
+              source: primaryLanguage?.locale,
+              target: [data.locale],
+            }),
+          );
+          statusFetcher.submit(formData, {
+            method: "post",
+            action: "/app",
+          });
+        }
+      });
+    }
+  }, [dataSource]);
+
+  useEffect(() => {
     if (loadingFetcher.data) {
       setShop(loadingFetcher.data.shop);
       setAllCountryCode(loadingFetcher.data.allCountryCode);
@@ -255,18 +302,15 @@ const Index = () => {
       setLanguagesLoad(loadingFetcher.data.languagesLoad);
       setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
       setWords(loadingFetcher.data.words);
+      setPrimaryLanguage(
+        loadingFetcher.data.shopLanguagesLoad?.find(
+          (lang) => lang.primary === true,
+        ),
+      );
       shopify.loading(false);
       setLoading(false);
     }
   }, [loadingFetcher.data]);
-
-  useEffect(() => {
-    if (shopLanguagesLoad) {
-      setPrimaryLanguage(
-        shopLanguagesLoad?.find((lang) => lang.primary === true),
-      );
-    }
-  }, [shopLanguagesLoad]);
 
   useEffect(() => {
     if (translateFetcher.data && translateFetcher.data.status) {
@@ -299,6 +343,32 @@ const Index = () => {
       }
     }
   }, [translateFetcher.data]);
+
+  useEffect(() => {
+    if (deleteFetcher.data) {
+      const deleteData = deleteFetcher.data.data.reduce(
+        (acc: any[], item: any) => {
+          if (item.status === "fulfilled") {
+            acc.push(item.value);
+          } else {
+            message.error(`Deletion failed for "${item.value}"`);
+          }
+          return acc;
+        },
+        [],
+      );
+
+      // 从 data 中过滤掉成功删除的数据
+      const newData = data.filter((item) => !deleteData.includes(item.locale));
+
+      // 更新表格数据
+      dispatch(setTableData(newData));
+      // 清空已选中项
+      setSelectedRowKeys([]);
+      // 结束加载状态
+      setDeleteLoading(false);
+    }
+  }, [deleteFetcher.data]);
 
   useEffect(() => {
     if (statusFetcher.data) {
@@ -459,7 +529,9 @@ const Index = () => {
   ];
 
   const handleOpenModal = () => {
-    setIsLanguageModalOpen(true); // 打开Modal
+    startTransition(() => {
+      setIsLanguageModalOpen((prev) => !prev); // 你的状态更新逻辑
+    });
   };
 
   const handlePublishChange = (locale: string, checked: boolean) => {
@@ -512,7 +584,9 @@ const Index = () => {
         );
       } else {
         message.error(
-          t("The translation task is in progress. Please try translating again later."),
+          t(
+            "The translation task is in progress. Please try translating again later.",
+          ),
         );
       }
     }
@@ -548,10 +622,7 @@ const Index = () => {
 
   //表格编辑
   const handleDelete = () => {
-    const newData = data.filter(
-      (item: LanguagesDataType) => !selectedRowKeys.includes(item.key),
-    );
-    const deleteData = data.filter((item: LanguagesDataType) =>
+    const targets = data.filter((item: LanguagesDataType) =>
       selectedRowKeys.includes(item.key),
     );
 
@@ -559,14 +630,12 @@ const Index = () => {
     formData.append(
       "deleteData",
       JSON.stringify({
-        deleteData: deleteData,
+        targets: targets,
         primaryLanguage: primaryLanguage?.locale,
       }),
     ); // 将选中的语言作为字符串发送
-    submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
-
-    dispatch(setTableData(newData)); // 更新表格数据
-    setSelectedRowKeys([]); // 清空已选中项
+    deleteFetcher.submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
+    setDeleteLoading(true);
   };
 
   const onSelectChange = (newSelectedRowKeys: any) => {
@@ -585,88 +654,103 @@ const Index = () => {
     window.open(shopUrl, "_blank", "noopener,noreferrer");
   };
 
+  useEffect(() => {
+    console.log("isLanguageModalOpen: ", isLanguageModalOpen);
+  }, [isLanguageModalOpen]);
+  useEffect(() => {
+    console.log("setIsLanguageModalOpen: ", setIsLanguageModalOpen);
+  }, [setIsLanguageModalOpen]);
+  useEffect(() => {
+    console.log("allLanguages: ", allLanguages);
+  }, [allLanguages]);
+  useEffect(() => {
+    console.log("languageLocaleInfo: ", languageLocaleInfo);
+  }, [languageLocaleInfo]);
+  useEffect(() => {
+    console.log("primaryLanguage: ", primaryLanguage);
+  }, [primaryLanguage]);
+
   return (
     <Page>
       <TitleBar title={t("Language")} />
-      {loading ? (
-        <div>{t("loading")}...</div>
-      ) : (
+      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <div>
-          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-            <div>
-              <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-                {t("Languages")}
-              </Title>
-              <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
-            </div>
-            <AttentionCard
-              title={t("Translation word credits have been exhausted.")}
-              content={t("The translation cannot be completed due to exhausted credits.")}
-              buttonContent={t("Get more word credits")}
-              show={disable}
-            />
-            <div className="languageTable_action">
-              <Flex
-                align="center"
-                justify="space-between" // 使按钮左右分布
-                style={{ width: "100%", marginBottom: "16px" }}
-              >
-                <Flex align="center" gap="middle">
-                  <Button
-                    type="primary"
-                    onClick={handleDelete}
-                    disabled={!hasSelected}
-                    loading={deleteloading}
-                  >
-                    {t("Delete")}
-                  </Button>
-                  {hasSelected
-                    ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
-                    : null}
-                </Flex>
-                <div>
-                  <Space>
-                    <Button type="default" onClick={PreviewClick}>
-                      {t("Preview store")}
-                    </Button>
-                    <Button type="primary" onClick={handleOpenModal}>
-                      {t("Add Language")}
-                    </Button>
-                  </Space>
-                </div>
-              </Flex>
-              <Suspense fallback={<Skeleton active />}>
-                <Table
-                  rowSelection={rowSelection}
-                  columns={columns}
-                  dataSource={data}
-                  style={{ width: "100%" }}
-                />
-              </Suspense>
-            </div>
-          </Space>
-          <Suspense>
-            <AddLanguageModal
-              isVisible={isLanguageModalOpen}
-              setIsModalOpen={setIsLanguageModalOpen}
-              allLanguages={allLanguages}
-              addFetcher={addFetcher}
-              languageLocaleInfo={languageLocaleInfo}
-              primaryLanguage={primaryLanguage}
-            />
+          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+            {t("Languages")}
+          </Title>
+          <Suspense fallback={<Skeleton active paragraph={{ rows: 0 }} />}>
+            <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
           </Suspense>
-          <Suspense>
-            <PublishModal
-              isVisible={isPublishModalOpen} // 父组件控制是否显示
-              onOk={() => handleConfirmPublishModal()}
-              onCancel={() => handleClosePublishModal()}
-              setPublishMarket={setPublishMarket}
-              selectedRow={selectedRow}
-              allMarket={allMarket}
+        </div>
+        <Suspense fallback={<Skeleton active />}>
+          <AttentionCard
+            title={t("Translation word credits have been exhausted.")}
+            content={t(
+              "The translation cannot be completed due to exhausted credits.",
+            )}
+            show={disable}
+          />
+        </Suspense>
+        <div className="languageTable_action">
+          <Flex
+            align="center"
+            justify="space-between" // 使按钮左右分布
+            style={{ width: "100%", marginBottom: "16px" }}
+          >
+            <Flex align="center" gap="middle">
+              <Button
+                type="primary"
+                onClick={handleDelete}
+                disabled={!hasSelected}
+                loading={deleteloading}
+              >
+                {t("Delete")}
+              </Button>
+              {hasSelected
+                ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
+                : null}
+            </Flex>
+            <div>
+              <Space>
+                <Button type="default" onClick={PreviewClick}>
+                  {t("Preview store")}
+                </Button>
+                <Button type="primary" onClick={handleOpenModal}>
+                  {t("Add Language")}
+                </Button>
+              </Space>
+            </div>
+          </Flex>
+          <Suspense fallback={<Skeleton active />}>
+            <Table
+              rowSelection={rowSelection}
+              columns={columns}
+              dataSource={data}
+              style={{ width: "100%" }}
+              loading={deleteloading || loading}
             />
           </Suspense>
         </div>
-      )}
+      </Space>
+      <Suspense>
+        <AddLanguageModal
+          isVisible={isLanguageModalOpen}
+          setIsModalOpen={setIsLanguageModalOpen}
+          allLanguages={allLanguages}
+          languageLocaleInfo={languageLocaleInfo}
+          primaryLanguage={primaryLanguage}
+        />
+      </Suspense>
+      <Suspense>
+        <PublishModal
+          isVisible={isPublishModalOpen} // 父组件控制是否显示
+          onOk={() => handleConfirmPublishModal()}
+          onCancel={() => handleClosePublishModal()}
+          setPublishMarket={setPublishMarket}
+          selectedRow={selectedRow}
+          allMarket={allMarket}
+        />
+      </Suspense>
     </Page>
   );
 };

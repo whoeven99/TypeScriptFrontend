@@ -61,7 +61,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 await AddCharsByShopName({ shop, amount: 20000 });
                 await SendPurchaseSuccessEmail({
                   shop,
-                  credit: 10000,
+                  credit: 20000,
                   price: 17.99,
                 });
                 break;
@@ -69,7 +69,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 await AddCharsByShopName({ shop, amount: 50000 });
                 await SendPurchaseSuccessEmail({
                   shop,
-                  credit: 10000,
+                  credit: 50000,
                   price: 39.99,
                 });
                 break;
@@ -77,7 +77,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 await AddCharsByShopName({ shop, amount: 100000 });
                 await SendPurchaseSuccessEmail({
                   shop,
-                  credit: 10000,
+                  credit: 100000,
                   price: 79.99,
                 });
                 break;
@@ -85,7 +85,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 await AddCharsByShopName({ shop, amount: 200000 });
                 await SendPurchaseSuccessEmail({
                   shop,
-                  credit: 10000,
+                  credit: 200000,
                   price: 159.99,
                 });
                 break;
@@ -93,7 +93,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 await AddCharsByShopName({ shop, amount: 300000 });
                 await SendPurchaseSuccessEmail({
                   shop,
-                  credit: 10000,
+                  credit: 300000,
                   price: 239.99,
                 });
                 break;
