@@ -320,8 +320,6 @@ export default function App() {
           <Link to="/app/manage_translation">{t("Manage Translation")}</Link>
           <Link to="/app/currency">{t("Currency")}</Link>
           <Link to="/app/glossary">{t("Glossary")}</Link>
-          <Link to="/app/test1">{t("test1")}</Link>
-          <Link to="/app/test2">{t("test2")}</Link>
         </NavMenu>
         <Outlet />
       </ConfigProvider>
