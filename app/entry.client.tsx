@@ -1,4 +1,4 @@
-import { RemixBrowser, useLoaderData } from "@remix-run/react";
+import { RemixBrowser } from "@remix-run/react";
 import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import i18n from "./i18n";

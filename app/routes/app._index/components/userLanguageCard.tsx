@@ -39,7 +39,6 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const translateFetcher = useFetcher<any>();
-  // const fetcher = useFetcher<FetchType>();
   const statusFetcher = useFetcher<any>();
 
   // useEffect(() => {
