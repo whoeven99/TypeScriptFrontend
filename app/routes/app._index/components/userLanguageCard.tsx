@@ -69,12 +69,16 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
           target: [data.locale],
         }),
       );
-      statusFetcher.submit(formData, {
-        method: "post",
-        action: "/app",
-      });
+      const timeoutId = setTimeout(() => {
+        statusFetcher.submit(formData, {
+          method: "post",
+          action: "/app",
+        });
+      }, 2000); // 2秒延时
+      // 在组件卸载时清除定时器
+      return () => clearTimeout(timeoutId);
     }
-  }, []);
+  }, [data]);
 
   useEffect(() => {
     if (statusFetcher.data) {
@@ -169,7 +173,9 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         );
       } else {
         message.error(
-          t("The translation task is in progress. Please try translating again later."),
+          t(
+            "The translation task is in progress. Please try translating again later.",
+          ),
         );
       }
     }
