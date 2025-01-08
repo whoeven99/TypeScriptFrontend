@@ -50,8 +50,6 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       name: `${lang.name}(${languageLocaleInfo[updatedLocales[i]].Local})`,
       state: "", // 默认值为 false
     }));
-  console.log(addLanguages);
-
   const [allSelectedKeys, setAllSelectedKeys] = useState<React.Key[]>([]); // 保存所有选中的key
   const [searchInput, setSearchInput] = useState("");
   const [filteredLanguages, setFilteredLanguages] =
