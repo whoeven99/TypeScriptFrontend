@@ -46,21 +46,27 @@ export const UserAdd = async ({ request }: { request: Request }) => {
     const lastSpaceIndex = shopOwnerName.lastIndexOf(" ");
     const firstName = shopOwnerName.substring(0, lastSpaceIndex);
     const lastName = shopOwnerName.substring(lastSpaceIndex + 1);
-    const Start1 = Date.now(); // 记录结束时间
+    console.log("addUserInfoData: ", {
+      shopName: shop,
+      accessToken: accessToken,
+      email: shopData.contactEmail,
+      firstName: firstName,
+      lastName: lastName,
+      userTag: shopOwnerName,
+    });
+
     const addUserInfoResponse = await axios({
       url: `${process.env.SERVER_URL}/user/add`,
       method: "POST",
       data: {
         shopName: shop,
         accessToken: accessToken,
-        email: shopData.contactEmail,
-        firstName: firstName,
-        lastName: lastName,
-        userTag: shopOwnerName,
+        email: shopData.contactEmail || "",
+        firstName: firstName || "",
+        lastName: lastName || "",
+        userTag: shopOwnerName || "",
       },
     });
-    const End1 = Date.now(); // 记录结束时间
-    console.log(`UserAdd took ${End1 - Start1}ms`);
     console.log("addUserInfoResponse: ", addUserInfoResponse.data);
   } catch (error) {
     console.error("Error UpdateUser:", error);
@@ -376,7 +382,6 @@ export const GetLanguageLocaleInfo = async ({
       },
       {},
     );
-    console.log("GetLanguageLocaleInfo: ", res);
     return res;
   } catch (error) {
     console.error("Error occurred in the languageData:", error);
@@ -393,7 +398,6 @@ export const GetLanguageList = async ({ shop }: { shop: string }) => {
     });
 
     const res = response.data.response;
-    console.log("GetLanguageList: ", res);
 
     return res;
   } catch (error) {
