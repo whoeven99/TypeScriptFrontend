@@ -44,10 +44,9 @@ import {
 import TranslatedIcon from "~/components/translateIcon";
 import { WordsType } from "../app._index/route";
 import { useTranslation } from "react-i18next";
-
-const PrimaryLanguage = lazy(() => import("./components/primaryLanguage"));
-const AddLanguageModal = lazy(() => import("./components/addLanguageModal"));
-const PublishModal = lazy(() => import("./components/publishModal"));
+import PrimaryLanguage from "./components/primaryLanguage";
+import PublishModal from "./components/publishModal";
+import AddLanguageModal from "./components/addLanguageModal";
 
 const { Title, Text } = Typography;
 
