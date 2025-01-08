@@ -1,7 +1,7 @@
 // Function to simulate fetching currencies from the backend
 async function fetchCurrencies(shop) {
   const response = await axios({
-    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
+    url: `https://springbackendprod.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
     method: "GET",
   });
 
@@ -24,7 +24,7 @@ async function fetchCurrencies(shop) {
 
 async function fetchAutoRate(shop, currencyCode) {
   const response = await axios({
-    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
+    url: `https://springbackendprod.azurewebsites.net/currency/getCacheData`,
     method: "POST",
     data: {
       shopName: shop,
