@@ -4,12 +4,12 @@ EXPOSE 3000
 
 WORKDIR /app
 
-ENV NODE_ENV=prod
-ENV SHOPIFY_APP_URL="https://typescriptfrontendprod.onrender.com/"
-ENV SHOPIFY_API_KEY="fb9fc15cbec02bd735e2a5b491cf8409"
-ENV SHOPIFY_API_SECRET="02e88a0c0c3ec60c97cdf7b6d1ab7ac7"
-ENV SHOPIFY_CIWI_SWITCHER_ID="1b647873-fef4-46f8-ba97-2fad001a5c55"
-ENV SHOPIFY_CIWI_SWITCHER_THEME_ID="shopify://apps/ciwi-ai-faster-ai-translator/blocks/switcher/1b647873-fef4-46f8-ba97-2fad001a5c55"
+ENV NODE_ENV=local
+ENV SHOPIFY_APP_URL="https://localhost:3000"
+ENV SHOPIFY_API_KEY="4b05c1caefa9e0761a0538b64159b627"
+ENV SHOPIFY_API_SECRET="ee60a93b498145dd16acfe018d8379ca"
+ENV SHOPIFY_CIWI_SWITCHER_ID="48d7b47f-31b8-4358-a3dd-5df35d5e1252"
+ENV SHOPIFY_CIWI_SWITCHER_THEME_ID="shopify://apps/ciwi-ai-fatlocal/blocks/switcher/48d7b47f-31b8-4358-a3dd-5df35d5e1252"
 
 COPY package.json package-lock.json* ./
 
@@ -23,3 +23,4 @@ COPY . .
 RUN npm run build
 
 CMD ["npm", "run", "docker-start"]
+
