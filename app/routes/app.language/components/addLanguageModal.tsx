@@ -45,7 +45,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       key: lang.key,
       isoCode: lang.isoCode,
       src: languageLocaleInfo[updatedLocales[i]]
-        ? languageLocaleInfo[updatedLocales[i]]?.country
+        ? languageLocaleInfo[updatedLocales[i]]?.countries
         : [],
       name: `${lang.name}(${languageLocaleInfo[updatedLocales[i]].Local})`,
       state: "", // 默认值为 false
