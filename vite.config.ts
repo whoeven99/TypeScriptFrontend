@@ -55,4 +55,7 @@ export default defineConfig({
       // external: ["antd", "@ant-design/icons"],
     },
   },
+  optimizeDeps: {
+    include: ["antd"],
+  },
 }) satisfies UserConfig;
