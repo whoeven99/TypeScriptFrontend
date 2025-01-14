@@ -1,8 +1,6 @@
 {
   "include": ["env.d.ts", "**/*.ts", "**/*.tsx"],
   "compilerOptions": {
-    "strictNullChecks": true,
-    "esModuleInterop": true,
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "strict": true,
     "skipLibCheck": true,
@@ -21,6 +19,7 @@
     "paths": {
       "~/*": ["./app/*"]
     },
-    "types": ["node", "jquery"]
+    "types": ["node","jquery"]
+    
   }
 }
