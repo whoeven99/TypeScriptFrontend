@@ -6,8 +6,8 @@ import i18next from "i18next";
 import { I18nextProvider, initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import Backend from "i18next-http-backend";
-import { ConfigProvider } from 'antd';
-import 'antd/dist/reset.css';
+import { createCache, StyleProvider } from "@ant-design/cssinjs";
+import { ConfigProvider } from "antd";
 
 async function hydrate() {
   await i18next
@@ -30,20 +30,23 @@ async function hydrate() {
     });
 
   startTransition(() => {
+    const cache = createCache();
     hydrateRoot(
       document,
       <I18nextProvider i18n={i18next}>
-        <ConfigProvider
-          theme={{
-            token: {
-              colorPrimary: "#007F61", // 设置主色
-            },
-          }}
-        >
-          <StrictMode>
-            <RemixBrowser />
-          </StrictMode>
-        </ConfigProvider>
+        <StyleProvider cache={cache}>
+          <ConfigProvider
+            theme={{
+              token: {
+                colorPrimary: "#007F61", // 设置主色
+              },
+            }}
+          >
+            <StrictMode>
+              <RemixBrowser />
+            </StrictMode>
+          </ConfigProvider>
+        </StyleProvider>
       </I18nextProvider>,
     );
   });

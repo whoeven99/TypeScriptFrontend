@@ -37,7 +37,7 @@ import {
   mutationAppPurchaseOneTimeCreate,
   queryShopLanguages,
 } from "~/api/admin";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
@@ -273,7 +273,9 @@ export default function App() {
           <Link to="/app/currency">{t("Currency")}</Link>
           <Link to="/app/glossary">{t("Glossary")}</Link>
         </NavMenu>
-        <Outlet />
+        <Suspense>
+          <Outlet />
+        </Suspense>
       </ConfigProvider>
     </AppProvider>
   );

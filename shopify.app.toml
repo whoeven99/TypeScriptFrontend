@@ -3,7 +3,7 @@
 client_id = "4b05c1caefa9e0761a0538b64159b627"
 name = "Ciwi.ai:FAT(Local)"
 handle = "ciwi_local"
-application_url = "https://deny-writes-lazy-duo.trycloudflare.com"
+application_url = "https://nature-medication-nuts-jewellery.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://deny-writes-lazy-duo.trycloudflare.com/auth/callback",
-  "https://deny-writes-lazy-duo.trycloudflare.com/auth/shopify/callback",
-  "https://deny-writes-lazy-duo.trycloudflare.com/api/auth/callback"
+  "https://nature-medication-nuts-jewellery.trycloudflare.com/auth/callback",
+  "https://nature-medication-nuts-jewellery.trycloudflare.com/auth/shopify/callback",
+  "https://nature-medication-nuts-jewellery.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

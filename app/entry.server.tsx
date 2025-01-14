@@ -13,7 +13,7 @@ import { createInstance } from "i18next";
 import Backend from "i18next-fs-backend";
 import { resolve } from "node:path";
 import { ConfigProvider } from "antd";
-import 'antd/dist/reset.css';
+import { createCache, extractStyle, StyleProvider } from "@ant-design/cssinjs";
 
 const ABORT_DELAY = 5000;
 
@@ -76,21 +76,25 @@ export default async function handleRequest(
     });
 
   return new Promise((resolve, reject) => {
+    const cache = createCache();
+
     const { pipe, abort } = renderToPipeableStream(
       <I18nextProvider i18n={instance}>
-        <ConfigProvider
-          theme={{
-            token: {
-              colorPrimary: "#007F61", // 设置主色
-            },
-          }}
-        >
-          <RemixServer
-            context={remixContext}
-            url={request.url}
-            abortDelay={ABORT_DELAY}
-          />
-        </ConfigProvider>
+        <StyleProvider cache={cache}>
+          <ConfigProvider
+            theme={{
+              token: {
+                colorPrimary: "#007F61", // 设置主色
+              },
+            }}
+          >
+            <RemixServer
+              context={remixContext}
+              url={request.url}
+              abortDelay={ABORT_DELAY}
+            />
+          </ConfigProvider>
+        </StyleProvider>
       </I18nextProvider>,
       {
         [callbackName]: () => {
