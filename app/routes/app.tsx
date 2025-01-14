@@ -16,7 +16,6 @@ import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
-import { ConfigProvider } from "antd";
 import {
   GetLanguageLocaleInfo,
   GetLanguageList,
@@ -38,8 +37,10 @@ import {
   mutationAppPurchaseOneTimeCreate,
   queryShopLanguages,
 } from "~/api/admin";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+
+import { ConfigProvider } from "antd";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -67,7 +68,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const formData = await request.formData();
-    const initialization = JSON.parse(formData.get("initialization") as string);
+    // const initialization = JSON.parse(formData.get("initialization") as string);
     const loading = JSON.parse(formData.get("loading") as string);
     const languageData = JSON.parse(formData.get("languageData") as string);
     const userData = JSON.parse(formData.get("userData") as string);
@@ -77,18 +78,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
 
-    if (initialization) {
-      try {
-        const data: boolean = await AddUserFreeSubscription({ shop });
-        return json({ data });
-      } catch (error) {
-        console.error("Error userCharsInitialization:", error);
-        return json(
-          { error: "Error userCharsInitialization" },
-          { status: 500 },
-        );
-      }
-    }
+    // if (initialization) {
+    //   try {
+    //     const data: boolean = await AddUserFreeSubscription({ shop });
+    //     return json({ data });
+    //   } catch (error) {
+    //     console.error("Error userCharsInitialization:", error);
+    //     return json(
+    //       { error: "Error userCharsInitialization" },
+    //       { status: 500 },
+    //     );
+    //   }
+    // }
 
     if (loading) {
       try {
@@ -98,6 +99,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           await InsertCharsByShopName({ request });
         if (!data?.addDefaultLanguagePack)
           await AddDefaultLanguagePack({ request });
+        if (!data?.addUserFreeSubscription)
+          await AddUserFreeSubscription({ shop });
       } catch (error) {
         console.error("Error loading app:", error);
         return json({ error: "Error loading app" }, { status: 500 });
@@ -270,7 +273,9 @@ export default function App() {
           <Link to="/app/currency">{t("Currency")}</Link>
           <Link to="/app/glossary">{t("Glossary")}</Link>
         </NavMenu>
-        <Outlet />
+        <Suspense>
+          <Outlet />
+        </Suspense>
       </ConfigProvider>
     </AppProvider>
   );

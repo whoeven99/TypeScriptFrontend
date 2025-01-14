@@ -11,6 +11,7 @@ import store from "./store";
 import "./styles.css";
 import "react-quill/dist/quill.snow.css";
 import { json, LoaderFunctionArgs } from "@remix-run/node";
+import { createCache, extractStyle, StyleProvider } from "@ant-design/cssinjs";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
@@ -60,11 +61,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function App() {
   const { i18nCode } = useLoaderData<typeof loader>();
+  const cache = createCache();
+  const styleText = extractStyle(cache);
 
   return (
     <Provider store={store}>
       <html lang={i18nCode}>
         <head>
+          {styleText}
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
           {/* <meta name="shopify-debug" content="web-vitals" />
