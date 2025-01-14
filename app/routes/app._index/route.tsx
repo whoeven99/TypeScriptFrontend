@@ -62,7 +62,7 @@ const Index = () => {
   const { t } = useTranslation();
   const loadingLanguageFetcher = useFetcher<any>();
   const loadingUserFetcher = useFetcher<any>();
-  const initializationFetcher = useFetcher<any>();
+  // const initializationFetcher = useFetcher<any>();
 
   useEffect(() => {
     const languageFormData = new FormData();
@@ -104,15 +104,15 @@ const Index = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (initializationFetcher.data && user) {
-      if (initializationFetcher.data?.data) {
-        setNewUserModal(false);
-        setNewUserModalLoading(false);
-        setUser({ ...user, totalChars: 50000 });
-      }
-    }
-  }, [initializationFetcher.data]);
+  // useEffect(() => {
+  //   if (initializationFetcher.data && user) {
+  //     if (initializationFetcher.data?.data) {
+  //       setNewUserModal(false);
+  //       setNewUserModalLoading(false);
+  //       setUser({ ...user, totalChars: 50000 });
+  //     }
+  //   }
+  // }, [initializationFetcher.data]);
 
   useEffect(() => {
     if (languageData.length) {
@@ -131,15 +131,15 @@ const Index = () => {
     }
   }, [dispatch, languageData]);
 
-  const onClick = async () => {
-    setNewUserModalLoading(true);
-    const formData = new FormData();
-    formData.append("initialization", JSON.stringify(true));
-    initializationFetcher.submit(formData, {
-      method: "post",
-      action: "/app",
-    });
-  };
+  // const onClick = async () => {
+  //   setNewUserModalLoading(true);
+  //   const formData = new FormData();
+  //   formData.append("initialization", JSON.stringify(true));
+  //   initializationFetcher.submit(formData, {
+  //     method: "post",
+  //     action: "/app",
+  //   });
+  // };
 
   return (
     <Suspense fallback={<div>{t("loading")}</div>}>
@@ -147,11 +147,11 @@ const Index = () => {
         <TitleBar title={t("Dashboard")} />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>
+            <Title level={2}>
               {t("Faster, higher-quality localization translation tool")}
             </Title>
           </div>
-          {user ? (
+          {/* {user ? (
             <UserProfileCard
               setPaymentModalVisible={setPaymentModalVisible}
               chars={user.chars}
@@ -159,7 +159,7 @@ const Index = () => {
             />
           ) : (
             <Skeleton active />
-          )}
+          )} */}
           <div style={{ paddingLeft: "8px" }}>
             <Title level={3}>
               {languageData.length}
@@ -228,7 +228,7 @@ const Index = () => {
             </Link>
           </Text>
         </Space>
-        <Modal
+        {/* <Modal
           open={newUserModal}
           footer={
             <Button
@@ -254,7 +254,7 @@ const Index = () => {
         <PaymentModal
           visible={paymentModalVisible}
           setVisible={setPaymentModalVisible}
-        />
+        /> */}
       </Page>
     </Suspense>
   );

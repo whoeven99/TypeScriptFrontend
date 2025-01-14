@@ -6,6 +6,8 @@ import i18next from "i18next";
 import { I18nextProvider, initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import Backend from "i18next-http-backend";
+import { ConfigProvider } from 'antd';
+import 'antd/dist/reset.css';
 
 async function hydrate() {
   await i18next
@@ -31,9 +33,17 @@ async function hydrate() {
     hydrateRoot(
       document,
       <I18nextProvider i18n={i18next}>
-        <StrictMode>
-          <RemixBrowser />
-        </StrictMode>
+        <ConfigProvider
+          theme={{
+            token: {
+              colorPrimary: "#007F61", // 设置主色
+            },
+          }}
+        >
+          <StrictMode>
+            <RemixBrowser />
+          </StrictMode>
+        </ConfigProvider>
       </I18nextProvider>,
     );
   });
