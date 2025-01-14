@@ -11,8 +11,6 @@ import store from "./store";
 import "./styles.css";
 import "react-quill/dist/quill.snow.css";
 import { json, LoaderFunctionArgs } from "@remix-run/node";
-import { ConfigProvider } from "antd";
-import "antd/dist/reset.css";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
@@ -84,15 +82,7 @@ export default function App() {
           <Links />
         </head>
         <body>
-          <ConfigProvider
-            theme={{
-              token: {
-                colorPrimary: "#007F61", // 设置主色
-              },
-            }}
-          >
-            <Outlet />
-          </ConfigProvider>
+          <Outlet />
           <ScrollRestoration />
           <Scripts />
           <script
