@@ -118,7 +118,7 @@ export const AddDefaultLanguagePack = async ({
     });
     console.log(
       "addDefaultLanguagePackResponse:",
-      addDefaultLanguagePackResponse,
+      addDefaultLanguagePackResponse.data,
     );
   } catch (error) {
     console.error("Error UpdateUser:", error);
@@ -179,7 +179,7 @@ export const InsertShopTranslateInfo = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {
-    const response = await axios({
+    await axios({
       url: `${process.env.SERVER_URL}/translate/insertShopTranslateInfo`,
       method: "POST",
       data: {
@@ -189,9 +189,6 @@ export const InsertShopTranslateInfo = async ({
         target: target,
       },
     });
-
-    const res = response.data;
-    console.log("languageInfo: ", res);
   } catch (error) {
     console.error("Error insert languageInfo:", error);
     throw new Error("Error insert languageInfo");
@@ -211,7 +208,7 @@ export const InsertTargets = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   try {
-    const response = await axios({
+    await axios({
       url: `${process.env.SERVER_URL}/translate/insertTargets`,
       method: "POST",
       data: {
@@ -221,9 +218,6 @@ export const InsertTargets = async ({
         targetList: targets,
       },
     });
-
-    const res = response.data;
-    console.log("languageInfo: ", res);
   } catch (error) {
     console.error("Error insert languageInfo:", error);
     throw new Error("Error insert languageInfo");

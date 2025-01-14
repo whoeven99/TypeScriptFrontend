@@ -1,10 +1,8 @@
 import { PassThrough } from "stream";
 import { renderToPipeableStream } from "react-dom/server";
-import { RemixServer, useLoaderData } from "@remix-run/react";
+import { RemixServer } from "@remix-run/react";
 import {
   createReadableStreamFromReadable,
-  json,
-  LoaderFunctionArgs,
   type EntryContext,
 } from "@remix-run/node";
 import { isbot } from "isbot";
@@ -14,6 +12,8 @@ import i18n from "./i18n";
 import { createInstance } from "i18next";
 import Backend from "i18next-fs-backend";
 import { resolve } from "node:path";
+import { ConfigProvider } from "antd";
+import "antd";
 
 const ABORT_DELAY = 5000;
 
@@ -78,11 +78,19 @@ export default async function handleRequest(
   return new Promise((resolve, reject) => {
     const { pipe, abort } = renderToPipeableStream(
       <I18nextProvider i18n={instance}>
-        <RemixServer
-          context={remixContext}
-          url={request.url}
-          abortDelay={ABORT_DELAY}
-        />
+        <ConfigProvider
+          theme={{
+            token: {
+              colorPrimary: "#007F61", // 设置主色
+            },
+          }}
+        >
+          <RemixServer
+            context={remixContext}
+            url={request.url}
+            abortDelay={ABORT_DELAY}
+          />
+        </ConfigProvider>
       </I18nextProvider>,
       {
         [callbackName]: () => {
