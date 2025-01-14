@@ -13,7 +13,7 @@ import { createInstance } from "i18next";
 import Backend from "i18next-fs-backend";
 import { resolve } from "node:path";
 import { ConfigProvider } from "antd";
-import "antd";
+import 'antd/dist/reset.css';
 
 const ABORT_DELAY = 5000;
 

@@ -39,6 +39,10 @@ import {
 } from "~/api/admin";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { StyleProvider } from "@ant-design/cssinjs";
+
+import "/antd.min.css"; // 添加这行
+import { ConfigProvider } from "antd";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -255,16 +259,18 @@ export default function App() {
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
-      <NavMenu>
-        <Link to="/app" rel="home">
-          Home
-        </Link>
-        <Link to="/app/language">{t("Language")}</Link>
-        <Link to="/app/manage_translation">{t("Manage Translation")}</Link>
-        <Link to="/app/currency">{t("Currency")}</Link>
-        <Link to="/app/glossary">{t("Glossary")}</Link>
-      </NavMenu>
-      <Outlet />
+      <StyleProvider hashPriority="high">
+        <NavMenu>
+          <Link to="/app" rel="home">
+            Home
+          </Link>
+          <Link to="/app/language">{t("Language")}</Link>
+          <Link to="/app/manage_translation">{t("Manage Translation")}</Link>
+          <Link to="/app/currency">{t("Currency")}</Link>
+          <Link to="/app/glossary">{t("Glossary")}</Link>
+        </NavMenu>
+        <Outlet />
+      </StyleProvider>
     </AppProvider>
   );
 }
