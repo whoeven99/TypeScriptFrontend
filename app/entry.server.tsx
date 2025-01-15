@@ -80,21 +80,21 @@ export default async function handleRequest(
 
     const { pipe, abort } = renderToPipeableStream(
       <I18nextProvider i18n={instance}>
-        {/* <StyleProvider cache={cache}>
+        <StyleProvider cache={cache}>
           <ConfigProvider
             theme={{
               token: {
                 colorPrimary: "#007F61", // 设置主色
               },
             }}
-          > */}
+          >
             <RemixServer
               context={remixContext}
               url={request.url}
               abortDelay={ABORT_DELAY}
             />
-          {/* </ConfigProvider>
-        </StyleProvider> */}
+          </ConfigProvider>
+        </StyleProvider>
       </I18nextProvider>,
       {
         [callbackName]: () => {
