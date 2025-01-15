@@ -66,15 +66,8 @@ export default function App() {
     <Provider store={store}>
       <html lang={i18nCode}>
         <head>
-          {/* {styleText} */}
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
-          {/* <meta name="shopify-debug" content="web-vitals" />
-          <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" />
-          <meta
-            name="shopify-api-key"
-            content="4b05c1caefa9e0761a0538b64159b627"
-          /> */}
           <link rel="preconnect" href="https://cdn.shopify.com/" />
           <link
             rel="stylesheet"
@@ -82,6 +75,7 @@ export default function App() {
           />
           <Meta />
           <Links />
+          {typeof document === "undefined" ? "__ANTD__" : ""}
         </head>
         <body>
           <Outlet />
