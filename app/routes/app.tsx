@@ -39,7 +39,7 @@ import {
 } from "~/api/admin";
 import { Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-
+import { createCache, StyleProvider } from "@ant-design/cssinjs";
 import { ConfigProvider } from "antd";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
@@ -244,6 +244,7 @@ export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
   const loadingFetcher = useFetcher<LoadingFetchType>();
   const { t } = useTranslation();
+  const cache = createCache(); // 创建新的缓存实例
 
   useEffect(() => {
     shopify.loading(true);
@@ -257,26 +258,28 @@ export default function App() {
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
-      <ConfigProvider
-        theme={{
-          token: {
-            colorPrimary: "#007F61", // 设置主色
-          },
-        }}
-      >
-        <NavMenu>
-          <Link to="/app" rel="home">
-            Home
-          </Link>
-          <Link to="/app/language">{t("Language")}</Link>
-          <Link to="/app/manage_translation">{t("Manage Translation")}</Link>
-          <Link to="/app/currency">{t("Currency")}</Link>
-          <Link to="/app/glossary">{t("Glossary")}</Link>
-        </NavMenu>
-        <Suspense>
-          <Outlet />
-        </Suspense>
-      </ConfigProvider>
+      <StyleProvider cache={cache} hashPriority="high">
+        <ConfigProvider
+          theme={{
+            token: {
+              colorPrimary: "#007F61", // 设置主色
+            },
+          }}
+        >
+          <NavMenu>
+            <Link to="/app" rel="home">
+              Home
+            </Link>
+            <Link to="/app/language">{t("Language")}</Link>
+            <Link to="/app/manage_translation">{t("Manage Translation")}</Link>
+            <Link to="/app/currency">{t("Currency")}</Link>
+            <Link to="/app/glossary">{t("Glossary")}</Link>
+          </NavMenu>
+          <Suspense>
+            <Outlet />
+          </Suspense>
+        </ConfigProvider>
+      </StyleProvider>
     </AppProvider>
   );
 }
