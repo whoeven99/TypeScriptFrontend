@@ -75,7 +75,7 @@ export default function App() {
           />
           <Meta />
           <Links />
-          {typeof document === "undefined" ? "__ANTD__" : ""}
+          {/* {typeof document === "undefined" ? "__ANTD__" : ""} */}
         </head>
         <body>
           <Outlet />

@@ -258,14 +258,14 @@ export default function App() {
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
-      <StyleProvider cache={cache} hashPriority="high">
+      {/* <StyleProvider cache={cache} hashPriority="high">
         <ConfigProvider
           theme={{
             token: {
               colorPrimary: "#007F61", // 设置主色
             },
           }}
-        >
+        > */}
           <NavMenu>
             <Link to="/app" rel="home">
               Home
@@ -276,8 +276,8 @@ export default function App() {
             <Link to="/app/glossary">{t("Glossary")}</Link>
           </NavMenu>
           <Outlet />
-        </ConfigProvider>
-      </StyleProvider>
+        {/* </ConfigProvider>
+      </StyleProvider> */}
     </AppProvider>
   );
 }
