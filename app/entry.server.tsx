@@ -1,5 +1,5 @@
 import { PassThrough } from "stream";
-import { renderToPipeableStream } from "react-dom/server";
+import { renderToPipeableStream, renderToString } from "react-dom/server";
 import { RemixServer } from "@remix-run/react";
 import {
   createReadableStreamFromReadable,
@@ -27,34 +27,34 @@ export default async function handleRequest(
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   let i18nCode;
   switch (true) {
-    case language == "fr":
+    case language === "fr":
       i18nCode = "fr";
       break;
-    case language == "de":
+    case language === "de":
       i18nCode = "de";
       break;
-    case language == "es":
+    case language === "es":
       i18nCode = "es";
       break;
-    case language == "it":
+    case language === "it":
       i18nCode = "it";
       break;
-    case language == "nl":
+    case language === "nl":
       i18nCode = "nl";
       break;
-    case language == "pt":
+    case language === "pt":
       i18nCode = "pt";
       break;
-    case language == "sv":
+    case language === "sv":
       i18nCode = "sv";
       break;
-    case language == "ja":
+    case language === "ja":
       i18nCode = "ja";
       break;
-    case language == "zh-TW":
+    case language === "zh-TW":
       i18nCode = "zh-TW";
       break;
-    case language == "zh-CN":
+    case language === "zh-CN":
       i18nCode = "zh";
       break;
     default:
@@ -67,18 +67,17 @@ export default async function handleRequest(
 
   let instance = createInstance();
   await instance
-    .use(Backend) // Setup our backend
-    .use(initReactI18next) // Tell our instance to use react-i18next
+    .use(Backend)
+    .use(initReactI18next)
     .init({
-      ...i18n, // spread the configuration
+      ...i18n,
       fallbackLng: i18nCode,
       backend: { loadPath: resolve("./public/locales/{{lng}}/{{ns}}.json") },
     });
+  const cache = createCache();
 
-  return new Promise((resolve, reject) => {
-    const cache = createCache();
-
-    const { pipe, abort } = renderToPipeableStream(
+  function MainApp() {
+    return (
       <I18nextProvider i18n={instance}>
         <StyleProvider cache={cache}>
           <ConfigProvider
@@ -95,31 +94,19 @@ export default async function handleRequest(
             />
           </ConfigProvider>
         </StyleProvider>
-      </I18nextProvider>,
-      {
-        [callbackName]: () => {
-          const body = new PassThrough();
-          const stream = createReadableStreamFromReadable(body);
-
-          responseHeaders.set("Content-Type", "text/html");
-          resolve(
-            new Response(stream, {
-              headers: responseHeaders,
-              status: responseStatusCode,
-            }),
-          );
-          pipe(body);
-        },
-        onShellError(error) {
-          reject(error);
-        },
-        onError(error) {
-          responseStatusCode = 500;
-          console.error(error);
-        },
-      },
+      </I18nextProvider>
     );
+  }
 
-    setTimeout(abort, ABORT_DELAY);
+  let markup = renderToString(<MainApp />);
+  const styleText = extractStyle(cache);
+
+  markup = markup.replace("__ANTD__", styleText);
+
+  responseHeaders.set("Content-Type", "text/html");
+
+  return new Response("<!DOCTYPE html>" + markup, {
+    status: responseStatusCode,
+    headers: responseHeaders,
   });
 }
