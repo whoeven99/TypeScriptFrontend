@@ -34,19 +34,19 @@ async function hydrate() {
     hydrateRoot(
       document,
       <I18nextProvider i18n={i18next}>
-        <StyleProvider cache={cache}>
+        {/* <StyleProvider cache={cache}>
           <ConfigProvider
             theme={{
               token: {
                 colorPrimary: "#007F61", // 设置主色
               },
             }}
-          >
+          > */}
             <StrictMode>
               <RemixBrowser />
             </StrictMode>
-          </ConfigProvider>
-        </StyleProvider>
+          {/* </ConfigProvider>
+        </StyleProvider> */}
       </I18nextProvider>,
     );
   });
