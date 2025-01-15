@@ -61,8 +61,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function App() {
   const { i18nCode } = useLoaderData<typeof loader>();
-  const cache = createCache();
-  const styleText = extractStyle(cache);
 
   return (
     <Provider store={store}>
