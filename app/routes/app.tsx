@@ -273,7 +273,9 @@ export default function App() {
           <Link to="/app/currency">{t("Currency")}</Link>
           <Link to="/app/glossary">{t("Glossary")}</Link>
         </NavMenu>
-        <Outlet />
+        <Suspense>
+          <Outlet />
+        </Suspense>
       </ConfigProvider>
     </AppProvider>
   );
