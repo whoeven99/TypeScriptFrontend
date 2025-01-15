@@ -74,38 +74,38 @@ export default async function handleRequest(
       fallbackLng: i18nCode,
       backend: { loadPath: resolve("./public/locales/{{lng}}/{{ns}}.json") },
     });
-  // const cache = createCache();
+  const cache = createCache();
 
   function MainApp() {
     return (
       <I18nextProvider i18n={instance}>
-        {/* <StyleProvider cache={cache} hashPriority="high">
+        <StyleProvider cache={cache} hashPriority="high">
           <ConfigProvider
             theme={{
               token: {
                 colorPrimary: "#007F61",
               },
             }}
-          > */}
+          >
             <RemixServer
               context={remixContext}
               url={request.url}
               abortDelay={ABORT_DELAY}
             />
-          {/* </ConfigProvider>
-        </StyleProvider> */}
+          </ConfigProvider>
+        </StyleProvider>
       </I18nextProvider>
     );
   }
 
-  // let markup = renderToString(<MainApp />);
-  // const styleText = extractStyle(cache);
+  let markup = renderToString(<MainApp />);
+  const styleText = extractStyle(cache);
 
-  // markup = markup.replace("__ANTD__", styleText);
+  markup = markup.replace("__ANTD__", styleText);
 
   responseHeaders.set("Content-Type", "text/html");
 
-  return new Response("<!DOCTYPE html>", {
+  return new Response("<!DOCTYPE html>" + markup, {
     status: responseStatusCode,
     headers: responseHeaders,
   });
