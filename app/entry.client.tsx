@@ -34,7 +34,7 @@ async function hydrate() {
     hydrateRoot(
       document,
       <I18nextProvider i18n={i18next}>
-        <StyleProvider cache={cache}>
+        <StyleProvider cache={cache} hashPriority="high">
           <ConfigProvider
             theme={{
               token: {

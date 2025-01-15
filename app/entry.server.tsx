@@ -79,11 +79,11 @@ export default async function handleRequest(
   function MainApp() {
     return (
       <I18nextProvider i18n={instance}>
-        <StyleProvider cache={cache}>
+        <StyleProvider cache={cache} hashPriority="high">
           <ConfigProvider
             theme={{
               token: {
-                colorPrimary: "#007F61", // 设置主色
+                colorPrimary: "#007F61",
               },
             }}
           >
