@@ -79,19 +79,21 @@ export default async function handleRequest(
   function MainApp() {
     return (
       <I18nextProvider i18n={instance}>
-        <ConfigProvider
-          theme={{
-            token: {
-              colorPrimary: "#007F61", // 设置主色
-            },
-          }}
-        >
-          <RemixServer
-            context={remixContext}
-            url={request.url}
-            abortDelay={ABORT_DELAY}
-          />
-        </ConfigProvider>
+        <StyleProvider cache={cache}>
+          <ConfigProvider
+            theme={{
+              token: {
+                colorPrimary: "#007F61", // 设置主色
+              },
+            }}
+          >
+            <RemixServer
+              context={remixContext}
+              url={request.url}
+              abortDelay={ABORT_DELAY}
+            />
+          </ConfigProvider>
+        </StyleProvider>
       </I18nextProvider>
     );
   }
