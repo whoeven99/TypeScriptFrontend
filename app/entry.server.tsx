@@ -82,7 +82,7 @@ export default async function handleRequest(
         <ConfigProvider
           theme={{
             token: {
-              colorPrimary: "#007F61",
+              colorPrimary: "#007F61", // 设置主色
             },
           }}
         >
