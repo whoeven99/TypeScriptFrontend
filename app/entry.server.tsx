@@ -79,21 +79,19 @@ export default async function handleRequest(
   function MainApp() {
     return (
       <I18nextProvider i18n={instance}>
-        <StyleProvider cache={cache} hashPriority="high">
-          <ConfigProvider
-            theme={{
-              token: {
-                colorPrimary: "#007F61",
-              },
-            }}
-          >
-            <RemixServer
-              context={remixContext}
-              url={request.url}
-              abortDelay={ABORT_DELAY}
-            />
-          </ConfigProvider>
-        </StyleProvider>
+        <ConfigProvider
+          theme={{
+            token: {
+              colorPrimary: "#007F61",
+            },
+          }}
+        >
+          <RemixServer
+            context={remixContext}
+            url={request.url}
+            abortDelay={ABORT_DELAY}
+          />
+        </ConfigProvider>
       </I18nextProvider>
     );
   }
