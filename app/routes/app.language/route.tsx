@@ -538,7 +538,7 @@ const Index = () => {
 
   const handleTranslate = async (locale: string) => {
     if (words && words.chars > words.totalChars) {
-      message.error(t("Character Limit Reached"));
+      setShowWarnModal(true);
     } else {
       const selectedItem = data.find(
         (item: LanguagesDataType) => item.locale === locale,
@@ -635,10 +635,7 @@ const Index = () => {
   return (
     <>
       {showWarnModal && (
-        <TranslationWarnModal
-          show={showWarnModal}
-          setShow={setShowWarnModal}
-        />
+        <TranslationWarnModal show={showWarnModal} setShow={setShowWarnModal} />
       )}
       <Page>
         <TitleBar title={t("Language")} />
