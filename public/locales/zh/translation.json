@@ -26,7 +26,7 @@
   "1. Go to": "1. 转到",
   "Settings >> General": "设置 >> 常规",
   "2. Under the": "2. 在",
-  "’Store defaults‘": "‘商店默认’",
+  "'Store defaults'": "'商店默认'",
   "section, click Change currency formatting, then change with the code below:": "部分，点击更改货币格式，然后用以下代码进行更改：",
   "Case-sensitive": "区分大小写",
   "Case-insensitive": "不区分大小写",
@@ -128,6 +128,9 @@
   "Resource": "资源",
   "This language has been deleted. Please edit again.": "该语言已被删除，请重新编辑。",
   "Edit rules": "编辑规则",
-  "Select markets for display": "选择要显示的市场"
+  "Select markets for display": "选择要显示的市场",
+  "Translation failed": "翻译失败",
+  "Contact Support": "联系支持",
+  "Contact Support_message": "抱歉，我们检测到您的商店存在异常的翻译请求，导致翻译失败。请联系我们解决此问题。"
 }
 

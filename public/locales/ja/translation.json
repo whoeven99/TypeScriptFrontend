@@ -128,6 +128,9 @@
     "Resource": "リソース",
     "This language has been deleted. Please edit again.": "この言語は削除されました。もう一度編集してください。",
     "Edit rules": "ルールを編集",
-    "Select markets for display": "表示する市場を選択"
+    "Select markets for display": "表示する市場を選択",
+    "Translation failed": "翻訳失敗",
+    "Contact Support": "サポートに連絡",
+    "Contact Support_message": "申し訳ありませんが、ストアから異常な翻訳リクエストが検出され、翻訳に失敗しました。この問題を解決するには、サポートまでご連絡ください。"
 }
   

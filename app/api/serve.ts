@@ -1,6 +1,6 @@
 import axios from "axios";
 import { authenticate } from "~/shopify.server";
-import { queryShop, queryShopLanguages } from "./admin";
+import { queryProductCount, queryShop, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import { json } from "@remix-run/node";
 
@@ -275,6 +275,7 @@ export const GetTranslationItemsInfo = async ({
     throw new Error("Error fetching updating translation items");
   }
 };
+
 //获取各项翻译状态
 export const GetItemsInSqlByShopName = async ({
   shop,
@@ -473,6 +474,20 @@ export const GetTranslate = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   console.log(source, target);
+
+  try {
+    const response = await queryProductCount({ request });
+    if (response.data.productsCount.count > 500) {
+      return {
+        success: false,
+        errorCode: 10014,
+      };
+    }
+  } catch (error) {
+    console.error("Error occurred in the translation:", error);
+    throw new Error("Error occurred in the translation");
+  }
+
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/clickTranslation`,
@@ -494,6 +509,7 @@ export const GetTranslate = async ({
     const res = { ...response.data, target: target };
     console.log("translation: ", res);
     return res;
+    return null;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
     throw new Error("Error occurred in the translation");

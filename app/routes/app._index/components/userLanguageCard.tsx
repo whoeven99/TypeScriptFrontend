@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Card, message, Space, Typography } from "antd";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,6 +6,7 @@ import { setStatusState } from "~/store/modules/languageTableData";
 import TranslatedIcon from "~/components/translateIcon";
 import { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
+import TranslationWarnModal from "~/components/translationWarnModal";
 const { Text } = Typography;
 
 interface UserLanguageCardProps {
@@ -40,6 +41,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   const navigate = useNavigate();
   const translateFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
+  const [showWarnModal, setShowWarnModal] = useState(false);
 
   // useEffect(() => {
   //   const formData = new FormData();
@@ -112,40 +114,22 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
     }
   }, [statusFetcher.data]);
 
-  // useEffect(() => {
-  //   if (translateFetcher.data && translateFetcher.data.data) {
-  //     if (translateFetcher.data.data.success) {
-  //       if (data && data.status === 2) {
-  //         const formData = new FormData();
-  //         formData.append(
-  //           "statusData",
-  //           JSON.stringify({
-  //             source: primaryLanguageCode,
-  //             target: [data.locale],
-  //           }),
-  //         );
-  //         // 延时提交，设置 2000 毫秒（即 2 秒）的延时
-  //         const timeoutId = setTimeout(() => {
-  //           statusFetcher.submit(formData, {
-  //             method: "post",
-  //             action: "/app",
-  //           });
-  //         }, 2000); // 2秒延时
-
-  //         // 在组件卸载时清除定时器
-  //         return () => clearTimeout(timeoutId);
-  //       }
-  //     } else {
-  //       message.error(translateFetcher.data.data.errorMsg);
-  //       dispatch(
-  //         setStatusState({
-  //           target: translateFetcher.data.data.target,
-  //           status: 3,
-  //         }),
-  //       );
-  //     }
-  //   }
-  // }, [translateFetcher.data]);
+  useEffect(() => {
+    if (translateFetcher.data) {
+      console.log("translateFetcher.data: ", translateFetcher.data);
+      if (!translateFetcher.data?.data?.success) {
+        setShowWarnModal(true);
+      } else {
+        message.success(t("The translation task is in progress."));
+        dispatch(
+          setStatusState({
+            target: translateFetcher.data.status.target,
+            status: 2,
+          }),
+        );
+      }
+    }
+  }, [translateFetcher.data]);
 
   const handleTranslate = async () => {
     if (limited) {
@@ -164,12 +148,6 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
           }),
         ); // 将选中的语言作为字符串发送
         translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
-        dispatch(
-          setStatusState({
-            target: data.locale,
-            status: 2,
-          }),
-        );
       } else {
         message.error(
           t(
@@ -185,64 +163,67 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   };
 
   return (
-    <Card style={{ textAlign: "center", padding: "20px" }}>
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <div className="flag_container">
-          {flagUrl.map((url, index) => (
-            <img
-              key={index}
-              src={url}
-              alt={`${languageName} flag`}
+    <>
+      <TranslationWarnModal show={showWarnModal} setShow={setShowWarnModal} />
+      <Card style={{ textAlign: "center", padding: "20px" }}>
+        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+          <div className="flag_container">
+            {flagUrl.map((url, index) => (
+              <img
+                key={index}
+                src={url}
+                alt={`${languageName} flag`}
+                style={{
+                  width: "60px",
+                  height: "auto",
+                  marginBottom: "10px",
+                  border: "1px solid #888", // 添加灰色边框
+                  borderRadius: "2px",
+                }}
+              />
+            ))}
+          </div>
+          <div>
+            <Text
+              strong
               style={{
-                width: "60px",
-                height: "auto",
-                marginBottom: "10px",
-                border: "1px solid #888", // 添加灰色边框
-                borderRadius: "2px",
+                display: "block", // 使用 block 或 inline-block
+                whiteSpace: "nowrap", // 不换行
+                textAlign: "center",
+                overflow: "hidden", // 超出部分隐藏
+                textOverflow: "ellipsis", // 超出部分显示省略号
               }}
-            />
-          ))}
-        </div>
-        <div>
-          <Text
-            strong
-            style={{
-              display: "block", // 使用 block 或 inline-block
-              whiteSpace: "nowrap", // 不换行
-              textAlign: "center",
-              overflow: "hidden", // 超出部分隐藏
-              textOverflow: "ellipsis", // 超出部分显示省略号
-            }}
-          >
-            {languageName}
-          </Text>
-          <Text
-            strong
-            style={{
-              display: "block", // 使用 block 或 inline-block
-              whiteSpace: "nowrap", // 不换行
-              overflow: "hidden", // 超出部分隐藏
-              textOverflow: "ellipsis", // 超出部分显示省略号
-            }}
-          >
-            {languageLocaleName}
-          </Text>
-        </div>
-        <div className="language_statu">
-          {data ? <TranslatedIcon status={data?.status} /> : <Text>...</Text>}
-        </div>
-        <Space direction="horizontal">
-          <Button
-            onClick={() => handleTranslate()}
-            style={{ width: "100px" }}
-            type="primary"
-          >
-            {t("Translate")}
-          </Button>
-          <Button onClick={onClick}>{t("Manage")}</Button>
+            >
+              {languageName}
+            </Text>
+            <Text
+              strong
+              style={{
+                display: "block", // 使用 block 或 inline-block
+                whiteSpace: "nowrap", // 不换行
+                overflow: "hidden", // 超出部分隐藏
+                textOverflow: "ellipsis", // 超出部分显示省略号
+              }}
+            >
+              {languageLocaleName}
+            </Text>
+          </div>
+          <div className="language_statu">
+            {data ? <TranslatedIcon status={data?.status} /> : <Text>...</Text>}
+          </div>
+          <Space direction="horizontal">
+            <Button
+              onClick={() => handleTranslate()}
+              style={{ width: "100px" }}
+              type="primary"
+            >
+              {t("Translate")}
+            </Button>
+            <Button onClick={onClick}>{t("Manage")}</Button>
+          </Space>
         </Space>
-      </Space>
-    </Card>
+      </Card>
+    </>
   );
 };
 

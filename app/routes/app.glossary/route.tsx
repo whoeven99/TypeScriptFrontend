@@ -233,8 +233,8 @@ const Index = () => {
   };
 
   const handleIsModalOpen = (title: string, key: number) => {
-    if (title === "Create rule" && dataSource.length >= 5) {
-      message.error(t("You can add up to 5 translation rules"));
+    if (title === "Create rule" && dataSource.length >= 100) {
+      message.error(t("You can add up to 10 translation rules"));
     } else {
       setTitle(t(title));
       setGlossaryModalId(key);
