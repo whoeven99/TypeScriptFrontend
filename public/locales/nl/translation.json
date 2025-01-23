@@ -3,7 +3,7 @@
     "Dashboard": "Dashboard",
     "Faster, higher-quality localization translation tool": "Snellere, hogere kwaliteit lokalisatie vertaaltool",
     "available languages": " beschikbare talen",
-    "Your store’s default language:": "De standaardtaal van uw winkel:",
+    "Your store's default language:": "De standaardtaal van uw winkel:",
     "No primary language set": " Geen primaire taal ingesteld",
     "Learn more in": "Leer meer in",
     "Ciwi Help Center": "Ciwi Helpcentrum",
@@ -26,12 +26,12 @@
     "1. Go to": "1. Ga naar",
     "Settings >> General": "Instellingen >> Algemeen",
     "2. Under the": "2. Onder de",
-    "’Store defaults‘": "‘Winkelvoorkeuren’",
+    "'Store defaults'": "‘Winkelvoorkeuren’",
     "section, click Change currency formatting, then change with the code below:": "sectie, klik op ‘Wijzig valuta-indeling’ en wijzig deze met de onderstaande code:",
     "Case-sensitive": "Hoofdlettergevoelig",
     "Case-insensitive": "Hoofdletterongevoelig",
     "Total Payment:": "Totaal Betaling:",
-    "Your store’s default currency:": "De standaardvaluta van uw winkel:",
+    "Your store's default currency:": "De standaardvaluta van uw winkel:",
     "Uncompleted": "Onvoltooid",
     "Completed": "Voltooid",
     "Please": "Gelieve",
@@ -129,8 +129,8 @@
     "This language has been deleted. Please edit again.": "Deze taal is verwijderd. Bewerk het opnieuw.",
     "Edit rules": "Bewerk regel",
     "Select markets for display": "Selecteer markten om weer te geven",
-    "Translation failed": "Vertaling mislukt",
-    "Contact Support": "Contact opnemen met support",
-    "Contact Support_message": "Onze excuses, maar we hebben ongebruikelijke vertaalverzoeken van uw winkel gedetecteerd, wat heeft geleid tot een vertaalfout. Neem contact met ons op om dit probleem op te lossen."
+    "Translation_failed": "Vertaal limiet bereikt",
+    "Contact_Support": "Neem contact op met ondersteuning",
+    "Contact_Support_message": "Sorry, uw winkel is te groot om de vertaling voort te zetten. Neem contact op met ons team voor ondersteuning."
 }
   

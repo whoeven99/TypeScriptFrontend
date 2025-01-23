@@ -3,7 +3,7 @@
     "Dashboard": "Painel de Controle",
     "Faster, higher-quality localization translation tool": "Ferramenta de tradução de localização mais rápida e de maior qualidade",
     "available languages": " idiomas disponíveis",
-    "Your store’s default language:": "O idioma padrão da sua loja:",
+    "Your store's default language:": "O idioma padrão da sua loja:",
     "No primary language set": " Nenhuma língua primária definida",
     "Learn more in": "Saiba mais em",
     "Ciwi Help Center": "Centro de Ajuda Ciwi",
@@ -26,12 +26,12 @@
     "1. Go to": "1. Vá para",
     "Settings >> General": "Configurações >> Geral",
     "2. Under the": "2. Sob o",
-    "’Store defaults‘": "‘Padrões da loja’",
+    "'Store defaults'": "‘Padrões da loja’",
     "section, click Change currency formatting, then change with the code below:": "seção, clique em Alterar formatação de moeda, depois altere com o código abaixo:",
     "Case-sensitive": "Sensível a maiúsculas/minúsculas",
     "Case-insensitive": "Insensível a maiúsculas/minúsculas",
     "Total Payment:": "Pagamento Total:",
-    "Your store’s default currency:": "A moeda padrão da sua loja:",
+    "Your store's default currency:": "A moeda padrão da sua loja:",
     "Uncompleted": "Incompleto",
     "Completed": "Completo",
     "Please": "Por favor",
@@ -129,8 +129,8 @@
     "This language has been deleted. Please edit again.": "Este idioma foi excluído. Por favor, edite novamente.",
     "Edit rules": "Editar regra",
     "Select markets for display": "Selecionar mercados para exibição",
-    "Translation failed": "Falha na tradução",
-    "Contact Support": "Contatar suporte",
-    "Contact Support_message": "Pedimos desculpas, mas detectamos solicitações de tradução incomuns em sua loja, o que causou uma falha na tradução. Entre em contato conosco para resolver o problema."
+    "Translation_failed": "Limite de tradução alcançado",
+    "Contact_Support": "Contactar suporte",
+    "Contact_Support_message": "Desculpe, sua loja é muito grande para continuar a tradução. Entre em contato com nossa equipe para obter suporte."
 }
   

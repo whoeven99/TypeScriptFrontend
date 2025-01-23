@@ -3,7 +3,7 @@
     "Dashboard": "Instrumentpanel",
     "Faster, higher-quality localization translation tool": "Snabbare, högkvalitativare verktyg för lokaliseringsöversättning",
     "available languages": " tillgängliga språk",
-    "Your store’s default language:": "Din butiks standardspråk:",
+    "Your store's default language:": "Din butiks standardspråk:",
     "No primary language set": " Ingen primär språk inställt",
     "Learn more in": "Läs mer i",
     "Ciwi Help Center": "Ciwi Hjälpcenter",
@@ -26,12 +26,12 @@
     "1. Go to": "1. Gå till",
     "Settings >> General": "Inställningar >> Allmänt",
     "2. Under the": "2. Under",
-    "’Store defaults‘": "‘Butikens standard’",
+    "'Store defaults'": "‘Butikens standard’",
     "section, click Change currency formatting, then change with the code below:": "avsnittet, klicka på Ändra valutafomat, och ändra sedan med koden nedan:",
     "Case-sensitive": "Skiftlägeskänslig",
     "Case-insensitive": "Skiftlägesokänslig",
     "Total Payment:": "Total betalning:",
-    "Your store’s default currency:": "Din butiks standardvaluta:",
+    "Your store's default currency:": "Din butiks standardvaluta:",
     "Uncompleted": "Ej slutfört",
     "Completed": "Slutfört",
     "Please": "Vänligen",
@@ -129,8 +129,8 @@
     "This language has been deleted. Please edit again.": "Detta språk har tagits bort. Vänligen redigera igen.",
     "Edit rules": "Redigera regel",
     "Select markets for display": "Välj marknader att visa",
-    "Translation failed": "Översättning misslyckades",
-    "Contact Support": "Kontakta support",
-    "Contact Support_message": "Vi ber om ursäkt, men vi har upptäckt ovanliga översättningsförfrågningar från din butik, vilket har orsakat ett översättningsfel. Vänligen kontakta oss för att lösa problemet."
+    "Translation_failed": "Översättningsgräns nådd",
+    "Contact_Support": "Kontakta support",
+    "Contact_Support_message": "Ursäkta, din butik är för stor för att fortsätta översättningen. Vänligen kontakta vårt team för support."
 }
   

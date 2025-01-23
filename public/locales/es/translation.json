@@ -3,7 +3,7 @@
     "Dashboard": "Tablero",
     "Faster, higher-quality localization translation tool": "Herramienta de traducción de localización más rápida y de mayor calidad",
     "available languages": " idiomas disponibles",
-    "Your store’s default language:": "El idioma predeterminado de su tienda:",
+    "Your store's default language:": "El idioma predeterminado de su tienda:",
     "No primary language set": "No se ha establecido un idioma principal",
     "Learn more in": "Aprenda más en",
     "Ciwi Help Center": "Centro de ayuda de Ciwi",
@@ -26,12 +26,12 @@
     "1. Go to": "1. Vaya a",
     "Settings >> General": "Configuración >> General",
     "2. Under the": "2. Bajo",
-    "’Store defaults‘": "‘Predeterminados de la tienda’",
+    "'Store defaults'": "‘Predeterminados de la tienda’",
     "section, click Change currency formatting, then change with the code below:": "sección, haga clic en Cambiar formato de moneda, luego cambie con el código a continuación:",
     "Case-sensitive": "Sensible a mayúsculas y minúsculas",
     "Case-insensitive": "Insensible a mayúsculas y minúsculas",
     "Total Payment:": "Pago total:",
-    "Your store’s default currency:": "Moneda predeterminada de su tienda:",
+    "Your store's default currency:": "Moneda predeterminada de su tienda:",
     "Uncompleted": "No completado",
     "Completed": "Completado",
     "Please": "Por favor",
@@ -129,8 +129,8 @@
     "This language has been deleted. Please edit again.": "Este idioma ha sido eliminado. Por favor edite nuevamente.",
     "Edit rules": "Editar regla",
     "Select markets for display": "Seleccionar mercados para mostrar",
-    "Translation failed": "Error de traducción",
-    "Contact Support": "Contactar soporte",
-    "Contact Support_message": "Lo sentimos, pero hemos detectado solicitudes de traducción inusuales de su tienda, lo que ha causado un fallo en la traducción. Por favor, contáctenos para resolver el problema."
+    "Translation_failed": "Límite de traducción alcanzado",
+    "Contact_Support": "Contactar con soporte",
+    "Contact_Support_message": "Lo siento, tu tienda es demasiado grande para seguir traduciendo. Por favor, contacta a nuestro equipo para recibir soporte."
 }
   
