@@ -477,7 +477,7 @@ export const GetTranslate = async ({
 
   try {
     const response = await queryProductCount({ request });
-    if (response.data.productsCount.count > 500) {
+    if (response.data.productsCount.count > 100) {
       return {
         success: false,
         errorCode: 10014,

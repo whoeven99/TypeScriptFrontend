@@ -123,7 +123,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         message.success(t("The translation task is in progress."));
         dispatch(
           setStatusState({
-            target: translateFetcher.data.status.target,
+            target: translateFetcher.data?.data.target,
             status: 2,
           }),
         );
