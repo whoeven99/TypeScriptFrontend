@@ -128,6 +128,9 @@
     "Resource": "Recurso",
     "This language has been deleted. Please edit again.": "Este idioma ha sido eliminado. Por favor edite nuevamente.",
     "Edit rules": "Editar regla",
-    "Select markets for display": "Seleccionar mercados para mostrar"
+    "Select markets for display": "Seleccionar mercados para mostrar",
+    "Translation failed": "Error de traducción",
+    "Contact Support": "Contactar soporte",
+    "Contact Support_message": "Lo sentimos, pero hemos detectado solicitudes de traducción inusuales de su tienda, lo que ha causado un fallo en la traducción. Por favor, contáctenos para resolver el problema."
 }
   
