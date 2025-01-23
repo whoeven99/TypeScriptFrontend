@@ -133,7 +133,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
 
   const handleTranslate = async () => {
     if (limited) {
-      message.error("Character Limit Reached");
+      setShowWarnModal(true);
     } else {
       const selectedTranslatingItem = datas.find(
         (item: LanguagesDataType) => item.status === 2,
