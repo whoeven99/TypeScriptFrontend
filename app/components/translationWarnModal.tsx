@@ -24,14 +24,17 @@ const TranslationWarnModal: React.FC<TranslationWarnModalProps> = ({
     <Modal
       open={show}
       onCancel={() => setShow(false)}
-      title={t("Translation failed")}
+      title="Translation limit reached"
       footer={
         <Button type="primary" onClick={() => handleContactSupport()}>
-          {t("Contact Support")}
+          Contact Support
         </Button>
       }
     >
-      <Text>{t("Contact Support message")}</Text>
+      <Text>
+        Sorry, your store is too large to continue translating. Please contact
+        our team for support.
+      </Text>
     </Modal>
   );
 };
