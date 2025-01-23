@@ -153,6 +153,23 @@ export const queryTheme = async ({ request }: { request: Request }) => {
   }
 };
 
+export const queryProductCount = async ({ request }: { request: Request }) => {
+  const { admin } = await authenticate.admin(request);
+
+  const response = await admin.graphql(
+    `#graphql
+      query {
+        productsCount {
+          count
+        }
+      }`,
+  );
+
+  const data = await response.json();
+  console.log("queryProductCount: ", response);
+  return data;
+};
+
 export const queryAllProducts = async (request: Request) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;

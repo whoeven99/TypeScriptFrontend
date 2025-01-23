@@ -176,13 +176,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (translation) {
       const source = translation.primaryLanguageCode;
-      const selectedLanguage = translation.selectedLanguage;
-      const translateResponse = await GetTranslate({
+      const target = translation.selectedLanguage;
+      const data = await GetTranslate({
         request,
         source,
-        target: selectedLanguage,
+        target,
       });
-      return json({ data: translateResponse });
+      return json({ data: data });
     }
 
     if (statusData) {

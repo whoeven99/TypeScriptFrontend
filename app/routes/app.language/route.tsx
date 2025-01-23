@@ -47,6 +47,7 @@ import { useTranslation } from "react-i18next";
 import PrimaryLanguage from "./components/primaryLanguage";
 import PublishModal from "./components/publishModal";
 import AddLanguageModal from "./components/addLanguageModal";
+import TranslationWarnModal from "~/components/translationWarnModal";
 
 const { Title, Text } = Typography;
 
@@ -242,6 +243,7 @@ const Index = () => {
   const [disable, setDisable] = useState<boolean>(false);
   const [data, setData] = useState<LanguagesDataType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [showWarnModal, setShowWarnModal] = useState(false);
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -311,37 +313,21 @@ const Index = () => {
     }
   }, [loadingFetcher.data]);
 
-  // useEffect(() => {
-  //   if (translateFetcher.data && translateFetcher.data.status) {
-  //     if (translateFetcher.data.status.success) {
-  //       const target = translateFetcher.data.status.target;
-  //       const formData = new FormData();
-  //       formData.append(
-  //         "statusData",
-  //         JSON.stringify({
-  //           source: primaryLanguage?.locale,
-  //           target: [target],
-  //         }),
-  //       );
-  //       const timeoutId = setTimeout(() => {
-  //         statusFetcher.submit(formData, {
-  //           method: "post",
-  //           action: "/app",
-  //         });
-  //       }, 2000); // 2秒延时
-  //       // 在组件卸载时清除定时器
-  //       return () => clearTimeout(timeoutId);
-  //     } else {
-  //       message.error(translateFetcher.data.status.errorMsg);
-  //       dispatch(
-  //         setStatusState({
-  //           target: translateFetcher.data.status.target,
-  //           status: 3,
-  //         }),
-  //       );
-  //     }
-  //   }
-  // }, [translateFetcher.data]);
+  useEffect(() => {
+    if (translateFetcher.data && translateFetcher.data.status) {
+      if (!translateFetcher.data.status.success) {
+        setShowWarnModal(true);
+      } else {
+        message.success(t("The translation task is in progress."));
+        dispatch(
+          setStatusState({
+            target: translateFetcher.data.status.target,
+            status: 2,
+          }),
+        );
+      }
+    }
+  }, [translateFetcher.data]);
 
   useEffect(() => {
     if (deleteFetcher.data) {
@@ -573,14 +559,6 @@ const Index = () => {
           method: "post",
           action: "/app/language",
         }); // 提交表单请求
-
-        message.success(t("The translation task is in progress."));
-        dispatch(
-          setStatusState({
-            target: selectedItem.locale,
-            status: 2,
-          }),
-        );
       } else {
         message.error(
           t(
@@ -590,6 +568,7 @@ const Index = () => {
       }
     }
   };
+
   const handleConfirmPublishModal = () => {
     if (selectedRow) {
       dispatch(
@@ -654,87 +633,95 @@ const Index = () => {
   };
 
   return (
-    <Page>
-      <TitleBar title={t("Language")} />
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <div>
-          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-            {t("Languages")}
-          </Title>
-          <Suspense fallback={<Skeleton active paragraph={{ rows: 0 }} />}>
-            <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
-          </Suspense>
-        </div>
-        <Suspense fallback={<Skeleton active />}>
-          <AttentionCard
-            title={t("Translation word credits have been exhausted.")}
-            content={t(
-              "The translation cannot be completed due to exhausted credits.",
-            )}
-            show={disable}
-          />
-        </Suspense>
-        <div className="languageTable_action">
-          <Flex
-            align="center"
-            justify="space-between" // 使按钮左右分布
-            style={{ width: "100%", marginBottom: "16px" }}
-          >
-            <Flex align="center" gap="middle">
-              <Button
-                type="primary"
-                onClick={handleDelete}
-                disabled={!hasSelected}
-                loading={deleteloading}
-              >
-                {t("Delete")}
-              </Button>
-              {hasSelected
-                ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
-                : null}
-            </Flex>
-            <div>
-              <Space>
-                <Button type="default" onClick={PreviewClick}>
-                  {t("Preview store")}
-                </Button>
-                <Button type="primary" onClick={handleOpenModal}>
-                  {t("Add Language")}
-                </Button>
-              </Space>
-            </div>
-          </Flex>
+    <>
+      {showWarnModal && (
+        <TranslationWarnModal
+          show={showWarnModal}
+          setShow={setShowWarnModal}
+        />
+      )}
+      <Page>
+        <TitleBar title={t("Language")} />
+        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+          <div>
+            <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+              {t("Languages")}
+            </Title>
+            <Suspense fallback={<Skeleton active paragraph={{ rows: 0 }} />}>
+              <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
+            </Suspense>
+          </div>
           <Suspense fallback={<Skeleton active />}>
-            <Table
-              rowSelection={rowSelection}
-              columns={columns}
-              dataSource={data}
-              style={{ width: "100%" }}
-              loading={deleteloading || loading}
+            <AttentionCard
+              title={t("Translation word credits have been exhausted.")}
+              content={t(
+                "The translation cannot be completed due to exhausted credits.",
+              )}
+              show={disable}
             />
           </Suspense>
-        </div>
-      </Space>
-      <Suspense>
-        <AddLanguageModal
-          isVisible={isLanguageModalOpen}
-          setIsModalOpen={setIsLanguageModalOpen}
-          allLanguages={allLanguages}
-          languageLocaleInfo={languageLocaleInfo}
-          primaryLanguage={primaryLanguage}
-        />
-      </Suspense>
-      <Suspense>
-        <PublishModal
-          isVisible={isPublishModalOpen} // 父组件控制是否显示
-          onOk={() => handleConfirmPublishModal()}
-          onCancel={() => handleClosePublishModal()}
-          setPublishMarket={setPublishMarket}
-          selectedRow={selectedRow}
-          allMarket={allMarket}
-        />
-      </Suspense>
-    </Page>
+          <div className="languageTable_action">
+            <Flex
+              align="center"
+              justify="space-between" // 使按钮左右分布
+              style={{ width: "100%", marginBottom: "16px" }}
+            >
+              <Flex align="center" gap="middle">
+                <Button
+                  type="primary"
+                  onClick={handleDelete}
+                  disabled={!hasSelected}
+                  loading={deleteloading}
+                >
+                  {t("Delete")}
+                </Button>
+                {hasSelected
+                  ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
+                  : null}
+              </Flex>
+              <div>
+                <Space>
+                  <Button type="default" onClick={PreviewClick}>
+                    {t("Preview store")}
+                  </Button>
+                  <Button type="primary" onClick={handleOpenModal}>
+                    {t("Add Language")}
+                  </Button>
+                </Space>
+              </div>
+            </Flex>
+            <Suspense fallback={<Skeleton active />}>
+              <Table
+                rowSelection={rowSelection}
+                columns={columns}
+                dataSource={data}
+                style={{ width: "100%" }}
+                loading={deleteloading || loading}
+              />
+            </Suspense>
+          </div>
+        </Space>
+        <Suspense>
+          <AddLanguageModal
+            isVisible={isLanguageModalOpen}
+            setIsModalOpen={setIsLanguageModalOpen}
+            allLanguages={allLanguages}
+            languageLocaleInfo={languageLocaleInfo}
+            primaryLanguage={primaryLanguage}
+          />
+        </Suspense>
+        <Suspense>
+          <PublishModal
+            isVisible={isPublishModalOpen} // 父组件控制是否显示
+            onOk={() => handleConfirmPublishModal()}
+            onCancel={() => handleClosePublishModal()}
+            setPublishMarket={setPublishMarket}
+            selectedRow={selectedRow}
+            allMarket={allMarket}
+          />
+        </Suspense>
+      </Page>
+    </>
   );
 };
 
