@@ -130,7 +130,7 @@
   "Edit rules": "Edit rules",
   "Select markets for display": "Select markets for display",
   "Pricing": "Pricing",
-  "Translation_failed": "Translation limit reached",
-  "Contact_Support": "Contact Support",
-  "Contact_Support_message": "Sorry, your store is too large to continue translating. Please contact our team for support."
+  "Translation failed": "Translation limit reached",
+  "Contact Support": "Contact Support",
+  "Contact Support message": "Sorry, your store is too large to continue translating. Please contact our team for support."
 }
