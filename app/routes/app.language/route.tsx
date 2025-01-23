@@ -651,7 +651,7 @@ const Index = () => {
               <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
             </Suspense>
           </div>
-          <Suspense fallback={<Skeleton active />}>
+          {/* <Suspense fallback={<Skeleton active />}>
             <AttentionCard
               title={t("Translation word credits have been exhausted.")}
               content={t(
@@ -659,7 +659,7 @@ const Index = () => {
               )}
               show={disable}
             />
-          </Suspense>
+          </Suspense> */}
           <div className="languageTable_action">
             <Flex
               align="center"
