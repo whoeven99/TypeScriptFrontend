@@ -166,7 +166,7 @@ const Index = () => {
               {t("available languages")}
             </Title>
             <div>
-              <Text>{t("Your store’s default language:")}</Text>
+              <Text>{t("Your store's default language:")}</Text>
               {languageSetting && (
                 <Text strong>
                   {languageSetting.primaryLanguage ? (

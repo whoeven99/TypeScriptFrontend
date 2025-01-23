@@ -3,7 +3,7 @@
   "Dashboard": "仪表盘",
   "Faster, higher-quality localization translation tool": "更快、更高质量的本地化翻译工具",
   "available languages": "种可用语言",
-  "Your store’s default language:": "您商店的默认语言：",
+  "Your store's default language:": "您商店的默认语言：",
   "No primary language set": "未设置主要语言",
   "Learn more in": "详细了解",
   "Ciwi Help Center": "Ciwi帮助中心",
@@ -31,7 +31,7 @@
   "Case-sensitive": "区分大小写",
   "Case-insensitive": "不区分大小写",
   "Total Payment:": "总付款：",
-  "Your store’s default currency:": "您的商店默认货币：",
+  "Your store's default currency:": "您的商店默认货币：",
   "Uncompleted": "未完成",
   "Completed": "已完成",
   "Please": "请",
@@ -129,7 +129,7 @@
   "This language has been deleted. Please edit again.": "该语言已被删除，请重新编辑。",
   "Edit rules": "编辑规则",
   "Select markets for display": "选择要显示的市场",
-  "Translation failed": "翻译失败",
+  "Translation failed": "已达到翻译限制",
   "Contact Support": "联系支持",
-  "Contact Support_message": "抱歉，我们检测到您的商店存在异常的翻译请求，导致翻译失败。请联系我们解决此问题。"
+  "Contact Support_message": "抱歉，您的商店规模过大，无法继续翻译。请联系我们的团队获取支持。"
 }

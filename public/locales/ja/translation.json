@@ -3,7 +3,7 @@
     "Dashboard": "ダッシュボード",
     "Faster, higher-quality localization translation tool": "より速く高品質なローカライズ翻訳ツール",
     "available languages": " 利用可能な言語",
-    "Your store’s default language:": "店舗のデフォルト言語：",
+    "Your store's default language:": "店舗のデフォルト言語：",
     "No primary language set": " プライマリ言語が設定されていません",
     "Learn more in": "詳細については",
     "Ciwi Help Center": "Ciwiヘルプセンター",
@@ -26,12 +26,12 @@
     "1. Go to": "1. 移動する",
     "Settings >> General": "設定 >> 一般",
     "2. Under the": "2. 次の下で",
-    "’Store defaults‘": "「店舗のデフォルト」",
+    "'Store defaults'": "「店舗のデフォルト」",
     "section, click Change currency formatting, then change with the code below:": "セクションで「通貨の書式設定を変更」をクリックし、以下のコードに変更します：",
     "Case-sensitive": "大文字と小文字を区別",
     "Case-insensitive": "大文字と小文字を区別しない",
     "Total Payment:": "合計支払い：",
-    "Your store’s default currency:": "店舗のデフォルト通貨：",
+    "Your store's default currency:": "店舗のデフォルト通貨：",
     "Uncompleted": "未完了",
     "Completed": "完了",
     "Please": "お願いします",
@@ -129,8 +129,8 @@
     "This language has been deleted. Please edit again.": "この言語は削除されました。もう一度編集してください。",
     "Edit rules": "ルールを編集",
     "Select markets for display": "表示する市場を選択",
-    "Translation failed": "翻訳失敗",
+    "Translation failed": "翻訳制限に達しました",
     "Contact Support": "サポートに連絡",
-    "Contact Support_message": "申し訳ありませんが、ストアから異常な翻訳リクエストが検出され、翻訳に失敗しました。この問題を解決するには、サポートまでご連絡ください。"
+    "Contact Support_message": "申し訳ありませんが、ストアが大きすぎるため翻訳を続行できません。サポートチームまでご連絡ください。"
 }
   

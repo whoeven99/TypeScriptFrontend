@@ -3,7 +3,7 @@
     "Dashboard": "Dashboard",
     "Faster, higher-quality localization translation tool": "Schnelleres, qualitativ hochwertigeres Lokalisierungsübersetzungstool",
     "available languages": "verfügbare Sprachen",
-    "Your store’s default language:": "Die Standardsprache Ihres Shops:",
+    "Your store's default language:": "Die Standardsprache Ihres Shops:",
     "No primary language set": "Keine Primärsprache festgelegt",
     "Learn more in": "Erfahren Sie mehr in",
     "Ciwi Help Center": "Ciwi Hilfezentrum",
@@ -26,12 +26,12 @@
     "1. Go to": "1. Gehen Sie zu",
     "Settings >> General": "Einstellungen >> Allgemein",
     "2. Under the": "2. Unter dem",
-    "’Store defaults‘": "’Shop-Standardeinstellungen‘",
+    "'Store defaults'": "’Shop-Standardeinstellungen‘",
     "section, click Change currency formatting, then change with the code below:": "Abschnitt, klicken Sie auf 'Währungsformat ändern' und ändern Sie es mit dem untenstehenden Code:",
     "Case-sensitive": "Groß-/Kleinschreibung beachten",
     "Case-insensitive": "Groß-/Kleinschreibung ignorieren",
     "Total Payment:": "Gesamtzahlung:",
-    "Your store’s default currency:": "Die Standardwährung Ihres Shops:",
+    "Your store's default currency:": "Die Standardwährung Ihres Shops:",
     "Uncompleted": "Nicht abgeschlossen",
     "Completed": "Abgeschlossen",
     "Please": "Bitte",
@@ -129,7 +129,7 @@
     "This language has been deleted. Please edit again.": "Diese Sprache wurde gelöscht. Bitte bearbeiten Sie erneut.",
     "Edit rules": "Regel bearbeiten",
     "Select markets for display": "Märkte zur Anzeige auswählen",
-    "Translation failed": "Übersetzung fehlgeschlagen",
+    "Translation failed": "Übersetzungslimit erreicht",
     "Contact Support": "Support kontaktieren",
-    "Contact Support_message": "Entschuldigung, wir haben ungewöhnliche Übersetzungsanfragen von Ihrem Shop festgestellt, die zu einem Übersetzungsfehler geführt haben. Bitte kontaktieren Sie uns, um das Problem zu lösen."
+    "Contact Support_message": "Entschuldigung, Ihr Shop ist zu groß, um die Übersetzung fortzusetzen. Bitte kontaktieren Sie unser Team für Unterstützung."
 }

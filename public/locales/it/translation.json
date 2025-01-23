@@ -3,7 +3,7 @@
     "Dashboard": "Dashboard",
     "Faster, higher-quality localization translation tool": "Strumento di traduzione per localizzazione più veloce e di alta qualità",
     "available languages": " lingue disponibili",
-    "Your store’s default language:": "La lingua predefinita del tuo negozio:",
+    "Your store's default language:": "La lingua predefinita del tuo negozio:",
     "No primary language set": "Nessuna lingua principale impostata",
     "Learn more in": "Scopri di più in",
     "Ciwi Help Center": "Centro assistenza Ciwi",
@@ -26,12 +26,11 @@
     "1. Go to": "1. Vai su",
     "Settings >> General": "Impostazioni >> Generale",
     "2. Under the": "2. Sotto la",
-    "’Store defaults‘": "‘Impostazioni predefinite del negozio’",
-    "section, click Change currency formatting, then change with the code below:": "sezione, clicca su Modifica formato valuta, quindi cambia con il codice sottostante:",
+    "'Store defaults'": "sezione, clicca su Modifica formato valuta, quindi cambia con il codice sottostante:",
     "Case-sensitive": "Sensibile alle maiuscole/minuscole",
     "Case-insensitive": "Insensibile alle maiuscole/minuscole",
     "Total Payment:": "Pagamento totale:",
-    "Your store’s default currency:": "La valuta predefinita del tuo negozio:",
+    "Your store's default currency:": "La valuta predefinita del tuo negozio:",
     "Uncompleted": "Non completato",
     "Completed": "Completato",
     "Please": "Per favore",
@@ -129,8 +128,8 @@
     "This language has been deleted. Please edit again.": "Questa lingua è stata eliminata. Per favore modifica di nuovo.",
     "Edit rules": "Modifica regola",
     "Select markets for display": "Seleziona i mercati da visualizzare",
-    "Translation failed": "Traduzione fallita",
+    "Translation failed": "Limite di traduzione raggiunto",
     "Contact Support": "Contatta il supporto",
-    "Contact Support_message": "Ci scusiamo, ma abbiamo rilevato richieste di traduzione insolite dal tuo negozio, che hanno causato un errore nella traduzione. Contattaci per risolvere il problema."
+    "Contact Support_message": "Spiacenti, il tuo negozio è troppo grande per continuare la traduzione. Contatta il nostro team per assistenza."
 }
   

@@ -3,7 +3,7 @@
     "Dashboard": "대시보드",
     "Faster, higher-quality localization translation tool": "더 빠르고 고품질의 로컬라이제이션 번역 도구",
     "available languages": "사용 가능한 언어",
-    "Your store’s default language:": "스토어의 기본 언어:",
+    "Your store's default language:": "스토어의 기본 언어:",
     "No primary language set": "기본 언어가 설정되지 않았습니다",
     "Learn more in": "자세히 알아보기",
     "Ciwi Help Center": "Ciwi 도움말 센터",
@@ -26,12 +26,11 @@
     "1. Go to": "1. 이동:",
     "Settings >> General": "설정 >> 일반",
     "2. Under the": "2. 아래에서:",
-    "’Store defaults‘": "‘스토어 기본값’",
-    "section, click Change currency formatting, then change with the code below:": "섹션에서 ‘통화 형식 변경’을 클릭한 후 아래 코드를 사용하여 변경합니다:",
+    "'Store defaults'": "섹션에서 '통화 형식 변경'을 클릭한 후 아래 코드를 사용하여 변경합니다:",
     "Case-sensitive": "대소문자 구분",
     "Case-insensitive": "대소문자 구분 안 함",
     "Total Payment:": "총 결제 금액:",
-    "Your store’s default currency:": "스토어의 기본 통화:",
+    "Your store's default currency:": "스토어의 기본 통화:",
     "Uncompleted": "미완료",
     "Completed": "완료",
     "Please": "다음 작업을 수행하십시오:",
@@ -130,8 +129,8 @@
     "Edit rules": "규칙 편집",
     "Select markets for display": "표시할 시장 선택",
     "Pricing": "가격 책정",
-    "Translation failed": "번역 실패",
-    "Contact Support": "지원 요청",
-    "Contact Support_message": "죄송합니다. 스토어에서 비정상적인 번역 요청이 감지되어 번역에 실패했습니다. 문제 해결을 위해 저희에게 문의하십시오."
+    "Translation failed": "번역 한도 도달",
+    "Contact Support": "지원팀 문의",
+    "Contact Support_message": "죄송합니다. 스토어 규모가 너무 커서 번역을 계속할 수 없습니다. 지원팀에 문의해 주시기 바랍니다."
   }
   

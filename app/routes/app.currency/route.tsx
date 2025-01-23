@@ -575,7 +575,7 @@ const Index = () => {
         </div>
         {defaultCurrencyCode ? (
           <div>
-            <Text type="secondary">{t("Your store’s default currency:")}</Text>
+            <Text type="secondary">{t("Your store's default currency:")}</Text>
             <Text strong> {defaultCurrencyCode}</Text>
           </div>
         ) : (
