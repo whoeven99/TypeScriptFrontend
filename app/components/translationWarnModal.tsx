@@ -24,14 +24,14 @@ const TranslationWarnModal: React.FC<TranslationWarnModalProps> = ({
     <Modal
       open={show}
       onCancel={() => setShow(false)}
-      title={t("Translation failed")}
+      title={t("Translation_failed")}
       footer={
         <Button type="primary" onClick={() => handleContactSupport()}>
-          {t("Contact Support")}
+          {t("Contact_Support")}
         </Button>
       }
     >
-      <Text>{t("Contact Support_message")}</Text>
+      <Text>{t("Contact_Support_message")}</Text>
     </Modal>
   );
 };

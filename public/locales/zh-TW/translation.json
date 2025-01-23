@@ -129,8 +129,8 @@
     "This language has been deleted. Please edit again.": "此語言已被刪除，請重新編輯。",
     "Edit rules": "編輯規則",
     "Select markets for display": "選擇要顯示的市場",
-    "Translation failed": "已達到翻譯限制",
-    "Contact Support": "聯繫支援",
-    "Contact Support_message": "抱歉，您的商店規模過大，無法繼續翻譯。請聯繫我們的團隊獲取支援。"
+    "Translation_failed": "翻譯限制已達",
+    "Contact_Support": "聯繫客服",
+    "Contact_Support_message": "抱歉，您的商店太大，無法繼續翻譯。請聯繫我們的團隊以獲取支援。"
 }
   

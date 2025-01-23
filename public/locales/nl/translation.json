@@ -129,8 +129,8 @@
     "This language has been deleted. Please edit again.": "Deze taal is verwijderd. Bewerk het opnieuw.",
     "Edit rules": "Bewerk regel",
     "Select markets for display": "Selecteer markten om weer te geven",
-    "Translation failed": "Vertaallimiet bereikt",
-    "Contact Support": "Contact opnemen met support",
-    "Contact Support_message": "Sorry, uw winkel is te groot om door te gaan met vertalen. Neem contact op met ons team voor ondersteuning."
+    "Translation_failed": "Vertaal limiet bereikt",
+    "Contact_Support": "Neem contact op met ondersteuning",
+    "Contact_Support_message": "Sorry, uw winkel is te groot om de vertaling voort te zetten. Neem contact op met ons team voor ondersteuning."
 }
   

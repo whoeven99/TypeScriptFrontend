@@ -129,8 +129,8 @@
     "This language has been deleted. Please edit again.": "この言語は削除されました。もう一度編集してください。",
     "Edit rules": "ルールを編集",
     "Select markets for display": "表示する市場を選択",
-    "Translation failed": "翻訳制限に達しました",
-    "Contact Support": "サポートに連絡",
-    "Contact Support_message": "申し訳ありませんが、ストアが大きすぎるため翻訳を続行できません。サポートチームまでご連絡ください。"
+    "Translation_failed": "翻訳制限に達しました",
+    "Contact_Support": "サポートに連絡する",
+    "Contact_Support_message": "申し訳ありませんが、店舗が大きすぎて翻訳を続けることができません。サポートチームに連絡してください。"
 }
   
