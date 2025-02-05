@@ -246,7 +246,6 @@ export default function App() {
   const { t } = useTranslation();
 
   useEffect(() => {
-    shopify.loading(true);
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
     loadingFetcher.submit(formData, {

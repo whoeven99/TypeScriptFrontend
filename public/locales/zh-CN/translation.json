@@ -131,5 +131,22 @@
   "Select markets for display": "选择要显示的市场",
   "Translation failed": "已达到翻译限制",
   "Contact Support": "联系支持",
-  "Contact Support message": "抱歉，您的商店太庞大了，无法继续翻译。请联系我们的团队寻求支持。"
+  "Contact Support message": "抱歉，您的商店太庞大了，无法继续翻译。请联系我们的团队寻求支持。",
+  "Bad Request": "错误请求",
+  "The request could not be understood by the server due to malformed syntax.": "由于语法错误，服务器无法理解该请求。",
+  "Unauthorized": "未授权",
+  "Authentication is required and has failed or has not been provided.": "需要身份验证，但验证失败或未提供。",
+  "Forbidden": "禁止访问",
+  "You don't have permission to access this resource.": "您没有权限访问此资源。",
+  "Not Found": "未找到",
+  "The requested resource could not be found.": "无法找到请求的资源。",
+  "Internal Server Error": "服务器内部错误",
+  "The server encountered an unexpected condition that prevented it from fulfilling the request.": "服务器遇到意外情况，无法完成请求。",
+  "Bad Gateway": "网关错误",
+  "The server received an invalid response from the upstream server.": "服务器从上游服务器收到无效响应。",
+  "Service Unavailable": "服务不可用",
+  "The server is currently unavailable.": "服务器当前不可用。",
+  "Gateway Timeout": "网关超时",
+  "The server did not receive a timely response from the upstream server.": "服务器未从上游服务器及时收到响应。",
+  "Back to Home": "返回首页"
 }
