@@ -5,15 +5,15 @@ import {
   Scripts,
   ScrollRestoration,
   useLoaderData,
+  LiveReload,
 } from "@remix-run/react";
 import { Provider } from "react-redux";
 import store from "./store";
 import "./styles.css";
 import "react-quill/dist/quill.snow.css";
 import { json, LoaderFunctionArgs } from "@remix-run/node";
-import { createCache, extractStyle, StyleProvider } from "@ant-design/cssinjs";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const language =
       request.headers.get("Accept-Language")?.split(",")[0] || "en";
@@ -57,7 +57,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     console.error("Error during authentication:", error);
     throw new Response("Error during authentication", { status: 500 });
   }
-};
+}
 
 export default function App() {
   const { i18nCode } = useLoaderData<typeof loader>();

@@ -150,3 +150,11 @@
   margin-left: auto;
   justify-content: space-between;
 }
+
+.icon-container.error .circle {
+  background-color: #ff4d4f;
+}
+
+.circle.error {
+  border-color: #ff4d4f;
+}

@@ -2,7 +2,7 @@ import axios from "axios";
 import { authenticate } from "~/shopify.server";
 import { queryProductCount, queryShop, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
-import { json } from "@remix-run/node";
+import { withRetry, AppError } from "~/utils/retry";
 
 export interface ConfirmDataType {
   resourceId: string;
@@ -31,7 +31,6 @@ export const InitializationDetection = async ({
     return res;
   } catch (error) {
     console.error("Error UpdateUser:", error);
-    throw new Error("Error UpdateUser");
   }
 };
 
@@ -40,37 +39,68 @@ export const InitializationDetection = async ({
 export const UserAdd = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  
   try {
-    const shopData = await queryShop({ request });
+    // 使用 withRetry 包装 queryShop
+    const shopData = await withRetry(
+      () => queryShop({ request }),
+      {
+        maxRetries: 5,
+        retryDelay: 1000,
+      }
+    );
+
     const shopOwnerName = shopData?.shopOwnerName;
     const lastSpaceIndex = shopOwnerName.lastIndexOf(" ");
     const firstName = shopOwnerName.substring(0, lastSpaceIndex);
     const lastName = shopOwnerName.substring(lastSpaceIndex + 1);
-    console.log("addUserInfoData: ", {
-      shopName: shop,
-      accessToken: accessToken,
-      email: shopData.contactEmail,
-      firstName: firstName,
-      lastName: lastName,
-      userTag: shopOwnerName,
-    });
+    
+    // 使用 withRetry 包装用户添加请求
+    const addUserInfoResponse = await withRetry(
+      () => axios({
+        url: `${process.env.SERVER_URL}/user/add`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          accessToken: accessToken,
+          email: shopData.contactEmail || "",
+          firstName: firstName || "",
+          lastName: lastName || "",
+          userTag: shopOwnerName || "",
+        },
+      }),
+      {
+        maxRetries: 5,
+        retryDelay: 1000,
+        shouldRetry: (error) => {
+          if (axios.isAxiosError(error)) {
+            const status = error.response?.status;
+            // 对于用户添加，我们可能想要重试的特定情况
+            return (
+              !status || // 网络错误
+              status === 429 || // 速率限制
+              status >= 500 || // 服务器错误
+              error.code === 'ECONNABORTED' // 超时
+            );
+          }
+          return false;
+        }
+      }
+    );
 
-    const addUserInfoResponse = await axios({
-      url: `${process.env.SERVER_URL}/user/add`,
-      method: "POST",
-      data: {
-        shopName: shop,
-        accessToken: accessToken,
-        email: shopData.contactEmail || "",
-        firstName: firstName || "",
-        lastName: lastName || "",
-        userTag: shopOwnerName || "",
-      },
-    });
     console.log("addUserInfoResponse: ", addUserInfoResponse.data);
+    return addUserInfoResponse.data;
   } catch (error) {
     console.error("Error UpdateUser:", error);
-    throw new Error("Error UpdateUser");
+    // 抛出标准化的错误
+    if (error instanceof AppError) {
+      throw error;
+    }
+    throw new AppError(
+      "Failed to add user after multiple retries",
+      500,
+      "USER_ADD_ERROR"
+    );
   }
 };
 
@@ -97,7 +127,6 @@ export const InsertCharsByShopName = async ({
     );
   } catch (error) {
     console.error("Error UpdateUser:", error);
-    throw new Error("Error UpdateUser");
   }
 };
 
@@ -122,7 +151,6 @@ export const AddDefaultLanguagePack = async ({
     );
   } catch (error) {
     console.error("Error UpdateUser:", error);
-    throw new Error("Error UpdateUser");
   }
 };
 
@@ -141,7 +169,6 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error get user:", error);
-    throw new Error("Error get user");
   }
 };
 
@@ -162,7 +189,6 @@ export const AddUserFreeSubscription = async ({ shop }: { shop: string }) => {
     return addUserFreeSubscriptionResponse.data.success;
   } catch (error) {
     console.error("Error chars initialization:", error);
-    throw new Error("Error chars initialization");
   }
 };
 
@@ -191,7 +217,6 @@ export const InsertShopTranslateInfo = async ({
     });
   } catch (error) {
     console.error("Error insert languageInfo:", error);
-    throw new Error("Error insert languageInfo");
   }
 };
 
@@ -220,7 +245,6 @@ export const InsertTargets = async ({
     });
   } catch (error) {
     console.error("Error insert languageInfo:", error);
-    throw new Error("Error insert languageInfo");
   }
 };
 
@@ -272,7 +296,6 @@ export const GetTranslationItemsInfo = async ({
     return res;
   } catch (error) {
     console.error("Error fetching updating translation items:", error);
-    throw new Error("Error fetching updating translation items");
   }
 };
 
@@ -322,7 +345,6 @@ export const GetItemsInSqlByShopName = async ({
     return res;
   } catch (error) {
     console.error("Error fetching search translation items:", error);
-    throw new Error("Error fetching search translation items");
   }
 };
 
@@ -337,7 +359,6 @@ export const GetUserWords = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error occurred in the userwords:", error);
-    throw new Error("Error occurred in the userwords");
   }
 };
 
@@ -397,7 +418,6 @@ export const GetLanguageList = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);
-    throw new Error("Error occurred in the languageList");
   }
 };
 
@@ -428,7 +448,6 @@ export const GetLanguageStatus = async ({
     return res;
   } catch (error) {
     console.error("Error occurred in the languageStatus:", error);
-    throw new Error("Error occurred in the languageStatus");
   }
 };
 
@@ -457,7 +476,6 @@ export const GetTotalWords = async ({
     return res;
   } catch (error) {
     console.error("Error GetTotalWords:", error);
-    return { status: "error", error: "Failed to fetch total words" }; // 错误时返回默认值和错误信息
   }
 };
 
@@ -485,7 +503,6 @@ export const GetTranslate = async ({
     }
   } catch (error) {
     console.error("Error occurred in the translation:", error);
-    throw new Error("Error occurred in the translation");
   }
 
   try {
@@ -509,10 +526,8 @@ export const GetTranslate = async ({
     const res = { ...response.data, target: target };
     console.log("translation: ", res);
     return res;
-    return null;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
-    throw new Error("Error occurred in the translation");
   }
 };
 
@@ -621,7 +636,6 @@ export const updateManageTranslation = async ({
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
-    throw new Error("Error occurred in the translation");
   }
 };
 
@@ -642,7 +656,6 @@ export const InitCurrency = async ({ request }: { request: Request }) => {
     return res;
   } catch (error) {
     console.error("Error InitCurrency:", error);
-    throw new Error("Error InitCurrency");
   }
 };
 
@@ -686,7 +699,6 @@ export const UpdateDefaultCurrency = async ({
     return res;
   } catch (error) {
     console.error("Error UpdateDefaultCurrency:", error);
-    throw new Error("Error UpdateDefaultCurrency");
   }
 };
 
@@ -748,7 +760,6 @@ export const AddCurrency = async ({
     }
   } catch (error) {
     console.error("Error add currency:", error);
-    throw new Error("Error add currency");
   }
 };
 
@@ -778,7 +789,6 @@ export const DeleteCurrency = async ({
     return res;
   } catch (error) {
     console.error("Error delete currency:", error);
-    throw new Error("Error delete currency");
   }
 };
 
@@ -821,7 +831,6 @@ export const UpdateCurrency = async ({
     return res;
   } catch (error) {
     console.error("Error update currency:", error);
-    throw new Error("Error update currency");
   }
 };
 
@@ -857,7 +866,6 @@ export const GetCurrencyByShopName = async ({
     }
   } catch (error) {
     console.error("Error get currency:", error);
-    throw new Error("Error get currency");
   }
 };
 
@@ -900,7 +908,6 @@ export const GetCurrencyLocaleInfo = async () => {
     return res;
   } catch (error) {
     console.error("Error GetCurrencyLocaleInfo:", error);
-    throw new Error("Error GetCurrencyLocaleInfo");
   }
 };
 
@@ -930,7 +937,6 @@ export const GetCacheData = async ({
     };
   } catch (error) {
     console.error("Error GetCacheData:", error);
-    throw new Error("Error GetCacheData");
   }
 };
 
@@ -980,7 +986,6 @@ export const InsertOrUpdateOrder = async ({
     console.log("InsertOrUpdateOrder:", res);
   } catch (error) {
     console.error("Error fetching insert order:", error);
-    throw new Error("Error fetching insert order");
   }
 };
 
@@ -1007,7 +1012,6 @@ export const AddCharsByShopName = async ({
     console.log(res);
   } catch (error) {
     console.error("Error fetching add chars:", error);
-    throw new Error("Error fetching add chars");
   }
 };
 
@@ -1035,7 +1039,6 @@ export const SendPurchaseSuccessEmail = async ({
     console.log("SendPurchaseSuccessEmail: ", res);
   } catch (error) {
     console.error("Error fetching add chars:", error);
-    throw new Error("Error fetching add chars");
   }
 };
 
@@ -1093,7 +1096,6 @@ export const GetGlossaryByShopName = async ({
     };
   } catch (error) {
     console.error("Error GetGlossaryByShopName:", error);
-    throw new Error("Error GetGlossaryByShopName");
   }
 };
 
@@ -1124,7 +1126,6 @@ export const UpdateTargetTextById = async ({
     return res;
   } catch (error) {
     console.error("Error UpdateTargetTextById:", error);
-    throw new Error("Error UpdateTargetTextById");
   }
 };
 
@@ -1163,7 +1164,6 @@ export const InsertGlossaryInfo = async ({
     return res;
   } catch (error) {
     console.error("Error InsertGlossaryInfo:", error);
-    throw new Error("Error InsertGlossaryInfo");
   }
 };
 
@@ -1183,7 +1183,6 @@ export const DeleteGlossaryInfo = async ({ id }: { id: number }) => {
     return res;
   } catch (error) {
     console.error("Error DeleteGlossaryInfo:", error);
-    throw new Error("Error DeleteGlossaryInfo");
   }
 };
 
@@ -1201,7 +1200,6 @@ export const Uninstall = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error Uninstall:", error);
-    throw new Error("Error Uninstall");
   }
 };
 
@@ -1219,7 +1217,6 @@ export const CleanData = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error CleanData:", error);
-    throw new Error("Error CleanData");
   }
 };
 
@@ -1237,7 +1234,6 @@ export const RequestData = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error RequestData:", error);
-    throw new Error("Error RequestData");
   }
 };
 
@@ -1255,6 +1251,5 @@ export const DeleteData = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error DeleteData:", error);
-    throw new Error("Error DeleteData");
   }
 };
