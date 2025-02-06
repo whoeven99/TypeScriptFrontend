@@ -2,6 +2,8 @@ import axios from "axios";
 import { authenticate } from "~/shopify.server";
 import { queryProductCount, queryShop, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
+import pLimit from "p-limit";
+import { withRetry } from "~/utils/retry";
 
 export interface ConfirmDataType {
   resourceId: string;
@@ -518,92 +520,123 @@ export const updateManageTranslation = async ({
       value?: string;
     };
   }[] = [];
-  try {
-    // 遍历 confirmData 数组
-    for (const item of confirmData) {
-      if (item.translatableContentDigest && item.locale) {
-        console.log("updateManageTranslation: ", item.value);
-        if (item.value && item.value != "<p><br></p>") {
-          const response = await axios({
-            url: `${process.env.SERVER_URL}/shopify/updateShopifyDataByTranslateTextRequest`,
-            method: "POST",
-            data: {
-              shopName: shop,
-              accessToken: accessToken,
-              locale: item.locale,
-              key: item.key,
-              value: item.value,
-              translatableContentDigest: item.translatableContentDigest,
-              resourceId: item.resourceId,
-              target: item.target,
-            },
-          });
-          res.push({
-            success: response.data.success,
-            errorMsg: response.data.errorMsg,
-            data: {
-              resourceId: item.resourceId,
-              key: item.key,
-              value: item.value,
-            },
-          });
-        } else {
-          const response = await axios({
-            url: `https://${shop}/admin/api/2024-10/graphql.json`,
-            method: "POST",
-            headers: {
-              "X-Shopify-Access-Token": accessToken,
-              "Content-Type": "application/json",
-            },
-            data: {
-              query: `mutation translationsRemove($resourceId: ID!, $translationKeys: [String!]!, $locales: [String!]!) {
-                translationsRemove(resourceId: $resourceId, translationKeys: $translationKeys, locales: $locales) {
-                  userErrors {
-                    message
-                    field
-                  }
-                  translations {
-                    key
-                    value
-                  }
-                }
-              }`,
-              variables: {
-                resourceId: item.resourceId,
-                locales: [item.target],
-                translationKeys: [item.key],
-              },
-            },
-          });
 
-          if (response.data.data.translationsRemove.translations) {
-            res.push({
-              success: true,
-              errorMsg: "",
-              data: {
-                resourceId: item.resourceId,
-                key: item.key,
-              },
-            });
-          } else {
-            res.push({
-              success: false,
-              errorMsg:
-                response.data.data.translationsRemove.userErrors[0].message,
-              data: {
-                resourceId: item.resourceId,
-                key: item.key,
-              },
-            });
-          }
-        }
+  // 创建并发限制器，最多同时处理5个请求
+  const limit = pLimit(7);
+
+  try {
+    // 定义处理单个翻译项的函数
+    const processTranslationItem = async (item: ConfirmDataType) => {
+      if (!item.translatableContentDigest || !item.locale) {
+        return null;
       }
-    }
-    console.log(res);
+
+      // 添加重试机制
+      return withRetry(
+        async () => {
+          if (item.value && item.value !== "<p><br></p>") {
+            const response = await axios({
+              url: `${process.env.SERVER_URL}/shopify/updateShopifyDataByTranslateTextRequest`,
+              method: "POST",
+              timeout: 10000, // 添加超时设置
+              data: {
+                shopName: shop,
+                accessToken: accessToken,
+                locale: item.locale,
+                key: item.key,
+                value: item.value,
+                translatableContentDigest: item.translatableContentDigest,
+                resourceId: item.resourceId,
+                target: item.target,
+              },
+            });
+
+            return {
+              success: response.data.success,
+              errorMsg: response.data.errorMsg,
+              data: {
+                resourceId: item.resourceId,
+                key: item.key,
+                value: item.value,
+              },
+            };
+          } else {
+            const response = await axios({
+              url: `https://${shop}/admin/api/2024-10/graphql.json`,
+              method: "POST",
+              timeout: 10000, // 添加超时设置
+              headers: {
+                "X-Shopify-Access-Token": accessToken,
+                "Content-Type": "application/json",
+              },
+              data: {
+                query: `mutation translationsRemove($resourceId: ID!, $translationKeys: [String!]!, $locales: [String!]!) {
+                  translationsRemove(resourceId: $resourceId, translationKeys: $translationKeys, locales: $locales) {
+                    userErrors {
+                      message
+                      field
+                    }
+                    translations {
+                      key
+                      value
+                    }
+                  }
+                }`,
+                variables: {
+                  resourceId: item.resourceId,
+                  locales: [item.target],
+                  translationKeys: [item.key],
+                },
+              },
+            });
+
+            return {
+              success: !!response.data.data.translationsRemove.translations,
+              errorMsg:
+                response.data.data.translationsRemove.userErrors[0]?.message ||
+                "",
+              data: {
+                resourceId: item.resourceId,
+                key: item.key,
+              },
+            };
+          }
+        },
+        {
+          maxRetries: 3, // 最多重试3次
+          retryDelay: 1000, // 重试间隔1秒
+        },
+      );
+    };
+
+    // 并发处理所有翻译项
+    const promises = confirmData.map((item) =>
+      limit(() => processTranslationItem(item)),
+    );
+
+    // 等待所有请求完成
+    const results = await Promise.allSettled(promises);
+
+    // 处理结果
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled" && result.value) {
+        res.push(result.value);
+      } else if (result.status === "rejected") {
+        res.push({
+          success: false,
+          errorMsg: `Failed to process item ${index}: ${result.reason}`,
+          data: {
+            resourceId: confirmData[index].resourceId,
+            key: confirmData[index].key,
+          },
+        });
+      }
+    });
 
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
+    throw error; // 向上抛出错误，让调用者处理
   }
 };
 
