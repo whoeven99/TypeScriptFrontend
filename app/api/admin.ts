@@ -166,7 +166,7 @@ export const queryProductCount = async ({ request }: { request: Request }) => {
   );
 
   const data = await response.json();
-  console.log("queryProductCount: ", response);
+  console.log("queryProductCount: ", data);
   return data;
 };
 

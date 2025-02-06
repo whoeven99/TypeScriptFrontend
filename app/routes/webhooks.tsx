@@ -39,77 +39,57 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     case "APP_PURCHASES_ONE_TIME_UPDATE":
       try {
         if (payload) {
-          await InsertOrUpdateOrder({
-            id: payload?.app_purchase_one_time.admin_graphql_api_id,
-            status: payload?.app_purchase_one_time.status,
-          });
-          console.log(
-            `Order ${payload.app_purchase_one_time} processed successfully.`,
-          );
-          if (payload?.app_purchase_one_time.status === "ACTIVE") {
-            console.log("name: ", payload?.app_purchase_one_time.name);
-            switch (payload?.app_purchase_one_time.name) {
-              case "10K Credits":
-                await AddCharsByShopName({ shop, amount: 10000 });
-                await SendPurchaseSuccessEmail({
-                  shop,
-                  credit: 10000,
-                  price: 8.99,
-                });
-                break;
-              case "20K Credits":
-                await AddCharsByShopName({ shop, amount: 20000 });
-                await SendPurchaseSuccessEmail({
-                  shop,
-                  credit: 20000,
-                  price: 17.99,
-                });
-                break;
-              case "50K Credits":
-                await AddCharsByShopName({ shop, amount: 50000 });
-                await SendPurchaseSuccessEmail({
-                  shop,
-                  credit: 50000,
-                  price: 39.99,
-                });
-                break;
-              case "100K Credits":
-                await AddCharsByShopName({ shop, amount: 100000 });
-                await SendPurchaseSuccessEmail({
-                  shop,
-                  credit: 100000,
-                  price: 79.99,
-                });
-                break;
-              case "200K Credits":
-                await AddCharsByShopName({ shop, amount: 200000 });
-                await SendPurchaseSuccessEmail({
-                  shop,
-                  credit: 200000,
-                  price: 159.99,
-                });
-                break;
-              case "300K Credits":
-                await AddCharsByShopName({ shop, amount: 300000 });
-                await SendPurchaseSuccessEmail({
-                  shop,
-                  credit: 300000,
-                  price: 239.99,
-                });
-                break;
-            }
+          let credits = 0;
+          let price = 0;
+          switch (payload?.app_purchase_one_time.name) {
+            case "10K Credits":
+              credits = 10000;
+              price = 8.99;
+              break;
+            case "20K Credits":
+              credits = 20000;
+              price = 17.99;
+              break;
+            case "50K Credits":
+              credits = 50000;
+              price = 39.99;
+              break;
+            case "100K Credits":
+              credits = 100000;
+              price = 79.99;
+              break;
+            case "200K Credits":
+              credits = 200000;
+              price = 159.99;
+              break;
+            case "300K Credits":
+              credits = 300000;
+              price = 239.99;
+              break;
           }
-        } else {
-          console.log(`No data found for order id`);
+          await Promise.all([
+            InsertOrUpdateOrder({
+              id: payload?.app_purchase_one_time.admin_graphql_api_id,
+              status: payload?.app_purchase_one_time.status,
+            }),
+
+            payload?.app_purchase_one_time.status === "ACTIVE"
+              ? Promise.all([
+                  AddCharsByShopName({ shop, amount: credits }),
+                  SendPurchaseSuccessEmail({
+                    shop,
+                    credit: credits,
+                    price: price,
+                  }),
+                ])
+              : Promise.resolve(),
+          ]);
         }
+        return new Response(null, { status: 200 });
       } catch (error) {
-        console.error(
-          `Error processing order ${payload.app_purchase_one_time}:`,
-          error,
-        );
-        // 选择继续处理下一个订单或提前中止
+        console.error("Error processing purchase:", error);
+        return new Response(null, { status: 200 });
       }
-      break;
     case "CUSTOMERS_DATA_REQUEST":
       try {
         await RequestData({ shop });
