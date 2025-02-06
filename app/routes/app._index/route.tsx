@@ -57,14 +57,14 @@ export const loader = async () => {
 const Index = () => {
   const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
   const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
-  const [user, setUser] = useState<UserType>();
+  // const [user, setUser] = useState<UserType>();
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
-  const [limited, setLimited] = useState<boolean>(false);
-  const [paymentModalVisible, setPaymentModalVisible] =
-    useState<boolean>(false);
-  const [newUserModal, setNewUserModal] = useState<boolean>(false);
-  const [newUserModalLoading, setNewUserModalLoading] =
-    useState<boolean>(false);
+  // const [limited, setLimited] = useState<boolean>(false);
+  // const [paymentModalVisible, setPaymentModalVisible] =
+  //   useState<boolean>(false);
+  // const [newUserModal, setNewUserModal] = useState<boolean>(false);
+  // const [newUserModalLoading, setNewUserModalLoading] =
+  //   useState<boolean>(false);
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const loadingLanguageFetcher = useFetcher<any>();
@@ -96,20 +96,20 @@ const Index = () => {
     }
   }, [loadingLanguageFetcher.data]);
 
-  useEffect(() => {
-    if (loadingUserFetcher.data) {
-      setUser(loadingUserFetcher.data.data);
-      if (!loadingUserFetcher.data.data?.plan) {
-        setNewUserModal(true);
-      }
-    }
-  }, [loadingUserFetcher.data]);
+  // useEffect(() => {
+  //   if (loadingUserFetcher.data) {
+  //     setUser(loadingUserFetcher.data.data);
+  //     if (!loadingUserFetcher.data.data?.plan) {
+  //       setNewUserModal(true);
+  //     }
+  //   }
+  // }, [loadingUserFetcher.data]);
 
-  useEffect(() => {
-    if (user && user.chars >= user.totalChars) {
-      setLimited(true);
-    }
-  }, [user]);
+  // useEffect(() => {
+  //   if (user && user.chars >= user.totalChars) {
+  //     setLimited(true);
+  //   }
+  // }, [user]);
 
   // useEffect(() => {
   //   if (initializationFetcher.data && user) {
@@ -201,7 +201,7 @@ const Index = () => {
                         languageLocaleName={language.localeName}
                         languageName={language.name}
                         languageCode={language.locale}
-                        limited={limited}
+                        // limited={limited}
                       />
                     )}
                   </Col>

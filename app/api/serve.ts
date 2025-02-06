@@ -2,7 +2,6 @@ import axios from "axios";
 import { authenticate } from "~/shopify.server";
 import { queryProductCount, queryShop, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
-import { withRetry, AppError } from "~/utils/retry";
 
 export interface ConfirmDataType {
   resourceId: string;
@@ -39,68 +38,36 @@ export const InitializationDetection = async ({
 export const UserAdd = async ({ request }: { request: Request }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  
   try {
-    // 使用 withRetry 包装 queryShop
-    const shopData = await withRetry(
-      () => queryShop({ request }),
-      {
-        maxRetries: 5,
-        retryDelay: 1000,
-      }
-    );
-
+    const shopData = await queryShop({ request });
     const shopOwnerName = shopData?.shopOwnerName;
     const lastSpaceIndex = shopOwnerName.lastIndexOf(" ");
     const firstName = shopOwnerName.substring(0, lastSpaceIndex);
     const lastName = shopOwnerName.substring(lastSpaceIndex + 1);
-    
-    // 使用 withRetry 包装用户添加请求
-    const addUserInfoResponse = await withRetry(
-      () => axios({
-        url: `${process.env.SERVER_URL}/user/add`,
-        method: "POST",
-        data: {
-          shopName: shop,
-          accessToken: accessToken,
-          email: shopData.contactEmail || "",
-          firstName: firstName || "",
-          lastName: lastName || "",
-          userTag: shopOwnerName || "",
-        },
-      }),
-      {
-        maxRetries: 5,
-        retryDelay: 1000,
-        shouldRetry: (error) => {
-          if (axios.isAxiosError(error)) {
-            const status = error.response?.status;
-            // 对于用户添加，我们可能想要重试的特定情况
-            return (
-              !status || // 网络错误
-              status === 429 || // 速率限制
-              status >= 500 || // 服务器错误
-              error.code === 'ECONNABORTED' // 超时
-            );
-          }
-          return false;
-        }
-      }
-    );
+    console.log("addUserInfoData: ", {
+      shopName: shop,
+      accessToken: accessToken,
+      email: shopData.contactEmail,
+      firstName: firstName,
+      lastName: lastName,
+      userTag: shopOwnerName,
+    });
 
+    const addUserInfoResponse = await axios({
+      url: `${process.env.SERVER_URL}/user/add`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        email: shopData.contactEmail || "",
+        firstName: firstName || "",
+        lastName: lastName || "",
+        userTag: shopOwnerName || "",
+      },
+    });
     console.log("addUserInfoResponse: ", addUserInfoResponse.data);
-    return addUserInfoResponse.data;
   } catch (error) {
     console.error("Error UpdateUser:", error);
-    // 抛出标准化的错误
-    if (error instanceof AppError) {
-      throw error;
-    }
-    throw new AppError(
-      "Failed to add user after multiple retries",
-      500,
-      "USER_ADD_ERROR"
-    );
   }
 };
 
@@ -526,6 +493,7 @@ export const GetTranslate = async ({
     const res = { ...response.data, target: target };
     console.log("translation: ", res);
     return res;
+    return null;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
   }

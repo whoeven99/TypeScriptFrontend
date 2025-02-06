@@ -15,7 +15,7 @@ interface UserLanguageCardProps {
   languageLocaleName: string;
   languageCode: string; //语言代码
   primaryLanguageCode: string;
-  limited: boolean;
+  // limited: boolean;
 }
 
 // interface FetchType {
@@ -28,7 +28,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   languageLocaleName,
   languageCode,
   primaryLanguageCode,
-  limited,
+  // limited,
 }) => {
   const data = useSelector((state: any) =>
     state.languageTableData.rows.find(
@@ -116,7 +116,6 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
 
   useEffect(() => {
     if (translateFetcher.data) {
-      console.log("translateFetcher.data: ", translateFetcher.data);
       if (!translateFetcher.data?.data?.success) {
         setShowWarnModal(true);
       } else {
@@ -132,29 +131,25 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   }, [translateFetcher.data]);
 
   const handleTranslate = async () => {
-    if (limited) {
-      setShowWarnModal(true);
+    const selectedTranslatingItem = datas.find(
+      (item: LanguagesDataType) => item.status === 2,
+    );
+    if (!selectedTranslatingItem) {
+      const formData = new FormData();
+      formData.append(
+        "translation",
+        JSON.stringify({
+          primaryLanguageCode: primaryLanguageCode,
+          selectedLanguage: languageCode,
+        }),
+      ); // 将选中的语言作为字符串发送
+      translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
     } else {
-      const selectedTranslatingItem = datas.find(
-        (item: LanguagesDataType) => item.status === 2,
+      message.error(
+        t(
+          "The translation task is in progress. Please try translating again later.",
+        ),
       );
-      if (!selectedTranslatingItem) {
-        const formData = new FormData();
-        formData.append(
-          "translation",
-          JSON.stringify({
-            primaryLanguageCode: primaryLanguageCode,
-            selectedLanguage: languageCode,
-          }),
-        ); // 将选中的语言作为字符串发送
-        translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
-      } else {
-        message.error(
-          t(
-            "The translation task is in progress. Please try translating again later.",
-          ),
-        );
-      }
     }
   };
 

@@ -151,26 +151,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
+        console.log(`${shop}根路由正常加载`);
+        
         return json({ data, languageSetting });
       } catch (error) {
-        console.error("Error statusData app:", error);
-        return json({ error: "Error statusData app" }, { status: 500 });
+        console.error("Error languageData app:", error);
+        return json({ error: "Error languageData app" }, { status: 500 });
       }
     }
 
     if (userData) {
       try {
-        const plan = await GetUserSubscriptionPlan({ shop });
+        // const plan = await GetUserSubscriptionPlan({ shop });
         const words = await GetUserWords({ shop });
         const data = {
-          plan,
+          // plan,
           chars: words?.chars || 0,
           totalChars: words?.totalChars || 0,
         };
         return json({ data });
       } catch (error) {
-        console.error("Error statusData app:", error);
-        return json({ error: "Error statusData app" }, { status: 500 });
+        console.error("Error userData app:", error);
+        return json({ error: "Error userData app" }, { status: 500 });
       }
     }
 
