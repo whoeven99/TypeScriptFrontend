@@ -3,7 +3,7 @@
     "Dashboard": "儀表板",
     "Faster, higher-quality localization translation tool": "更快速、更高品質的在地化翻譯工具",
     "available languages": " 可用語言",
-    "Your store’s default language:": "您的商店預設語言：",
+    "Your store's default language:": "您的商店預設語言：",
     "No primary language set": " 尚未設定主要語言",
     "Learn more in": "了解更多",
     "Ciwi Help Center": "Ciwi 幫助中心",
@@ -26,12 +26,12 @@
     "1. Go to": "1. 前往",
     "Settings >> General": "設置 >> 一般",
     "2. Under the": "2. 在",
-    "’Store defaults‘": "‘商店預設’",
+    "'Store defaults'": "‘商店預設’",
     "section, click Change currency formatting, then change with the code below:": "區塊中，點擊更改貨幣格式，然後使用以下代碼進行更改：",
     "Case-sensitive": "區分大小寫",
     "Case-insensitive": "不區分大小寫",
     "Total Payment:": "總付款：",
-    "Your store’s default currency:": "您的商店預設貨幣：",
+    "Your store's default currency:": "您的商店預設貨幣：",
     "Uncompleted": "未完成",
     "Completed": "已完成",
     "Please": "請",
@@ -128,6 +128,9 @@
     "Resource": "資源",
     "This language has been deleted. Please edit again.": "此語言已被刪除，請重新編輯。",
     "Edit rules": "編輯規則",
-    "Select markets for display": "選擇要顯示的市場"
+    "Select markets for display": "選擇要顯示的市場",
+    "Translation failed": "翻譯限制已達",
+    "Contact Support": "聯繫客服",
+    "Contact Support message": "抱歉，您的商店太大，無法繼續翻譯。請聯繫我們的團隊以獲取支援。"
 }
   

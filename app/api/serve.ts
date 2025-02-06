@@ -2,7 +2,8 @@ import axios from "axios";
 import { authenticate } from "~/shopify.server";
 import { queryProductCount, queryShop, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
-import { json } from "@remix-run/node";
+import pLimit from "p-limit";
+import { withRetry } from "~/utils/retry";
 
 export interface ConfirmDataType {
   resourceId: string;
@@ -31,7 +32,6 @@ export const InitializationDetection = async ({
     return res;
   } catch (error) {
     console.error("Error UpdateUser:", error);
-    throw new Error("Error UpdateUser");
   }
 };
 
@@ -70,7 +70,6 @@ export const UserAdd = async ({ request }: { request: Request }) => {
     console.log("addUserInfoResponse: ", addUserInfoResponse.data);
   } catch (error) {
     console.error("Error UpdateUser:", error);
-    throw new Error("Error UpdateUser");
   }
 };
 
@@ -97,7 +96,6 @@ export const InsertCharsByShopName = async ({
     );
   } catch (error) {
     console.error("Error UpdateUser:", error);
-    throw new Error("Error UpdateUser");
   }
 };
 
@@ -122,7 +120,6 @@ export const AddDefaultLanguagePack = async ({
     );
   } catch (error) {
     console.error("Error UpdateUser:", error);
-    throw new Error("Error UpdateUser");
   }
 };
 
@@ -141,7 +138,6 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error get user:", error);
-    throw new Error("Error get user");
   }
 };
 
@@ -162,7 +158,6 @@ export const AddUserFreeSubscription = async ({ shop }: { shop: string }) => {
     return addUserFreeSubscriptionResponse.data.success;
   } catch (error) {
     console.error("Error chars initialization:", error);
-    throw new Error("Error chars initialization");
   }
 };
 
@@ -191,7 +186,6 @@ export const InsertShopTranslateInfo = async ({
     });
   } catch (error) {
     console.error("Error insert languageInfo:", error);
-    throw new Error("Error insert languageInfo");
   }
 };
 
@@ -220,7 +214,6 @@ export const InsertTargets = async ({
     });
   } catch (error) {
     console.error("Error insert languageInfo:", error);
-    throw new Error("Error insert languageInfo");
   }
 };
 
@@ -272,7 +265,6 @@ export const GetTranslationItemsInfo = async ({
     return res;
   } catch (error) {
     console.error("Error fetching updating translation items:", error);
-    throw new Error("Error fetching updating translation items");
   }
 };
 
@@ -322,7 +314,6 @@ export const GetItemsInSqlByShopName = async ({
     return res;
   } catch (error) {
     console.error("Error fetching search translation items:", error);
-    throw new Error("Error fetching search translation items");
   }
 };
 
@@ -337,7 +328,6 @@ export const GetUserWords = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error occurred in the userwords:", error);
-    throw new Error("Error occurred in the userwords");
   }
 };
 
@@ -397,7 +387,6 @@ export const GetLanguageList = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);
-    throw new Error("Error occurred in the languageList");
   }
 };
 
@@ -428,7 +417,6 @@ export const GetLanguageStatus = async ({
     return res;
   } catch (error) {
     console.error("Error occurred in the languageStatus:", error);
-    throw new Error("Error occurred in the languageStatus");
   }
 };
 
@@ -457,7 +445,6 @@ export const GetTotalWords = async ({
     return res;
   } catch (error) {
     console.error("Error GetTotalWords:", error);
-    return { status: "error", error: "Failed to fetch total words" }; // 错误时返回默认值和错误信息
   }
 };
 
@@ -474,20 +461,6 @@ export const GetTranslate = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   console.log(source, target);
-
-  try {
-    const response = await queryProductCount({ request });
-    if (response.data.productsCount.count > 500) {
-      return {
-        success: false,
-        errorCode: 10014,
-      };
-    }
-  } catch (error) {
-    console.error("Error occurred in the translation:", error);
-    throw new Error("Error occurred in the translation");
-  }
-
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/clickTranslation`,
@@ -512,7 +485,6 @@ export const GetTranslate = async ({
     return null;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
-    throw new Error("Error occurred in the translation");
   }
 };
 
@@ -535,93 +507,123 @@ export const updateManageTranslation = async ({
       value?: string;
     };
   }[] = [];
-  try {
-    // 遍历 confirmData 数组
-    for (const item of confirmData) {
-      if (item.translatableContentDigest && item.locale) {
-        console.log("updateManageTranslation: ", item.value);
-        if (item.value && item.value != "<p><br></p>") {
-          const response = await axios({
-            url: `${process.env.SERVER_URL}/shopify/updateShopifyDataByTranslateTextRequest`,
-            method: "POST",
-            data: {
-              shopName: shop,
-              accessToken: accessToken,
-              locale: item.locale,
-              key: item.key,
-              value: item.value,
-              translatableContentDigest: item.translatableContentDigest,
-              resourceId: item.resourceId,
-              target: item.target,
-            },
-          });
-          res.push({
-            success: response.data.success,
-            errorMsg: response.data.errorMsg,
-            data: {
-              resourceId: item.resourceId,
-              key: item.key,
-              value: item.value,
-            },
-          });
-        } else {
-          const response = await axios({
-            url: `https://${shop}/admin/api/2024-10/graphql.json`,
-            method: "POST",
-            headers: {
-              "X-Shopify-Access-Token": accessToken,
-              "Content-Type": "application/json",
-            },
-            data: {
-              query: `mutation translationsRemove($resourceId: ID!, $translationKeys: [String!]!, $locales: [String!]!) {
-                translationsRemove(resourceId: $resourceId, translationKeys: $translationKeys, locales: $locales) {
-                  userErrors {
-                    message
-                    field
-                  }
-                  translations {
-                    key
-                    value
-                  }
-                }
-              }`,
-              variables: {
-                resourceId: item.resourceId,
-                locales: [item.target],
-                translationKeys: [item.key],
-              },
-            },
-          });
 
-          if (response.data.data.translationsRemove.translations) {
-            res.push({
-              success: true,
-              errorMsg: "",
-              data: {
-                resourceId: item.resourceId,
-                key: item.key,
-              },
-            });
-          } else {
-            res.push({
-              success: false,
-              errorMsg:
-                response.data.data.translationsRemove.userErrors[0].message,
-              data: {
-                resourceId: item.resourceId,
-                key: item.key,
-              },
-            });
-          }
-        }
+  // 创建并发限制器，最多同时处理5个请求
+  const limit = pLimit(7);
+
+  try {
+    // 定义处理单个翻译项的函数
+    const processTranslationItem = async (item: ConfirmDataType) => {
+      if (!item.translatableContentDigest || !item.locale) {
+        return null;
       }
-    }
-    console.log(res);
+
+      // 添加重试机制
+      return withRetry(
+        async () => {
+          if (item.value && item.value !== "<p><br></p>") {
+            const response = await axios({
+              url: `${process.env.SERVER_URL}/shopify/updateShopifyDataByTranslateTextRequest`,
+              method: "POST",
+              timeout: 10000, // 添加超时设置
+              data: {
+                shopName: shop,
+                accessToken: accessToken,
+                locale: item.locale,
+                key: item.key,
+                value: item.value,
+                translatableContentDigest: item.translatableContentDigest,
+                resourceId: item.resourceId,
+                target: item.target,
+              },
+            });
+
+            return {
+              success: response.data.success,
+              errorMsg: response.data.errorMsg,
+              data: {
+                resourceId: item.resourceId,
+                key: item.key,
+                value: item.value,
+              },
+            };
+          } else {
+            const response = await axios({
+              url: `https://${shop}/admin/api/2024-10/graphql.json`,
+              method: "POST",
+              timeout: 10000, // 添加超时设置
+              headers: {
+                "X-Shopify-Access-Token": accessToken,
+                "Content-Type": "application/json",
+              },
+              data: {
+                query: `mutation translationsRemove($resourceId: ID!, $translationKeys: [String!]!, $locales: [String!]!) {
+                  translationsRemove(resourceId: $resourceId, translationKeys: $translationKeys, locales: $locales) {
+                    userErrors {
+                      message
+                      field
+                    }
+                    translations {
+                      key
+                      value
+                    }
+                  }
+                }`,
+                variables: {
+                  resourceId: item.resourceId,
+                  locales: [item.target],
+                  translationKeys: [item.key],
+                },
+              },
+            });
+
+            return {
+              success: !!response.data.data.translationsRemove.translations,
+              errorMsg:
+                response.data.data.translationsRemove.userErrors[0]?.message ||
+                "",
+              data: {
+                resourceId: item.resourceId,
+                key: item.key,
+              },
+            };
+          }
+        },
+        {
+          maxRetries: 3, // 最多重试3次
+          retryDelay: 1000, // 重试间隔1秒
+        },
+      );
+    };
+
+    // 并发处理所有翻译项
+    const promises = confirmData.map((item) =>
+      limit(() => processTranslationItem(item)),
+    );
+
+    // 等待所有请求完成
+    const results = await Promise.allSettled(promises);
+
+    // 处理结果
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled" && result.value) {
+        res.push(result.value);
+      } else if (result.status === "rejected") {
+        res.push({
+          success: false,
+          errorMsg: `Failed to process item ${index}: ${result.reason}`,
+          data: {
+            resourceId: confirmData[index].resourceId,
+            key: confirmData[index].key,
+          },
+        });
+      }
+    });
 
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
-    throw new Error("Error occurred in the translation");
+    throw error; // 向上抛出错误，让调用者处理
   }
 };
 
@@ -642,7 +644,6 @@ export const InitCurrency = async ({ request }: { request: Request }) => {
     return res;
   } catch (error) {
     console.error("Error InitCurrency:", error);
-    throw new Error("Error InitCurrency");
   }
 };
 
@@ -686,7 +687,6 @@ export const UpdateDefaultCurrency = async ({
     return res;
   } catch (error) {
     console.error("Error UpdateDefaultCurrency:", error);
-    throw new Error("Error UpdateDefaultCurrency");
   }
 };
 
@@ -748,7 +748,6 @@ export const AddCurrency = async ({
     }
   } catch (error) {
     console.error("Error add currency:", error);
-    throw new Error("Error add currency");
   }
 };
 
@@ -778,7 +777,6 @@ export const DeleteCurrency = async ({
     return res;
   } catch (error) {
     console.error("Error delete currency:", error);
-    throw new Error("Error delete currency");
   }
 };
 
@@ -821,7 +819,6 @@ export const UpdateCurrency = async ({
     return res;
   } catch (error) {
     console.error("Error update currency:", error);
-    throw new Error("Error update currency");
   }
 };
 
@@ -857,7 +854,6 @@ export const GetCurrencyByShopName = async ({
     }
   } catch (error) {
     console.error("Error get currency:", error);
-    throw new Error("Error get currency");
   }
 };
 
@@ -900,7 +896,6 @@ export const GetCurrencyLocaleInfo = async () => {
     return res;
   } catch (error) {
     console.error("Error GetCurrencyLocaleInfo:", error);
-    throw new Error("Error GetCurrencyLocaleInfo");
   }
 };
 
@@ -930,7 +925,6 @@ export const GetCacheData = async ({
     };
   } catch (error) {
     console.error("Error GetCacheData:", error);
-    throw new Error("Error GetCacheData");
   }
 };
 
@@ -980,7 +974,6 @@ export const InsertOrUpdateOrder = async ({
     console.log("InsertOrUpdateOrder:", res);
   } catch (error) {
     console.error("Error fetching insert order:", error);
-    throw new Error("Error fetching insert order");
   }
 };
 
@@ -1007,7 +1000,6 @@ export const AddCharsByShopName = async ({
     console.log(res);
   } catch (error) {
     console.error("Error fetching add chars:", error);
-    throw new Error("Error fetching add chars");
   }
 };
 
@@ -1035,7 +1027,6 @@ export const SendPurchaseSuccessEmail = async ({
     console.log("SendPurchaseSuccessEmail: ", res);
   } catch (error) {
     console.error("Error fetching add chars:", error);
-    throw new Error("Error fetching add chars");
   }
 };
 
@@ -1093,7 +1084,6 @@ export const GetGlossaryByShopName = async ({
     };
   } catch (error) {
     console.error("Error GetGlossaryByShopName:", error);
-    throw new Error("Error GetGlossaryByShopName");
   }
 };
 
@@ -1124,7 +1114,6 @@ export const UpdateTargetTextById = async ({
     return res;
   } catch (error) {
     console.error("Error UpdateTargetTextById:", error);
-    throw new Error("Error UpdateTargetTextById");
   }
 };
 
@@ -1163,7 +1152,6 @@ export const InsertGlossaryInfo = async ({
     return res;
   } catch (error) {
     console.error("Error InsertGlossaryInfo:", error);
-    throw new Error("Error InsertGlossaryInfo");
   }
 };
 
@@ -1183,7 +1171,6 @@ export const DeleteGlossaryInfo = async ({ id }: { id: number }) => {
     return res;
   } catch (error) {
     console.error("Error DeleteGlossaryInfo:", error);
-    throw new Error("Error DeleteGlossaryInfo");
   }
 };
 
@@ -1201,7 +1188,6 @@ export const Uninstall = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error Uninstall:", error);
-    throw new Error("Error Uninstall");
   }
 };
 
@@ -1219,7 +1205,6 @@ export const CleanData = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error CleanData:", error);
-    throw new Error("Error CleanData");
   }
 };
 
@@ -1237,7 +1222,6 @@ export const RequestData = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error RequestData:", error);
-    throw new Error("Error RequestData");
   }
 };
 
@@ -1255,6 +1239,5 @@ export const DeleteData = async ({ shop }: { shop: string }) => {
     return res;
   } catch (error) {
     console.error("Error DeleteData:", error);
-    throw new Error("Error DeleteData");
   }
 };

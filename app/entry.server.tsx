@@ -55,7 +55,7 @@ export default async function handleRequest(
       i18nCode = "zh-TW";
       break;
     case language === "zh-CN":
-      i18nCode = "zh";
+      i18nCode = "zh-CN";
       break;
     default:
       i18nCode = "en";

@@ -2,7 +2,13 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Col, Modal, Row, Skeleton, Space, Typography, Button } from "antd";
-import { Link, useFetcher } from "@remix-run/react";
+import {
+  Link,
+  useFetcher,
+  useRouteError,
+  isRouteErrorResponse,
+  Navigate,
+} from "@remix-run/react";
 import "./styles.css";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
@@ -13,6 +19,7 @@ import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import UserProfileCard from "./components/userProfileCard";
 import UserLanguageCard from "./components/userLanguageCard";
 import { useTranslation } from "react-i18next";
+import { AppError } from "~/utils/retry";
 
 const { Title, Text } = Typography;
 
@@ -50,14 +57,14 @@ export const loader = async () => {
 const Index = () => {
   const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
   const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
-  const [user, setUser] = useState<UserType>();
+  // const [user, setUser] = useState<UserType>();
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
-  const [limited, setLimited] = useState<boolean>(false);
-  const [paymentModalVisible, setPaymentModalVisible] =
-    useState<boolean>(false);
-  const [newUserModal, setNewUserModal] = useState<boolean>(false);
-  const [newUserModalLoading, setNewUserModalLoading] =
-    useState<boolean>(false);
+  // const [limited, setLimited] = useState<boolean>(false);
+  // const [paymentModalVisible, setPaymentModalVisible] =
+  //   useState<boolean>(false);
+  // const [newUserModal, setNewUserModal] = useState<boolean>(false);
+  // const [newUserModalLoading, setNewUserModalLoading] =
+  //   useState<boolean>(false);
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const loadingLanguageFetcher = useFetcher<any>();
@@ -89,20 +96,20 @@ const Index = () => {
     }
   }, [loadingLanguageFetcher.data]);
 
-  useEffect(() => {
-    if (loadingUserFetcher.data) {
-      setUser(loadingUserFetcher.data.data);
-      if (!loadingUserFetcher.data.data?.plan) {
-        setNewUserModal(true);
-      }
-    }
-  }, [loadingUserFetcher.data]);
+  // useEffect(() => {
+  //   if (loadingUserFetcher.data) {
+  //     setUser(loadingUserFetcher.data.data);
+  //     if (!loadingUserFetcher.data.data?.plan) {
+  //       setNewUserModal(true);
+  //     }
+  //   }
+  // }, [loadingUserFetcher.data]);
 
-  useEffect(() => {
-    if (user && user.chars >= user.totalChars) {
-      setLimited(true);
-    }
-  }, [user]);
+  // useEffect(() => {
+  //   if (user && user.chars >= user.totalChars) {
+  //     setLimited(true);
+  //   }
+  // }, [user]);
 
   // useEffect(() => {
   //   if (initializationFetcher.data && user) {
@@ -166,7 +173,7 @@ const Index = () => {
               {t("available languages")}
             </Title>
             <div>
-              <Text>{t("Your store’s default language:")}</Text>
+              <Text>{t("Your store's default language:")}</Text>
               {languageSetting && (
                 <Text strong>
                   {languageSetting.primaryLanguage ? (
@@ -194,7 +201,7 @@ const Index = () => {
                         languageLocaleName={language.localeName}
                         languageName={language.name}
                         languageCode={language.locale}
-                        limited={limited}
+                        // limited={limited}
                       />
                     )}
                   </Col>

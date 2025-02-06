@@ -146,7 +146,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
               </div>
               <Text>
                 {t("2. Under the")}
-                <strong>{t("’Store defaults‘")}</strong>
+                <strong>{t("'Store defaults'")}</strong>
                 {t(
                   "section, click Change currency formatting, then change with the code below:",
                 )}

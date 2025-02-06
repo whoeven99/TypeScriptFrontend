@@ -1,6 +1,6 @@
 export default {
   // This is the list of languages your application supports
-  supportedLngs: ["en", "fr", "de", "es", "it", "nl", "pt", "sv", "ja", "zh", "zh-TW"],
+  supportedLngs: ["en", "fr", "de", "es", "it", "nl", "pt", "sv", "ja", "zh-CN", "zh-TW"],
   // This is the language you want to use in case
   // if the user language is not in the supportedLngs
   interpolation: {

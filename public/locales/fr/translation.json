@@ -3,7 +3,7 @@
     "Dashboard": "Tableau de bord",
     "Faster, higher-quality localization translation tool": "Outil de traduction de localisation plus rapide et de meilleure qualité",
     "available languages": "langues disponibles",
-    "Your store’s default language:": "Langue par défaut de votre boutique :",
+    "Your store's default language:": "Langue par défaut de votre boutique :",
     "No primary language set": "Aucune langue principale définie",
     "Learn more in": "En savoir plus dans",
     "Ciwi Help Center": "Centre d'aide Ciwi",
@@ -26,12 +26,12 @@
     "1. Go to": "1. Allez à",
     "Settings >> General": "Paramètres >> Général",
     "2. Under the": "2. Sous la section",
-    "’Store defaults‘": "‘Paramètres par défaut de la boutique’",
+    "'Store defaults'": "‘Paramètres par défaut de la boutique’",
     "section, click Change currency formatting, then change with the code below:": "cliquez sur Modifier le format de la devise, puis modifiez avec le code ci-dessous :",
     "Case-sensitive": "Sensible à la casse",
     "Case-insensitive": "Insensible à la casse",
     "Total Payment:": "Paiement total :",
-    "Your store’s default currency:": "Devise par défaut de votre boutique :",
+    "Your store's default currency:": "Devise par défaut de votre boutique :",
     "Uncompleted": "Inachevé",
     "Completed": "Terminé",
     "Please": "Veuillez",
@@ -128,6 +128,9 @@
     "Resource": "Ressource",
     "This language has been deleted. Please edit again.": "Cette langue a été supprimée. Veuillez modifier à nouveau.",
     "Edit rules": "Modifier la règle",
-    "Select markets for display": "Sélectionnez les marchés à afficher"
+    "Select markets for display": "Sélectionnez les marchés à afficher",
+    "Translation failed": "Limite de traduction atteinte",
+    "Contact Support": "Contacter le support",
+    "Contact Support message": "Désolé, votre magasin est trop grand pour continuer la traduction. Veuillez contacter notre équipe pour obtenir de l'aide."
 }
   
