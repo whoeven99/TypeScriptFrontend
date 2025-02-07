@@ -36,6 +36,49 @@ async function fetchAutoRate(shop, currencyCode) {
   return res.exchangeRate;
 }
 
+// 初始化语言函数
+function initializeLanguage() {
+  const storedLanguage = localStorage.getItem("selectedLanguage");
+
+  const pathSegments = currentPath.split("/").filter(Boolean);
+  const supportedLanguages = ["zh", "en", "ja"]; // 支持的语言列表
+
+  // 如果当前路径已经包含语言前缀，不需要重定向
+  if (pathSegments.length > 0 && supportedLanguages.includes(pathSegments[0])) {
+    return pathSegments[0];
+  }
+
+  if (storedLanguage) {
+    window.location.replace(`/${storedLanguage}`);
+    return storedLanguage;
+  }
+
+  try {
+    // 获取浏览器语言并转换为基础语言代码
+    const browserLanguage = navigator.language.split("-")[0].toLowerCase();
+    console.log("browserLanguage: ", browserLanguage);
+
+    // 获取匹配的语言或默认为英语
+    const detectedLanguage = browserLanguage || "en";
+
+    // 存储到 localStorage
+    localStorage.setItem("selectedLanguage", detectedLanguage);
+
+    // 如果当前路径不包含语言前缀，则进行重定向
+    window.location.replace(`/${detectedLanguage}`);
+
+    return detectedLanguage;
+  } catch (error) {
+    console.error("Language initialization error:", error);
+    // 发生错误时返回默认语言
+    const defaultLanguage = "en";
+    localStorage.setItem("selectedLanguage", defaultLanguage);
+    // 错误情况下也进行重定向
+    window.location.replace(`/${defaultLanguage}`);
+    return defaultLanguage;
+  }
+}
+
 // Function to update the display text
 function updateDisplayText() {
   const currency =
@@ -451,6 +494,8 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
 // Page load handling
 window.onload = async function () {
+  // 在页面加载时执行初始化
+  initializeLanguage();
   const shop = document.getElementById("queryCiwiId");
   let moneyFormat = document.getElementById("queryMoneyFormat");
   const data = await fetchCurrencies(shop.value);
