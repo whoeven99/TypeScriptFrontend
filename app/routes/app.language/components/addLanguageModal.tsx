@@ -255,13 +255,13 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       title: t("Language"),
       dataIndex: "name",
       key: "name",
-      width: "20%",
+      width: "35%",
     },
     {
       title: t("Relevant region(s)"),
       dataIndex: "src",
       key: "src",
-      width: "60%",
+      width: "45%",
       render: (_: any, record: any) => {
         return (
           <div
