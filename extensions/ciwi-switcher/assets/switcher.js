@@ -36,38 +36,39 @@ async function fetchAutoRate(shop, currencyCode) {
   return res.exchangeRate;
 }
 
+async function fetchUserIP() {
+  try {
+    const response = await axios.get("https://api.ipify.org?format=json");
+    return response.data.ip;
+  } catch (error) {
+    console.error("Error fetching IP:", error);
+    return null;
+  }
+}
+
 // 初始化语言函数
 function initializeLanguage() {
   const storedLanguage = localStorage.getItem("selectedLanguage");
-
-  const pathSegments = currentPath.split("/").filter(Boolean);
-  const supportedLanguages = ["zh", "en", "ja"]; // 支持的语言列表
-
-  // 如果当前路径已经包含语言前缀，不需要重定向
-  if (pathSegments.length > 0 && supportedLanguages.includes(pathSegments[0])) {
-    return pathSegments[0];
-  }
-
-  if (storedLanguage) {
-    window.location.replace(`/${storedLanguage}`);
-    return storedLanguage;
-  }
+  const currentPath = window.location.pathname;
+  const currentLanguage = currentPath.split("/")[1];
 
   try {
-    // 获取浏览器语言并转换为基础语言代码
-    const browserLanguage = navigator.language.split("-")[0].toLowerCase();
-    console.log("browserLanguage: ", browserLanguage);
+    if (storedLanguage && storedLanguage !== currentLanguage) {
+      // 获取浏览器语言并转换为基础语言代码
+      const browserLanguage = navigator.language.split("-")[0].toLowerCase();
+      console.log("browserLanguage: ", browserLanguage);
 
-    // 获取匹配的语言或默认为英语
-    const detectedLanguage = browserLanguage || "en";
+      // 获取匹配的语言或默认为英语
+      const detectedLanguage = browserLanguage || "en";
 
-    // 存储到 localStorage
-    localStorage.setItem("selectedLanguage", detectedLanguage);
+      // 存储到 localStorage
+      localStorage.setItem("selectedLanguage", detectedLanguage);
 
-    // 如果当前路径不包含语言前缀，则进行重定向
-    window.location.replace(`/${detectedLanguage}`);
+      // 如果当前路径不包含语言前缀，则进行重定向
+      window.location.replace(`/${detectedLanguage}`);
 
-    return detectedLanguage;
+      return detectedLanguage;
+    }
   } catch (error) {
     console.error("Language initialization error:", error);
     // 发生错误时返回默认语言
@@ -76,6 +77,86 @@ function initializeLanguage() {
     // 错误情况下也进行重定向
     window.location.replace(`/${defaultLanguage}`);
     return defaultLanguage;
+  }
+}
+
+async function initializeCurrency(data, shop, value) {
+  let moneyFormat = document.getElementById("queryMoneyFormat");
+  const selectedCurrency = data.find(
+    (currency) => currency?.currencyCode === value,
+  );
+  const isValueInCurrencies =
+    selectedCurrency && !selectedCurrency.primaryStatus;
+
+  const currencySwitcher = document.getElementById("currency-switcher");
+  const currencyTitleLabel = document.getElementById("currency-title");
+  const currencyInput = document.querySelector('input[name="currency_code"]');
+
+  const regex = /{{(.*?)}}/;
+  const match = moneyFormat.value.match(regex);
+
+  if (match) {
+    moneyFormat = match[1];
+  }
+
+  console.log(data);
+
+  if (isValueInCurrencies) {
+    currencySwitcher.style.display = "block";
+    currencyTitleLabel.style.display = "block";
+    let rate = selectedCurrency.exchangeRate;
+    if (selectedCurrency.exchangeRate == "Auto") {
+      rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
+      if (typeof rate != "number") {
+        rate = 1;
+      }
+    }
+    const prices = document.querySelectorAll(".ciwi-money");
+    prices.forEach((price) => {
+      const priceText = price.innerText;
+      const transformedPrice = transform(
+        priceText,
+        rate,
+        moneyFormat,
+        selectedCurrency.symbol,
+        selectedCurrency.currencyCode,
+        selectedCurrency.rounding,
+      );
+
+      if (transformedPrice) {
+        price.innerText = transformedPrice;
+      }
+    });
+    currencyInput.value = value;
+    currencySwitcher.value = value;
+
+    data.forEach((currency) => {
+      const option = new Option(
+        `${currency.currencyCode}(${currency.symbol})`,
+        currency.currencyCode,
+      );
+      if (currency.currencyCode == value) {
+        option.selected = true;
+      }
+      currencySwitcher.add(option);
+    });
+    updateDisplayText();
+  } else if (data.length) {
+    currencySwitcher.style.display = "block";
+    currencyTitleLabel.style.display = "block";
+    currencyInput.value = data[0];
+    currencySwitcher.value = data[0]?.currencyCode;
+    data.forEach((currency) => {
+      const option = new Option(
+        `${currency.currencyCode}(${currency.symbol})`,
+        currency.currencyCode,
+      );
+      if (currency.primaryStatus) {
+        option.selected = true;
+      }
+      currencySwitcher.add(option);
+    });
+    updateDisplayText();
   }
 }
 
@@ -497,84 +578,14 @@ window.onload = async function () {
   // 在页面加载时执行初始化
   initializeLanguage();
   const shop = document.getElementById("queryCiwiId");
-  let moneyFormat = document.getElementById("queryMoneyFormat");
-  const data = await fetchCurrencies(shop.value);
 
   let value = localStorage.getItem("selectedCurrency");
-  const selectedCurrency = data.find(
-    (currency) => currency?.currencyCode === value,
-  );
-  const isValueInCurrencies =
-    selectedCurrency && !selectedCurrency.primaryStatus;
+  const data = await fetchCurrencies(shop.value);
 
-  const currencySwitcher = document.getElementById("currency-switcher");
-  const currencyTitleLabel = document.getElementById("currency-title");
-  const currencyInput = document.querySelector('input[name="currency_code"]');
-
-  const regex = /{{(.*?)}}/;
-  const match = moneyFormat.value.match(regex);
-
-  if (match) {
-    moneyFormat = match[1];
-  }
-
-  console.log(data);
-
-  if (value && isValueInCurrencies) {
-    currencySwitcher.style.display = "block";
-    currencyTitleLabel.style.display = "block";
-    let rate = selectedCurrency.exchangeRate;
-    if (selectedCurrency.exchangeRate == "Auto") {
-      rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
-      if (typeof rate != "number") {
-        rate = 1;
-      }
-    }
-    const prices = document.querySelectorAll(".ciwi-money");
-    prices.forEach((price) => {
-      const priceText = price.innerText;
-      const transformedPrice = transform(
-        priceText,
-        rate,
-        moneyFormat,
-        selectedCurrency.symbol,
-        selectedCurrency.currencyCode,
-        selectedCurrency.rounding,
-      );
-
-      if (transformedPrice) {
-        price.innerText = transformedPrice;
-      }
-    });
-    currencyInput.value = value;
-    currencySwitcher.value = value;
-
-    data.forEach((currency) => {
-      const option = new Option(
-        `${currency.currencyCode}(${currency.symbol})`,
-        currency.currencyCode,
-      );
-      if (currency.currencyCode == value) {
-        option.selected = true;
-      }
-      currencySwitcher.add(option);
-    });
-    updateDisplayText();
-  } else if (data.length) {
-    currencySwitcher.style.display = "block";
-    currencyTitleLabel.style.display = "block";
-    currencyInput.value = data[0];
-    currencySwitcher.value = data[0]?.currencyCode;
-    data.forEach((currency) => {
-      const option = new Option(
-        `${currency.currencyCode}(${currency.symbol})`,
-        currency.currencyCode,
-      );
-      if (currency.primaryStatus) {
-        option.selected = true;
-      }
-      currencySwitcher.add(option);
-    });
-    updateDisplayText();
+  if (value && data) {
+    await initializeCurrency(data, shop, value);
+  } else {
+    // const userIP = await fetchUserIP();
+    // console.log("User IP:", userIP);
   }
 };

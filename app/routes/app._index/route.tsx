@@ -1,25 +1,18 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
 import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Col, Modal, Row, Skeleton, Space, Typography, Button } from "antd";
 import {
   Link,
   useFetcher,
-  useRouteError,
-  isRouteErrorResponse,
-  Navigate,
 } from "@remix-run/react";
 import "./styles.css";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
 import { Suspense, useEffect, useState } from "react";
-import PaymentModal from "~/components/paymentModal";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
-import UserProfileCard from "./components/userProfileCard";
 import UserLanguageCard from "./components/userLanguageCard";
 import { useTranslation } from "react-i18next";
-import { AppError } from "~/utils/retry";
 
 const { Title, Text } = Typography;
 
@@ -201,39 +194,40 @@ const Index = () => {
                         languageLocaleName={language.localeName}
                         languageName={language.name}
                         languageCode={language.locale}
-                        // limited={limited}
+                      // limited={limited}
                       />
                     )}
                   </Col>
                 ))}
               </Row>
+              <Text
+                style={{
+                  marginTop: "10px",
+                  display: "flex", // 使用 flexbox 来布局
+                  justifyContent: "center", // 水平居中
+                }}
+              >
+                {t("Learn more in")}
+                <Link
+                  to="http://ciwi.bogdatech.com/help"
+                  target="_blank"
+                  style={{ margin: "0 5px" }}
+                >
+                  {t("Ciwi Help Center")}
+                </Link>
+                {t("by")}
+                <Link
+                  to={"http://ciwi.bogdatech.com/"}
+                  target="_blank"
+                  style={{ margin: "0 5px" }}
+                >
+                  {t("Ciwi.ai")}
+                </Link>
+              </Text>
             </div>
           ) : (
             <NoLanguageSetCard />
           )}
-          <Text
-            style={{
-              display: "flex", // 使用 flexbox 来布局
-              justifyContent: "center", // 水平居中
-            }}
-          >
-            {t("Learn more in")}
-            <Link
-              to="http://ciwi.bogdatech.com/help"
-              target="_blank"
-              style={{ margin: "0 5px" }}
-            >
-              {t("Ciwi Help Center")}
-            </Link>
-            {t("by")}
-            <Link
-              to={"http://ciwi.bogdatech.com/"}
-              target="_blank"
-              style={{ margin: "0 5px" }}
-            >
-              {t("Ciwi.ai")}
-            </Link>
-          </Text>
         </Space>
         {/* <Modal
           open={newUserModal}
