@@ -13,6 +13,8 @@ import { Suspense, useEffect, useState } from "react";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import UserLanguageCard from "./components/userLanguageCard";
 import { useTranslation } from "react-i18next";
+import UserProfileCard from "./components/userProfileCard";
+import PaymentModal from "~/components/paymentModal";
 
 const { Title, Text } = Typography;
 
@@ -50,11 +52,11 @@ export const loader = async () => {
 const Index = () => {
   const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
   const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
-  // const [user, setUser] = useState<UserType>();
+  const [user, setUser] = useState<UserType>();
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
-  // const [limited, setLimited] = useState<boolean>(false);
-  // const [paymentModalVisible, setPaymentModalVisible] =
-  //   useState<boolean>(false);
+  const [limited, setLimited] = useState<boolean>(false);
+  const [paymentModalVisible, setPaymentModalVisible] =
+    useState<boolean>(false);
   // const [newUserModal, setNewUserModal] = useState<boolean>(false);
   // const [newUserModalLoading, setNewUserModalLoading] =
   //   useState<boolean>(false);
@@ -89,20 +91,20 @@ const Index = () => {
     }
   }, [loadingLanguageFetcher.data]);
 
-  // useEffect(() => {
-  //   if (loadingUserFetcher.data) {
-  //     setUser(loadingUserFetcher.data.data);
-  //     if (!loadingUserFetcher.data.data?.plan) {
-  //       setNewUserModal(true);
-  //     }
-  //   }
-  // }, [loadingUserFetcher.data]);
+  useEffect(() => {
+    if (loadingUserFetcher.data) {
+      setUser(loadingUserFetcher.data.data);
+      if (!loadingUserFetcher.data.data?.plan) {
+        // setNewUserModal(true);
+      }
+    }
+  }, [loadingUserFetcher.data]);
 
-  // useEffect(() => {
-  //   if (user && user.chars >= user.totalChars) {
-  //     setLimited(true);
-  //   }
-  // }, [user]);
+  useEffect(() => {
+    if (user && user.chars >= user.totalChars) {
+      setLimited(true);
+    }
+  }, [user]);
 
   // useEffect(() => {
   //   if (initializationFetcher.data && user) {
@@ -151,7 +153,7 @@ const Index = () => {
               {t("Faster, higher-quality localization translation tool")}
             </Title>
           </div>
-          {/* {user ? (
+          {user ? (
             <UserProfileCard
               setPaymentModalVisible={setPaymentModalVisible}
               chars={user.chars}
@@ -159,7 +161,7 @@ const Index = () => {
             />
           ) : (
             <Skeleton active />
-          )} */}
+          )}
           <div style={{ paddingLeft: "8px" }}>
             <Title level={3}>
               {languageData.length}
@@ -251,11 +253,11 @@ const Index = () => {
               "You have received 50,000 Credits, enabling you to translate into over 137 languages.",
             )}
           </Text>
-        </Modal>
+        </Modal> */}
         <PaymentModal
           visible={paymentModalVisible}
           setVisible={setPaymentModalVisible}
-        /> */}
+        />
       </Page>
     </Suspense>
   );

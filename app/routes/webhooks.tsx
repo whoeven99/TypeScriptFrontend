@@ -34,7 +34,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         break;
       } catch (error) {
         console.error("Error APP_UNINSTALLED:", error);
-        throw new Error("Error APP_UNINSTALLED");
+        return new Response(null, { status: 200 });
       }
     case "APP_PURCHASES_ONE_TIME_UPDATE":
       try {
@@ -67,6 +67,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               price = 239.99;
               break;
           }
+          new Response(null, { status: 200 });
           await Promise.all([
             InsertOrUpdateOrder({
               id: payload?.app_purchase_one_time.admin_graphql_api_id,
@@ -75,44 +76,47 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
             payload?.app_purchase_one_time.status === "ACTIVE"
               ? Promise.all([
-                  AddCharsByShopName({ shop, amount: credits }),
-                  SendPurchaseSuccessEmail({
-                    shop,
-                    credit: credits,
-                    price: price,
-                  }),
-                ])
+                AddCharsByShopName({ shop, amount: credits }),
+                SendPurchaseSuccessEmail({
+                  shop,
+                  credit: credits,
+                  price: price,
+                }),
+              ])
               : Promise.resolve(),
           ]);
         }
-        return new Response(null, { status: 200 });
+        break;
       } catch (error) {
         console.error("Error processing purchase:", error);
         return new Response(null, { status: 200 });
       }
     case "CUSTOMERS_DATA_REQUEST":
       try {
+        new Response(null, { status: 200 });
         await RequestData({ shop });
         break;
       } catch (error) {
         console.error("Error CUSTOMERS_DATA_REQUEST:", error);
-        throw new Error("Error CUSTOMERS_DATA_REQUEST");
+        return new Response(null, { status: 200 });
       }
     case "CUSTOMERS_REDACT":
       try {
+        new Response(null, { status: 200 });
         await DeleteData({ shop });
         break;
       } catch (error) {
         console.error("Error CUSTOMERS_REDACT:", error);
-        throw new Error("Error CUSTOMERS_REDACT");
+        return new Response(null, { status: 200 });
       }
     case "SHOP_REDACT":
       try {
+        new Response(null, { status: 200 });
         await CleanData({ shop });
         break;
       } catch (error) {
         console.error("Error SHOP_REDACT:", error);
-        throw new Error("Error SHOP_REDACT");
+        return new Response(null, { status: 200 });
       }
     default:
       throw new Response("Unhandled webhook topic", { status: 404 });

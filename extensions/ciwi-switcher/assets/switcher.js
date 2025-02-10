@@ -33,7 +33,102 @@ async function fetchAutoRate(shop, currencyCode) {
   });
 
   const res = response.data.response;
+  console.log(response.data.response);
+
   return res.exchangeRate;
+}
+
+async function fetchUserCountryInfo(access_key) {
+  try {
+    const response = await axios.get(
+      `http://api.ipapi.com/api/check?access_key=${access_key}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching IP:", error);
+    return null;
+  }
+}
+
+async function initializeCurrency(data, shop) {
+  let value = localStorage.getItem("selectedCurrency");
+  let moneyFormat = document.getElementById("queryMoneyFormat");
+  const selectedCurrency = data.find(
+    (currency) => currency?.currencyCode === value,
+  );
+  const isValueInCurrencies =
+    selectedCurrency && !selectedCurrency.primaryStatus;
+
+  const currencySwitcher = document.getElementById("currency-switcher");
+  const currencyTitleLabel = document.getElementById("currency-title");
+  const currencyInput = document.querySelector('input[name="currency_code"]');
+
+  const regex = /{{(.*?)}}/;
+  const match = moneyFormat.value.match(regex);
+
+  if (match) {
+    moneyFormat = match[1];
+  }
+
+  console.log(data);
+
+  if (isValueInCurrencies) {
+    currencySwitcher.style.display = "block";
+    currencyTitleLabel.style.display = "block";
+    let rate = selectedCurrency.exchangeRate;
+    if (selectedCurrency.exchangeRate == "Auto") {
+      rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
+      if (typeof rate != "number") {
+        rate = 1;
+      }
+    }
+    const prices = document.querySelectorAll(".ciwi-money");
+    prices.forEach((price) => {
+      const priceText = price.innerText;
+      const transformedPrice = transform(
+        priceText,
+        rate,
+        moneyFormat,
+        selectedCurrency.symbol,
+        selectedCurrency.currencyCode,
+        selectedCurrency.rounding,
+      );
+
+      if (transformedPrice) {
+        price.innerText = transformedPrice;
+      }
+    });
+    currencyInput.value = value;
+    currencySwitcher.value = value;
+
+    data.forEach((currency) => {
+      const option = new Option(
+        `${currency.currencyCode}(${currency.symbol})`,
+        currency.currencyCode,
+      );
+      if (currency.currencyCode == value) {
+        option.selected = true;
+      }
+      currencySwitcher.add(option);
+    });
+    updateDisplayText();
+  } else if (data.length) {
+    currencySwitcher.style.display = "block";
+    currencyTitleLabel.style.display = "block";
+    currencyInput.value = data[0];
+    currencySwitcher.value = data[0]?.currencyCode;
+    data.forEach((currency) => {
+      const option = new Option(
+        `${currency.currencyCode}(${currency.symbol})`,
+        currency.currencyCode,
+      );
+      if (currency.primaryStatus) {
+        option.selected = true;
+      }
+      currencySwitcher.add(option);
+    });
+    updateDisplayText();
+  }
 }
 
 // Function to update the display text
@@ -290,6 +385,12 @@ function formatWithSpaceAndPeriod(integerPart, decimalPart) {
   return integerPart;
 }
 
+function isInThemeEditor() {
+  const url = window.location.href;
+  console.log(url);
+  return null;
+}
+
 // Class to handle form submission and interactions
 class CiwiswitcherForm extends HTMLElement {
   constructor() {
@@ -299,136 +400,140 @@ class CiwiswitcherForm extends HTMLElement {
       selectorBox: this.querySelector("#selector-box"),
       languageInput: this.querySelector('input[name="language_code"]'),
       currencyInput: this.querySelector('input[name="currency_code"]'),
+      marketInput: this.querySelector(
+        'input[name="locale_code"], input[name="country_code"]',
+      ),
       confirmButton: this.querySelector("#switcher-confirm"),
       closeButton: this.querySelector("#switcher-close"),
       mainBox: this.querySelector("#main-box"),
       languageSwitcher: this.querySelector("#language-switcher"),
       currencySwitcher: this.querySelector("#currency-switcher"),
     };
-    this.elements.selectorBox.addEventListener("click", function (event) {
+
+    // 初始化所有事件监听
+    this.initializeEventListeners();
+  }
+
+  initializeEventListeners() {
+    // 阻止选择器框的点击事件冒泡
+    this.elements.selectorBox?.addEventListener("click", (event) => {
       event.stopPropagation();
     });
-    this.elements.confirmButton.addEventListener(
+
+    // 按钮事件
+    this.elements.confirmButton?.addEventListener(
       "click",
       this.submitForm.bind(this),
     );
-    this.elements.closeButton.addEventListener(
+    this.elements.closeButton?.addEventListener(
       "click",
       this.toggleSelector.bind(this),
     );
-    this.elements.mainBox.addEventListener(
+    this.elements.mainBox?.addEventListener(
       "click",
       this.toggleSelector.bind(this),
     );
-    this.elements.languageSwitcher.addEventListener(
+
+    // 语言切换器事件
+    this.elements.languageSwitcher?.addEventListener(
       "change",
       this.updateLanguage.bind(this),
     );
-    this.elements.languageSwitcher.addEventListener(
-      "focus",
-      this.rotateLanguageSwitcherFocus.bind(this),
+    this.elements.languageSwitcher?.addEventListener("focus", () =>
+      this.rotateArrow("language-arrow-icon", 180),
     );
-    this.elements.languageSwitcher.addEventListener(
-      "blur",
-      this.rotateLanguageSwitcherBlur.bind(this),
+    this.elements.languageSwitcher?.addEventListener("blur", () =>
+      this.rotateArrow("language-arrow-icon", 0),
     );
-    this.elements.currencySwitcher.addEventListener(
+
+    // 货币切换器事件
+    this.elements.currencySwitcher?.addEventListener(
       "change",
       this.updateCurrency.bind(this),
     );
-    this.elements.currencySwitcher.addEventListener(
-      "focus",
-      this.rotateCurrencySwitcherFocus.bind(this),
+    this.elements.currencySwitcher?.addEventListener("focus", () =>
+      this.rotateArrow("currency-arrow-icon", 180),
     );
-    this.elements.currencySwitcher.addEventListener(
-      "blur",
-      this.rotateCurrencySwitcherBlur.bind(this),
+    this.elements.currencySwitcher?.addEventListener("blur", () =>
+      this.rotateArrow("currency-arrow-icon", 0),
     );
+
+    // 市场选择事件
+    this.querySelectorAll("a[data-value]").forEach((item) => {
+      item.addEventListener("click", this.handleMarketSelection.bind(this));
+    });
+
+    // 点击外部关闭
     document.addEventListener("click", this.handleOutsideClick.bind(this));
   }
 
   submitForm(event) {
     event.preventDefault();
     const form = this.querySelector("form");
-    localStorage.setItem("selectedCurrency", this.elements.currencyInput.value);
+    console.log(form);
+
+    // 保存选择的值到 localStorage
+    if (this.elements.currencyInput?.value) {
+      localStorage.setItem(
+        "selectedCurrency",
+        this.elements.currencyInput.value,
+      );
+    }
+    if (this.elements.languageInput?.value) {
+      localStorage.setItem(
+        "selectedLanguage",
+        this.elements.languageInput.value,
+      );
+    }
+    // 提交表单
     if (form) form.submit();
   }
 
+  handleMarketSelection(event) {
+    event.preventDefault();
+    const marketValue = event.currentTarget.dataset.value;
+    if (this.elements.marketInput && marketValue) {
+      this.elements.marketInput.value = marketValue;
+      // 自动触发表单提交
+      this.submitForm(event);
+    }
+  }
+
   toggleSelector(event) {
-    event.preventDefault(); // 阻止默认行为
+    event.preventDefault();
     const box = document.getElementById("selector-box");
-    box.style.display = box.style.display === "none" ? "block" : "none";
+    const isVisible = box.style.display !== "none";
+    box.style.display = isVisible ? "none" : "block";
+
+    // 移动端适配
     if (window.innerWidth <= 768) {
       const mainBox = document.getElementById("main-box");
-
-      // 切换 mainBox 的显示状态
-      mainBox.style.display =
-        mainBox.style.display === "none" ? "block" : "none";
-
-      // 切换 ciwiContainer 的 expanded 类
-      this.elements.ciwiContainer.classList.toggle("expanded");
+      mainBox.style.display = isVisible ? "block" : "none";
+      this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
     }
-    const arrow = document.getElementById("mainbox-arrow-icon");
-    box.style.display === "block"
-      ? (arrow.style.transform = "rotate(180deg)")
-      : (arrow.style.transform = "rotate(0deg)");
+
+    // 旋转箭头
+    this.rotateArrow("mainbox-arrow-icon", isVisible ? 0 : 180);
   }
 
   updateLanguage(event) {
     const selectedLanguage = event.target.value;
-    this.elements.languageInput.value = selectedLanguage;
-  }
-
-  rotateLanguageSwitcherFocus() {
-    // 获取指定 ID 的图像元素
-    var imgElement = document.getElementById("language-arrow-icon");
-    // 检查图像元素是否存在
-    if (imgElement) {
-      // 使用 CSS transform 属性进行旋转
-      imgElement.style.transform = "rotate(180deg)"; // 旋转180度
-    } else {
-      console.error("Element with ID language-arrow-icon not found.");
-    }
-  }
-
-  rotateLanguageSwitcherBlur() {
-    // 获取指定 ID 的图像元素
-    var imgElement = document.getElementById("language-arrow-icon");
-    // 检查图像元素是否存在
-    if (imgElement) {
-      // 使用 CSS transform 属性进行旋转
-      imgElement.style.transform = "rotate(0deg)"; // 旋转180度
-    } else {
-      console.error("Element with ID language-arrow-icon not found.");
+    if (this.elements.languageInput) {
+      this.elements.languageInput.value = selectedLanguage;
     }
   }
 
   updateCurrency(event) {
     const selectedCurrency = event.target.value;
-    this.elements.currencyInput.value = selectedCurrency;
-  }
-
-  rotateCurrencySwitcherFocus() {
-    // 获取指定 ID 的图像元素
-    var imgElement = document.getElementById("currency-arrow-icon");
-    // 检查图像元素是否存在
-    if (imgElement) {
-      // 使用 CSS transform 属性进行旋转
-      imgElement.style.transform = "rotate(180deg)"; // 旋转180度
-    } else {
-      console.error("Element with ID currency-arrow-icon not found.");
+    if (this.elements.currencyInput) {
+      this.elements.currencyInput.value = selectedCurrency;
     }
   }
 
-  rotateCurrencySwitcherBlur() {
-    // 获取指定 ID 的图像元素
-    var imgElement = document.getElementById("currency-arrow-icon");
-    // 检查图像元素是否存在
-    if (imgElement) {
-      // 使用 CSS transform 属性进行旋转
-      imgElement.style.transform = "rotate(0deg)"; // 旋转180度
-    } else {
-      console.error("Element with ID currency-arrow-icon not found.");
+  rotateArrow(elementId, degrees) {
+    const arrow = document.getElementById(elementId);
+    if (arrow) {
+      arrow.style.transform = `rotate(${degrees}deg)`;
     }
   }
 
@@ -437,11 +542,10 @@ class CiwiswitcherForm extends HTMLElement {
       if (window.innerWidth <= 768) {
         const mainBox = document.getElementById("main-box");
         this.elements.ciwiContainer.classList.remove("expanded");
-        mainBox.style.display = mainBox.style.display = "block";
+        mainBox.style.display = "block";
       }
       this.elements.selectorBox.style.display = "none";
-      const arrow = document.getElementById("mainbox-arrow-icon");
-      arrow.style.transform = "rotate(0deg)";
+      this.rotateArrow("mainbox-arrow-icon", 0);
     }
   }
 }
@@ -451,85 +555,48 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
 // Page load handling
 window.onload = async function () {
-  const shop = document.getElementById("queryCiwiId");
-  let moneyFormat = document.getElementById("queryMoneyFormat");
-  const data = await fetchCurrencies(shop.value);
+  const storedLanguage = localStorage.getItem("selectedLanguage");
+  const currentPath = window.location.pathname;
+  const currentLanguage = currentPath.split("/")[1];
+  const languageInput = document.querySelector('input[name="language_code"]');
+  const language = languageInput.value;
 
-  let value = localStorage.getItem("selectedCurrency");
-  const selectedCurrency = data.find(
-    (currency) => currency?.currencyCode === value,
-  );
-  const isValueInCurrencies =
-    selectedCurrency && !selectedCurrency.primaryStatus;
-
-  const currencySwitcher = document.getElementById("currency-switcher");
-  const currencyTitleLabel = document.getElementById("currency-title");
-  const currencyInput = document.querySelector('input[name="currency_code"]');
-
-  const regex = /{{(.*?)}}/;
-  const match = moneyFormat.value.match(regex);
-
-  if (match) {
-    moneyFormat = match[1];
-  }
-
-  console.log(data);
-
-  if (value && isValueInCurrencies) {
-    currencySwitcher.style.display = "block";
-    currencyTitleLabel.style.display = "block";
-    let rate = selectedCurrency.exchangeRate;
-    if (selectedCurrency.exchangeRate == "Auto") {
-      rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
-      if (typeof rate != "number") {
-        rate = 1;
+  if (storedLanguage) {
+    if (storedLanguage !== currentLanguage) {
+      // 存储到 localStorage
+      if (languageInput.value !== storedLanguage) {
+        languageInput.value = storedLanguage;
       }
     }
-    const prices = document.querySelectorAll(".ciwi-money");
-    prices.forEach((price) => {
-      const priceText = price.innerText;
-      const transformedPrice = transform(
-        priceText,
-        rate,
-        moneyFormat,
-        selectedCurrency.symbol,
-        selectedCurrency.currencyCode,
-        selectedCurrency.rounding,
-      );
+  } else {
+    const browserLanguage = navigator.language;
+    // 获取匹配的语言或默认为英语
+    const detectedLanguage = browserLanguage || "en";
+    localStorage.setItem("selectedLanguage", detectedLanguage);
+    if (languageInput.value !== detectedLanguage) {
+      languageInput.value = detectedLanguage;
+    }
+  }
+  const htmlElement = document.documentElement; // 获取 <html> 元素
+  const isInThemeEditor = htmlElement.classList.contains("shopify-design-mode");
+  console.log(
+    languageInput.value,
+    language,
+    isInThemeEditor,
+  );
+  if (languageInput.value !== language && !isInThemeEditor) {
+    const ciwiSwitcherForm = document.querySelector("ciwiswitcher-form");
+    if (ciwiSwitcherForm) {
+      const mockEvent = new Event("submit", { cancelable: true });
+      ciwiSwitcherForm.submitForm(mockEvent);
+    }
+  }
 
-      if (transformedPrice) {
-        price.innerText = transformedPrice;
-      }
-    });
-    currencyInput.value = value;
-    currencySwitcher.value = value;
+  // 在页面加载时执行初始化
+  const shop = document.getElementById("queryCiwiId");
+  const data = await fetchCurrencies(shop.value);
 
-    data.forEach((currency) => {
-      const option = new Option(
-        `${currency.currencyCode}(${currency.symbol})`,
-        currency.currencyCode,
-      );
-      if (currency.currencyCode == value) {
-        option.selected = true;
-      }
-      currencySwitcher.add(option);
-    });
-    updateDisplayText();
-  } else if (data.length) {
-    currencySwitcher.style.display = "block";
-    currencyTitleLabel.style.display = "block";
-    currencyInput.value = data[0];
-    currencySwitcher.value = data[0]?.currencyCode;
-    data.forEach((currency) => {
-      const option = new Option(
-        `${currency.currencyCode}(${currency.symbol})`,
-        currency.currencyCode,
-      );
-      if (currency.primaryStatus) {
-        option.selected = true;
-      }
-      currencySwitcher.add(option);
-    });
-    updateDisplayText();
+  if (data) {
+    await initializeCurrency(data, shop);
   }
 };

@@ -77,6 +77,26 @@
           height="50px"
         >
       </div>
+      <div hidden>
+        <ul role="list">
+          {%- for country in localization.available_countries -%}
+            <li>
+              <a
+                href="#"
+                data-value="{{ country.iso_code }}"
+                {% if country.iso_code == localization.country.iso_code %}
+                  aria-current="true"
+                {% endif %}
+              >
+                {{- country.name }} |
+                {{ country.currency.iso_code }}
+                {{ country.currency.symbol -}}
+              </a>
+            </li>
+          {%- endfor -%}
+        </ul>
+      </div>
+      <input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
     </div>
   {% endform %}
 </ciwiswitcher-form>

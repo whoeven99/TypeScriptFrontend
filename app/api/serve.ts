@@ -383,6 +383,7 @@ export const GetLanguageList = async ({ shop }: { shop: string }) => {
     });
 
     const res = response.data.response;
+    console.log("GetLanguageList: ", res);
 
     return res;
   } catch (error) {
