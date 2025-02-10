@@ -555,40 +555,55 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
 // Page load handling
 window.onload = async function () {
-  const storedLanguage = localStorage.getItem("selectedLanguage");
-  const currentPath = window.location.pathname;
-  const currentLanguage = currentPath.split("/")[1];
-  const languageInput = document.querySelector('input[name="language_code"]');
-  const language = languageInput.value;
+  const IpData = await fetchUserCountryInfo("4edc3b4d5ca1476accda4d9912c99112");
+  if (IpData?.country_code) {
+    const storedLanguage = localStorage.getItem("selectedLanguage");
+    const currentPath = window.location.pathname;
+    const currentLanguage = currentPath.split("/")[1];
+    const languageInput = document.querySelector('input[name="language_code"]');
+    const language = languageInput.value;
+    const countryInput = document.querySelector('input[name="country_code"]');
+    const country = countryInput.value;
 
-  if (storedLanguage) {
-    if (storedLanguage !== currentLanguage) {
-      // 存储到 localStorage
-      if (languageInput.value !== storedLanguage) {
-        languageInput.value = storedLanguage;
+    if (storedLanguage) {
+      if (storedLanguage !== currentLanguage) {
+        // 存储到 localStorage
+        if (languageInput.value !== storedLanguage) {
+          languageInput.value = storedLanguage;
+        }
+      }
+    } else {
+      const browserLanguage = navigator.language;
+      // 获取匹配的语言或默认为英语
+      const detectedLanguage = browserLanguage || "en";
+      localStorage.setItem("selectedLanguage", detectedLanguage);
+      if (languageInput.value !== detectedLanguage) {
+        languageInput.value = detectedLanguage;
       }
     }
-  } else {
-    const browserLanguage = navigator.language;
-    // 获取匹配的语言或默认为英语
-    const detectedLanguage = browserLanguage || "en";
-    localStorage.setItem("selectedLanguage", detectedLanguage);
-    if (languageInput.value !== detectedLanguage) {
-      languageInput.value = detectedLanguage;
+    if (countryInput.value !== IpData.country_code) {
+      countryInput.value = IpData.country_code;
     }
-  }
-  const htmlElement = document.documentElement; // 获取 <html> 元素
-  const isInThemeEditor = htmlElement.classList.contains("shopify-design-mode");
-  console.log(
-    languageInput.value,
-    language,
-    isInThemeEditor,
-  );
-  if (languageInput.value !== language && !isInThemeEditor) {
-    const ciwiSwitcherForm = document.querySelector("ciwiswitcher-form");
-    if (ciwiSwitcherForm) {
-      const mockEvent = new Event("submit", { cancelable: true });
-      ciwiSwitcherForm.submitForm(mockEvent);
+    const htmlElement = document.documentElement; // 获取 <html> 元素
+    const isInThemeEditor = htmlElement.classList.contains(
+      "shopify-design-mode",
+    );
+    console.log(
+      countryInput.value,
+      country,
+      languageInput.value,
+      language,
+      isInThemeEditor,
+    );
+    if (
+      (countryInput.value !== country || languageInput.value !== language) &&
+      !isInThemeEditor
+    ) {
+      const ciwiSwitcherForm = document.querySelector("ciwiswitcher-form");
+      if (ciwiSwitcherForm) {
+        const mockEvent = new Event("submit", { cancelable: true });
+        ciwiSwitcherForm.submitForm(mockEvent);
+      }
     }
   }
 
