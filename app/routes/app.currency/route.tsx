@@ -366,6 +366,7 @@ const Index = () => {
       }, []);
       if (newRates.length > 0) {
         setCurrencyAutoRate(newRates);
+        console.log(newRates);
       }
     }
   }, [rateFetcher.data]);
@@ -451,11 +452,14 @@ const Index = () => {
       render: (_: any, record: any) => {
         const autoRate: any = currencyAutoRate.find(
           (item: any) => item?.currencyCode == record.currencyCode,
-        );
+        );  
+        console.log(autoRate);
+        console.log(typeof autoRate?.rate === "number");
+    
         return record.exchangeRate === "Auto" ? (
           <div>
             <Text>{t("Auto")}</Text>
-            {autoRate && (
+            {typeof autoRate?.rate === "number" && (
               <Text>
                 ({defaultSymbol}1 = {autoRate.rate.toFixed(4)}{" "}
                 {record.currencyCode})
