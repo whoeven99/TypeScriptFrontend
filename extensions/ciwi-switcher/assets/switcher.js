@@ -544,34 +544,42 @@ window.onload = async function () {
   const availableLanguages = Array.from(
     document.querySelectorAll("#language-switcher option"),
   ).map((option) => option.value);
+  const availableCountries = Array.from(
+    document.querySelectorAll('ul[role="list"] a[data-value]'),
+  ).map((link) => link.getAttribute("data-value"));
 
-  if (availableLanguages.includes(languageInput.value)) {
-    if (storedLanguage) {
-      console.log(storedLanguage);
+  if (storedLanguage) {
+    console.log(storedLanguage);
+    console.log(languageInput.value);
+    if (storedLanguage !== languageInput.value && availableLanguages.includes(storedLanguage)) {
+      // 存储到 localStorage
+      languageInput.value = storedLanguage;
       console.log(languageInput.value);
-      if (storedLanguage !== languageInput.value) {
-        // 存储到 localStorage
-        languageInput.value = storedLanguage;
-        console.log(languageInput.value);
-      }
-    } else {
-      const browserLanguage = navigator.language;
-      // 获取匹配的语言或默认为英语
-      const detectedLanguage = browserLanguage || "en";
-      localStorage.setItem("selectedLanguage", detectedLanguage);
-      if (languageInput.value !== detectedLanguage) {
-        languageInput.value = detectedLanguage;
-      }
+    }
+  } else {
+    const browserLanguage = navigator.language;
+    // 获取匹配的语言或默认为英语
+    const detectedLanguage = browserLanguage || "en";
+    localStorage.setItem("selectedLanguage", detectedLanguage);
+    if (languageInput.value !== detectedLanguage && availableLanguages.includes(detectedLanguage)) {
+      languageInput.value = detectedLanguage;
     }
   }
+
   if (storedCountry) {
-    if (countryInput.value !== storedCountry) {
+    if (
+      countryInput.value !== storedCountry &&
+      availableCountries.includes(storedCountry)
+    ) {
       countryInput.value = storedCountry;
     }
   } else {
     const IpData = await fetchUserCountryInfo(iptokenValue);
     console.log(IpData);
-    if (IpData?.country_code) {
+    if (
+      IpData?.country_code &&
+      availableCountries.includes(IpData.country_code)
+    ) {
       if (countryInput.value !== IpData.country_code) {
         countryInput.value = IpData.country_code;
       }
