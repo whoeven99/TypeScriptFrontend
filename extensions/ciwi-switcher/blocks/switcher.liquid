@@ -73,25 +73,6 @@
           height="50px"
         >
       </div>
-      <div hidden>
-        <ul role="list">
-          {%- for country in localization.available_countries -%}
-            <li>
-              <a
-                href="#"
-                data-value="{{ country.iso_code }}"
-                {% if country.iso_code == localization.country.iso_code %}
-                  aria-current="true"
-                {% endif %}
-              >
-                {{- country.name }} |
-                {{ country.currency.iso_code }}
-                {{ country.currency.symbol -}}
-              </a>
-            </li>
-          {%- endfor -%}
-        </ul>
-      </div>
     </div>
     <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
     <input type="hidden" name="currency_code" value="">
@@ -100,6 +81,25 @@
 </ciwiswitcher-form>
 <ciwiswitcher-form>
   {% form 'localization' %}
+    <div hidden>
+      <ul role="list">
+        {%- for country in localization.available_countries -%}
+          <li>
+            <a
+              href="#"
+              data-value="{{ country.iso_code }}"
+              {% if country.iso_code == localization.country.iso_code %}
+                aria-current="true"
+              {% endif %}
+            >
+              {{- country.name }} |
+              {{ country.currency.iso_code }}
+              {{ country.currency.symbol -}}
+            </a>
+          </li>
+        {%- endfor -%}
+      </ul>
+    </div>
     <span type="hidden" name="iptoken">4edc3b4d5ca1476accda4d9912c99112</span>
     <input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
   {% endform %}
