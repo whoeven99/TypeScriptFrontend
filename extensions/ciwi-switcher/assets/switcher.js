@@ -385,6 +385,19 @@ function isInThemeEditor() {
   return null;
 }
 
+function updateLocalization({ country, language }) {
+  const formId = crypto.randomUUID();
+  const formHtml = `
+    <form id="${formId}" action="/localization" method="POST" hidden>
+      <input name="_method" value="PUT">
+      <input name="country_code" value="${country}">
+      <input name="language_code" value="${language}">
+    </form>
+  `;
+  document.body.insertAdjacentHTML("beforeend", formHtml);
+  document.getElementById(formId).submit();
+}
+
 // Class to handle form submission and interactions
 class CiwiswitcherForm extends HTMLElement {
   constructor() {
@@ -394,9 +407,7 @@ class CiwiswitcherForm extends HTMLElement {
       selectorBox: this.querySelector("#selector-box"),
       languageInput: this.querySelector('input[name="language_code"]'),
       currencyInput: this.querySelector('input[name="currency_code"]'),
-      marketInput: this.querySelector(
-        'input[name="locale_code"], input[name="country_code"]',
-      ),
+      countryInput: this.querySelector('input[name="country_code"]'),
       confirmButton: this.querySelector("#switcher-confirm"),
       closeButton: this.querySelector("#switcher-close"),
       mainBox: this.querySelector("#main-box"),
@@ -452,11 +463,6 @@ class CiwiswitcherForm extends HTMLElement {
       this.rotateArrow("currency-arrow-icon", 0),
     );
 
-    // 市场选择事件
-    this.querySelectorAll("a[data-value]").forEach((item) => {
-      item.addEventListener("click", this.handleMarketSelection.bind(this));
-    });
-
     // 点击外部关闭
     document.addEventListener("click", this.handleOutsideClick.bind(this));
   }
@@ -464,31 +470,10 @@ class CiwiswitcherForm extends HTMLElement {
   submitForm(event) {
     event.preventDefault();
     const form = this.querySelector("form");
-    // 保存选择的值到 localStorage
-    if (this.elements.currencyInput?.value) {
-      localStorage.setItem(
-        "selectedCurrency",
-        this.elements.currencyInput.value,
-      );
-    }
-    if (this.elements.languageInput?.value) {
-      localStorage.setItem(
-        "selectedLanguage",
-        this.elements.languageInput.value,
-      );
-    }
+    localStorage.setItem("selectedLanguage", this.elements.languageInput.value);
+    localStorage.setItem("selectedCurrency", this.elements.currencyInput.value);
     // 提交表单
     if (form) form.submit();
-  }
-
-  handleMarketSelection(event) {
-    event.preventDefault();
-    const marketValue = event.currentTarget.dataset.value;
-    if (this.elements.marketInput && marketValue) {
-      this.elements.marketInput.value = marketValue;
-      // 自动触发表单提交
-      this.submitForm(event);
-    }
   }
 
   toggleSelector(event) {
@@ -547,13 +532,11 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
 // Page load handling
 window.onload = async function () {
-  const iptoken = document.querySelector('input[name="iptoken"]');
-  const iptokenValue = iptoken.value;
+  const iptoken = document.querySelector('span[name="iptoken"]');
+  const iptokenValue = iptoken.textContent;
   if (iptokenValue) iptoken.remove(); // 移除DOM元素
   const storedLanguage = localStorage.getItem("selectedLanguage");
   const storedCountry = localStorage.getItem("selectedCountry");
-  const currentPath = window.location.pathname;
-  const currentLanguage = currentPath.split("/")[1];
   const languageInput = document.querySelector('input[name="language_code"]');
   const language = languageInput.value;
   const countryInput = document.querySelector('input[name="country_code"]');
@@ -564,11 +547,12 @@ window.onload = async function () {
 
   if (availableLanguages.includes(languageInput.value)) {
     if (storedLanguage) {
-      if (storedLanguage !== currentLanguage) {
+      console.log(storedLanguage);
+      console.log(languageInput.value);
+      if (storedLanguage !== languageInput.value) {
         // 存储到 localStorage
-        if (languageInput.value !== storedLanguage) {
-          languageInput.value = storedLanguage;
-        }
+        languageInput.value = storedLanguage;
+        console.log(languageInput.value);
       }
     } else {
       const browserLanguage = navigator.language;
@@ -586,14 +570,15 @@ window.onload = async function () {
     }
   } else {
     const IpData = await fetchUserCountryInfo(iptokenValue);
+    console.log(IpData);
     if (IpData?.country_code) {
       if (countryInput.value !== IpData.country_code) {
         countryInput.value = IpData.country_code;
-        localStorage.setItem("selectedCountry", IpData.country_code);
-        console.log(
-          "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
-        );
       }
+      localStorage.setItem("selectedCountry", countryInput.value);
+      console.log(
+        "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
+      );
     }
   }
   const htmlElement = document.documentElement; // 获取 <html> 元素
@@ -602,17 +587,17 @@ window.onload = async function () {
     (countryInput.value !== country || languageInput.value !== language) &&
     !isInThemeEditor
   ) {
-    const ciwiSwitcherForm = document.querySelector("ciwiswitcher-form");
-    if (ciwiSwitcherForm) {
-      const mockEvent = new Event("submit", { cancelable: true });
-      ciwiSwitcherForm.submitForm(mockEvent);
-    }
+    console.log(countryInput.value, languageInput.value);
+    updateLocalization({
+      country: countryInput.value,
+      language: languageInput.value,
+    });
   }
 
   // 在页面加载时执行初始化
   const shop = document.getElementById("queryCiwiId");
+  shop.remove();
   const data = await fetchCurrencies(shop.value);
-
   if (data) {
     await initializeCurrency(data, shop);
   }

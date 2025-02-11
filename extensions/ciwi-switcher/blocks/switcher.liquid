@@ -10,7 +10,6 @@
         id="selector-box"
         style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%; display: none"
       >
-        <input type="hidden" name="market" value="{{ localization.market.id }}">
         <label for="language-switcher" class="language_title">Language</label>
         <div class="select-wrapper">
           <select id="language-switcher" class="ciwi_select">
@@ -34,8 +33,6 @@
             height="25%"
           >
         </div>
-        <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">
-
         <label for="currency-switcher" class="currency_title" id="currency-title" style="display: none">Currency</label>
         <div class="select-wrapper">
           <select id="currency-switcher" class="ciwi_select" style="display: none"></select>
@@ -48,7 +45,6 @@
             height="25%"
           >
         </div>
-        <input type="hidden" name="currency_code" value="">
         <div class="button_wrapper">
           <button id="switcher-confirm" class="ciwi_switcher_confirm_button">Confirm</button>
           <button id="switcher-close" class="ciwi_switcher_cancel_button">Cancel</button>
@@ -96,9 +92,16 @@
           {%- endfor -%}
         </ul>
       </div>
-      <input type="hidden" name="iptoken" value="4edc3b4d5ca1476accda4d9912c99112">
-      <input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
     </div>
+    <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
+    <input type="hidden" name="currency_code" value="">
+    <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">
+  {% endform %}
+</ciwiswitcher-form>
+<ciwiswitcher-form>
+  {% form 'localization' %}
+    <span type="hidden" name="iptoken">4edc3b4d5ca1476accda4d9912c99112</span>
+    <input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
   {% endform %}
 </ciwiswitcher-form>
 
