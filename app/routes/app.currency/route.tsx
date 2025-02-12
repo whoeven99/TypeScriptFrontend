@@ -646,12 +646,12 @@ const Index = () => {
                 {t("to view the prices in different currencies.")}
               </Text>
             </Flex>
-            {/* {!loading && <div>
+            {!loading && <div>
               <Popover content={t("Automatically switch to the target language and currency.")}>
                 <Text strong>Geolocation{" "}</Text>
                 <Switch onChange={onIpChange} checked={ip} loading={ipFetcher.state === "submitting"} />
               </Popover>
-            </div>} */}
+            </div>}
           </div>
           <Input
             placeholder={t("Search currencies...")}
