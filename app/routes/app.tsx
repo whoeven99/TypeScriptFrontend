@@ -140,8 +140,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           localeName: languageLocaleInfo[lang.locale].Local,
           locale: lang.locale,
           status:
-            languages.find((language: any) => language.target === lang.locale)
-              ?.status || 0,
+            languages ? languages.find((language: any) => language.target === lang.locale)
+              ?.status : 0,
           published: lang.published,
         }));
 
@@ -152,7 +152,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
         console.log(`${shop}根路由正常加载`);
-        
+
         return json({ data, languageSetting });
       } catch (error) {
         console.error("Error languageData app:", error);
