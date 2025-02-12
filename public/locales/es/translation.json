@@ -131,6 +131,24 @@
     "Select markets for display": "Seleccionar mercados para mostrar",
     "Translation failed": "Límite de traducción alcanzado",
     "Contact Support": "Contactar con soporte",
-    "Contact Support message": "Lo siento, tu tienda es demasiado grande para seguir traduciendo. Por favor, contacta a nuestro equipo para recibir soporte."
+    "Contact Support message": "Lo siento, tu tienda es demasiado grande para seguir traduciendo. Por favor, contacta a nuestro equipo para recibir soporte.",
+    "Bad Request": "Solicitud incorrecta",
+    "The request could not be understood by the server due to malformed syntax.": "La solicitud no pudo ser comprendida por el servidor debido a una sintaxis incorrecta.",
+    "Unauthorized": "No autorizado",
+    "Authentication is required and has failed or has not been provided.": "Se requiere autenticación y ha fallado o no se ha proporcionado.",
+    "Forbidden": "Prohibido",
+    "You don't have permission to access this resource.": "No tienes permiso para acceder a este recurso.",
+    "Not Found": "No encontrado",
+    "The requested resource could not be found.": "No se pudo encontrar el recurso solicitado.",
+    "Internal Server Error": "Error del servidor interno",
+    "The server encountered an unexpected condition that prevented it from fulfilling the request.": "El servidor encontró una condición inesperada que impidió cumplir con la solicitud.",
+    "Bad Gateway": "Puerta de enlace incorrecta",
+    "The server received an invalid response from the upstream server.": "El servidor recibió una respuesta inválida del servidor upstream.",
+    "Service Unavailable": "Servicio no disponible",
+    "The server is currently unavailable.": "El servidor está actualmente no disponible.",
+    "Gateway Timeout": "Tiempo de espera de la puerta de enlace agotado",
+    "The server did not receive a timely response from the upstream server.": "El servidor no recibió una respuesta oportuna del servidor upstream.",
+    "Back to Home": "Volver a la página principal",
+    "Automatically switch to the target language and currency.": "Cambiar automáticamente al idioma y moneda objetivo."
 }
   

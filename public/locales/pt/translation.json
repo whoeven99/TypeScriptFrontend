@@ -131,6 +131,24 @@
     "Select markets for display": "Selecionar mercados para exibição",
     "Translation failed": "Limite de tradução alcançado",
     "Contact Support": "Contactar suporte",
-    "Contact Support message": "Desculpe, sua loja é muito grande para continuar a tradução. Entre em contato com nossa equipe para obter suporte."
+    "Contact Support message": "Desculpe, sua loja é muito grande para continuar a tradução. Entre em contato com nossa equipe para obter suporte.",
+    "Bad Request": "Solicitação inválida",
+    "The request could not be understood by the server due to malformed syntax.": "A solicitação não pôde ser compreendida pelo servidor devido a uma sintaxe malformada.",
+    "Unauthorized": "Não autorizado",
+    "Authentication is required and has failed or has not been provided.": "Uma autenticação é necessária e falhou ou não foi fornecida.",
+    "Forbidden": "Proibido",
+    "You don't have permission to access this resource.": "Você não tem permissão para acessar este recurso.",
+    "Not Found": "Não encontrado",
+    "The requested resource could not be found.": "O recurso solicitado não foi encontrado.",
+    "Internal Server Error": "Erro interno do servidor",
+    "The server encountered an unexpected condition that prevented it from fulfilling the request.": "O servidor encontrou uma condição inesperada que impediu a execução da solicitação.",
+    "Bad Gateway": "Gateway ruim",
+    "The server received an invalid response from the upstream server.": "O servidor recebeu uma resposta inválida do servidor upstream.",
+    "Service Unavailable": "Serviço não disponível",
+    "The server is currently unavailable.": "O servidor está atualmente indisponível.",
+    "Gateway Timeout": "Tempo limite do gateway",
+    "The server did not receive a timely response from the upstream server.": "O servidor não recebeu uma resposta oportuna do servidor upstream.",
+    "Back to Home": "Voltar para a página inicial",
+    "Automatically switch to the target language and currency.": "Mudar automaticamente para o idioma e moeda alvo."
 }
   

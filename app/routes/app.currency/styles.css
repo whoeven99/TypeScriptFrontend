@@ -1,14 +1,23 @@
-.currency-header, .card-header {
-    display: flex;
-    justify-content: space-between; /* 确保左右分布 */
-    align-items: center; /* 如果需要垂直居中 */
+.currency-header,
+.card-header {
+  display: flex;
+  justify-content: space-between; /* 确保左右分布 */
+  align-items: center; /* 如果需要垂直居中 */
 }
 
 .currency-action {
-    /* 右对齐 */
-    margin-left: auto; /* 将元素推到右边 */
+  /* 右对齐 */
+  margin-left: auto; /* 将元素推到右边 */
 }
 
 .manual_rate_input {
-    margin-top: 8px;
+  margin-top: 8px;
+}
+
+.ip_action {
+  white-space: nowrap; /* 不换行 */
+  display: flex; /* 使用flex布局 */
+  align-items: center; /* 垂直居中 */
+  gap: 8px; /* 元素之间的间距 */
+  justify-content: space-between; /* 确保左右分布 */
 }

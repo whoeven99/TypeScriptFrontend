@@ -131,6 +131,24 @@
     "Select markets for display": "Seleziona i mercati da visualizzare",
     "Translation failed": "Limite di traduzione raggiunto",
     "Contact Support": "Contatta il supporto",
-    "Contact Support message": "Spiacente, il tuo negozio è troppo grande per continuare la traduzione. Contatta il nostro team per assistenza."
+    "Contact Support message": "Spiacente, il tuo negozio è troppo grande per continuare la traduzione. Contatta il nostro team per assistenza.",
+    "Bad Request": "Richiesta non valida",
+    "The request could not be understood by the server due to malformed syntax.": "La richiesta non può essere compresa dal server a causa di una sintassi non valida.",
+    "Unauthorized": "Non autorizzato",
+    "Authentication is required and has failed or has not been provided.": "È necessaria un'autenticazione e ha fallito o non è stata fornita.",
+    "Forbidden": "Proibito",
+    "You don't have permission to access this resource.": "Non hai i permessi per accedere a questa risorsa.",
+    "Not Found": "Non trovato",
+    "The requested resource could not be found.": "La risorsa richiesta non è stata trovata.",
+    "Internal Server Error": "Errore interno del server",
+    "The server encountered an unexpected condition that prevented it from fulfilling the request.": "Il server ha incontrato una condizione imprevista che ha impedito di completare la richiesta.",
+    "Bad Gateway": "Gateway non valido",
+    "The server received an invalid response from the upstream server.": "Il server ha ricevuto una risposta non valida dal server upstream.",
+    "Service Unavailable": "Servizio non disponibile",
+    "The server is currently unavailable.": "Il server è attualmente non disponibile.",
+    "Gateway Timeout": "Timeout del gateway",
+    "The server did not receive a timely response from the upstream server.": "Il server non ha ricevuto una risposta tempestiva dal server upstream.",
+    "Back to Home": "Torna alla home",
+    "Automatically switch to the target language and currency.": "Cambia automaticamente la lingua e la valuta di destinazione."
 }
   

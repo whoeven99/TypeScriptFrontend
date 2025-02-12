@@ -1188,6 +1188,47 @@ export const DeleteGlossaryInfo = async ({ id }: { id: number }) => {
   }
 };
 
+export const GetSwitchId = async ({ shopName }: { shopName: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/IpSwitch/getSwitchId?shopName=${shopName}`,
+      method: "GET",
+    });
+    const res = response.data;
+    console.log(res);
+    if (res.response) {
+      return res.response;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error("Error InsertSwitch:", error);
+  }
+};
+
+export const InsertSwitch = async ({
+  shopName,
+  switchId,
+}: {
+  shopName: string;
+  switchId: number;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/IpSwitch/insertSwitch`,
+      method: "POST",
+      data: {
+        shopName: shopName,
+        switchId: switchId,
+      },
+    });
+    const res = response.data;
+    return res;
+  } catch (error) {
+    console.error("Error InsertSwitch:", error);
+  }
+};
+
 //用户卸载
 export const Uninstall = async ({ shop }: { shop: string }) => {
   try {

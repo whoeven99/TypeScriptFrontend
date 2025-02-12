@@ -9,6 +9,8 @@ import {
   Table,
   Typography,
   Skeleton,
+  Switch,
+  Popover,
 } from "antd";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
@@ -26,7 +28,9 @@ import {
   DeleteCurrency,
   GetCacheData,
   GetCurrencyByShopName,
+  GetSwitchId,
   InitCurrency,
+  InsertSwitch,
   UpdateCurrency,
   UpdateDefaultCurrency,
 } from "~/api/serve";
@@ -89,6 +93,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const updateCurrencies = JSON.parse(
       formData.get("updateCurrencies") as string,
     );
+    const ip = JSON.parse(
+      formData.get("ip") as string,
+    );
 
     switch (true) {
       case !!loading:
@@ -100,12 +107,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const moneyFormat = shopLoad.currencyFormats.moneyFormat;
           const moneyWithCurrencyFormat =
             shopLoad.currencyFormats.moneyWithCurrencyFormat;
+          const ip = await GetSwitchId({ shopName: shop });
+          console.log(ip);
           return json({
             primaryCurrency,
             defaultCurrencyCode: shopLoad.currencyCode,
             currencyList: finalCurrencyList,
             moneyFormat,
             moneyWithCurrencyFormat,
+            ip,
           });
         } catch (error) {
           console.error("Error loading currency:", error);
@@ -185,6 +195,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             { status: 500 },
           );
         }
+      case !!ip:
+        try {
+          const data = await InsertSwitch({
+            shopName: ip.shop,
+            switchId: ip.ip,
+          });
+          console.log(data);
+
+          return json({ data });
+        } catch (error) {
+          console.error("Error updateCurrencies currency:", error);
+          return json(
+            { error: "Error updateCurrencies currency" },
+            { status: 500 },
+          );
+        }
     }
     return null;
   } catch (error) {
@@ -226,6 +252,7 @@ const Index = () => {
   const [filteredData, setFilteredData] = useState<
     CurrencyDataType[] | undefined
   >(dataSource);
+  const [ip, setIp] = useState(false);
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -234,6 +261,7 @@ const Index = () => {
   const rateFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
   const initCurrencyFetcher = useFetcher<any>();
+  const ipFetcher = useFetcher<any>();
 
   useEffect(() => {
     const loadingFormData = new FormData();
@@ -300,6 +328,7 @@ const Index = () => {
           "text/html",
         ).documentElement.textContent,
       );
+      setIp(loadingFetcher.data.ip);
       shopify.loading(false);
       setLoading(false);
       const primaryCurrency = loadingFetcher.data.primaryCurrency;
@@ -321,7 +350,7 @@ const Index = () => {
         });
       } else if (
         primaryCurrency?.currencyCode !==
-          loadingFetcher.data.defaultCurrencyCode &&
+        loadingFetcher.data.defaultCurrencyCode &&
         defaultCurrency
       ) {
         const formData = new FormData();
@@ -392,6 +421,18 @@ const Index = () => {
   }, [deleteFetcher.data]);
 
   useEffect(() => {
+    if (ipFetcher.data) {
+      if (ipFetcher.data.data.success) {
+        if (ipFetcher.data.data.response) {
+          setIp(true);
+        } else {
+          setIp(false);
+        }
+      }
+    }
+  }, [ipFetcher.data])
+
+  useEffect(() => {
     setOriginalData(dataSource);
     setFilteredData(dataSource);
   }, [dataSource]);
@@ -452,10 +493,7 @@ const Index = () => {
       render: (_: any, record: any) => {
         const autoRate: any = currencyAutoRate.find(
           (item: any) => item?.currencyCode == record.currencyCode,
-        );  
-        console.log(autoRate);
-        console.log(typeof autoRate?.rate === "number");
-    
+        );
         return record.exchangeRate === "Auto" ? (
           <div>
             <Text>{t("Auto")}</Text>
@@ -540,6 +578,18 @@ const Index = () => {
     setDeleteLoading(true);
   };
 
+  const onIpChange = (checked: boolean) => {
+    const formData = new FormData();
+    formData.append("ip", JSON.stringify({
+      shop,
+      ip: checked ? 1 : 0,
+    }));
+    ipFetcher.submit(formData, {
+      method: "post",
+      action: "/app/currency",
+    });
+  };
+
   return (
     <Page>
       <TitleBar title={t("Currency")}></TitleBar>
@@ -586,15 +636,23 @@ const Index = () => {
           <Skeleton active paragraph={{ rows: 0 }} />
         )}
         <Flex gap="middle" vertical>
-          <Flex align="center" gap="middle">
-            <Text>
-              {t("After setting, you can")}
-              <Link url={userShop} target="_blank">
-                {t("Preview")}
-              </Link>
-              {t("to view the prices in different currencies.")}
-            </Text>
-          </Flex>
+          <div className="ip_action">
+            <Flex align="center" gap="middle">
+              <Text>
+                {t("After setting, you can")}
+                <Link url={userShop} target="_blank">
+                  {t("Preview")}
+                </Link>
+                {t("to view the prices in different currencies.")}
+              </Text>
+            </Flex>
+            {!loading && <div>
+              <Popover content={t("Automatically switch to the target language and currency.")}>
+                <Text strong>Geolocation{" "}</Text>
+                <Switch onChange={onIpChange} checked={ip} loading={ipFetcher.state === "submitting"} />
+              </Popover>
+            </div>}
+          </div>
           <Input
             placeholder={t("Search currencies...")}
             prefix={<SearchOutlined />}
