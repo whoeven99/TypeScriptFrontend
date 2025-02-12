@@ -131,6 +131,24 @@
     "Select markets for display": "Sélectionnez les marchés à afficher",
     "Translation failed": "Limite de traduction atteinte",
     "Contact Support": "Contacter le support",
-    "Contact Support message": "Désolé, votre magasin est trop grand pour continuer la traduction. Veuillez contacter notre équipe pour obtenir de l'aide."
+    "Contact Support message": "Désolé, votre magasin est trop grand pour continuer la traduction. Veuillez contacter notre équipe pour obtenir de l'aide.",
+    "Bad Request": "Requête incorrecte",
+    "The request could not be understood by the server due to malformed syntax.": "La requête ne peut pas être comprise par le serveur en raison d'une syntaxe incorrecte.",
+    "Unauthorized": "Non autorisé",
+    "Authentication is required and has failed or has not been provided.": "Une authentification est requise et a échoué ou n'a pas été fournie.",
+    "Forbidden": "Interdit",
+    "You don't have permission to access this resource.": "Vous n'avez pas l'autorisation d'accéder à cette ressource.",
+    "Not Found": "Non trouvé",
+    "The requested resource could not be found.": "La ressource demandée n'a pas été trouvée.",
+    "Internal Server Error": "Erreur interne du serveur",
+    "The server encountered an unexpected condition that prevented it from fulfilling the request.": "Le serveur a rencontré une condition inattendue qui a empêché la réalisation de la demande.",
+    "Bad Gateway": "Passerelle incorrecte",
+    "The server received an invalid response from the upstream server.": "Le serveur a reçu une réponse invalide du serveur upstream.",
+    "Service Unavailable": "Service non disponible",
+    "The server is currently unavailable.": "Le serveur est actuellement indisponible.",
+    "Gateway Timeout": "Délai de passerelle dépassé",
+    "The server did not receive a timely response from the upstream server.": "Le serveur n'a pas reçu de réponse à temps du serveur upstream.",
+    "Back to Home": "Retour à la page d'accueil",
+    "Automatically switch to the target language and currency.": "Changer automatiquement de langue et de devise cible."
 }
   

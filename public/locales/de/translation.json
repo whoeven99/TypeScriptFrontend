@@ -131,5 +131,24 @@
     "Select markets for display": "Märkte zur Anzeige auswählen",
     "Translation failed": "Übersetzungsgrenze erreicht",
     "Contact Support": "Support kontaktieren",
-    "Contact Support message": "Entschuldigung, Ihr Shop ist zu groß, um die Übersetzung fortzusetzen. Bitte kontaktieren Sie unser Team für Unterstützung."
+    "Contact Support message": "Entschuldigung, Ihr Shop ist zu groß, um die Übersetzung fortzusetzen. Bitte kontaktieren Sie unser Team für Unterstützung.",
+    "Bad Request": "Ungültige Anfrage",
+    "The request could not be understood by the server due to malformed syntax.": "Die Anfrage konnte vom Server nicht verstanden werden, da die Syntax fehlerhaft ist.",
+    "Unauthorized": "Nicht autorisiert",
+    "Authentication is required and has failed or has not been provided.": "Authentifizierung ist erforderlich und ist fehlgeschlagen oder nicht bereitgestellt worden.",
+    "Forbidden": "Verboten",
+    "You don't have permission to access this resource.": "Sie haben keine Berechtigung, auf diese Ressource zuzugreifen.",
+    "Not Found": "Nicht gefunden",
+    "The requested resource could not be found.": "Die angeforderte Ressource konnte nicht gefunden werden.",
+    "Internal Server Error": "Interner Serverfehler",
+    "The server encountered an unexpected condition that prevented it from fulfilling the request.": "Der Server trat einen unerwarteten Zustand auf, der verhindert hat, dass die Anfrage erfüllt wurde.",
+    "Bad Gateway": "Schlechte Gateway-Verbindung",
+    "The server received an invalid response from the upstream server.": "Der Server erhielt eine ungültige Antwort vom Upstream-Server.",
+    "Service Unavailable": "Service nicht verfügbar",
+    "The server is currently unavailable.": "Der Server ist derzeit nicht verfügbar.",
+    "Gateway Timeout": "Gateway-Timeout",
+    "The server did not receive a timely response from the upstream server.": "Der Server erhielt keine rechtzeitige Antwort vom Upstream-Server.",
+    "Back to Home": "Zurück zur Startseite",
+    "Automatically switch to the target language and currency.": "Automatisch zum Zielsprach- und Währungsumrechner wechseln."
 }
+    
