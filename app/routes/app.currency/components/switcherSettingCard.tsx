@@ -198,7 +198,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             </Space>
           </Card>
         ) : (
-          <Skeleton.Button active style={{ height: 200 }} block/>
+          <Skeleton.Button active style={{ height: 300 }} block/>
         ))}
       {step2Visible &&
         (isVisible !== undefined ? (

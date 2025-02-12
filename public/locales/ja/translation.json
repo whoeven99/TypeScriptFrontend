@@ -131,6 +131,25 @@
     "Select markets for display": "表示する市場を選択",
     "Translation failed": "翻訳制限に達しました",
     "Contact Support": "サポートに連絡する",
-    "Contact Support message": "申し訳ありませんが、店舗が大きすぎて翻訳を続けることができません。サポートチームに連絡してください。"
+    "Contact Support message": "申し訳ありませんが、店舗が大きすぎて翻訳を続けることができません。サポートチームに連絡してください。",
+    "Bad Request": "不正な要求",
+    "The request could not be understood by the server due to malformed syntax.": "不正な構文により、サーバーが要求を理解できませんでした。",
+    "Unauthorized": "未承認",
+    "Authentication is required and has failed or has not been provided.": "認証が必要で、失敗したか、提供されていません。",
+    "Forbidden": "禁止されています",
+    "You don't have permission to access this resource.": "このリソースにアクセスする権限がありません。",
+    "Not Found": "見つかりません",
+    "The requested resource could not be found.": "要求されたリソースが見つかりませんでした。",
+    "Internal Server Error": "内部サーバーエラー",
+    "The server encountered an unexpected condition that prevented it from fulfilling the request.": "サーバーが要求を実行できない予期せぬ条件に遭遇しました。",
+    "Bad Gateway": "不正なゲートウェイ",
+    "The server received an invalid response from the upstream server.": "上流サーバーから無効な応答を受け取りました。",
+    "Service Unavailable": "サービスが利用できません",
+    "The server is currently unavailable.": "サーバーは現在利用できません。",
+    "Gateway Timeout": "ゲートウェイタイムアウト",
+    "The server did not receive a timely response from the upstream server.": "上流サーバーからのタイムリーな応答を受け取りませんでした。",
+    "Back to Home": "ホームに戻る",
+    "Automatically switch to the target language and currency.": "ターゲット言語と通貨に自動的に切り替えます。"
+
 }
   

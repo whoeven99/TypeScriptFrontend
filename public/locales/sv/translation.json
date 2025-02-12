@@ -131,6 +131,24 @@
     "Select markets for display": "Välj marknader att visa",
     "Translation failed": "Översättningsgräns nådd",
     "Contact Support": "Kontakta support",
-    "Contact Support message": "Ursäkta, din butik är för stor för att fortsätta översättningen. Vänligen kontakta vårt team för support."
+    "Contact Support message": "Ursäkta, din butik är för stor för att fortsätta översättningen. Vänligen kontakta vårt team för support.",
+    "Bad Request": "Felaktig begäran",
+    "The request could not be understood by the server due to malformed syntax.": "Begäran kunde inte förstås av servern på grund av felaktig syntax.",
+    "Unauthorized": "Ej auktoriserad",
+    "Authentication is required and has failed or has not been provided.": "Autentisering krävs och har misslyckats eller inte har tillhandahållits.",
+    "Forbidden": "Förbjuden",
+    "You don't have permission to access this resource.": "Du har inte tillgång till denna resurs.",
+    "Not Found": "Hittas inte",
+    "The requested resource could not be found.": "Den begärda resursen kunde inte hittas.",
+    "Internal Server Error": "Intern serverfel",
+    "The server encountered an unexpected condition that prevented it from fulfilling the request.": "Servern stötte på ett oväntat villkor som förhindrade att uppgiften kunde slutföras.",
+    "Bad Gateway": "Dålig gateway",
+    "The server received an invalid response from the upstream server.": "Servern mottog en ogiltig svar från upstream-servern.",
+    "Service Unavailable": "Tjänsten är otillgänglig",
+    "The server is currently unavailable.": "Servern är för närvarande otillgänglig.",
+    "Gateway Timeout": "Gateway timeout",
+    "The server did not receive a timely response from the upstream server.": "Servern fick inte ett tillräckligt snabbt svar från upstream-servern.",
+    "Back to Home": "Tillbaka till startsida",
+    "Automatically switch to the target language and currency.": "Växla automatiskt till målspråk och valuta."
 }
   

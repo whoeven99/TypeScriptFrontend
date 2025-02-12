@@ -131,6 +131,24 @@
     "Select markets for display": "Selecteer markten om weer te geven",
     "Translation failed": "Vertaal limiet bereikt",
     "Contact Support": "Neem contact op met ondersteuning",
-    "Contact Support message": "Sorry, uw winkel is te groot om de vertaling voort te zetten. Neem contact op met ons team voor ondersteuning."
+    "Contact Support message": "Sorry, uw winkel is te groot om de vertaling voort te zetten. Neem contact op met ons team voor ondersteuning.",
+    "Bad Request": "Ongeldige aanvraag",
+    "The request could not be understood by the server due to malformed syntax.": "De aanvraag kon niet worden begrepen door de server vanwege een ongeldige syntaxis.",
+    "Unauthorized": "Niet geautoriseerd",
+    "Authentication is required and has failed or has not been provided.": "Authentificatie is vereist en is mislukt of niet verstrekt.",
+    "Forbidden": "Verboden",
+    "You don't have permission to access this resource.": "U hebt geen toegang tot deze bron.",
+    "Not Found": "Niet gevonden",
+    "The requested resource could not be found.": "De gevraagde bron kon niet worden gevonden.",
+    "Internal Server Error": "Interne serverfout",
+    "The server encountered an unexpected condition that prevented it from fulfilling the request.": "De server heeft een onverwachte voorwaarde tegengehouden die de voltooiing van de aanvraag heeft verhinderd.",
+    "Bad Gateway": "Ongeldige gateway",
+    "The server received an invalid response from the upstream server.": "De server heeft een ongeldige respons ontvangen van de upstream-server.",
+    "Service Unavailable": "Service niet beschikbaar",
+    "The server is currently unavailable.": "De server is momenteel niet beschikbaar.",
+    "Gateway Timeout": "Gateway timeout",
+    "The server did not receive a timely response from the upstream server.": "De server heeft geen tijdige respons ontvangen van de upstream-server.",
+    "Back to Home": "Terug naar Home",
+    "Automatically switch to the target language and currency.": "Automatisch naar de doeltaal en valuta schakelen."
 }
   
