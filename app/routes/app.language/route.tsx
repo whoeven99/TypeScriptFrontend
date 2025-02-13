@@ -141,7 +141,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
 
         const words = await GetUserWords({ shop });
-        const languagesLoad = await GetLanguageList({ shop });
+        const languagesLoad = await GetLanguageList({ shop,source: shopLanguagesLoad[0].locale });
 
         return json({
           shop: shop,

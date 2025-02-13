@@ -1,6 +1,6 @@
 import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Col, Modal, Row, Skeleton, Space, Typography, Button } from "antd";
+import { Col, Modal, Row, Skeleton, Space, Typography, Button, Rate, notification } from "antd";
 import {
   Link,
   useFetcher,
@@ -9,12 +9,13 @@ import "./styles.css";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import UserLanguageCard from "./components/userLanguageCard";
 import { useTranslation } from "react-i18next";
 import UserProfileCard from "./components/userProfileCard";
 import PaymentModal from "~/components/paymentModal";
+import PreviewModal from "~/components/previewModal";
 
 const { Title, Text } = Typography;
 
@@ -52,19 +53,35 @@ export const loader = async () => {
 const Index = () => {
   const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
   const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
-  const [user, setUser] = useState<UserType>();
+  // const [user, setUser] = useState<UserType>();
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
-  const [limited, setLimited] = useState<boolean>(false);
-  const [paymentModalVisible, setPaymentModalVisible] =
-    useState<boolean>(false);
+  // const [limited, setLimited] = useState<boolean>(false);
+  // const [paymentModalVisible, setPaymentModalVisible] =
+  //   useState<boolean>(false);
   // const [newUserModal, setNewUserModal] = useState<boolean>(false);
   // const [newUserModalLoading, setNewUserModalLoading] =
   //   useState<boolean>(false);
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const loadingLanguageFetcher = useFetcher<any>();
-  const loadingUserFetcher = useFetcher<any>();
+  // const loadingUserFetcher = useFetcher<any>();
   // const initializationFetcher = useFetcher<any>();
+  const [rating, setRating] = useState<number>(0);
+  const fetcher = useFetcher();
+
+  const handleSubmit = async () => {
+    const formData = new FormData();
+    formData.append("rate", JSON.stringify(
+      rating,
+    ));
+    fetcher.submit(formData, {
+      method: "post",
+      action: "/app",
+    });
+    // 提交评分到后端
+    // 关闭通知
+    notification.destroy('ratingNotification');
+  };
 
   useEffect(() => {
     const languageFormData = new FormData();
@@ -73,12 +90,12 @@ const Index = () => {
       method: "post",
       action: "/app",
     });
-    const userFormData = new FormData();
-    userFormData.append("userData", JSON.stringify(true));
-    loadingUserFetcher.submit(userFormData, {
-      method: "post",
-      action: "/app",
-    });
+    // const userFormData = new FormData();
+    // userFormData.append("userData", JSON.stringify(true));
+    // loadingUserFetcher.submit(userFormData, {
+    //   method: "post",
+    //   action: "/app",
+    // });
     shopify.loading(true);
   }, []);
 
@@ -91,20 +108,20 @@ const Index = () => {
     }
   }, [loadingLanguageFetcher.data]);
 
-  useEffect(() => {
-    if (loadingUserFetcher.data) {
-      setUser(loadingUserFetcher.data.data);
-      if (!loadingUserFetcher.data.data?.plan) {
-        // setNewUserModal(true);
-      }
-    }
-  }, [loadingUserFetcher.data]);
+  // useEffect(() => {
+  //   if (loadingUserFetcher.data) {
+  //     setUser(loadingUserFetcher.data.data);
+  //     if (!loadingUserFetcher.data.data?.plan) {
+  //       // setNewUserModal(true);
+  //     }
+  //   }
+  // }, [loadingUserFetcher.data]);
 
-  useEffect(() => {
-    if (user && user.chars >= user.totalChars) {
-      setLimited(true);
-    }
-  }, [user]);
+  // useEffect(() => {
+  //   if (user && user.chars >= user.totalChars) {
+  //     setLimited(true);
+  //   }
+  // }, [user]);
 
   // useEffect(() => {
   //   if (initializationFetcher.data && user) {
@@ -129,7 +146,36 @@ const Index = () => {
         published: lang.published,
         loading: false,
       }));
-      dispatch(setTableData(data)); // 只在组件首次渲染时触
+      dispatch(setTableData(data)); // 只在组件首次渲染时触发
+      notification.open({
+        key: 'ratingNotification',
+        message: t('rating.title'),
+        description: (
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            <Rate
+              onChange={(value: number) => setRating(value)}
+              style={{ fontSize: 24 }}
+            />
+            <Space>
+              <Button
+                type="primary"
+                onClick={handleSubmit}
+                style={{ color: "#007F61" }}
+              >
+                {t('rating.submit')}
+              </Button>
+              <Button onClick={() => notification.destroy('ratingNotification')}>
+                {t('rating.cancel')}
+              </Button>
+            </Space>
+          </Space>
+        ),
+        placement: 'topRight',
+        duration: 0,
+        style: {
+          width: 300,
+        },
+      });
     }
   }, [dispatch, languageData]);
 
@@ -153,7 +199,7 @@ const Index = () => {
               {t("Faster, higher-quality localization translation tool")}
             </Title>
           </div>
-          {user ? (
+          {/* {user ? (
             <UserProfileCard
               setPaymentModalVisible={setPaymentModalVisible}
               chars={user.chars}
@@ -161,7 +207,7 @@ const Index = () => {
             />
           ) : (
             <Skeleton active />
-          )}
+          )} */}
           <div style={{ paddingLeft: "8px" }}>
             <Title level={3}>
               {languageData.length}
@@ -231,6 +277,10 @@ const Index = () => {
             <NoLanguageSetCard />
           )}
         </Space>
+        {/* <PreviewModal
+          visible={previewModalVisible}
+          setVisible={setPreviewModalVisible}
+        /> */}
         {/* <Modal
           open={newUserModal}
           footer={
@@ -254,10 +304,10 @@ const Index = () => {
             )}
           </Text>
         </Modal> */}
-        <PaymentModal
+        {/* <PaymentModal
           visible={paymentModalVisible}
           setVisible={setPaymentModalVisible}
-        />
+        /> */}
       </Page>
     </Suspense>
   );

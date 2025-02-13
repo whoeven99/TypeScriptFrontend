@@ -376,11 +376,13 @@ const Index = () => {
         themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
       const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
       const blocks = JSON.parse(jsonString).current.blocks;
-      const switcherJson: any = Object.values(blocks).find(
-        (block: any) => block.type === ciwiSwitcherBlocksId,
-      );
-      if (!switcherJson || switcherJson.disabled) {
-        setSwitcherEnableCardOpen(true);
+      if (blocks) {
+        const switcherJson: any = Object.values(blocks).find(
+          (block: any) => block.type === ciwiSwitcherBlocksId,
+        );
+        if (!switcherJson || switcherJson.disabled) {
+          setSwitcherEnableCardOpen(true);
+        }
       }
     }
   }, [themeFetcher.data]);
