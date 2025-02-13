@@ -151,7 +151,7 @@
   "The server did not receive a timely response from the upstream server.": "The server did not receive a timely response from the upstream server.",
   "Back to Home": "Back to Home",
   "Automatically switch to the target language and currency.": "Automatically switch to the target language and currency.",
-  "rate":{
+  "rating":{
     "title":"Thank you for using our app"
   }
 }

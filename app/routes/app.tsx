@@ -59,7 +59,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-
   try {
     const formData = await request.formData();
     // const initialization = JSON.parse(formData.get("initialization") as string);
@@ -71,6 +70,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const statusData = JSON.parse(formData.get("statusData") as string);
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
+    const rate = JSON.parse(formData.get("rate") as string);
 
     // if (initialization) {
     //   try {
@@ -126,7 +126,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           targets: shopLocalesIndex,
         });
 
-        const languages = await GetLanguageList({ shop });
+        const languages = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
         const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
           key: i,
           src: languageLocaleInfo[lang.locale].countries,
@@ -146,8 +146,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
         console.log(`${shop}根路由正常加载`);
-        
-        return json({ data, languageSetting });
+
+        return json({ data, languageSetting, shop });
       } catch (error) {
         console.error("Error languageData app:", error);
         return json({ error: "Error languageData app" }, { status: 500 });
@@ -227,6 +227,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         confirmationUrl: orderInfo.confirmationUrl,
       });
       return json({ data: orderData });
+    }
+
+    if (rate) {
+      console.log(`${shop}`, rate)
     }
 
     return json({ success: false, message: "Invalid data" });

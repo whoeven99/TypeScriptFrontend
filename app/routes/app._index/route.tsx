@@ -1,6 +1,6 @@
 import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Col, Modal, Row, Skeleton, Space, Typography, Button } from "antd";
+import { Col, Modal, Row, Skeleton, Space, Typography, Button, Rate, notification } from "antd";
 import {
   Link,
   useFetcher,
@@ -9,7 +9,7 @@ import "./styles.css";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import UserLanguageCard from "./components/userLanguageCard";
 import { useTranslation } from "react-i18next";
@@ -61,12 +61,27 @@ const Index = () => {
   // const [newUserModal, setNewUserModal] = useState<boolean>(false);
   // const [newUserModalLoading, setNewUserModalLoading] =
   //   useState<boolean>(false);
-  const [previewModalVisible, setPreviewModalVisible] = useState<boolean>(true);
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const loadingLanguageFetcher = useFetcher<any>();
   // const loadingUserFetcher = useFetcher<any>();
   // const initializationFetcher = useFetcher<any>();
+  const [rating, setRating] = useState<number>(0);
+  const fetcher = useFetcher();
+
+  const handleSubmit = async () => {
+    const formData = new FormData();
+    formData.append("rate", JSON.stringify(
+      rating,
+    ));
+    fetcher.submit(formData, {
+      method: "post",
+      action: "/app",
+    });
+    // 提交评分到后端
+    // 关闭通知
+    notification.destroy('ratingNotification');
+  };
 
   useEffect(() => {
     const languageFormData = new FormData();
@@ -131,7 +146,36 @@ const Index = () => {
         published: lang.published,
         loading: false,
       }));
-      dispatch(setTableData(data)); // 只在组件首次渲染时触
+      dispatch(setTableData(data)); // 只在组件首次渲染时触发
+      notification.open({
+        key: 'ratingNotification',
+        message: t('rating.title'),
+        description: (
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            <Rate
+              onChange={(value: number) => setRating(value)}
+              style={{ fontSize: 24 }}
+            />
+            <Space>
+              <Button
+                type="primary"
+                onClick={handleSubmit}
+                style={{ color: "#007F61" }}
+              >
+                {t('rating.submit')}
+              </Button>
+              <Button onClick={() => notification.destroy('ratingNotification')}>
+                {t('rating.cancel')}
+              </Button>
+            </Space>
+          </Space>
+        ),
+        placement: 'topRight',
+        duration: 0,
+        style: {
+          width: 300,
+        },
+      });
     }
   }, [dispatch, languageData]);
 

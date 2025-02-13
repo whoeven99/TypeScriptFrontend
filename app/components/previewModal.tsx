@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Rate, Input, Form, message } from 'antd';
 import { useTranslation } from 'react-i18next';
 
@@ -12,6 +12,12 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ visible, setVisible }) => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [count, setCount] = useState(5);
+    const [mounted, setMounted] = useState(false);
+
+    // 确保组件只在客户端渲染
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const handleSubmit = async () => {
         if (count === 5) {
@@ -22,13 +28,9 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ visible, setVisible }) => {
         }
     };
 
-    const desc = [
-        t('rating.terrible'),
-        t('rating.bad'),
-        t('rating.normal'),
-        t('rating.good'),
-        t('rating.excellent')
-    ];
+    if (!mounted) {
+        return null;
+    }
 
     return (
         <Modal
@@ -46,7 +48,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ visible, setVisible }) => {
                     label={t('rating.rateLabel')}
                     rules={[{ required: true, message: t('rating.rateRequired') }]}
                 >
-                    <Rate tooltips={desc} count={count} defaultValue={5} onChange={(value) => setCount(value)} />
+                    <Rate count={count} onChange={(value) => setCount(value)} />
                 </Form.Item>
                 <Form.Item
                     name="feedback"
