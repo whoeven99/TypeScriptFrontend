@@ -546,7 +546,9 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
 // Page load handling
 window.onload = async function () {
-  const IpOpen = await fetchIpSwitch(shop);
+  const shop = document.getElementById("queryCiwiId");
+  shop.remove();
+  const IpOpen = await fetchIpSwitch(shop.value);
   if (IpOpen) {
     const iptoken = document.querySelector('span[name="iptoken"]');
     const iptokenValue = iptoken.textContent;
@@ -628,8 +630,6 @@ window.onload = async function () {
   }
 
   // 在页面加载时执行初始化
-  const shop = document.getElementById("queryCiwiId");
-  shop.remove();
   const data = await fetchCurrencies(shop.value);
   if (data) {
     await initializeCurrency(data, shop);

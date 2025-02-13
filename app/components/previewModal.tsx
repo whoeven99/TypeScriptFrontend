@@ -11,21 +11,16 @@ const RatingForm: React.FC<RatingFormProps> = ({ visible, setVisible }) => {
     const { t } = useTranslation();
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
+    const [count, setCount] = useState(5);
 
-    // const handleSubmit = async () => {
-    //     try {
-    //         setLoading(true);
-    //         const values = await form.validateFields();
-    //         await onSubmit(values.rating, values.feedback);
-    //         message.success(t('rating.submitSuccess'));
-    //         form.resetFields();
-    //         onClose();
-    //     } catch (error) {
-    //         message.error(t('rating.submitError'));
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
+    const handleSubmit = async () => {
+        if (count === 5) {
+            // 5星评价时跳转到Shopify应用商店
+            window.open('https://apps.shopify.com/translator-by-ciwi?locale=zh-CN', '_blank');
+            setVisible(false);
+            message.success(t('rating.thankYou'));
+        }
+    };
 
     const desc = [
         t('rating.terrible'),
@@ -40,7 +35,7 @@ const RatingForm: React.FC<RatingFormProps> = ({ visible, setVisible }) => {
             title={t('rating.title')}
             open={visible}
             onCancel={() => setVisible(false)}
-            // onOk={handleSubmit}
+            onOk={handleSubmit}
             confirmLoading={loading}
             okText={t('rating.submit')}
             cancelText={t('rating.cancel')}
@@ -51,7 +46,7 @@ const RatingForm: React.FC<RatingFormProps> = ({ visible, setVisible }) => {
                     label={t('rating.rateLabel')}
                     rules={[{ required: true, message: t('rating.rateRequired') }]}
                 >
-                    <Rate tooltips={desc} />
+                    <Rate tooltips={desc} count={count} defaultValue={5} onChange={(value) => setCount(value)} />
                 </Form.Item>
                 <Form.Item
                     name="feedback"
