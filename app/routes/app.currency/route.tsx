@@ -108,12 +108,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const moneyWithCurrencyFormat =
             shopLoad.currencyFormats.moneyWithCurrencyFormat;
           const ip = await GetSwitchId({ shopName: shop });
-          console.log("primaryCurrency: ", primaryCurrency);
-          console.log("defaultCurrencyCode: ", shopLoad.currencyCode);
-          console.log("currencyList: ", finalCurrencyList);
-          console.log("moneyFormat: ", moneyFormat);
-          console.log("moneyWithCurrencyFormat: ", moneyWithCurrencyFormat);
-          console.log("ip: ", ip);
           return json({
             primaryCurrency,
             defaultCurrencyCode: shopLoad.currencyCode,
@@ -301,26 +295,22 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data && currencyData.length) {
-      console.log("loadingFetcher.data: ", loadingFetcher.data);
       setDefaultCurrencyCode(loadingFetcher.data.defaultCurrencyCode);
       const defaultCurrency = currencyData.find(
         (item) => item.currencyCode === loadingFetcher.data.defaultCurrencyCode,
       );
-      console.log("defaultCurrency: ", defaultCurrency);
       if (defaultCurrency) {
         setDefaultSymbol(defaultCurrency.symbol);
       }
       const tableData = loadingFetcher.data.currencyList.filter(
         (item: any) => !item.primaryStatus,
       );
-      console.log("tableData: ", tableData);
       setOriginalData(tableData);
       setFilteredData(tableData);
       dispatch(setTableData(tableData));
       const autoRateData = loadingFetcher.data.currencyList
         .filter((item: any) => item.exchangeRate == "Auto")
         .map((item: any) => item.currencyCode);
-      console.log("autoRateData: ", autoRateData);
       const rateFormData = new FormData();
       rateFormData.append("rateData", JSON.stringify(autoRateData));
       rateFetcher.submit(rateFormData, {
@@ -339,7 +329,6 @@ const Index = () => {
         ).documentElement.textContent,
       );
       setIp(loadingFetcher.data.ip);
-      console.log("loadingFetcher.data.ip: ", loadingFetcher.data.ip);
       shopify.loading(false);
       setLoading(false);
       const primaryCurrency = loadingFetcher.data.primaryCurrency;
@@ -383,14 +372,10 @@ const Index = () => {
 
   useEffect(() => {
     if (themeFetcher.data) {
-      console.log("themeFetcher.data: ", themeFetcher.data);
       const switcherData =
         themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
-      console.log("switcherData: ", switcherData);
       const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
-      console.log("jsonString: ", jsonString);
       const blocks = JSON.parse(jsonString).current?.blocks;
-      console.log("blocks: ", blocks);
       if (blocks) {
         const switcherJson: any = Object.values(blocks).find(
           (block: any) => block.type === ciwiSwitcherBlocksId,
@@ -405,7 +390,6 @@ const Index = () => {
 
   useEffect(() => {
     if (rateFetcher.data) {
-      console.log("rateFetcher.data: ", rateFetcher.data);
       const newRates = rateFetcher.data.data.reduce((acc: any[], item: any) => {
         if (item.status === "fulfilled" && item.value) {
           acc.push(item.value);
@@ -414,7 +398,6 @@ const Index = () => {
       }, []);
       if (newRates.length > 0) {
         setCurrencyAutoRate(newRates);
-        console.log(newRates);
       }
     }
   }, [rateFetcher.data]);
