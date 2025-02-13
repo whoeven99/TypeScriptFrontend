@@ -306,18 +306,21 @@ const Index = () => {
       const defaultCurrency = currencyData.find(
         (item) => item.currencyCode === loadingFetcher.data.defaultCurrencyCode,
       );
+      console.log("defaultCurrency: ", defaultCurrency);
       if (defaultCurrency) {
         setDefaultSymbol(defaultCurrency.symbol);
       }
       const tableData = loadingFetcher.data.currencyList.filter(
         (item: any) => !item.primaryStatus,
       );
+      console.log("tableData: ", tableData);
       setOriginalData(tableData);
       setFilteredData(tableData);
       dispatch(setTableData(tableData));
       const autoRateData = loadingFetcher.data.currencyList
         .filter((item: any) => item.exchangeRate == "Auto")
         .map((item: any) => item.currencyCode);
+      console.log("autoRateData: ", autoRateData);
       const rateFormData = new FormData();
       rateFormData.append("rateData", JSON.stringify(autoRateData));
       rateFetcher.submit(rateFormData, {
@@ -336,6 +339,7 @@ const Index = () => {
         ).documentElement.textContent,
       );
       setIp(loadingFetcher.data.ip);
+      console.log("loadingFetcher.data.ip: ", loadingFetcher.data.ip);
       shopify.loading(false);
       setLoading(false);
       const primaryCurrency = loadingFetcher.data.primaryCurrency;
