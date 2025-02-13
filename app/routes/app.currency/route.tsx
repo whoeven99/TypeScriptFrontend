@@ -389,14 +389,16 @@ const Index = () => {
       console.log("switcherData: ", switcherData);
       const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
       console.log("jsonString: ", jsonString);
-      const blocks = JSON.parse(jsonString).current.blocks;
+      const blocks = JSON.parse(jsonString).current?.blocks;
       console.log("blocks: ", blocks);
-      const switcherJson: any = Object.values(blocks).find(
-        (block: any) => block.type === ciwiSwitcherBlocksId,
-      );
-      console.log("switcherJson: ", switcherJson);
-      if (!switcherJson || switcherJson.disabled) {
-        setSwitcherEnableCardOpen(true);
+      if (blocks) {
+        const switcherJson: any = Object.values(blocks).find(
+          (block: any) => block.type === ciwiSwitcherBlocksId,
+        );
+        console.log("switcherJson: ", switcherJson);
+        if (!switcherJson || switcherJson.disabled) {
+          setSwitcherEnableCardOpen(true);
+        }
       }
     }
   }, [themeFetcher.data]);
