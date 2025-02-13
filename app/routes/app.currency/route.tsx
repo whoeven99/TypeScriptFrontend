@@ -108,7 +108,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const moneyWithCurrencyFormat =
             shopLoad.currencyFormats.moneyWithCurrencyFormat;
           const ip = await GetSwitchId({ shopName: shop });
-          console.log(ip);
+          console.log("primaryCurrency: ", primaryCurrency);
+          console.log("defaultCurrencyCode: ", shopLoad.currencyCode);
+          console.log("currencyList: ", finalCurrencyList);
+          console.log("moneyFormat: ", moneyFormat);
+          console.log("moneyWithCurrencyFormat: ", moneyWithCurrencyFormat);
+          console.log("ip: ", ip);
           return json({
             primaryCurrency,
             defaultCurrencyCode: shopLoad.currencyCode,
