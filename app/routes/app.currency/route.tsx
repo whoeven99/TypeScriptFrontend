@@ -140,6 +140,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             GetCacheData({ shop, currencyCode }),
           );
           const data = await Promise.allSettled(promises);
+          console.log("rateData: ", data);
           return json({ data });
         } catch (error) {
           console.error("Error rateData currency:", error);
@@ -300,6 +301,7 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data && currencyData.length) {
+      console.log("loadingFetcher.data: ", loadingFetcher.data);
       setDefaultCurrencyCode(loadingFetcher.data.defaultCurrencyCode);
       const defaultCurrency = currencyData.find(
         (item) => item.currencyCode === loadingFetcher.data.defaultCurrencyCode,
@@ -377,13 +379,18 @@ const Index = () => {
 
   useEffect(() => {
     if (themeFetcher.data) {
+      console.log("themeFetcher.data: ", themeFetcher.data);
       const switcherData =
         themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
+      console.log("switcherData: ", switcherData);
       const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+      console.log("jsonString: ", jsonString);
       const blocks = JSON.parse(jsonString).current.blocks;
+      console.log("blocks: ", blocks);
       const switcherJson: any = Object.values(blocks).find(
         (block: any) => block.type === ciwiSwitcherBlocksId,
       );
+      console.log("switcherJson: ", switcherJson);
       if (!switcherJson || switcherJson.disabled) {
         setSwitcherEnableCardOpen(true);
       }
@@ -392,6 +399,7 @@ const Index = () => {
 
   useEffect(() => {
     if (rateFetcher.data) {
+      console.log("rateFetcher.data: ", rateFetcher.data);
       const newRates = rateFetcher.data.data.reduce((acc: any[], item: any) => {
         if (item.status === "fulfilled" && item.value) {
           acc.push(item.value);
