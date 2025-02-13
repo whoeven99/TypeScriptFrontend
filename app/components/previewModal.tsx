@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Modal, Rate, Input, Form, message } from 'antd';
 import { useTranslation } from 'react-i18next';
 
-interface RatingFormProps {
+interface PreviewModalProps {
     visible: boolean;
     setVisible: (visible: boolean) => void;
 }
 
-const RatingForm: React.FC<RatingFormProps> = ({ visible, setVisible }) => {
+const PreviewModal: React.FC<PreviewModalProps> = ({ visible, setVisible }) => {
     const { t } = useTranslation();
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
@@ -65,4 +65,4 @@ const RatingForm: React.FC<RatingFormProps> = ({ visible, setVisible }) => {
     );
 };
 
-export default RatingForm;
+export default PreviewModal;

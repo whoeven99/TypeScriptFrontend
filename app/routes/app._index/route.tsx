@@ -233,10 +233,10 @@ const Index = () => {
             <NoLanguageSetCard />
           )}
         </Space>
-        <PreviewModal
+        {/* <PreviewModal
           visible={previewModalVisible}
           setVisible={setPreviewModalVisible}
-        />
+        /> */}
         {/* <Modal
           open={newUserModal}
           footer={

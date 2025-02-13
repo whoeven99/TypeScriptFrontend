@@ -44,12 +44,6 @@ import { ConfigProvider } from "antd";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
-interface LoadingFetchType {
-  shopLocales: string[];
-  primaryLanguage: string[];
-  initialization: boolean;
-}
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
     await authenticate.admin(request);
@@ -244,7 +238,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
-  const loadingFetcher = useFetcher<LoadingFetchType>();
+  const loadingFetcher = useFetcher<any>();
   const { t } = useTranslation();
 
   useEffect(() => {
