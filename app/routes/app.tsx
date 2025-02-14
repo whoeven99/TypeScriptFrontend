@@ -133,8 +133,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           localeName: languageLocaleInfo[lang.locale].Local,
           locale: lang.locale,
           status:
-            languages.find((language: any) => language.target === lang.locale)
-              ?.status || 0,
+            languages ? languages.find((language: any) => language.target === lang.locale)
+              ?.status : 0,
           published: lang.published,
         }));
 
