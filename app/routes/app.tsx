@@ -71,7 +71,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
     const rate = JSON.parse(formData.get("rate") as string);
-
     // if (initialization) {
     //   try {
     //     const data: boolean = await AddUserFreeSubscription({ shop });
@@ -229,8 +228,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return json({ data: orderData });
     }
 
-    if (rate) {
-      console.log(`${shop}`, rate)
+    if (typeof rate === 'number') {
+      console.log(`商店${shop}的评分: ${rate}`)
     }
 
     return json({ success: false, message: "Invalid data" });
