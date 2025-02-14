@@ -141,7 +141,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
 
         const words = await GetUserWords({ shop });
-        const languagesLoad = await GetLanguageList({ shop,source: shopLanguagesLoad[0].locale });
+        const languagesLoad = await GetLanguageList({ shop, source: shopLanguagesLoad[0].locale });
 
         return json({
           shop: shop,
@@ -404,8 +404,8 @@ const Index = () => {
       locale: lang.locale,
       primary: lang.primary,
       status:
-        languagesLoad.find((language: any) => language.target === lang.locale)
-          ?.status || 0,
+        languagesLoad ? languagesLoad.find((language: any) => language.target === lang.locale)
+          ?.status : 0,
       auto_update_translation: false,
       published: lang.published,
       loading: false,
