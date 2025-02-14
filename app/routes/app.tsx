@@ -126,7 +126,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           targets: shopLocalesIndex,
         });
 
-        const languages = await GetLanguageList({ shop });
+        const languages = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
         const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
           key: i,
           src: languageLocaleInfo[lang.locale].countries,
