@@ -148,6 +148,9 @@
     "Gateway Timeout": "Timeout del gateway",
     "The server did not receive a timely response from the upstream server.": "Il server non ha ricevuto una risposta tempestiva dal server upstream.",
     "Back to Home": "Torna alla home",
-    "Automatically switch to the target language and currency.": "Cambia automaticamente la lingua e la valuta di destinazione."
+    "Automatically switch to the target language and currency.": "Cambia automaticamente la lingua e la valuta di destinazione.",
+    "rating":{
+      "title":"Grazie per l'utilizzo della nostra app"
+    }
 }
   

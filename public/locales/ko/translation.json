@@ -149,6 +149,9 @@
     "Gateway Timeout": "게이트웨이 타임아웃",
     "The server did not receive a timely response from the upstream server.": "상위 서버에서 신속한 응답을 받지 못했습니다.",
     "Back to Home": "홈으로 돌아가기",
-    "Automatically switch to the target language and currency.": "목표 언어와 통화로 자동 전환"
+    "Automatically switch to the target language and currency.": "목표 언어와 통화로 자동 전환",
+    "rating":{
+      "title":"감사합니다. 우리 앱을 사용하십시오."
+    }
   }
   

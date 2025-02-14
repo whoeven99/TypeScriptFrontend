@@ -149,6 +149,9 @@
     "Gateway Timeout": "Délai de passerelle dépassé",
     "The server did not receive a timely response from the upstream server.": "Le serveur n'a pas reçu de réponse à temps du serveur upstream.",
     "Back to Home": "Retour à la page d'accueil",
-    "Automatically switch to the target language and currency.": "Changer automatiquement de langue et de devise cible."
+    "Automatically switch to the target language and currency.": "Changer automatiquement de langue et de devise cible.",
+    "rating":{
+      "title":"Merci pour l'utilisation de notre application"
+    }   
 }
   

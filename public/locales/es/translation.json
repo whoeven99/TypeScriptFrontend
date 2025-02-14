@@ -149,6 +149,9 @@
     "Gateway Timeout": "Tiempo de espera de la puerta de enlace agotado",
     "The server did not receive a timely response from the upstream server.": "El servidor no recibió una respuesta oportuna del servidor upstream.",
     "Back to Home": "Volver a la página principal",
-    "Automatically switch to the target language and currency.": "Cambiar automáticamente al idioma y moneda objetivo."
+    "Automatically switch to the target language and currency.": "Cambiar automáticamente al idioma y moneda objetivo.",
+    "rating":{
+      "title":"Gracias por usar nuestra app"
+    }
 }
   

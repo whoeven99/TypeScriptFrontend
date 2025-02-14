@@ -149,6 +149,9 @@
     "Gateway Timeout": "Tempo limite do gateway",
     "The server did not receive a timely response from the upstream server.": "O servidor não recebeu uma resposta oportuna do servidor upstream.",
     "Back to Home": "Voltar para a página inicial",
-    "Automatically switch to the target language and currency.": "Mudar automaticamente para o idioma e moeda alvo."
+    "Automatically switch to the target language and currency.": "Mudar automaticamente para o idioma e moeda alvo.",
+    "rating":{
+      "title":"Obrigado por usar nossa app"
+    }
 }
   

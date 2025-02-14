@@ -149,5 +149,8 @@
   "Gateway Timeout": "网关超时",
   "The server did not receive a timely response from the upstream server.": "服务器未从上游服务器及时收到响应。",
   "Back to Home": "返回首页",
-  "Automatically switch to the target language and currency.": "自动切换到目标语言和货币。"
+  "Automatically switch to the target language and currency.": "自动切换到目标语言和货币。",
+  "rating":{
+    "title":"感谢使用我们的应用程序"
+  }
 }

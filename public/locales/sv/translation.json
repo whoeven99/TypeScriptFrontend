@@ -149,6 +149,9 @@
     "Gateway Timeout": "Gateway timeout",
     "The server did not receive a timely response from the upstream server.": "Servern fick inte ett tillräckligt snabbt svar från upstream-servern.",
     "Back to Home": "Tillbaka till startsida",
-    "Automatically switch to the target language and currency.": "Växla automatiskt till målspråk och valuta."
+    "Automatically switch to the target language and currency.": "Växla automatiskt till målspråk och valuta.",
+    "rating":{
+      "title":"Tack för att du använder vår app"
+    }
 }
   

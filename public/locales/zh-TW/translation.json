@@ -149,6 +149,9 @@
     "Gateway Timeout": "閘道超時",
     "The server did not receive a timely response from the upstream server.": "伺服器未從上游伺服器收到即時的回應。",
     "Back to Home": "返回首頁",
-    "Automatically switch to the target language and currency.": "自動切換到目標語言和貨幣。"
+    "Automatically switch to the target language and currency.": "自動切換到目標語言和貨幣。",
+    "rating":{
+      "title":"感謝使用我們的應用程序"
+    }
 }
   

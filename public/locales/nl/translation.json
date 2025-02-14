@@ -149,6 +149,9 @@
     "Gateway Timeout": "Gateway timeout",
     "The server did not receive a timely response from the upstream server.": "De server heeft geen tijdige respons ontvangen van de upstream-server.",
     "Back to Home": "Terug naar Home",
-    "Automatically switch to the target language and currency.": "Automatisch naar de doeltaal en valuta schakelen."
+    "Automatically switch to the target language and currency.": "Automatisch naar de doeltaal en valuta schakelen.",
+    "rating":{
+      "title":"Bedankt voor het gebruik van onze app"
+    }
 }
   
