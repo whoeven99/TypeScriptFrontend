@@ -85,7 +85,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
 
   useEffect(() => {
     if (statusFetcher.data) {
-      if (statusFetcher.data.data[0].status === 2) {
+      if (statusFetcher.data?.data[0]?.status === 2) {
         // 加入10秒的延时
         const delayTimeout = setTimeout(() => {
           const formData = new FormData();
@@ -128,10 +128,6 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
             status: 2,
           }),
         );
-        dateTimeFetcher.submit(
-          JSON.stringify({ getDateTime: true }),
-          { method: "post", action: "/app" },
-        );
       }
     }
   }, [translateFetcher.data]);
@@ -141,15 +137,19 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
       (item: LanguagesDataType) => item.status === 2,
     );
     if (!selectedTranslatingItem) {
-      const formData = new FormData();
-      formData.append(
-        "translation",
-        JSON.stringify({
-          primaryLanguageCode: primaryLanguageCode,
-          selectedLanguage: languageCode,
-        }),
-      ); // 将选中的语言作为字符串发送
-      translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
+      // const formData = new FormData();
+      // formData.append(
+      //   "translation",
+      //   JSON.stringify({
+      //     primaryLanguageCode: primaryLanguageCode,
+      //     selectedLanguage: languageCode,
+      //   }),
+      // ); // 将选中的语言作为字符串发送
+      // translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
+      dateTimeFetcher.submit(
+        { getDateTime: true },
+        { method: "post", action: "/app" },
+      );
     } else {
       message.error(
         t(

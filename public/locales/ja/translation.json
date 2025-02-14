@@ -149,7 +149,10 @@
     "Gateway Timeout": "ゲートウェイタイムアウト",
     "The server did not receive a timely response from the upstream server.": "上流サーバーからのタイムリーな応答を受け取りませんでした。",
     "Back to Home": "ホームに戻る",
-    "Automatically switch to the target language and currency.": "ターゲット言語と通貨に自動的に切り替えます。"
-
+    "Automatically switch to the target language and currency.": "ターゲット言語と通貨に自動的に切り替えます。",
+    "rating":{
+      "title":"我々はあなたのサポートが必要です。",
+      "description":"翻訳結果に満足している場合、5星評価を残してください。"
+    }
 }
   

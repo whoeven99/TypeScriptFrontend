@@ -151,7 +151,8 @@
     "Back to Home": "Tillbaka till startsida",
     "Automatically switch to the target language and currency.": "Växla automatiskt till målspråk och valuta.",
     "rating":{
-      "title":"Tack för att du använder vår app"
+      "title":"Vi behöver din stöd.",
+      "description":"Om du är nöjd med översättningsresultaten, vänligen lämna oss en femstjärnig recension."
     }
 }
   

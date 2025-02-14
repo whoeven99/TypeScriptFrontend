@@ -151,6 +151,7 @@
   "Back to Home": "返回首页",
   "Automatically switch to the target language and currency.": "自动切换到目标语言和货币。",
   "rating":{
-    "title":"感谢使用我们的应用程序"
+    "title":"我们需要您的支持。",
+    "description":"如果您对翻译结果满意，请考虑给我们留下五星好评。"
   }
 }

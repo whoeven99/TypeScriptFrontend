@@ -152,6 +152,7 @@
   "Back to Home": "Back to Home",
   "Automatically switch to the target language and currency.": "Automatically switch to the target language and currency.",
   "rating":{
-    "title":"Thank you for using our app"
+    "title":"We need your support.",
+    "description":"If you're satisfied with the translation results, please consider leaving us a five-star review."
   }
 }

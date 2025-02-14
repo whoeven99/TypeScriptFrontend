@@ -357,7 +357,7 @@ const Index = () => {
 
   useEffect(() => {
     if (statusFetcher.data) {
-      const items = statusFetcher.data.data.map((item: any) => {
+      const items = statusFetcher.data?.data.map((item: any) => {
         if (item?.status === 2) {
           return item;
         } else {

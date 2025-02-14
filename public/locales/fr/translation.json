@@ -151,7 +151,8 @@
     "Back to Home": "Retour à la page d'accueil",
     "Automatically switch to the target language and currency.": "Changer automatiquement de langue et de devise cible.",
     "rating":{
-      "title":"Merci pour l'utilisation de notre application"
+      "title":"Nous avons besoin de votre soutien.",
+      "description":"Si vous êtes satisfait des résultats de la traduction, veuillez nous laisser une évaluation de cinq étoiles."
     }   
 }
   

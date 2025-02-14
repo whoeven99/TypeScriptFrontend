@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Rate, Input, Form, message } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { useFetcher } from '@remix-run/react';
 
 interface PreviewModalProps {
     visible: boolean;
@@ -10,9 +11,9 @@ interface PreviewModalProps {
 const PreviewModal: React.FC<PreviewModalProps> = ({ visible, setVisible }) => {
     const { t } = useTranslation();
     const [form] = Form.useForm();
-    const [loading, setLoading] = useState(false);
-    const [count, setCount] = useState(5);
+    const [count, setCount] = useState(0);
     const [mounted, setMounted] = useState(false);
+    const fetcher = useFetcher<any>();
 
     // 确保组件只在客户端渲染
     useEffect(() => {
@@ -21,11 +22,15 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ visible, setVisible }) => {
 
     const handleSubmit = async () => {
         if (count === 5) {
+            const formData = new FormData();
+            formData.append("rate", JSON.stringify(count));
             // 5星评价时跳转到Shopify应用商店
-            window.open('https://apps.shopify.com/translator-by-ciwi?locale=zh-CN', '_blank');
-            setVisible(false);
-            message.success(t('rating.thankYou'));
+            fetcher.submit(
+                formData,
+                { method: 'post', action: '/app' },
+            );
         }
+        setVisible(false);
     };
 
     if (!mounted) {
@@ -38,29 +43,15 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ visible, setVisible }) => {
             open={visible}
             onCancel={() => setVisible(false)}
             onOk={handleSubmit}
-            confirmLoading={loading}
-            okText={t('rating.submit')}
-            cancelText={t('rating.cancel')}
+            okText={t('OK')}
+            cancelText={t('Cancel')}
         >
             <Form form={form} layout="vertical">
                 <Form.Item
                     name="rating"
-                    label={t('rating.rateLabel')}
-                    rules={[{ required: true, message: t('rating.rateRequired') }]}
+                    label={t('rating.description')}
                 >
-                    <Rate count={count} onChange={(value) => setCount(value)} />
-                </Form.Item>
-                <Form.Item
-                    name="feedback"
-                    label={t('rating.feedbackLabel')}
-                    rules={[{ required: true, message: t('rating.feedbackRequired') }]}
-                >
-                    <Input.TextArea
-                        rows={4}
-                        placeholder={t('rating.feedbackPlaceholder')}
-                        maxLength={500}
-                        showCount
-                    />
+                    <Rate value={count} onChange={(value) => setCount(value)} />
                 </Form.Item>
             </Form>
         </Modal>

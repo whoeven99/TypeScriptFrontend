@@ -151,7 +151,8 @@
     "Back to Home": "홈으로 돌아가기",
     "Automatically switch to the target language and currency.": "목표 언어와 통화로 자동 전환",
     "rating":{
-      "title":"감사합니다. 우리 앱을 사용하십시오."
+      "title":"우리는 당신의 지원이 필요합니다.",
+      "description":"만약 번역 결과에 만족하시면, 5 점 평점을 남겨주세요."
     }
   }
   

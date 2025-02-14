@@ -72,7 +72,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
     const rate = JSON.parse(formData.get("rate") as string);
-    const getDateTime = JSON.parse(formData.get("getDateTime") as string);
+    const getDateTime = formData.get("getDateTime");
     // if (initialization) {
     //   try {
     //     const data: boolean = await AddUserFreeSubscription({ shop });
@@ -236,8 +236,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (getDateTime) {
       const data = await GetUserCreateTime(shop);
-      console.log(data);
-      return json({ data });
+      console.log("GetUserCreateTime", data);
+      return data;
     }
 
     return json({ success: false, message: "Invalid data" });
