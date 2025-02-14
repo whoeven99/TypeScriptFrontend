@@ -160,18 +160,16 @@ const Index = () => {
               <Button
                 type="primary"
                 onClick={handleSubmit}
-                style={{ color: "#007F61" }}
+                style={{ backgroundColor: "#007F61" }}
               >
-                {t('rating.submit')}
+                {t('OK')}
               </Button>
-              <Button onClick={() => notification.destroy('ratingNotification')}>
-                {t('rating.cancel')}
-              </Button>
+              
             </Space>
           </Space>
         ),
         placement: 'topRight',
-        duration: 0,
+        showProgress: true,
         style: {
           width: 300,
         },
