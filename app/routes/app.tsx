@@ -41,6 +41,7 @@ import { Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
+import { GetUserCreateTime } from "~/api/prisma";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -71,6 +72,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
     const rate = JSON.parse(formData.get("rate") as string);
+    const getDateTime = JSON.parse(formData.get("getDateTime") as string);
     // if (initialization) {
     //   try {
     //     const data: boolean = await AddUserFreeSubscription({ shop });
@@ -230,6 +232,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (typeof rate === 'number') {
       console.log(`商店${shop}的评分: ${rate}`)
+    }
+
+    if (getDateTime) {
+      const data = await GetUserCreateTime(shop);
+      console.log(data);
+      return json({ data });
     }
 
     return json({ success: false, message: "Invalid data" });

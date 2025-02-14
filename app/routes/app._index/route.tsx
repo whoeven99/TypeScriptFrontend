@@ -1,6 +1,6 @@
 import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Col, Modal, Row, Skeleton, Space, Typography, Button, Rate, notification } from "antd";
+import { Col, Modal, Row, Skeleton, Space, Typography } from "antd";
 import {
   Link,
   useFetcher,
@@ -36,11 +36,6 @@ interface LanguageSettingType {
   shopLanguageCodesWithoutPrimary: string[];
 }
 
-interface UserType {
-  chars: number;
-  totalChars: number;
-}
-
 export interface WordsType {
   chars: number;
   totalChars: number;
@@ -58,6 +53,8 @@ const Index = () => {
   // const [limited, setLimited] = useState<boolean>(false);
   // const [paymentModalVisible, setPaymentModalVisible] =
   //   useState<boolean>(false);
+  const [previewModalVisible, setPreviewModalVisible] =
+    useState<boolean>(false);
   // const [newUserModal, setNewUserModal] = useState<boolean>(false);
   // const [newUserModalLoading, setNewUserModalLoading] =
   //   useState<boolean>(false);
@@ -67,21 +64,7 @@ const Index = () => {
   // const loadingUserFetcher = useFetcher<any>();
   // const initializationFetcher = useFetcher<any>();
   const [rating, setRating] = useState<number>(0);
-  const fetcher = useFetcher();
-
-  const handleSubmit = async () => {
-    const formData = new FormData();
-    formData.append("rate", JSON.stringify(
-      rating,
-    ));
-    fetcher.submit(formData, {
-      method: "post",
-      action: "/app",
-    });
-    // 提交评分到后端
-    // 关闭通知
-    notification.destroy('ratingNotification');
-  };
+  const dateTimeFetcher = useFetcher();
 
   useEffect(() => {
     const languageFormData = new FormData();
@@ -97,6 +80,10 @@ const Index = () => {
     //   action: "/app",
     // });
     shopify.loading(true);
+    dateTimeFetcher.submit(
+      JSON.stringify({ getDateTime: true }),
+      { method: "post", action: "/app" },
+    );
   }, []);
 
   useEffect(() => {
@@ -107,6 +94,12 @@ const Index = () => {
       shopify.loading(false);
     }
   }, [loadingLanguageFetcher.data]);
+
+  useEffect(() => {
+    if (dateTimeFetcher.data) {
+      console.log(dateTimeFetcher.data);
+    }
+  }, [dateTimeFetcher.data]);
 
   // useEffect(() => {
   //   if (loadingUserFetcher.data) {
@@ -147,33 +140,6 @@ const Index = () => {
         loading: false,
       }));
       dispatch(setTableData(data)); // 只在组件首次渲染时触发
-      notification.open({
-        key: 'ratingNotification',
-        message: t('rating.title'),
-        description: (
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            <Rate
-              onChange={(value: number) => setRating(value)}
-              style={{ fontSize: 24 }}
-            />
-            <Space>
-              <Button
-                type="primary"
-                onClick={handleSubmit}
-                style={{ backgroundColor: "#007F61" }}
-              >
-                {t('OK')}
-              </Button>
-              
-            </Space>
-          </Space>
-        ),
-        placement: 'topRight',
-        showProgress: true,
-        style: {
-          width: 300,
-        },
-      });
     }
   }, [dispatch, languageData]);
 
@@ -240,6 +206,7 @@ const Index = () => {
                         languageLocaleName={language.localeName}
                         languageName={language.name}
                         languageCode={language.locale}
+                        dateTimeFetcher={dateTimeFetcher}
                       // limited={limited}
                       />
                     )}
@@ -275,10 +242,10 @@ const Index = () => {
             <NoLanguageSetCard />
           )}
         </Space>
-        {/* <PreviewModal
+        <PreviewModal
           visible={previewModalVisible}
           setVisible={setPreviewModalVisible}
-        /> */}
+        />
         {/* <Modal
           open={newUserModal}
           footer={

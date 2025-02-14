@@ -3,7 +3,7 @@
 client_id = "dec512b68e658e4f21588e3d4de0e748"
 name = "Ciwi.ai:FAT(Test)"
 handle = "ciwi_test"
-application_url = "https://typescriptfrontend.onrender.com"
+application_url = "https://02a0590eca42.ngrok.app"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://typescriptfrontend.onrender.com/auth/callback",
-  "https://typescriptfrontend.onrender.com/auth/shopify/callback",
-  "https://typescriptfrontend.onrender.com/api/auth/callback"
+  "https://02a0590eca42.ngrok.app/auth/callback",
+  "https://02a0590eca42.ngrok.app/auth/shopify/callback",
+  "https://02a0590eca42.ngrok.app/api/auth/callback"
 ]
 
 [webhooks]

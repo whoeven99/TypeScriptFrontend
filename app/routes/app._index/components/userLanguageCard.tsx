@@ -15,6 +15,7 @@ interface UserLanguageCardProps {
   languageLocaleName: string;
   languageCode: string; //语言代码
   primaryLanguageCode: string;
+  dateTimeFetcher: any;
   // limited: boolean;
 }
 
@@ -28,6 +29,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   languageLocaleName,
   languageCode,
   primaryLanguageCode,
+  dateTimeFetcher,
   // limited,
 }) => {
   const data = useSelector((state: any) =>
@@ -125,6 +127,10 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
             target: translateFetcher.data?.data.target,
             status: 2,
           }),
+        );
+        dateTimeFetcher.submit(
+          JSON.stringify({ getDateTime: true }),
+          { method: "post", action: "/app" },
         );
       }
     }
