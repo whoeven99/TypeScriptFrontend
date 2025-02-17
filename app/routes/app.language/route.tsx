@@ -130,6 +130,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopPrimaryLanguage = shopLanguagesLoad.filter(
           (language) => language.primary,
         );
+        console.log("shopPrimaryLanguage: ", shopPrimaryLanguage);
+        
         const allMarket: MarketType[] = await queryAllMarket({ request });
         let allLanguages: AllLanguagesType[] = await queryAllLanguages({
           request,

@@ -378,7 +378,7 @@ export const GetLanguageLocaleInfo = async ({
 export const GetLanguageList = async ({ shop, source }: { shop: string, source: string }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}?source=${source}`,
+      url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}&&source=${source}`,
       method: "GET",
     });
 
