@@ -63,7 +63,6 @@ const Index = () => {
   const loadingLanguageFetcher = useFetcher<any>();
   // const loadingUserFetcher = useFetcher<any>();
   // const initializationFetcher = useFetcher<any>();
-  const dateTimeFetcher = useFetcher<any>();
 
   useEffect(() => {
     const languageFormData = new FormData();
@@ -79,6 +78,10 @@ const Index = () => {
     //   action: "/app",
     // });
     shopify.loading(true);
+    const installTime = localStorage.getItem('installTime')
+    if (!installTime) {
+      localStorage.setItem('installTime', new Date().toISOString());
+    }
   }, []);
 
   useEffect(() => {
@@ -90,33 +93,6 @@ const Index = () => {
     }
   }, [loadingLanguageFetcher.data]);
 
-  useEffect(() => {
-    if (dateTimeFetcher.data) {
-      const createTime = new Date(dateTimeFetcher.data.createdAt);
-      const currentTime = new Date();
-
-      // 计算时间差（毫秒）
-      const timeDifference = currentTime.getTime() - createTime.getTime();
-
-      // 转换为天数（1天 = 24 * 60 * 60 * 1000 毫秒）
-      const daysDifference = Math.floor(timeDifference / (24 * 60 * 60 * 1000));
-
-      // 如果超过3天，显示评分弹窗
-      if (daysDifference >= 3) {
-        // 检查localStorage是否已经显示过
-        const hasShownRating = localStorage.getItem('hasShownRating');
-        if (!hasShownRating) {
-          setPreviewModalVisible(true);
-          // 标记已经显示过
-          localStorage.setItem('hasShownRating', 'true');
-        }
-      }
-
-      console.log('创建时间：', createTime);
-      console.log('当前时间：', currentTime);
-      console.log('已使用天数：', daysDifference);
-    }
-  }, [dateTimeFetcher.data]);
 
   // useEffect(() => {
   //   if (loadingUserFetcher.data) {
@@ -223,7 +199,7 @@ const Index = () => {
                         languageLocaleName={language.localeName}
                         languageName={language.name}
                         languageCode={language.locale}
-                        dateTimeFetcher={dateTimeFetcher}
+                        setPreviewModalVisible={setPreviewModalVisible}
                       // limited={limited}
                       />
                     )}

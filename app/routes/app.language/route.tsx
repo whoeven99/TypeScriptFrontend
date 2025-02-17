@@ -50,6 +50,7 @@ import AddLanguageModal from "./components/addLanguageModal";
 import TranslationWarnModal from "~/components/translationWarnModal";
 import ProgressingCard from "~/components/progressingCard";
 import { updateState } from "~/store/modules/translatingResourceType";
+import PreviewModal from "~/components/previewModal";
 
 const { Title, Text } = Typography;
 
@@ -251,6 +252,8 @@ const Index = () => {
   const [data, setData] = useState<LanguagesDataType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showWarnModal, setShowWarnModal] = useState(false);
+  const [previewModalVisible, setPreviewModalVisible] =
+  useState<boolean>(false);
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -541,6 +544,30 @@ const Index = () => {
           method: "post",
           action: "/app/language",
         }); // 提交表单请求
+        const installTime = localStorage.getItem('installTime')
+        if (!installTime) {
+          localStorage.setItem('installTime', new Date().toISOString());
+        } else {
+          const createTime = new Date(installTime);
+          const currentTime = new Date();
+
+          // 计算时间差（毫秒）
+          const timeDifference = currentTime.getTime() - createTime.getTime();
+
+          // 转换为天数（1天 = 24 * 60 * 60 * 1000 毫秒）
+          const daysDifference = Math.floor(timeDifference / (24 * 60 * 60 * 1000));
+
+          // 如果超过3天，显示评分弹窗
+          if (daysDifference >= 3) {
+            // 检查localStorage是否已经显示过
+            const hasShownRating = localStorage.getItem('hasShownRating');
+            if (!hasShownRating) {
+              setPreviewModalVisible(true);
+              // 标记已经显示过
+              localStorage.setItem('hasShownRating', 'true');
+            }
+          }
+        }
       } else {
         message.error(
           t(
@@ -688,6 +715,12 @@ const Index = () => {
             allLanguages={allLanguages}
             languageLocaleInfo={languageLocaleInfo}
             primaryLanguage={primaryLanguage}
+          />
+        </Suspense>
+        <Suspense>
+          <PreviewModal
+            visible={previewModalVisible}
+            setVisible={setPreviewModalVisible}
           />
         </Suspense>
         <Suspense>

@@ -29,5 +29,4 @@ model Session {
   locale        String?
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
-  createdAt   DateTime @default(now())
 }
