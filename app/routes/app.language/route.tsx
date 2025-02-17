@@ -127,6 +127,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop,
           accessToken,
         });
+        const shopPrimaryLanguage = shopLanguagesLoad.filter(
+          (language) => language.primary,
+        );
         const allMarket: MarketType[] = await queryAllMarket({ request });
         let allLanguages: AllLanguagesType[] = await queryAllLanguages({
           request,
@@ -141,7 +144,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
 
         const words = await GetUserWords({ shop });
-        const languagesLoad = await GetLanguageList({ shop, source: shopLanguagesLoad[0].locale });
+        const languagesLoad = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
 
         return json({
           shop: shop,
