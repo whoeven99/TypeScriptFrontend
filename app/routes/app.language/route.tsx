@@ -48,7 +48,6 @@ import PrimaryLanguage from "./components/primaryLanguage";
 import PublishModal from "./components/publishModal";
 import AddLanguageModal from "./components/addLanguageModal";
 import TranslationWarnModal from "~/components/translationWarnModal";
-import { updateState } from "~/store/modules/translatingResourceType";
 
 const { Title, Text } = Typography;
 
@@ -364,7 +363,6 @@ const Index = () => {
             action: "/app",
           });
         }, 10000); // 10秒延时（10000毫秒）
-        dispatch(updateState(items[0].resourceType));
         // 清除超时定时器，以防组件卸载后仍然尝试执行
         return () => clearTimeout(delayTimeout);
       }
