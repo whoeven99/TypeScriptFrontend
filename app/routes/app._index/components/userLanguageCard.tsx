@@ -7,6 +7,7 @@ import TranslatedIcon from "~/components/translateIcon";
 import { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
 import TranslationWarnModal from "~/components/translationWarnModal";
+import { updateState } from "~/store/modules/translatingResourceType";
 const { Text } = Typography;
 
 interface UserLanguageCardProps {
@@ -102,7 +103,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
             action: "/app",
           });
         }, 10000); // 10秒延时（10000毫秒）
-
+        // dispatch(updateState(statusFetcher.data.data[0].resourceType));
         // 清除超时定时器，以防组件卸载后仍然尝试执行
         return () => clearTimeout(delayTimeout);
       } else {

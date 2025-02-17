@@ -48,6 +48,7 @@ import PrimaryLanguage from "./components/primaryLanguage";
 import PublishModal from "./components/publishModal";
 import AddLanguageModal from "./components/addLanguageModal";
 import TranslationWarnModal from "~/components/translationWarnModal";
+import ProgressingCard from "~/components/progressingCard";
 
 const { Title, Text } = Typography;
 
@@ -647,6 +648,7 @@ const Index = () => {
             <Suspense fallback={<Skeleton active paragraph={{ rows: 0 }} />}>
               <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
             </Suspense>
+            {/* <ProgressingCard /> */}
           </div>
           {/* <Suspense fallback={<Skeleton active />}>
             <AttentionCard

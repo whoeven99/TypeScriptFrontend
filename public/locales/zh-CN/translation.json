@@ -153,5 +153,11 @@
   "rating":{
     "title":"我们需要您的支持。",
     "description":"如果您对翻译结果满意，请考虑给我们留下五星好评。"
+  },
+  "Progressing":{
+    "title":"翻译任务：",
+    "target":"目标语言：",
+    "progressing":"正在翻译",
+    "module":"模块"
   }
 }
