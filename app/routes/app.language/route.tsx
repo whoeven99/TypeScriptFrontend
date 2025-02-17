@@ -49,6 +49,7 @@ import PublishModal from "./components/publishModal";
 import AddLanguageModal from "./components/addLanguageModal";
 import TranslationWarnModal from "~/components/translationWarnModal";
 import ProgressingCard from "~/components/progressingCard";
+import { updateState } from "~/store/modules/translatingResourceType";
 
 const { Title, Text } = Typography;
 
@@ -132,7 +133,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           (language) => language.primary,
         );
         console.log("shopPrimaryLanguage: ", shopPrimaryLanguage);
-        
+
         const allMarket: MarketType[] = await queryAllMarket({ request });
         let allLanguages: AllLanguagesType[] = await queryAllLanguages({
           request,
@@ -147,7 +148,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
 
         const words = await GetUserWords({ shop });
-        const languagesLoad = await GetLanguageList({ shop, source: shopLanguagesLoad[0].locale });
+        const languagesLoad = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
 
         return json({
           shop: shop,
@@ -275,31 +276,6 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (dataSource && primaryLanguage) {
-      dataSource.map((data) => {
-        if (data && data.status === 2) {
-          const formData = new FormData();
-          formData.append(
-            "statusData",
-            JSON.stringify({
-              source: primaryLanguage?.locale,
-              target: [data.locale],
-            }),
-          );
-          const timeoutId = setTimeout(() => {
-            statusFetcher.submit(formData, {
-              method: "post",
-              action: "/app",
-            });
-          }, 2000); // 2秒延时
-          // 在组件卸载时清除定时器
-          return () => clearTimeout(timeoutId);
-        }
-      });
-    }
-  }, [dataSource]);
-
-  useEffect(() => {
     if (loadingFetcher.data) {
       setShop(loadingFetcher.data.shop);
       setAllCountryCode(loadingFetcher.data.allCountryCode);
@@ -389,7 +365,7 @@ const Index = () => {
             action: "/app",
           });
         }, 10000); // 10秒延时（10000毫秒）
-
+        dispatch(updateState(items[0].resourceType));
         // 清除超时定时器，以防组件卸载后仍然尝试执行
         return () => clearTimeout(delayTimeout);
       }
@@ -653,8 +629,8 @@ const Index = () => {
             <Suspense fallback={<Skeleton active paragraph={{ rows: 0 }} />}>
               <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
             </Suspense>
-            {/* <ProgressingCard /> */}
           </div>
+          <ProgressingCard />
           {/* <Suspense fallback={<Skeleton active />}>
             <AttentionCard
               title={t("Translation word credits have been exhausted.")}
