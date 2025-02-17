@@ -211,7 +211,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
             </Text>
           </div>
           <div className="language_statu">
-            {data ? <TranslatedIcon status={data?.status} /> : <Text>...</Text>}
+            {data ? <TranslatedIcon status={4} /> : <Text>...</Text>}
           </div>
           <Space direction="horizontal">
             <Button
