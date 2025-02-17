@@ -81,6 +81,18 @@
   color: #29845a;
 }
 
+.translate_exception {
+  background-color: #fff1f0;
+}
+
+.translate_exception .circle {
+  border-color: #be2d2f;
+}
+
+.translate_exception .text {
+  color: #be2d2f;
+}
+
 /* 动画：旋转 */
 @keyframes rotating {
   0% {

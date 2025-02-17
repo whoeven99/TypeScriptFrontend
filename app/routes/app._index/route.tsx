@@ -63,7 +63,6 @@ const Index = () => {
   const loadingLanguageFetcher = useFetcher<any>();
   // const loadingUserFetcher = useFetcher<any>();
   // const initializationFetcher = useFetcher<any>();
-  const [rating, setRating] = useState<number>(0);
   const dateTimeFetcher = useFetcher<any>();
 
   useEffect(() => {

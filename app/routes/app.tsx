@@ -110,7 +110,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         const shopPrimaryLanguage = shopLanguagesIndex.filter(
           (language) => language.primary,
-        );
+        );        
         const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
           (language) => !language.primary,
         );
