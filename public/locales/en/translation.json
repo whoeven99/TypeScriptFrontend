@@ -154,5 +154,11 @@
   "rating":{
     "title":"We need your support.",
     "description":"If you're satisfied with the translation results, please consider leaving us a five-star review."
+  },
+  "Progressing":{
+    "title":"Translation tasks: ",
+    "target":"Target language: ",
+    "progressing":"Translating ",
+    "module":" module"
   }
 }

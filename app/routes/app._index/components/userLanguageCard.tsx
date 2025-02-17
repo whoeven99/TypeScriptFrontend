@@ -7,6 +7,7 @@ import TranslatedIcon from "~/components/translateIcon";
 import { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
 import TranslationWarnModal from "~/components/translationWarnModal";
+import { updateState } from "~/store/modules/translatingResourceType";
 const { Text } = Typography;
 
 interface UserLanguageCardProps {
@@ -15,7 +16,7 @@ interface UserLanguageCardProps {
   languageLocaleName: string;
   languageCode: string; //语言代码
   primaryLanguageCode: string;
-  dateTimeFetcher: any;
+  setPreviewModalVisible: (visible: boolean) => void;
   // limited: boolean;
 }
 
@@ -29,7 +30,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
   languageLocaleName,
   languageCode,
   primaryLanguageCode,
-  dateTimeFetcher,
+  setPreviewModalVisible,
   // limited,
 }) => {
   const data = useSelector((state: any) =>
@@ -102,7 +103,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
             action: "/app",
           });
         }, 10000); // 10秒延时（10000毫秒）
-
+        // dispatch(updateState(statusFetcher.data.data[0].resourceType));
         // 清除超时定时器，以防组件卸载后仍然尝试执行
         return () => clearTimeout(delayTimeout);
       } else {
@@ -137,19 +138,39 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
       (item: LanguagesDataType) => item.status === 2,
     );
     if (!selectedTranslatingItem) {
-      // const formData = new FormData();
-      // formData.append(
-      //   "translation",
-      //   JSON.stringify({
-      //     primaryLanguageCode: primaryLanguageCode,
-      //     selectedLanguage: languageCode,
-      //   }),
-      // ); // 将选中的语言作为字符串发送
-      // translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
-      dateTimeFetcher.submit(
-        { getDateTime: true },
-        { method: "post", action: "/app" },
-      );
+      const formData = new FormData();
+      formData.append(
+        "translation",
+        JSON.stringify({
+          primaryLanguageCode: primaryLanguageCode,
+          selectedLanguage: languageCode,
+        }),
+      ); // 将选中的语言作为字符串发送
+      translateFetcher.submit(formData, { method: "post", action: "/app" }); // 提交表单请求
+      const installTime = localStorage.getItem('installTime')
+      if (!installTime) {
+        localStorage.setItem('installTime', new Date().toISOString());
+      } else {
+        const createTime = new Date(installTime);
+        const currentTime = new Date();
+
+        // 计算时间差（毫秒）
+        const timeDifference = currentTime.getTime() - createTime.getTime();
+
+        // 转换为天数（1天 = 24 * 60 * 60 * 1000 毫秒）
+        const daysDifference = Math.floor(timeDifference / (24 * 60 * 60 * 1000));
+
+        // 如果超过3天，显示评分弹窗
+        if (daysDifference >= 0) {
+          // 检查localStorage是否已经显示过
+          const hasShownRating = localStorage.getItem('hasShownRating');
+          if (!hasShownRating) {
+            setPreviewModalVisible(true);
+            // 标记已经显示过
+            localStorage.setItem('hasShownRating', 'true');
+          }
+        }
+      }
     } else {
       message.error(
         t(
@@ -210,7 +231,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
             </Text>
           </div>
           <div className="language_statu">
-            {data ? <TranslatedIcon status={data?.status} /> : <Text>...</Text>}
+            {data ? <TranslatedIcon status={4} /> : <Text>...</Text>}
           </div>
           <Space direction="horizontal">
             <Button

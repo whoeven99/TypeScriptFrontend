@@ -41,7 +41,6 @@ import { Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
-import { GetUserCreateTime } from "~/api/prisma";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -232,12 +231,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (typeof rate === 'number') {
       console.log(`商店${shop}的评分: ${rate}`)
-    }
-
-    if (getDateTime) {
-      const data = await GetUserCreateTime(shop);
-      console.log("GetUserCreateTime", data);
-      return data;
     }
 
     return json({ success: false, message: "Invalid data" });
