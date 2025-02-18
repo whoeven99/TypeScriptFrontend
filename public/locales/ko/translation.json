@@ -153,6 +153,23 @@
     "rating":{
       "title":"우리는 당신의 지원이 필요합니다.",
       "description":"만약 번역 결과에 만족하시면, 5 점 평점을 남겨주세요."
+    },
+    "progressing":{
+      "title":"번역 작업: ",
+      "target":"목표 언어: ",
+      "progressing":"번역 중 ",
+      "module":" 모듈"
+    },
+    "contact":{
+      "title":"문의하기",
+      "description":"질문이나 도움이 필요하시면 아래 버튼을 클릭하여 지원에 문의하세요.",
+      "contactButton":"지원에 문의"
+    },
+    "userGuide":{
+      "title":"사용 설명서",
+      "feature1":"Shopify 번역 방법",
+      "feature2":"Shopify 테마 사용자 지정에서 Ciwi_Switcher를 활성화하는 방법",
+      "feature3":"Shopify 스토어에서 다중 통화 가격 설정 방법"
     }
   }
   

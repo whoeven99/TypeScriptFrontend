@@ -164,5 +164,11 @@
     "title":"联系我们",
     "description":"如果您有任何问题或需要帮助，请点击下方按钮与我们联系。",
     "contactButton":"联系支持"
+  },
+  "userGuide":{
+    "title":"用户指南",
+    "feature1":"如何翻译您的Shopify商店？",
+    "feature2":"如何启用Shopify主题定制中的Ciwi_Switcher以应用语言和货币选择器？",
+    "feature3":"如何在您的Shopify商店中设置多货币定价？"
   }
 }
