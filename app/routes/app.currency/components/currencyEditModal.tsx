@@ -164,7 +164,14 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         top: "40%",
       }}
       footer={[
-        <div key={"footer_buttons"}>
+        <div key={"footer_buttons"} style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          width: "100%",
+          marginTop: "-12px",
+          gap: "12px"        // 使用 gap 替代 marginRight
+        }}>
           <Button
             key={"manage_cancel_button"}
             onClick={handleCloseModal}

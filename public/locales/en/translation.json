@@ -155,10 +155,21 @@
     "title":"We need your support.",
     "description":"If you're satisfied with the translation results, please consider leaving us a five-star review."
   },
-  "Progressing":{
+  "progressing":{
     "title":"Translation tasks: ",
     "target":"Target language: ",
     "progressing":"Translating ",
     "module":" module"
+  },
+  "contact":{
+    "title":"Contact Us",
+    "description":"If you have any questions or need assistance, please click the button below to contact support.",
+    "contactButton":"Contact Support"
+  },
+  "userGuide":{
+    "title":"User Guide",
+    "feature1":"How to translate your Shopify store?",
+    "feature2":"How to enable the App from Shopify theme customization to apply the language & currency exchange switcher",
+    "feature3":"How to create translation rules for certain words and phrases"
   }
 }

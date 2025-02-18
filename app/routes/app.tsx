@@ -71,7 +71,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
     const rate = JSON.parse(formData.get("rate") as string);
-    const getDateTime = formData.get("getDateTime");
     // if (initialization) {
     //   try {
     //     const data: boolean = await AddUserFreeSubscription({ shop });
@@ -103,30 +102,63 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (languageData) {
       try {
+        const Acreatetime = new Date()
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,
         });
+        const Aendtime = new Date();
+
+        console.log("Acreatetime: ", Acreatetime);
+        console.log("Aendtime: ", Aendtime);
+        console.log("Atiming: ", Aendtime.getTime() - Acreatetime.getTime());
+
+        const Bcreatetime = new Date()
         const shopPrimaryLanguage = shopLanguagesIndex.filter(
           (language) => language.primary,
-        );        
+        );
         const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
           (language) => !language.primary,
         );
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
           (item) => item.locale,
         );
+        const Bendtime = new Date();
+
+        console.log("Bcreatetime: ", Bcreatetime);
+        console.log("Bendtime: ", Bendtime);
+        console.log("Btiming: ", Bendtime.getTime() - Bcreatetime.getTime());
         const languageLocaleInfo = await GetLanguageLocaleInfo({
           locale: shopLocalesIndex,
         });
 
+        const Ccreatetime = new Date()
         await InsertTargets({
           request,
           source: shopPrimaryLanguage[0].locale,
           targets: shopLocalesIndex,
         });
+        const Cendtime = new Date();
+        
+        console.log("Ccreatetime: ", Ccreatetime);
+        console.log("Cendtime: ", Cendtime);
+        console.log("Ctiming: ", Cendtime.getTime() - Ccreatetime.getTime());
 
+        const Dcreatetime = new Date()
         const languages = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
+        
+        // const response = await axios({
+        //   url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}&&source=${shopPrimaryLanguage[0].locale}`,
+        //   method: "GET",
+        // });
+        // const languages = response.data.response;
+
+        const Dendtime = new Date();
+        
+        console.log("Dcreatetime: ", Dcreatetime);
+        console.log("Dendtime: ", Dendtime);
+        console.log("Dtiming: ", Dendtime.getTime() - Dcreatetime.getTime());
+
         const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
           key: i,
           src: languageLocaleInfo[lang.locale].countries,

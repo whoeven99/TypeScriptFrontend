@@ -249,7 +249,11 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       open={isVisible}
       onCancel={handleCloseModal}
       footer={[
-        <div key={"footer_buttons"}>
+        <div key={"footer_buttons"} style={{
+          display: "flex",
+          justifyContent: "center",
+          width: "100%",
+        }}>
           <Button
             key={"manage_cancel_button"}
             onClick={handleCloseModal}

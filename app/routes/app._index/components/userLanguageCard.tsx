@@ -191,18 +191,25 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div className="flag_container">
             {flagUrl.map((url, index) => (
-              <img
+              <div
                 key={index}
-                src={url}
-                alt={`${languageName} flag`}
                 style={{
                   width: "60px",
-                  height: "auto",
-                  marginBottom: "10px",
-                  border: "1px solid #888", // 添加灰色边框
-                  borderRadius: "2px",
-                }}
-              />
+                  height: "40.21px",
+                }}>
+                <img
+                  key={`${index} img`}
+                  src={url}
+                  alt={`${languageName} flag`}
+                  style={{
+                    width: "60px",
+                    height: "auto",
+                    marginBottom: "10px",
+                    border: "1px solid #888", // 添加灰色边框
+                    borderRadius: "2px",
+                  }}
+                />
+              </div>
             ))}
           </div>
           <div>
