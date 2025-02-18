@@ -16,6 +16,8 @@ import { useTranslation } from "react-i18next";
 import UserProfileCard from "./components/userProfileCard";
 import PaymentModal from "~/components/paymentModal";
 import PreviewModal from "~/components/previewModal";
+import UserGuideCard from "~/components/userGuideCard";
+import ContactCard from "~/components/contactCard";
 
 const { Title, Text } = Typography;
 
@@ -61,6 +63,7 @@ const Index = () => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const loadingLanguageFetcher = useFetcher<any>();
+  const languageLocalInfoFetcher = useFetcher<any>();
   // const loadingUserFetcher = useFetcher<any>();
   // const initializationFetcher = useFetcher<any>();
 
@@ -152,7 +155,7 @@ const Index = () => {
         <TitleBar title={t("Dashboard")} />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
-            <Title level={2}>
+            <Title level={3}>
               {t("Faster, higher-quality localization translation tool")}
             </Title>
           </div>
@@ -165,6 +168,14 @@ const Index = () => {
           ) : (
             <Skeleton active />
           )} */}
+          <Row gutter={16}>
+            <Col xs={24} sm={24} md={12}>
+              <ContactCard />
+            </Col>
+            <Col xs={24} sm={24} md={12}>
+              <UserGuideCard />
+            </Col>
+          </Row>
           <div style={{ paddingLeft: "8px" }}>
             <Title level={3}>
               {languageData.length}

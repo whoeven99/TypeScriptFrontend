@@ -166,17 +166,17 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
     return (
         target &&
         <Card
-            title={t("Progressing.title")}
+            title={t("progressing.title")}
         >
             <Space direction="vertical" style={{ width: '100%' }}>
                 <div>
-                    <Text>{t("Progressing.target")}</Text>
+                    <Text>{t("progressing.target")}</Text>
                     <Text>{target.locale}</Text>
                 </div>
                 <div>
-                    <Text>{t("Progressing.progressing")}</Text>
+                    <Text>{t("progressing.progressing")}</Text>
                     <Text>{t(item)}</Text>
-                    <Text>{t("Progressing.module")}</Text>
+                    <Text>{t("progressing.module")}</Text>
                 </div>
                 <Progress
                     percent={calculateProgressByType(resourceType)}
