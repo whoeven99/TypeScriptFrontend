@@ -24,7 +24,7 @@ const UserGuideCard: React.FC = () => {
         },
         {
             title: t('userGuide.feature3'),
-            link: 'https://docs.example.com/feature3'
+            link: 'http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/'
         }
     ];
 

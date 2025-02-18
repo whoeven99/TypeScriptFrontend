@@ -153,6 +153,23 @@
     "rating":{
       "title":"我々はあなたのサポートが必要です。",
       "description":"翻訳結果に満足している場合、5星評価を残してください。"
+    },
+    "progressing":{
+      "title":"翻訳タスク: ",
+      "target":"ターゲット言語: ",
+      "progressing":"翻訳中 ",
+      "module":" モジュール"
+    },
+    "contact":{
+      "title":"お問い合わせ",
+      "description":"ご質問やサポートが必要な場合は、以下のボタンをクリックしてお問い合わせください。",
+      "contactButton":"サポートに連絡する"
+    },
+    "userGuide":{
+      "title":"ユーザーガイド",
+      "feature1":"Shopifyの翻訳方法",
+      "feature2":"ShopifyテーマのカスタマイズからCiwi_Switcherを有効にする方法",
+      "feature3":"Shopifyストアでの多通貨価格設定方法"
     }
 }
   

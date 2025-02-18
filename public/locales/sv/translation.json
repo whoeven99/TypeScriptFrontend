@@ -153,6 +153,23 @@
     "rating":{
       "title":"Vi behöver din stöd.",
       "description":"Om du är nöjd med översättningsresultaten, vänligen lämna oss en femstjärnig recension."
+    },
+    "progressing":{
+      "title":"Översättningsuppgifter: ",
+      "target":"Målspråk: ",
+      "progressing":"Översätter ",
+      "module":" modul"
+    },
+    "contact":{
+      "title":"Kontakta oss",
+      "description":"Om du har frågor eller behöver hjälp, klicka på knappen nedan för att kontakta oss.",
+      "contactButton":"Kontakta oss"
+    },
+    "userGuide":{
+      "title":"Användarhandbok",
+      "feature1":"Hur översätter du din Shopify-butik?",
+      "feature2":"Hur aktiverar du appen från Shopify-temaanpassning för att tillämpa språk- och valutaväljaren?",
+      "feature3":"Hur ställer du in multi-valuta-priser på din Shopify-butik?"
     }
 }
   

@@ -153,6 +153,23 @@
     "rating":{
       "title":"Necesitamos su apoyo.",
       "description":"Si está satisfecho con los resultados de la traducción, considere dejarnos una reseña de cinco estrellas."
+    },
+    "progressing":{
+      "title":"Tareas de traducción: ",
+      "target":"Idioma objetivo: ",
+      "progressing":"Traduciendo ",
+      "module":" módulo"
+    },
+    "contact":{
+      "title":"Contacta con nosotros",
+      "description":"Si tiene alguna pregunta o necesita ayuda, haga clic en el botón de abajo para contactar con el soporte.",
+      "contactButton":"Contactar con soporte"
+    },
+    "userGuide":{
+      "title":"Guía de usuario",
+      "feature1":"¿Cómo traduce su tienda de Shopify?",
+      "feature2":"¿Cómo habilita la aplicación de la personalización de temas de Shopify para aplicar el selector de idioma y moneda?",
+      "feature3":"¿Cómo configura precios multi-moneda en su tienda de Shopify?"
     }
 }
   

@@ -153,6 +153,23 @@
     "rating":{
       "title":"We hebben uw steun nodig.",
       "description":"Als u tevreden bent met de vertaling, laat ons een vijfsterrenbeoordeling achter."
+    },
+    "progressing":{
+      "title":"Vertaalopdrachten: ",
+      "target":"Doeltaal: ",
+      "progressing":"Vertalen ",
+      "module":" module"
+    },
+    "contact":{
+      "title":"Contacteer ons",
+      "description":"Als u vragen of hulp nodig hebt, klik op de knop hieronder om ons te contacteren.",
+      "contactButton":"Contacteer ons"
+    },
+    "userGuide":{
+      "title":"Gebruikershandleiding",
+      "feature1":"Hoe vertal je je Shopify-winkel?",
+      "feature2":"Hoe activeert u de app van Shopify-thema-aanpassingen om de taal- en valuta-wisselaar toe te passen?",
+      "feature3":"Hoe stelt u multi-valuta-prijzen in voor je Shopify-winkel?"
     }
 }
   

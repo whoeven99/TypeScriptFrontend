@@ -153,6 +153,23 @@
     "rating":{
       "title":"Wir brauchen Ihre Unterstützung.",
       "description":"Wenn Sie mit den Übersetzungsergebnissen zufrieden sind, betrachten Sie uns bitte als fünf Sterne-Bewertung."
+    },
+    "progressing":{
+      "title":"Übersetzungsaufgaben: ",
+      "target":"Zielsprache: ",
+      "progressing":"Übersetze ",
+      "module":" Modul"
+    },
+    "contact":{
+      "title":"Kontaktieren Sie uns",
+      "description":"Wenn Sie Fragen oder Unterstützung benötigen, klicken Sie bitte auf die Schaltfläche unten, um Support zu kontaktieren.",
+      "contactButton":"Support kontaktieren"
+    },
+    "userGuide":{
+      "title":"Benutzerhandbuch",
+      "feature1":"Wie übersetzen Sie Ihren Shopify-Shop?",
+      "feature2":"Wie aktivieren Sie die App aus der Shopify-Theme-Anpassung, um den Sprach- und Währungsumrechner anzuwenden",
+      "feature3":"Wie richten Sie multi-Währungspreise auf Ihrem Shopify-Shop ein?"
     }
 }
     
