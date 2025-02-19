@@ -150,26 +150,18 @@
     "The server did not receive a timely response from the upstream server.": "伺服器未從上游伺服器收到即時的回應。",
     "Back to Home": "返回首頁",
     "Automatically switch to the target language and currency.": "自動切換到目標語言和貨幣。",
-    "rating":{
-      "title":"我們需要您的支持。",
-      "description":"如果您對翻譯結果滿意，請考慮給我們留下五星評價。"
-    },
-    "progressing":{
-      "title":"翻譯任務：",
-      "target":"目標語言：",
-      "progressing":"正在翻譯",
-      "module":"模組"
-    },
-    "contact":{
-      "title":"聯繫我們",
-      "description":"如果您有任何問題或需要幫助，請點擊下方按鈕與我們聯繫。",
-      "contactButton":"聯繫支持"
-    },
-    "userGuide":{
-      "title":"用戶指南",
-      "feature1":"如何翻譯您的Shopify商店？",
-      "feature2":"如何啟用Shopify主題自訂中的Ciwi_Switcher以應用語言和貨幣選擇器？",
-      "feature3":"如何在您的Shopify商店中設置多貨幣定價？"
-    }
+    "rating.title":"我們需要您的支持。",
+    "rating.description":"如果您對翻譯結果滿意，請考慮給我們留下五星評價。",
+    "progressing.title":"翻譯任務：",
+    "progressing.target":"目標語言：",
+    "progressing.progressing":"正在翻譯",
+    "progressing.module":"模組",
+    "contact.title":"聯繫我們",
+    "contact.description":"如果您有任何問題或需要幫助，請點擊下方按鈕與我們聯繫。",
+    "contact.contactButton":"聯繫支持",
+    "userGuide.title":"用戶指南",
+    "userGuide.feature1":"如何翻譯您的Shopify商店？",
+    "userGuide.feature2":"如何啟用Shopify主題自訂中的Ciwi_Switcher以應用語言和貨幣選擇器？",
+    "userGuide.feature3":"如何在您的Shopify商店中設置多貨幣定價？"
 }
   

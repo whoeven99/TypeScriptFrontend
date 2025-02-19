@@ -28,7 +28,6 @@ async function hydrate() {
         caches: [],
       },
     });
-
   startTransition(() => {
     const cache = createCache();
     hydrateRoot(

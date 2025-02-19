@@ -150,26 +150,18 @@
     "The server did not receive a timely response from the upstream server.": "Servern fick inte ett tillräckligt snabbt svar från upstream-servern.",
     "Back to Home": "Tillbaka till startsida",
     "Automatically switch to the target language and currency.": "Växla automatiskt till målspråk och valuta.",
-    "rating":{
-      "title":"Vi behöver din stöd.",
-      "description":"Om du är nöjd med översättningsresultaten, vänligen lämna oss en femstjärnig recension."
-    },
-    "progressing":{
-      "title":"Översättningsuppgifter: ",
-      "target":"Målspråk: ",
-      "progressing":"Översätter ",
-      "module":" modul"
-    },
-    "contact":{
-      "title":"Kontakta oss",
-      "description":"Om du har frågor eller behöver hjälp, klicka på knappen nedan för att kontakta oss.",
-      "contactButton":"Kontakta oss"
-    },
-    "userGuide":{
-      "title":"Användarhandbok",
-      "feature1":"Hur översätter du din Shopify-butik?",
-      "feature2":"Hur aktiverar du appen från Shopify-temaanpassning för att tillämpa språk- och valutaväljaren?",
-      "feature3":"Hur ställer du in multi-valuta-priser på din Shopify-butik?"
-    }
+    "rating.title":"Vi behöver din stöd.",
+    "rating.description":"Om du är nöjd med översättningsresultaten, vänligen lämna oss en femstjärnig recension.",
+    "progressing.title":"Översättningsuppgifter: ",
+    "progressing.target":"Målspråk: ",
+    "progressing.progressing":"Översätter ",
+    "progressing.module":" modul",
+    "contact.title":"Kontakta oss",
+    "contact.description":"Om du har frågor eller behöver hjälp, klicka på knappen nedan för att kontakta oss.",
+    "contact.contactButton":"Kontakta oss",
+    "userGuide.title":"Användarhandbok",
+    "userGuide.feature1":"Hur översätter du din Shopify-butik?",
+    "userGuide.feature2":"Hur aktiverar du appen från Shopify-temaanpassning för att tillämpa språk- och valutaväljaren?",
+    "userGuide.feature3":"Hur ställer du in multi-valuta-priser på din Shopify-butik?"
 }
   

@@ -54,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         i18nCode = "zh-TW";
         break;
       case language == "zh-CN":
-        i18nCode = "zh-CN";
+        i18nCode = "zh";
         break;
       default:
         i18nCode = "en";
@@ -202,8 +202,6 @@ export function ErrorBoundary() {
 
 export default function App() {
   const { i18nCode } = useLoaderData<typeof loader>();
-  console.log("i18nCode:", i18nCode);
-
   return (
     <Provider store={store}>
       <html lang={i18nCode}>

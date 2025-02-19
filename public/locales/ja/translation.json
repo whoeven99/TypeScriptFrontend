@@ -150,26 +150,18 @@
     "The server did not receive a timely response from the upstream server.": "上流サーバーからのタイムリーな応答を受け取りませんでした。",
     "Back to Home": "ホームに戻る",
     "Automatically switch to the target language and currency.": "ターゲット言語と通貨に自動的に切り替えます。",
-    "rating":{
-      "title":"我々はあなたのサポートが必要です。",
-      "description":"翻訳結果に満足している場合、5星評価を残してください。"
-    },
-    "progressing":{
-      "title":"翻訳タスク: ",
-      "target":"ターゲット言語: ",
-      "progressing":"翻訳中 ",
-      "module":" モジュール"
-    },
-    "contact":{
-      "title":"お問い合わせ",
-      "description":"ご質問やサポートが必要な場合は、以下のボタンをクリックしてお問い合わせください。",
-      "contactButton":"サポートに連絡する"
-    },
-    "userGuide":{
-      "title":"ユーザーガイド",
-      "feature1":"Shopifyの翻訳方法",
-      "feature2":"ShopifyテーマのカスタマイズからCiwi_Switcherを有効にする方法",
-      "feature3":"Shopifyストアでの多通貨価格設定方法"
-    }
+    "rating.title":"我々はあなたのサポートが必要です。",
+    "rating.description":"翻訳結果に満足している場合、5星評価を残してください。",
+    "progressing.title":"翻訳タスク: ",
+    "progressing.target":"ターゲット言語: ",
+    "progressing.progressing":"翻訳中 ",
+    "progressing.module":" モジュール",
+    "contact.title":"お問い合わせ",
+    "contact.description":"ご質問やサポートが必要な場合は、以下のボタンをクリックしてお問い合わせください。",
+    "contact.contactButton":"サポートに連絡する",
+    "userGuide.title":"ユーザーガイド",
+    "userGuide.feature1":"Shopifyの翻訳方法",
+    "userGuide.feature2":"ShopifyテーマのカスタマイズからCiwi_Switcherを有効にする方法",
+    "userGuide.feature3":"Shopifyストアでの多通貨価格設定方法"
 }
   
