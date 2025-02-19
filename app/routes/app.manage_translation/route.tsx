@@ -276,27 +276,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             { status: 500 },
           );
         }
-      case !!store_metadataItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: store_metadataItems.source,
-            target: store_metadataItems.target,
-            resourceType: store_metadataItems.resourceType,
-          });
+      // case !!store_metadataItems:
+      //   try {
+      //     const data = await GetTranslationItemsInfo({
+      //       shop,
+      //       accessToken,
+      //       source: store_metadataItems.source,
+      //       target: store_metadataItems.target,
+      //       resourceType: store_metadataItems.resourceType,
+      //     });
 
-          return json({ data: data });
-        } catch (error) {
-          console.error(
-            "Error GetTranslationItemsInfo store_metadataItems:",
-            error,
-          );
-          return json(
-            { error: "Error GetTranslationItemsInfo store_metadataItems" },
-            { status: 500 },
-          );
-        }
+      //     return json({ data: data });
+      //   } catch (error) {
+      //     console.error(
+      //       "Error GetTranslationItemsInfo store_metadataItems:",
+      //       error,
+      //     );
+      //     return json(
+      //       { error: "Error GetTranslationItemsInfo store_metadataItems" },
+      //       { status: 500 },
+      //     );
+      //   }
       case !!themeItems:
         try {
           const data = await GetTranslationItemsInfo({
@@ -386,7 +386,7 @@ const Index = () => {
   const navigationFetcher = useFetcher<any>();
   const policiesFetcher = useFetcher<any>();
   const shopFetcher = useFetcher<any>();
-  const store_metadataFetcher = useFetcher<any>();
+  // const store_metadataFetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
   const deliveryFetcher = useFetcher<any>();
   const shippingFetcher = useFetcher<any>();
@@ -540,22 +540,22 @@ const Index = () => {
       sync_status: false,
       navigation: "shop",
     },
-    {
-      key: "store_metadata",
-      title: t("Store metadata"),
-      allTranslatedItems:
-        items.find(
-          (item: any) =>
-            item?.language === current && item?.type === "METAFIELD",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        items.find(
-          (item: any) =>
-            item?.language === current && item?.type === "METAFIELD",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "metafield",
-    },
+    // {
+    //   key: "store_metadata",
+    //   title: t("Store metadata"),
+    //   allTranslatedItems:
+    //     items.find(
+    //       (item: any) =>
+    //         item?.language === current && item?.type === "METAFIELD",
+    //     )?.translatedNumber ?? undefined,
+    //   allItems:
+    //     items.find(
+    //       (item: any) =>
+    //         item?.language === current && item?.type === "METAFIELD",
+    //     )?.totalNumber ?? undefined,
+    //   sync_status: false,
+    //   navigation: "metafield",
+    // },
     {
       key: "theme",
       title: t("Theme"),
@@ -688,11 +688,11 @@ const Index = () => {
     }
   }, [shopFetcher.data]);
 
-  useEffect(() => {
-    if (store_metadataFetcher.data) {
-      dispatch(updateData(store_metadataFetcher.data.data));
-    }
-  }, [store_metadataFetcher.data]);
+  // useEffect(() => {
+  //   if (store_metadataFetcher.data) {
+  //     dispatch(updateData(store_metadataFetcher.data.data));
+  //   }
+  // }, [store_metadataFetcher.data]);
 
   useEffect(() => {
     if (themeFetcher.data) {
@@ -876,19 +876,19 @@ const Index = () => {
         method: "post",
         action: "/app/manage_translation",
       }); // 提交表单请求
-      const store_metadataFormData = new FormData();
-      store_metadataFormData.append(
-        "store_metadataItems",
-        JSON.stringify({
-          source: primaryLanguage,
-          target: current,
-          resourceType: "Store metadata",
-        }),
-      );
-      store_metadataFetcher.submit(store_metadataFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
+      // const store_metadataFormData = new FormData();
+      // store_metadataFormData.append(
+      //   "store_metadataItems",
+      //   JSON.stringify({
+      //     source: primaryLanguage,
+      //     target: current,
+      //     resourceType: "Store metadata",
+      //   }),
+      // );
+      // store_metadataFetcher.submit(store_metadataFormData, {
+      //   method: "post",
+      //   action: "/app/manage_translation",
+      // }); // 提交表单请求
       const themeFormData = new FormData();
       themeFormData.append(
         "themeItems",

@@ -35,111 +35,6 @@ async function fetchAutoRate(shop, currencyCode) {
   return res.exchangeRate;
 }
 
-async function fetchIpSwitch(shop) {
-  const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/IpSwitch/getSwitchId?shopName=${shop}`,
-    method: "GET",
-  });
-
-  const res = response.data;
-  if (res?.response) {
-    return res.response;
-  } else {
-    return false;
-  }
-}
-
-async function fetchUserCountryInfo(access_key) {
-  try {
-    const response = await axios.get(
-      `http://api.ipapi.com/api/check?access_key=${access_key}`,
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching IP:", error);
-    return null;
-  }
-}
-
-async function initializeCurrency(data, shop) {
-  let value = localStorage.getItem("selectedCurrency");
-  let moneyFormat = document.getElementById("queryMoneyFormat");
-  const selectedCurrency = data.find(
-    (currency) => currency?.currencyCode === value,
-  );
-  const isValueInCurrencies =
-    selectedCurrency && !selectedCurrency.primaryStatus;
-
-  const currencySwitcher = document.getElementById("currency-switcher");
-  const currencyTitleLabel = document.getElementById("currency-title");
-  const currencyInput = document.querySelector('input[name="currency_code"]');
-
-  const regex = /{{(.*?)}}/;
-  const match = moneyFormat.value.match(regex);
-
-  if (match) {
-    moneyFormat = match[1];
-  }
-
-  if (isValueInCurrencies) {
-    currencySwitcher.style.display = "block";
-    currencyTitleLabel.style.display = "block";
-    let rate = selectedCurrency.exchangeRate;
-    if (selectedCurrency.exchangeRate == "Auto") {
-      rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
-      if (typeof rate != "number") {
-        rate = 1;
-      }
-    }
-    const prices = document.querySelectorAll(".ciwi-money");
-    prices.forEach((price) => {
-      const priceText = price.innerText;
-      const transformedPrice = transform(
-        priceText,
-        rate,
-        moneyFormat,
-        selectedCurrency.symbol,
-        selectedCurrency.currencyCode,
-        selectedCurrency.rounding,
-      );
-
-      if (transformedPrice) {
-        price.innerText = transformedPrice;
-      }
-    });
-    currencyInput.value = value;
-    currencySwitcher.value = value;
-
-    data.forEach((currency) => {
-      const option = new Option(
-        `${currency.currencyCode}(${currency.symbol})`,
-        currency.currencyCode,
-      );
-      if (currency.currencyCode == value) {
-        option.selected = true;
-      }
-      currencySwitcher.add(option);
-    });
-    updateDisplayText();
-  } else if (data.length) {
-    currencySwitcher.style.display = "block";
-    currencyTitleLabel.style.display = "block";
-    currencyInput.value = data[0];
-    currencySwitcher.value = data[0]?.currencyCode;
-    data.forEach((currency) => {
-      const option = new Option(
-        `${currency.currencyCode}(${currency.symbol})`,
-        currency.currencyCode,
-      );
-      if (currency.primaryStatus) {
-        option.selected = true;
-      }
-      currencySwitcher.add(option);
-    });
-    updateDisplayText();
-  }
-}
-
 // Function to update the display text
 function updateDisplayText() {
   const currency =
@@ -578,60 +473,52 @@ window.onload = async function () {
         languageInput.value = storedLanguage;
         console.log(languageInput.value);
       }
-    } else {
-      const browserLanguage = navigator.language;
-      // 获取匹配的语言或默认为英语
-      const detectedLanguage = browserLanguage || "en";
-      localStorage.setItem("selectedLanguage", detectedLanguage);
-      if (
-        languageInput.value !== detectedLanguage &&
-        availableLanguages.includes(detectedLanguage)
-      ) {
-        languageInput.value = detectedLanguage;
-      }
     }
+    const prices = document.querySelectorAll(".ciwi-money");
+    prices.forEach((price) => {
+      const priceText = price.innerText;
+      const transformedPrice = transform(
+        priceText,
+        rate,
+        moneyFormat,
+        selectedCurrency.symbol,
+        selectedCurrency.currencyCode,
+        selectedCurrency.rounding,
+      );
 
-    if (storedCountry) {
-      if (
-        countryInput.value !== storedCountry &&
-        availableCountries.includes(storedCountry)
-      ) {
-        countryInput.value = storedCountry;
+      if (transformedPrice) {
+        price.innerText = transformedPrice;
       }
-    } else {
-      const IpData = await fetchUserCountryInfo(iptokenValue);
-      console.log(IpData);
-      if (
-        IpData?.country_code &&
-        availableCountries.includes(IpData.country_code)
-      ) {
-        if (countryInput.value !== IpData.country_code) {
-          countryInput.value = IpData.country_code;
-        }
-        localStorage.setItem("selectedCountry", countryInput.value);
-        console.log(
-          "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
-        );
-      }
-    }
-    const htmlElement = document.documentElement; // 获取 <html> 元素
-    const isInThemeEditor = htmlElement.classList.contains(
-      "shopify-design-mode",
-    );
-    if (
-      (countryInput.value !== country || languageInput.value !== language) &&
-      !isInThemeEditor
-    ) {
-      console.log(countryInput.value, languageInput.value);
-      updateLocalization({
-        country: countryInput.value,
-        language: languageInput.value,
-      });
-    }
-  }
+    });
+    currencyInput.value = value;
+    currencySwitcher.value = value;
 
-  const data = await fetchCurrencies(shop.value);
-  if (data) {
-    await initializeCurrency(data, shop);
+    data.forEach((currency) => {
+      const option = new Option(
+        `${currency.currencyCode}(${currency.symbol})`,
+        currency.currencyCode,
+      );
+      if (currency.currencyCode == value) {
+        option.selected = true;
+      }
+      currencySwitcher.add(option);
+    });
+    updateDisplayText();
+  } else if (data.length) {
+    currencySwitcher.style.display = "block";
+    currencyTitleLabel.style.display = "block";
+    currencyInput.value = data[0];
+    currencySwitcher.value = data[0]?.currencyCode;
+    data.forEach((currency) => {
+      const option = new Option(
+        `${currency.currencyCode}(${currency.symbol})`,
+        currency.currencyCode,
+      );
+      if (currency.primaryStatus) {
+        option.selected = true;
+      }
+      currencySwitcher.add(option);
+    });
+    updateDisplayText();
   }
 };

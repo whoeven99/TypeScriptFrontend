@@ -48,6 +48,9 @@ import PrimaryLanguage from "./components/primaryLanguage";
 import PublishModal from "./components/publishModal";
 import AddLanguageModal from "./components/addLanguageModal";
 import TranslationWarnModal from "~/components/translationWarnModal";
+import ProgressingCard from "~/components/progressingCard";
+import { updateState } from "~/store/modules/translatingResourceType";
+import PreviewModal from "~/components/previewModal";
 
 const { Title, Text } = Typography;
 
@@ -131,7 +134,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           (language) => language.primary,
         );
         console.log("shopPrimaryLanguage: ", shopPrimaryLanguage);
-        
         const allMarket: MarketType[] = await queryAllMarket({ request });
         let allLanguages: AllLanguagesType[] = await queryAllLanguages({
           request,
@@ -249,6 +251,8 @@ const Index = () => {
   const [data, setData] = useState<LanguagesDataType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showWarnModal, setShowWarnModal] = useState(false);
+  const [previewModalVisible, setPreviewModalVisible] =
+  useState<boolean>(false);
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -272,31 +276,6 @@ const Index = () => {
     });
     shopify.loading(true);
   }, []);
-
-  useEffect(() => {
-    if (dataSource && primaryLanguage) {
-      dataSource.map((data) => {
-        if (data && data.status === 2) {
-          const formData = new FormData();
-          formData.append(
-            "statusData",
-            JSON.stringify({
-              source: primaryLanguage?.locale,
-              target: [data.locale],
-            }),
-          );
-          const timeoutId = setTimeout(() => {
-            statusFetcher.submit(formData, {
-              method: "post",
-              action: "/app",
-            });
-          }, 2000); // 2秒延时
-          // 在组件卸载时清除定时器
-          return () => clearTimeout(timeoutId);
-        }
-      });
-    }
-  }, [dataSource]);
 
   useEffect(() => {
     if (loadingFetcher.data) {
@@ -362,7 +341,7 @@ const Index = () => {
 
   useEffect(() => {
     if (statusFetcher.data) {
-      const items = statusFetcher.data.data.map((item: any) => {
+      const items = statusFetcher.data?.data.map((item: any) => {
         if (item?.status === 2) {
           return item;
         } else {
@@ -564,6 +543,30 @@ const Index = () => {
           method: "post",
           action: "/app/language",
         }); // 提交表单请求
+        const installTime = localStorage.getItem('installTime')
+        if (!installTime) {
+          localStorage.setItem('installTime', new Date().toISOString());
+        } else {
+          const createTime = new Date(installTime);
+          const currentTime = new Date();
+
+          // 计算时间差（毫秒）
+          const timeDifference = currentTime.getTime() - createTime.getTime();
+
+          // 转换为天数（1天 = 24 * 60 * 60 * 1000 毫秒）
+          const daysDifference = Math.floor(timeDifference / (24 * 60 * 60 * 1000));
+
+          // 如果超过3天，显示评分弹窗
+          if (daysDifference >= 3) {
+            // 检查localStorage是否已经显示过
+            const hasShownRating = localStorage.getItem('hasShownRating');
+            if (!hasShownRating) {
+              setPreviewModalVisible(true);
+              // 标记已经显示过
+              localStorage.setItem('hasShownRating', 'true');
+            }
+          }
+        }
       } else {
         message.error(
           t(
@@ -653,6 +656,7 @@ const Index = () => {
               <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
             </Suspense>
           </div>
+          <ProgressingCard />
           {/* <Suspense fallback={<Skeleton active />}>
             <AttentionCard
               title={t("Translation word credits have been exhausted.")}
@@ -710,6 +714,12 @@ const Index = () => {
             allLanguages={allLanguages}
             languageLocaleInfo={languageLocaleInfo}
             primaryLanguage={primaryLanguage}
+          />
+        </Suspense>
+        <Suspense>
+          <PreviewModal
+            visible={previewModalVisible}
+            setVisible={setPreviewModalVisible}
           />
         </Suspense>
         <Suspense>

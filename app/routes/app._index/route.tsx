@@ -1,6 +1,6 @@
 import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Col, Modal, Row, Skeleton, Space, Typography, Button } from "antd";
+import { Col, Modal, Row, Skeleton, Space, Typography } from "antd";
 import {
   Link,
   useFetcher,
@@ -9,10 +9,15 @@ import "./styles.css";
 import { ShopLocalesType } from "../app.language/route";
 import { useDispatch } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import UserLanguageCard from "./components/userLanguageCard";
 import { useTranslation } from "react-i18next";
+import UserProfileCard from "./components/userProfileCard";
+import PaymentModal from "~/components/paymentModal";
+import PreviewModal from "~/components/previewModal";
+import UserGuideCard from "~/components/userGuideCard";
+import ContactCard from "~/components/contactCard";
 
 const { Title, Text } = Typography;
 
@@ -33,11 +38,6 @@ interface LanguageSettingType {
   shopLanguageCodesWithoutPrimary: string[];
 }
 
-interface UserType {
-  chars: number;
-  totalChars: number;
-}
-
 export interface WordsType {
   chars: number;
   totalChars: number;
@@ -55,13 +55,16 @@ const Index = () => {
   // const [limited, setLimited] = useState<boolean>(false);
   // const [paymentModalVisible, setPaymentModalVisible] =
   //   useState<boolean>(false);
+  const [previewModalVisible, setPreviewModalVisible] =
+    useState<boolean>(false);
   // const [newUserModal, setNewUserModal] = useState<boolean>(false);
   // const [newUserModalLoading, setNewUserModalLoading] =
   //   useState<boolean>(false);
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const loadingLanguageFetcher = useFetcher<any>();
-  const loadingUserFetcher = useFetcher<any>();
+  const languageLocalInfoFetcher = useFetcher<any>();
+  // const loadingUserFetcher = useFetcher<any>();
   // const initializationFetcher = useFetcher<any>();
 
   useEffect(() => {
@@ -71,13 +74,17 @@ const Index = () => {
       method: "post",
       action: "/app",
     });
-    const userFormData = new FormData();
-    userFormData.append("userData", JSON.stringify(true));
-    loadingUserFetcher.submit(userFormData, {
-      method: "post",
-      action: "/app",
-    });
+    // const userFormData = new FormData();
+    // userFormData.append("userData", JSON.stringify(true));
+    // loadingUserFetcher.submit(userFormData, {
+    //   method: "post",
+    //   action: "/app",
+    // });
     shopify.loading(true);
+    const installTime = localStorage.getItem('installTime')
+    if (!installTime) {
+      localStorage.setItem('installTime', new Date().toISOString());
+    }
   }, []);
 
   useEffect(() => {
@@ -89,11 +96,12 @@ const Index = () => {
     }
   }, [loadingLanguageFetcher.data]);
 
+
   // useEffect(() => {
   //   if (loadingUserFetcher.data) {
   //     setUser(loadingUserFetcher.data.data);
   //     if (!loadingUserFetcher.data.data?.plan) {
-  //       setNewUserModal(true);
+  //       // setNewUserModal(true);
   //     }
   //   }
   // }, [loadingUserFetcher.data]);
@@ -127,7 +135,7 @@ const Index = () => {
         published: lang.published,
         loading: false,
       }));
-      dispatch(setTableData(data)); // 只在组件首次渲染时触
+      dispatch(setTableData(data)); // 只在组件首次渲染时触发
     }
   }, [dispatch, languageData]);
 
@@ -147,7 +155,7 @@ const Index = () => {
         <TitleBar title={t("Dashboard")} />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
-            <Title level={2}>
+            <Title level={3}>
               {t("Faster, higher-quality localization translation tool")}
             </Title>
           </div>
@@ -160,6 +168,14 @@ const Index = () => {
           ) : (
             <Skeleton active />
           )} */}
+          <Row gutter={16}>
+            <Col xs={24} sm={24} md={12}>
+              <ContactCard />
+            </Col>
+            <Col xs={24} sm={24} md={12}>
+              <UserGuideCard />
+            </Col>
+          </Row>
           <div style={{ paddingLeft: "8px" }}>
             <Title level={3}>
               {languageData.length}
@@ -194,6 +210,7 @@ const Index = () => {
                         languageLocaleName={language.localeName}
                         languageName={language.name}
                         languageCode={language.locale}
+                        setPreviewModalVisible={setPreviewModalVisible}
                       // limited={limited}
                       />
                     )}
@@ -229,6 +246,10 @@ const Index = () => {
             <NoLanguageSetCard />
           )}
         </Space>
+        <PreviewModal
+          visible={previewModalVisible}
+          setVisible={setPreviewModalVisible}
+        />
         {/* <Modal
           open={newUserModal}
           footer={
@@ -251,8 +272,8 @@ const Index = () => {
               "You have received 50,000 Credits, enabling you to translate into over 137 languages.",
             )}
           </Text>
-        </Modal>
-        <PaymentModal
+        </Modal> */}
+        {/* <PaymentModal
           visible={paymentModalVisible}
           setVisible={setPaymentModalVisible}
         /> */}

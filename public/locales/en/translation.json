@@ -150,5 +150,26 @@
   "Gateway Timeout": "Gateway Timeout",
   "The server did not receive a timely response from the upstream server.": "The server did not receive a timely response from the upstream server.",
   "Back to Home": "Back to Home",
-  "Automatically switch to the target language and currency.": "Automatically switch to the target language and currency."
+  "Automatically switch to the target language and currency.": "Automatically switch to the target language and currency.",
+  "rating":{
+    "title":"We need your support.",
+    "description":"If you're satisfied with the translation results, please consider leaving us a five-star review."
+  },
+  "progressing":{
+    "title":"Translation tasks: ",
+    "target":"Target language: ",
+    "progressing":"Translating ",
+    "module":" module"
+  },
+  "contact":{
+    "title":"Contact Us",
+    "description":"If you have any questions or need assistance, please click the button below to contact support.",
+    "contactButton":"Contact Support"
+  },
+  "userGuide":{
+    "title":"User Guide",
+    "feature1":"How to translate your Shopify store?",
+    "feature2":"How to enable the App from Shopify theme customization to apply the language & currency exchange switcher",
+    "feature3":"How to set up multi-currency pricing on your Shopify store?"
+  }
 }

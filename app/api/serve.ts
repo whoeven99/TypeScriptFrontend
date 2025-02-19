@@ -201,20 +201,37 @@ export const InsertTargets = async ({
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  try {
-    await axios({
-      url: `${process.env.SERVER_URL}/translate/insertTargets`,
-      method: "POST",
-      data: {
-        shopName: shop,
-        accessToken: accessToken,
-        source: source,
-        targetList: targets,
-      },
-    });
-  } catch (error) {
-    console.error("Error insert languageInfo:", error);
-  }
+
+  // 创建异步任务
+  const insertTask = async () => {
+    try {
+      const response = await withRetry(
+        async () => {
+          return axios({
+            url: `${process.env.SERVER_URL}/translate/insertTargets`,
+            method: "POST",
+            data: {
+              shopName: shop,
+              accessToken: accessToken,
+              source: source,
+              targetList: targets,
+            },
+            timeout: 10000, // 10秒超时
+          });
+        },
+      );
+
+      return response;
+    } catch (error) {
+      console.error("Error insert languageInfo:", error);
+      throw error;
+    }
+  };
+
+  // 不等待结果，直接返回
+  insertTask().catch((error) => {
+    console.error("InsertTargets final error:", error);
+  });
 };
 
 //更新各项翻译状态
@@ -375,7 +392,13 @@ export const GetLanguageLocaleInfo = async ({
 };
 
 //查询语言状态
-export const GetLanguageList = async ({ shop, source }: { shop: string, source: string }) => {
+export const GetLanguageList = async ({
+  shop,
+  source,
+}: {
+  shop: string;
+  source: string;
+}) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}&&source=${source}`,

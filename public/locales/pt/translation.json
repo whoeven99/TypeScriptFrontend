@@ -149,6 +149,27 @@
     "Gateway Timeout": "Tempo limite do gateway",
     "The server did not receive a timely response from the upstream server.": "O servidor não recebeu uma resposta oportuna do servidor upstream.",
     "Back to Home": "Voltar para a página inicial",
-    "Automatically switch to the target language and currency.": "Mudar automaticamente para o idioma e moeda alvo."
+    "Automatically switch to the target language and currency.": "Mudar automaticamente para o idioma e moeda alvo.",
+    "rating":{
+      "title":"Precisamos do seu apoio.",
+      "description":"Se você está satisfeito com os resultados da tradução, considere deixar uma avaliação de cinco estrelas."
+    },
+    "progressing":{
+      "title":"Tarefas de tradução: ",
+      "target":"Idioma alvo: ",
+      "progressing":"Traduzindo ",
+      "module":" módulo"
+    },
+    "contact":{
+      "title":"Contate-nos",
+      "description":"Se você tiver perguntas ou precisar de ajuda, clique no botão abaixo para entrar em contato conosco.",
+      "contactButton":"Contate-nos"
+    },
+    "userGuide":{
+      "title":"Guia de usuário",
+      "feature1":"Como traduzir sua loja Shopify?",
+      "feature2":"Como ativar o aplicativo de personalização de tema Shopify para aplicar o seletor de idioma e moeda?",
+      "feature3":"Como configurar preços multi-moeda na sua loja Shopify?"
+    }
 }
   
