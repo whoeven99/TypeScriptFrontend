@@ -48,7 +48,7 @@ import PrimaryLanguage from "./components/primaryLanguage";
 import PublishModal from "./components/publishModal";
 import AddLanguageModal from "./components/addLanguageModal";
 import TranslationWarnModal from "~/components/translationWarnModal";
-import ProgressingCard from "~/components/progressingCard";
+// import ProgressingCard from "~/components/progressingCard";
 import { updateState } from "~/store/modules/translatingResourceType";
 import PreviewModal from "~/components/previewModal";
 
@@ -656,7 +656,7 @@ const Index = () => {
               <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
             </Suspense>
           </div>
-          <ProgressingCard />
+          {/* <ProgressingCard /> */}
           {/* <Suspense fallback={<Skeleton active />}>
             <AttentionCard
               title={t("Translation word credits have been exhausted.")}
