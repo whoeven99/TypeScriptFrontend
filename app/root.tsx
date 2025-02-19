@@ -16,7 +16,6 @@ import "./styles.css";
 import "react-quill/dist/quill.snow.css";
 import { json, LoaderFunctionArgs } from "@remix-run/node";
 import { Button, Card, Typography } from "antd";
-import { useEffect, useState } from "react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
@@ -70,8 +69,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       case language == "zh-TW":
         i18nCode = "zh-TW";
         break;
-      case language == "zh-CN" || language == "zh":
-        i18nCode = "zh-CN";
+      case language == "zh-CN":
+        i18nCode = "zh";
         break;
       default:
         i18nCode = "en";
@@ -219,37 +218,21 @@ export function ErrorBoundary() {
 
 export default function App() {
   const { i18nCode } = useLoaderData<typeof loader>();
-  const [lang, setLang] = useState<string>(i18nCode);
+  let lang: string | null = null;
 
   useEffect(() => {
-    const browserLang = getBrowserLanguage();
-    setLang(browserLang);
-  }, []);
+    if (i18nCode && !lang) {
+      lang = i18nCode;
+    }
+  }, [i18nCode]);
 
-  const getBrowserLanguage = () => {
-    const browserLang = navigator.language.toLowerCase();
-    return supportedLanguages[browserLang as keyof typeof supportedLanguages]
-      || supportedLanguages[browserLang.split('-')[0] as keyof typeof supportedLanguages]
-      || "en";
-  };
-
-  const supportedLanguages = {
-    fr: "fr",
-    de: "de",
-    es: "es",
-    it: "it",
-    nl: "nl",
-    pt: "pt",
-    sv: "sv",
-    ja: "ja",
-    "zh-TW": "zh-TW",
-    "zh-CN": "zh-CN",
-    zh: "zh-CN"
-  };
+  useEffect(() => {
+    console.log("lang:", lang);
+  }, [lang]);
 
   return (
     <Provider store={store}>
-      <html lang={"zh-CN"}>
+      <html lang={lang ? lang : i18nCode}>
         <head>
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />

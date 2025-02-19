@@ -150,25 +150,17 @@
   "The server did not receive a timely response from the upstream server.": "服务器未从上游服务器及时收到响应。",
   "Back to Home": "返回首页",
   "Automatically switch to the target language and currency.": "自动切换到目标语言和货币。",
-  "rating":{
-    "title":"我们需要您的支持。",
-    "description":"如果您对翻译结果满意，请考虑给我们留下五星好评。"
-  },
-  "progressing":{
-    "title":"翻译任务：",
-    "target":"目标语言：",
-    "progressing":"正在翻译",
-    "module":"模块"
-  },
-  "contact":{
-    "title":"联系我们",
-    "description":"如果您有任何问题或需要帮助，请点击下方按钮与我们联系。",
-    "contactButton":"联系支持"
-  },
-  "userGuide":{
-    "title":"用户指南",
-    "feature1":"如何翻译您的Shopify商店？",
-    "feature2":"如何启用Shopify主题定制中的Ciwi_Switcher以应用语言和货币选择器？",
-    "feature3":"如何在您的Shopify商店中设置多货币定价？"
-  }
+  "rating.title":"我们需要您的支持。",
+  "rating.description":"如果您对翻译结果满意，请考虑给我们留下五星好评。",
+  "progressing.title":"翻译任务：",
+  "progressing.target":"目标语言：",
+  "progressing.progressing":"正在翻译",
+  "progressing.module":"模块",
+  "contact.title":"联系我们",
+  "contact.description":"如果您有任何问题或需要帮助，请点击下方按钮与我们联系。",
+  "contact.contactButton":"联系支持",
+  "userGuide.title":"用户指南",
+  "userGuide.feature1":"如何翻译您的Shopify商店？",
+  "userGuide.feature2":"如何启用Shopify主题定制中的Ciwi_Switcher以应用语言和货币选择器？",
+  "userGuide.feature3":"如何在您的Shopify商店中设置多货币定价？"
 }

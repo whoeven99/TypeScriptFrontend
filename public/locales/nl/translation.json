@@ -150,26 +150,18 @@
     "The server did not receive a timely response from the upstream server.": "De server heeft geen tijdige respons ontvangen van de upstream-server.",
     "Back to Home": "Terug naar Home",
     "Automatically switch to the target language and currency.": "Automatisch naar de doeltaal en valuta schakelen.",
-    "rating":{
-      "title":"We hebben uw steun nodig.",
-      "description":"Als u tevreden bent met de vertaling, laat ons een vijfsterrenbeoordeling achter."
-    },
-    "progressing":{
-      "title":"Vertaalopdrachten: ",
-      "target":"Doeltaal: ",
-      "progressing":"Vertalen ",
-      "module":" module"
-    },
-    "contact":{
-      "title":"Contacteer ons",
-      "description":"Als u vragen of hulp nodig hebt, klik op de knop hieronder om ons te contacteren.",
-      "contactButton":"Contacteer ons"
-    },
-    "userGuide":{
-      "title":"Gebruikershandleiding",
-      "feature1":"Hoe vertal je je Shopify-winkel?",
-      "feature2":"Hoe activeert u de app van Shopify-thema-aanpassingen om de taal- en valuta-wisselaar toe te passen?",
-      "feature3":"Hoe stelt u multi-valuta-prijzen in voor je Shopify-winkel?"
-    }
+    "rating.title":"We hebben uw steun nodig.",
+    "rating.description":"Als u tevreden bent met de vertaling, laat ons een vijfsterrenbeoordeling achter.",
+    "progressing.title":"Vertaalopdrachten: ",
+    "progressing.target":"Doeltaal: ",
+    "progressing.progressing":"Vertalen ",
+    "progressing.module":" module",
+    "contact.title":"Contacteer ons",
+    "contact.description":"Als u vragen of hulp nodig hebt, klik op de knop hieronder om ons te contacteren.",
+    "contact.contactButton":"Contacteer ons",
+    "userGuide.title":"Gebruikershandleiding",
+    "userGuide.feature1":"Hoe vertal je je Shopify-winkel?",
+    "userGuide.feature2":"Hoe activeert u de app van Shopify-thema-aanpassingen om de taal- en valuta-wisselaar toe te passen?",
+    "userGuide.feature3":"Hoe stelt u multi-valuta-prijzen in voor je Shopify-winkel?"
 }
   

@@ -150,26 +150,18 @@
     "The server did not receive a timely response from the upstream server.": "Der Server erhielt keine rechtzeitige Antwort vom Upstream-Server.",
     "Back to Home": "Zurück zur Startseite",
     "Automatically switch to the target language and currency.": "Automatisch zum Zielsprach- und Währungsumrechner wechseln.",
-    "rating":{
-      "title":"Wir brauchen Ihre Unterstützung.",
-      "description":"Wenn Sie mit den Übersetzungsergebnissen zufrieden sind, betrachten Sie uns bitte als fünf Sterne-Bewertung."
-    },
-    "progressing":{
-      "title":"Übersetzungsaufgaben: ",
-      "target":"Zielsprache: ",
-      "progressing":"Übersetze ",
-      "module":" Modul"
-    },
-    "contact":{
-      "title":"Kontaktieren Sie uns",
-      "description":"Wenn Sie Fragen oder Unterstützung benötigen, klicken Sie bitte auf die Schaltfläche unten, um Support zu kontaktieren.",
-      "contactButton":"Support kontaktieren"
-    },
-    "userGuide":{
-      "title":"Benutzerhandbuch",
-      "feature1":"Wie übersetzen Sie Ihren Shopify-Shop?",
-      "feature2":"Wie aktivieren Sie die App aus der Shopify-Theme-Anpassung, um den Sprach- und Währungsumrechner anzuwenden",
-      "feature3":"Wie richten Sie multi-Währungspreise auf Ihrem Shopify-Shop ein?"
-    }
+    "rating.title":"Wir brauchen Ihre Unterstützung.",
+    "rating.description":"Wenn Sie mit den Übersetzungsergebnissen zufrieden sind, betrachten Sie uns bitte als fünf Sterne-Bewertung.",
+    "progressing.title":"Übersetzungsaufgaben: ",
+    "progressing.target":"Zielsprache: ",
+    "progressing.progressing":"Übersetze ",
+    "progressing.module":" Modul",
+    "contact.title":"Kontaktieren Sie uns",
+    "contact.description":"Wenn Sie Fragen oder Unterstützung benötigen, klicken Sie bitte auf die Schaltfläche unten, um Support zu kontaktieren.",
+    "contact.contactButton":"Support kontaktieren",
+    "userGuide.title":"Benutzerhandbuch",
+    "userGuide.feature1":"Wie übersetzen Sie Ihren Shopify-Shop?",
+    "userGuide.feature2":"Wie aktivieren Sie die App aus der Shopify-Theme-Anpassung, um den Sprach- und Währungsumrechner anzuwenden",
+    "userGuide.feature3":"Wie richten Sie multi-Währungspreise auf Ihrem Shopify-Shop ein?"
 }
     
