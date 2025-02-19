@@ -19,23 +19,8 @@ import { Button, Card, Typography } from "antd";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
-    const getBrowserLanguage = () => {
-      if (typeof window !== 'undefined') {
-        // 优先使用 navigator.language
-        const browserLang = navigator.language ||
-          (navigator as any).userLanguage || // IE
-          (navigator as any).browserLanguage; // 旧浏览器
-        return browserLang.split(',')[0];
-      }
-      return null;
-    };
-
-    // 获取语言代码
-    const language = getBrowserLanguage() ||
-      request.headers.get("Accept-Language")?.split(",")[0] ||
-      "en";
-
-    console.log("Browser/Header language:", language);
+    const language =
+      request.headers.get("Accept-Language")?.split(",")[0] || "en";
     let i18nCode;
     switch (true) {
       case language == "fr":
@@ -214,11 +199,13 @@ export function ErrorBoundary() {
 
 export default function App() {
   const { i18nCode } = useLoaderData<typeof loader>();
-  console.log("i18nCode:", i18nCode);
-
+  let lang;
+  if (i18nCode && !lang) {
+    lang = i18nCode;
+  }
   return (
     <Provider store={store}>
-      <html lang={i18nCode}>
+      <html lang={lang || "en"}>
         <head>
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
