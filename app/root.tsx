@@ -19,12 +19,24 @@ import { Button, Card, Typography } from "antd";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
-    const language =
-      request.headers.get("Accept-Language")?.split(",")[0] || "en";
+    const getBrowserLanguage = () => {
+      if (typeof window !== 'undefined') {
+        // 优先使用 navigator.language
+        const browserLang = navigator.language ||
+          (navigator as any).userLanguage || // IE
+          (navigator as any).browserLanguage; // 旧浏览器
+        return browserLang.split(',')[0];
+      }
+      return null;
+    };
+
+    // 获取语言代码
+    const language = getBrowserLanguage() ||
+      request.headers.get("Accept-Language")?.split(",")[0] ||
+      "en";
+
+    console.log("Browser/Header language:", language);
     let i18nCode;
-    console.log("language:", language);
-    console.log("request.headers.get('Accept-Language'):", request.headers.get("Accept-Language"));
-    console.log("i18nCode:", i18nCode);
     switch (true) {
       case language == "fr":
         i18nCode = "fr";
@@ -53,7 +65,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       case language == "zh-TW":
         i18nCode = "zh-TW";
         break;
-      case language == "zh-CN":
+      case language == "zh-CN" || language == "zh":
         i18nCode = "zh-CN";
         break;
       default:
