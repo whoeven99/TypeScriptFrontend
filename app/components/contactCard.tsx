@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, Button, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { PhoneOutlined } from '@ant-design/icons';
@@ -7,6 +7,12 @@ const { Text } = Typography;
 
 const ContactCard: React.FC = () => {
     const { t } = useTranslation();
+    const [isBrowser, setIsBrowser] = useState(false);
+
+    useEffect(() => {
+        setIsBrowser(true);
+    }, []);
+
     const handleContactSupport = () => {
         // 声明 tidioChatApi 类型
         interface Window {
@@ -15,7 +21,7 @@ const ContactCard: React.FC = () => {
             }
         }
 
-        if ((window as Window)?.tidioChatApi) {
+        if (isBrowser && (window as Window)?.tidioChatApi) {
             (window as Window).tidioChatApi?.open();
         } else {
             console.warn('Tidio Chat API not loaded');
