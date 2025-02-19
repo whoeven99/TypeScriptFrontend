@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Card, Button, Typography } from 'antd';
+import React, { Suspense } from 'react';
+import { Card, Button, Typography, Skeleton } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { PhoneOutlined } from '@ant-design/icons';
 
@@ -7,12 +7,6 @@ const { Text } = Typography;
 
 const ContactCard: React.FC = () => {
     const { t } = useTranslation();
-    const [isBrowser, setIsBrowser] = useState(false);
-
-    useEffect(() => {
-        setIsBrowser(true);
-    }, []);
-
     const handleContactSupport = () => {
         // 声明 tidioChatApi 类型
         interface Window {
@@ -21,7 +15,7 @@ const ContactCard: React.FC = () => {
             }
         }
 
-        if (isBrowser && (window as Window)?.tidioChatApi) {
+        if ((window as Window)?.tidioChatApi) {
             (window as Window).tidioChatApi?.open();
         } else {
             console.warn('Tidio Chat API not loaded');
@@ -31,54 +25,56 @@ const ContactCard: React.FC = () => {
     };
 
     return (
-        <Card
-            style={{
-                height: '100%',
-                borderRadius: '8px',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-            }}
-        >
-            <div
+        <Suspense fallback={<Skeleton.Button active style={{ height: 150 }} block />}>
+            <Card
                 style={{
-                    margin: "-12px 0",
-                    // minHeight: '100%',
-                    // display: 'flex',
-                    // flexDirection: 'column',
-                    // justifyContent: 'space-between'
+                    height: '100%',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
                 }}
             >
-                <div>
-                    <Text strong style={{ marginBottom: '8px' }}>
-                        {t('contact.title')}
-                    </Text>
-
-                    <Text
-                        style={{
-                            display: 'block',
-                            marginBottom: '50px',
-                            color: '#637381',
-                            fontSize: '14px'
-                        }}
-                    >
-                        {t('contact.description')}
-                    </Text>
-                </div>
-
-                <Button
-                    type="primary"
-                    icon={<PhoneOutlined />}
-                    onClick={handleContactSupport}
+                <div
                     style={{
-                        backgroundColor: '#007F61',
-                        borderColor: '#007F61',
-                        borderRadius: '6px',
-                        boxShadow: '0 2px 4px rgba(0, 127, 97, 0.2)',
+                        margin: "-12px 0",
+                        // minHeight: '100%',
+                        // display: 'flex',
+                        // flexDirection: 'column',
+                        // justifyContent: 'space-between'
                     }}
                 >
-                    {t('contact.contactButton')}
-                </Button>
-            </div>
-        </Card>
+                    <div>
+                        <Text strong style={{ marginBottom: '8px' }}>
+                            {t('contact.title')}
+                        </Text>
+
+                        <Text
+                            style={{
+                                display: 'block',
+                                marginBottom: '50px',
+                                color: '#637381',
+                                fontSize: '14px'
+                            }}
+                        >
+                            {t('contact.description')}
+                        </Text>
+                    </div>
+
+                    <Button
+                        type="primary"
+                        icon={<PhoneOutlined />}
+                        onClick={handleContactSupport}
+                        style={{
+                            backgroundColor: '#007F61',
+                            borderColor: '#007F61',
+                            borderRadius: '6px',
+                            boxShadow: '0 2px 4px rgba(0, 127, 97, 0.2)',
+                        }}
+                    >
+                        {t('contact.contactButton')}
+                    </Button>
+                </div>
+            </Card>
+        </Suspense>
     );
 };
 
