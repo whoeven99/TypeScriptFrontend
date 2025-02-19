@@ -150,26 +150,18 @@
     "The server did not receive a timely response from the upstream server.": "Le serveur n'a pas reçu de réponse à temps du serveur upstream.",
     "Back to Home": "Retour à la page d'accueil",
     "Automatically switch to the target language and currency.": "Changer automatiquement de langue et de devise cible.",
-    "rating":{
-      "title":"Nous avons besoin de votre soutien.",
-      "description":"Si vous êtes satisfait des résultats de la traduction, veuillez nous laisser une évaluation de cinq étoiles."
-    },
-    "progressing":{
-      "title":"Tâches de traduction: ",
-      "target":"Langue cible: ",
-      "progressing":"Traduction ",
-      "module":" module"
-    },
-    "contact":{
-      "title":"Contactez-nous",
-      "description":"Si vous avez des questions ou besoin d'aide, veuillez cliquer sur le bouton ci-dessous pour contacter le support.",
-      "contactButton":"Contacter le support"
-    },
-    "userGuide":{
-      "title":"Guide d'utilisation",
-      "feature1":"Comment traduire votre boutique Shopify ?",
-      "feature2":"Comment activer l'application de la personnalisation de thème Shopify pour appliquer le sélecteur de langue et de devise ?",
-      "feature3":"Comment configurer les prix multi-devises sur votre boutique Shopify ?"
-    }
+    "rating.title":"Nous avons besoin de votre soutien.",
+    "rating.description":"Si vous êtes satisfait des résultats de la traduction, veuillez nous laisser une évaluation de cinq étoiles.",
+    "progressing.title":"Tâches de traduction: ",
+    "progressing.target":"Langue cible: ",
+    "progressing.progressing":"Traduction ",
+    "progressing.module":" module",
+    "contact.title":"Contactez-nous",
+    "contact.description":"Si vous avez des questions ou besoin d'aide, veuillez cliquer sur le bouton ci-dessous pour contacter le support.",
+    "contact.contactButton":"Contacter le support",
+    "userGuide.title":"Guide d'utilisation",
+    "userGuide.feature1":"Comment traduire votre boutique Shopify ?",
+    "userGuide.feature2":"Comment activer l'application de la personnalisation de thème Shopify pour appliquer le sélecteur de langue et de devise ?",
+    "userGuide.feature3":"Comment configurer les prix multi-devises sur votre boutique Shopify ?"
 }
   

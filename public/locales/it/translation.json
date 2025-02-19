@@ -149,26 +149,18 @@
     "The server did not receive a timely response from the upstream server.": "Il server non ha ricevuto una risposta tempestiva dal server upstream.",
     "Back to Home": "Torna alla home",
     "Automatically switch to the target language and currency.": "Cambia automaticamente la lingua e la valuta di destinazione.",
-    "rating":{
-      "title":"Abbiamo bisogno del tuo supporto.",
-      "description":"Se sei soddisfatto dei risultati della traduzione, considera lasciarci una recensione di cinque stelle."
-    },
-    "progressing":{
-      "title":"Tâches de traduction: ",
-      "target":"Lingua obiettivo: ",
-      "progressing":"Traduzione ",
-      "module":" modulo"
-    },
-    "contact":{
-      "title":"Contattaci",
-      "description":"Se hai domande o hai bisogno di aiuto, clicca sul pulsante qui sotto per contattare il supporto.",
-      "contactButton":"Contattare il supporto"
-    },
-    "userGuide":{
-      "title":"Guida utente",
-      "feature1":"Come tradurre il tuo negozio Shopify?",
-      "feature2":"Come attivare l'app di personalizzazione del tema Shopify per applicare il selettore di lingua e valuta?",
-      "feature3":"Come configurare i prezzi multi-valuta sul tuo negozio Shopify?"
-    }
+    "rating.title":"Abbiamo bisogno del tuo supporto.",
+    "rating.description":"Se sei soddisfatto dei risultati della traduzione, considera lasciarci una recensione di cinque stelle.",
+    "progressing.title":"Tâches de traduction: ",
+    "progressing.target":"Lingua obiettivo: ",
+    "progressing.progressing":"Traduzione ",
+    "progressing.module":" modulo",
+    "contact.title":"Contattaci",
+    "contact.description":"Se hai domande o hai bisogno di aiuto, clicca sul pulsante qui sotto per contattare il supporto.",
+    "contact.contactButton":"Contattare il supporto",
+    "userGuide.title":"Guida utente",
+    "userGuide.feature1":"Come tradurre il tuo negozio Shopify?",
+    "userGuide.feature2":"Come attivare l'app di personalizzazione del tema Shopify per applicare il selettore di lingua e valuta?",
+    "userGuide.feature3":"Come configurare i prezzi multi-valuta sul tuo negozio Shopify?"
 }
   
