@@ -22,6 +22,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const language =
       request.headers.get("Accept-Language")?.split(",")[0] || "en";
     let i18nCode;
+    console.log("language:", language);
+    console.log("request.headers.get('Accept-Language'):", request.headers.get("Accept-Language"));
+    console.log("i18nCode:", i18nCode);
     switch (true) {
       case language == "fr":
         i18nCode = "fr";
