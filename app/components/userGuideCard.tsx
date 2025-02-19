@@ -15,15 +15,15 @@ const UserGuideCard: React.FC = () => {
 
     const guideList: GuideItem[] = [
         {
-            title: t('userGuide.feature1'),
+            title: t("userGuide.feature1"),
             link: 'http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-translate/'
         },
         {
-            title: t('userGuide.feature2'),
+            title: t("userGuide.feature2"),
             link: 'http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/'
         },
         {
-            title: t('userGuide.feature3'),
+            title: t("userGuide.feature3"),
             link: 'http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/'
         }
     ];
@@ -41,7 +41,7 @@ const UserGuideCard: React.FC = () => {
             >
                 <Text strong style={{ marginBottom: '16px' }}>
                     <ReadOutlined style={{ marginRight: '8px', color: '#007F61' }} />
-                    {t('userGuide.title')}
+                    {t("userGuide.title")}
                 </Text>
                 {/* 
             <Text

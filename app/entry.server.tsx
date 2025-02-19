@@ -26,6 +26,8 @@ export default async function handleRequest(
   const language =
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   let i18nCode;
+  console.log("language:", language);
+  console.log("i18nCode:", i18nCode);
   switch (true) {
     case language === "fr":
       i18nCode = "fr";

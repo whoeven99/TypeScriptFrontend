@@ -44,7 +44,7 @@ const ContactCard: React.FC = () => {
                 >
                     <div>
                         <Text strong style={{ marginBottom: '8px' }}>
-                            {t('contact.title')}
+                            {t("contact.title")}
                         </Text>
 
                         <Text
@@ -55,7 +55,7 @@ const ContactCard: React.FC = () => {
                                 fontSize: '14px'
                             }}
                         >
-                            {t('contact.description')}
+                            {t("contact.description")}
                         </Text>
                     </div>
 
@@ -70,7 +70,7 @@ const ContactCard: React.FC = () => {
                             boxShadow: '0 2px 4px rgba(0, 127, 97, 0.2)',
                         }}
                     >
-                        {t('contact.contactButton')}
+                        {t("contact.contactButton")}
                     </Button>
                 </div>
             </Card>
