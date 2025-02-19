@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, Typography, List } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { ReadOutlined, RightOutlined } from '@ant-design/icons';
@@ -12,6 +12,11 @@ interface GuideItem {
 
 const UserGuideCard: React.FC = () => {
     const { t } = useTranslation();
+    const [isBrowser, setIsBrowser] = useState(false);
+
+    useEffect(() => {
+        setIsBrowser(true);
+    }, []);
 
     const guideList: GuideItem[] = [
         {
@@ -27,6 +32,12 @@ const UserGuideCard: React.FC = () => {
             link: 'http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/'
         }
     ];
+
+    const handleOpenLink = (link: string) => {
+        if (isBrowser) {
+            window.open(link, '_blank');
+        }
+    };
 
     return (
         <Card
@@ -64,13 +75,7 @@ const UserGuideCard: React.FC = () => {
                             cursor: 'pointer',
                             transition: 'all 0.3s'
                         }}
-                        onClick={() => window.open(item.link, '_blank')}
-                        onMouseEnter={e => {
-                            e.currentTarget.style.backgroundColor = '#f9fafb';
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
+                        onClick={() => handleOpenLink(item.link)}
                     >
                         <div style={{
                             display: 'flex',
