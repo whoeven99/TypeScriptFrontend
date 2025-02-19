@@ -12,11 +12,6 @@ interface GuideItem {
 
 const UserGuideCard: React.FC = () => {
     const { t } = useTranslation();
-    const [isBrowser, setIsBrowser] = useState(false);
-
-    useEffect(() => {
-        setIsBrowser(true);
-    }, []);
 
     const guideList: GuideItem[] = [
         {
@@ -33,11 +28,6 @@ const UserGuideCard: React.FC = () => {
         }
     ];
 
-    const handleOpenLink = (link: string) => {
-        if (isBrowser) {
-            window.open(link, '_blank');
-        }
-    };
 
     return (
         <Suspense fallback={<Skeleton.Button active style={{ height: 150 }} block />}>
@@ -76,7 +66,7 @@ const UserGuideCard: React.FC = () => {
                                 cursor: 'pointer',
                                 transition: 'all 0.3s'
                             }}
-                            onClick={() => handleOpenLink(item.link)}
+                            onClick={() => window.open(item.link, '_blank')}
                         >
                             <div style={{
                                 display: 'flex',
