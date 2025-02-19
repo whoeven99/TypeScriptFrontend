@@ -161,7 +161,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         const daysDifference = Math.floor(timeDifference / (24 * 60 * 60 * 1000));
 
         // 如果超过3天，显示评分弹窗
-        if (daysDifference >= 0) {
+        if (daysDifference >= 3) {
           // 检查localStorage是否已经显示过
           const hasShownRating = localStorage.getItem('hasShownRating');
           if (!hasShownRating) {
