@@ -53,8 +53,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       case language == "zh-TW":
         i18nCode = "zh-TW";
         break;
-      case language == "zh-CN":
-        i18nCode = "zh";
+      case language == "zh-CN" || language == "zh":
+        i18nCode = "zh-CN";
         break;
       default:
         i18nCode = "en";
