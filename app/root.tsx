@@ -19,25 +19,6 @@ import { Button, Card, Typography } from "antd";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
-    const supportedLanguages = {
-      fr: "fr",
-      de: "de",
-      es: "es",
-      it: "it",
-      nl: "nl",
-      pt: "pt",
-      sv: "sv",
-      ja: "ja",
-      "zh-TW": "zh-TW",
-      "zh-CN": "zh-CN",
-      zh: "zh-CN"
-    };
-    const getBrowserLanguage = () => {
-      const browserLang = navigator.language.toLowerCase();
-      return supportedLanguages[browserLang as keyof typeof supportedLanguages]
-        || supportedLanguages[browserLang.split('-')[0] as keyof typeof supportedLanguages]
-        || "en";
-    };
     const language =
       request.headers.get("Accept-Language")?.split(",")[0] || "en";
     let i18nCode;
@@ -218,21 +199,9 @@ export function ErrorBoundary() {
 
 export default function App() {
   const { i18nCode } = useLoaderData<typeof loader>();
-  let lang: string | null = null;
-
-  useEffect(() => {
-    if (i18nCode && !lang) {
-      lang = i18nCode;
-    }
-  }, [i18nCode]);
-
-  useEffect(() => {
-    console.log("lang:", lang);
-  }, [lang]);
-
   return (
     <Provider store={store}>
-      <html lang={lang ? lang : i18nCode}>
+      <html lang={i18nCode}>
         <head>
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
