@@ -16,6 +16,7 @@ import "./styles.css";
 import "react-quill/dist/quill.snow.css";
 import { json, LoaderFunctionArgs } from "@remix-run/node";
 import { Button, Card, Typography } from "antd";
+import { useEffect } from "react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
@@ -199,13 +200,21 @@ export function ErrorBoundary() {
 
 export default function App() {
   const { i18nCode } = useLoaderData<typeof loader>();
-  let lang;
-  if (i18nCode && !lang) {
-    lang = i18nCode;
-  }
+  let lang: string | null = null;
+
+  useEffect(() => {
+    if (i18nCode && !lang) {
+      lang = i18nCode;
+    }
+  }, [i18nCode]);
+
+  useEffect(() => {
+    console.log("lang:", lang);
+  }, [lang]);
+
   return (
     <Provider store={store}>
-      <html lang={lang || "en"}>
+      <html lang={lang ? lang : i18nCode}>
         <head>
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
