@@ -16,8 +16,8 @@ import { useTranslation } from "react-i18next";
 import UserProfileCard from "./components/userProfileCard";
 import PaymentModal from "~/components/paymentModal";
 import PreviewModal from "~/components/previewModal";
-import UserGuideCard from "~/components/userGuideCard";
-import ContactCard from "~/components/contactCard";
+import UserGuideCard from "~/routes/app._index/components/userGuideCard";
+import ContactCard from "~/routes/app._index/components/contactCard";
 
 const { Title, Text } = Typography;
 
