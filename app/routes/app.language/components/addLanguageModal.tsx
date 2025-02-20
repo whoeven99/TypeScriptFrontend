@@ -361,7 +361,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
         dataSource={filteredLanguages}
         columns={columns}
         rowKey="key"
-        loading={confirmButtonDisable}
+        loading={confirmButtonDisable || allLanguages.length === 0}
         pagination={{
           pageSize: 10, // 每页默认显示 10 条
           position: ["bottomCenter"], // 将分页组件居中

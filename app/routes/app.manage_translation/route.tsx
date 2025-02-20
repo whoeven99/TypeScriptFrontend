@@ -65,7 +65,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const navigationItems = JSON.parse(
       formData.get("navigationItems") as string,
     );
-    const policiesItems = JSON.parse(formData.get("policiesItems") as string);
+    // const policiesItems = JSON.parse(formData.get("policiesItems") as string);
     const shopItems = JSON.parse(formData.get("shopItems") as string);
     const store_metadataItems = JSON.parse(
       formData.get("store_metadataItems") as string,
@@ -240,24 +240,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             { status: 500 },
           );
         }
-      case !!policiesItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: policiesItems.source,
-            target: policiesItems.target,
-            resourceType: policiesItems.resourceType,
-          });
+      // case !!policiesItems:
+      //   try {
+      //     const data = await GetTranslationItemsInfo({
+      //       shop,
+      //       accessToken,
+      //       source: policiesItems.source,
+      //       target: policiesItems.target,
+      //       resourceType: policiesItems.resourceType,
+      //     });
 
-          return json({ data: data });
-        } catch (error) {
-          console.error("Error GetTranslationItemsInfo policiesItems:", error);
-          return json(
-            { error: "Error GetTranslationItemsInfo policiesItems" },
-            { status: 500 },
-          );
-        }
+      //     return json({ data: data });
+      //   } catch (error) {
+      //     console.error("Error GetTranslationItemsInfo policiesItems:", error);
+      //     return json(
+      //       { error: "Error GetTranslationItemsInfo policiesItems" },
+      //       { status: 500 },
+      //     );
+      //   }
       case !!shopItems:
         try {
           const data = await GetTranslationItemsInfo({
@@ -384,7 +384,7 @@ const Index = () => {
   const filtersFetcher = useFetcher<any>();
   const metaobjectsFetcher = useFetcher<any>();
   const navigationFetcher = useFetcher<any>();
-  const policiesFetcher = useFetcher<any>();
+  // const policiesFetcher = useFetcher<any>();
   const shopFetcher = useFetcher<any>();
   // const store_metadataFetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
@@ -510,22 +510,22 @@ const Index = () => {
       sync_status: false,
       navigation: "navigation",
     },
-    {
-      key: "policies",
-      title: t("Policies"),
-      allTranslatedItems:
-        items.find(
-          (item: any) =>
-            item?.language === current && item?.type === "SHOP_POLICY",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        items.find(
-          (item: any) =>
-            item?.language === current && item?.type === "SHOP_POLICY",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "policy",
-    },
+    // {
+    //   key: "policies",
+    //   title: t("Policies"),
+    //   allTranslatedItems:
+    //     items.find(
+    //       (item: any) =>
+    //         item?.language === current && item?.type === "SHOP_POLICY",
+    //     )?.translatedNumber ?? undefined,
+    //   allItems:
+    //     items.find(
+    //       (item: any) =>
+    //         item?.language === current && item?.type === "SHOP_POLICY",
+    //     )?.totalNumber ?? undefined,
+    //   sync_status: false,
+    //   navigation: "policy",
+    // },
     {
       key: "shop",
       title: t("Shop"),
@@ -676,11 +676,11 @@ const Index = () => {
     }
   }, [navigationFetcher.data]);
 
-  useEffect(() => {
-    if (policiesFetcher.data) {
-      dispatch(updateData(policiesFetcher.data.data));
-    }
-  }, [policiesFetcher.data]);
+  // useEffect(() => {
+  //   if (policiesFetcher.data) {
+  //     dispatch(updateData(policiesFetcher.data.data));
+  //   }
+  // }, [policiesFetcher.data]);
 
   useEffect(() => {
     if (shopFetcher.data) {
@@ -850,19 +850,19 @@ const Index = () => {
         method: "post",
         action: "/app/manage_translation",
       }); // 提交表单请求
-      const policiesFormData = new FormData();
-      policiesFormData.append(
-        "policiesItems",
-        JSON.stringify({
-          source: primaryLanguage,
-          target: current,
-          resourceType: "Policies",
-        }),
-      );
-      policiesFetcher.submit(policiesFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
+      // const policiesFormData = new FormData();
+      // policiesFormData.append(
+      //   "policiesItems",
+      //   JSON.stringify({
+      //     source: primaryLanguage,
+      //     target: current,
+      //     resourceType: "Policies",
+      //   }),
+      // );
+      // policiesFetcher.submit(policiesFormData, {
+      //   method: "post",
+      //   action: "/app/manage_translation",
+      // }); // 提交表单请求
       const shopFormData = new FormData();
       shopFormData.append(
         "shopItems",

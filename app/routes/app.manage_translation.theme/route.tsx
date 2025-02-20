@@ -242,15 +242,19 @@ const Index = () => {
         return updatedConfirmData;
       } else {
         // 如果 key 不存在，新增一条数据
+        console.log();
+
         const newItem = {
           resourceId: themes.nodes[0]?.resourceId,
           locale: themes.nodes[0]?.translatableContent[0]?.locale,
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest:
-            themes.nodes[0]?.translatableContent[0]?.digest,
+            themes.nodes[0]?.translatableContent.find((item: any) => item.key === key)?.digest || themes.nodes[0]?.translatableContent[0]?.digest || "",
           target: searchTerm || "",
         };
+
+        console.log(newItem);
 
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       }
