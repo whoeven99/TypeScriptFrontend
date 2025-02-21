@@ -22,23 +22,6 @@ import ContactCard from "~/routes/app._index/components/contactCard";
 
 const { Title, Text } = Typography;
 
-interface LanguageDataType {
-  key: number;
-  src: string[];
-  name: string;
-  locale: string;
-  localeName: string;
-  status: number;
-  published: boolean;
-}
-
-interface LanguageSettingType {
-  primaryLanguage: string;
-  primaryLanguageCode: string;
-  shopLanguagesWithoutPrimary: ShopLocalesType[];
-  shopLanguageCodesWithoutPrimary: string[];
-}
-
 export interface WordsType {
   chars: number;
   totalChars: number;
@@ -49,54 +32,54 @@ export const loader = async () => {
 };
 
 const Index = () => {
-  const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
-  const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
+  // const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
+  // const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
   // const [user, setUser] = useState<UserType>();
-  const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
+  // const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
   // const [limited, setLimited] = useState<boolean>(false);
   // const [paymentModalVisible, setPaymentModalVisible] =
   //   useState<boolean>(false);
-  const [previewModalVisible, setPreviewModalVisible] =
-    useState<boolean>(false);
+  // const [previewModalVisible, setPreviewModalVisible] =
+  //   useState<boolean>(false);
   // const [newUserModal, setNewUserModal] = useState<boolean>(false);
   // const [newUserModalLoading, setNewUserModalLoading] =
   //   useState<boolean>(false);
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
   const { t } = useTranslation();
-  const loadingLanguageFetcher = useFetcher<any>();
-  const languageLocalInfoFetcher = useFetcher<any>();
+  // const loadingLanguageFetcher = useFetcher<any>();
+  // const languageLocalInfoFetcher = useFetcher<any>();
   // const loadingUserFetcher = useFetcher<any>();
   // const initializationFetcher = useFetcher<any>();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const languageFormData = new FormData();
-    languageFormData.append("languageData", JSON.stringify(true));
-    loadingLanguageFetcher.submit(languageFormData, {
-      method: "post",
-      action: "/app",
-    });
-    // const userFormData = new FormData();
-    // userFormData.append("userData", JSON.stringify(true));
-    // loadingUserFetcher.submit(userFormData, {
-    //   method: "post",
-    //   action: "/app",
-    // });
-    shopify.loading(true);
-    const installTime = localStorage.getItem('installTime')
-    if (!installTime) {
-      localStorage.setItem('installTime', new Date().toISOString());
-    }
-  }, []);
+  // useEffect(() => {
+  //   const languageFormData = new FormData();
+  //   languageFormData.append("languageData", JSON.stringify(true));
+  //   loadingLanguageFetcher.submit(languageFormData, {
+  //     method: "post",
+  //     action: "/app",
+  //   });
+  //   // const userFormData = new FormData();
+  //   // userFormData.append("userData", JSON.stringify(true));
+  //   // loadingUserFetcher.submit(userFormData, {
+  //   //   method: "post",
+  //   //   action: "/app",
+  //   // });
+  //   shopify.loading(true);
+  //   const installTime = localStorage.getItem('installTime')
+  //   if (!installTime) {
+  //     localStorage.setItem('installTime', new Date().toISOString());
+  //   }
+  // }, []);
 
-  useEffect(() => {
-    if (loadingLanguageFetcher.data) {
-      setLanguageData(loadingLanguageFetcher.data.data);
-      setLanguageSetting(loadingLanguageFetcher.data.languageSetting);
-      setLoadingLanguage(false);
-      shopify.loading(false);
-    }
-  }, [loadingLanguageFetcher.data]);
+  // useEffect(() => {
+  //   if (loadingLanguageFetcher.data) {
+  //     setLanguageData(loadingLanguageFetcher.data.data);
+  //     setLanguageSetting(loadingLanguageFetcher.data.languageSetting);
+  //     setLoadingLanguage(false);
+  //     shopify.loading(false);
+  //   }
+  // }, [loadingLanguageFetcher.data]);
 
 
   // useEffect(() => {
@@ -124,22 +107,22 @@ const Index = () => {
   //   }
   // }, [initializationFetcher.data]);
 
-  useEffect(() => {
-    if (languageData.length) {
-      const data = languageData.map((lang) => ({
-        key: lang.key,
-        language: lang.name,
-        localeName: lang.localeName,
-        locale: lang.locale,
-        primary: false,
-        status: lang.status || 0,
-        auto_update_translation: false,
-        published: lang.published,
-        loading: false,
-      }));
-      dispatch(setTableData(data)); // 只在组件首次渲染时触发
-    }
-  }, [dispatch, languageData]);
+  // useEffect(() => {
+  //   if (languageData.length) {
+  //     const data = languageData.map((lang) => ({
+  //       key: lang.key,
+  //       language: lang.name,
+  //       localeName: lang.localeName,
+  //       locale: lang.locale,
+  //       primary: false,
+  //       status: lang.status || 0,
+  //       auto_update_translation: false,
+  //       published: lang.published,
+  //       loading: false,
+  //     }));
+  //     dispatch(setTableData(data)); // 只在组件首次渲染时触发
+  //   }
+  // }, [dispatch, languageData]);
 
   // const onClick = async () => {
   //   setNewUserModalLoading(true);
@@ -170,16 +153,18 @@ const Index = () => {
   ];
 
   const data: {
+    key: number;
     need: string;
     votes: number;
     devStatus: string;
   }[] = [
-      {
-        need: "dashboard 重置",
-        votes: 0,
-        devStatus: "开发中",
-      },
-    ];
+    {
+      key: 1,
+      need: "dashboard 重置",
+      votes: 0,
+      devStatus: "开发中",
+    },
+  ];
 
   return (
     <Suspense fallback={<div>{t("loading")}</div>}>
@@ -229,7 +214,7 @@ const Index = () => {
                       {t("transLanguageCard2.title")}
                     </Title>
                     <Text >{t("transLanguageCard2.description")}</Text>
-                    <Button type="primary">{t("transLanguageCard2.button")}</Button>
+                    <Button type="primary" onClick={() => navigate("/app/manage_translation")}>{t("transLanguageCard2.button")}</Button>
                   </Space>
                 </Card>
               </Col>
@@ -293,7 +278,7 @@ const Index = () => {
                       {t("transCurrencyCard2.title")}
                     </Title>
                     <Text >{t("transCurrencyCard2.description")}</Text>
-                    <Button type="primary">{t("transCurrencyCard2.button")}</Button>
+                    <Button type="primary" >{t("transCurrencyCard2.button")}</Button>
                   </Space>
                 </Card>
               </Col>
@@ -368,7 +353,6 @@ const Index = () => {
           </Space>
           <Text
             style={{
-              marginTop: "10px",
               display: "flex", // 使用 flexbox 来布局
               justifyContent: "center", // 水平居中
             }}
