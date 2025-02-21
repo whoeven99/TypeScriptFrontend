@@ -14,6 +14,12 @@ export interface ConfirmDataType {
   target: string;
 }
 
+interface GroupedDeleteData {
+  resourceId: string;
+  locales: string[];
+  translationKeys: string[];
+}
+
 //用户数据初始化检测
 export const InitializationDetection = async ({
   request,
@@ -205,21 +211,19 @@ export const InsertTargets = async ({
   // 创建异步任务
   const insertTask = async () => {
     try {
-      const response = await withRetry(
-        async () => {
-          return axios({
-            url: `${process.env.SERVER_URL}/translate/insertTargets`,
-            method: "POST",
-            data: {
-              shopName: shop,
-              accessToken: accessToken,
-              source: source,
-              targetList: targets,
-            },
-            timeout: 10000, // 10秒超时
-          });
-        },
-      );
+      const response = await withRetry(async () => {
+        return axios({
+          url: `${process.env.SERVER_URL}/translate/insertTargets`,
+          method: "POST",
+          data: {
+            shopName: shop,
+            accessToken: accessToken,
+            source: source,
+            targetList: targets,
+          },
+          timeout: 10000, // 10秒超时
+        });
+      });
 
       return response;
     } catch (error) {
@@ -683,129 +687,244 @@ export const updateManageTranslation = async ({
       value?: string;
     };
   }[] = [];
+
+  const itemsToUpdate = confirmData.filter(
+    (item) => item.value && item.value !== "<p><br></p>" && item.value !== "",
+  );
+
   const itemsToDelete = confirmData.filter(
     (item) => !item.value || item.value === "<p><br></p>" || item.value === "",
   );
   // 创建并发限制器，最多同时处理5个请求
   const limit = pLimit(7);
 
-  try {
-    // 定义处理单个翻译项的函数
-    const processTranslationItem = async (item: ConfirmDataType) => {
-      if (!item.translatableContentDigest || !item.locale) {
-        return null;
-      }
+  console.log("itemsToUpdate: ", itemsToUpdate);
+  console.log(!!itemsToUpdate);
+  console.log(!!(itemsToUpdate.length > 0));
+  console.log(itemsToUpdate[0].resourceId.split("/")[4]);
 
-      // 添加重试机制
-      return withRetry(
-        async () => {
-          if (item.value && item.value !== "<p><br></p>") {
-            const response = await axios({
-              url: `${process.env.SERVER_URL}/shopify/updateShopifyDataByTranslateTextRequest`,
-              method: "POST",
-              timeout: 10000, // 添加超时设置
+  try {
+    if (itemsToUpdate && itemsToUpdate.length > 0) {
+      if (itemsToUpdate[0].resourceId.split("/")[3] !== "OnlineStoreTheme") {
+        // 定义处理单个翻译项的函数
+        const processTranslationItem = async (item: ConfirmDataType) => {
+          if (!item.translatableContentDigest || !item.locale) {
+            return null;
+          }
+
+          // 添加重试机制
+          return withRetry(
+            async () => {
+              if (item.value && item.value !== "<p><br></p>") {
+                const response = await axios({
+                  url: `${process.env.SERVER_URL}/shopify/updateShopifyDataByTranslateTextRequest`,
+                  method: "POST",
+                  timeout: 10000, // 添加超时设置
+                  data: {
+                    shopName: shop,
+                    accessToken: accessToken,
+                    locale: item.locale,
+                    key: item.key,
+                    value: item.value,
+                    translatableContentDigest: item.translatableContentDigest,
+                    resourceId: item.resourceId,
+                    target: item.target,
+                  },
+                });
+
+                return {
+                  success: response.data.success,
+                  errorMsg: response.data.errorMsg,
+                  data: {
+                    resourceId: item.resourceId,
+                    key: item.key,
+                    value: item.value,
+                  },
+                };
+              }
+            },
+            {
+              maxRetries: 3, // 最多重试3次
+              retryDelay: 1000, // 重试间隔1秒
+            },
+          );
+        };
+
+        // 并发处理所有翻译项
+        const promises = confirmData.map((item) =>
+          limit(() => processTranslationItem(item)),
+        );
+
+        // 等待所有请求完成
+        const results = await Promise.allSettled(promises);
+
+        // 处理结果
+        results.forEach((result, index) => {
+          if (result.status === "fulfilled" && result.value) {
+            res.push(result.value);
+          } else if (result.status === "rejected") {
+            res.push({
+              success: false,
+              errorMsg: `Failed to process item ${index}: ${result.reason}`,
               data: {
-                shopName: shop,
-                accessToken: accessToken,
-                locale: item.locale,
-                key: item.key,
-                value: item.value,
-                translatableContentDigest: item.translatableContentDigest,
-                resourceId: item.resourceId,
-                target: item.target,
+                resourceId: confirmData[index].resourceId,
+                key: confirmData[index].key,
               },
             });
-
-            return {
-              success: response.data.success,
-              errorMsg: response.data.errorMsg,
-              data: {
-                resourceId: item.resourceId,
-                key: item.key,
-                value: item.value,
-              },
-            };
           }
-        },
-        {
-          maxRetries: 3, // 最多重试3次
-          retryDelay: 1000, // 重试间隔1秒
-        },
-      );
-    };
+        });
+      } else {
+        // 定义处理单个翻译项的函数
+        // 添加重试机制
 
-    // 并发处理所有翻译项
-    const promises = confirmData.map((item) =>
-      limit(() => processTranslationItem(item)),
-    );
+        console.log(
+          "itemsToUpdateArray: ",
+          itemsToUpdate.map((item) => {
+            return {
+              shopName: shop,
+              accessToken: accessToken,
+              locale: item.locale,
+              key: item.key,
+              value: item.value,
+              translatableContentDigest: item.translatableContentDigest,
+              resourceId: item.resourceId,
+              target: item.target,
+            };
+          }),
+        );
 
-    // 等待所有请求完成
-    const results = await Promise.allSettled(promises);
+        const response = await axios({
+          url: `${process.env.SERVER_URL}/shopify/updateItems`,
+          method: "POST",
+          timeout: 10000, // 添加超时设置
+          data: itemsToUpdate.map((item) => {
+            return {
+              shopName: shop,
+              accessToken: accessToken,
+              locale: item.locale,
+              key: item.key,
+              value: item.value,
+              translatableContentDigest: item.translatableContentDigest,
+              resourceId: item.resourceId,
+              target: item.target,
+            };
+          }),
+        });
 
-    // 处理结果
-    results.forEach((result, index) => {
-      if (result.status === "fulfilled" && result.value) {
-        res.push(result.value);
-      } else if (result.status === "rejected") {
         res.push({
-          success: false,
-          errorMsg: `Failed to process item ${index}: ${result.reason}`,
+          success: response.data.success,
+          errorMsg: response.data.errorMsg,
           data: {
-            resourceId: confirmData[index].resourceId,
-            key: confirmData[index].key,
+            resourceId: itemsToUpdate[0].resourceId,
+            key: itemsToUpdate[0].key,
           },
         });
       }
-    });
+    }
 
     if (itemsToDelete.length > 0) {
-      const response = await axios({
-        url: `https://${shop}/admin/api/2024-10/graphql.json`,
-        method: "POST",
-        timeout: 10000, // 添加超时设置
-        headers: {
-          "X-Shopify-Access-Token": accessToken,
-          "Content-Type": "application/json",
-        },
-        data: {
-          query: `mutation translationsRemove($resourceId: ID!, $translationKeys: [String!]!, $locales: [String!]!) {
-          translationsRemove(resourceId: $resourceId, translationKeys: $translationKeys, locales: $locales) {
-            userErrors {
-              message
-              field
-            }
-            translations {
-              key
-              value
-            }
+      // 创建 Map 对象
+      const groupedMap = new Map<
+        string,
+        {
+          resourceId: string;
+          locales: string[];
+          translationKeys: string[];
+        }
+      >();
+
+      // 使用 forEach 填充 Map
+      itemsToDelete.forEach((item) => {
+        if (!groupedMap.has(item.resourceId)) {
+          groupedMap.set(item.resourceId, {
+            resourceId: item.resourceId,
+            locales: [item.target],
+            translationKeys: [item.key],
+          });
+        } else {
+          const group = groupedMap.get(item.resourceId)!;
+          if (!group.locales.includes(item.target)) {
+            group.locales.push(item.target);
           }
-        }`,
-          variables: {
-            resourceId: itemsToDelete[0].resourceId,
-            locales: [itemsToDelete[0].target],
-            translationKeys: itemsToDelete.map((item) => item.key),
-          },
-        },
+          group.translationKeys.push(item.key);
+        }
       });
 
-      if (response.data.data.translationsRemove.translations) {
-        res.push({
-          success: true,
-          errorMsg: "",
-          data: {
-            resourceId: itemsToDelete[0].resourceId,
-            key: itemsToDelete[0].key,
-          },
+      // 将 Map 转换为数组
+      const deleteData = Array.from(groupedMap.values());
+      console.log("deleteData: ", deleteData);
+
+      try {
+        const processTranslationItem = async (item: GroupedDeleteData) => {
+          // 添加重试机制
+          return withRetry(
+            async () => {
+              const response = await axios({
+                url: `https://${shop}/admin/api/2024-10/graphql.json`,
+                method: "POST",
+                timeout: 10000, // 添加超时设置
+                headers: {
+                  "X-Shopify-Access-Token": accessToken,
+                  "Content-Type": "application/json",
+                },
+                data: {
+                  query: `mutation translationsRemove($resourceId: ID!, $translationKeys: [String!]!, $locales: [String!]!) {
+                    translationsRemove(resourceId: $resourceId, translationKeys: $translationKeys, locales: $locales) {
+                      userErrors {
+                        message
+                        field
+                      }
+                      translations {
+                        key
+                        value
+                      }
+                    }
+                  }`,
+                  variables: item,
+                },
+              });
+
+              return {
+                success: response.data.success,
+                errorMsg: response.data.errorMsg,
+                data: {
+                  resourceId: item.resourceId,
+                  key: item.translationKeys[0],
+                },
+              };
+            },
+            {
+              maxRetries: 3, // 最多重试3次
+              retryDelay: 1000, // 重试间隔1秒
+            },
+          );
+        };
+
+        // 并发处理所有翻译项
+        const promises = deleteData.map((item) =>
+          limit(() => processTranslationItem(item)),
+        );
+
+        // 等待所有请求完成
+        const results = await Promise.allSettled(promises);
+
+        // 处理结果
+        results.forEach((result, index) => {
+          if (result.status === "fulfilled" && result.value) {
+            res.push(result.value);
+          } else if (result.status === "rejected") {
+            res.push({
+              success: false,
+              errorMsg: `Failed to process item ${index}: ${result.reason}`,
+              data: {
+                resourceId: confirmData[index].resourceId,
+                key: confirmData[index].key,
+              },
+            });
+          }
         });
-      } else {
-        res.push({
-          success: false,
-          errorMsg: "Failed to delete translations",
-          data: {
-            resourceId: itemsToDelete[0].resourceId,
-            key: itemsToDelete[0].key,
-          },
-        });
+      } catch (error) {
+        console.error("Error occurred in the translation delete:", error);
       }
     }
     return res;
