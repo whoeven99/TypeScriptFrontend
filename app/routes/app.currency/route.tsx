@@ -301,15 +301,15 @@ const Index = () => {
       if (defaultCurrency) {
         setDefaultSymbol(defaultCurrency.symbol);
       }
-      const tableData = loadingFetcher.data.currencyList.filter(
-        (item: any) => !item.primaryStatus,
+      const tableData = loadingFetcher.data.currencyList?.filter(
+        (item: any) => !item?.primaryStatus,
       );
       setOriginalData(tableData);
       setFilteredData(tableData);
       dispatch(setTableData(tableData));
       const autoRateData = loadingFetcher.data.currencyList
-        .filter((item: any) => item.exchangeRate == "Auto")
-        .map((item: any) => item.currencyCode);
+        ?.filter((item: any) => item?.exchangeRate == "Auto")
+        .map((item: any) => item?.currencyCode);
       const rateFormData = new FormData();
       rateFormData.append("rateData", JSON.stringify(autoRateData));
       rateFetcher.submit(rateFormData, {
