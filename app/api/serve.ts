@@ -695,13 +695,11 @@ export const updateManageTranslation = async ({
   const itemsToDelete = confirmData.filter(
     (item) => !item.value || item.value === "<p><br></p>" || item.value === "",
   );
+
+  console.log("itemsToDelete: ", itemsToDelete);
+  console.log("itemsToUpdate: ", itemsToUpdate);
   // 创建并发限制器，最多同时处理5个请求
   const limit = pLimit(7);
-
-  console.log("itemsToUpdate: ", itemsToUpdate);
-  console.log(!!itemsToUpdate);
-  console.log(!!(itemsToUpdate.length > 0));
-  console.log(itemsToUpdate[0].resourceId.split("/")[4]);
 
   try {
     if (itemsToUpdate && itemsToUpdate.length > 0) {

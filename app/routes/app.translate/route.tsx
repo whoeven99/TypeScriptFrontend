@@ -147,6 +147,111 @@ const Index = () => {
         setSelectedLanguageCode(e.target.value);
     };
 
+    const translateSettings1Options = [
+        {
+            label: "ChatGPT 4o",
+            value: "1"
+        },
+        {
+            label: "ChatGPT 4o",
+            value: "2"
+        },
+        {
+            label: "ChatGPT 4o",
+            value: "3"
+        },
+        {
+            label: "ChatGPT 4o",
+            value: "4"
+        },
+    ]
+
+    const translateSettings2Options = [
+        {
+            label: "General",
+            value: "1"
+        },
+        {
+            label: "Clothing",
+            value: "2"
+        },
+        {
+            label: "Jewelry",
+            value: "3"
+        },
+        {
+            label: "Electrical appliances",
+            value: "4"
+        },
+    ]
+
+    const translateSettings3Options = [
+        {
+            label: t("Products"),
+            value: "1"
+        },
+        {
+            label: t("Collections"),
+            value: "2"
+        },
+        {
+            label: t("Articles"),
+            value: "3"
+        },
+        {
+            label: t("Blog titles"),
+            value: "4"
+        },
+        {
+            label: t("Pages"),
+            value: "5"
+        },
+        {
+            label: t("Filters"),
+            value: "6"
+        },
+        {
+            label: t("Metaobjects"),
+            value: "7"
+        },
+        {
+            label: t("Navigation"),
+            value: "8"
+        },
+        {
+            label: t("Shop"),
+            value: "9"
+        },
+        {
+            label: t("Theme"),
+            value: "10"
+        },
+        {
+            label: t("Delivery"),
+            value: "11"
+        },
+        {
+            label: t("Shipping"),
+            value: "12"
+        },
+    ]
+
+    const translateSettings4Options = [
+        {
+            label: t("translateSettings4Options.option1"),
+            value: "1"
+        },
+        {
+            label: t("translateSettings4Options.option1"),
+            value: "2"
+        },
+        {
+            label: t("translateSettings4Options.option1"),
+            value: "3"
+        },
+    ]
+
+
     return (
         <Page>
             <TitleBar title={t("Translate Store")} />
@@ -189,25 +294,108 @@ const Index = () => {
                             </Text>
                         )}
                     </div>
-                    <Card>
-                        <Radio.Group
-                            value={selectedLanguageCode}
-                            onChange={onChange}
-                            style={{ width: '100%' }}
+                    {languageData?.length > 0 ? (
+                        <Card
+                            style={{
+                                width: '100%',
+                                minHeight: "222px",
+                                marginBottom: "16px"
+                            }}
                         >
-                            <div style={{ 
-                                display: 'grid', 
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
-                                gap: '16px',
-                                width: '100%'
-                            }}>
-                                {languageData.map((lang) => (
-                                    <Radio key={lang.locale} value={lang.locale}>
-                                        {lang.name}
-                                    </Radio>
-                                ))}
-                            </div>
-                        </Radio.Group>
+                            <Radio.Group
+                                value={selectedLanguageCode}
+                                onChange={onChange}
+                                style={{ width: '100%' }}
+                            >
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                    gap: '16px',
+                                    width: '100%'
+                                }}>
+                                    {languageData.map((lang) => (
+                                        <Radio key={lang.locale} value={lang.locale}>
+                                            {lang.name}
+                                        </Radio>
+                                    ))}
+                                </div>
+                            </Radio.Group>
+                        </Card>) : <Skeleton.Button active style={{ height: 222 }} block />
+                    }
+                    <div style={{ paddingLeft: "8px" }}>
+                        <Title level={5} style={{ fontSize: "1.25rem", margin: "0" }}>
+                            {t("translateSettings.title")}
+                        </Title>
+                        <Text style={{ margin: "0" }}>
+                            {t("translateSettings.description")}
+                        </Text>
+                    </div>
+                    <Card
+                        style={{
+                            width: '100%',
+                            minHeight: "222px",
+                            marginBottom: "16px"
+                        }}
+                    >
+                        <Space direction="vertical" size="small" style={{ display: "flex" }}>
+                            <Title level={5} style={{ fontSize: "1.25rem", margin: "0" }}>
+                                {t("translateSettings1.title")}
+                            </Title>
+                            <Radio.Group
+                                value={selectedLanguageCode}
+                                options={translateSettings1Options}
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                    width: '100%'
+                                }}
+                                optionType="button"
+                                buttonStyle="solid"
+                            >
+                            </Radio.Group>
+                            <Title level={5} style={{ fontSize: "1.25rem", margin: "0" }}>
+                                {t("translateSettings2.title")}
+                            </Title>
+                            <Radio.Group
+                                value={selectedLanguageCode}
+                                options={translateSettings2Options}
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                    width: '100%'
+                                }}
+                                optionType="button"
+                                buttonStyle="solid"
+                            >
+                            </Radio.Group>
+                            <Title level={5} style={{ fontSize: "1.25rem", margin: "0" }}>
+                                {t("translateSettings3.title")}
+                            </Title>
+                            <Checkbox.Group
+                                options={translateSettings3Options}
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                    width: '100%'
+                                }}
+                            >
+                            </Checkbox.Group>
+                            <Title level={5} style={{ fontSize: "1.25rem", margin: "0" }}>
+                                {t("translateSettings4.title")}
+                            </Title>
+                            <Radio.Group
+                                value={selectedLanguageCode}
+                                options={translateSettings4Options}
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                    width: '100%'
+                                }}
+                                optionType="button"
+                                buttonStyle="solid"
+                            >
+                            </Radio.Group>
+                        </Space>
                     </Card>
                 </Space>
             </div>
