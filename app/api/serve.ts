@@ -774,7 +774,6 @@ export const updateManageTranslation = async ({
       } else {
         // 定义处理单个翻译项的函数
         // 添加重试机制
-
         console.log(
           "itemsToUpdateArray: ",
           itemsToUpdate.map((item) => {
