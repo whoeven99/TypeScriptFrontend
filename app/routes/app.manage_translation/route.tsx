@@ -952,13 +952,13 @@ const Index = () => {
       ) : (
         <div>
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-            <AttentionCard
+            {/* <AttentionCard
               title={t("Translation credits have been exhausted.")}
               content={t(
                 "The translation cannot be completed due to exhausted credits.",
               )}
               show={disable}
-            />
+            /> */}
             {menuData?.length ? (
               <div className="manage-header">
                 <Menu

@@ -302,15 +302,15 @@ const Index = () => {
       if (defaultCurrency) {
         setDefaultSymbol(defaultCurrency.symbol);
       }
-      const tableData = loadingFetcher.data.currencyList.filter(
-        (item: any) => !item.primaryStatus,
+      const tableData = loadingFetcher.data.currencyList?.filter(
+        (item: any) => !item?.primaryStatus,
       );
       setOriginalData(tableData);
       setFilteredData(tableData);
       dispatch(setTableData(tableData));
       const autoRateData = loadingFetcher.data.currencyList
-        .filter((item: any) => item.exchangeRate == "Auto")
-        .map((item: any) => item.currencyCode);
+        ?.filter((item: any) => item?.exchangeRate == "Auto")
+        .map((item: any) => item?.currencyCode);
       const rateFormData = new FormData();
       rateFormData.append("rateData", JSON.stringify(autoRateData));
       rateFetcher.submit(rateFormData, {
@@ -376,10 +376,12 @@ const Index = () => {
         themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
       const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
       const blocks = JSON.parse(jsonString).current.blocks;
+      console.log(blocks);
       if (blocks) {
         const switcherJson: any = Object.values(blocks).find(
           (block: any) => block.type === ciwiSwitcherBlocksId,
         );
+        console.log(switcherJson);
         if (!switcherJson || switcherJson.disabled) {
           setSwitcherEnableCardOpen(true);
         }
