@@ -63,12 +63,6 @@ const ContactCard: React.FC = () => {
                         type="primary"
                         icon={<PhoneOutlined />}
                         onClick={handleContactSupport}
-                        style={{
-                            backgroundColor: '#007F61',
-                            borderColor: '#007F61',
-                            borderRadius: '6px',
-                            boxShadow: '0 2px 4px rgba(0, 127, 97, 0.2)',
-                        }}
                     >
                         {t("contact.contactButton")}
                     </Button>

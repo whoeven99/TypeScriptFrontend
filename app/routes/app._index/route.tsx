@@ -1,9 +1,10 @@
 import { Page, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Col, Modal, Row, Skeleton, Space, Typography } from "antd";
+import { Button, Card, Col, Modal, Row, Skeleton, Space, Table, Typography } from "antd";
 import {
   Link,
   useFetcher,
+  useNavigate,
 } from "@remix-run/react";
 import "./styles.css";
 import { ShopLocalesType } from "../app.language/route";
@@ -66,6 +67,7 @@ const Index = () => {
   const languageLocalInfoFetcher = useFetcher<any>();
   // const loadingUserFetcher = useFetcher<any>();
   // const initializationFetcher = useFetcher<any>();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const languageFormData = new FormData();
@@ -149,17 +151,51 @@ const Index = () => {
   //   });
   // };
 
+  const columns = [
+    {
+      title: t("planCardTableList1.title"),
+      dataIndex: "need",
+      key: "need",
+    },
+    {
+      title: t("planCardTableList2.title"),
+      dataIndex: "votes",
+      key: "votes",
+    },
+    {
+      title: t("planCardTableList3.title"),
+      dataIndex: "devStatus",
+      key: "devStatus",
+    },
+  ];
+
+  const data: {
+    need: string;
+    votes: number;
+    devStatus: string;
+  }[] = [
+      {
+        need: "dashboard 重置",
+        votes: 0,
+        devStatus: "开发中",
+      },
+    ];
+
   return (
     <Suspense fallback={<div>{t("loading")}</div>}>
       <Page>
         <TitleBar title={t("Dashboard")} />
-        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>
-              {t("Faster, higher-quality localization translation tool")}
-            </Title>
-          </div>
-          {/* {user ? (
+        <Space direction="vertical" size="large" style={{ display: "flex" }}>
+          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+            <div style={{ paddingLeft: "8px" }}>
+              <Title level={3}>
+                {t("dashboard.title1")}
+              </Title>
+              <Title level={4}>
+                {t("dashboard.description1")}
+              </Title>
+            </div>
+            {/* {user ? (
             <UserProfileCard
               setPaymentModalVisible={setPaymentModalVisible}
               chars={user.chars}
@@ -168,15 +204,193 @@ const Index = () => {
           ) : (
             <Skeleton active />
           )} */}
-          <Row gutter={16}>
-            <Col xs={24} sm={24} md={12}>
-              <ContactCard />
-            </Col>
-            <Col xs={24} sm={24} md={12}>
-              <UserGuideCard />
-            </Col>
-          </Row>
-          <div style={{ paddingLeft: "8px" }}>
+            <Card
+              bordered={false}
+
+            >
+              <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+                <Title level={4}>
+                  {t("transLanguageCard1.title")}
+                </Title>
+                <Text >{t("transLanguageCard1.description")}</Text>
+                <Button type="primary" onClick={() => navigate("/app/translate")}>{t("transLanguageCard1.button")}</Button>
+              </Space>
+            </Card>
+            <Row gutter={16}>
+              <Col xs={24} sm={24} md={12}>
+                <Card
+                  bordered={false}
+                  style={{
+                    height: "100%",
+                  }}
+                >
+                  <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+                    <Title level={4}>
+                      {t("transLanguageCard2.title")}
+                    </Title>
+                    <Text >{t("transLanguageCard2.description")}</Text>
+                    <Button type="primary">{t("transLanguageCard2.button")}</Button>
+                  </Space>
+                </Card>
+              </Col>
+              <Col xs={24} sm={24} md={12}>
+                <Card
+                  bordered={false}
+                  style={{
+                    height: "100%",
+                  }}
+                >
+                  <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+                    <Title level={4}>
+                      {t("transLanguageCard3.title")}
+                    </Title>
+                    <Text >{t("transLanguageCard3.description")}</Text>
+                    <Button type="primary">{t("transLanguageCard3.button")}</Button>
+                  </Space>
+                </Card>
+              </Col>
+            </Row>
+          </Space>
+          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+            <div style={{ paddingLeft: "8px" }}>
+              <Title level={3}>
+                {t("dashboard.title2")}
+              </Title>
+              <Title level={4}>
+                {t("dashboard.description2")}
+              </Title>
+            </div>
+            {/* {user ? (
+            <UserProfileCard
+              setPaymentModalVisible={setPaymentModalVisible}
+              chars={user.chars}
+              totalChars={user.totalChars}
+            />
+          ) : (
+            <Skeleton active />
+          )} */}
+            <Card
+              bordered={false}
+            >
+              <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+                <Title level={4}>
+                  {t("transCurrencyCard1.title")}
+                </Title>
+                <Text >{t("transCurrencyCard1.description")}</Text>
+                <Button type="primary" onClick={() => navigate("/app/currency")}>{t("transCurrencyCard1.button")}</Button>
+              </Space>
+            </Card>
+            <Row gutter={16}>
+              <Col xs={24} sm={24} md={12}>
+                <Card
+                  bordered={false}
+                  style={{
+                    height: "100%",
+                  }}
+                >
+                  <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+                    <Title level={4}>
+                      {t("transCurrencyCard2.title")}
+                    </Title>
+                    <Text >{t("transCurrencyCard2.description")}</Text>
+                    <Button type="primary">{t("transCurrencyCard2.button")}</Button>
+                  </Space>
+                </Card>
+              </Col>
+              <Col xs={24} sm={24} md={12}>
+                <Card
+                  bordered={false}
+                  style={{
+                    height: "100%",
+                  }}
+                >
+                  <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+                    <Title level={4}>
+                      {t("transCurrencyCard3.title")}
+                    </Title>
+                    <Text >{t("transCurrencyCard3.description")}</Text>
+                    <Button type="primary">{t("transCurrencyCard3.button")}</Button>
+                  </Space>
+                </Card>
+              </Col>
+            </Row>
+          </Space>
+          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+            <div style={{ paddingLeft: "8px" }}>
+              <Title level={3}>
+                {t("dashboard.title3")}
+              </Title>
+              <Title level={4}>
+                {t("dashboard.description3")}
+              </Title>
+            </div>
+            {/* {user ? (
+            <UserProfileCard
+              setPaymentModalVisible={setPaymentModalVisible}
+              chars={user.chars}
+              totalChars={user.totalChars}
+            />
+          ) : (
+            <Skeleton active />
+          )} */}
+            <Card
+              bordered={false}
+            >
+              <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Title level={4}>
+                    {t("planCard.title")}
+                  </Title>
+                  <Button type="primary">{t("planCard.button")}</Button>
+                </div>
+                <Text >{t("planCard.description")}</Text>
+                <Table
+                  columns={columns}
+                  dataSource={data}
+                  pagination={false}
+                />
+              </Space>
+            </Card>
+            <Row gutter={16}>
+              <Col xs={24} sm={24} md={12}>
+                <ContactCard />
+              </Col>
+              <Col xs={24} sm={24} md={12}>
+                <UserGuideCard />
+              </Col>
+            </Row>
+          </Space>
+          <Text
+            style={{
+              marginTop: "10px",
+              display: "flex", // 使用 flexbox 来布局
+              justifyContent: "center", // 水平居中
+            }}
+          >
+            {t("Learn more in")}
+            <Link
+              to="http://ciwi.bogdatech.com/help"
+              target="_blank"
+              style={{ margin: "0 5px" }}
+            >
+              {t("Ciwi Help Center")}
+            </Link>
+            {t("by")}
+            <Link
+              to={"http://ciwi.bogdatech.com/"}
+              target="_blank"
+              style={{ margin: "0 5px" }}
+            >
+              {t("Ciwi.ai")}
+            </Link>
+          </Text>
+          {/* <div style={{ paddingLeft: "8px" }}>
             <Title level={3}>
               {languageData.length}
               {t("available languages")}
@@ -193,8 +407,8 @@ const Index = () => {
                 </Text>
               )}
             </div>
-          </div>
-          {loadingLanguage ? (
+          </div> */}
+          {/* {loadingLanguage ? (
             <Skeleton active />
           ) : languageData.length != 0 ? (
             <div>
@@ -244,12 +458,12 @@ const Index = () => {
             </div>
           ) : (
             <NoLanguageSetCard />
-          )}
+          )} */}
         </Space>
-        <PreviewModal
+        {/* <PreviewModal
           visible={previewModalVisible}
           setVisible={setPreviewModalVisible}
-        />
+        /> */}
         {/* <Modal
           open={newUserModal}
           footer={
