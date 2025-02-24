@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Card, Button, Typography, Skeleton } from 'antd';
+import { Card, Button, Typography, Skeleton, Space } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { PhoneOutlined } from '@ant-design/icons';
 
@@ -27,37 +27,39 @@ const ContactCard: React.FC = () => {
     return (
         <Suspense fallback={<Skeleton.Button active style={{ height: 150 }} block />}>
             <Card
+                bordered={false}
                 style={{
-                    height: '100%',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                }}
+                styles={{
+                    body: {
+                        display: "flex",
+                        flexDirection: "column",
+                        flex: 1
+                    }
                 }}
             >
-                <div
-                    style={{
-                        margin: "-12px 0",
-                        // minHeight: '100%',
-                        // display: 'flex',
-                        // flexDirection: 'column',
-                        // justifyContent: 'space-between'
-                    }}
-                >
-                    <div>
-                        <Text strong style={{ marginBottom: '8px' }}>
-                            {t("contact.title")}
-                        </Text>
+                <Space direction="vertical" size="middle" style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    flex: 1
+                }}>
+                    <Text strong style={{ marginBottom: '8px' }}>
+                        {t("contact.title")}
+                    </Text>
 
-                        <Text
-                            style={{
-                                display: 'block',
-                                marginBottom: '50px',
-                                color: '#637381',
-                                fontSize: '14px'
-                            }}
-                        >
-                            {t("contact.description")}
-                        </Text>
-                    </div>
+                    <Text
+                        style={{
+                            display: 'block',
+                            color: '#637381',
+                            fontSize: '14px'
+                        }}
+                    >
+                        {t("contact.description")}
+                    </Text>
 
                     <Button
                         type="primary"
@@ -72,7 +74,7 @@ const ContactCard: React.FC = () => {
                     >
                         {t("contact.contactButton")}
                     </Button>
-                </div>
+                </Space>
             </Card>
         </Suspense>
     );
