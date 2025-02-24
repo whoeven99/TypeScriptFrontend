@@ -689,11 +689,23 @@ export const updateManageTranslation = async ({
   }[] = [];
 
   const itemsToUpdate = confirmData.filter(
-    (item) => item.value && item.value !== "<p><br></p>" && item.value !== "",
+    (item) =>
+      item.value &&
+      item.value !== "<h1><br></h1>" &&
+      item.value !== "<h2><br></h2>" &&
+      item.value !== "<h3><br></h3>" &&
+      item.value !== "<p><br></p>" &&
+      item.value !== "",
   );
 
   const itemsToDelete = confirmData.filter(
-    (item) => !item.value || item.value === "<p><br></p>" || item.value === "",
+    (item) =>
+      !item.value ||
+      item.value === "<h1><br></h1>" ||
+      item.value === "<h2><br></h2>" ||
+      item.value === "<h3><br></h3>" ||
+      item.value === "<p><br></p>" ||
+      item.value === "",
   );
 
   console.log("itemsToDelete: ", itemsToDelete);
