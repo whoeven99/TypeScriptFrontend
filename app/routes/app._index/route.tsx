@@ -414,7 +414,8 @@ const Index = () => {
               {t("Ciwi.ai")}
             </Link>
           </Text>
-          {/* <div style={{ paddingLeft: "8px" }}>
+        </Space>
+        {/* <div style={{ paddingLeft: "8px" }}>
             <Title level={3}>
               {languageData.length}
               {t("available languages")}
