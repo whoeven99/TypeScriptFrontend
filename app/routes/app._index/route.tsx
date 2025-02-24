@@ -19,6 +19,7 @@ import PaymentModal from "~/components/paymentModal";
 import PreviewModal from "~/components/previewModal";
 import UserGuideCard from "~/routes/app._index/components/userGuideCard";
 import ContactCard from "~/routes/app._index/components/contactCard";
+import PreviewCard from "./components/previewCard";
 
 const { Title, Text } = Typography;
 
@@ -158,13 +159,13 @@ const Index = () => {
     votes: number;
     devStatus: string;
   }[] = [
-    {
-      key: 1,
-      need: "dashboard 重置",
-      votes: 0,
-      devStatus: "开发中",
-    },
-  ];
+      {
+        key: 1,
+        need: "dashboard 重置",
+        votes: 0,
+        devStatus: "开发中",
+      },
+    ];
 
   return (
     <Suspense fallback={<div>{t("loading")}</div>}>
@@ -176,9 +177,9 @@ const Index = () => {
               <Title level={3}>
                 {t("dashboard.title1")}
               </Title>
-              <Title level={4}>
+              <Text strong>
                 {t("dashboard.description1")}
-              </Title>
+              </Text>
             </div>
             {/* {user ? (
             <UserProfileCard
@@ -198,7 +199,7 @@ const Index = () => {
                   {t("transLanguageCard1.title")}
                 </Title>
                 <Text >{t("transLanguageCard1.description")}</Text>
-                <Button type="primary" onClick={() => navigate("/app/translate")}>{t("transLanguageCard1.button")}</Button>
+                <Button type="primary" onClick={() => navigate("/app/translate", { state: { from: "/app", selectedLanguageCode: "" } })}>{t("transLanguageCard1.button")}</Button>
               </Space>
             </Card>
             <Row gutter={16}>
@@ -241,9 +242,9 @@ const Index = () => {
               <Title level={3}>
                 {t("dashboard.title2")}
               </Title>
-              <Title level={4}>
+              <Text strong>
                 {t("dashboard.description2")}
-              </Title>
+              </Text>
             </div>
             {/* {user ? (
             <UserProfileCard
@@ -271,14 +272,29 @@ const Index = () => {
                   bordered={false}
                   style={{
                     height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                  styles={{
+                    body: {
+                      display: "flex",
+                      flexDirection: "column",
+                      flex: 1
+                    }
                   }}
                 >
-                  <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+                  <Space direction="vertical" size="middle" style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    flex: 1
+                  }}>
                     <Title level={4}>
                       {t("transCurrencyCard2.title")}
                     </Title>
-                    <Text >{t("transCurrencyCard2.description")}</Text>
-                    <Button type="primary" >{t("transCurrencyCard2.button")}</Button>
+                    <Text>{t("transCurrencyCard2.description")}</Text>
+                    {/* <div style={{ flex: 1 }} /> 添加弹性空间 */}
+                    <Button type="primary">{t("transCurrencyCard2.button")}</Button>
                   </Space>
                 </Card>
               </Col>
@@ -287,13 +303,19 @@ const Index = () => {
                   bordered={false}
                   style={{
                     height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
                   }}
                 >
-                  <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+                  <Space direction="vertical" size="middle" style={{
+                    display: "flex",
+                    flex: 1
+                  }}>
                     <Title level={4}>
                       {t("transCurrencyCard3.title")}
                     </Title>
-                    <Text >{t("transCurrencyCard3.description")}</Text>
+                    <Text>{t("transCurrencyCard3.description")}</Text>
+                    {/* <div style={{ flex: 1 }} /> 添加弹性空间 */}
                     <Button type="primary">{t("transCurrencyCard3.button")}</Button>
                   </Space>
                 </Card>
@@ -305,9 +327,9 @@ const Index = () => {
               <Title level={3}>
                 {t("dashboard.title3")}
               </Title>
-              <Title level={4}>
+              <Text strong>
                 {t("dashboard.description3")}
-              </Title>
+              </Text>
             </div>
             {/* {user ? (
             <UserProfileCard
@@ -350,6 +372,7 @@ const Index = () => {
                 <UserGuideCard />
               </Col>
             </Row>
+            <PreviewCard />
           </Space>
           <Text
             style={{
