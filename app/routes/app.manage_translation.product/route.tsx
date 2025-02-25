@@ -305,7 +305,7 @@ const Index = () => {
     setTranslatedValues({});
   }, [selectProductKey]);
 
-  useEffect(() => {
+  useEffect(() => {    
     setResourceData(
       [
         {
@@ -755,6 +755,7 @@ const Index = () => {
     const productMetafield = metafields.nodes.find(
       (metafield: any) => metafield?.resourceId === selectProductKey,
     );
+    console.log(product);
     data.key = product?.resourceId;
     data.title = product?.translatableContent.find(
       (item: any) => item.key === "title",

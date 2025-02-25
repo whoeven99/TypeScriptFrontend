@@ -187,11 +187,22 @@
     "transCurrencyCard3.title":"如何設置貨幣選擇器？",
     "transCurrencyCard3.description":"設置選擇器允許您實現貨幣動態切換並提高訪客轉換率",
     "transCurrencyCard3.button":"聯繫我們",
+    "planCard.title": "為客戶成功而開發",
+    "planCard.button": "提交要求",
+    "planCard.description": "如果您沒有想要的功能，請隨時提交並投票，我們每周都會迭代一個新功能！",
+    "planCardTableList1.title": "請求功能",
+    "planCardTableList2.title": "投票",
+    "planCardTableList3.title": "開發狀態",
+    "Translate Store": "翻譯商店",
     "translateSettings1.title":"使用的AI模型",
     "translateSettings2.title":"使用的語言包",
     "translateSettings3.title":"翻譯模組設定",
     "translateSettings.title":"翻譯設定",
     "Please set the primary language first.": "請先設置主要語言。",
-    "Please select a language to translate first.": "請先選擇要翻譯的語言。"
+    "Please select a language to translate first.": "請先選擇要翻譯的語言。",
+    "General": "總類",
+    "Clothing": "服裝",
+    "Jewelry": "珠寶",
+    "Electrical appliances": "電器"
 }
   

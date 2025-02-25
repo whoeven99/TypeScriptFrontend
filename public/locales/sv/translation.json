@@ -199,6 +199,10 @@
     "translateSettings3.title": "Översättningsmodulinställningar",
     "translateSettings.title": "Översättningsinställningar",
     "Please set the primary language first.": "Vänligen ställ in det primära språket först.",
-    "Please select a language to translate first.": "Vänligen välj ett språk att översätta först."
+    "Please select a language to translate first.": "Vänligen välj ett språk att översätta först.",
+    "General": "Allmän",
+    "Clothing": "Kläder",
+    "Jewelry": "Juveler",
+    "Electrical appliances": "Elektronik"
 }
   

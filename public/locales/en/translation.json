@@ -200,5 +200,9 @@
   "translateSettings3.title": "Translation module settings",
   "translateSettings.title": "Translation Settings",
   "Please set the primary language first.": "Please set the primary language first.",
-  "Please select a language to translate first.": "Please select a language to translate first."
+  "Please select a language to translate first.": "Please select a language to translate first.",
+  "General": "General",
+  "Clothing": "Clothing",
+  "Jewelry": "Jewelry",
+  "Electrical appliances": "Electrical appliances"
 }

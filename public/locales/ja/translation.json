@@ -199,6 +199,10 @@
     "translateSettings3.title": "翻訳モジュールの設定",
     "translateSettings.title": "翻訳設定",
     "Please set the primary language first.": "まず、プライマリ言語を設定してください。",
-    "Please select a language to translate first.": "まず、翻訳する言語を選択してください。"
+    "Please select a language to translate first.": "まず、翻訳する言語を選択してください。",
+    "General": "総類",
+    "Clothing": "服",
+    "Jewelry": "宝石",
+    "Electrical appliances": "電化製品"
 }
   
