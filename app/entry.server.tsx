@@ -75,7 +75,12 @@ export default async function handleRequest(
     .init({
       ...i18n,
       fallbackLng: i18nCode,
-      backend: { loadPath: resolve("./public/locales/{{lng}}/{{ns}}.json") },
+      backend: {
+        loadPath: resolve("./public/locales/{{lng}}/{{ns}}.json"),
+        requestOptions: {
+          cache: 'no-store',
+        },
+      },
     });
   const cache = createCache();
 
