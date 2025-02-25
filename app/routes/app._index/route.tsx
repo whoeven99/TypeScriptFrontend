@@ -211,9 +211,9 @@ const Index = () => {
                   }}
                 >
                   <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-                    <Title level={4}>
+                    <Text strong>
                       {t("transLanguageCard2.title")}
-                    </Title>
+                    </Text>
                     <Text >{t("transLanguageCard2.description")}</Text>
                     <Button type="primary" onClick={() => navigate("/app/manage_translation")}>{t("transLanguageCard2.button")}</Button>
                   </Space>
@@ -227,11 +227,11 @@ const Index = () => {
                   }}
                 >
                   <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-                    <Title level={4}>
+                    <Text strong>
                       {t("transLanguageCard3.title")}
-                    </Title>
+                    </Text>
                     <Text >{t("transLanguageCard3.description")}</Text>
-                    <Button type="primary">{t("transLanguageCard3.button")}</Button>
+                    <Button type="primary" onClick={() => window.open("http://ciwi.bogdatech.com/meet-five-top-translation-experts-supporting-your-e-commerce-business/", "_blank")}>{t("transLanguageCard3.button")}</Button>
                   </Space>
                 </Card>
               </Col>
@@ -289,12 +289,12 @@ const Index = () => {
                     justifyContent: "space-between",
                     flex: 1
                   }}>
-                    <Title level={4}>
+                    <Text strong >
                       {t("transCurrencyCard2.title")}
-                    </Title>
-                    <Text>{t("transCurrencyCard2.description")}</Text>
+                    </Text>
+                    <Text >{t("transCurrencyCard2.description")}</Text>
                     {/* <div style={{ flex: 1 }} /> 添加弹性空间 */}
-                    <Button type="primary">{t("transCurrencyCard2.button")}</Button>
+                    <Button type="primary" onClick={() => window.open("http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/", "_blank")}>{t("transCurrencyCard2.button")}</Button>
                   </Space>
                 </Card>
               </Col>
@@ -311,12 +311,12 @@ const Index = () => {
                     display: "flex",
                     flex: 1
                   }}>
-                    <Title level={4}>
+                    <Text strong>
                       {t("transCurrencyCard3.title")}
-                    </Title>
-                    <Text>{t("transCurrencyCard3.description")}</Text>
+                    </Text>
+                    <Text >{t("transCurrencyCard3.description")}</Text>
                     {/* <div style={{ flex: 1 }} /> 添加弹性空间 */}
-                    <Button type="primary">{t("transCurrencyCard3.button")}</Button>
+                    <Button type="primary" onClick={() => window.open("http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/", "_blank")}>{t("transCurrencyCard3.button")}</Button>
                   </Space>
                 </Card>
               </Col>
@@ -340,7 +340,7 @@ const Index = () => {
           ) : (
             <Skeleton active />
           )} */}
-            <Card
+            {/* <Card
               bordered={false}
             >
               <Space direction="vertical" size="middle" style={{ display: "flex" }}>
@@ -363,7 +363,7 @@ const Index = () => {
                   pagination={false}
                 />
               </Space>
-            </Card>
+            </Card> */}
             <Row gutter={16}>
               <Col xs={24} sm={24} md={12}>
                 <ContactCard />

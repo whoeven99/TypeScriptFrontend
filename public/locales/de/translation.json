@@ -199,6 +199,10 @@
     "translateSettings3.title": "Übersetzungsmodul-Einstellungen",
     "translateSettings.title": "Übersetzungseinstellungen",
     "Please set the primary language first.": "Bitte setzen Sie zuerst die Standardsprache.",
-    "Please select a language to translate first.": "Bitte wählen Sie zuerst eine Sprache zum Übersetzen."
+    "Please select a language to translate first.": "Bitte wählen Sie zuerst eine Sprache zum Übersetzen.",
+    "General": "Allgemein",
+    "Clothing": "Kleidung",
+    "Jewelry": "Schmuck",
+    "Electrical appliances": "Elektrische Geräte"
 }
     

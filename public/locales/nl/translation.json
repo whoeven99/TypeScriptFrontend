@@ -199,6 +199,10 @@
     "translateSettings3.title": "Vertaalmodule-instellingen",
     "translateSettings.title": "Vertaalinstellingen",
     "Please set the primary language first.": "Stel eerst de primaire taal in.",
-    "Please select a language to translate first.": "Selecteer eerst een taal om te vertalen."
+    "Please select a language to translate first.": "Selecteer eerst een taal om te vertalen.",
+    "General": "Algemeen",
+    "Clothing": "Kleding",
+    "Jewelry": "Sieraden",
+    "Electrical appliances": "Elektrische apparaten"
 }
   

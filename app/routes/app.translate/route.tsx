@@ -7,11 +7,14 @@ import {
     Button,
     Card,
     Checkbox,
+    Col,
     Flex,
     message,
     Popover,
     Radio,
     RadioChangeEvent,
+    Row,
+    Select,
     Skeleton,
     Space,
     Switch,
@@ -247,34 +250,50 @@ const Index = () => {
 
     const translateSettings1Options = [
         {
-            label: "ChatGPT 4o",
+            label: "OpenAI/GPT-4",
             value: "1"
         },
         {
-            label: "Deepseek R1",
+            label: "Google/Gemini-1.5",
             value: "2"
         },
         {
-            label: "Gemini 2.0",
+            label: "DeepL/DeepL-translator",
             value: "3"
         },
+        {
+            label: "Qwen/Qwen-Max",
+            value: "4"
+        },
+        {
+            label: "DeepSeek-ai/DeepSeek-V3",
+            value: "5"
+        },
+        {
+            label: "Meta/Llama-3",
+            value: "6"
+        },
+        {
+            label: "Google/Google translate",
+            value: "7"
+        }
     ]
 
     const translateSettings2Options = [
         {
-            label: "General",
-            value: "1"
+            label: t("General"),
+            value: "1"          
         },
         {
-            label: "Clothing",
+            label: t("Clothing"),
             value: "2"
         },
         {
-            label: "Jewelry",
+            label: t("Jewelry"),
             value: "3"
         },
         {
-            label: "Electrical appliances",
+            label: t("Electrical appliances"),
             value: "4"
         },
     ]
@@ -431,13 +450,43 @@ const Index = () => {
                             >
                                 <div style={{
                                     display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
                                     gap: '16px',
                                     width: '100%'
                                 }}>
                                     {languageData.map((lang) => (
-                                        <Radio key={lang.locale} value={lang.locale}>
-                                            {lang.name}
+                                        <Radio
+                                            key={lang.locale}
+                                            value={lang.locale}
+                                            style={{
+                                                width: '100%',
+                                                marginRight: 0,
+                                                padding: '8px 12px',
+                                                border: '1px solid #f0f0f0',
+                                                borderRadius: '4px',
+                                                alignItems: "center"
+                                            }}
+                                        >
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                width: '100%'
+                                            }}>
+                                                <img
+                                                    src={lang.src[0]}
+                                                    alt={lang.name}
+                                                    style={{
+                                                        width: "30px",
+                                                        height: "auto",
+                                                        justifyContent: 'center',
+                                                        border: "1px solid #888",
+                                                        borderRadius: "2px",
+                                                        marginRight: "8px"
+                                                    }}
+                                                />
+                                                <span>{lang.name}({lang.localeName})</span>
+                                            </div>
                                         </Radio>
                                     ))}
                                 </div>
@@ -458,42 +507,40 @@ const Index = () => {
                                 marginBottom: "16px"
                             }}
                         >
-                            <Space direction="vertical" size="small" style={{ display: "flex" }}>
-                                <Title level={5} style={{ fontSize: "1.25rem", margin: "0" }}>
+                            <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+                                <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
                                     {t("translateSettings1.title")}
                                 </Title>
-                                <Radio.Group
-                                    defaultValue={1}
-                                    value={translateSettings1}
-                                    options={translateSettings1Options}
-                                    style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                                        width: '100%'
-                                    }}
-                                    optionType="button"
-                                    buttonStyle="solid"
-                                    onChange={(e) => setTranslateSettings1(e.target.value)}
-                                >
-                                </Radio.Group>
-                                <Title level={5} style={{ fontSize: "1.25rem", margin: "0" }}>
+                                <Row key={translateSettings1} gutter={[16, 16]}>
+                                    {
+                                        translateSettings1Options.map((option) => (
+                                            <Col key={option.value} span={6}>
+                                                <Button type={translateSettings1 === option.value ? "primary" : "default"} key={option.value} value={option.value} onClick={() => setTranslateSettings1(option.value)} style={{ width: "100%" }}
+                                                >
+                                                    {option.label}
+                                                </Button>
+                                            </Col>
+
+                                        ))
+                                    }
+                                </Row>
+                                <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
                                     {t("translateSettings2.title")}
                                 </Title>
-                                <Radio.Group
-                                    defaultValue={1}
-                                    value={translateSettings2}
+                                <Select
+                                    defaultValue={"1"}
+                                    // value={translateSettings2}
                                     options={translateSettings2Options}
                                     style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
                                         width: '100%'
                                     }}
-                                    optionType="button"
-                                    buttonStyle="solid"
-                                    onChange={(e) => setTranslateSettings2(e.target.value)}
+                                    // optionType="button"
+                                    // buttonStyle="solid"
+                                    // onChange={(e) => setTranslateSettings2(e.target.value)}
+                                    onSelect={(value) => setTranslateSettings2(value)}
                                 >
-                                </Radio.Group>
-                                <Title level={5} style={{ fontSize: "1.25rem", margin: "0" }}>
+                                </Select>
+                                <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
                                     {t("translateSettings3.title")}
                                 </Title>
                                 <Checkbox.Group

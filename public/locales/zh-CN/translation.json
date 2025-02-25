@@ -168,7 +168,7 @@
   "dashboard.title2": "本地化货币",
   "dashboard.description2": "我们支持超过100多种货币,可以随时根据IP切换货币,提高下单转化率",
   "dashboard.title3": "我们不断开发新功能",
-  "dashboard.description3": "我们完全致力于帮助我们的客户取得成功。如果您需要帮助，请随时联系我们。",
+  "dashboard.description3": "我们完全站在客户的角度助力客户成功,有需要请随时联系我们。",
   "transLanguageCard1.title": "翻译您的商店",
   "transLanguageCard1.description": "点击翻译。在下一步中，您可以设置翻译条件并实现基于强大AI的本地化翻译",
   "transLanguageCard1.button": "翻译",
@@ -187,7 +187,7 @@
   "transCurrencyCard3.title": "如何设置货币选择器？",
   "transCurrencyCard3.description": "设置选择器允许您实现货币动态切换并提高访客转换率",
   "transCurrencyCard3.button": "查看详情",
-  "planCard.title": "开发客户成功",
+  "planCard.title": "为客户成功而开发",
   "planCard.button": "提交要求",
   "planCard.description": "如果您没有想要的功能，请随时提交并投票，我们每周都会迭代一个新功能！",
   "planCardTableList1.title": "请求功能",
@@ -199,5 +199,9 @@
   "translateSettings3.title": "翻译模块设置",
   "translateSettings.title": "翻译设置",
   "Please set the primary language first.": "请先设置主要语言。",
-  "Please select a language to translate first.": "请先选择要翻译的语言。"
+  "Please select a language to translate first.": "请先选择要翻译的语言。",
+  "General": "通用",
+  "Clothing": "服装",
+  "Jewelry": "珠宝",
+  "Electrical appliances": "电器"
 }

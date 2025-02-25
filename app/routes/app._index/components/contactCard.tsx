@@ -51,13 +51,7 @@ const ContactCard: React.FC = () => {
                         {t("contact.title")}
                     </Text>
 
-                    <Text
-                        style={{
-                            display: 'block',
-                            color: '#637381',
-                            fontSize: '14px'
-                        }}
-                    >
+                    <Text>
                         {t("contact.description")}
                     </Text>
 

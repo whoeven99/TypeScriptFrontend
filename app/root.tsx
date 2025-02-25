@@ -58,8 +58,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
     return json({ i18nCode: i18nCode });
   } catch (error) {
-    console.error("Error during authentication:", error);
-    throw new Response("Error during authentication", { status: 500 });
+    console.error("Error get the default language", error);
+    return json({ i18nCode: "en" });
   }
 }
 
