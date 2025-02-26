@@ -135,6 +135,23 @@ const Index = () => {
   //   });
   // };
 
+  const handleContactSupport = () => {
+    // 声明 tidioChatApi 类型
+    interface Window {
+      tidioChatApi?: {
+        open: () => void;
+      }
+    }
+
+    if ((window as Window)?.tidioChatApi) {
+      (window as Window).tidioChatApi?.open();
+    } else {
+      console.warn('Tidio Chat API not loaded');
+      // 备用方案：打开支持页面
+      // window.open('https://apps.shopify.com/translator-by-ciwi/support', '_blank');
+    }
+  };
+
   const columns = [
     {
       title: t("planCardTableList1.title"),
@@ -161,9 +178,27 @@ const Index = () => {
   }[] = [
       {
         key: 1,
-        need: "dashboard 重置",
-        votes: 0,
-        devStatus: "开发中",
+        need: t("devplanCard1.title"),
+        votes: 100,
+        devStatus: t("In development"),
+      },
+      {
+        key: 2,
+        need: t("devplanCard2.title"),
+        votes: 35,
+        devStatus: t("In development"),
+      },
+      {
+        key: 3,
+        need: t("devplanCard3.title"),
+        votes: 35,
+        devStatus: t("In development"),
+      },
+      {
+        key: 4,
+        need: t("devplanCard4.title"),
+        votes: 25,
+        devStatus: t("In development"),
       },
     ];
 
@@ -231,7 +266,7 @@ const Index = () => {
                       {t("transLanguageCard3.title")}
                     </Text>
                     <Text >{t("transLanguageCard3.description")}</Text>
-                    <Button type="primary" onClick={() => window.open("http://ciwi.bogdatech.com/meet-five-top-translation-experts-supporting-your-e-commerce-business/", "_blank")}>{t("transLanguageCard3.button")}</Button>
+                    <Button type="default" onClick={() => window.open("http://ciwi.bogdatech.com/meet-five-top-translation-experts-supporting-your-e-commerce-business/", "_blank")}>{t("transLanguageCard3.button")}</Button>
                   </Space>
                 </Card>
               </Col>
@@ -294,7 +329,7 @@ const Index = () => {
                     </Text>
                     <Text >{t("transCurrencyCard2.description")}</Text>
                     {/* <div style={{ flex: 1 }} /> 添加弹性空间 */}
-                    <Button type="primary" onClick={() => window.open("http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/", "_blank")}>{t("transCurrencyCard2.button")}</Button>
+                    <Button type="default" onClick={() => window.open("http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/", "_blank")}>{t("transCurrencyCard2.button")}</Button>
                   </Space>
                 </Card>
               </Col>
@@ -316,7 +351,7 @@ const Index = () => {
                     </Text>
                     <Text >{t("transCurrencyCard3.description")}</Text>
                     {/* <div style={{ flex: 1 }} /> 添加弹性空间 */}
-                    <Button type="primary" onClick={() => window.open("http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/", "_blank")}>{t("transCurrencyCard3.button")}</Button>
+                    <Button type="default" onClick={() => window.open("http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/", "_blank")}>{t("transCurrencyCard3.button")}</Button>
                   </Space>
                 </Card>
               </Col>
@@ -340,7 +375,7 @@ const Index = () => {
           ) : (
             <Skeleton active />
           )} */}
-            {/* <Card
+            <Card
               bordered={false}
             >
               <Space direction="vertical" size="middle" style={{ display: "flex" }}>
@@ -354,7 +389,7 @@ const Index = () => {
                   <Title level={4}>
                     {t("planCard.title")}
                   </Title>
-                  <Button type="primary">{t("planCard.button")}</Button>
+                  <Button type="primary" onClick={handleContactSupport}>{t("planCard.button")}</Button>
                 </div>
                 <Text >{t("planCard.description")}</Text>
                 <Table
@@ -363,10 +398,10 @@ const Index = () => {
                   pagination={false}
                 />
               </Space>
-            </Card> */}
+            </Card>
             <Row gutter={16}>
               <Col xs={24} sm={24} md={12}>
-                <ContactCard />
+                <ContactCard onClick={handleContactSupport} />
               </Col>
               <Col xs={24} sm={24} md={12}>
                 <UserGuideCard />

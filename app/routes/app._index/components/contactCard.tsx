@@ -5,24 +5,12 @@ import { PhoneOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
-const ContactCard: React.FC = () => {
-    const { t } = useTranslation();
-    const handleContactSupport = () => {
-        // 声明 tidioChatApi 类型
-        interface Window {
-            tidioChatApi?: {
-                open: () => void;
-            }
-        }
+interface ContactCardProps {
+    onClick: () => void;
+}
 
-        if ((window as Window)?.tidioChatApi) {
-            (window as Window).tidioChatApi?.open();
-        } else {
-            console.warn('Tidio Chat API not loaded');
-            // 备用方案：打开支持页面
-            // window.open('https://apps.shopify.com/translator-by-ciwi/support', '_blank');
-        }
-    };
+const ContactCard: React.FC<ContactCardProps> = ({ onClick }) => {
+    const { t } = useTranslation();
 
     return (
         <Suspense fallback={<Skeleton.Button active style={{ height: 150 }} block />}>
@@ -58,7 +46,7 @@ const ContactCard: React.FC = () => {
                     <Button
                         type="primary"
                         icon={<PhoneOutlined />}
-                        onClick={handleContactSupport}
+                        onClick={onClick}
                     >
                         {t("contact.contactButton")}
                     </Button>
