@@ -447,7 +447,7 @@ const Index = () => {
   // }, [words]);
 
   useEffect(() => {
-    if (!shopLanguagesLoad || !languagesLoad) return; // 确保数据加载完成后再执行
+    if (!shopLanguagesLoad) return; // 确保数据加载完成后再执行
     const newdata = shopLanguagesLoad.filter((language) => !language.primary);
     const data = newdata.map((lang, i) => ({
       key: i,

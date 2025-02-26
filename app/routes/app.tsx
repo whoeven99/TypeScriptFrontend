@@ -94,6 +94,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           await AddDefaultLanguagePack({ request });
         if (!data?.addUserFreeSubscription)
           await AddUserFreeSubscription({ shop });
+        const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
+          shop,
+          accessToken,
+        });
+        const shopPrimaryLanguage = shopLanguagesIndex.filter(
+          (language) => language.primary,
+        );
+        const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
+          (language) => !language.primary,
+        );
+        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
+          (item) => item.locale,
+        );
+        await InsertTargets({
+          request,
+          source: shopPrimaryLanguage[0].locale,
+          targets: shopLocalesIndex,
+        });
+
+        return null
       } catch (error) {
         console.error("Error loading app:", error);
         return json({ error: "Error loading app" }, { status: 500 });
