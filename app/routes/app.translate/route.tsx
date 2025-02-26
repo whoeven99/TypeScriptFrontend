@@ -298,51 +298,51 @@ const Index = () => {
         },
         {
             label: t("Pet Supplies"),
-            value: "1"
+            value: "5"
         },
         {
             label: t("Beauty & Personal Care"),
-            value: "1"
+            value: "6"
         },
         {
             label: t("Furniture & Gardening"),
-            value: "1"
+            value: "7"
         },
         {
             label: t("Hardware & Tools"),
-            value: "1"
+            value: "8"
         },
         {
             label: t("Baby & Toddler Products"),
-            value: "1"
+            value: "9"
         },
         {
             label: t("Toys & Games"),
-            value: "1"
+            value: "10"
         },
         {
             label: t("Luggage & Accessories"),
-            value: "1"
+            value: "11"
         },
         {
             label: t("Health & Nutrition"),
-            value: "1"
+            value: "12"
         },
         {
             label: t("Outdoor & Sports"),
-            value: "1"
+            value: "13"
         },
         {
             label: t("Crafts & Small Goods"),
-            value: "1"
+            value: "14"
         },
         {
             label: t("Home Appliances"),
-            value: "1"
+            value: "15"
         },
         {
             label: t("Automotive Parts"),
-            value: "1"
+            value: "16"
         }
     ]
 
