@@ -522,10 +522,16 @@ export const GetTranslate = async ({
 
     const res = { ...response.data, target: target };
     console.log("translation: ", res);
-    return res;
-    return null;
+    return {
+      success: true,
+      data: res,
+    };
   } catch (error) {
     console.error("Error occurred in the translation:", error);
+    return {
+      success: false,
+      errorCode: 10014,
+    };
   }
 };
 
@@ -786,7 +792,6 @@ export const updateManageTranslation = async ({
       } else {
         // 定义处理单个翻译项的函数
         // 添加重试机制
-
         console.log(
           "itemsToUpdateArray: ",
           itemsToUpdate.map((item) => {

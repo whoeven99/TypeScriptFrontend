@@ -228,7 +228,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               const source = translation.primaryLanguage;
               const target = translation.selectedLanguage.locale;
               const data = await GetTranslate({ request, source, target });
-              return json({ success: true, data: data });
+              return data;
             }
           }
           return json({ success: false, message: "words get error" }, { status: 200 });
