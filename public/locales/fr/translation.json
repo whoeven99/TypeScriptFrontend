@@ -201,8 +201,25 @@
     "Please set the primary language first.": "Veuillez d'abord définir la langue principale.",
     "Please select a language to translate first.": "Veuillez d'abord sélectionner une langue à traduire.",
     "General": "Général",
-    "Clothing": "Vêtements",
-    "Jewelry": "Bijoux",
-    "Electrical appliances": "Appareils électriques"
+    "Fashion & Apparel": "Mode & Vêtements",
+    "Electronics & Technology": "Électronique & Technologie",
+    "Home Goods & Daily Essentials": "Bien-être & Matériel quotidien",
+    "Pet Supplies": "Fournitures pour animaux",
+    "Beauty & Personal Care": "Soins personnels & Beauté",
+    "Furniture & Gardening": "Meubles & Jardinage",
+    "Hardware & Tools": "Matériel & Outils",
+    "Baby & Toddler Products": "Produits pour bébés & Enfants",
+    "Toys & Games": "Jouets & Jeux",
+    "Luggage & Accessories": "Bagages & Accessoires",
+    "Health & Nutrition": "Santé & Nutrition",
+    "Outdoor & Sports": "Extérieur & Sports",
+    "Crafts & Small Goods": "Arts & Petits biens",
+    "Home Appliances": "Appareils ménagers",
+    "Automotive Parts": "Pièces automobiles",
+    "In development": "En développement",
+    "devplanCard1.title": "Supporte l'API privée OpenAI, permettant aux individus d'utiliser leurs propres crédits API pour la traduction",
+    "devplanCard2.title": "Ajoute le progrès de la traduction",
+    "devplanCard3.title": "Optimise le style du sélecteur, supporte l'affichage dans le pied de page",
+    "devplanCard4.title": "Améliore la vitesse de traduction, ajoute un mode de traduction rapide"
 }
   

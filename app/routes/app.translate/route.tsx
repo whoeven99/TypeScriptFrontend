@@ -282,20 +282,68 @@ const Index = () => {
     const translateSettings2Options = [
         {
             label: t("General"),
-            value: "1"          
+            value: "1"
         },
         {
-            label: t("Clothing"),
+            label: t("Fashion & Apparel"),
             value: "2"
         },
         {
-            label: t("Jewelry"),
+            label: t("Electronics & Technology"),
             value: "3"
         },
         {
-            label: t("Electrical appliances"),
+            label: t("Home Goods & Daily Essentials"),
             value: "4"
         },
+        {
+            label: t("Pet Supplies"),
+            value: "1"
+        },
+        {
+            label: t("Beauty & Personal Care"),
+            value: "1"
+        },
+        {
+            label: t("Furniture & Gardening"),
+            value: "1"
+        },
+        {
+            label: t("Hardware & Tools"),
+            value: "1"
+        },
+        {
+            label: t("Baby & Toddler Products"),
+            value: "1"
+        },
+        {
+            label: t("Toys & Games"),
+            value: "1"
+        },
+        {
+            label: t("Luggage & Accessories"),
+            value: "1"
+        },
+        {
+            label: t("Health & Nutrition"),
+            value: "1"
+        },
+        {
+            label: t("Outdoor & Sports"),
+            value: "1"
+        },
+        {
+            label: t("Crafts & Small Goods"),
+            value: "1"
+        },
+        {
+            label: t("Home Appliances"),
+            value: "1"
+        },
+        {
+            label: t("Automotive Parts"),
+            value: "1"
+        }
     ]
 
     const translateSettings3Options = [
@@ -507,54 +555,60 @@ const Index = () => {
                                 marginBottom: "16px"
                             }}
                         >
-                            <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-                                <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                                    {t("translateSettings1.title")}
-                                </Title>
-                                <Row key={translateSettings1} gutter={[16, 16]}>
-                                    {
-                                        translateSettings1Options.map((option) => (
-                                            <Col key={option.value} span={6}>
-                                                <Button type={translateSettings1 === option.value ? "primary" : "default"} key={option.value} value={option.value} onClick={() => setTranslateSettings1(option.value)} style={{ width: "100%" }}
-                                                >
-                                                    {option.label}
-                                                </Button>
-                                            </Col>
+                            <Space direction="vertical" size={24} style={{ display: "flex" }}>
+                                <Space direction="vertical" size={16} style={{ display: "flex" }}>
+                                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+                                        {t("translateSettings1.title")}
+                                    </Title>
+                                    <Row key={translateSettings1} gutter={[16, 16]}>
+                                        {
+                                            translateSettings1Options.map((option) => (
+                                                <Col key={option.value} span={6}>
+                                                    <Button type={translateSettings1 === option.value ? "primary" : "default"} key={option.value} value={option.value} onClick={() => setTranslateSettings1(option.value)} style={{ width: "100%" }}
+                                                    >
+                                                        {option.label}
+                                                    </Button>
+                                                </Col>
 
-                                        ))
-                                    }
-                                </Row>
-                                <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                                    {t("translateSettings2.title")}
-                                </Title>
-                                <Select
-                                    defaultValue={"1"}
-                                    // value={translateSettings2}
-                                    options={translateSettings2Options}
-                                    style={{
-                                        width: '100%'
-                                    }}
-                                    // optionType="button"
-                                    // buttonStyle="solid"
-                                    // onChange={(e) => setTranslateSettings2(e.target.value)}
-                                    onSelect={(value) => setTranslateSettings2(value)}
-                                >
-                                </Select>
-                                <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                                    {t("translateSettings3.title")}
-                                </Title>
-                                <Checkbox.Group
-                                    defaultValue={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]}
-                                    value={translateSettings3}
-                                    options={translateSettings3Options}
-                                    style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                                        width: '100%'
-                                    }}
-                                    onChange={(e) => setTranslateSettings3(e)}
-                                >
-                                </Checkbox.Group>
+                                            ))
+                                        }
+                                    </Row>
+                                </Space>
+                                <Space direction="vertical" size={16} style={{ display: "flex" }}>
+                                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+                                        {t("translateSettings2.title")}
+                                    </Title>
+                                    <Select
+                                        defaultValue={"1"}
+                                        // value={translateSettings2}
+                                        options={translateSettings2Options}
+                                        style={{
+                                            width: '100%'
+                                        }}
+                                        // optionType="button"
+                                        // buttonStyle="solid"
+                                        // onChange={(e) => setTranslateSettings2(e.target.value)}
+                                        onSelect={(value) => setTranslateSettings2(value)}
+                                    >
+                                    </Select>
+                                </Space>
+                                <Space direction="vertical" size={16} style={{ display: "flex" }}>
+                                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+                                        {t("translateSettings3.title")}
+                                    </Title>
+                                    <Checkbox.Group
+                                        defaultValue={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]}
+                                        value={translateSettings3}
+                                        options={translateSettings3Options}
+                                        style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                            width: '100%'
+                                        }}
+                                        onChange={(e) => setTranslateSettings3(e)}
+                                    >
+                                    </Checkbox.Group>
+                                </Space>
                                 {/* <Title level={5} style={{ fontSize: "1.25rem", margin: "0" }}>
                                     {t("translateSettings4.title")}
                                 </Title>

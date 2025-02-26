@@ -201,8 +201,25 @@
     "Please set the primary language first.": "Stel eerst de primaire taal in.",
     "Please select a language to translate first.": "Selecteer eerst een taal om te vertalen.",
     "General": "Algemeen",
-    "Clothing": "Kleding",
-    "Jewelry": "Sieraden",
-    "Electrical appliances": "Elektrische apparaten"
+    "Fashion & Apparel": "Mode & Kleding",
+    "Electronics & Technology": "Elektronica & Technologie",
+    "Home Goods & Daily Essentials": "Huishoudelijke artikelen & Dagelijkse benodigdheden",
+    "Pet Supplies": "Dierenbenodigdheden",
+    "Beauty & Personal Care": "Schoonheid & Persoonlijke verzorging",
+    "Furniture & Gardening": "Meubels & Tuinieren",
+    "Hardware & Tools": "Hardware & Gereedschap",
+    "Baby & Toddler Products": "Baby- & Peuterproducten",
+    "Toys & Games": "Speelgoed & Spellen",
+    "Luggage & Accessories": "Bagage & Accessoires",
+    "Health & Nutrition": "Gezondheid & Voeding",
+    "Outdoor & Sports": "Buitenleven & Sport",
+    "Crafts & Small Goods": "Handwerk & Kleine artikelen",
+    "Home Appliances": "Huishoudelijke apparaten",
+    "Automotive Parts": "Auto-onderdelen",
+    "In development": "In ontwikkeling",
+    "devplanCard1.title": "OpenAI private API ondersteuning, waardoor individuen hun eigen API-credits kunnen gebruiken voor vertaling",
+    "devplanCard2.title": "Voeg vertaling voortgang toe",
+    "devplanCard3.title": "Optimaliseer de switcher-stijl, ondersteuning voor weergave in de voettekst",
+    "devplanCard4.title": "Verhoog de vertaling snelheid, voeg een snelle vertaling modus toe"
 }
   

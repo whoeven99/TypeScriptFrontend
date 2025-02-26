@@ -201,8 +201,25 @@
     "Please set the primary language first.": "まず、プライマリ言語を設定してください。",
     "Please select a language to translate first.": "まず、翻訳する言語を選択してください。",
     "General": "総類",
-    "Clothing": "服",
-    "Jewelry": "宝石",
-    "Electrical appliances": "電化製品"
+    "Fashion & Apparel": "服",
+    "Electronics & Technology": "電化製品",
+    "Home Goods & Daily Essentials": "日用品",
+    "Pet Supplies": "ペット用品",
+    "Beauty & Personal Care": "美容",
+    "Furniture & Gardening": "家具",
+    "Hardware & Tools": "工具",
+    "Baby & Toddler Products": "ベビー用品",
+    "Toys & Games": "おもちゃ",
+    "Luggage & Accessories": "旅行用品",
+    "Health & Nutrition": "健康",
+    "Outdoor & Sports": "アウトドア",
+    "Crafts & Small Goods": "手芸",
+    "Home Appliances": "家電",
+    "Automotive Parts": "自動車部品",
+    "In development": "開発中",
+    "devplanCard1.title": "OpenAIプライベートAPIをサポートし、個人が自分のAPIクレジットを使用して翻訳できるようにします。",
+    "devplanCard2.title": "翻訳進捗を追加",
+    "devplanCard3.title": "スイッチャーのスタイルを最適化し、フッターに表示をサポートします。",
+    "devplanCard4.title": "翻訳速度を向上させ、高速翻訳モードを追加します。"
 }
   

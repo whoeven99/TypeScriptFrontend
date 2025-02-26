@@ -201,8 +201,25 @@
     "Please set the primary language first.": "Vänligen ställ in det primära språket först.",
     "Please select a language to translate first.": "Vänligen välj ett språk att översätta först.",
     "General": "Allmän",
-    "Clothing": "Kläder",
-    "Jewelry": "Juveler",
-    "Electrical appliances": "Elektronik"
+    "Fashion & Apparel": "Kläder & Apparel",
+    "Electronics & Technology": "Elektronik & Teknologi",
+    "Home Goods & Daily Essentials": "Hem & Dagligt nödvändigt",
+    "Pet Supplies": "Hund & Katt",
+    "Beauty & Personal Care": "Vård & Personligt",
+    "Furniture & Gardening": "Möbler & Trädgård",
+    "Hardware & Tools": "Hårdvara & Verktyg",
+    "Baby & Toddler Products": "Barn & Baby",
+    "Toys & Games": "Spel & Leksaker",
+    "Luggage & Accessories": "Resväskor & Tillbehör",
+    "Health & Nutrition": "Hälsa & Näring",
+    "Outdoor & Sports": "Ute & Sport",
+    "Crafts & Small Goods": "Konst & Små varor",
+    "Home Appliances": "Hem & Elektronik",
+    "Automotive Parts": "Bil & delar",
+    "In development": "Utveckling",
+    "devplanCard1.title": "Stöder OpenAI private API, som gör att individer kan använda sina egna API-krediter för översättning",
+    "devplanCard2.title": "Lägger till översättningsförlopp",
+    "devplanCard3.title": "Optimera växlarens stil, stöd för visning i sidfoten",
+    "devplanCard4.title": "Förbättrar översättningshastigheten, lägger till en snabb översättningsläge"
 }
   
