@@ -12,7 +12,7 @@ import {
   Switch,
   Popover,
 } from "antd";
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { json } from "@remix-run/node";
 import { useEffect, useState } from "react";
@@ -66,12 +66,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
     return json({
       shop,
-      ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID,
-      ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID,
+      ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
+      ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
     });
   } catch (error) {
-    console.error("Error during authentication:", error);
-    return new Response("Internal Server Error", { status: 500 });
+    console.error("Error during authentication currency:", error);
+    return redirect("/");
   }
 };
 

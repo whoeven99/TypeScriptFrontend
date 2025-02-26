@@ -3,7 +3,7 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import {
   Link,
   Outlet,
@@ -51,8 +51,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       apiKey: process.env.SHOPIFY_API_KEY || "",
     });
   } catch (error) {
-    console.error("Error during authentication:", error);
-    throw new Response("Error during authentication", { status: 500 });
+    console.error("Error during authentication app:", error);
+    return redirect("/");
   }
 };
 
@@ -139,14 +139,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           targets: shopLocalesIndex,
         });
         const Cendtime = new Date();
-        
+
         console.log("Ccreatetime: ", Ccreatetime);
         console.log("Cendtime: ", Cendtime);
         console.log("Ctiming: ", Cendtime.getTime() - Ccreatetime.getTime());
 
         const Dcreatetime = new Date()
         const languages = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
-        
+
         // const response = await axios({
         //   url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}&&source=${shopPrimaryLanguage[0].locale}`,
         //   method: "GET",
@@ -154,7 +154,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         // const languages = response.data.response;
 
         const Dendtime = new Date();
-        
+
         console.log("Dcreatetime: ", Dcreatetime);
         console.log("Dendtime: ", Dendtime);
         console.log("Dtiming: ", Dendtime.getTime() - Dcreatetime.getTime());
