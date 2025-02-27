@@ -68,8 +68,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
     if (visible) {
       fetcher.submit({
         credits: JSON.stringify({
-          source: source,
-          target: target,
+          source: source || "en",
+          target: target || "zh-CN",
         }),
       }, {
         method: "post",
@@ -85,7 +85,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         console.log("fetcher.data.data.response: ", fetcher.data.data.response);
         let credits = 0;
         Object.entries(fetcher.data.data.response).forEach(([key, value]) => {
-          if (value !== null && key !== 'id' || 'translationId') {  // 排除 id 字段
+          console.log("key: ", key);
+          console.log("value: ", value);
+          console.log();
+          
+          if (value !== null && (key !== 'id' && key !== 'translationId' && key !== 'createTime' && key !== 'updateTime')) {  // 排除 id 字段
             credits += value as number;
           } else {
             setCredits(-1);
@@ -137,23 +141,24 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
     }
   }, [payFetcher.data]);
 
+  //分别是10w（3.99美金），20w（6.99美金），50w（15.99美金），100w（29.99美金），300w（79.99美金），500w（99.99美金）
   const options: OptionType[] = [
     {
       key: "option-1",
-      name: "10K Credits",
-      Credits: 10000,
+      name: "100K",
+      Credits: 100000,
       price: {
-        currentPrice: 8.99,
-        comparedPrice: 10.0,
+        currentPrice: 3.99,
+        comparedPrice: 100.0,
         currencyCode: "USD",
       },
     },
     {
       key: "option-2",
-      name: "20K Credits",
-      Credits: 20000,
+      name: "200K",
+      Credits: 200000,
       price: {
-        currentPrice: 17.99,
+        currentPrice: 6.99,
         comparedPrice: 20.0,
         currencyCode: "USD",
       },
@@ -161,42 +166,42 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
     },
     {
       key: "option-3",
-      name: "50K Credits",
-      Credits: 50000,
+      name: "500K",
+      Credits: 500000,
       price: {
-        currentPrice: 39.99,
-        comparedPrice: 50.0,
+        currentPrice: 15.99,
+        comparedPrice: 100.0,
         currencyCode: "USD",
       },
     },
     {
       key: "option-4",
-      name: "100K Credits",
-      Credits: 100000,
+      name: "1M",
+      Credits: 1000000,
       price: {
-        currentPrice: 79.99,
-        comparedPrice: 100.0,
+        currentPrice: 29.99,
+        comparedPrice: 200.0,
         currencyCode: "USD",
       },
       test: true,
     },
     {
       key: "option-5",
-      name: "200K Credits",
-      Credits: 200000,
+      name: "3M",
+      Credits: 3000000,
       price: {
-        currentPrice: 159.99,
-        comparedPrice: 200.0,
+        currentPrice: 79.99,
+        comparedPrice: 800.0,
         currencyCode: "USD",
       },
     },
     {
       key: "option-6",
-      name: "300K Credits",
-      Credits: 300000,
+      name: "5M",
+      Credits: 5000000,
       price: {
-        currentPrice: 239.99,
-        comparedPrice: 300.0,
+        currentPrice: 99.99,
+        comparedPrice: 1000.0,
         currencyCode: "USD",
       },
     },

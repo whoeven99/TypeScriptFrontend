@@ -31,7 +31,7 @@ const PaymentOptionSelect: React.FC<PaymentOptionSelectProps> = ({
           checked={JSON.stringify(selectedOption) === JSON.stringify(option)}
           readOnly
         />
-        <Text>{Number(option.Credits).toLocaleString()} </Text>
+        <Text>{option.name} </Text>
         <Text>{t("Credits")}</Text>
         <Text strong>
           ${option.price.currentPrice}

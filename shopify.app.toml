@@ -3,7 +3,7 @@
 client_id = "4b05c1caefa9e0761a0538b64159b627"
 name = "Ciwi.ai:FAT(Local)"
 handle = "ciwi_local"
-application_url = "https://c0adf9c5f6ef.ngrok.app"
+application_url = "https://aeb94d2b1a27.ngrok.app"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://c0adf9c5f6ef.ngrok.app/auth/callback",
-  "https://c0adf9c5f6ef.ngrok.app/auth/shopify/callback",
-  "https://c0adf9c5f6ef.ngrok.app/api/auth/callback"
+  "https://aeb94d2b1a27.ngrok.app/auth/callback",
+  "https://aeb94d2b1a27.ngrok.app/auth/shopify/callback",
+  "https://aeb94d2b1a27.ngrok.app/api/auth/callback"
 ]
 
 [webhooks]

@@ -642,7 +642,7 @@ const Index = () => {
                 )}
             </Space>
             {showWarnModal && (
-                <PaymentModal visible={true} setVisible={setShowWarnModal} source={source} target={target} modal={"Deepseek R1"}/>
+                <PaymentModal visible={showWarnModal} setVisible={setShowWarnModal} source={source} target={target} modal={"Deepseek R1"}/>
             )}
         </Page>
     );
