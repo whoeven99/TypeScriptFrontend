@@ -31,6 +31,7 @@ import {
   AddDefaultLanguagePack,
   InsertCharsByShopName,
   InsertTargets,
+  getCredits,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -71,6 +72,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
     const rate = JSON.parse(formData.get("rate") as string);
+    const credits = JSON.parse(formData.get("credits") as string);
     // if (initialization) {
     //   try {
     //     const data: boolean = await AddUserFreeSubscription({ shop });
@@ -259,6 +261,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         confirmationUrl: orderInfo.confirmationUrl,
       });
       return json({ data: orderData });
+    }
+
+    if (credits) {
+      const data = await getCredits({ shop, accessToken: accessToken!, target: credits.target, source: credits.source });
+      return json({ data });
     }
 
     if (typeof rate === 'number') {

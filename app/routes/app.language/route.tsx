@@ -12,7 +12,7 @@ import {
 } from "antd";
 import { lazy, Suspense, useEffect, useState, startTransition } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { useFetcher, useNavigate, useSubmit } from "@remix-run/react";
+import { useFetcher, useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
 import "./styles.css";
 import { authenticate } from "~/shopify.server";
 import {
@@ -28,6 +28,7 @@ import {
 } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  setLocaleNameState,
   setPublishConfirmState,
   setPublishLoadingState,
   setPublishState,
@@ -103,7 +104,31 @@ interface FetchType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  return null;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  const Acreatetime = new Date()
+  const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+    shop,
+    accessToken,
+  });
+  const Aendtime = new Date();
+
+  console.log("Acreatetime: ", Acreatetime);
+  console.log("Aendtime: ", Aendtime);
+  console.log("Atiming: ", Aendtime.getTime() - Acreatetime.getTime());
+  const shopPrimaryLanguage = shopLanguagesLoad.filter(
+    (language) => language.primary,
+  );
+  const shopLocalesIndex = shopLanguagesLoad.filter(
+    (language) => !language.primary,
+  ).map((item) => item.locale);
+  console.log("shopPrimaryLanguage: ", shopPrimaryLanguage);
+  return {
+    shop,
+    shopLanguagesLoad,
+    shopPrimaryLanguage,
+    shopLocalesIndex,
+  };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -127,23 +152,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     switch (true) {
       case !!loading:
-        const Acreatetime = new Date()
-        const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-          shop,
-          accessToken,
-        });
-        const Aendtime = new Date();
-
-        console.log("Acreatetime: ", Acreatetime);
-        console.log("Aendtime: ", Aendtime);
-        console.log("Atiming: ", Aendtime.getTime() - Acreatetime.getTime());
-        const shopPrimaryLanguage = shopLanguagesLoad.filter(
-          (language) => language.primary,
-        );
-        const shopLocalesIndex = shopLanguagesLoad.filter(
-          (language) => !language.primary,
-        ).map((item) => item.locale);
-        console.log("shopPrimaryLanguage: ", shopPrimaryLanguage);
+        const shopLocalesIndex = loading.shopLocalesIndex;
+        const shopPrimaryLanguage = loading.shopPrimaryLanguage;
         const Bcreatetime = new Date()
         const allMarket: MarketType[] = await queryAllMarket({ request });
         const Bendtime = new Date();
@@ -171,7 +181,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         return json({
           shop: shop,
-          shopLanguagesLoad: shopLanguagesLoad,
           allMarket: allMarket,
           languagesLoad: languagesLoad,
           languageLocaleInfo: languageLocaleInfo,
@@ -228,7 +237,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               const source = translation.primaryLanguage;
               const target = translation.selectedLanguage.locale;
               const data = await GetTranslate({ request, source, target });
-              return json({ success: true, data: data });
+              return data;
             }
           }
           return json({ success: false, message: "words get error" }, { status: 200 });
@@ -290,14 +299,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const [shop, setShop] = useState<string>("");
-  const [primaryLanguage, setPrimaryLanguage] = useState<ShopLocalesType>();
-  const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>(
-    [],
-  );
+  const { shop, shopLanguagesLoad, shopPrimaryLanguage, shopLocalesIndex } = useLoaderData<typeof loader>();
+  // const [shop, setShop] = useState<string>("");
+  // const [primaryLanguage, setPrimaryLanguage] = useState<ShopLocalesType>();
+  // const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>(
+  //   [],
+  // );
   const [allLanguages, setAllLanguages] = useState<AllLanguagesType[]>([]);
   const [allMarket, setAllMarket] = useState<MarketType[]>([]);
-  const [languagesLoad, setLanguagesLoad] = useState<any>();
+  const [languagesLoad, setLanguagesLoad] = useState<any>(null);
   const [languageLocaleInfo, setLanguageLocaleInfo] = useState<any>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
@@ -331,7 +341,10 @@ const Index = () => {
 
   useEffect(() => {
     const formData = new FormData();
-    formData.append("loading", JSON.stringify(true));
+    formData.append("loading", JSON.stringify({
+      shopPrimaryLanguage: shopPrimaryLanguage,
+      shopLocalesIndex: shopLocalesIndex,
+    }));
     loadingFetcher.submit(formData, {
       method: "post",
       action: "/app/language",
@@ -341,16 +354,16 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data) {
-      setShop(loadingFetcher.data.shop);
-      setShopLanguagesLoad(loadingFetcher.data.shopLanguagesLoad);
+      // setShop(loadingFetcher.data.shop);
+      // setShopLanguagesLoad(loadingFetcher.data.shopLanguagesLoad);
       setAllMarket(loadingFetcher.data.allMarket);
       setLanguagesLoad(loadingFetcher.data.languagesLoad);
       setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
-      setPrimaryLanguage(
-        loadingFetcher.data.shopLanguagesLoad?.find(
-          (lang) => lang.primary === true,
-        ),
-      );
+      // setPrimaryLanguage(
+      //   loadingFetcher.data.shopLanguagesLoad?.find(
+      //     (lang) => lang.primary === true,
+      //   ),
+      // );
       shopify.loading(false);
       setLoading(false);
     }
@@ -425,7 +438,7 @@ const Index = () => {
           formData.append(
             "statusData",
             JSON.stringify({
-              source: primaryLanguage?.locale,
+              source: shopPrimaryLanguage[0].locale,
               target: [items[0].target],
             }),
           );
@@ -447,39 +460,63 @@ const Index = () => {
   // }, [words]);
 
   useEffect(() => {
-    if (!shopLanguagesLoad || !languagesLoad) return; // 确保数据加载完成后再执行
+    if (!shopLanguagesLoad || dataSource.length > 0) return; // 确保数据加载完成后再执行
+    console.log("shopLanguagesLoad: ", shopLanguagesLoad);
     const newdata = shopLanguagesLoad.filter((language) => !language.primary);
     const data = newdata.map((lang, i) => ({
       key: i,
       language: lang.name,
-      localeName: languageLocaleInfo[newdata[i].locale].Local || "",
+      localeName: "",
       locale: lang.locale,
       primary: lang.primary,
-      status:
-        languagesLoad ? languagesLoad.find((language: any) => language.target === lang.locale)
-          ?.status : 0,
+      status: 0,
       auto_update_translation: false,
       published: lang.published,
       loading: false,
     }));
 
-    const findItem = data.find((data: any) => data.status === 2);
-    if (findItem && primaryLanguage) {
-      const formData = new FormData();
-      formData.append(
-        "statusData",
-        JSON.stringify({
-          source: primaryLanguage?.locale,
-          target: [findItem.locale],
-        }),
-      );
-      statusFetcher.submit(formData, {
-        method: "post",
-        action: "/app",
+
+    dispatch(setTableData(data));
+  }, [shopLanguagesLoad]); // 依赖 shopLanguagesLoad 和 status
+
+  useEffect(() => {
+    if (languagesLoad) {
+      const data = shopLanguagesLoad.map((lang, i) => ({
+        target: lang.locale,
+        status: languagesLoad.find((language: any) => language.target === lang.locale)?.status || 0,
+      }));
+      const findItem = data.find((data: any) => data.status === 2);
+      if (findItem && shopPrimaryLanguage) {
+        const formData = new FormData();
+        formData.append(
+          "statusData",
+          JSON.stringify({
+            source: shopPrimaryLanguage[0]?.locale,
+            target: [findItem.target],
+          }),
+        );
+        statusFetcher.submit(formData, {
+          method: "post",
+          action: "/app",
+        });
+      }
+      data.forEach((item) => {
+        dispatch(setStatusState(item));
       });
     }
-    dispatch(setTableData(data));
-  }, [shopLanguagesLoad, languagesLoad]); // 依赖 shopLanguagesLoad 和 status
+  }, [languagesLoad]);
+
+  useEffect(() => {
+    if (languageLocaleInfo) {
+      const data = shopLanguagesLoad.map((lang, i) => ({
+        target: lang.locale,
+        localeName: languageLocaleInfo[lang.locale]?.Local || "",
+      }));
+      data.forEach((item) => {
+        dispatch(setLocaleNameState(item));
+      }); 
+    }
+  }, [languageLocaleInfo]);
 
   useEffect(() => {
     if (publishInfo) {
@@ -499,12 +536,12 @@ const Index = () => {
 
   useEffect(() => {
     if (dataSource && dataSource.find((item: any) => item.status === 2)) {
-      if (primaryLanguage) {
+      if (shopPrimaryLanguage) {
         const formData = new FormData();
         formData.append(
           "statusData",
           JSON.stringify({
-            source: primaryLanguage?.locale,
+            source: shopPrimaryLanguage[0]?.locale,
             target: [dataSource.find((item: any) => item.status === 2)?.locale],
           }),
         );
@@ -707,7 +744,7 @@ const Index = () => {
       "deleteData",
       JSON.stringify({
         targets: targets,
-        primaryLanguage: primaryLanguage?.locale,
+        primaryLanguage: shopPrimaryLanguage[0]?.locale,
       }),
     ); // 将选中的语言作为字符串发送
     deleteFetcher.submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
@@ -742,9 +779,9 @@ const Index = () => {
             <Title style={{ fontSize: "1.25rem", display: "inline" }}>
               {t("Languages")}
             </Title>
-            <Suspense fallback={<Skeleton active paragraph={{ rows: 0 }} />}>
+            {/* <Suspense fallback={<Skeleton active paragraph={{ rows: 0 }} />}> */}
               <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
-            </Suspense>
+            {/* </Suspense> */}
           </div>
           {/* <ProgressingCard /> */}
           {/* <Suspense fallback={<Skeleton active />}>
@@ -786,7 +823,7 @@ const Index = () => {
                 </Space>
               </div>
             </Flex>
-            <Suspense fallback={<Skeleton active />}>
+            {/* <Suspense fallback={<Skeleton active />}> */}
               <Table
                 rowSelection={rowSelection}
                 columns={columns}
@@ -794,25 +831,25 @@ const Index = () => {
                 style={{ width: "100%" }}
                 loading={deleteloading || loading}
               />
-            </Suspense>
+            {/* </Suspense> */}
           </div>
         </Space>
-        <Suspense>
+        {/* <Suspense> */}
           <AddLanguageModal
             isVisible={isLanguageModalOpen}
             setIsModalOpen={setIsLanguageModalOpen}
             allLanguages={allLanguages}
             languageLocaleInfo={languageLocaleInfo}
-            primaryLanguage={primaryLanguage}
+            primaryLanguage={shopPrimaryLanguage[0]}
           />
-        </Suspense>
-        <Suspense>
+        {/* </Suspense> */}
+        {/* <Suspense> */}
           <PreviewModal
             visible={previewModalVisible}
             setVisible={setPreviewModalVisible}
           />
-        </Suspense>
-        <Suspense>
+        {/* </Suspense> */}
+        {/* <Suspense> */}
           <PublishModal
             isVisible={isPublishModalOpen} // 父组件控制是否显示
             onOk={() => handleConfirmPublishModal()}
@@ -821,7 +858,7 @@ const Index = () => {
             selectedRow={selectedRow}
             allMarket={allMarket}
           />
-        </Suspense>
+        {/* </Suspense> */}
       </Page>
     </>
   );

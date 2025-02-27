@@ -113,7 +113,7 @@
 
 .payment-option {
   width: 120px;
-  padding: 12px 20px;
+  padding: 4px 8px;
   border-radius: 6px;
   cursor: pointer;
   text-align: center; /* 让文本居中 */
@@ -123,8 +123,8 @@
 }
 
 .payment-option.selected {
-  border: 2px solid #75D344; /* 选中时显示蓝色边框 */
-  background-color: #E0F7E0; /* 选中时背景色变化 */
+  border: 2px solid #75d344; /* 选中时显示蓝色边框 */
+  background-color: #e0f7e0; /* 选中时背景色变化 */
 }
 
 .payment-option:not(.selected) {
@@ -146,9 +146,9 @@
 }
 
 /* paymentModal */
-.options_wrapper {
+/* .options_wrapper {
   margin: 20px 32px 0 32px;
-}
+} */
 
 .total_payment {
   display: flex;

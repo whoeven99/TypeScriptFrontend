@@ -20,6 +20,24 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const getCredits = async ({ shop, accessToken, target, source }: { shop: string, accessToken: string, target: string, source: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/userTypeToken/getUserToken`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        target: target,
+        source: source,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error get credits:", error);
+  }
+};
+
 //用户数据初始化检测
 export const InitializationDetection = async ({
   request,
@@ -522,10 +540,16 @@ export const GetTranslate = async ({
 
     const res = { ...response.data, target: target };
     console.log("translation: ", res);
-    return res;
-    return null;
+    return {
+      success: true,
+      data: res,
+    };
   } catch (error) {
     console.error("Error occurred in the translation:", error);
+    return {
+      success: false,
+      errorCode: 10014,
+    };
   }
 };
 
