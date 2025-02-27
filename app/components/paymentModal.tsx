@@ -4,6 +4,7 @@ import PaymentOptionSelect from "./paymentOptionSelect";
 import "./styles.css";
 import { useFetcher } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
+import { handleContactSupport } from "~/routes/app._index/route";
 
 const { Title, Text } = Typography;
 
@@ -88,7 +89,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
           console.log("key: ", key);
           console.log("value: ", value);
           console.log();
-          
+
           if (value !== null && (key !== 'id' && key !== 'translationId' && key !== 'createTime' && key !== 'updateTime')) {  // 排除 id 字段
             credits += value as number;
           } else {
@@ -241,15 +242,21 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
       onCancel={onCancel}
       width={900}
       footer={[
-        <Button
-          key="buy-now"
-          type="primary"
-          onClick={onClick}
-          disabled={buyButtonLoading}
-          loading={buyButtonLoading}
-        >
-          {t("Buy now")}
-        </Button>,
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div >
+            <Text strong>{t("Cost questions: ")}</Text>
+            <Button type="link" onClick={() => handleContactSupport()} style={{ marginLeft: "-15px" }}>{t("Contact support")}</Button>
+          </div>
+          <Button
+            key="buy-now"
+            type="primary"
+            onClick={onClick}
+            disabled={buyButtonLoading}
+            loading={buyButtonLoading}
+          >
+            {t("Buy now")}
+          </Button>
+        </div>
       ]}
     >
       {/* <div style={{ display: "flex" }}>

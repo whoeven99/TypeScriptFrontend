@@ -112,7 +112,7 @@
 }
 
 .payment-option {
-  width: 120px;
+  min-width: 120px;
   padding: 4px 8px;
   border-radius: 6px;
   cursor: pointer;

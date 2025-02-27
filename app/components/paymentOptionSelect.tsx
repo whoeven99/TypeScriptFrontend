@@ -31,8 +31,10 @@ const PaymentOptionSelect: React.FC<PaymentOptionSelectProps> = ({
           checked={JSON.stringify(selectedOption) === JSON.stringify(option)}
           readOnly
         />
-        <Text>{option.name} </Text>
-        <Text>{t("Credits")}</Text>
+        <div style={{ whiteSpace: "nowrap" }}>
+          <Text>{option.name} </Text>
+          <Text>{t("Credits")}</Text>
+        </div>
         <Text strong>
           ${option.price.currentPrice}
         </Text>

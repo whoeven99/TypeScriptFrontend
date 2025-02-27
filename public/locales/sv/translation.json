@@ -220,6 +220,18 @@
     "devplanCard1.title": "Stöder OpenAI private API, som gör att individer kan använda sina egna API-krediter för översättning",
     "devplanCard2.title": "Lägger till översättningsförlopp",
     "devplanCard3.title": "Optimera växlarens stil, stöd för visning i sidfoten",
-    "devplanCard4.title": "Förbättrar översättningshastigheten, lägger till en snabb översättningsläge"
+    "devplanCard4.title": "Förbättrar översättningshastigheten, lägger till en snabb översättningsläge",
+    "Your translation task exceeds the free limit and you need to purchase additional credits": "Din översättningsuppgift överstiger den kostnadsfria gränsen och du måste köpa ytterligare krediter",
+    "Translation tasks": "Översättningsuppgifter",
+    "Estimated number of words to translate: ": "Antal ord att översätta:",
+    "Calculation failed": "Beräkning misslyckades",
+    "Calculating...": "Beräknar...",
+    "words": "ord",
+    "Translate files: ": "Översätt filer:",
+    "Translate modal: ": "Översätt modal:",
+    "Total: ": "Totalt:",
+    "Buy credits": "Köp krediter",
+    "Cost questions: ": "Kostnadsfrågor: ",
+    "Contact support": "Kontakta support"
 }
   
