@@ -31,15 +31,15 @@ const PaymentOptionSelect: React.FC<PaymentOptionSelectProps> = ({
           checked={JSON.stringify(selectedOption) === JSON.stringify(option)}
           readOnly
         />
-        <Text style={{ display: 'block' }}>{Number(option.Credits).toLocaleString()}</Text>
+        <Text>{Number(option.Credits).toLocaleString()} </Text>
         <Text>{t("Credits")}</Text>
-      </div>
-      <div className="price">
-        <Text strong style={{ marginRight: "5px", color: "#E74C3C" }}>
+        <Text strong>
           ${option.price.currentPrice}
         </Text>
-        <Text type="secondary" style={{ textDecoration: "line-through" }}>${option.price.comparedPrice}</Text>
       </div>
+      {/* <div className="price">
+        <Text type="secondary" style={{ textDecoration: "line-through" }}>${option.price.comparedPrice}</Text>
+      </div> */}
     </div>
   );
 };
