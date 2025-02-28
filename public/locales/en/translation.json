@@ -228,11 +228,12 @@
   "Calculation failed": "Calculation failed",
   "Calculating...": "Calculating...",
   "words": "words",
-  "Translate files: ": "Translate files: ",
+  "Translate files: ": "Translate language: ",
   "translate to": "translate to",
   "Translate modal: ": "Translate modal: ",
   "Total: ": "Total: ",
   "Buy credits": "Buy credits",
   "Cost questions: ": "Cost questions: ",
-  "Contact support": "Contact support"
+  "Contact support": "Contact support",
+  "word": "word"
 }

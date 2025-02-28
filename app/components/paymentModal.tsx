@@ -86,10 +86,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         console.log("fetcher.data.data.response: ", fetcher.data.data.response);
         let credits = 0;
         Object.entries(fetcher.data.data.response).forEach(([key, value]) => {
-          console.log("key: ", key);
-          console.log("value: ", value);
-          console.log();
-
           if (value !== null && (key !== 'id' && key !== 'translationId' && key !== 'createTime' && key !== 'updateTime')) {  // 排除 id 字段
             credits += value as number;
           } else {
@@ -240,9 +236,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
       open={visible}
       // title={t("Extend your quota usage")}
       onCancel={onCancel}
-      width={900}
+      width={1000}
       footer={[
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div >
             <Text strong>{t("Cost questions: ")}</Text>
             <Button type="link" onClick={() => handleContactSupport()} style={{ marginLeft: "-15px" }}>{t("Contact support")}</Button>
@@ -253,8 +249,24 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
             onClick={onClick}
             disabled={buyButtonLoading}
             loading={buyButtonLoading}
+            style={{
+              height: 'auto',     // 允许按钮高度自适应
+              paddingTop: '4px',  // 增加上下内边距
+              paddingBottom: '4px'
+            }}
           >
-            {t("Buy now")}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}>
+              <Text strong style={{ color: 'inherit' }}>
+                ${selectedOption?.price.currentPrice ?? 0}
+              </Text>
+              <Text style={{ color: 'inherit' }}>
+                {t("Buy now")}
+              </Text>
+            </div>
           </Button>
         </div>
       ]}
@@ -269,11 +281,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
           <Text>calculating</Text>
         )}
       </div> */}
-      <Title level={4}>{t("Your translation task exceeds the free limit and you need to purchase additional credits")}</Title>
+      <Title level={4} style={{ textAlign: "center", marginTop: "20px" }}>{t("Your translation task exceeds the free limit and you need to purchase additional credits")}</Title>
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <Title level={5}>{t("Translation tasks")}</Title>
-          <Text>{t("Credits")}</Text>
+          <Title level={5} style={{ marginTop: "0px" }}>{t("Credits")}</Title>
         </div>
         <Divider style={{ margin: "10px 0" }} />
         <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -306,7 +318,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         </div>
       </Card>
       <Divider />
-      <Title level={5}>{t("Buy credits")}</Title>
+      <div style={{
+        display: "flex",
+        alignItems: 'flex-end',  // 底部对齐
+        gap: '3px',
+        marginBottom: "10px"
+      }}>
+        <Title level={5} style={{ marginBottom: "0px" }}>{t("Buy credits")}</Title>
+        <Text type="secondary">1{t("word")} = 1token</Text>
+      </div>
       <div className="options_wrapper">
         <Space direction="vertical">
           <div

@@ -32,7 +32,7 @@ const PaymentOptionSelect: React.FC<PaymentOptionSelectProps> = ({
           readOnly
         />
         <div style={{ whiteSpace: "nowrap" }}>
-          <Text>{option.name} </Text>
+          <Text>{Number(option.Credits).toLocaleString()} </Text>
           <Text>{t("Credits")}</Text>
         </div>
         <Text strong>
