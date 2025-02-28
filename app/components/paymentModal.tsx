@@ -85,9 +85,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
       console.log("fetcher.data: ", fetcher.data);
       if (fetcher.data.data.success) {
         console.log("fetcher.data.data.response: ", fetcher.data.data.response);
+        const { id, translationId, shopName, ...rest } = fetcher.data.data.response;
         let credits = 0;
-        Object.entries(fetcher.data.data.response).forEach(([key, value]) => {
-          if (value !== null && (key !== 'id' && key !== 'translationId' && key !== 'createTime' && key !== 'updateTime' && key !== 'shopName')) {  // 排除 id 字段
+        console.log("rest: ", rest);
+        Object.entries(rest).forEach(([key, value]) => {
+          if (value !== null) {
             credits += value as number;
           } else {
             recalculateFetcher.submit({
