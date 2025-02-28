@@ -42,7 +42,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
   const [selectedOption, setSelectedOption] = useState<OptionType>();
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [credits, setCredits] = useState<number>(0);
-  const [multiple1, setMultiple1] = useState<number>(1);
+  const [multiple1, setMultiple1] = useState<number>(2);
   const [multiple2, setMultiple2] = useState<number>(1);
   // const [recommendOption, setRecommendOption] = useState<OptionType>();
   // const totalCharacters = useSelector(
@@ -367,15 +367,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         </div>
       </Card>
       <Divider />
-      <div style={{
+      {/* <div style={{
         display: "flex",
         alignItems: 'flex-end',  // 底部对齐
         gap: '3px',
         marginBottom: "10px"
-      }}>
-        <Title level={5} style={{ marginBottom: "0px" }}>{t("Buy credits")}</Title>
-        <Text type="secondary">1{t("word")} = 1{t("credit")}</Text>
-      </div>
+      }}> */}
+        <Title level={5}>{t("Buy credits")}</Title>
+        {/* <Text type="secondary">1{t("word")} = 1{t("credit")}</Text> */}
+      {/* </div> */}
       <div className="options_wrapper">
         <Space direction="vertical">
           <div
