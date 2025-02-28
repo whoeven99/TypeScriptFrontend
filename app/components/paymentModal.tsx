@@ -367,15 +367,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         </div>
       </Card>
       <Divider />
-      <div style={{
+      {/* <div style={{
         display: "flex",
         alignItems: 'flex-end',  // 底部对齐
         gap: '3px',
         marginBottom: "10px"
-      }}>
-        <Title level={5} style={{ marginBottom: "0px" }}>{t("Buy credits")}</Title>
-        <Text type="secondary">1{t("word")} = 1{t("credit")}</Text>
-      </div>
+      }}> */}
+        <Title level={5}>{t("Buy credits")}</Title>
+        {/* <Text type="secondary">1{t("word")} = 1{t("credit")}</Text> */}
+      {/* </div> */}
       <div className="options_wrapper">
         <Space direction="vertical">
           <div
