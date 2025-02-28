@@ -230,7 +230,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         try {
           const words = await GetUserWords({ shop });
           if (words) {
-            if (words.chars > words.totalChars) {
+            if (words.chars >= words.totalChars) {
               return json({
                 success: false, message: "user words limit", data: {
                   source: translation.primaryLanguage,
