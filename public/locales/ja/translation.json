@@ -220,6 +220,21 @@
     "devplanCard1.title": "OpenAIプライベートAPIをサポートし、個人が自分のAPIクレジットを使用して翻訳できるようにします。",
     "devplanCard2.title": "翻訳進捗を追加",
     "devplanCard3.title": "スイッチャーのスタイルを最適化し、フッターに表示をサポートします。",
-    "devplanCard4.title": "翻訳速度を向上させ、高速翻訳モードを追加します。"
+    "devplanCard4.title": "翻訳速度を向上させ、高速翻訳モードを追加します。",
+    "Your translation task exceeds the free limit and you need to purchase additional credits": "翻訳タスクが無料の制限を超えているため、追加のクレジットを購入する必要があります。",
+    "Translation tasks": "翻訳タスク",
+    "Estimated number of words to translate: ": "翻訳する必要がある単語数：",
+    "Calculation failed": "計算に失敗しました",
+    "Calculating...": "計算中...",
+    "words": "単語",
+    "Translate files: ": "言語を翻訳する：",
+    "Translate modal: ": "モーダルを翻訳する：",
+    "Total: ": "合計：",
+    "Buy credits": "クレジットを購入する",
+    "Cost questions: ": "コストの質問：",
+    "Contact support": "サポートに連絡する",
+    "word": "単語",
+    "credit": "クレジット",
+    "Credits to be consumed": "使用するクレジット"
 }
   

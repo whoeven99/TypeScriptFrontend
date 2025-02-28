@@ -31,6 +31,7 @@ import { LanguagesDataType, ShopLocalesType } from "../app.language/route";
 import { setStatusState, setTableData } from "~/store/modules/languageTableData";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import TranslationWarnModal from "~/components/translationWarnModal";
+import PaymentModal from "~/components/paymentModal";
 
 const { Title, Text } = Typography;
 
@@ -66,10 +67,13 @@ const Index = () => {
     const [selectedLanguageCode, setSelectedLanguageCode] = useState<string>("");
     const [translateSettings1, setTranslateSettings1] = useState<string>("1");
     const [translateSettings2, setTranslateSettings2] = useState<string>("1");
-    const [translateSettings3, setTranslateSettings3] = useState<string[]>(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]);
+    const [translateSettings3, setTranslateSettings3] = useState<string[]>(["Products", "Collection", "Article", "Blog titles", "Pages", "Filters", "Metaobjects", "Navigation", "Shop", "Theme", "Delivery", "Shipping"]);
+    const [modal, setModal] = useState<string>("");    
     const [translateSettings4, setTranslateSettings4] = useState<string>("1");
     const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
     const [showWarnModal, setShowWarnModal] = useState(false);
+    const [source, setSource] = useState("");
+    const [target, setTarget] = useState("");
     const dispatch = useDispatch();
     const { t } = useTranslation();
     const loadingLanguageFetcher = useFetcher<any>();
@@ -83,12 +87,10 @@ const Index = () => {
     );
 
     useEffect(() => {
-        console.log(translateSettings1, translateSettings2, translateSettings3, translateSettings4);
-    }, [translateSettings1, translateSettings2, translateSettings3, translateSettings4]);
-
-    useEffect(() => {
-        console.log(selectedLanguageCode);
-    }, [selectedLanguageCode]);
+        console.log("translateSettings1: ", translateSettings1);
+        console.log("translateSettings2: ", translateSettings2);
+        console.log("translateSettings3: ", translateSettings3);
+    }, [translateSettings1, translateSettings2, translateSettings3]);
 
     useEffect(() => {
         const languageFormData = new FormData();
@@ -130,6 +132,8 @@ const Index = () => {
                 navigate("/app/language");
             } else {
                 setShowWarnModal(true);
+                const modalSettingOption = translateSettings1Options.find(option => option.value === fetcher.data.data.translateSettings1);
+                setModal(modalSettingOption?.label || "OpenAI/GPT-4");
             }
         }
     }, [fetcher.data]);
@@ -206,12 +210,18 @@ const Index = () => {
                 JSON.stringify({
                     primaryLanguage: languageSetting?.primaryLanguageCode,
                     selectedLanguage: selectedItem,
+                    translateSettings1: translateSettings1,
+                    translateSettings2: translateSettings2,
+                    translateSettings3: translateSettings3,
                 }),
             ); // 将选中的语言作为字符串发送
             fetcher.submit(formData, {
                 method: "post",
                 action: "/app/language",
-            }); // 提交表单请求
+            }); 
+            setSource(languageSetting?.primaryLanguageCode);
+            setTarget(selectedLanguageCode);
+            // 提交表单请求
             // const installTime = localStorage.getItem('installTime')
             // if (!installTime) {
             //     localStorage.setItem('installTime', new Date().toISOString());
@@ -244,6 +254,7 @@ const Index = () => {
             );
         }
     };
+
     const onChange = (e: RadioChangeEvent) => {
         setSelectedLanguageCode(e.target.value);
     };
@@ -349,62 +360,62 @@ const Index = () => {
     const translateSettings3Options = [
         {
             label: t("Products"),
-            value: "1",
+            value: "Products",
             disabled: true
         },
         {
             label: t("Collections"),
-            value: "2",
+            value: "Collection",
             disabled: true
         },
         {
             label: t("Articles"),
-            value: "3",
+            value: "Article",
             disabled: true
         },
         {
             label: t("Blog titles"),
-            value: "4",
+            value: "Blog titles",
             disabled: true
         },
         {
             label: t("Pages"),
-            value: "5",
+            value: "Pages",
             disabled: true
         },
         {
             label: t("Filters"),
-            value: "6",
+            value: "Filters",
             disabled: true
         },
         {
             label: t("Metaobjects"),
-            value: "7",
+            value: "Metaobjects",
             disabled: true
         },
         {
             label: t("Navigation"),
-            value: "8",
+            value: "Navigation",
             disabled: true
         },
         {
             label: t("Shop"),
-            value: "9",
+            value: "Shop",
             disabled: true
         },
         {
             label: t("Theme"),
-            value: "10",
+            value: "Theme",
             disabled: true
         },
         {
             label: t("Delivery"),
-            value: "11",
+            value: "Delivery",
             disabled: true
         },
         {
             label: t("Shipping"),
-            value: "12",
+            value: "Shipping",
             disabled: true
         },
     ]
@@ -634,7 +645,7 @@ const Index = () => {
                 )}
             </Space>
             {showWarnModal && (
-                <TranslationWarnModal show={showWarnModal} setShow={setShowWarnModal} />
+                <PaymentModal visible={showWarnModal} setVisible={setShowWarnModal} source={source} target={target} modal={modal}/>
             )}
         </Page>
     );

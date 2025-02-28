@@ -220,6 +220,21 @@
     "devplanCard1.title": "Unterstützt OpenAI private API, das individuelle API-Kredite für Übersetzung verwenden können",
     "devplanCard2.title": "Fügt Übersetzungsfortschritt hinzu",
     "devplanCard3.title": "Optimiert den Switcher-Stil, unterstützt die Anzeige im Footer",
-    "devplanCard4.title": "Verbessert die Übersetzungsgeschwindigkeit, fügt einen schnellen Übersetzungsmodus hinzu"
+    "devplanCard4.title": "Verbessert die Übersetzungsgeschwindigkeit, fügt einen schnellen Übersetzungsmodus hinzu",
+    "Your translation task exceeds the free limit and you need to purchase additional credits": "Ihre Übersetzungsaufgabe überschreitet den kostenlosen Grenzwert und Sie müssen zusätzliche Credits kaufen",
+    "Translation tasks": "Übersetzungsaufgaben",
+    "Estimated number of words to translate: ": "Geschätzte Anzahl der zu übersetzenden Wörter: ",
+    "Calculation failed": "Berechnung fehlgeschlagen",
+    "Calculating...": "Berechnen...",
+    "words": "Wörter",
+    "Translate files: ": "Übersetzen Sie Sprachen: ",
+    "Translate modal: ": "Übersetzen Sie Modal: ",
+    "Total: ": "Gesamt: ",
+    "Buy credits": "Credits kaufen",
+    "Cost questions: ": "Kostenfragen: ",
+    "Contact support": "Support kontaktieren",
+    "word": "wort",
+    "credit": "credit",
+    "Credits to be consumed": "Credits zu verbrauchen"
 }
     

@@ -42,29 +42,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           let credits = 0;
           let price = 0;
           switch (payload?.app_purchase_one_time.name) {
-            case "10K Credits":
-              credits = 10000;
-              price = 8.99;
-              break;
-            case "20K Credits":
-              credits = 20000;
-              price = 17.99;
-              break;
-            case "50K Credits":
-              credits = 50000;
-              price = 39.99;
-              break;
             case "100K Credits":
               credits = 100000;
-              price = 79.99;
+              price = 3.99;
               break;
             case "200K Credits":
               credits = 200000;
-              price = 159.99;
+              price = 6.99;
               break;
-            case "300K Credits":
-              credits = 300000;
-              price = 239.99;
+            case "500K Credits":
+              credits = 500000;
+              price = 15.99;
+              break;
+            case "1M Credits":
+              credits = 1000000;
+              price = 29.99;
+              break;
+            case "3M Credits":
+              credits = 3000000;
+              price = 79.99;
+              break;
+            case "5M Credits":
+              credits = 5000000;
+              price = 99.99;
               break;
           }
           new Response(null, { status: 200 });

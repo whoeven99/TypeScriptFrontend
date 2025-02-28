@@ -31,6 +31,8 @@ import {
   AddDefaultLanguagePack,
   InsertCharsByShopName,
   InsertTargets,
+  getCredits,
+  GetUserInitTokenByShopName,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -71,6 +73,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
     const rate = JSON.parse(formData.get("rate") as string);
+    const credits = JSON.parse(formData.get("credits") as string);
+    const recalculate = JSON.parse(formData.get("recalculate") as string);
     // if (initialization) {
     //   try {
     //     const data: boolean = await AddUserFreeSubscription({ shop });
@@ -229,6 +233,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         request,
         source,
         target,
+        translateSettings1: translation.translateSettings1,
+        translateSettings2: translation.translateSettings2,
+        translateSettings3: translation.translateSettings3,
       });
       return json({ data: data });
     }
@@ -279,6 +286,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         confirmationUrl: orderInfo.confirmationUrl,
       });
       return json({ data: orderData });
+    }
+
+    if (credits) {
+      const data = await getCredits({ shop, accessToken: accessToken!, target: credits.target, source: credits.source });
+      return json({ data });
+    }
+
+    if (recalculate) {
+      try {
+        const data = await GetUserInitTokenByShopName({ shop });
+        return json({ data });
+      } catch (error) {
+        console.error("Error recalculate app:", error);
+        return json({
+          data: {
+            success: false,
+            message: "Error recalculate app",
+          }
+        });
+      }
     }
 
     if (typeof rate === 'number') {

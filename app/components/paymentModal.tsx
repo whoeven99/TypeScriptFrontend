@@ -1,15 +1,19 @@
-import { Button, Col, Modal, Row, Space, Typography } from "antd";
+import { Button, Card, Col, Divider, Modal, Row, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 import PaymentOptionSelect from "./paymentOptionSelect";
 import "./styles.css";
 import { useFetcher } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
+import { handleContactSupport } from "~/routes/app._index/route";
 
-const { Text } = Typography;
+const { Title, Text } = Typography;
 
 interface PaymentModalProps {
   visible: boolean;
   setVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  source: string;
+  target: string;
+  modal: string;
 }
 
 export interface OptionType {
@@ -24,41 +28,110 @@ export interface OptionType {
   test?: boolean;
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
-  const recommendOption: OptionType = {
-    key: "option-2",
-    name: "20K Credits",
-    Credits: 20000,
-    price: {
-      currentPrice: 17.99,
-      comparedPrice: 20.0,
-      currencyCode: "USD",
-    },
-  };
+const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source, target, modal }) => {
+  // const recommendOption: OptionType = {
+  //   key: "option-2",
+  //   name: "20K Credits",
+  //   Credits: 20000,
+  //   price: {
+  //     currentPrice: 17.99,
+  //     comparedPrice: 20.0,
+  //     currencyCode: "USD",
+  //   },
+  // };
   const [selectedOption, setSelectedOption] = useState<OptionType>();
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
+  const [credits, setCredits] = useState<number>(0);
+  const [multiple1, setMultiple1] = useState<number>(1);
+  const [multiple2, setMultiple2] = useState<number>(1);
+  // const [recommendOption, setRecommendOption] = useState<OptionType>();
   // const totalCharacters = useSelector(
   //   (state: any) => state.TotalCharacters.count,
   // );
   const { t } = useTranslation();
+  const fetcher = useFetcher<any>();
+  const recalculateFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
 
-  // useEffect(() => {
-  //   if (totalCharacters && !selectedOption) {
-  //     const matchedOption = options.find(
-  //       (option) => option.Credits >= totalCharacters,
-  //     ); // 找到第一个符合条件的选项
-  //     if (matchedOption) {
-  //       setRecommendOption(matchedOption);
-  //       setSelectedOption(matchedOption);
-  //     }
-  //   }
-  // }, [totalCharacters]);
+  useEffect(() => {
+    if (credits && !selectedOption) {
+      const matchedOption = options.find(
+        (option) => option.Credits >= credits * multiple1 * multiple2,
+      ); // 找到第一个符合条件的选项
+      if (matchedOption) {
+        // setRecommendOption(matchedOption);
+        setSelectedOption(matchedOption);
+      }
+    }
+  }, [credits]);
 
   useEffect(() => {
-    if (visible) setSelectedOption(recommendOption);
+    if (visible) {
+      fetcher.submit({
+        credits: JSON.stringify({
+          source: source || "en",
+          target: target || "zh-CN",
+        }),
+      }, {
+        method: "post",
+        action: "/app",
+      });
+    }
   }, [visible]);
+
+  useEffect(() => {
+    if (fetcher.data) {
+      console.log("fetcher.data: ", fetcher.data);
+      if (fetcher.data.data.success) {
+        console.log("fetcher.data.data.response: ", fetcher.data.data.response);
+        let credits = 0;
+        Object.entries(fetcher.data.data.response).forEach(([key, value]) => {
+          if (value !== null && (key !== 'id' && key !== 'translationId' && key !== 'createTime' && key !== 'updateTime' && key !== 'shopName')) {  // 排除 id 字段
+            credits += value as number;
+          } else {
+            recalculateFetcher.submit({
+              recalculate: JSON.stringify(true),
+            }, {
+              method: "post",
+              action: "/app",
+            });
+          }
+        });
+        setCredits(credits);
+      } else {
+        recalculateFetcher.submit({
+          recalculate: JSON.stringify(true),
+        }, {
+          method: "post",
+          action: "/app",
+        });
+      }
+    }
+  }, [fetcher.data]);
+
+  useEffect(() => {
+    if (recalculateFetcher.data) {
+      console.log("recalculateFetcher.data: ", recalculateFetcher.data);
+      if (recalculateFetcher.data.data.success) {
+        console.log("recalculateFetcher.data.data.response: ", recalculateFetcher.data.data.response);
+        const { id, translationId, shopName, ...rest } = recalculateFetcher.data.data.response;
+        let credits = 0;
+        console.log("rest: ", rest);
+        Object.entries(rest).forEach(([key, value]) => {
+          if (value !== null) {
+            credits += value as number;
+          } else {
+            setCredits(-1);
+            return;
+          }
+        });
+        setCredits(credits);
+      } else {
+        setCredits(-1);
+      }
+    }
+  }, [recalculateFetcher.data]);
 
   useEffect(() => {
     if (payFetcher.data) {
@@ -98,23 +171,24 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     }
   }, [payFetcher.data]);
 
+  //分别是10w（3.99美金），20w（6.99美金），50w（15.99美金），100w（29.99美金），300w（79.99美金），500w（99.99美金）
   const options: OptionType[] = [
     {
       key: "option-1",
-      name: "10K Credits",
-      Credits: 10000,
+      name: "100K",
+      Credits: 100000,
       price: {
-        currentPrice: 8.99,
-        comparedPrice: 10.0,
+        currentPrice: 3.99,
+        comparedPrice: 100.0,
         currencyCode: "USD",
       },
     },
     {
       key: "option-2",
-      name: "20K Credits",
-      Credits: 20000,
+      name: "200K",
+      Credits: 200000,
       price: {
-        currentPrice: 17.99,
+        currentPrice: 6.99,
         comparedPrice: 20.0,
         currencyCode: "USD",
       },
@@ -122,42 +196,42 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
     },
     {
       key: "option-3",
-      name: "50K Credits",
-      Credits: 50000,
+      name: "500K",
+      Credits: 500000,
       price: {
-        currentPrice: 39.99,
-        comparedPrice: 50.0,
+        currentPrice: 15.99,
+        comparedPrice: 100.0,
         currencyCode: "USD",
       },
     },
     {
       key: "option-4",
-      name: "100K Credits",
-      Credits: 100000,
+      name: "1M",
+      Credits: 1000000,
       price: {
-        currentPrice: 79.99,
-        comparedPrice: 100.0,
+        currentPrice: 29.99,
+        comparedPrice: 200.0,
         currencyCode: "USD",
       },
       test: true,
     },
     {
       key: "option-5",
-      name: "200K Credits",
-      Credits: 200000,
+      name: "3M",
+      Credits: 3000000,
       price: {
-        currentPrice: 159.99,
-        comparedPrice: 200.0,
+        currentPrice: 79.99,
+        comparedPrice: 800.0,
         currencyCode: "USD",
       },
     },
     {
       key: "option-6",
-      name: "300K Credits",
-      Credits: 300000,
+      name: "5M",
+      Credits: 5000000,
       price: {
-        currentPrice: 239.99,
-        comparedPrice: 300.0,
+        currentPrice: 99.99,
+        comparedPrice: 1000.0,
         currencyCode: "USD",
       },
     },
@@ -183,7 +257,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
 
   const onCancel = () => {
     setVisible(false);
-    if (recommendOption) setSelectedOption(recommendOption);
+    // if (recommendOption) setSelectedOption(recommendOption);
   };
 
   const handleChange = (value: OptionType) => {
@@ -193,19 +267,55 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   return (
     <Modal
       open={visible}
-      title={t("Extend your quota usage")}
+      // title={t("Extend your quota usage")}
       onCancel={onCancel}
+      width={1000}
       footer={[
-        <Button
-          key="buy-now"
-          type="primary"
-          onClick={onClick}
-          disabled={buyButtonLoading}
-          loading={buyButtonLoading}
-          style={{ marginRight: "32px" }}
+        <div
+          key="footer-container"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end"
+          }}
         >
-          {t("Buy now")}
-        </Button>,
+          <div key="support-section">
+            <Text strong key="cost-question">{t("Cost questions: ")}</Text>
+            <Button
+              key="contact-support"
+              type="link"
+              onClick={() => handleContactSupport()}
+              style={{ marginLeft: "-15px" }}
+            >
+              {t("Contact support")}
+            </Button>
+          </div>
+          <Button
+            key="buy-now"
+            type="primary"
+            onClick={onClick}
+            disabled={buyButtonLoading}
+            loading={buyButtonLoading}
+            style={{
+              height: 'auto',
+              paddingTop: '4px',
+              paddingBottom: '4px'
+            }}
+          >
+            <div key="button-content" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}>
+              <Text key="price" strong style={{ color: 'inherit' }}>
+                ${selectedOption?.price.currentPrice ?? 0}
+              </Text>
+              <Text key="buy-text" style={{ color: 'inherit' }}>
+                {t("Buy now")}
+              </Text>
+            </div>
+          </Button>
+        </div>
       ]}
     >
       {/* <div style={{ display: "flex" }}>
@@ -218,28 +328,86 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
           <Text>calculating</Text>
         )}
       </div> */}
+      <Title level={4} style={{ textAlign: "center", marginTop: "20px" }}>{t("Your translation task exceeds the free limit and you need to purchase additional credits")}</Title>
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <Title level={5}>{t("Translation tasks")}</Title>
+          <Title level={5} style={{ marginTop: "0px" }}>{t("Credits to be consumed")}</Title>
+        </div>
+        <Divider style={{ margin: "10px 0" }} />
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div>
+            <Text strong>{t("Estimated number of words to translate: ")}</Text>
+            {credits > 0 ? <Text>{credits} {t("words")}</Text> : (credits < 0 ? <Text>{t("Calculation failed")}</Text> : <Text>{t("Calculating...")}</Text>)}
+          </div>
+          {credits > 0 ? <Text>+{credits}</Text> : (credits < 0 ? <Text>{t("Calculation failed")}</Text> : <Text>{t("Calculating...")}</Text>)}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div>
+            <Text strong>{t("Translate files: ")}</Text>
+            <Text>{source.toUpperCase()} {t("translate to")} {target.toUpperCase()}</Text>
+          </div>
+          <Text>*{multiple1}</Text>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div>
+            <Text strong>{t("Translate modal: ")}</Text>
+            <Text>{modal}</Text>
+          </div>
+          <Text>*{multiple2}</Text>
+        </div>
+        <Divider style={{ margin: "10px 0" }} />
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div>
+            <Text strong>{t("Total: ")}</Text>
+          </div>
+          <Text>{(credits * multiple1 * multiple2).toFixed(2) || 0}</Text>
+        </div>
+      </Card>
+      <Divider />
+      <div style={{
+        display: "flex",
+        alignItems: 'flex-end',  // 底部对齐
+        gap: '3px',
+        marginBottom: "10px"
+      }}>
+        <Title level={5} style={{ marginBottom: "0px" }}>{t("Buy credits")}</Title>
+        <Text type="secondary">1{t("word")} = 1{t("credit")}</Text>
+      </div>
       <div className="options_wrapper">
         <Space direction="vertical">
-          <Row gutter={[16, 16]}>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',  // 允许自动换行
+              gap: '16px',
+              width: '100%'
+            }}
+          >
             {options.map((option: any) => (
-              <Col
-                span={8}
+              <div
                 key={option.name}
-                style={{ display: "flex", justifyContent: "center" }}
+                style={{
+                  flex: '0 1 auto',  // 允许缩小但不放大
+                  // minWidth: '200px',  // 设置最小宽度
+                  display: 'flex',
+                  justifyContent: 'center'
+                }}
               >
                 <PaymentOptionSelect
                   option={option}
                   selectedOption={selectedOption}
                   onChange={handleChange}
                 />
-              </Col>
+              </div>
             ))}
-          </Row>
-          <div className="total_payment">
-            <Text style={{ marginRight: "5px" }}>{t("Total Payment:")}</Text>
-            <Text strong>${selectedOption?.price.currentPrice || 0}</Text>
           </div>
         </Space>
+      </div>
+      <Divider />
+      <div className="total_payment">
+        <Text style={{ marginRight: "5px" }}>{t("Total Payment:")}</Text>
+        <Text strong>${selectedOption?.price.currentPrice ? selectedOption?.price.currentPrice : 0}</Text>
       </div>
     </Modal>
   );

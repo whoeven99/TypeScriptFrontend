@@ -152,22 +152,7 @@ const Index = () => {
   //   });
   // };
 
-  const handleContactSupport = () => {
-    // 声明 tidioChatApi 类型
-    interface Window {
-      tidioChatApi?: {
-        open: () => void;
-      }
-    }
 
-    if ((window as Window)?.tidioChatApi) {
-      (window as Window).tidioChatApi?.open();
-    } else {
-      console.warn('Tidio Chat API not loaded');
-      // 备用方案：打开支持页面
-      // window.open('https://apps.shopify.com/translator-by-ciwi/support', '_blank');
-    }
-  };
 
   const columns = [
     {
@@ -554,6 +539,23 @@ const Index = () => {
       </Page>
     </Suspense>
   );
+};
+
+export const handleContactSupport = () => {
+  // 声明 tidioChatApi 类型
+  interface Window {
+    tidioChatApi?: {
+      open: () => void;
+    }
+  }
+
+  if ((window as Window)?.tidioChatApi) {
+    (window as Window).tidioChatApi?.open();
+  } else {
+    console.warn('Tidio Chat API not loaded');
+    // 备用方案：打开支持页面
+    // window.open('https://apps.shopify.com/translator-by-ciwi/support', '_blank');
+  }
 };
 
 export default Index;

@@ -86,6 +86,17 @@ const languageTableDataSlice = createSlice({
         row.status = action.payload.status;
       }
     },
+    setLocaleNameState: (
+      state,
+      action: PayloadAction<{ target: string; localeName: string }>,
+    ) => {
+      const row = state.rows.find(
+        (item) => item.locale === action.payload.target,
+      );
+      if (row) {
+        row.localeName = action.payload.localeName;
+      }
+    },
   },
 });
 
@@ -96,6 +107,7 @@ export const {
   setPublishLoadingState,
   setPublishState,
   setStatusState,
+  setLocaleNameState,
 } = languageTableDataSlice.actions;
 
 const reducer = languageTableDataSlice.reducer;

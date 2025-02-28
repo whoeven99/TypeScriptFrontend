@@ -23,14 +23,8 @@ const PrimaryLanguage: React.FC<{ shopLanguages: ShopLocalesType[] }> = ({
 
   return (
     <div>
-      {primaryLanguage ? (
-        <div>
-          <Text>{t("Your store's default language:")}</Text>
-          <Text strong>{primaryLanguage.name}</Text>
-        </div>
-      ) : (
-        <Skeleton active paragraph={{ rows: 0 }} />
-      )}
+      <Text>{t("Your store's default language:")}</Text>
+      <Text strong>{primaryLanguage ? primaryLanguage?.name : ""}</Text>
     </div>
   );
 };

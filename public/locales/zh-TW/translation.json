@@ -113,7 +113,7 @@
     "Powered by GPT 4o": "由 GPT 4o 提供支持",
     "Buy Credits": "購買信用",
     "Select Currencies": "選擇貨幣",
-    "Buy now": "立即購買",
+    "Buy now": "立即支付",
     "Extend your quota usage": "延長您的配額使用",
     "Translated": "已翻譯",
     "Translating": "翻譯中",
@@ -220,6 +220,21 @@
     "devplanCard1.title": "支持OpenAI私人API，允許個人使用自己的API積分進行翻譯",
     "devplanCard2.title": "添加翻譯進度",
     "devplanCard3.title": "優化切換器樣式，支持在頁腳顯示",
-    "devplanCard4.title": "提高翻譯速度，添加快速翻譯模式"
+    "devplanCard4.title": "提高翻譯速度，添加快速翻譯模式",
+    "Your translation task exceeds the free limit and you need to purchase additional credits": "您的翻譯任務超過了免費限制，您需要購買額外的積分",
+    "Translation tasks": "翻譯任務",
+    "Estimated number of words to translate: ": "需要翻譯的單詞數：",
+    "Calculation failed": "計算失敗",
+    "Calculating...": "計算中...",
+    "words": "單詞",
+    "Translate files: ": "翻譯語言：",
+    "Translate modal: ": "翻譯模組：",
+    "Total: ": "總計：",
+    "Buy credits": "購買積分",
+    "Cost questions: ": "費用問題：",
+    "Contact support": "聯繫支持",
+    "word": "單詞",
+    "credit": "積分",
+    "Credits to be consumed": "需要消耗的積分"
 }
   

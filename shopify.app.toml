@@ -22,8 +22,3 @@ redirect_urls = [
   "https://typescriptfrontendprod.onrender.com/api/auth/callback"
 ]
 
-  uri = "/webhooks"
-  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
-
-[pos]
-embedded = false
