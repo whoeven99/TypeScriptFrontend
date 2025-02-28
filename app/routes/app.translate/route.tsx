@@ -67,7 +67,8 @@ const Index = () => {
     const [selectedLanguageCode, setSelectedLanguageCode] = useState<string>("");
     const [translateSettings1, setTranslateSettings1] = useState<string>("1");
     const [translateSettings2, setTranslateSettings2] = useState<string>("1");
-    const [translateSettings3, setTranslateSettings3] = useState<string[]>(["Products", "Collection", "Article", "Blog titles", "Pages", "Filters", "Metaobjects", "Navigation", "Shop", "Theme", "Delivery", "Shipping"]);    
+    const [translateSettings3, setTranslateSettings3] = useState<string[]>(["Products", "Collection", "Article", "Blog titles", "Pages", "Filters", "Metaobjects", "Navigation", "Shop", "Theme", "Delivery", "Shipping"]);
+    const [modal, setModal] = useState<string>("");    
     const [translateSettings4, setTranslateSettings4] = useState<string>("1");
     const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
     const [showWarnModal, setShowWarnModal] = useState(false);
@@ -131,6 +132,8 @@ const Index = () => {
                 navigate("/app/language");
             } else {
                 setShowWarnModal(true);
+                const modalSettingOption = translateSettings1Options.find(option => option.value === fetcher.data.data.translateSettings1);
+                setModal(modalSettingOption?.label || "OpenAI/GPT-4");
             }
         }
     }, [fetcher.data]);
@@ -642,7 +645,7 @@ const Index = () => {
                 )}
             </Space>
             {showWarnModal && (
-                <PaymentModal visible={showWarnModal} setVisible={setShowWarnModal} source={source} target={target} modal={"Deepseek R1"}/>
+                <PaymentModal visible={showWarnModal} setVisible={setShowWarnModal} source={source} target={target} modal={modal}/>
             )}
         </Page>
     );

@@ -231,12 +231,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const words = await GetUserWords({ shop });
           if (words) {
             if (words.chars > words.totalChars) {
-              return json({ success: false, message: "user words limit" }, { status: 200 });
+              return json({
+                success: false, message: "user words limit", data: {
+                  source: translation.primaryLanguage,
+                  target: translation.selectedLanguage.locale,
+                  translateSettings1: translation.translateSettings1,
+                  translateSettings2: translation.translateSettings2,
+                  translateSettings3: translation.translateSettings3,
+                }
+              }, { status: 200 });
             } else {
               console.log(translation);
               const source = translation.primaryLanguage;
               const target = translation.selectedLanguage.locale;
-              const data = await GetTranslate({ request, source, target });
+              const translateSettings1 = translation.translateSettings1;
+              const translateSettings2 = translation.translateSettings2;
+              const translateSettings3 = translation.translateSettings3;
+              const data = await GetTranslate({ request, source, target, translateSettings1, translateSettings2, translateSettings3 });
               return data;
             }
           }
@@ -514,7 +525,7 @@ const Index = () => {
       }));
       data.forEach((item) => {
         dispatch(setLocaleNameState(item));
-      }); 
+      });
     }
   }, [languageLocaleInfo]);
 
@@ -780,7 +791,7 @@ const Index = () => {
               {t("Languages")}
             </Title>
             {/* <Suspense fallback={<Skeleton active paragraph={{ rows: 0 }} />}> */}
-              <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
+            <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
             {/* </Suspense> */}
           </div>
           {/* <ProgressingCard /> */}
@@ -824,40 +835,40 @@ const Index = () => {
               </div>
             </Flex>
             {/* <Suspense fallback={<Skeleton active />}> */}
-              <Table
-                rowSelection={rowSelection}
-                columns={columns}
-                dataSource={dataSource}
-                style={{ width: "100%" }}
-                loading={deleteloading || loading}
-              />
+            <Table
+              rowSelection={rowSelection}
+              columns={columns}
+              dataSource={dataSource}
+              style={{ width: "100%" }}
+              loading={deleteloading || loading}
+            />
             {/* </Suspense> */}
           </div>
         </Space>
         {/* <Suspense> */}
-          <AddLanguageModal
-            isVisible={isLanguageModalOpen}
-            setIsModalOpen={setIsLanguageModalOpen}
-            allLanguages={allLanguages}
-            languageLocaleInfo={languageLocaleInfo}
-            primaryLanguage={shopPrimaryLanguage[0]}
-          />
+        <AddLanguageModal
+          isVisible={isLanguageModalOpen}
+          setIsModalOpen={setIsLanguageModalOpen}
+          allLanguages={allLanguages}
+          languageLocaleInfo={languageLocaleInfo}
+          primaryLanguage={shopPrimaryLanguage[0]}
+        />
         {/* </Suspense> */}
         {/* <Suspense> */}
-          <PreviewModal
-            visible={previewModalVisible}
-            setVisible={setPreviewModalVisible}
-          />
+        <PreviewModal
+          visible={previewModalVisible}
+          setVisible={setPreviewModalVisible}
+        />
         {/* </Suspense> */}
         {/* <Suspense> */}
-          <PublishModal
-            isVisible={isPublishModalOpen} // 父组件控制是否显示
-            onOk={() => handleConfirmPublishModal()}
-            onCancel={() => handleClosePublishModal()}
-            setPublishMarket={setPublishMarket}
-            selectedRow={selectedRow}
-            allMarket={allMarket}
-          />
+        <PublishModal
+          isVisible={isPublishModalOpen} // 父组件控制是否显示
+          onOk={() => handleConfirmPublishModal()}
+          onCancel={() => handleClosePublishModal()}
+          setPublishMarket={setPublishMarket}
+          selectedRow={selectedRow}
+          allMarket={allMarket}
+        />
         {/* </Suspense> */}
       </Page>
     </>

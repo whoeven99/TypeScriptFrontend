@@ -20,6 +20,21 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const GetUserInitTokenByShopName = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/userTypeToken/getUserInitTokenByShopName`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error get user init token:", error);
+  }
+};
+
 export const getCredits = async ({ shop, accessToken, target, source }: { shop: string, accessToken: string, target: string, source: string }) => {
   try {
     const response = await axios({
@@ -499,10 +514,16 @@ export const GetTranslate = async ({
   request,
   source,
   target,
+  translateSettings1,
+  translateSettings2,
+  translateSettings3,
 }: {
   request: Request;
   source: string;
   target: string;
+  translateSettings1: string;
+  translateSettings2: string;
+  translateSettings3: string[];
 }) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -529,6 +550,9 @@ export const GetTranslate = async ({
         accessToken: accessToken,
         source: source,
         target: target,
+        translateSettings1: translateSettings1,
+        translateSettings2: translateSettings2,
+        translateSettings3: translateSettings3,
       },
     });
     console.log({
@@ -536,6 +560,9 @@ export const GetTranslate = async ({
       accessToken: accessToken,
       source: source,
       target: target,
+      translateSettings1: translateSettings1,
+      translateSettings2: translateSettings2,
+      translateSettings3: translateSettings3,
     });
 
     const res = { ...response.data, target: target };

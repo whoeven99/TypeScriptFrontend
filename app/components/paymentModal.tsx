@@ -42,14 +42,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
   const [selectedOption, setSelectedOption] = useState<OptionType>();
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [credits, setCredits] = useState<number>(0);
-  const [multiple1, setMultiple1] = useState<number>(1.5);
-  const [multiple2, setMultiple2] = useState<number>(1.5);
+  const [multiple1, setMultiple1] = useState<number>(1);
+  const [multiple2, setMultiple2] = useState<number>(1);
   // const [recommendOption, setRecommendOption] = useState<OptionType>();
   // const totalCharacters = useSelector(
   //   (state: any) => state.TotalCharacters.count,
   // );
   const { t } = useTranslation();
   const fetcher = useFetcher<any>();
+  const recalculateFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
 
@@ -86,7 +87,39 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         console.log("fetcher.data.data.response: ", fetcher.data.data.response);
         let credits = 0;
         Object.entries(fetcher.data.data.response).forEach(([key, value]) => {
-          if (value !== null && (key !== 'id' && key !== 'translationId' && key !== 'createTime' && key !== 'updateTime')) {  // 排除 id 字段
+          if (value !== null && (key !== 'id' && key !== 'translationId' && key !== 'createTime' && key !== 'updateTime' && key !== 'shopName')) {  // 排除 id 字段
+            credits += value as number;
+          } else {
+            recalculateFetcher.submit({
+              recalculate: JSON.stringify(true),
+            }, {
+              method: "post",
+              action: "/app",
+            });
+          }
+        });
+        setCredits(credits);
+      } else {
+        recalculateFetcher.submit({
+          recalculate: JSON.stringify(true),
+        }, {
+          method: "post",
+          action: "/app",
+        });
+      }
+    }
+  }, [fetcher.data]);
+
+  useEffect(() => {
+    if (recalculateFetcher.data) {
+      console.log("recalculateFetcher.data: ", recalculateFetcher.data);
+      if (recalculateFetcher.data.data.success) {
+        console.log("recalculateFetcher.data.data.response: ", recalculateFetcher.data.data.response);
+        const { id, translationId, shopName, ...rest } = recalculateFetcher.data.data.response;
+        let credits = 0;
+        console.log("rest: ", rest);
+        Object.entries(rest).forEach(([key, value]) => {
+          if (value !== null) {
             credits += value as number;
           } else {
             setCredits(-1);
@@ -98,7 +131,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         setCredits(-1);
       }
     }
-  }, [fetcher.data]);
+  }, [recalculateFetcher.data]);
 
   useEffect(() => {
     if (payFetcher.data) {
@@ -238,10 +271,24 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
       onCancel={onCancel}
       width={1000}
       footer={[
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <div >
-            <Text strong>{t("Cost questions: ")}</Text>
-            <Button type="link" onClick={() => handleContactSupport()} style={{ marginLeft: "-15px" }}>{t("Contact support")}</Button>
+        <div
+          key="footer-container"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end"
+          }}
+        >
+          <div key="support-section">
+            <Text strong key="cost-question">{t("Cost questions: ")}</Text>
+            <Button
+              key="contact-support"
+              type="link"
+              onClick={() => handleContactSupport()}
+              style={{ marginLeft: "-15px" }}
+            >
+              {t("Contact support")}
+            </Button>
           </div>
           <Button
             key="buy-now"
@@ -250,20 +297,20 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
             disabled={buyButtonLoading}
             loading={buyButtonLoading}
             style={{
-              height: 'auto',     // 允许按钮高度自适应
-              paddingTop: '4px',  // 增加上下内边距
+              height: 'auto',
+              paddingTop: '4px',
               paddingBottom: '4px'
             }}
           >
-            <div style={{
+            <div key="button-content" style={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center'
             }}>
-              <Text strong style={{ color: 'inherit' }}>
+              <Text key="price" strong style={{ color: 'inherit' }}>
                 ${selectedOption?.price.currentPrice ?? 0}
               </Text>
-              <Text style={{ color: 'inherit' }}>
+              <Text key="buy-text" style={{ color: 'inherit' }}>
                 {t("Buy now")}
               </Text>
             </div>
@@ -285,7 +332,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <Title level={5}>{t("Translation tasks")}</Title>
-          <Title level={5} style={{ marginTop: "0px" }}>{t("Credits")}</Title>
+          <Title level={5} style={{ marginTop: "0px" }}>{t("Credits to be consumed")}</Title>
         </div>
         <Divider style={{ margin: "10px 0" }} />
         <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -325,7 +372,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         marginBottom: "10px"
       }}>
         <Title level={5} style={{ marginBottom: "0px" }}>{t("Buy credits")}</Title>
-        <Text type="secondary">1{t("word")} = 1token</Text>
+        <Text type="secondary">1{t("word")} = 1{t("credit")}</Text>
       </div>
       <div className="options_wrapper">
         <Space direction="vertical">
