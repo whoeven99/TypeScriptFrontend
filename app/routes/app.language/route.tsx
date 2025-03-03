@@ -486,7 +486,7 @@ const Index = () => {
       published: lang.published,
       loading: false,
     }));
-    dispatch(setTableData(data.reverse()));
+    dispatch(setTableData(data));
   }, [shopLanguagesLoad]); // 依赖 shopLanguagesLoad 和 status
 
   useEffect(() => {
