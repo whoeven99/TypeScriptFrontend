@@ -112,7 +112,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           (item) => item.locale,
         );
         await InsertTargets({
-          request,
+          shop,
+          accessToken: accessToken!,
           source: shopPrimaryLanguage[0].locale,
           targets: shopLocalesIndex,
         });
@@ -155,18 +156,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const languageLocaleInfo = await GetLanguageLocaleInfo({
           locale: shopLocalesIndex,
         });
-
-        const Ccreatetime = new Date()
-        await InsertTargets({
-          request,
-          source: shopPrimaryLanguage[0].locale,
-          targets: shopLocalesIndex,
-        });
-        const Cendtime = new Date();
-
-        console.log("Ccreatetime: ", Ccreatetime);
-        console.log("Cendtime: ", Cendtime);
-        console.log("Ctiming: ", Cendtime.getTime() - Ccreatetime.getTime());
 
         const Dcreatetime = new Date()
         const languages = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });

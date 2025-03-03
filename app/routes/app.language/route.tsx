@@ -52,6 +52,7 @@ import TranslationWarnModal from "~/components/translationWarnModal";
 // import ProgressingCard from "~/components/progressingCard";
 import { updateState } from "~/store/modules/translatingResourceType";
 import PreviewModal from "~/components/previewModal";
+import ScrollNotice from "~/components/ScrollNotice";
 
 const { Title, Text } = Typography;
 
@@ -485,8 +486,6 @@ const Index = () => {
       published: lang.published,
       loading: false,
     }));
-
-
     dispatch(setTableData(data));
   }, [shopLanguagesLoad]); // 依赖 shopLanguagesLoad 和 status
 
@@ -780,11 +779,9 @@ const Index = () => {
 
   return (
     <>
-      {showWarnModal && (
-        <TranslationWarnModal show={showWarnModal} setShow={setShowWarnModal} />
-      )}
       <Page>
         <TitleBar title={t("Language")} />
+        <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div>
             <Title style={{ fontSize: "1.25rem", display: "inline" }}>
@@ -870,6 +867,9 @@ const Index = () => {
           allMarket={allMarket}
         />
         {/* </Suspense> */}
+        {showWarnModal && (
+          <TranslationWarnModal show={showWarnModal} setShow={setShowWarnModal} />
+        )}
       </Page>
     </>
   );
