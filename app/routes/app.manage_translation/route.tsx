@@ -18,6 +18,7 @@ import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { updateData } from "~/store/modules/languageItemsData";
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
+import ScrollNotice from "~/components/ScrollNotice";
 
 interface ManageMenuDataType {
   label: string;
@@ -937,6 +938,7 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Manage Translation")} />
+      <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
       {!loading && !menuData?.length ? (
         <div
           style={{

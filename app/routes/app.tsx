@@ -98,6 +98,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           await AddDefaultLanguagePack({ request });
         if (!data?.addUserFreeSubscription)
           await AddUserFreeSubscription({ shop });
+        const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
+          shop,
+          accessToken,
+        });
+        const shopPrimaryLanguage = shopLanguagesIndex.filter(
+          (language) => language.primary,
+        );
+        const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
+          (language) => !language.primary,
+        );
+        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
+          (item) => item.locale,
+        );
+        await InsertTargets({
+          shop,
+          accessToken: accessToken!,
+          source: shopPrimaryLanguage[0].locale,
+          targets: shopLocalesIndex,
+        });
+
+        return null
       } catch (error) {
         console.error("Error loading app:", error);
         return json({ error: "Error loading app" }, { status: 500 });
@@ -135,18 +156,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const languageLocaleInfo = await GetLanguageLocaleInfo({
           locale: shopLocalesIndex,
         });
-
-        const Ccreatetime = new Date()
-        await InsertTargets({
-          request,
-          source: shopPrimaryLanguage[0].locale,
-          targets: shopLocalesIndex,
-        });
-        const Cendtime = new Date();
-
-        console.log("Ccreatetime: ", Ccreatetime);
-        console.log("Cendtime: ", Cendtime);
-        console.log("Ctiming: ", Cendtime.getTime() - Ccreatetime.getTime());
 
         const Dcreatetime = new Date()
         const languages = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });

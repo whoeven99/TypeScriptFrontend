@@ -32,6 +32,7 @@ import { setStatusState, setTableData } from "~/store/modules/languageTableData"
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import TranslationWarnModal from "~/components/translationWarnModal";
 import PaymentModal from "~/components/paymentModal";
+import ScrollNotice from "~/components/ScrollNotice";
 
 const { Title, Text } = Typography;
 
@@ -68,7 +69,7 @@ const Index = () => {
     const [translateSettings1, setTranslateSettings1] = useState<string>("1");
     const [translateSettings2, setTranslateSettings2] = useState<string>("1");
     const [translateSettings3, setTranslateSettings3] = useState<string[]>(["Products", "Collection", "Article", "Blog titles", "Pages", "Filters", "Metaobjects", "Navigation", "Shop", "Theme", "Delivery", "Shipping"]);
-    const [modal, setModal] = useState<string>("");    
+    const [modal, setModal] = useState<string>("");
     const [translateSettings4, setTranslateSettings4] = useState<string>("1");
     const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
     const [showWarnModal, setShowWarnModal] = useState(false);
@@ -218,7 +219,7 @@ const Index = () => {
             fetcher.submit(formData, {
                 method: "post",
                 action: "/app/language",
-            }); 
+            });
             setSource(languageSetting?.primaryLanguageCode);
             setTarget(selectedLanguageCode);
             // 提交表单请求
@@ -454,6 +455,7 @@ const Index = () => {
     return (
         <Page>
             <TitleBar title={t("Translate Store")} />
+            <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
             <Space direction="vertical" size="middle" style={{ display: "flex" }}>
                 <div
                     style={{
@@ -544,7 +546,7 @@ const Index = () => {
                                                         marginRight: "8px"
                                                     }}
                                                 />
-                                                <span>{lang.name}({lang.localeName})</span>
+                                                <span>{lang.name}</span>
                                             </div>
                                         </Radio>
                                     ))}
@@ -645,7 +647,7 @@ const Index = () => {
                 )}
             </Space>
             {showWarnModal && (
-                <PaymentModal visible={showWarnModal} setVisible={setShowWarnModal} source={source} target={target} modal={modal}/>
+                <PaymentModal visible={showWarnModal} setVisible={setShowWarnModal} source={source} target={target} modal={modal} />
             )}
         </Page>
     );

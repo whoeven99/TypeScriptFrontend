@@ -20,7 +20,11 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
-export const GetUserInitTokenByShopName = async ({ shop }: { shop: string }) => {
+export const GetUserInitTokenByShopName = async ({
+  shop,
+}: {
+  shop: string;
+}) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/userTypeToken/getUserInitTokenByShopName`,
@@ -35,7 +39,17 @@ export const GetUserInitTokenByShopName = async ({ shop }: { shop: string }) => 
   }
 };
 
-export const getCredits = async ({ shop, accessToken, target, source }: { shop: string, accessToken: string, target: string, source: string }) => {
+export const getCredits = async ({
+  shop,
+  accessToken,
+  target,
+  source,
+}: {
+  shop: string;
+  accessToken: string;
+  target: string;
+  source: string;
+}) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/userTypeToken/getUserToken`,
@@ -230,16 +244,18 @@ export const InsertShopTranslateInfo = async ({
 
 //批量更新语言数据
 export const InsertTargets = async ({
-  request,
+  shop,
+  accessToken,
   source,
   targets,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   source: string;
   targets: string[];
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  console.log(`${shop} source: `, source);
+  console.log(`${shop} targets: `, targets);
 
   // 创建异步任务
   const insertTask = async () => {

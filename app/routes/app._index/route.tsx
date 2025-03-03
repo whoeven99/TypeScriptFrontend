@@ -20,6 +20,7 @@ import PreviewModal from "~/components/previewModal";
 import UserGuideCard from "~/routes/app._index/components/userGuideCard";
 import ContactCard from "~/routes/app._index/components/contactCard";
 import PreviewCard from "./components/previewCard";
+import ScrollNotice from "~/components/ScrollNotice";
 
 const { Title, Text } = Typography;
 
@@ -208,6 +209,7 @@ const Index = () => {
     <Suspense fallback={<div>{t("loading")}</div>}>
       <Page>
         <TitleBar title={t("Dashboard")} />
+        <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
         <Space direction="vertical" size="large" style={{ display: "flex" }}>
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
             <div style={{ paddingLeft: "8px" }}>

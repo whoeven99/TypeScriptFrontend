@@ -40,6 +40,7 @@ import CurrencyEditModal from "./components/currencyEditModal";
 import { setTableData } from "~/store/modules/currencyDataTable";
 import SwitcherSettingCard from "./components/switcherSettingCard";
 import { useTranslation } from "react-i18next";
+import ScrollNotice from "~/components/ScrollNotice";
 
 const { Title, Text } = Typography;
 
@@ -597,6 +598,7 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Currency")}></TitleBar>
+      <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <SwitcherSettingCard
           settingUrl={settingUrl}
