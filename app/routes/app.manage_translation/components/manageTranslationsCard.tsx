@@ -76,7 +76,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   return (
     <Card>
       <Space direction="vertical" size="small" style={{ display: "flex" }}>
-        <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+        <Title style={{ fontSize: "1.5rem", display: "inline" }}>
           {cardTitle}
         </Title>
         <Table

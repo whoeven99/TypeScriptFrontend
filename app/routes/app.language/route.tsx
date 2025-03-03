@@ -49,7 +49,7 @@ import PrimaryLanguage from "./components/primaryLanguage";
 import PublishModal from "./components/publishModal";
 import AddLanguageModal from "./components/addLanguageModal";
 import TranslationWarnModal from "~/components/translationWarnModal";
-import ProgressingCard from "~/components/progressingCard";
+// import ProgressingCard from "~/components/progressingCard";
 import { updateState } from "~/store/modules/translatingResourceType";
 import PreviewModal from "~/components/previewModal";
 
@@ -230,7 +230,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         try {
           const words = await GetUserWords({ shop });
           if (words) {
-            if (words.chars > words.totalChars) {
+            if (words.chars >= words.totalChars) {
               return json({
                 success: false, message: "user words limit", data: {
                   source: translation.primaryLanguage,
@@ -485,9 +485,7 @@ const Index = () => {
       published: lang.published,
       loading: false,
     }));
-
-
-    dispatch(setTableData(data));
+    dispatch(setTableData(data.reverse()));
   }, [shopLanguagesLoad]); // 依赖 shopLanguagesLoad 和 status
 
   useEffect(() => {
