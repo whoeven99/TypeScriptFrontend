@@ -6,7 +6,7 @@ import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import { Outlet, useFetcher, useLocation } from "@remix-run/react";
+import { Outlet, useFetcher, useLoaderData, useLocation } from "@remix-run/react";
 import AttentionCard from "~/components/attentionCard";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
@@ -18,6 +18,7 @@ import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { updateData } from "~/store/modules/languageItemsData";
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
+import ScrollNotice from "~/components/ScrollNotice";
 
 interface ManageMenuDataType {
   label: string;
@@ -39,8 +40,17 @@ interface FetchType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-  return null;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
+    shop,
+    accessToken,
+  });
+  // const words = await GetUserWords({ shop });
+  return json({
+    shopLanguages: shopLanguages,
+    // words: words,
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -73,17 +83,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const themeItems = JSON.parse(formData.get("themeItems") as string);
     const deliveryItems = JSON.parse(formData.get("deliveryItems") as string);
     const shippingItems = JSON.parse(formData.get("shippingItems") as string);
-    switch (true) {
-      case !!loading:
-        const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-          shop,
-          accessToken,
-        });
-        const words = await GetUserWords({ shop });
-        return json({
-          shopLanguagesLoad: shopLanguagesLoad,
-          words: words,
-        });
+    switch (true) {        
       case !!productsItems:
         try {
           const data = await GetTranslationItemsInfo({
@@ -362,20 +362,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  // const { shopLanguagesLoad, words } = useLoaderData<typeof loader>();
-  const [words, setWords] = useState<WordsType>();
-  const [shopLanguages, setShopLanguages] = useState<ShopLocalesType[]>();
+  const { shopLanguages } = useLoaderData<typeof loader>();
+  // const [words, setWords] = useState<WordsType>();
+  // const [shopLanguages, setShopLanguages] = useState<ShopLocalesType[]>();
   const [menuData, setMenuData] = useState<ManageMenuDataType[]>([]);
   const [primaryLanguage, setPrimaryLanguage] = useState<string>();
   const [current, setCurrent] = useState<string>("");
-  const [disable, setDisable] = useState<boolean>(false);
+  // const [disable, setDisable] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const location = useLocation();
   const { key } = location.state || {}; // 提取传递的状态
   const items = useSelector((state: any) => state.languageItemsData);
-  const fetcher = useFetcher<FetchType>();
+  // const fetcher = useFetcher<FetchType>();
   const productsFetcher = useFetcher<any>();
   const collectionsFetcher = useFetcher<any>();
   const articlesFetcher = useFetcher<any>();
@@ -611,22 +611,22 @@ const Index = () => {
       navigation: "shipping",
     },
   ];
-  useEffect(() => {
-    const formData = new FormData();
-    formData.append("loading", JSON.stringify(true));
-    fetcher.submit(formData, {
-      method: "post",
-      action: "/app/manage_translation",
-    });
-    shopify.loading(true);
-  }, []);
+  // useEffect(() => {
+  //   const formData = new FormData();
+  //   formData.append("loading", JSON.stringify(true));
+  //   fetcher.submit(formData, {
+  //     method: "post",
+  //     action: "/app/manage_translation",
+  //   });
+  //   shopify.loading(true);
+  // }, []);
 
-  useEffect(() => {
-    if (fetcher.data) {
-      setShopLanguages(fetcher.data.shopLanguagesLoad);
-      setWords(fetcher.data.words);
-    }
-  }, [fetcher.data]);
+  // useEffect(() => {
+  //   if (fetcher.data) {
+  //     setShopLanguages(fetcher.data.shopLanguagesLoad);
+  //     setWords(fetcher.data.words);
+  //   }
+  // }, [fetcher.data]);
 
   useEffect(() => {
     if (productsFetcher.data) {
@@ -712,9 +712,9 @@ const Index = () => {
     }
   }, [shippingFetcher.data]);
 
-  useEffect(() => {
-    if (words && words.chars > words.totalChars) setDisable(true);
-  }, [words]);
+  // useEffect(() => {
+  //   if (words && words.chars > words.totalChars) setDisable(true);
+  // }, [words]);
 
   useEffect(() => {
     if (shopLanguages && shopLanguages?.length) {
@@ -938,6 +938,7 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Manage Translation")} />
+      <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
       {!loading && !menuData?.length ? (
         <div
           style={{

@@ -33,6 +33,7 @@ import UpdateGlossaryModal from "./components/updateGlossaryModal";
 import { WarningOutlined } from "@ant-design/icons";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { useTranslation } from "react-i18next";
+import ScrollNotice from "~/components/ScrollNotice";
 
 const { Title, Text } = Typography;
 
@@ -326,92 +327,87 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Glossary")} />
-      <div>
-        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <div>
-            <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-              {t("Glossary")}
-            </Title>
-            <div>
-              <Text>
-                {t("Create translation rules for certain words and phrases")}
-              </Text>
-            </div>
-          </div>
-          {loading ? (
-            <div className="languageTable_action">
-              <Flex
-                align="center"
-                justify="space-between" // 使按钮左右分布
-                style={{ width: "100%", marginBottom: "16px" }}
-              >
-                <Skeleton.Button active />
-                <Skeleton.Button active />
-              </Flex>
-              <Table columns={columns} loading style={{ width: "100%" }} />
-            </div>
-          ) : !shopLocales?.length ? (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                minHeight: "90vh",
-              }}
+      <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
+      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+          {t("Glossary")}
+        </Title>
+        <Text>
+          {t("Create translation rules for certain words and phrases")}
+        </Text>
+        {loading ? (
+          <div className="languageTable_action">
+            <Flex
+              align="center"
+              justify="space-between" // 使按钮左右分布
+              style={{ width: "100%", marginBottom: "16px" }}
             >
-              <NoLanguageSetCard />
-            </div>
-          ) : (
-            <div className="languageTable_action">
-              <Flex
-                align="center"
-                justify="space-between" // 使按钮左右分布
-                style={{ width: "100%", marginBottom: "16px" }}
-              >
-                <Flex align="center" gap="middle">
+              <Skeleton.Button active />
+              <Skeleton.Button active />
+            </Flex>
+            <Table columns={columns} loading style={{ width: "100%" }} />
+          </div>
+        ) : !shopLocales?.length ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: "90vh",
+            }}
+          >
+            <NoLanguageSetCard />
+          </div>
+        ) : (
+          <div className="languageTable_action">
+            <Flex
+              align="center"
+              justify="space-between" // 使按钮左右分布
+              style={{ width: "100%", marginBottom: "16px" }}
+            >
+              <Flex align="center" gap="middle">
+                <Button
+                  type="primary"
+                  onClick={handleDelete}
+                  disabled={!hasSelected}
+                  loading={deleteLoading}
+                >
+                  {t("Delete")}
+                </Button>
+                {hasSelected
+                  ? `${t("Selected")}${selectedRowKeys.length}${t("items")}`
+                  : null}
+              </Flex>
+              <div>
+                <Space>
                   <Button
                     type="primary"
-                    onClick={handleDelete}
-                    disabled={!hasSelected}
-                    loading={deleteLoading}
+                    onClick={() => handleIsModalOpen("Create rule", -1)}
                   >
-                    {t("Delete")}
+                    {t("Create rule")}
                   </Button>
-                  {hasSelected
-                    ? `${t("Selected")}${selectedRowKeys.length}${t("items")}`
-                    : null}
-                </Flex>
-                <div>
-                  <Space>
-                    <Button
-                      type="primary"
-                      onClick={() => handleIsModalOpen("Create rule", -1)}
-                    >
-                      {t("Create rule")}
-                    </Button>
-                  </Space>
-                </div>
-              </Flex>
-              <Suspense fallback={<Skeleton active />}>
-                <Table
-                  rowSelection={rowSelection}
-                  columns={columns}
-                  loading={deleteLoading || loading}
-                  dataSource={dataSource}
-                  style={{ width: "100%" }}
-                />
-              </Suspense>
-            </div>
-          )}
-        </Space>
-        <UpdateGlossaryModal
-          id={glossaryModalId}
-          title={title}
-          isVisible={isGlossaryModalOpen}
-          setIsModalOpen={setIsGlossaryModalOpen}
-          shopLocales={shopLocales}
-        />
-      </div>
+                </Space>
+              </div>
+            </Flex>
+            <Suspense fallback={<Skeleton active />}>
+              <Table
+                rowSelection={rowSelection}
+                columns={columns}
+                loading={deleteLoading || loading}
+                dataSource={dataSource}
+                style={{ width: "100%" }}
+              />
+            </Suspense>
+          </div>
+        )}
+      </Space>
+      <UpdateGlossaryModal
+        id={glossaryModalId}
+        title={title}
+        isVisible={isGlossaryModalOpen}
+        setIsModalOpen={setIsGlossaryModalOpen}
+        shopLocales={shopLocales}
+      />
     </Page>
   );
 };
