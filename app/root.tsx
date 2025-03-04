@@ -206,6 +206,48 @@ export default function App() {
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
           <meta name="shopify-debug" content="web-vitals" />
+          {/* <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (async function() {  // 使用立即执行的异步函数
+                  try {
+                    console.log('Script loaded');
+                    
+                    async function processWebVitals(metrics) {
+                      try {
+                        const monitorUrl = 'https://typescriptfrontend.onrender.com';
+                        const data = JSON.stringify(metrics);
+                        console.log("metrics: ", data);
+                        
+                        navigator.sendBeacon(monitorUrl, data);
+                        return data;
+                      } catch (err) {
+                        console.error('Error in processWebVitals:', err);
+                      }
+                    }
+
+                    // 安全地访问 shopify 对象
+                    if (typeof window !== 'undefined' && window.shopify) {
+                      console.log("Shopify object found");
+                      
+                      if (window.shopify.webVitals) {
+                        console.log("WebVitals found");
+                        await window.shopify.webVitals.onReport(processWebVitals);
+                        console.log("shopify.webVitals: ", await window.shopify.webVitals.onReport(processWebVitals));
+                      } else {
+                        console.log("WebVitals not available");
+                      }
+                    } else {
+                      console.log("Shopify object not found");
+                    }
+                  } catch (error) {
+                    console.error('Script error:', error);
+                  }
+                })();  // 立即执行
+              `
+            }}
+          /> */}
           <link rel="preconnect" href="https://cdn.shopify.com/" />
           <link
             rel="stylesheet"
@@ -223,6 +265,7 @@ export default function App() {
             src="//code.tidio.co/inl4rrmds8vvbldv1k6gyc2nzxongl3p.js"
             async
           ></script>
+          <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
         </body>
       </html>
     </Provider>

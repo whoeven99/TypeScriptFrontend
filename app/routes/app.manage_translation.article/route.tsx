@@ -499,7 +499,7 @@ const Index = () => {
 
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
-    navigate("/app/manage_translation"); // 跳转到 /app/manage_translation
+    navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
   };
 
   return (

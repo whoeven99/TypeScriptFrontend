@@ -424,13 +424,6 @@ const Index = () => {
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
 
-  useEffect(() => {
-    if (!isVisible) {
-      // Modal 已关闭后再进行路由跳转
-      navigate("/app/manage_translation");
-    }
-  }, [isVisible]);
-
   const resourceColumns = [
     {
       title: t("Resource"),
@@ -849,7 +842,7 @@ const Index = () => {
   };
 
   const onCancel = () => {
-    navigate("/app/manage_translation");
+    navigate(`/app/manage_translation?language=${searchTerm}`);
     setIsVisible(false); // 关闭 Modal
   };
 
