@@ -206,7 +206,7 @@ export default function App() {
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
           <meta name="shopify-debug" content="web-vitals" />
-          <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+          {/* <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
           <script
             dangerouslySetInnerHTML={{
               __html: `
@@ -216,7 +216,7 @@ export default function App() {
                     
                     async function processWebVitals(metrics) {
                       try {
-                        const monitorUrl = 'https://typescriptfrontend.onrender.com/web-vitals-metrics';
+                        const monitorUrl = 'https://typescriptfrontend.onrender.com';
                         const data = JSON.stringify(metrics);
                         console.log("metrics: ", data);
                         
@@ -247,7 +247,7 @@ export default function App() {
                 })();  // 立即执行
               `
             }}
-          />
+          /> */}
           <link rel="preconnect" href="https://cdn.shopify.com/" />
           <link
             rel="stylesheet"
