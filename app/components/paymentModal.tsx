@@ -194,7 +194,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         comparedPrice: 20.0,
         currencyCode: "USD",
       },
-      // test: true,
     },
     {
       key: "option-3",
@@ -215,7 +214,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         comparedPrice: 200.0,
         currencyCode: "USD",
       },
-      // test: true,
     },
     {
       key: "option-5",

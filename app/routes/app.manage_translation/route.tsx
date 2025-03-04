@@ -46,9 +46,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     shop,
     accessToken,
   });
+  const url = new URL(request.url);
+  const languageCode = url.searchParams.get('language');
   // const words = await GetUserWords({ shop });
   return json({
     shopLanguages: shopLanguages,
+    languageCode: languageCode
     // words: words,
   });
 };
@@ -83,7 +86,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const themeItems = JSON.parse(formData.get("themeItems") as string);
     const deliveryItems = JSON.parse(formData.get("deliveryItems") as string);
     const shippingItems = JSON.parse(formData.get("shippingItems") as string);
-    switch (true) {        
+    switch (true) {
       case !!productsItems:
         try {
           const data = await GetTranslationItemsInfo({
@@ -362,7 +365,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shopLanguages } = useLoaderData<typeof loader>();
+  const { shopLanguages, languageCode } = useLoaderData<typeof loader>();
   // const [words, setWords] = useState<WordsType>();
   // const [shopLanguages, setShopLanguages] = useState<ShopLocalesType[]>();
   const [menuData, setMenuData] = useState<ManageMenuDataType[]>([]);
@@ -729,11 +732,15 @@ const Index = () => {
           key: language.locale,
         }));
       setMenuData(newArray);
-      setCurrent(newArray[0]?.key);
+      if (!languageCode) {
+        setCurrent(newArray[0]?.key);
+      } else {
+        setCurrent(languageCode);
+      }
       shopify.loading(false);
       setLoading(false);
     }
-  }, [shopLanguages]);
+  }, []);
 
   useEffect(() => {
     const foundItem = menuData?.find((item) => item.key === key);
@@ -976,7 +983,7 @@ const Index = () => {
                 />
               </div>
             ) : (
-              <Skeleton.Button active block/>
+              <Skeleton.Button active block />
             )}
 
             <div className="manage-content-wrap">

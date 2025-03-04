@@ -742,25 +742,37 @@ export const updateManageTranslation = async ({
     };
   }[] = [];
 
-  const itemsToUpdate = confirmData.filter(
-    (item) =>
-      item.value &&
-      item.value !== "<h1><br></h1>" &&
-      item.value !== "<h2><br></h2>" &&
-      item.value !== "<h3><br></h3>" &&
-      item.value !== "<p><br></p>" &&
-      item.value !== "",
-  );
+  console.log("confirmData: ", confirmData);
 
-  const itemsToDelete = confirmData.filter(
-    (item) =>
-      !item.value ||
-      item.value === "<h1><br></h1>" ||
-      item.value === "<h2><br></h2>" ||
-      item.value === "<h3><br></h3>" ||
-      item.value === "<p><br></p>" ||
-      item.value === "",
-  );
+  confirmData.filter((item) => {
+    // 移除所有 HTML 标签，只保留文本内容
+    const textContent = item.value?.replace(/<[^>]*>/g, "").trim();
+    console.log("Original:", item.value);
+    console.log("Text content:", textContent);
+
+    // 如果没有文本内容，返回 false（将被过滤掉）
+    return textContent !== "";
+  });
+
+  const itemsToUpdate = confirmData.filter((item) => {
+    if (!item.value) return false;
+
+    // 移除所有 HTML 标签
+    const textContent = item.value.replace(/<[^>]*>/g, "").trim();
+
+    // 如果有实际文本内容则保留
+    return textContent !== "";
+  });
+
+  const itemsToDelete = confirmData.filter((item) => {
+    if (!item.value) return true;
+
+    // 移除所有 HTML 标签
+    const textContent = item.value.replace(/<[^>]*>/g, "").trim();
+
+    // 如果没有实际文本内容则删除
+    return textContent === "";
+  });
 
   console.log("itemsToDelete: ", itemsToDelete);
   console.log("itemsToUpdate: ", itemsToUpdate);

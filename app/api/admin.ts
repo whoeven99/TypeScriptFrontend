@@ -1478,7 +1478,6 @@ export const mutationShopLocaleEnable = async ({
           target: language,
         },
       });
-      console.log("serveResponse: ", serveResponse.data.response);
       if (
         serveResponse.status >= 200 &&
         serveResponse.status < 300 &&
