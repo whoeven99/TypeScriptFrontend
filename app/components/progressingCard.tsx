@@ -1,78 +1,178 @@
 import React, { useEffect, useState } from "react";
-import { Card, Progress, Space, Typography } from "antd";
+import { Button, Card, Progress, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { updateState } from "~/store/modules/translatingResourceType";
+import { useFetcher } from "@remix-run/react";
+import { PhoneOutlined } from "@ant-design/icons";
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 interface ProgressingCardProps {
+    source: string;
 }
 
 const ProgressingCard: React.FC<ProgressingCardProps> = ({
+    source,
 }) => {
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const [data, setData] = useState<any>(null);
     const [item, setItem] = useState("Products");
+    const [target, setTarget] = useState<string>("");
+    const [resourceType, setResourceType] = useState<string>("");
+    const [progress, setProgress] = useState<number>(0);
+    const [status, setStatus] = useState<number>(0);
     const { t } = useTranslation();
-    const resourceType = useSelector((state: any) => {
-        return state.translatingResourceType.resourceType;
-    });
-    console.log(resourceType);
-    const target = useSelector((state: any) =>
-        state.languageTableData.rows.find(
-            (item: any) => item.status === 2,
-        ),
-    );
+    const fetcher = useFetcher<any>();
+    const statusFetcher = useFetcher<any>();
+    // const target = useSelector((state: any) =>
+    //     state.languageTableData.rows.find(
+    //         (item: any) => item.status === 2,
+    //     ),
+    // );
 
-    const dispatch = useDispatch();
+    useEffect(() => {
+        fetcher.submit({
+            translatingLanguage: JSON.stringify(source),
+        }, {
+            method: "POST",
+            action: "/app",
+        });
+    }, []);
 
-    const RESOURCE_TYPES = [
-        'PRODUCT',
-        'PRODUCT_OPTION',
-        'PRODUCT_OPTION_VALUE',
+    useEffect(() => {
+        if (fetcher.data) {
+            if (fetcher.data.success) {
+                setData(fetcher.data.data);
+            }
+        }
+    }, [fetcher.data]);
 
-        'COLLECTION',
+    useEffect(() => {
+        if (data) {
+            console.log("data: ", data);
+            setTarget(data.target);
+            setStatus(data.status);
+            setResourceType(data.resourceType);
+        }
+    }, [data]);
 
-        'ONLINE_STORE_THEME',
-        'ONLINE_STORE_THEME_APP_EMBED',
-        'ONLINE_STORE_THEME_JSON_TEMPLATE',
-        'ONLINE_STORE_THEME_SECTION_GROUP',
-        'ONLINE_STORE_THEME_SETTINGS_CATEGORY',
-        'ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS',
+    useEffect(() => {
+        if (status === 2) {
+            const formData = new FormData();
+            formData.append(
+                "statusData",
+                JSON.stringify({
+                    source: source,
+                    target: [target],
+                }),
+            );
+            const timeoutId = setTimeout(() => {
+                statusFetcher.submit(formData, {
+                    method: "post",
+                    action: "/app",
+                });
+            }, 2000); // 2秒延时
+            // 在组件卸载时清除定时器
+            return () => clearTimeout(timeoutId);
+        }
+    }, [status]);
 
-        'PACKING_SLIP_TEMPLATE',
+    useEffect(() => {
+        if (statusFetcher.data) {
+            if (statusFetcher.data.data) {
+                console.log(statusFetcher.data.data);
+                if (statusFetcher.data.data[0].status === 2) {
+                    setStatus(statusFetcher.data.data[0].status);
+                    setResourceType(statusFetcher.data.data[0].resourceType);
+                } else {
+                    setStatus(statusFetcher.data.data[0].status);
+                    setResourceType("");
+                }
+            }
+        }
+    }, [statusFetcher.data]);
 
-        'SHOP_POLICY',
+    // useEffect(() => {
+    //     if (target) {
+    //         statusFetcher.submit({
+    //             statusData: JSON.stringify({
+    //                 source: source,
+    //                 target: [target],
+    //             }),
+    //         }, {
+    //             method: "POST",
+    //             action: "/app",
+    //         });
+    //     }
+    // }, [target]);
 
-        'EMAIL_TEMPLATE',
+    // useEffect(() => {
+    //     if (statusFetcher.data) {
+    //         if (statusFetcher.data.data) {
+    //             const statusData = statusFetcher.data.data.find((item: any) => item.status === 2);
+    //             console.log(statusData);
+    //             if (statusData) {
+    //                 // setResourceType(statusData.resourceType);
+    //                 setResourceType(statusData.resourceType);
+    //             }
+    //         }
+    //     }
+    // }, [statusFetcher.data]);
 
-        'ONLINE_STORE_THEME_LOCALE_CONTENT',
+    useEffect(() => {
+        if (resourceType) {
+            const progress = calculateProgressByType(resourceType);
+            setProgress(progress);
+        }
+    }, [resourceType]);
 
-        'MENU',
+    // const RESOURCE_TYPES = [
+    //     'PRODUCT',
+    //     'PRODUCT_OPTION',
+    //     'PRODUCT_OPTION_VALUE',
 
-        'LINK',
+    //     'COLLECTION',
 
-        'DELIVERY_METHOD_DEFINITION',
+    //     'ONLINE_STORE_THEME',
+    //     'ONLINE_STORE_THEME_APP_EMBED',
+    //     'ONLINE_STORE_THEME_JSON_TEMPLATE',
+    //     'ONLINE_STORE_THEME_SECTION_GROUP',
+    //     'ONLINE_STORE_THEME_SETTINGS_CATEGORY',
+    //     'ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS',
 
-        'FILTER',
+    //     'PACKING_SLIP_TEMPLATE',
 
-        'METAFIELD',
+    //     'SHOP_POLICY',
 
-        'METAOBJECT',
+    //     'EMAIL_TEMPLATE',
 
-        'PAYMENT_GATEWAY',
+    //     'ONLINE_STORE_THEME_LOCALE_CONTENT',
 
-        'SELLING_PLAN',
-        'SELLING_PLAN_GROUP',
+    //     'MENU',
 
-        'SHOP',
+    //     'LINK',
 
-        'ARTICLE',
+    //     'DELIVERY_METHOD_DEFINITION',
 
-        'BLOG',
+    //     'FILTER',
 
-        'PAGE'
-    ];
+    //     'METAFIELD',
+
+    //     'METAOBJECT',
+
+    //     'PAYMENT_GATEWAY',
+
+    //     'SELLING_PLAN',
+    //     'SELLING_PLAN_GROUP',
+
+    //     'SHOP',
+
+    //     'ARTICLE',
+
+    //     'BLOG',
+
+    //     'PAGE'
+    // ];
 
     const calculateProgressByType = (resourceType: string): number => {
         switch (resourceType) {
@@ -162,29 +262,96 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
         }
     };
 
-
     return (
-        target &&
         <Card
-            title={t("progressing.title")}
         >
+            <Title level={4}>{t("progressing.title")}</Title>
             <Space direction="vertical" style={{ width: '100%' }}>
-                <div>
-                    <Text>{t("progressing.target")}</Text>
-                    <Text>{target.locale}</Text>
-                </div>
-                <div>
-                    <Text>{t("progressing.progressing")}</Text>
-                    <Text>{t(item)}</Text>
-                    <Text>{t("progressing.module")}</Text>
-                </div>
-                <Progress
-                    percent={calculateProgressByType(resourceType)}
-                    status={calculateProgressByType(resourceType) === 100 ? 'success' : 'active'}
-                    percentPosition={{ align: 'end', type: 'inner' }}
-                    size={["100%", 20]}
-                    strokeColor="#001342"
-                />
+                {status !== 0 ?
+                    <Card>
+                        <Space direction="vertical" style={{ width: '100%' }} size="small">
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                width: '100%',  // 确保占满容器宽度
+                                textAlign: 'center',
+                            }}>
+                                {/* 左侧部分 */}
+                                <div style={{
+                                    display: 'flex',
+                                    maxWidth: '33%'  // 限制最大宽度
+                                }}>
+                                    <Text>{t("progressing.target")}</Text>
+                                    <Text>{target}</Text>
+                                </div>
+
+                                {/* 中间部分 */}
+                                <div style={{
+                                    display: 'flex',
+                                    maxWidth: '33%',  // 限制最大宽度
+                                    alignItems: 'center'  // 居中对齐
+                                }}>
+                                    <Text>{t("progressing.progressing")}{" "}</Text>
+                                    <Text>{t(item)}{" "}</Text>
+                                    <Text>{t("progressing.module")}</Text>
+                                </div>
+
+                                {/* 右侧部分 */}
+                                <div style={{
+                                    display: 'flex',
+                                    maxWidth: '33%',  // 限制最大宽度
+                                    alignItems: 'flex-end'  // 右对齐
+                                }}>
+                                    {status === 3 &&
+                                        <Button>
+                                            {t("progressing.buyCredits")}
+                                        </Button>
+                                    }
+                                    {status === 2 &&
+                                        <>
+                                            <Text>
+                                                {t("progressing.remaining")}
+                                            </Text>
+                                            <Text>
+
+                                            </Text>
+                                        </>
+                                    }
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                                <Progress
+                                    percent={status === 1 ? 100 : progress}
+                                    status={status === 1 ? 'success' : 'active'}
+                                    percentPosition={{ align: 'end', type: 'inner' }}
+                                    size={["100%", 20]}
+                                    strokeColor="#001342"
+                                />
+                                {(status === 3 || status === 4) &&
+                                    <Button
+                                        type="primary"
+                                        icon={<PhoneOutlined />}
+                                    >
+                                        {t("contact.contactButton")}
+                                    </Button>
+                                }
+                                {status === 1 &&
+                                    <Button
+                                        type="primary"
+                                        icon={<PhoneOutlined />}
+                                    >
+                                        {t("progressing.publishLanguage")}
+                                    </Button>
+                                }
+                            </div>
+                        </Space>
+                    </Card>
+                    :
+                    <Card>
+                        <Text style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '52px' }}>{t("progressing.noTranslate")}</Text>
+                    </Card>
+                }
             </Space>
         </Card>
     );

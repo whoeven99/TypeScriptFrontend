@@ -80,9 +80,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     // const policiesItems = JSON.parse(formData.get("policiesItems") as string);
     const shopItems = JSON.parse(formData.get("shopItems") as string);
-    const store_metadataItems = JSON.parse(
-      formData.get("store_metadataItems") as string,
-    );
+    // const store_metadataItems = JSON.parse(
+    //   formData.get("store_metadataItems") as string,
+    // );
     const themeItems = JSON.parse(formData.get("themeItems") as string);
     const deliveryItems = JSON.parse(formData.get("deliveryItems") as string);
     const shippingItems = JSON.parse(formData.get("shippingItems") as string);
