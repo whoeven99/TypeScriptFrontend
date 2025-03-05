@@ -21,37 +21,41 @@ export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const language =
       request.headers.get("Accept-Language")?.split(",")[0] || "en";
+    const languageCode = language.split("-")[0];
     let i18nCode;
     switch (true) {
-      case language == "fr":
+      case language === "fr" || (languageCode && languageCode === "fr"):
         i18nCode = "fr";
         break;
-      case language == "de":
+      case language === "de" || (languageCode && languageCode === "de"):
         i18nCode = "de";
         break;
-      case language == "es":
+      case language === "es" || (languageCode && languageCode === "es"):
         i18nCode = "es";
         break;
-      case language == "it":
+      case language === "it" || (languageCode && languageCode === "it"):
         i18nCode = "it";
         break;
-      case language == "nl":
+      case language === "nl" || (languageCode && languageCode === "nl"):
         i18nCode = "nl";
         break;
-      case language == "pt":
+      case language === "pt" || (languageCode && languageCode === "pt"):
         i18nCode = "pt";
         break;
-      case language == "sv":
+      case language === "sv" || (languageCode && languageCode === "sv"):
         i18nCode = "sv";
         break;
-      case language == "ja":
+      case language === "ja" || (languageCode && languageCode === "ja"):
         i18nCode = "ja";
         break;
-      case language == "zh-TW":
+      case language === "zh-TW":
         i18nCode = "zh-TW";
         break;
-      case language == "zh-CN":
-        i18nCode = "zh";
+      case language === "zh-CN" || language === "zh":
+        i18nCode = "zh-CN";
+        break;
+      case language === "ko" || (languageCode && languageCode === "ko"):
+        i18nCode = "ko";
         break;
       default:
         i18nCode = "en";
