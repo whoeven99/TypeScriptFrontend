@@ -66,10 +66,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   console.log("GetTranslateDOByShopNameAndSource: ", data);
   return {
     translatingLanguage: {
-      source: data.response.source,
-      target: data.response.target,
-      status: data.response.status,
-      resourceType: data.response.resourceType,
+      source: data.response?.source || "",
+      target: data.response?.target || "",
+      status: data.response?.status || 0,
+      resourceType: data.response?.resourceType || "",
     }
   };
 
@@ -318,9 +318,9 @@ const Index = () => {
               chars={user.chars}
               totalChars={user.totalChars}
             />
-          ) : (
-            <Skeleton active />
-          )} */}
+            ) : (
+              <Skeleton active />
+            )} */}
             <Card
               bordered={false}
             >
