@@ -130,7 +130,7 @@ const Index = () => {
         if (fetcher.data) {
             if (fetcher.data.success) {
                 message.success(t("The translation task is in progress."));
-                navigate("/app/language");
+                navigate("/app");
             } else {
                 setShowWarnModal(true);
                 const modalSettingOption = translateSettings1Options.find(option => option.value === fetcher.data.data.translateSettings1);

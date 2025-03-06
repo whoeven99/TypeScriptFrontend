@@ -26,6 +26,7 @@ import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import ProgressingCard from "~/components/progressingCard";
+import { GetTranslateDOByShopNameAndSource } from "~/api/serve";
 
 const { Title, Text } = Typography;
 
@@ -61,13 +62,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shopPrimaryLanguage = shopLanguagesLoad.filter(
     (language) => language.primary,
   );
+  const data = await GetTranslateDOByShopNameAndSource({ shop, source: shopPrimaryLanguage[0].locale });
+  console.log("GetTranslateDOByShopNameAndSource: ", data);
   return {
-    shopPrimaryLanguage,
+    translatingLanguage: {
+      source: data.response.source,
+      target: data.response.target,
+      status: data.response.status,
+      resourceType: data.response.resourceType,
+    }
   };
+
 };
 
 const Index = () => {
-  const { shopPrimaryLanguage } = useLoaderData<typeof loader>();
+  const { translatingLanguage } = useLoaderData<typeof loader>();
   // const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
   // const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
   // const [user, setUser] = useState<UserType>();
@@ -258,7 +267,7 @@ const Index = () => {
                 <Button type="primary" onClick={() => navigate("/app/translate", { state: { from: "/app", selectedLanguageCode: "" } })}>{t("transLanguageCard1.button")}</Button>
               </Space>
             </Card>
-            <ProgressingCard source={shopPrimaryLanguage[0].locale} />
+            <ProgressingCard source={translatingLanguage.source} target={translatingLanguage.target} status={translatingLanguage.status} resourceType={translatingLanguage.resourceType} />
             <Row gutter={16}>
               <Col xs={24} sm={24} md={12}>
                 <Card

@@ -62,295 +62,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
-    const productsItems = JSON.parse(formData.get("productsItems") as string);
-    const collectionsItems = JSON.parse(
-      formData.get("collectionsItems") as string,
-    );
-    const articlesItems = JSON.parse(formData.get("articlesItems") as string);
-    const blog_titlesItems = JSON.parse(
-      formData.get("blog_titlesItems") as string,
-    );
-    const pagesItems = JSON.parse(formData.get("pagesItems") as string);
-    const filtersItems = JSON.parse(formData.get("filtersItems") as string);
-    const metaobjectsItems = JSON.parse(
-      formData.get("metaobjectsItems") as string,
-    );
-    const navigationItems = JSON.parse(
-      formData.get("navigationItems") as string,
-    );
-    // const policiesItems = JSON.parse(formData.get("policiesItems") as string);
-    const shopItems = JSON.parse(formData.get("shopItems") as string);
-    // const store_metadataItems = JSON.parse(
-    //   formData.get("store_metadataItems") as string,
-    // );
-    const themeItems = JSON.parse(formData.get("themeItems") as string);
-    const deliveryItems = JSON.parse(formData.get("deliveryItems") as string);
-    const shippingItems = JSON.parse(formData.get("shippingItems") as string);
+    const itemsCount = JSON.parse(formData.get("itemsCount") as string);
     switch (true) {
-      case !!productsItems:
+      case !!itemsCount:
         try {
           const data = await GetTranslationItemsInfo({
             shop,
             accessToken,
-            source: productsItems.source,
-            target: productsItems.target,
-            resourceType: productsItems.resourceType,
+            source: itemsCount.source,
+            target: itemsCount.target,
+            resourceType: itemsCount.resourceType,
           });
-
+          console.log("GetTranslationItemsInfo: ", data);
+          
           return json({ data: data });
         } catch (error) {
-          console.error("Error GetTranslationItemsInfo productsItems:", error);
+          console.error("Error GetTranslationItemsInfo itemsCount:", error);
           return json(
-            { error: "Error GetTranslationItemsInfo productsItems" },
-            { status: 500 },
-          );
-        }
-      case !!collectionsItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: collectionsItems.source,
-            target: collectionsItems.target,
-            resourceType: collectionsItems.resourceType,
-          });
-
-          return json({ data: data });
-        } catch (error) {
-          console.error(
-            "Error GetTranslationItemsInfo collectionsItems:",
-            error,
-          );
-          return json(
-            { error: "Error GetTranslationItemsInfo collectionsItems" },
-            { status: 500 },
-          );
-        }
-      case !!articlesItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: articlesItems.source,
-            target: articlesItems.target,
-            resourceType: articlesItems.resourceType,
-          });
-
-          return json({ data: data });
-        } catch (error) {
-          console.error("Error GetTranslationItemsInfo articlesItems:", error);
-          return json(
-            { error: "Error GetTranslationItemsInfo articlesItems" },
-            { status: 500 },
-          );
-        }
-      case !!blog_titlesItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: blog_titlesItems.source,
-            target: blog_titlesItems.target,
-            resourceType: blog_titlesItems.resourceType,
-          });
-
-          return json({ data: data });
-        } catch (error) {
-          console.error(
-            "Error GetTranslationItemsInfo blog_titlesItems:",
-            error,
-          );
-          return json(
-            { error: "Error GetTranslationItemsInfo blog_titlesItems" },
-            { status: 500 },
-          );
-        }
-      case !!pagesItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: pagesItems.source,
-            target: pagesItems.target,
-            resourceType: pagesItems.resourceType,
-          });
-
-          return json({ data: data });
-        } catch (error) {
-          console.error("Error GetTranslationItemsInfo pagesItems:", error);
-          return json(
-            { error: "Error GetTranslationItemsInfo pagesItems" },
-            { status: 500 },
-          );
-        }
-      case !!filtersItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: filtersItems.source,
-            target: filtersItems.target,
-            resourceType: filtersItems.resourceType,
-          });
-
-          return json({ data: data });
-        } catch (error) {
-          console.error("Error GetTranslationItemsInfo filtersItems:", error);
-          return json(
-            { error: "Error GetTranslationItemsInfo filtersItems" },
-            { status: 500 },
-          );
-        }
-      case !!metaobjectsItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: metaobjectsItems.source,
-            target: metaobjectsItems.target,
-            resourceType: metaobjectsItems.resourceType,
-          });
-
-          return json({ data: data });
-        } catch (error) {
-          console.error(
-            "Error GetTranslationItemsInfo metaobjectsItems:",
-            error,
-          );
-          return json(
-            { error: "Error GetTranslationItemsInfo metaobjectsItems" },
-            { status: 500 },
-          );
-        }
-      case !!navigationItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: navigationItems.source,
-            target: navigationItems.target,
-            resourceType: navigationItems.resourceType,
-          });
-
-          return json({ data: data });
-        } catch (error) {
-          console.error(
-            "Error GetTranslationItemsInfo navigationItems:",
-            error,
-          );
-          return json(
-            { error: "Error GetTranslationItemsInfo navigationItems" },
-            { status: 500 },
-          );
-        }
-      // case !!policiesItems:
-      //   try {
-      //     const data = await GetTranslationItemsInfo({
-      //       shop,
-      //       accessToken,
-      //       source: policiesItems.source,
-      //       target: policiesItems.target,
-      //       resourceType: policiesItems.resourceType,
-      //     });
-
-      //     return json({ data: data });
-      //   } catch (error) {
-      //     console.error("Error GetTranslationItemsInfo policiesItems:", error);
-      //     return json(
-      //       { error: "Error GetTranslationItemsInfo policiesItems" },
-      //       { status: 500 },
-      //     );
-      //   }
-      case !!shopItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: shopItems.source,
-            target: shopItems.target,
-            resourceType: shopItems.resourceType,
-          });
-
-          return json({ data: data });
-        } catch (error) {
-          console.error("Error GetTranslationItemsInfo shopItems:", error);
-          return json(
-            { error: "Error GetTranslationItemsInfo shopItems" },
-            { status: 500 },
-          );
-        }
-      // case !!store_metadataItems:
-      //   try {
-      //     const data = await GetTranslationItemsInfo({
-      //       shop,
-      //       accessToken,
-      //       source: store_metadataItems.source,
-      //       target: store_metadataItems.target,
-      //       resourceType: store_metadataItems.resourceType,
-      //     });
-
-      //     return json({ data: data });
-      //   } catch (error) {
-      //     console.error(
-      //       "Error GetTranslationItemsInfo store_metadataItems:",
-      //       error,
-      //     );
-      //     return json(
-      //       { error: "Error GetTranslationItemsInfo store_metadataItems" },
-      //       { status: 500 },
-      //     );
-      //   }
-      case !!themeItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: themeItems.source,
-            target: themeItems.target,
-            resourceType: themeItems.resourceType,
-          });
-
-          return json({ data: data });
-        } catch (error) {
-          console.error("Error GetTranslationItemsInfo themeItems:", error);
-          return json(
-            { error: "Error GetTranslationItemsInfo themeItems" },
-            { status: 500 },
-          );
-        }
-      case !!deliveryItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: deliveryItems.source,
-            target: deliveryItems.target,
-            resourceType: deliveryItems.resourceType,
-          });
-
-          return json({ data: data });
-        } catch (error) {
-          console.error("Error GetTranslationItemsInfo deliveryItems:", error);
-          return json(
-            { error: "Error GetTranslationItemsInfo deliveryItems" },
-            { status: 500 },
-          );
-        }
-      case !!shippingItems:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: shippingItems.source,
-            target: shippingItems.target,
-            resourceType: shippingItems.resourceType,
-          });
-
-          return json({ data: data });
-        } catch (error) {
-          console.error("Error GetTranslationItemsInfo shippingItems:", error);
-          return json(
-            { error: "Error GetTranslationItemsInfo shippingItems" },
+            { error: "Error GetTranslationItemsInfo itemsCount" },
             { status: 500 },
           );
         }
@@ -755,7 +484,7 @@ const Index = () => {
     if (!findItem && primaryLanguage) {
       const productsFormData = new FormData();
       productsFormData.append(
-        "productsItems",
+        "itemsCount",
         JSON.stringify({
           source: primaryLanguage,
           target: current,
@@ -768,7 +497,7 @@ const Index = () => {
       }); // 提交表单请求
       const collectionsFormData = new FormData();
       collectionsFormData.append(
-        "collectionsItems",
+        "itemsCount",
         JSON.stringify({
           source: primaryLanguage,
           target: current,
@@ -781,7 +510,7 @@ const Index = () => {
       }); // 提交表单请求
       const articlesFormData = new FormData();
       articlesFormData.append(
-        "articlesItems",
+        "itemsCount",
         JSON.stringify({
           source: primaryLanguage,
           target: current,
@@ -794,7 +523,7 @@ const Index = () => {
       }); // 提交表单请求
       const blog_titlesFormData = new FormData();
       blog_titlesFormData.append(
-        "blog_titlesItems",
+        "itemsCount",
         JSON.stringify({
           source: primaryLanguage,
           target: current,
@@ -807,7 +536,7 @@ const Index = () => {
       }); // 提交表单请求
       const pagesFormData = new FormData();
       pagesFormData.append(
-        "pagesItems",
+        "itemsCount",
         JSON.stringify({
           source: primaryLanguage,
           target: current,
@@ -820,7 +549,7 @@ const Index = () => {
       }); // 提交表单请求
       const filtersFormData = new FormData();
       filtersFormData.append(
-        "filtersItems",
+        "itemsCount",
         JSON.stringify({
           source: primaryLanguage,
           target: current,
@@ -833,7 +562,7 @@ const Index = () => {
       }); // 提交表单请求
       const metaobjectsFormData = new FormData();
       metaobjectsFormData.append(
-        "metaobjectsItems",
+        "itemsCount",
         JSON.stringify({
           source: primaryLanguage,
           target: current,
@@ -846,7 +575,7 @@ const Index = () => {
       }); // 提交表单请求
       const navigationFormData = new FormData();
       navigationFormData.append(
-        "navigationItems",
+        "itemsCount",
         JSON.stringify({
           source: primaryLanguage,
           target: current,
@@ -872,7 +601,7 @@ const Index = () => {
       // }); // 提交表单请求
       const shopFormData = new FormData();
       shopFormData.append(
-        "shopItems",
+        "itemsCount",
         JSON.stringify({
           source: primaryLanguage,
           target: current,
@@ -898,7 +627,7 @@ const Index = () => {
       // }); // 提交表单请求
       const themeFormData = new FormData();
       themeFormData.append(
-        "themeItems",
+        "itemsCount",
         JSON.stringify({
           source: primaryLanguage,
           target: current,
@@ -911,7 +640,7 @@ const Index = () => {
       }); // 提交表单请求
       const deliveryFormData = new FormData();
       deliveryFormData.append(
-        "deliveryItems",
+        "itemsCount",
         JSON.stringify({
           source: primaryLanguage,
           target: current,
@@ -924,7 +653,7 @@ const Index = () => {
       }); // 提交表单请求
       const shippingFormData = new FormData();
       shippingFormData.append(
-        "shippingItems",
+        "itemsCount",
         JSON.stringify({
           source: primaryLanguage,
           target: current,

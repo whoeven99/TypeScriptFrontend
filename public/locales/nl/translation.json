@@ -19,7 +19,7 @@
     "Auto": "Auto",
     "After setting, you can": "Na het instellen kunt u",
     "Preview": "Voorbeeld",
-    "to view the prices in different currencies.": "om de prijzen in verschillende valuta's te bekijken.",
+    "to view the prices in different currencies.": " om de prijzen in verschillende valuta's te bekijken.",
     "Search currencies...": "Zoek valuta's...",
     "will fluctuate based on market rates.": " zal fluctueren op basis van de marktarieven.",
     "To display currency switcher, please follow the instructions below:": "Volg de onderstaande instructies om de valuta-wisselaar weer te geven:",
@@ -36,7 +36,7 @@
     "Completed": "Voltooid",
     "Please": "Gelieve",
     "Click here": "Klik hier",
-    "to go to Shopify theme editor >> enable Ciwi_Switcher >> click the Save button in the right corner.": "om naar de Shopify-thema-editor te gaan >> inschakelen Ciwi_Switcher >> klik op de knop 'Opslaan' in de rechterhoek.",
+    "to go to Shopify theme editor >> enable Ciwi_Switcher >> click the Save button in the right corner.": " om naar de Shopify-thema-editor te gaan >> inschakelen Ciwi_Switcher >> klik op de knop 'Opslaan' in de rechterhoek.",
     "Please refer to this": "Raadpleeg dit",
     "step-by-step guide": "stapsgewijze handleiding",
     "Create translation rules for certain words and phrases": "Maak vertaalregels voor bepaalde woorden en zinnen",
@@ -154,8 +154,7 @@
     "rating.description":"Als u tevreden bent met onze producten en diensten, laat ons dan uw beoordeling achter. Zo kunnen wij onze diensten nog verder verbeteren!",
     "progressing.title":"Vertaalopdrachten: ",
     "progressing.target":"Doeltaal: ",
-    "progressing.progressing":"Vertalen ",
-    "progressing.module":" module",
+    "progressing.progressingWithSpace":"Vertalen {{item}} module",
     "contact.title":"Contacteer ons",
     "contact.description":"Als u vragen of hulp nodig hebt, klik op de knop hieronder om ons te contacteren.",
     "contact.contactButton":"Contacteer ons",
@@ -235,6 +234,7 @@
     "Contact support": "Contacteer ondersteuning",
     "word": "woord",
     "credit": "credit",
-    "Credits to be consumed": "Credits te verbruiken"
+    "Credits to be consumed": "Credits te verbruiken",
+    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "Welkom bij onze app! Als u vragen hebt, neem gerust contact met ons op via support@ciwi.ai, en we zullen zo snel mogelijk reageren."
 }
   

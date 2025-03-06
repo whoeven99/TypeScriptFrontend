@@ -66,7 +66,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
     // const initialization = JSON.parse(formData.get("initialization") as string);
     const loading = JSON.parse(formData.get("loading") as string);
-    const translatingLanguage = JSON.parse(formData.get("translatingLanguage") as string);
     const languageData = JSON.parse(formData.get("languageData") as string);
     const userData = JSON.parse(formData.get("userData") as string);
     const translation = JSON.parse(formData.get("translation") as string);
@@ -125,20 +124,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.error("Error loading app:", error);
         return json({ error: "Error loading app" }, { status: 500 });
       }
-    }
-
-    if (translatingLanguage) {
-      const data = await GetTranslateDOByShopNameAndSource({ shop, source: translatingLanguage });
-      console.log("GetTranslateDOByShopNameAndSource: ", data);
-      return json({
-        success: data.success,
-        data: {
-          source: data.response.source,
-          target: data.response.target,
-          status: data.response.status,
-          resourceType: data.response.resourceType,
-        }
-      });
     }
 
     if (languageData) {

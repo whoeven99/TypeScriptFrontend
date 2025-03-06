@@ -154,8 +154,7 @@
   "rating.description":"如果对我们的产品和服务感到满意，请给出你的评价，帮助我们更好地改进!",
   "progressing.title":"翻译任务：",
   "progressing.target":"目标语言：",
-  "progressing.progressing":"正在翻译",
-  "progressing.module":"模块",
+  "progressingWithSpace": "正在翻译{{item}}模块",
   "contact.title":"联系我们",
   "contact.description":"如果您有任何问题或需要帮助，请点击下方按钮与我们联系。",
   "contact.contactButton":"联系支持",
@@ -235,5 +234,6 @@
   "Contact support": "联系支持",
   "word": "单词",
   "credit": "积分",
-  "Credits to be consumed": "需要消耗的积分"
+  "Credits to be consumed": "需要消耗的积分",
+  "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "欢迎使用我们的应用程序！如果您有任何问题，请随时通过电子邮件联系我们，我们将尽快回复。"
 }

@@ -1,29 +1,42 @@
 import React, { useEffect, useState } from "react";
 import { Button, Card, Progress, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
-import { updateState } from "~/store/modules/translatingResourceType";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import { PhoneOutlined } from "@ant-design/icons";
+import { handleContactSupport } from "~/routes/app._index/route";
 
 const { Text, Title } = Typography;
 
 interface ProgressingCardProps {
     source: string;
+    target: string;
+    status: number;
+    resourceType: string;
 }
 
 const ProgressingCard: React.FC<ProgressingCardProps> = ({
     source,
+    target,
+    status,
+    resourceType,
 }) => {
-    const [data, setData] = useState<any>(null);
+    // const [data, setData] = useState<any>(null);
     const [item, setItem] = useState("Products");
-    const [target, setTarget] = useState<string>("");
-    const [resourceType, setResourceType] = useState<string>("");
+    const [itemsCount, setItemsCount] = useState<{
+        totalNumber: number;
+        translatedNumber: number;
+    }>({
+        totalNumber: 0,
+        translatedNumber: 0,
+    });
+    // const [target, setTarget] = useState<string>("");
+    const [newResourceType, setNewResourceType] = useState<string>(resourceType);
     const [progress, setProgress] = useState<number>(0);
-    const [status, setStatus] = useState<number>(0);
+    const [newStatus, setNewStatus] = useState<number>(status);
     const { t } = useTranslation();
-    const fetcher = useFetcher<any>();
+    const navigate = useNavigate();
     const statusFetcher = useFetcher<any>();
+    const itemsFetcher = useFetcher<any>();
     // const target = useSelector((state: any) =>
     //     state.languageTableData.rows.find(
     //         (item: any) => item.status === 2,
@@ -31,66 +44,98 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
     // );
 
     useEffect(() => {
-        fetcher.submit({
-            translatingLanguage: JSON.stringify(source),
-        }, {
-            method: "POST",
-            action: "/app",
-        });
-    }, []);
-
-    useEffect(() => {
-        if (fetcher.data) {
-            if (fetcher.data.success) {
-                setData(fetcher.data.data);
-            }
+        if (item) {
+            console.log("item: ", item);
         }
-    }, [fetcher.data]);
+    }, [item]);
 
     useEffect(() => {
-        if (data) {
-            console.log("data: ", data);
-            setTarget(data.target);
-            setStatus(data.status);
-            setResourceType(data.resourceType);
-        }
-    }, [data]);
+        console.log("newStatus:", newStatus, "item:", item);
+        let timeoutId: NodeJS.Timeout;
 
-    useEffect(() => {
-        if (status === 2) {
-            const formData = new FormData();
-            formData.append(
-                "statusData",
-                JSON.stringify({
-                    source: source,
-                    target: [target],
-                }),
-            );
-            const timeoutId = setTimeout(() => {
-                statusFetcher.submit(formData, {
+        // 当状态为 2 时，开始轮询
+        if (newStatus === 2) {
+            const pollStatus = () => {
+                // 状态查询请求
+                const statusformData = new FormData();
+                statusformData.append(
+                    "statusData",
+                    JSON.stringify({
+                        source: source,
+                        target: [target],
+                    }),
+                );
+
+                statusFetcher.submit(statusformData, {
                     method: "post",
                     action: "/app",
                 });
-            }, 2000); // 2秒延时
-            // 在组件卸载时清除定时器
-            return () => clearTimeout(timeoutId);
+
+                // 项目计数请求
+                const itemsFormData = new FormData();
+                itemsFormData.append(
+                    "itemsCount",
+                    JSON.stringify({
+                        source: [source],
+                        target: target,
+                        resourceType: item,  // 使用当前的 item
+                    }),
+                );
+
+                itemsFetcher.submit(itemsFormData, {
+                    method: "post",
+                    action: "/app/manage_translation",
+                });
+
+                // 设置下一次轮询
+                timeoutId = setTimeout(pollStatus, 5000);
+            };
+
+            // 开始首次轮询
+            pollStatus();
+
+            // 清理函数
+            return () => {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+            };
         }
-    }, [status]);
+    }, [newStatus, source, target, item]); // 添加 item 到依赖数组
 
     useEffect(() => {
-        if (statusFetcher.data) {
-            if (statusFetcher.data.data) {
-                console.log(statusFetcher.data.data);
-                if (statusFetcher.data.data[0].status === 2) {
-                    setStatus(statusFetcher.data.data[0].status);
-                    setResourceType(statusFetcher.data.data[0].resourceType);
-                } else {
-                    setStatus(statusFetcher.data.data[0].status);
-                    setResourceType("");
-                }
+        if (statusFetcher.data?.data) {
+            console.log("statusFetcher Fetched data:", statusFetcher.data.data);
+            const newStatusValue = statusFetcher.data.data[0].status;
+            setNewStatus(newStatusValue);
+            if (newStatusValue === 2) {
+                setNewResourceType(statusFetcher.data.data[0].resourceType);
+            } else {
+                setNewResourceType("");
+                // 状态不为 2 时，轮询会自动停止
             }
         }
     }, [statusFetcher.data]);
+
+    useEffect(() => {
+        if (itemsFetcher.data?.data) {
+            console.log("itemsFetcher Fetched data:", itemsFetcher.data.data);
+            setItemsCount({
+                totalNumber: itemsFetcher.data.data[0].totalNumber,
+                translatedNumber: itemsFetcher.data.data[0].translatedNumber,
+            });
+            // console.log("itemsCount: ", itemsCount);
+
+            // const newStatusValue = statusFetcher.data.data[0].status;
+            // setNewStatus(newStatusValue);
+            // if (newStatusValue === 2) {
+            //     setNewResourceType(statusFetcher.data.data[0].resourceType);
+            // } else {
+            //     setNewResourceType("");
+            //     // 状态不为 2 时，轮询会自动停止
+            // }
+        }
+    }, [itemsFetcher.data]);
 
     // useEffect(() => {
     //     if (target) {
@@ -120,11 +165,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
     // }, [statusFetcher.data]);
 
     useEffect(() => {
-        if (resourceType) {
-            const progress = calculateProgressByType(resourceType);
+        if (newResourceType) {
+            const progress = calculateProgressByType(newResourceType);
             setProgress(progress);
         }
-    }, [resourceType]);
+    }, [newResourceType]);
 
     // const RESOURCE_TYPES = [
     //     'PRODUCT',
@@ -267,7 +312,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
         >
             <Title level={4}>{t("progressing.title")}</Title>
             <Space direction="vertical" style={{ width: '100%' }}>
-                {status !== 0 ?
+                {newStatus !== 0 ?
                     <Card>
                         <Space direction="vertical" style={{ width: '100%' }} size="small">
                             <div style={{
@@ -280,68 +325,86 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                 {/* 左侧部分 */}
                                 <div style={{
                                     display: 'flex',
-                                    maxWidth: '33%'  // 限制最大宽度
+                                    maxWidth: '15%'  // 限制最大宽度
                                 }}>
-                                    <Text>{t("progressing.target")}</Text>
+                                    <Text style={{
+                                        marginRight: '2px'
+                                    }}>{t("progressing.target")}</Text>
                                     <Text>{target}</Text>
                                 </div>
 
                                 {/* 中间部分 */}
                                 <div style={{
                                     display: 'flex',
-                                    maxWidth: '33%',  // 限制最大宽度
-                                    alignItems: 'center'  // 居中对齐
+                                    maxWidth: newStatus === 1 ? '100%' : '65%',  // 限制最大宽度
+                                    alignItems: newStatus === 1 ? 'flex-end' : 'center'  // 居中对齐
                                 }}>
-                                    <Text>{t("progressing.progressing")}{" "}</Text>
-                                    <Text>{t(item)}{" "}</Text>
-                                    <Text>{t("progressing.module")}</Text>
+                                    {
+                                        newStatus === 1 &&
+                                        <Text>{t("progressing.finished")}</Text>
+                                    }
+                                    {
+                                        newStatus === 2 &&
+                                        <Text>{t("progressing.progressingWithSpace", { item: t(item) })}({itemsCount.translatedNumber}/{itemsCount.totalNumber})</Text>
+                                    }
+                                    {
+                                        newStatus === 3 &&
+                                        <Text>{t("progressing.contact")}</Text>
+                                    }
+                                    {
+                                        newStatus === 4 &&
+                                        <Text>{t("progressing.contact")}</Text>
+                                    }
                                 </div>
 
                                 {/* 右侧部分 */}
-                                <div style={{
-                                    display: 'flex',
-                                    maxWidth: '33%',  // 限制最大宽度
-                                    alignItems: 'flex-end'  // 右对齐
-                                }}>
-                                    {status === 3 &&
-                                        <Button>
-                                            {t("progressing.buyCredits")}
-                                        </Button>
-                                    }
-                                    {status === 2 &&
-                                        <>
-                                            <Text>
-                                                {t("progressing.remaining")}
-                                            </Text>
-                                            <Text>
-
-                                            </Text>
-                                        </>
-                                    }
-                                </div>
+                                {newStatus !== 1 &&
+                                    <div style={{
+                                        display: 'flex',
+                                        maxWidth: '20%',  // 限制最大宽度
+                                        alignItems: 'flex-end'  // 右对齐
+                                    }}>
+                                        {newStatus === 3 &&
+                                            <Button
+                                                onClick={() => navigate("/app/translate", { state: { selectedLanguageCode: target } })}
+                                            >
+                                                {t("progressing.buyCredits")}
+                                            </Button>
+                                        }
+                                        {newStatus === 2 &&
+                                            <>
+                                                <Text>
+                                                    {t("progressing.remaining")}
+                                                </Text>
+                                            </>
+                                        }
+                                    </div>
+                                }
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
                                 <Progress
-                                    percent={status === 1 ? 100 : progress}
-                                    status={status === 1 ? 'success' : 'active'}
+                                    percent={newStatus === 1 ? 100 : progress}
+                                    status={newStatus === 1 ? 'success' : 'active'}
                                     percentPosition={{ align: 'end', type: 'inner' }}
                                     size={["100%", 20]}
                                     strokeColor="#001342"
                                 />
-                                {(status === 3 || status === 4) &&
+                                {(newStatus === 3 || newStatus === 4) &&
                                     <Button
                                         type="primary"
                                         icon={<PhoneOutlined />}
+                                        onClick={handleContactSupport}
                                     >
                                         {t("contact.contactButton")}
                                     </Button>
                                 }
-                                {status === 1 &&
+                                {newStatus === 1 &&
                                     <Button
                                         type="primary"
                                         icon={<PhoneOutlined />}
+                                        onClick={() => navigate("/app/language")}
                                     >
-                                        {t("progressing.publishLanguage")}
+                                        {t("progressing.publish")}
                                     </Button>
                                 }
                             </div>

@@ -19,7 +19,7 @@
     "Auto": "Automático",
     "After setting, you can": "Após a configuração, você pode",
     "Preview": "Visualizar",
-    "to view the prices in different currencies.": "para visualizar os preços em diferentes moedas.",
+    "to view the prices in different currencies.": " para visualizar os preços em diferentes moedas.",
     "Search currencies...": "Buscar moedas...",
     "will fluctuate based on market rates.": " irá flutuar com base nas taxas de mercado.",
     "To display currency switcher, please follow the instructions below:": "Para exibir o seletor de moeda, siga as instruções abaixo:",
@@ -36,7 +36,7 @@
     "Completed": "Completo",
     "Please": "Por favor",
     "Click here": "Clique aqui",
-    "to go to Shopify theme editor >> enable Ciwi_Switcher >> click the Save button in the right corner.": "para ir ao editor de temas do Shopify >> habilitar Ciwi_Switcher >> clique no botão 'Salvar' no canto direito.",
+    "to go to Shopify theme editor >> enable Ciwi_Switcher >> click the Save button in the right corner.": " para ir ao editor de temas do Shopify >> habilitar Ciwi_Switcher >> clique no botão 'Salvar' no canto direito.",
     "Please refer to this": "Por favor, consulte este",
     "step-by-step guide": "guia passo a passo",
     "Create translation rules for certain words and phrases": "Criar regras de tradução para palavras e frases específicas",
@@ -154,8 +154,7 @@
     "rating.description":"Se estiver satisfeito com os nossos produtos e serviços, envie-nos a sua avaliação para nos ajudar a melhorar!",
     "progressing.title":"Tarefas de tradução: ",
     "progressing.target":"Idioma alvo: ",
-    "progressing.progressing":"Traduzindo ",
-    "progressing.module":" módulo",
+    "progressing.progressingWithSpace":"Traduzindo {{item}} módulo",
     "contact.title":"Contate-nos",
     "contact.description":"Se você tiver perguntas ou precisar de ajuda, clique no botão abaixo para entrar em contato conosco.",
     "contact.contactButton":"Contate-nos",
@@ -235,6 +234,7 @@
     "Contact support": "Contate o suporte",
     "word": "palavra",
     "credit": "crédito",
-    "Credits to be consumed": "Créditos a consumir"
+    "Credits to be consumed": "Créditos a consumir",
+    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "Bem-vindo à nossa app! Se você tiver alguma dúvida, não hesite em nos contatar no endereço support@ciwi.ai, e responderemos o mais rapidamente possível."
 }
   
