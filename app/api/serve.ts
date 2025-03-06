@@ -20,6 +20,29 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+//获取最新翻译状态
+export const GetTranslateDOByShopNameAndSource = async ({
+  shop,
+  source, 
+}: {
+  shop: string;
+  source: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/translate/getTranslateDOByShopNameAndSource`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        source: source,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error get translate do by shop name and source:", error);
+  }
+};
+
 export const GetUserInitTokenByShopName = async ({
   shop,
 }: {
@@ -331,7 +354,6 @@ export const GetTranslationItemsInfo = async ({
         };
       }),
     ];
-    console.log(res);
     return res;
   } catch (error) {
     console.error("Error fetching updating translation items:", error);
@@ -477,6 +499,14 @@ export const GetLanguageStatus = async ({
   source: string;
   target: string[];
 }) => {
+  console.log([
+    {
+      shopName: shop,
+      source: source,
+      target: target[0],
+    },
+  ]);
+
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/readTranslateDOByArray`,
@@ -490,7 +520,6 @@ export const GetLanguageStatus = async ({
       ],
     });
     const res = response.data.response;
-    console.log(res);
     return res;
   } catch (error) {
     console.error("Error occurred in the languageStatus:", error);

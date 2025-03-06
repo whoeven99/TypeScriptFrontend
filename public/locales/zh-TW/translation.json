@@ -154,8 +154,7 @@
     "rating.description":"如果您對翻譯結果滿意，請考慮給我們留下五星評價。",
     "progressing.title":"翻譯任務：",
     "progressing.target":"目標語言：",
-    "progressing.progressing":"正在翻譯",
-    "progressing.module":"模組",
+    "progressingWithSpace": "正在翻譯{{item}}模組",
     "contact.title":"聯繫我們",
     "contact.description":"如果對我們的產品和服務感到滿意，請給予你的評價，幫助我們更好地改進!",
     "contact.contactButton":"聯繫支持",
@@ -235,6 +234,7 @@
     "Contact support": "聯繫支持",
     "word": "單詞",
     "credit": "積分",
-    "Credits to be consumed": "需要消耗的積分"
+    "Credits to be consumed": "需要消耗的積分",
+    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "歡迎使用我們的應用程序！如果您有任何問題，請隨時通過電子郵件聯繫我們，我們將盡快回復。"
 }
   

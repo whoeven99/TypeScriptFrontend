@@ -19,7 +19,7 @@
     "Auto": "자동",
     "After setting, you can": "설정 후, 다음을 수행할 수 있습니다:",
     "Preview": "미리보기",
-    "to view the prices in different currencies.": "다른 통화로 가격을 확인합니다.",
+    "to view the prices in different currencies.": " 다른 통화로 가격을 확인합니다.",
     "Search currencies...": "통화 검색...",
     "will fluctuate based on market rates.": "시장 환율에 따라 변동합니다.",
     "To display currency switcher, please follow the instructions below:": "통화 변환기를 표시하려면 아래 지침을 따르십시오:",
@@ -35,7 +35,7 @@
     "Completed": "완료",
     "Please": "다음 작업을 수행하십시오:",
     "Click here": "여기를 클릭",
-    "to go to Shopify theme editor >> enable Ciwi_Switcher >> click the Save button in the right corner.": "Shopify 테마 편집기로 이동 >> Ciwi_Switcher 활성화 >> 오른쪽 상단의 저장 버튼 클릭.",
+    "to go to Shopify theme editor >> enable Ciwi_Switcher >> click the Save button in the right corner.": " Shopify 테마 편집기로 이동 >> Ciwi_Switcher 활성화 >> 오른쪽 상단의 저장 버튼 클릭.",
     "Please refer to this": "참고:",
     "step-by-step guide": "단계별 가이드",
     "Create translation rules for certain words and phrases": "특정 단어 및 구문에 대한 번역 규칙 생성",
@@ -154,8 +154,7 @@
     "rating.description":"당사의 제품과 서비스에 만족하신다면, 더욱 개선될 수 있도록 평가를 남겨주시기 바랍니다!",
     "progressing.title":"번역 작업: ",
     "progressing.target":"목표 언어: ",
-    "progressing.progressing":"번역 중 ",
-    "progressing.module":" 모듈",
+    "progressing.progressingWithSpace":"번역 중 {{item}} 모듈",
     "contact.title":"문의하기",
     "contact.description":"질문이나 도움이 필요하시면 아래 버튼을 클릭하여 지원에 문의하세요.",
     "contact.contactButton":"지원에 문의",
@@ -235,6 +234,7 @@
     "Contact support": "지원에 문의",
     "word": "단어",
     "credit": "크레딧",
-    "Credits to be consumed": "사용할 크레딧"
+    "Credits to be consumed": "사용할 크레딧",
+    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "당사의 애플리케이션에 오신 것을 환영합니다! 질문이 있으시면 support@ciwi.ai로 문의하세요. 가능한 한 빨리 답장할 것입니다."
   }
   

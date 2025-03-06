@@ -1,78 +1,223 @@
 import React, { useEffect, useState } from "react";
-import { Card, Progress, Space, Typography } from "antd";
+import { Button, Card, Progress, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
-import { updateState } from "~/store/modules/translatingResourceType";
+import { useFetcher, useNavigate } from "@remix-run/react";
+import { PhoneOutlined } from "@ant-design/icons";
+import { handleContactSupport } from "~/routes/app._index/route";
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 interface ProgressingCardProps {
+    source: string;
+    target: string;
+    status: number;
+    resourceType: string;
 }
 
 const ProgressingCard: React.FC<ProgressingCardProps> = ({
+    source,
+    target,
+    status,
+    resourceType,
 }) => {
-    const [currentIndex, setCurrentIndex] = useState(0);
+    // const [data, setData] = useState<any>(null);
     const [item, setItem] = useState("Products");
-    const { t } = useTranslation();
-    const resourceType = useSelector((state: any) => {
-        return state.translatingResourceType.resourceType;
+    const [itemsCount, setItemsCount] = useState<{
+        totalNumber: number;
+        translatedNumber: number;
+    }>({
+        totalNumber: 0,
+        translatedNumber: 0,
     });
-    console.log(resourceType);
-    const target = useSelector((state: any) =>
-        state.languageTableData.rows.find(
-            (item: any) => item.status === 2,
-        ),
-    );
+    // const [target, setTarget] = useState<string>("");
+    const [newResourceType, setNewResourceType] = useState<string>(resourceType);
+    const [progress, setProgress] = useState<number>(0);
+    const [newStatus, setNewStatus] = useState<number>(status);
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const statusFetcher = useFetcher<any>();
+    const itemsFetcher = useFetcher<any>();
+    // const target = useSelector((state: any) =>
+    //     state.languageTableData.rows.find(
+    //         (item: any) => item.status === 2,
+    //     ),
+    // );
 
-    const dispatch = useDispatch();
+    useEffect(() => {
+        if (item) {
+            console.log("item: ", item);
+        }
+    }, [item]);
 
-    const RESOURCE_TYPES = [
-        'PRODUCT',
-        'PRODUCT_OPTION',
-        'PRODUCT_OPTION_VALUE',
+    useEffect(() => {
+        console.log("newStatus:", newStatus, "item:", item);
+        let timeoutId: NodeJS.Timeout;
 
-        'COLLECTION',
+        // 当状态为 2 时，开始轮询
+        if (newStatus === 2) {
+            const pollStatus = () => {
+                // 状态查询请求
+                const statusformData = new FormData();
+                statusformData.append(
+                    "statusData",
+                    JSON.stringify({
+                        source: source,
+                        target: [target],
+                    }),
+                );
 
-        'ONLINE_STORE_THEME',
-        'ONLINE_STORE_THEME_APP_EMBED',
-        'ONLINE_STORE_THEME_JSON_TEMPLATE',
-        'ONLINE_STORE_THEME_SECTION_GROUP',
-        'ONLINE_STORE_THEME_SETTINGS_CATEGORY',
-        'ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS',
+                statusFetcher.submit(statusformData, {
+                    method: "post",
+                    action: "/app",
+                });
 
-        'PACKING_SLIP_TEMPLATE',
+                // 项目计数请求
+                const itemsFormData = new FormData();
+                itemsFormData.append(
+                    "itemsCount",
+                    JSON.stringify({
+                        source: [source],
+                        target: target,
+                        resourceType: item,  // 使用当前的 item
+                    }),
+                );
 
-        'SHOP_POLICY',
+                itemsFetcher.submit(itemsFormData, {
+                    method: "post",
+                    action: "/app/manage_translation",
+                });
 
-        'EMAIL_TEMPLATE',
+                // 设置下一次轮询
+                timeoutId = setTimeout(pollStatus, 5000);
+            };
 
-        'ONLINE_STORE_THEME_LOCALE_CONTENT',
+            // 开始首次轮询
+            pollStatus();
 
-        'MENU',
+            // 清理函数
+            return () => {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+            };
+        }
+    }, [newStatus, source, target, item]); // 添加 item 到依赖数组
 
-        'LINK',
+    useEffect(() => {
+        if (statusFetcher.data?.data) {
+            console.log("statusFetcher Fetched data:", statusFetcher.data.data);
+            const newStatusValue = statusFetcher.data.data[0].status;
+            setNewStatus(newStatusValue);
+            if (newStatusValue === 2) {
+                setNewResourceType(statusFetcher.data.data[0].resourceType);
+            } else {
+                setNewResourceType("");
+                // 状态不为 2 时，轮询会自动停止
+            }
+        }
+    }, [statusFetcher.data]);
 
-        'DELIVERY_METHOD_DEFINITION',
+    useEffect(() => {
+        if (itemsFetcher.data?.data) {
+            console.log("itemsFetcher Fetched data:", itemsFetcher.data.data);
+            setItemsCount({
+                totalNumber: itemsFetcher.data.data[0].totalNumber,
+                translatedNumber: itemsFetcher.data.data[0].translatedNumber,
+            });
+            // console.log("itemsCount: ", itemsCount);
 
-        'FILTER',
+            // const newStatusValue = statusFetcher.data.data[0].status;
+            // setNewStatus(newStatusValue);
+            // if (newStatusValue === 2) {
+            //     setNewResourceType(statusFetcher.data.data[0].resourceType);
+            // } else {
+            //     setNewResourceType("");
+            //     // 状态不为 2 时，轮询会自动停止
+            // }
+        }
+    }, [itemsFetcher.data]);
 
-        'METAFIELD',
+    // useEffect(() => {
+    //     if (target) {
+    //         statusFetcher.submit({
+    //             statusData: JSON.stringify({
+    //                 source: source,
+    //                 target: [target],
+    //             }),
+    //         }, {
+    //             method: "POST",
+    //             action: "/app",
+    //         });
+    //     }
+    // }, [target]);
 
-        'METAOBJECT',
+    // useEffect(() => {
+    //     if (statusFetcher.data) {
+    //         if (statusFetcher.data.data) {
+    //             const statusData = statusFetcher.data.data.find((item: any) => item.status === 2);
+    //             console.log(statusData);
+    //             if (statusData) {
+    //                 // setResourceType(statusData.resourceType);
+    //                 setResourceType(statusData.resourceType);
+    //             }
+    //         }
+    //     }
+    // }, [statusFetcher.data]);
 
-        'PAYMENT_GATEWAY',
+    useEffect(() => {
+        if (newResourceType) {
+            const progress = calculateProgressByType(newResourceType);
+            setProgress(progress);
+        }
+    }, [newResourceType]);
 
-        'SELLING_PLAN',
-        'SELLING_PLAN_GROUP',
+    // const RESOURCE_TYPES = [
+    //     'PRODUCT',
+    //     'PRODUCT_OPTION',
+    //     'PRODUCT_OPTION_VALUE',
 
-        'SHOP',
+    //     'COLLECTION',
 
-        'ARTICLE',
+    //     'ONLINE_STORE_THEME',
+    //     'ONLINE_STORE_THEME_APP_EMBED',
+    //     'ONLINE_STORE_THEME_JSON_TEMPLATE',
+    //     'ONLINE_STORE_THEME_SECTION_GROUP',
+    //     'ONLINE_STORE_THEME_SETTINGS_CATEGORY',
+    //     'ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS',
 
-        'BLOG',
+    //     'PACKING_SLIP_TEMPLATE',
 
-        'PAGE'
-    ];
+    //     'SHOP_POLICY',
+
+    //     'EMAIL_TEMPLATE',
+
+    //     'ONLINE_STORE_THEME_LOCALE_CONTENT',
+
+    //     'MENU',
+
+    //     'LINK',
+
+    //     'DELIVERY_METHOD_DEFINITION',
+
+    //     'FILTER',
+
+    //     'METAFIELD',
+
+    //     'METAOBJECT',
+
+    //     'PAYMENT_GATEWAY',
+
+    //     'SELLING_PLAN',
+    //     'SELLING_PLAN_GROUP',
+
+    //     'SHOP',
+
+    //     'ARTICLE',
+
+    //     'BLOG',
+
+    //     'PAGE'
+    // ];
 
     const calculateProgressByType = (resourceType: string): number => {
         switch (resourceType) {
@@ -162,29 +307,114 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
         }
     };
 
-
     return (
-        target &&
         <Card
-            title={t("progressing.title")}
         >
+            <Title level={4}>{t("progressing.title")}</Title>
             <Space direction="vertical" style={{ width: '100%' }}>
-                <div>
-                    <Text>{t("progressing.target")}</Text>
-                    <Text>{target.locale}</Text>
-                </div>
-                <div>
-                    <Text>{t("progressing.progressing")}</Text>
-                    <Text>{t(item)}</Text>
-                    <Text>{t("progressing.module")}</Text>
-                </div>
-                <Progress
-                    percent={calculateProgressByType(resourceType)}
-                    status={calculateProgressByType(resourceType) === 100 ? 'success' : 'active'}
-                    percentPosition={{ align: 'end', type: 'inner' }}
-                    size={["100%", 20]}
-                    strokeColor="#001342"
-                />
+                {newStatus !== 0 ?
+                    <Card>
+                        <Space direction="vertical" style={{ width: '100%' }} size="small">
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                width: '100%',  // 确保占满容器宽度
+                                textAlign: 'center',
+                            }}>
+                                {/* 左侧部分 */}
+                                <div style={{
+                                    display: 'flex',
+                                    maxWidth: '15%'  // 限制最大宽度
+                                }}>
+                                    <Text style={{
+                                        marginRight: '2px'
+                                    }}>{t("progressing.target")}</Text>
+                                    <Text>{target}</Text>
+                                </div>
+
+                                {/* 中间部分 */}
+                                <div style={{
+                                    display: 'flex',
+                                    maxWidth: newStatus === 1 ? '100%' : '65%',  // 限制最大宽度
+                                    alignItems: newStatus === 1 ? 'flex-end' : 'center'  // 居中对齐
+                                }}>
+                                    {
+                                        newStatus === 1 &&
+                                        <Text>{t("progressing.finished")}</Text>
+                                    }
+                                    {
+                                        newStatus === 2 &&
+                                        <Text>{t("progressing.progressingWithSpace", { item: t(item) })}({itemsCount.translatedNumber}/{itemsCount.totalNumber})</Text>
+                                    }
+                                    {
+                                        newStatus === 3 &&
+                                        <Text>{t("progressing.contact")}</Text>
+                                    }
+                                    {
+                                        newStatus === 4 &&
+                                        <Text>{t("progressing.contact")}</Text>
+                                    }
+                                </div>
+
+                                {/* 右侧部分 */}
+                                {newStatus !== 1 &&
+                                    <div style={{
+                                        display: 'flex',
+                                        maxWidth: '20%',  // 限制最大宽度
+                                        alignItems: 'flex-end'  // 右对齐
+                                    }}>
+                                        {newStatus === 3 &&
+                                            <Button
+                                                onClick={() => navigate("/app/translate", { state: { selectedLanguageCode: target } })}
+                                            >
+                                                {t("progressing.buyCredits")}
+                                            </Button>
+                                        }
+                                        {newStatus === 2 &&
+                                            <>
+                                                <Text>
+                                                    {t("progressing.remaining")}
+                                                </Text>
+                                            </>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                                <Progress
+                                    percent={newStatus === 1 ? 100 : progress}
+                                    status={newStatus === 1 ? 'success' : 'active'}
+                                    percentPosition={{ align: 'end', type: 'inner' }}
+                                    size={["100%", 20]}
+                                    strokeColor="#001342"
+                                />
+                                {(newStatus === 3 || newStatus === 4) &&
+                                    <Button
+                                        type="primary"
+                                        icon={<PhoneOutlined />}
+                                        onClick={handleContactSupport}
+                                    >
+                                        {t("contact.contactButton")}
+                                    </Button>
+                                }
+                                {newStatus === 1 &&
+                                    <Button
+                                        type="primary"
+                                        icon={<PhoneOutlined />}
+                                        onClick={() => navigate("/app/language")}
+                                    >
+                                        {t("progressing.publish")}
+                                    </Button>
+                                }
+                            </div>
+                        </Space>
+                    </Card>
+                    :
+                    <Card>
+                        <Text style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '52px' }}>{t("progressing.noTranslate")}</Text>
+                    </Card>
+                }
             </Space>
         </Card>
     );
