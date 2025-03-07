@@ -241,5 +241,14 @@
   "word": "单词",
   "credit": "积分",
   "Credits to be consumed": "需要消耗的积分",
-  "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "欢迎使用我们的应用程序！如果您有任何问题，请随时通过电子邮件联系我们，我们将尽快回复。"
+  "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "欢迎使用我们的应用程序！如果您有任何问题，请随时通过电子邮件联系我们，我们将尽快回复。",
+  "Pricing": "定价",
+  "pricing": {
+    "recommended": "推荐",
+    "for_individuals": "适用于个人",
+    "for_small_teams": "适用于小型团队",
+    "for_growing": "适用于成长型企业",
+    "current_plan": "当前方案",
+    "try_free": "免费试用"
+  }
 }
