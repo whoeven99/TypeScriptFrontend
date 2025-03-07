@@ -33,6 +33,7 @@ import {
   InsertTargets,
   getCredits,
   GetUserInitTokenByShopName,
+  GetTranslateDOByShopNameAndSource,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -237,6 +238,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             source: statusData.source,
             target: statusData.target,
           });
+          console.log("GetLanguageStatus: ", data);
           return json({ data });
         }
       } catch (error) {

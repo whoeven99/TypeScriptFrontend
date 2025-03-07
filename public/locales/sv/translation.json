@@ -19,7 +19,7 @@
     "Auto": "Automatiskt",
     "After setting, you can": "Efter inställningen kan du",
     "Preview": "Förhandsgranska",
-    "to view the prices in different currencies.": "för att se priser i olika valutor.",
+    "to view the prices in different currencies.": " för att se priser i olika valutor.",
     "Search currencies...": "Sök valutor...",
     "will fluctuate based on market rates.": " kommer att fluktuera baserat på marknadsräntor.",
     "To display currency switcher, please follow the instructions below:": "För att visa valutaväljaren, följ instruktionerna nedan:",
@@ -36,7 +36,7 @@
     "Completed": "Slutfört",
     "Please": "Vänligen",
     "Click here": "Klicka här",
-    "to go to Shopify theme editor >> enable Ciwi_Switcher >> click the Save button in the right corner.": "för att gå till Shopify-temaredigeraren >> aktivera Ciwi_Switcher >> klicka på Spara-knappen i det högra hörnet.",
+    "to go to Shopify theme editor >> enable Ciwi_Switcher >> click the Save button in the right corner.": " för att gå till Shopify-temaredigeraren >> aktivera Ciwi_Switcher >> klicka på Spara-knappen i det högra hörnet.",
     "Please refer to this": "Vänligen hänvisa till detta",
     "step-by-step guide": "steg-för-steg guide",
     "Create translation rules for certain words and phrases": "Skapa översättningsregler för vissa ord och fraser",
@@ -154,8 +154,13 @@
     "rating.description":"Om du är nöjd med våra produkter och tjänster, vänligen ge oss din utvärdering för att hjälpa oss att bli bättre!",
     "progressing.title":"Översättningsuppgifter: ",
     "progressing.target":"Målspråk: ",
-    "progressing.progressing":"Översätter ",
-    "progressing.module":" modul",
+    "progressing.progressingWithSpace":"Översätter {{item}} modul",
+    "progressing.finished":"Översättningen är klar. Översättningen måste publiceras innan den träder i kraft.",
+    "progressing.buyCredits":"Köp krediter",
+    "progressing.publish":"Publicera språk",
+    "progressing.contact":"De kostnadsfria översättningskrediterna är otillräckliga. Vänligen köp krediter och försök igen.",
+    "progressing.noTranslate":"Det finns inga översättningsuppgifter just nu",
+    "progressing.contactButton":"Kontakta oss",
     "contact.title":"Kontakta oss",
     "contact.description":"Om du har frågor eller behöver hjälp, klicka på knappen nedan för att kontakta oss.",
     "contact.contactButton":"Kontakta oss",
@@ -235,6 +240,7 @@
     "Contact support": "Kontakta support",
     "word": "ord",
     "credit": "kredit",
-    "Credits to be consumed": "Krediter att använda"
+    "Credits to be consumed": "Krediter att använda",
+    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "Välkomen till vår app! Om du har några frågor, kontakta oss gärna på support@ciwi.ai, och vi svarar så snabbt som möjligt."
 }
   

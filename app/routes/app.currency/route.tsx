@@ -108,6 +108,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const moneyFormat = shopLoad.currencyFormats.moneyFormat;
           const moneyWithCurrencyFormat =
             shopLoad.currencyFormats.moneyWithCurrencyFormat;
+          const ip = await GetSwitchId({ shopName: shop });
           return json({
             primaryCurrency,
             defaultCurrencyCode: shopLoad.currencyCode,
@@ -201,7 +202,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             shopName: ip.shop,
             switchId: ip.ip,
           });
-          console.log(data);
 
           return json({ data });
         } catch (error) {
@@ -376,11 +376,13 @@ const Index = () => {
         themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
       const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
       const blocks = JSON.parse(jsonString).current.blocks;
-      const switcherJson: any = Object.values(blocks).find(
-        (block: any) => block.type === ciwiSwitcherBlocksId,
-      );
-      if (!switcherJson || switcherJson.disabled) {
-        setSwitcherEnableCardOpen(true);
+      if (blocks) {
+        const switcherJson: any = Object.values(blocks).find(
+          (block: any) => block.type === ciwiSwitcherBlocksId,
+        );
+        if (!switcherJson || switcherJson.disabled) {
+          setSwitcherEnableCardOpen(true);
+        }
       }
     }
   }, [themeFetcher.data]);
@@ -395,7 +397,6 @@ const Index = () => {
       }, []);
       if (newRates.length > 0) {
         setCurrencyAutoRate(newRates);
-        console.log(newRates);
       }
     }
   }, [rateFetcher.data]);

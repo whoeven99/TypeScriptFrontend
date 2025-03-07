@@ -19,7 +19,7 @@
     "Auto": "自動",
     "After setting, you can": "設定後、次を行うことができます",
     "Preview": "プレビュー",
-    "to view the prices in different currencies.": "異なる通貨で価格を表示します。",
+    "to view the prices in different currencies.": " 異なる通貨で価格を表示します。",
     "Search currencies...": "通貨を検索...",
     "will fluctuate based on market rates.": "市場の為替レートに基づいて変動します。",
     "To display currency switcher, please follow the instructions below:": "通貨切り替えを表示するには、以下の手順に従ってください：",
@@ -36,7 +36,7 @@
     "Completed": "完了",
     "Please": "お願いします",
     "Click here": "ここをクリック",
-    "to go to Shopify theme editor >> enable Ciwi_Switcher >> click the Save button in the right corner.": "Shopifyテーマエディターに移動 >> Ciwi_Switcherを有効化 >> 右上隅の「保存」ボタンをクリックします。",
+    "to go to Shopify theme editor >> enable Ciwi_Switcher >> click the Save button in the right corner.": " Shopifyテーマエディターに移動 >> Ciwi_Switcherを有効化 >> 右上隅の「保存」ボタンをクリックします。",
     "Please refer to this": "以下をご参照ください",
     "step-by-step guide": "ステップバイステップガイド",
     "Create translation rules for certain words and phrases": "特定の単語やフレーズに対する翻訳ルールを作成",
@@ -154,8 +154,13 @@
     "rating.description":"当社の製品やサービスにご満足いただけましたら、ぜひ評価をお寄せいただき、改善にご協力ください。",
     "progressing.title":"翻訳タスク: ",
     "progressing.target":"ターゲット言語: ",
-    "progressing.progressing":"翻訳中 ",
-    "progressing.module":" モジュール",
+    "progressing.progressingWithSpace":"翻訳中 {{item}} モジュール",
+    "progressing.finished":"翻訳が完了しました。翻訳されたコンテンツは公開する前に有効になります。",
+    "progressing.buyCredits":"クレジットを購入する",
+    "progressing.publish":"言語を公開する",
+    "progressing.contact":"無料の翻訳クレジットが不足しています。クレジットを購入して再試行してください。",
+    "progressing.noTranslate":"現在の翻訳タスクはありません",
+    "progressing.contactButton":"サポートに連絡する",
     "contact.title":"お問い合わせ",
     "contact.description":"ご質問やサポートが必要な場合は、以下のボタンをクリックしてお問い合わせください。",
     "contact.contactButton":"サポートに連絡する",
@@ -235,6 +240,7 @@
     "Contact support": "サポートに連絡する",
     "word": "単語",
     "credit": "クレジット",
-    "Credits to be consumed": "使用するクレジット"
+    "Credits to be consumed": "使用するクレジット",
+    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "当社のアプリケーションにようこそ！ご質問がありましたら、support@ciwi.aiまでお問い合わせください。迅速にご回答いたします。"
 }
   

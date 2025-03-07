@@ -242,7 +242,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }, { status: 200 });
             } else {
-              console.log(translation);
               const source = translation.primaryLanguage;
               const target = translation.selectedLanguage.locale;
               const translateSettings1 = translation.translateSettings1;

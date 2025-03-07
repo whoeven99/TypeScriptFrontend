@@ -4,6 +4,7 @@ import { Button, Card, Col, Modal, Row, Skeleton, Space, Table, Typography } fro
 import {
   Link,
   useFetcher,
+  useLoaderData,
   useNavigate,
 } from "@remix-run/react";
 import "./styles.css";
@@ -21,6 +22,11 @@ import UserGuideCard from "~/routes/app._index/components/userGuideCard";
 import ContactCard from "~/routes/app._index/components/contactCard";
 import PreviewCard from "./components/previewCard";
 import ScrollNotice from "~/components/ScrollNotice";
+import { authenticate } from "~/shopify.server";
+import { LoaderFunctionArgs } from "@remix-run/node";
+import { queryShopLanguages } from "~/api/admin";
+import ProgressingCard from "~/components/progressingCard";
+import { AddDefaultLanguagePack, AddUserFreeSubscription, GetTranslateDOByShopNameAndSource, InitializationDetection, InsertCharsByShopName, InsertTargets, UserAdd } from "~/api/serve";
 
 const { Title, Text } = Typography;
 
@@ -46,11 +52,51 @@ export interface WordsType {
   totalChars: number;
 }
 
-export const loader = async () => {
-  return null;
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+  const initData = await InitializationDetection({ request });
+  if (!initData?.add) await UserAdd({ request });
+  if (!initData?.insertCharsByShopName)
+    await InsertCharsByShopName({ request });
+  if (!initData?.addDefaultLanguagePack)
+    await AddDefaultLanguagePack({ request });
+  if (!initData?.addUserFreeSubscription)
+    await AddUserFreeSubscription({ shop });
+  const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
+    shop,
+    accessToken,
+  });
+  const shopPrimaryLanguage = shopLanguagesIndex.filter(
+    (language) => language.primary,
+  );
+  const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
+    (language) => !language.primary,
+  );
+  const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
+    (item) => item.locale,
+  );
+  await InsertTargets({
+    shop,
+    accessToken: accessToken!,
+    source: shopPrimaryLanguage[0].locale,
+    targets: shopLocalesIndex,
+  });
+  const data = await GetTranslateDOByShopNameAndSource({ shop, source: shopPrimaryLanguage[0].locale });
+  console.log("GetTranslateDOByShopNameAndSource: ", data);
+  return {
+    translatingLanguage: {
+      source: data.response?.source || "",
+      target: data.response?.target || "",
+      status: data.response?.status || 0,
+      resourceType: data.response?.resourceType || "",
+    }
+  };
+
 };
 
 const Index = () => {
+  const { translatingLanguage } = useLoaderData<typeof loader>();
   // const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
   // const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
   // const [user, setUser] = useState<UserType>();
@@ -241,6 +287,7 @@ const Index = () => {
                 <Button type="primary" onClick={() => navigate("/app/translate", { state: { from: "/app", selectedLanguageCode: "" } })}>{t("transLanguageCard1.button")}</Button>
               </Space>
             </Card>
+            <ProgressingCard source={translatingLanguage.source} target={translatingLanguage.target} status={translatingLanguage.status} resourceType={translatingLanguage.resourceType} />
             <Row gutter={16}>
               <Col xs={24} sm={24} md={12}>
                 <Card
@@ -291,9 +338,9 @@ const Index = () => {
               chars={user.chars}
               totalChars={user.totalChars}
             />
-          ) : (
-            <Skeleton active />
-          )} */}
+            ) : (
+              <Skeleton active />
+            )} */}
             <Card
               bordered={false}
             >

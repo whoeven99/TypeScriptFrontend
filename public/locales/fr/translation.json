@@ -19,7 +19,7 @@
     "Auto": "Automatique",
     "After setting, you can": "Après la configuration, vous pouvez",
     "Preview": "Aperçu",
-    "to view the prices in different currencies.": "pour voir les prix dans différentes devises.",
+    "to view the prices in different currencies.": " pour voir les prix dans différentes devises.",
     "Search currencies...": "Rechercher des devises...",
     "will fluctuate based on market rates.": "fluctuera en fonction des taux du marché.",
     "To display currency switcher, please follow the instructions below:": "Pour afficher le sélecteur de devise, veuillez suivre les instructions ci-dessous :",
@@ -36,7 +36,7 @@
     "Completed": "Terminé",
     "Please": "Veuillez",
     "Click here": "Cliquez ici",
-    "to go to Shopify theme editor >> enable Ciwi_Switcher >> click the Save button in the right corner.": "pour aller à l'éditeur de thème Shopify >> activer Ciwi_Switcher >> cliquer sur le bouton Enregistrer dans le coin droit.",
+    "to go to Shopify theme editor >> enable Ciwi_Switcher >> click the Save button in the right corner.": " pour aller à l'éditeur de thème Shopify >> activer Ciwi_Switcher >> cliquer sur le bouton Enregistrer dans le coin droit.",
     "Please refer to this": "Veuillez vous référer à ce",
     "step-by-step guide": "guide étape par étape",
     "Create translation rules for certain words and phrases": "Créer des règles de traduction pour certains mots et expressions",
@@ -154,8 +154,13 @@
     "rating.description":"Si vous êtes satisfait de nos produits et services, n'hésitez pas à nous donner votre évaluation pour nous aider à mieux nous améliorer !",
     "progressing.title":"Tâches de traduction: ",
     "progressing.target":"Langue cible: ",
-    "progressing.progressing":"Traduction ",
-    "progressing.module":" module",
+    "progressing.progressingWithSpace":"Traduction {{item}} module",
+    "progressing.finished":"La traduction a été terminée. Le contenu traduit doit être publié avant qu'il prenne effet.",
+    "progressing.buyCredits":"Acheter des crédits",
+    "progressing.publish":"Publier la langue",
+    "progressing.contact":"Les crédits de traduction gratuits sont insuffisants. Veuillez acheter des crédits et réessayer la traduction.",
+    "progressing.noTranslate":"Aucune tâche de traduction maintenant",
+    "progressing.contactButton":"Contacter le support",
     "contact.title":"Contactez-nous",
     "contact.description":"Si vous avez des questions ou besoin d'aide, veuillez cliquer sur le bouton ci-dessous pour contacter le support.",
     "contact.contactButton":"Contacter le support",
@@ -235,6 +240,7 @@
     "Contact support": "Contacter le support",
     "word": "mot",
     "credit": "crédit",
-    "Credits to be consumed": "Crédits à consommer"
+    "Credits to be consumed": "Crédits à consommer",
+    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "Bienvenue dans notre application ! Si vous avez des questions, n'hésitez pas à nous contacter à l'adresse support@ciwi.ai, et nous répondrons le plus rapidement possible."
 }
   

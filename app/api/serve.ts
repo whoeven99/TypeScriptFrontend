@@ -20,6 +20,29 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+//获取最新翻译状态
+export const GetTranslateDOByShopNameAndSource = async ({
+  shop,
+  source, 
+}: {
+  shop: string;
+  source: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/translate/getTranslateDOByShopNameAndSource`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        source: source,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error get translate do by shop name and source:", error);
+  }
+};
+
 export const GetUserInitTokenByShopName = async ({
   shop,
 }: {
@@ -331,7 +354,6 @@ export const GetTranslationItemsInfo = async ({
         };
       }),
     ];
-    console.log(res);
     return res;
   } catch (error) {
     console.error("Error fetching updating translation items:", error);
@@ -477,6 +499,14 @@ export const GetLanguageStatus = async ({
   source: string;
   target: string[];
 }) => {
+  console.log([
+    {
+      shopName: shop,
+      source: source,
+      target: target[0],
+    },
+  ]);
+
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/readTranslateDOByArray`,
@@ -490,7 +520,6 @@ export const GetLanguageStatus = async ({
       ],
     });
     const res = response.data.response;
-    console.log(res);
     return res;
   } catch (error) {
     console.error("Error occurred in the languageStatus:", error);
@@ -1220,7 +1249,7 @@ export const GetCurrencyByShopName = async ({
     });
 
     const res = response.data.response;
-    console.log("currency: ", res);
+    console.log("GetCurrencyByShopName: ", res);
     if (res) {
       const data = res.map((item: any) => ({
         key: item.id, // 将 id 转换为 key
@@ -1290,6 +1319,7 @@ export const GetCacheData = async ({
   currencyCode: string;
 }) => {
   try {
+    console.log("currencyCode: ", currencyCode);
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/getCacheData`,
       method: "POST",
@@ -1300,7 +1330,7 @@ export const GetCacheData = async ({
     });
 
     const res = response.data.response;
-    console.log("currency: ", res);
+    console.log("GetCacheData: ", res);
     return {
       currencyCode: currencyCode,
       rate: res.exchangeRate,
@@ -1492,7 +1522,6 @@ export const UpdateTargetTextById = async ({
     });
 
     const res = response.data;
-    console.log(res);
     return res;
   } catch (error) {
     console.error("Error UpdateTargetTextById:", error);
@@ -1530,7 +1559,6 @@ export const InsertGlossaryInfo = async ({
 
     const res = response.data;
 
-    console.log(res);
     return res;
   } catch (error) {
     console.error("Error InsertGlossaryInfo:", error);
@@ -1548,7 +1576,6 @@ export const DeleteGlossaryInfo = async ({ id }: { id: number }) => {
     });
 
     const res = response.data;
-    console.log(res);
 
     return res;
   } catch (error) {
@@ -1563,7 +1590,6 @@ export const GetSwitchId = async ({ shopName }: { shopName: string }) => {
       method: "GET",
     });
     const res = response.data;
-    console.log(res);
     if (res.response) {
       return res.response;
     } else {

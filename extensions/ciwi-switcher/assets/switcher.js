@@ -441,7 +441,6 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
 // Page load handling
 window.onload = async function () {
-  // 在页面加载时执行初始化
   const shop = document.getElementById("queryCiwiId");
   shop.remove();
   const IpOpen = await fetchIpSwitch(shop.value);
@@ -463,62 +462,66 @@ window.onload = async function () {
     ).map((link) => link.getAttribute("data-value"));
 
     if (storedLanguage) {
-      console.log(storedLanguage);
-      console.log(languageInput.value);
       if (
         storedLanguage !== languageInput.value &&
         availableLanguages.includes(storedLanguage)
       ) {
         // 存储到 localStorage
         languageInput.value = storedLanguage;
-        console.log(languageInput.value);
+      }
+    } else {
+      const browserLanguage = navigator.language;
+      // 获取匹配的语言或默认为英语
+      const detectedLanguage = browserLanguage || "en";
+      localStorage.setItem("selectedLanguage", detectedLanguage);
+      if (
+        languageInput.value !== detectedLanguage &&
+        availableLanguages.includes(detectedLanguage)
+      ) {
+        languageInput.value = detectedLanguage;
       }
     }
-    const prices = document.querySelectorAll(".ciwi-money");
-    prices.forEach((price) => {
-      const priceText = price.innerText;
-      const transformedPrice = transform(
-        priceText,
-        rate,
-        moneyFormat,
-        selectedCurrency.symbol,
-        selectedCurrency.currencyCode,
-        selectedCurrency.rounding,
-      );
 
-      if (transformedPrice) {
-        price.innerText = transformedPrice;
+    if (storedCountry) {
+      if (
+        countryInput.value !== storedCountry &&
+        availableCountries.includes(storedCountry)
+      ) {
+        countryInput.value = storedCountry;
       }
-    });
-    currencyInput.value = value;
-    currencySwitcher.value = value;
+    } else {
+      const IpData = await fetchUserCountryInfo(iptokenValue);
+      if (
+        IpData?.country_code &&
+        availableCountries.includes(IpData.country_code)
+      ) {
+        if (countryInput.value !== IpData.country_code) {
+          countryInput.value = IpData.country_code;
+        }
+        localStorage.setItem("selectedCountry", countryInput.value);
+        console.log(
+          "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
+        );
+      }
+    }
+    const htmlElement = document.documentElement; // 获取 <html> 元素
+    const isInThemeEditor = htmlElement.classList.contains(
+      "shopify-design-mode",
+    );
+    if (
+      (countryInput.value !== country || languageInput.value !== language) &&
+      !isInThemeEditor
+    ) {
+      updateLocalization({
+        country: countryInput.value,
+        language: languageInput.value,
+      });
+    }
+  }
 
-    data.forEach((currency) => {
-      const option = new Option(
-        `${currency.currencyCode}(${currency.symbol})`,
-        currency.currencyCode,
-      );
-      if (currency.currencyCode == value) {
-        option.selected = true;
-      }
-      currencySwitcher.add(option);
-    });
-    updateDisplayText();
-  } else if (data.length) {
-    currencySwitcher.style.display = "block";
-    currencyTitleLabel.style.display = "block";
-    currencyInput.value = data[0];
-    currencySwitcher.value = data[0]?.currencyCode;
-    data.forEach((currency) => {
-      const option = new Option(
-        `${currency.currencyCode}(${currency.symbol})`,
-        currency.currencyCode,
-      );
-      if (currency.primaryStatus) {
-        option.selected = true;
-      }
-      currencySwitcher.add(option);
-    });
-    updateDisplayText();
+  // 在页面加载时执行初始化
+  const data = await fetchCurrencies(shop.value);
+  if (data) {
+    await initializeCurrency(data, shop);
   }
 };
