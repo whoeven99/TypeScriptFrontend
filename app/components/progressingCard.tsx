@@ -469,4 +469,4 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
     );
 };
 
-// export default ProgressingCard;
+export default ProgressingCard;

@@ -25,8 +25,8 @@ import ScrollNotice from "~/components/ScrollNotice";
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
-import ProgressingCard from "~/components/progressingCard";
 import { AddDefaultLanguagePack, AddUserFreeSubscription, GetTranslateDOByShopNameAndSource, InitializationDetection, InsertCharsByShopName, InsertTargets, UserAdd } from "~/api/serve";
+import ProgressingCard from "~/components/progressingCard";
 
 const { Title, Text } = Typography;
 
