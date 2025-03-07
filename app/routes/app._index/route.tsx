@@ -26,7 +26,7 @@ import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import ProgressingCard from "~/components/progressingCard";
-import { GetTranslateDOByShopNameAndSource } from "~/api/serve";
+import { AddDefaultLanguagePack, AddUserFreeSubscription, GetTranslateDOByShopNameAndSource, InitializationDetection, InsertCharsByShopName, InsertTargets, UserAdd } from "~/api/serve";
 
 const { Title, Text } = Typography;
 
@@ -55,13 +55,33 @@ export interface WordsType {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+  const initData = await InitializationDetection({ request });
+  if (!initData?.add) await UserAdd({ request });
+  if (!initData?.insertCharsByShopName)
+    await InsertCharsByShopName({ request });
+  if (!initData?.addDefaultLanguagePack)
+    await AddDefaultLanguagePack({ request });
+  if (!initData?.addUserFreeSubscription)
+    await AddUserFreeSubscription({ shop });
+  const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
     shop,
     accessToken,
-  })
-  const shopPrimaryLanguage = shopLanguagesLoad.filter(
+  });
+  const shopPrimaryLanguage = shopLanguagesIndex.filter(
     (language) => language.primary,
   );
+  const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
+    (language) => !language.primary,
+  );
+  const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
+    (item) => item.locale,
+  );
+  await InsertTargets({
+    shop,
+    accessToken: accessToken!,
+    source: shopPrimaryLanguage[0].locale,
+    targets: shopLocalesIndex,
+  });
   const data = await GetTranslateDOByShopNameAndSource({ shop, source: shopPrimaryLanguage[0].locale });
   console.log("GetTranslateDOByShopNameAndSource: ", data);
   return {

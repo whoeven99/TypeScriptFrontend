@@ -1262,7 +1262,7 @@ export const GetCurrencyByShopName = async ({
     });
 
     const res = response.data.response;
-    console.log("currency: ", res);
+    console.log("GetCurrencyByShopName: ", res);
     if (res) {
       const data = res.map((item: any) => ({
         key: item.id, // 将 id 转换为 key
@@ -1332,6 +1332,7 @@ export const GetCacheData = async ({
   currencyCode: string;
 }) => {
   try {
+    console.log("currencyCode: ", currencyCode);
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/getCacheData`,
       method: "POST",
@@ -1342,7 +1343,7 @@ export const GetCacheData = async ({
     });
 
     const res = response.data.response;
-    console.log("currency: ", res);
+    console.log("GetCacheData: ", res);
     return {
       currencyCode: currencyCode,
       rate: res.exchangeRate,
@@ -1534,7 +1535,6 @@ export const UpdateTargetTextById = async ({
     });
 
     const res = response.data;
-    console.log(res);
     return res;
   } catch (error) {
     console.error("Error UpdateTargetTextById:", error);
@@ -1572,7 +1572,6 @@ export const InsertGlossaryInfo = async ({
 
     const res = response.data;
 
-    console.log(res);
     return res;
   } catch (error) {
     console.error("Error InsertGlossaryInfo:", error);
@@ -1590,7 +1589,6 @@ export const DeleteGlossaryInfo = async ({ id }: { id: number }) => {
     });
 
     const res = response.data;
-    console.log(res);
 
     return res;
   } catch (error) {
@@ -1605,7 +1603,6 @@ export const GetSwitchId = async ({ shopName }: { shopName: string }) => {
       method: "GET",
     });
     const res = response.data;
-    console.log(res);
     if (res.response) {
       return res.response;
     } else {
