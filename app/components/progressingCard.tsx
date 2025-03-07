@@ -218,35 +218,38 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
 
     const calculateProgressByType = (resourceType: string): number => {
         switch (resourceType) {
-            case 'PRODUCT':
-                setItem("Products");
-                return 28;
-            case 'PRODUCT_OPTION':
-                setItem("Products");
-                return 30;
-            case 'PRODUCT_OPTION_VALUE':
-                setItem("Products");
-                return 32;
-            case 'COLLECTION':
-                setItem("Collections");
-                return 34;
             case 'ONLINE_STORE_THEME':
                 setItem("Online Store Theme");
-                return 36;
+                return 28;
             case 'ONLINE_STORE_THEME_APP_EMBED':
                 setItem("Online Store Theme");
-                return 38;
+                return 30;
             case 'ONLINE_STORE_THEME_JSON_TEMPLATE':
                 setItem("Online Store Theme");
-                return 42;
+                return 32;
             case 'ONLINE_STORE_THEME_SECTION_GROUP':
                 setItem("Online Store Theme");
-                return 44;
+                return 34;
             case 'ONLINE_STORE_THEME_SETTINGS_CATEGORY':
                 setItem("Online Store Theme");
-                return 46;
+                return 36;
             case 'ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS':
                 setItem("Online Store Theme");
+                return 38;
+            case 'ONLINE_STORE_THEME_LOCALE_CONTENT':
+                setItem("Email Templates");
+                return 40;
+            case 'PRODUCT':
+                setItem("Products");
+                return 42;
+            case 'PRODUCT_OPTION':
+                setItem("Products");
+                return 44;
+            case 'PRODUCT_OPTION_VALUE':
+                setItem("Products");
+                return 46;
+            case 'COLLECTION':
+                setItem("Collections");
                 return 48;
             case 'PACKING_SLIP_TEMPLATE':
                 setItem("Online Store Theme");
@@ -257,9 +260,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
             case 'EMAIL_TEMPLATE':
                 setItem("Email Templates");
                 return 60;
-            case 'ONLINE_STORE_THEME_LOCALE_CONTENT':
-                setItem("Email Templates");
-                return 62;
             case 'MENU':
                 setItem("Navigation");
                 return 65;
