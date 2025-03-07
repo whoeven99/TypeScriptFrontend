@@ -567,15 +567,12 @@ window.onload = async function () {
     ).map((link) => link.getAttribute("data-value"));
 
     if (storedLanguage) {
-      console.log(storedLanguage);
-      console.log(languageInput.value);
       if (
         storedLanguage !== languageInput.value &&
         availableLanguages.includes(storedLanguage)
       ) {
         // 存储到 localStorage
         languageInput.value = storedLanguage;
-        console.log(languageInput.value);
       }
     } else {
       const browserLanguage = navigator.language;
@@ -599,7 +596,6 @@ window.onload = async function () {
       }
     } else {
       const IpData = await fetchUserCountryInfo(iptokenValue);
-      console.log(IpData);
       if (
         IpData?.country_code &&
         availableCountries.includes(IpData.country_code)
@@ -621,7 +617,6 @@ window.onload = async function () {
       (countryInput.value !== country || languageInput.value !== language) &&
       !isInThemeEditor
     ) {
-      console.log(countryInput.value, languageInput.value);
       updateLocalization({
         country: countryInput.value,
         language: languageInput.value,

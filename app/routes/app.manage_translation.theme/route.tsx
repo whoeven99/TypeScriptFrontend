@@ -242,8 +242,6 @@ const Index = () => {
         return updatedConfirmData;
       } else {
         // 如果 key 不存在，新增一条数据
-        console.log();
-
         const newItem = {
           resourceId: themes.nodes[0]?.resourceId,
           locale: themes.nodes[0]?.translatableContent[0]?.locale,

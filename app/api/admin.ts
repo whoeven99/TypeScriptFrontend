@@ -1391,7 +1391,6 @@ export const queryOrders = async ({
       data: JSON.stringify({ query }),
     });
     const res = response.data.node;
-    console.log(res);
     return res;
   } catch (error) {
     console.error("Error fetching orders:", error);
@@ -1540,7 +1539,6 @@ export const mutationShopLocaleDisable = async ({
       },
     });
 
-    console.log(response.data.data.shopLocaleDisable.locale);
     const res = response.data.data.shopLocaleDisable.locale;
     return res || language.locale;
   } catch (error) {
@@ -1704,7 +1702,6 @@ export const mutationAppPurchaseOneTimeCreate = async ({
       },
     });
     const res = response.data;
-    console.log(res);
     return res;
   } catch (error) {
     console.error("Payment failed:", error);
@@ -1789,7 +1786,6 @@ export const mutationAppSubscriptionCreate = async ({
       },
     });
     const res = response.data;
-    console.log(res);
     return res;
   } catch (error) {
     console.error("Payment failed:", error);

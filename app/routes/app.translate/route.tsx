@@ -88,12 +88,6 @@ const Index = () => {
     );
 
     useEffect(() => {
-        console.log("translateSettings1: ", translateSettings1);
-        console.log("translateSettings2: ", translateSettings2);
-        console.log("translateSettings3: ", translateSettings3);
-    }, [translateSettings1, translateSettings2, translateSettings3]);
-
-    useEffect(() => {
         const languageFormData = new FormData();
         languageFormData.append("languageData", JSON.stringify(true));
         loadingLanguageFetcher.submit(languageFormData, {
@@ -107,7 +101,6 @@ const Index = () => {
         //   action: "/app",
         // });
         if (location) {
-            console.log("selectedLanguageCode: ", location?.state?.selectedLanguageCode);
             setSelectedLanguageCode(location?.state?.selectedLanguageCode || "");
         }
         shopify.loading(true);

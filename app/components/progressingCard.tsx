@@ -50,7 +50,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
     }, [item]);
 
     useEffect(() => {
-        console.log("newStatus:", newStatus, "item:", item);
         let timeoutId: NodeJS.Timeout;
 
         // 当状态为 2 时，开始轮询
@@ -105,11 +104,10 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
 
     useEffect(() => {
         if (statusFetcher.data?.data) {
-            console.log("statusFetcher Fetched data:", statusFetcher.data.data);
-            const newStatusValue = statusFetcher.data.data[0].status;
+            const newStatusValue = statusFetcher.data?.data[0].status;
             setNewStatus(newStatusValue);
             if (newStatusValue === 2) {
-                setNewResourceType(statusFetcher.data.data[0].resourceType);
+                setNewResourceType(statusFetcher.data?.data[0].resourceType || "");
             } else {
                 setNewResourceType("");
                 // 状态不为 2 时，轮询会自动停止
@@ -119,10 +117,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
 
     useEffect(() => {
         if (itemsFetcher.data?.data) {
-            console.log("itemsFetcher Fetched data:", itemsFetcher.data.data);
             setItemsCount({
-                totalNumber: itemsFetcher.data.data[0].totalNumber,
-                translatedNumber: itemsFetcher.data.data[0].translatedNumber,
+                totalNumber: itemsFetcher.data?.data[0].totalNumber || 0,
+                translatedNumber: itemsFetcher.data?.data[0].translatedNumber || 0,
             });
             // console.log("itemsCount: ", itemsCount);
 
@@ -396,7 +393,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                 }}>
                                     <Progress
                                         percent={newStatus === 1 ? 100 : progress}
-                                        status={newStatus === 1 ? 'success' : 'active'}
+                                        status={newStatus === 1 ? 'success' : newStatus === 2 ? 'active' : 'normal'}
                                         percentPosition={{ align: 'end', type: 'inner' }}
                                         size={["100%", 20]}
                                         strokeColor="#001342"
@@ -404,35 +401,45 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                 </div>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '15%', flexDirection: 'column', height: '82px' }}>
-                                {newStatus !== 1 &&
+                                {newStatus === 3 &&
                                     <div style={{
-                                        // display: 'flex',
                                         width: '100%',  // 限制最大宽度
-                                        // alignItems: 'flex-end'  // 右对齐
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 10,
                                     }}>
-                                        {newStatus === 3 &&
-                                            <Button
-                                                block
-                                                onClick={() => navigate("/app/translate", { state: { selectedLanguageCode: target } })}
-                                            >
-                                                {t("progressing.buyCredits")}
-                                            </Button>
-                                        }
-                                        {/* {newStatus === 2 &&
+
+                                        <Button
+                                            block
+                                            onClick={() => navigate("/app/translate", { state: { selectedLanguageCode: target } })}
+                                        >
+                                            {t("progressing.buyCredits")}
+                                        </Button>
+                                        <Button
+                                            block
+                                            type="primary"
+                                            icon={<PhoneOutlined />}
+                                            onClick={handleContactSupport}
+                                        >
+                                            {t("progressing.contactButton")}
+                                        </Button>
+
+                                    </div>
+                                }
+                                {/* {newStatus === 2 &&
                                             <>
                                                 <Text>
                                                     {t("progressing.remaining")}
                                                 </Text>
                                             </>
                                         } */}
-                                    </div>
-                                }
-                                {(newStatus === 3 || newStatus === 4) &&
+                                {newStatus === 4 &&
                                     <Button
                                         block
                                         type="primary"
                                         icon={<PhoneOutlined />}
                                         onClick={handleContactSupport}
+                                        style={{ marginTop: 'auto' }}
                                     >
                                         {t("progressing.contactButton")}
                                     </Button>
@@ -443,6 +450,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                         type="primary"
                                         icon={<PhoneOutlined />}
                                         onClick={() => navigate("/app/language")}
+                                        style={{ marginTop: 'auto' }}
                                     >
                                         {t("progressing.publish")}
                                     </Button>
