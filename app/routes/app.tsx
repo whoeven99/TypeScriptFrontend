@@ -66,7 +66,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
     // const initialization = JSON.parse(formData.get("initialization") as string);
     const loading = JSON.parse(formData.get("loading") as string);
-    // const languageData = JSON.parse(formData.get("languageData") as string);
+    const languageData = JSON.parse(formData.get("languageData") as string);
     const nearTransaltedData = JSON.parse(formData.get("nearTransaltedData") as string);
     const userData = JSON.parse(formData.get("userData") as string);
     const translation = JSON.parse(formData.get("translation") as string);
@@ -127,59 +127,59 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    // if (languageData) {
-    //   try {
-    //     const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
-    //       shop,
-    //       accessToken,
-    //     });
-    //     const shopPrimaryLanguage = shopLanguagesIndex.filter(
-    //       (language) => language.primary,
-    //     );
-    //     const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
-    //       (language) => !language.primary,
-    //     );
-    //     const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
-    //       (item) => item.locale,
-    //     );
-    //     const languageLocaleInfo = await GetLanguageLocaleInfo({
-    //       locale: shopLocalesIndex,
-    //     });
+    if (languageData) {
+      try {
+        const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
+          shop,
+          accessToken,
+        });
+        const shopPrimaryLanguage = shopLanguagesIndex.filter(
+          (language) => language.primary,
+        );
+        const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
+          (language) => !language.primary,
+        );
+        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
+          (item) => item.locale,
+        );
+        const languageLocaleInfo = await GetLanguageLocaleInfo({
+          locale: shopLocalesIndex,
+        });
 
-    //     const languages = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
+        const languages = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
 
-    //     // const response = await axios({
-    //     //   url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}&&source=${shopPrimaryLanguage[0].locale}`,
-    //     //   method: "GET",
-    //     // });
-    //     // const languages = response.data.response;
+        // const response = await axios({
+        //   url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}&&source=${shopPrimaryLanguage[0].locale}`,
+        //   method: "GET",
+        // });
+        // const languages = response.data.response;
 
-    //     const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
-    //       key: i,
-    //       src: languageLocaleInfo[lang.locale].countries,
-    //       name: lang.name,
-    //       localeName: languageLocaleInfo[lang.locale].Local,
-    //       locale: lang.locale,
-    //       status:
-    //         languages ? languages.find((language: any) => language.target === lang.locale)
-    //           ?.status : 0,
-    //       published: lang.published,
-    //     }));
+        const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
+          key: i,
+          src: languageLocaleInfo[lang.locale].countries,
+          name: lang.name,
+          localeName: languageLocaleInfo[lang.locale].Local,
+          locale: lang.locale,
+          status:
+            languages ? languages.find((language: any) => language.target === lang.locale)
+              ?.status : 0,
+          published: lang.published,
+        }));
 
-    //     const languageSetting = {
-    //       primaryLanguage: shopPrimaryLanguage[0].name,
-    //       primaryLanguageCode: shopPrimaryLanguage[0].locale,
-    //       shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
-    //       shopLanguageCodesWithoutPrimary: shopLocalesIndex,
-    //     };
-    //     console.log(`${shop}根路由正常加载`);
+        const languageSetting = {
+          primaryLanguage: shopPrimaryLanguage[0].name,
+          primaryLanguageCode: shopPrimaryLanguage[0].locale,
+          shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
+          shopLanguageCodesWithoutPrimary: shopLocalesIndex,
+        };
+        console.log(`${shop}根路由正常加载`);
 
-    //     return json({ data, languageSetting, shop });
-    //   } catch (error) {
-    //     console.error("Error languageData app:", error);
-    //     return json({ error: "Error languageData app" }, { status: 500 });
-    //   }
-    // }
+        return json({ data, languageSetting, shop });
+      } catch (error) {
+        console.error("Error languageData app:", error);
+        return json({ error: "Error languageData app" }, { status: 500 });
+      }
+    }
 
     if (nearTransaltedData) {
       const adminAuthResult = await authenticate.admin(request);

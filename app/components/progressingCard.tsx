@@ -101,11 +101,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
     }, [status, source, target, item]); // 添加 item 到依赖数组
 
     useEffect(() => {
-        if (fetcher.data?.data) {
-            setSource(fetcher.data?.data.translatingLanguage.source);
-            setTarget(fetcher.data?.data.translatingLanguage.target);
-            setResourceType(fetcher.data?.data.translatingLanguage.resourceType);
-            setStatus(fetcher.data?.data.translatingLanguage.status);
+        if (fetcher.data?.translatingLanguage) {
+            setSource(fetcher.data?.translatingLanguage.source);
+            setTarget(fetcher.data?.translatingLanguage.target);
+            setResourceType(fetcher.data?.translatingLanguage.resourceType);
+            setStatus(fetcher.data?.translatingLanguage.status);
             setLoading(false);
         }
     }, [fetcher.data]);

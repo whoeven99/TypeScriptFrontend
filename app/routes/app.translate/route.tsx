@@ -111,6 +111,10 @@ const Index = () => {
     }, []);
 
     useEffect(() => {
+        console.log("languageData: ", languageData);
+    }, [languageData]);
+
+    useEffect(() => {
         if (loadingLanguageFetcher.data) {
             setLanguageData(loadingLanguageFetcher.data.data);
             setLanguageSetting(loadingLanguageFetcher.data.languageSetting);
