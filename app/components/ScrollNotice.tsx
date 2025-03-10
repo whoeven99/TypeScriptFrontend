@@ -40,7 +40,6 @@ const ScrollNotice: React.FC<ScrollNoticeProps> = ({
                 textOverflow: 'ellipsis',  // 添加省略号
                 WebkitLineClamp: 1,        // 限制为单行
                 WebkitBoxOrient: 'vertical',
-                padding: '0 15px',         // 添加内边距防止文字贴边
             }}
             className={className}
         // onMouseEnter={() => setIsHovered(true)}

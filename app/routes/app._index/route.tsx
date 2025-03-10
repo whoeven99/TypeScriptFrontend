@@ -3,21 +3,13 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { Button, Card, Col, Modal, Row, Skeleton, Space, Table, Typography } from "antd";
 import {
   Link,
-  useFetcher,
   useLoaderData,
   useNavigate,
 } from "@remix-run/react";
 import "./styles.css";
 import { ShopLocalesType } from "../app.language/route";
-import { useDispatch } from "react-redux";
-import { setTableData } from "~/store/modules/languageTableData";
-import { Suspense, useCallback, useEffect, useState } from "react";
-import NoLanguageSetCard from "~/components/noLanguageSetCard";
-import UserLanguageCard from "./components/userLanguageCard";
+import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
-import UserProfileCard from "./components/userProfileCard";
-import PaymentModal from "~/components/paymentModal";
-import PreviewModal from "~/components/previewModal";
 import UserGuideCard from "~/routes/app._index/components/userGuideCard";
 import ContactCard from "~/routes/app._index/components/contactCard";
 import PreviewCard from "./components/previewCard";
@@ -26,26 +18,9 @@ import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import ProgressingCard from "~/components/progressingCard";
-import { AddDefaultLanguagePack, AddUserFreeSubscription, GetTranslateDOByShopNameAndSource, InitializationDetection, InsertCharsByShopName, InsertTargets, UserAdd } from "~/api/serve";
+import { GetTranslateDOByShopNameAndSource } from "~/api/serve";
 
 const { Title, Text } = Typography;
-
-interface LanguageDataType {
-  key: number;
-  src: string[];
-  name: string;
-  locale: string;
-  localeName: string;
-  status: number;
-  published: boolean;
-}
-
-interface LanguageSettingType {
-  primaryLanguage: string;
-  primaryLanguageCode: string;
-  shopLanguagesWithoutPrimary: ShopLocalesType[];
-  shopLanguageCodesWithoutPrimary: string[];
-}
 
 export interface WordsType {
   chars: number;
@@ -55,14 +30,7 @@ export interface WordsType {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  const initData = await InitializationDetection({ request });
-  if (!initData?.add) await UserAdd({ request });
-  if (!initData?.insertCharsByShopName)
-    await InsertCharsByShopName({ request });
-  if (!initData?.addDefaultLanguagePack)
-    await AddDefaultLanguagePack({ request });
-  if (!initData?.addUserFreeSubscription)
-    await AddUserFreeSubscription({ shop });
+
   const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
     shop,
     accessToken,
@@ -76,25 +44,34 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
     (item) => item.locale,
   );
-  await InsertTargets({
-    shop,
-    accessToken: accessToken!,
-    source: shopPrimaryLanguage[0].locale,
-    targets: shopLocalesIndex,
-  });
+
+  const Cstarttime = new Date();
   const data = await GetTranslateDOByShopNameAndSource({ shop, source: shopPrimaryLanguage[0].locale });
   console.log("GetTranslateDOByShopNameAndSource: ", data);
-  return {
-    translatingLanguage: {
-      source: data.response?.source || "",
-      target: data.response?.target || "",
-      status: data.response?.status || 0,
-      resourceType: data.response?.resourceType || "",
+  const Cendtime = new Date();
+  const Ctime = Cendtime.getTime() - Cstarttime.getTime();
+  console.log("Ctime: ", Ctime);
+
+  if (shopLocalesIndex.includes(data.response?.target)) {
+    return {
+      translatingLanguage: {
+        source: data.response?.source || shopPrimaryLanguage[0].locale,
+        target: data.response?.target || "",
+        status: data.response?.status || 0,
+        resourceType: data.response?.resourceType || "",
+      }
     }
-  };
-
-};
-
+  } else {
+    return {
+      translatingLanguage: {
+        source: data.response?.source || shopPrimaryLanguage[0].locale,
+        target: "",
+        status: 0,
+        resourceType: "",
+      }
+    };
+  }
+}
 const Index = () => {
   const { translatingLanguage } = useLoaderData<typeof loader>();
   // const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
@@ -287,7 +264,7 @@ const Index = () => {
                 <Button type="primary" onClick={() => navigate("/app/translate", { state: { from: "/app", selectedLanguageCode: "" } })}>{t("transLanguageCard1.button")}</Button>
               </Space>
             </Card>
-            <ProgressingCard source={translatingLanguage.source} target={translatingLanguage.target} status={translatingLanguage.status} resourceType={translatingLanguage.resourceType} />
+            <ProgressingCard />
             <Row gutter={16}>
               <Col xs={24} sm={24} md={12}>
                 <Card

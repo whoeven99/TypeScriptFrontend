@@ -67,6 +67,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     // const initialization = JSON.parse(formData.get("initialization") as string);
     const loading = JSON.parse(formData.get("loading") as string);
     const languageData = JSON.parse(formData.get("languageData") as string);
+    const nearTransaltedData = JSON.parse(formData.get("nearTransaltedData") as string);
     const userData = JSON.parse(formData.get("userData") as string);
     const translation = JSON.parse(formData.get("translation") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
@@ -119,7 +120,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           targets: shopLocalesIndex,
         });
 
-        return null
+        return true
       } catch (error) {
         console.error("Error loading app:", error);
         return json({ error: "Error loading app" }, { status: 500 });
@@ -128,18 +129,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (languageData) {
       try {
-        const Acreatetime = new Date()
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,
         });
-        const Aendtime = new Date();
-
-        console.log("Acreatetime: ", Acreatetime);
-        console.log("Aendtime: ", Aendtime);
-        console.log("Atiming: ", Aendtime.getTime() - Acreatetime.getTime());
-
-        const Bcreatetime = new Date()
         const shopPrimaryLanguage = shopLanguagesIndex.filter(
           (language) => language.primary,
         );
@@ -149,16 +142,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
           (item) => item.locale,
         );
-        const Bendtime = new Date();
-
-        console.log("Bcreatetime: ", Bcreatetime);
-        console.log("Bendtime: ", Bendtime);
-        console.log("Btiming: ", Bendtime.getTime() - Bcreatetime.getTime());
         const languageLocaleInfo = await GetLanguageLocaleInfo({
           locale: shopLocalesIndex,
         });
 
-        const Dcreatetime = new Date()
         const languages = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
 
         // const response = await axios({
@@ -166,12 +153,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         //   method: "GET",
         // });
         // const languages = response.data.response;
-
-        const Dendtime = new Date();
-
-        console.log("Dcreatetime: ", Dcreatetime);
-        console.log("Dendtime: ", Dendtime);
-        console.log("Dtiming: ", Dendtime.getTime() - Dcreatetime.getTime());
 
         const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
           key: i,
@@ -197,6 +178,52 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       } catch (error) {
         console.error("Error languageData app:", error);
         return json({ error: "Error languageData app" }, { status: 500 });
+      }
+    }
+
+    if (nearTransaltedData) {
+      const adminAuthResult = await authenticate.admin(request);
+      const { shop, accessToken } = adminAuthResult.session;
+
+      const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
+        shop,
+        accessToken,
+      });
+      const shopPrimaryLanguage = shopLanguagesIndex.filter(
+        (language) => language.primary,
+      );
+      const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
+        (language) => !language.primary,
+      );
+      const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
+        (item) => item.locale,
+      );
+
+      const Cstarttime = new Date();
+      const data = await GetTranslateDOByShopNameAndSource({ shop, source: shopPrimaryLanguage[0].locale });
+      console.log("GetTranslateDOByShopNameAndSource: ", data);
+      const Cendtime = new Date();
+      const Ctime = Cendtime.getTime() - Cstarttime.getTime();
+      console.log("Ctime: ", Ctime);
+
+      if (shopLocalesIndex.includes(data.response?.target)) {
+        return {
+          translatingLanguage: {
+            source: data.response?.source || shopPrimaryLanguage[0].locale,
+            target: data.response?.target || "",
+            status: data.response?.status || 0,
+            resourceType: data.response?.resourceType || "",
+          }
+        }
+      } else {
+        return {
+          translatingLanguage: {
+            source: data.response?.source || shopPrimaryLanguage[0].locale,
+            target: "",
+            status: 0,
+            resourceType: "",
+          }
+        };
       }
     }
 
@@ -337,17 +364,17 @@ export default function App() {
           <Link to="/app" rel="home">
             Home
           </Link>
-          <Link to="/app/language">{t("Language")}</Link>
-          <Link to="/app/manage_translation">{t("Manage Translation")}</Link>
-          <Link to="/app/currency">{t("Currency")}</Link>
-          <Link to="/app/glossary">{t("Glossary")}</Link>
-          <Link to="/app/pricing">{t("Pricing")}</Link>
+          {loadingFetcher.data && <Link to="/app/language">{t("Language")}</Link>}
+          {loadingFetcher.data && <Link to="/app/manage_translation">{t("Manage Translation")}</Link>}
+          {loadingFetcher.data && <Link to="/app/currency">{t("Currency")}</Link>}
+          {loadingFetcher.data && <Link to="/app/glossary">{t("Glossary")}</Link>}
+          {loadingFetcher.data && <Link to="/app/pricing">{t("Pricing")}</Link>}
         </NavMenu>
         <Suspense>
           <Outlet />
         </Suspense>
       </ConfigProvider>
-    </AppProvider>
+    </AppProvider >
   );
 }
 

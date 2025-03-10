@@ -27,8 +27,8 @@ export default async function handleRequest(
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   const languageCode = language.split("-")[0];
   let i18nCode;
-  console.log("language:", language);
-  console.log("request.headers.get('Accept-Language'):", request.headers.get("Accept-Language"));
+  console.log("Server language: ", language);
+  console.log("Server request.headers.get('Accept-Language'): ", request.headers.get("Accept-Language"));
   switch (true) {
     case language === "fr" || (languageCode && languageCode === "fr"):
       i18nCode = "fr";
@@ -66,7 +66,7 @@ export default async function handleRequest(
     default:
       i18nCode = "en";
   }
-  console.log("i18nCode:", i18nCode);
+  console.log("Server i18nCode: ", i18nCode);
 
   addDocumentResponseHeaders(request, responseHeaders);
   const userAgent = request.headers.get("user-agent");

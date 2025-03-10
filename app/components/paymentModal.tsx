@@ -338,30 +338,30 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div>
             <Text strong>{t("Estimated number of words to translate: ")}</Text>
-            {credits > 0 ? <Text>{credits} {t("words")}</Text> : (credits < 0 ? <Text>{t("Calculation failed")}</Text> : <Text>{t("Calculating...")}</Text>)}
+            {credits > 0 ? <Text strong>{credits.toLocaleString()} {t("words")}</Text> : (credits < 0 ? <Text strong>{t("Calculation failed")}</Text> : <Text strong>{t("Calculating...")}</Text>)}
           </div>
-          {credits > 0 ? <Text>+{credits}</Text> : (credits < 0 ? <Text>{t("Calculation failed")}</Text> : <Text>{t("Calculating...")}</Text>)}
+          {credits > 0 ? <Text strong>+{credits.toLocaleString()}</Text> : (credits < 0 ? <Text strong>{t("Calculation failed")}</Text> : <Text strong>{t("Calculating...")}</Text>)}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div>
             <Text strong>{t("Translate files: ")}</Text>
-            <Text>{source.toUpperCase()} {t("translate to")} {target.toUpperCase()}</Text>
+            <Text strong>{source.toUpperCase()} {t("translate to")} {target.toUpperCase()}</Text>
           </div>
-          <Text>*{multiple1}</Text>
+          <Text strong>*{multiple1}</Text>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div>
             <Text strong>{t("Translate modal: ")}</Text>
-            <Text>{modal}</Text>
+            <Text strong>{modal}</Text>
           </div>
-          <Text>*{multiple2}</Text>
+          <Text strong>*{multiple2}</Text>
         </div>
         <Divider style={{ margin: "10px 0" }} />
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div>
             <Text strong>{t("Total: ")}</Text>
           </div>
-          <Text>{(credits * multiple1 * multiple2).toFixed(2) || 0}</Text>
+          <Text strong>{Number((credits * multiple1 * multiple2).toFixed(0)).toLocaleString() || 0}</Text>
         </div>
       </Card>
       <Divider />

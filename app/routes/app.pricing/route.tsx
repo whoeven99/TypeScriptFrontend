@@ -81,6 +81,7 @@ export default function PricingRoute() {
                                     display: plan.isRecommended ? 'block' : 'none',
                                     right: 0
                                 }}
+                                
                             >
                                 <Card
                                     hoverable
