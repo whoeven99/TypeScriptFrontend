@@ -148,9 +148,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("unPublishInfo") as string,
     );
     const deleteData = JSON.parse(formData.get("deleteData") as string);
-    console.log("deleteData: ", deleteData);
-    console.log("true: ", !!deleteData);
-
+    
     switch (true) {
       case !!loading:
         const shopLocalesIndex = loading.shopLocalesIndex;
