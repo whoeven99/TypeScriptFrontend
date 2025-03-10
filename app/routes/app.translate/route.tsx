@@ -25,7 +25,7 @@ import { useTranslation } from "react-i18next";
 import {
     ArrowLeftIcon
 } from '@shopify/polaris-icons';
-import { useFetcher, useLocation, useNavigate } from "@remix-run/react";
+import { Link, useFetcher, useLocation, useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { LanguagesDataType, ShopLocalesType } from "../app.language/route";
 import { setStatusState, setTableData } from "~/store/modules/languageTableData";
@@ -109,6 +109,10 @@ const Index = () => {
         //     localStorage.setItem('installTime', new Date().toISOString());
         // }
     }, []);
+
+    useEffect(() => {
+        console.log("languageData: ", languageData);
+    }, [languageData]);
 
     useEffect(() => {
         if (loadingLanguageFetcher.data) {
@@ -491,61 +495,65 @@ const Index = () => {
                     <Skeleton.Button active style={{ height: 600 }} block />
                 ) : languageData.length != 0 ? (
                     <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-                        <Card
-                            style={{
-                                width: '100%',
-                                marginBottom: "16px"
-                            }}
+                        <div
                         >
-                            <Radio.Group
-                                value={selectedLanguageCode}
-                                onChange={onChange}
-                                style={{ width: '100%' }}
+                            <Card
+                                style={{
+                                    width: '100%',
+                                    marginBottom: "16px"
+                                }}
                             >
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
-                                    gap: '16px',
-                                    width: '100%'
-                                }}>
-                                    {languageData.map((lang) => (
-                                        <Radio
-                                            key={lang.locale}
-                                            value={lang.locale}
-                                            style={{
-                                                width: '100%',
-                                                marginRight: 0,
-                                                padding: '8px 12px',
-                                                border: '1px solid #f0f0f0',
-                                                borderRadius: '4px',
-                                                alignItems: "center"
-                                            }}
-                                        >
-                                            <div style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                width: '100%'
-                                            }}>
-                                                <img
-                                                    src={lang.src[0]}
-                                                    alt={lang.name}
-                                                    style={{
-                                                        width: "30px",
-                                                        height: "auto",
-                                                        justifyContent: 'center',
-                                                        border: "1px solid #888",
-                                                        borderRadius: "2px",
-                                                        marginRight: "8px"
-                                                    }}
-                                                />
-                                                <span>{lang.name}</span>
-                                            </div>
-                                        </Radio>
-                                    ))}
-                                </div>
-                            </Radio.Group>
-                        </Card>
+                                <Radio.Group
+                                    value={selectedLanguageCode}
+                                    onChange={onChange}
+                                    style={{ width: '100%' }}
+                                >
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
+                                        gap: '16px',
+                                        width: '100%'
+                                    }}>
+                                        {languageData.map((lang) => (
+                                            <Radio
+                                                key={lang.locale}
+                                                value={lang.locale}
+                                                style={{
+                                                    width: '100%',
+                                                    marginRight: 0,
+                                                    padding: '8px 12px',
+                                                    border: '1px solid #f0f0f0',
+                                                    borderRadius: '4px',
+                                                    alignItems: "center"
+                                                }}
+                                            >
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    width: '100%'
+                                                }}>
+                                                    <img
+                                                        src={lang.src[0]}
+                                                        alt={lang.name}
+                                                        style={{
+                                                            width: "30px",
+                                                            height: "auto",
+                                                            justifyContent: 'center',
+                                                            border: "1px solid #888",
+                                                            borderRadius: "2px",
+                                                            marginRight: "8px"
+                                                        }}
+                                                    />
+                                                    <span>{lang.name}</span>
+                                                </div>
+                                            </Radio>
+                                        ))}
+                                    </div>
+                                </Radio.Group>
+                            </Card>
+                            <Link to={"/app/language"} style={{ paddingLeft: "8px" }}>{t("Can't find the language you want to translate into? Click here to add a language.")}</Link>
+                        </div>
                         <div style={{ paddingLeft: "8px" }}>
                             <Title level={5} style={{ fontSize: "1.25rem", margin: "0" }}>
                                 {t("translateSettings.title")}
