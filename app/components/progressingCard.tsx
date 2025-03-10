@@ -107,6 +107,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
             const newStatusValue = statusFetcher.data?.data[0].status;
             setNewStatus(newStatusValue);
             if (newStatusValue === 2) {
+                console.log("statusFetcher.data?.data[0].resourceType: ", statusFetcher.data?.data[0].resourceType);
                 setNewResourceType(statusFetcher.data?.data[0].resourceType || "");
             } else {
                 setNewResourceType("");
@@ -116,7 +117,8 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
     }, [statusFetcher.data]);
 
     useEffect(() => {
-        if (itemsFetcher.data?.data) {
+        if (itemsFetcher.data?.data && itemsFetcher.data?.data.length > 0) {
+            console.log("itemsFetcher.data?.data: ", itemsFetcher.data?.data);
             setItemsCount({
                 totalNumber: itemsFetcher.data?.data[0].totalNumber || 0,
                 translatedNumber: itemsFetcher.data?.data[0].translatedNumber || 0,
@@ -131,6 +133,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
             //     setNewResourceType("");
             //     // 状态不为 2 时，轮询会自动停止
             // }
+        } else {
+            setItemsCount({
+                totalNumber: 0,
+                translatedNumber: 0,
+            });
         }
     }, [itemsFetcher.data]);
 
@@ -237,7 +244,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                 setItem("Online Store Theme");
                 return 38;
             case 'ONLINE_STORE_THEME_LOCALE_CONTENT':
-                setItem("Email Templates");
+                setItem("Online Store Theme");
                 return 40;
             case 'PRODUCT':
                 setItem("Products");
@@ -249,7 +256,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                 setItem("Products");
                 return 46;
             case 'COLLECTION':
-                setItem("Collections");
+                setItem("Collection");
                 return 48;
             case 'PACKING_SLIP_TEMPLATE':
                 setItem("Online Store Theme");
@@ -327,7 +334,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'flex-start',
-                                    width: '85%',  // 确保占满容器宽度
+                                    width: '80%',  // 确保占满容器宽度
                                     textAlign: 'center',
                                     flexDirection: 'column',
                                     // height: '69px'
@@ -338,7 +345,8 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                     alignItems: 'flex-start',
                                     width: '100%',  // 确保占满容器宽度
                                     textAlign: 'center',
-                                    marginBottom: 'auto'  // 将内容推到顶部
+                                    marginBottom: 'auto',
+                                    gap: 10
                                 }}>
                                     {/* 左侧部分 */}
                                     <div style={{
@@ -400,7 +408,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                     />
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '15%', flexDirection: 'column', height: '82px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '20%', flexDirection: 'column', height: '82px' }}>
                                 {newStatus === 3 &&
                                     <div style={{
                                         width: '100%',  // 限制最大宽度

@@ -53,16 +53,53 @@ export interface WordsType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const Astarttime = new Date();
+  const astarttime = new Date();
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  const aendtime = new Date();
+  const atime = aendtime.getTime() - astarttime.getTime();
+  console.log("atime: ", atime);
+
+  const bstarttime = new Date();
   const initData = await InitializationDetection({ request });
+  const bendtime = new Date();
+  const btime = bendtime.getTime() - bstarttime.getTime();
+  console.log("btime: ", btime);
+
+  const cstarttime = new Date();
   if (!initData?.add) await UserAdd({ request });
+  const cendtime = new Date();
+  const ctime = cendtime.getTime() - cstarttime.getTime();
+  console.log("ctime: ", ctime);
+
+  const dstarttime = new Date();
   if (!initData?.insertCharsByShopName)
     await InsertCharsByShopName({ request });
+  const dendtime = new Date();
+  const dtime = dendtime.getTime() - dstarttime.getTime();
+  console.log("dtime: ", dtime);
+
+  const estarttime = new Date();
   if (!initData?.addDefaultLanguagePack)
     await AddDefaultLanguagePack({ request });
+  const eendtime = new Date();
+  const etime = eendtime.getTime() - estarttime.getTime();
+  console.log("etime: ", etime);
+
+  const fstarttime = new Date();
   if (!initData?.addUserFreeSubscription)
     await AddUserFreeSubscription({ shop });
+  const fendtime = new Date();
+  const ftime = fendtime.getTime() - fstarttime.getTime();
+  console.log("ftime: ", ftime);
+
+  const Aendtime = new Date();
+  const Atime = Aendtime.getTime() - Astarttime.getTime();
+  console.log("Atime: ", Atime);
+
+  const Bstarttime = new Date();
+  const Bastarttime = new Date();
   const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
     shop,
     accessToken,
@@ -76,14 +113,32 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
     (item) => item.locale,
   );
+  const Baendtime = new Date();
+  const Batime = Baendtime.getTime() - Bastarttime.getTime();
+  console.log("Batime: ", Batime);
+
+  const Castarttime = new Date();
   await InsertTargets({
     shop,
     accessToken: accessToken!,
     source: shopPrimaryLanguage[0].locale,
     targets: shopLocalesIndex,
   });
+  const Caendtime = new Date();
+  const Catime = Caendtime.getTime() - Castarttime.getTime();
+  console.log("Catime: ", Catime);
+
+  const Bendtime = new Date();
+  const Btime = Bendtime.getTime() - Bstarttime.getTime();
+  console.log("Btime: ", Btime);
+
+  const Cstarttime = new Date();
   const data = await GetTranslateDOByShopNameAndSource({ shop, source: shopPrimaryLanguage[0].locale });
   console.log("GetTranslateDOByShopNameAndSource: ", data);
+  const Cendtime = new Date();
+  const Ctime = Cendtime.getTime() - Cstarttime.getTime();
+  console.log("Ctime: ", Ctime);
+
   return {
     translatingLanguage: {
       source: data.response?.source || "",
@@ -92,7 +147,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       resourceType: data.response?.resourceType || "",
     }
   };
-
 };
 
 const Index = () => {

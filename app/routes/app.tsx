@@ -128,18 +128,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (languageData) {
       try {
-        const Acreatetime = new Date()
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken,
         });
-        const Aendtime = new Date();
-
-        console.log("Acreatetime: ", Acreatetime);
-        console.log("Aendtime: ", Aendtime);
-        console.log("Atiming: ", Aendtime.getTime() - Acreatetime.getTime());
-
-        const Bcreatetime = new Date()
         const shopPrimaryLanguage = shopLanguagesIndex.filter(
           (language) => language.primary,
         );
@@ -149,16 +141,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
           (item) => item.locale,
         );
-        const Bendtime = new Date();
-
-        console.log("Bcreatetime: ", Bcreatetime);
-        console.log("Bendtime: ", Bendtime);
-        console.log("Btiming: ", Bendtime.getTime() - Bcreatetime.getTime());
         const languageLocaleInfo = await GetLanguageLocaleInfo({
           locale: shopLocalesIndex,
         });
 
-        const Dcreatetime = new Date()
         const languages = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
 
         // const response = await axios({
@@ -166,13 +152,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         //   method: "GET",
         // });
         // const languages = response.data.response;
-
-        const Dendtime = new Date();
-
-        console.log("Dcreatetime: ", Dcreatetime);
-        console.log("Dendtime: ", Dendtime);
-        console.log("Dtiming: ", Dendtime.getTime() - Dcreatetime.getTime());
-
+        
         const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
           key: i,
           src: languageLocaleInfo[lang.locale].countries,
