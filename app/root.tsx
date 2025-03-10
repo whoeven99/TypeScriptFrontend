@@ -23,6 +23,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       request.headers.get("Accept-Language")?.split(",")[0] || "en";
     const languageCode = language.split("-")[0];
     let i18nCode;
+    console.log("Root language: ", language);
+    console.log("Root request.headers.get('Accept-Language'): ", request.headers.get("Accept-Language"));
     switch (true) {
       case language === "fr" || (languageCode && languageCode === "fr"):
         i18nCode = "fr";
@@ -60,6 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       default:
         i18nCode = "en";
     }
+    console.log("Root i18nCode: ", i18nCode);
     return json({ i18nCode: i18nCode });
   } catch (error) {
     console.error("Error get the default language", error);
@@ -209,7 +212,7 @@ export default function App() {
         <head>
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
-          <meta name="shopify-debug" content="web-vitals" />
+          {/* <meta name="shopify-debug" content="web-vitals" /> */}
           {/* <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
           <script
             dangerouslySetInnerHTML={{
