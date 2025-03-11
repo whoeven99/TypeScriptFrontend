@@ -264,6 +264,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
             case 'PACKING_SLIP_TEMPLATE':
                 setItem("Shipping");
                 return 50;
+            case 'SHOP_POLICY':
+                setItem("Shipping");
+                return 50;
             case 'EMAIL_TEMPLATE':
                 setItem("Shipping");
                 return 60;
@@ -277,6 +280,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                 setItem("Delivery");
                 return 70;
             case 'FILTER':
+                setItem("Filters");
+                return 73;
+            case 'METAFIELD':
                 setItem("Filters");
                 return 73;
             case 'METAOBJECT':
@@ -344,7 +350,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                         width: '100%',  // 确保占满容器宽度
                                         textAlign: 'center',
                                         marginBottom: 'auto',
-                                        gap: 10
+                                        gap: 30
                                     }}>
                                         {/* 左侧部分 */}
                                         <div style={{
@@ -417,13 +423,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
 
                                             <Button
                                                 block
+                                                type="primary"
                                                 onClick={() => navigate("/app/translate", { state: { selectedLanguageCode: target } })}
                                             >
                                                 {t("progressing.buyCredits")}
                                             </Button>
                                             <Button
                                                 block
-                                                type="primary"
                                                 icon={<PhoneOutlined />}
                                                 onClick={handleContactSupport}
                                             >
@@ -454,7 +460,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                         <Button
                                             block
                                             type="primary"
-                                            onClick={() => navigate("/app/language")}
+                                            onClick={() => navigate("/app/language", { state: { publishLanguageCode: target } })}
                                             style={{ marginTop: 'auto' }}
                                         >
                                             {t("progressing.publish")}

@@ -205,8 +205,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const Cendtime = new Date();
       const Ctime = Cendtime.getTime() - Cstarttime.getTime();
       console.log("Ctime: ", Ctime);
-
-      if (shopLocalesIndex.includes(data.response?.target)) {
+      
+      if (shopLocalesIndex.includes(data.response?.target) && !shopLanguagesWithoutPrimaryIndex.find((item) => item.locale === data.response?.target)?.published) {
         return {
           translatingLanguage: {
             source: data.response?.source || shopPrimaryLanguage[0].locale,

@@ -12,7 +12,7 @@ import {
 } from "antd";
 import { lazy, Suspense, useEffect, useState, startTransition } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { useFetcher, useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
+import { useFetcher, useLoaderData, useLocation, useNavigate, useSubmit } from "@remix-run/react";
 import "./styles.css";
 import { authenticate } from "~/shopify.server";
 import {
@@ -148,7 +148,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("unPublishInfo") as string,
     );
     const deleteData = JSON.parse(formData.get("deleteData") as string);
-    
+
     switch (true) {
       case !!loading:
         const shopLocalesIndex = loading.shopLocalesIndex;
@@ -337,6 +337,7 @@ const Index = () => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const loadingFetcher = useFetcher<FetchType>();
   const deleteFetcher = useFetcher<any>();
@@ -469,10 +470,9 @@ const Index = () => {
   // }, [words]);
 
   useEffect(() => {
-    if (!shopLanguagesLoad || dataSource.length > 0) return; // 确保数据加载完成后再执行
+    if (!shopLanguagesLoad || !languagesLoad || !languageLocaleInfo) return; // 确保数据加载完成后再执行
     console.log("shopLanguagesLoad: ", shopLanguagesLoad);
-    const newdata = shopLanguagesLoad.filter((language) => !language.primary);
-    const data = newdata.map((lang, i) => ({
+    let data = shopLanguagesLoad.filter((language) => !language.primary).map((lang, i) => ({
       key: i,
       language: lang.name,
       localeName: "",
@@ -483,23 +483,18 @@ const Index = () => {
       published: lang.published,
       loading: false,
     }));
-    dispatch(setTableData(data));
-  }, [shopLanguagesLoad]); // 依赖 shopLanguagesLoad 和 status
-
-  useEffect(() => {
-    if (languagesLoad) {
-      const data = shopLanguagesLoad.map((lang, i) => ({
-        target: lang.locale,
-        status: languagesLoad.find((language: any) => language.target === lang.locale)?.status || 0,
-      }));
-      const findItem = data.find((data: any) => data.status === 2);
+    data = data.map((lang, i) => ({
+      ...lang,
+      status: languagesLoad.find((language: any) => language.target === lang.locale)?.status || 0,
+    }));
+    const findItem = data.find((data: any) => data.status === 2);
       if (findItem && shopPrimaryLanguage) {
         const formData = new FormData();
         formData.append(
           "statusData",
           JSON.stringify({
             source: shopPrimaryLanguage[0]?.locale,
-            target: [findItem.target],
+            target: [findItem.locale],
           }),
         );
         statusFetcher.submit(formData, {
@@ -507,23 +502,16 @@ const Index = () => {
           action: "/app",
         });
       }
-      data.forEach((item) => {
-        dispatch(setStatusState(item));
-      });
+    data = data.map((lang, i) => ({
+      ...lang,
+      localeName: languageLocaleInfo[lang.locale]?.Local || "",
+    }));
+    dispatch(setTableData(data));
+    if (location.state?.publishLanguageCode && !data.find((item: any) => item.locale === location.state?.publishLanguageCode)?.published) {
+      setSelectedRow(data.find((item: any) => item.locale === location.state?.publishLanguageCode) || dataSource.find((item: any) => item.locale === location.state?.publishLanguageCode));
+      setIsPublishModalOpen(true);
     }
-  }, [languagesLoad]);
-
-  useEffect(() => {
-    if (languageLocaleInfo) {
-      const data = shopLanguagesLoad.map((lang, i) => ({
-        target: lang.locale,
-        localeName: languageLocaleInfo[lang.locale]?.Local || "",
-      }));
-      data.forEach((item) => {
-        dispatch(setLocaleNameState(item));
-      });
-    }
-  }, [languageLocaleInfo]);
+  }, [shopLanguagesLoad, languagesLoad, languageLocaleInfo]); // 依赖 shopLanguagesLoad 和 status
 
   useEffect(() => {
     if (publishInfo) {
@@ -759,6 +747,7 @@ const Index = () => {
   };
 
   const onSelectChange = (newSelectedRowKeys: any) => {
+    console.log("newSelectedRowKeys: ", newSelectedRowKeys);
     setSelectedRowKeys(newSelectedRowKeys);
   };
 
