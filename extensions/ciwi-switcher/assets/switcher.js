@@ -35,6 +35,111 @@ async function fetchAutoRate(shop, currencyCode) {
   return res.exchangeRate;
 }
 
+async function fetchIpSwitch(shop) {
+  const response = await axios({
+    url: `https://springbackendprod.azurewebsites.net/IpSwitch/getSwitchId?shopName=${shop}`,
+    method: "GET",
+  });
+
+  const res = response.data;
+  if (res?.response) {
+    return res.response;
+  } else {
+    return false;
+  }
+}
+
+async function fetchUserCountryInfo(access_key) {
+  try {
+    const response = await axios.get(
+      `http://api.ipapi.com/api/check?access_key=${access_key}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching IP:", error);
+    return null;
+  }
+}
+
+async function initializeCurrency(data, shop) {
+  let value = localStorage.getItem("selectedCurrency");
+  let moneyFormat = document.getElementById("queryMoneyFormat");
+  const selectedCurrency = data.find(
+    (currency) => currency?.currencyCode === value,
+  );
+  const isValueInCurrencies =
+    selectedCurrency && !selectedCurrency.primaryStatus;
+
+  const currencySwitcher = document.getElementById("currency-switcher");
+  const currencyTitleLabel = document.getElementById("currency-title");
+  const currencyInput = document.querySelector('input[name="currency_code"]');
+
+  const regex = /{{(.*?)}}/;
+  const match = moneyFormat.value.match(regex);
+
+  if (match) {
+    moneyFormat = match[1];
+  }
+
+  if (isValueInCurrencies) {
+    currencySwitcher.style.display = "block";
+    currencyTitleLabel.style.display = "block";
+    let rate = selectedCurrency.exchangeRate;
+    if (selectedCurrency.exchangeRate == "Auto") {
+      rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
+      if (typeof rate != "number") {
+        rate = 1;
+      }
+    }
+    const prices = document.querySelectorAll(".ciwi-money");
+    prices.forEach((price) => {
+      const priceText = price.innerText;
+      const transformedPrice = transform(
+        priceText,
+        rate,
+        moneyFormat,
+        selectedCurrency.symbol,
+        selectedCurrency.currencyCode,
+        selectedCurrency.rounding,
+      );
+
+      if (transformedPrice) {
+        price.innerText = transformedPrice;
+      }
+    });
+    currencyInput.value = value;
+    currencySwitcher.value = value;
+
+    data.forEach((currency) => {
+      const option = new Option(
+        `${currency.currencyCode}(${currency.symbol})`,
+        currency.currencyCode,
+      );
+      if (currency.currencyCode == value) {
+        option.selected = true;
+      }
+      currencySwitcher.add(option);
+    });
+    updateDisplayText();
+  } else if (data.length) {
+    currencySwitcher.style.display = "block";
+    currencyTitleLabel.style.display = "block";
+    currencyInput.value = data[0];
+    currencySwitcher.value = data[0]?.currencyCode;
+    data.forEach((currency) => {
+      const option = new Option(
+        `${currency.currencyCode}(${currency.symbol})`,
+        currency.currencyCode,
+      );
+      if (currency.primaryStatus) {
+        option.selected = true;
+      }
+      currencySwitcher.add(option);
+    });
+    updateDisplayText();
+  }
+}
+
 // Function to update the display text
 function updateDisplayText() {
   const currency =
