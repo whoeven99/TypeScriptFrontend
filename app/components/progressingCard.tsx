@@ -454,7 +454,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                         <Button
                                             block
                                             type="primary"
-                                            icon={<PhoneOutlined />}
                                             onClick={() => navigate("/app/language")}
                                             style={{ marginTop: 'auto' }}
                                         >
