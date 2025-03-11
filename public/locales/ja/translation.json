@@ -244,6 +244,8 @@
     "Credits to be consumed": "使用するクレジット",
     "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "当社のアプリケーションにようこそ！ご質問がありましたら、support@ciwi.aiまでお問い合わせください。迅速にご回答いたします。",
     "Collection": "コレクション",
-    "Article": "記事"
+    "Article": "記事",
+    "Translation Exception": "翻訳例外",
+    "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "ストアの内容がOpenAIの翻訳ポリシーに違反しています。手動サポートをお問い合わせください。"
 }
   

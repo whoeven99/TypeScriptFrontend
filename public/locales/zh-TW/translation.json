@@ -244,6 +244,8 @@
     "Credits to be consumed": "需要消耗的積分",
     "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "歡迎使用我們的應用程序！如果您有任何問題，請隨時通過電子郵件聯繫我們，我們將盡快回復。",
     "Collection": "收藏夾",
-    "Article": "文章"
+    "Article": "文章",
+    "Translation Exception": "翻譯異常",
+    "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "商店內容不符合 OpenAI 的翻譯政策，請聯繫我們以獲取手動支援。"
 }
   
