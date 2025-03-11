@@ -244,6 +244,8 @@
     "Credits to be consumed": "Krediter att använda",
     "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "Välkomen till vår app! Om du har några frågor, kontakta oss gärna på support@ciwi.ai, och vi svarar så snabbt som möjligt.",
     "Collection": "Samling",
-    "Article": "Artikel"
+    "Article": "Artikel",
+    "Translation Exception": "Översättningsundantag",
+    "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "Innehållet i butiken stämmer inte med OpenAI's översättningspolicy. Kontakta oss för manuell support."
 }
   

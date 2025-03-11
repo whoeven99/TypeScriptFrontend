@@ -382,7 +382,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                             }
                                             {
                                                 status === 3 &&
-                                                <Text>{t("progressing.contact")}</Text>
+                                                <Text>⚠️{t("progressing.contact")}</Text>
                                             }
                                             {
                                                 status === 4 &&

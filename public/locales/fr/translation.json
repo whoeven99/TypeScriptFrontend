@@ -244,6 +244,8 @@
     "Credits to be consumed": "Crédits à consommer",
     "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "Bienvenue dans notre application ! Si vous avez des questions, n'hésitez pas à nous contacter à l'adresse support@ciwi.ai, et nous répondrons le plus rapidement possible.",
     "Collection": "Collection",
-    "Article": "Article"
+    "Article": "Article",
+    "Translation Exception": "Exception de traduction",
+    "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "Certains contenus de la boutique ne respectent pas la politique de traduction d'OpenAI, veuillez nous contacter pour obtenir une assistance manuelle."
 }
   
