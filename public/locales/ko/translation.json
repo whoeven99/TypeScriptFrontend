@@ -246,6 +246,7 @@
     "Collection": "컬렉션",
     "Article": "기사",
     "Translation Exception": "번역 예외",
-    "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "스토어의 콘텐츠가 OpenAI의 번역 정책에 맞지 않습니다. 수동 지원을 위해 문의하세요."
-  }
+    "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "스토어의 콘텐츠가 OpenAI의 번역 정책에 맞지 않습니다. 수동 지원을 위해 문의하세요.",
+    "Launched": "출시됨"
+} 
   

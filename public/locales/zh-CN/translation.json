@@ -255,5 +255,6 @@
   "Collection": "收藏夹",
   "Article": "文章",
   "Translation Exception": "翻译异常",
-  "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "商店内容不符合 OpenAI 的翻译政策，请联系我们获取手动支持。"
+  "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "商店内容不符合 OpenAI 的翻译政策，请联系我们获取手动支持。",
+  "Launched": "已上线"
 }
