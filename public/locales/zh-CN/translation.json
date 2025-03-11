@@ -161,6 +161,7 @@
   "progressing.contact":"免费翻译积分不足。请购买积分并重试。",
   "progressing.noTranslate":"当前没有翻译任务",
   "progressing.contactButton":"联系支持",
+  "progressing.somethingWentWrong":"发生意外错误。请点击按钮联系支持获取解决方案。",
   "contact.title":"联系我们",
   "contact.description":"如果您有任何问题或需要帮助，请点击下方按钮与我们联系。",
   "contact.contactButton":"联系支持",

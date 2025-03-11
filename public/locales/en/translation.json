@@ -164,6 +164,7 @@
   "progressing.contact":"Free translation credits are insufficient. Please purchase credits and retry the translation.",
   "progressing.noTranslate":"No translation task now",
   "progressing.contactButton":"Support",
+  "progressing.somethingWentWrong":"Some unexpected errors occurred. Please click the button to contact support for resolution.",
   "contact.title":"Contact Us",
   "contact.description":"If you have any questions or need assistance, please click the button below to contact support.",
   "contact.contactButton":"Contact Support",

@@ -386,7 +386,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                             }
                                             {
                                                 status === 4 &&
-                                                <Text>{t("progressing.contact")}</Text>
+                                                <Text>{t("progressing.somethingWentWrong")}</Text>
                                             }
                                         </div>
 
@@ -402,7 +402,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                             status={status === 1 ? 'success' : status === 2 ? 'active' : 'normal'}
                                             percentPosition={{ align: 'end', type: 'inner' }}
                                             size={["100%", 20]}
-                                            strokeColor="#001342"
+                                            strokeColor="#007F61"
                                         />
                                     </div>
                                 </div>
