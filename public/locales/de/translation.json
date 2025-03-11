@@ -160,7 +160,8 @@
     "progressing.publish":"Sprache veröffentlichen",
     "progressing.contact":"Die kostenlosen Übersetzungscredits sind nicht ausreichend. Bitte kaufen Sie Credits und versuchen Sie es erneut.",
     "progressing.noTranslate":"Keine Übersetzungsaufgabe jetzt",
-    "progressing.contactButton":"Support",
+    "progressing.contactButton":"Support kontaktieren",
+    "progressing.somethingWentWrong":"Es ist ein unerwarteter Fehler aufgetreten. Bitte klicken Sie auf die Schaltfläche, um Support zu kontaktieren, um die Auflösung zu erhalten.",
     "contact.title":"Kontaktieren Sie uns",
     "contact.description": "Wenn Sie mit unseren Produkten und Dienstleistungen zufrieden sind, geben Sie uns bitte Ihre Bewertung, damit wir uns noch weiter verbessern können!",
     "contact.contactButton":"Support kontaktieren",
@@ -241,6 +242,11 @@
     "word": "wort",
     "credit": "credit",
     "Credits to be consumed": "Credits zu verbrauchen",
-    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "Willkommen bei unserer App! Wenn Sie Fragen haben, kontaktieren Sie uns bitte per E-Mail unter support@ciwi.ai, und wir werden uns schnellstmöglich um Ihre Anfrage kümmern."
+    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "Willkommen bei unserer App! Wenn Sie Fragen haben, kontaktieren Sie uns bitte per E-Mail unter support@ciwi.ai, und wir werden uns schnellstmöglich um Ihre Anfrage kümmern.",
+    "Collection": "Sammlung",
+    "Article": "Artikel",
+    "Translation Exception": "Übersetzungsausnahme",
+    "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "Inhalt des Shops stimmt nicht mit der OpenAI-Übersetzungsrichtlinie überein. Bitte kontaktieren Sie uns für manuelle Unterstützung.",
+    "Launched": "Veröffentlicht"
 }
     

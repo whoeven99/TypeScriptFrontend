@@ -161,6 +161,7 @@
     "progressing.contact":"무료 번역 크레딧이 부족합니다. 크레딧을 구매하고 다시 시도하세요.",
     "progressing.noTranslate":"현재 번역 작업이 없습니다",
     "progressing.contactButton":"지원에 문의",
+    "progressing.somethingWentWrong":"예상치 못한 오류가 발생했습니다. 지원에 문의하여 해결 방법을 얻으세요.",
     "contact.title":"문의하기",
     "contact.description":"질문이나 도움이 필요하시면 아래 버튼을 클릭하여 지원에 문의하세요.",
     "contact.contactButton":"지원에 문의",
@@ -241,6 +242,11 @@
     "word": "단어",
     "credit": "크레딧",
     "Credits to be consumed": "사용할 크레딧",
-    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "당사의 애플리케이션에 오신 것을 환영합니다! 질문이 있으시면 support@ciwi.ai로 문의하세요. 가능한 한 빨리 답장할 것입니다."
-  }
+    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "당사의 애플리케이션에 오신 것을 환영합니다! 질문이 있으시면 support@ciwi.ai로 문의하세요. 가능한 한 빨리 답장할 것입니다.",
+    "Collection": "컬렉션",
+    "Article": "기사",
+    "Translation Exception": "번역 예외",
+    "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "스토어의 콘텐츠가 OpenAI의 번역 정책에 맞지 않습니다. 수동 지원을 위해 문의하세요.",
+    "Launched": "출시됨"
+} 
   

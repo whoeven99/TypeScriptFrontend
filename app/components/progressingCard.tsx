@@ -229,25 +229,25 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
     const calculateProgressByType = (resourceType: string): number => {
         switch (resourceType) {
             case 'ONLINE_STORE_THEME':
-                setItem("Online Store Theme");
+                setItem("Theme");
                 return 28;
             case 'ONLINE_STORE_THEME_APP_EMBED':
-                setItem("Online Store Theme");
+                setItem("Theme");
                 return 30;
             case 'ONLINE_STORE_THEME_JSON_TEMPLATE':
-                setItem("Online Store Theme");
+                setItem("Theme");
                 return 32;
             case 'ONLINE_STORE_THEME_SECTION_GROUP':
-                setItem("Online Store Theme");
+                setItem("Theme");
                 return 34;
             case 'ONLINE_STORE_THEME_SETTINGS_CATEGORY':
-                setItem("Online Store Theme");
+                setItem("Theme");
                 return 36;
             case 'ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS':
-                setItem("Online Store Theme");
+                setItem("Theme");
                 return 38;
             case 'ONLINE_STORE_THEME_LOCALE_CONTENT':
-                setItem("Online Store Theme");
+                setItem("Theme");
                 return 40;
             case 'PRODUCT':
                 setItem("Products");
@@ -262,13 +262,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                 setItem("Collection");
                 return 48;
             case 'PACKING_SLIP_TEMPLATE':
-                setItem("Online Store Theme");
+                setItem("Shipping");
                 return 50;
             case 'SHOP_POLICY':
-                setItem("Policies");
-                return 55;
+                setItem("Shipping");
+                return 50;
             case 'EMAIL_TEMPLATE':
-                setItem("Email Templates");
+                setItem("Shipping");
                 return 60;
             case 'MENU':
                 setItem("Navigation");
@@ -283,28 +283,28 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                 setItem("Filters");
                 return 73;
             case 'METAFIELD':
-                setItem("Metafields");
-                return 75;
+                setItem("Filters");
+                return 73;
             case 'METAOBJECT':
                 setItem("Metaobjects");
                 return 75;
             case 'PAYMENT_GATEWAY':
-                setItem("Payment Gateways");
+                setItem("Metaobjects");
                 return 77;
             case 'SELLING_PLAN':
-                setItem("Selling Plans");
+                setItem("Metaobjects");
                 return 80;
             case 'SELLING_PLAN_GROUP':
-                setItem("Selling Plans");
+                setItem("Shop");
                 return 83;
             case 'SHOP':
                 setItem("Shop");
                 return 85;
             case 'ARTICLE':
-                setItem("Articles");
+                setItem("Article");
                 return 90;
             case 'BLOG':
-                setItem("Blogs");
+                setItem("Blog titles");
                 return 95;
             case 'PAGE':
                 setItem("Pages");
@@ -318,7 +318,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
         <Card
         >
             <Title level={4}>{t("progressing.title")}</Title>
-            {loading ? <Skeleton.Button active style={{ height: '82px' }} block /> :
+            {loading ? <Skeleton.Button active style={{ height: '130px' }} block /> :
                 <Space direction="vertical" style={{ width: '100%' }}>
                     {status !== 0 ?
                         <Card>
@@ -350,7 +350,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                         width: '100%',  // 确保占满容器宽度
                                         textAlign: 'center',
                                         marginBottom: 'auto',
-                                        gap: 10
+                                        gap: 30
                                     }}>
                                         {/* 左侧部分 */}
                                         <div style={{
@@ -388,11 +388,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                             }
                                             {
                                                 status === 3 &&
-                                                <Text>{t("progressing.contact")}</Text>
+                                                <Text>⚠️{t("progressing.contact")}</Text>
                                             }
                                             {
                                                 status === 4 &&
-                                                <Text>{t("progressing.contact")}</Text>
+                                                <Text>{t("progressing.somethingWentWrong")}</Text>
                                             }
                                         </div>
 
@@ -408,11 +408,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                             status={status === 1 ? 'success' : status === 2 ? 'active' : 'normal'}
                                             percentPosition={{ align: 'end', type: 'inner' }}
                                             size={["100%", 20]}
-                                            strokeColor="#001342"
+                                            strokeColor="#007F61"
                                         />
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '20%', flexDirection: 'column', height: '82px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '20%', height: '82px' }}>
                                     {status === 3 &&
                                         <div style={{
                                             width: '100%',  // 限制最大宽度
@@ -423,13 +423,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
 
                                             <Button
                                                 block
+                                                type="primary"
                                                 onClick={() => navigate("/app/translate", { state: { selectedLanguageCode: target } })}
                                             >
                                                 {t("progressing.buyCredits")}
                                             </Button>
                                             <Button
                                                 block
-                                                type="primary"
                                                 icon={<PhoneOutlined />}
                                                 onClick={handleContactSupport}
                                             >
@@ -460,8 +460,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                         <Button
                                             block
                                             type="primary"
-                                            icon={<PhoneOutlined />}
-                                            onClick={() => navigate("/app/language")}
+                                            onClick={() => navigate("/app/language", { state: { publishLanguageCode: target } })}
                                             style={{ marginTop: 'auto' }}
                                         >
                                             {t("progressing.publish")}

@@ -161,6 +161,7 @@
   "progressing.contact":"免费翻译积分不足。请购买积分并重试。",
   "progressing.noTranslate":"当前没有翻译任务",
   "progressing.contactButton":"联系支持",
+  "progressing.somethingWentWrong":"发生意外错误。请点击按钮联系支持获取解决方案。",
   "contact.title":"联系我们",
   "contact.description":"如果您有任何问题或需要帮助，请点击下方按钮与我们联系。",
   "contact.contactButton":"联系支持",
@@ -250,5 +251,10 @@
     "for_growing": "适用于成长型企业",
     "current_plan": "当前方案",
     "try_free": "免费试用"
-  }
+  },
+  "Collection": "收藏夹",
+  "Article": "文章",
+  "Translation Exception": "翻译异常",
+  "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "商店内容不符合 OpenAI 的翻译政策，请联系我们获取手动支持。",
+  "Launched": "已上线"
 }

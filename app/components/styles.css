@@ -70,15 +70,15 @@
 }
 
 .partly_translated {
-  background-color: #e0f7e0;
+  background-color: #F7F6E0;
 }
 
 .partly_translated .circle {
-  border-top-color: #4caf50;
+  border-top-color: #AFA34C;
 }
 
 .partly_translated .text {
-  color: #29845a;
+  color: #7F8429;
 }
 
 .translate_exception {

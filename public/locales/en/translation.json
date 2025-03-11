@@ -78,7 +78,9 @@
   "Online Store": "Online Store",
   "Settings": "Settings",
   "Collections": "Collections",
+  "Collection": "Collections",
   "Articles": "Articles",
+  "Article": "Articles",
   "Blog titles": "Blog titles",
   "Pages": "Pages",
   "Filters": "Filters",
@@ -162,6 +164,7 @@
   "progressing.contact":"Free translation credits are insufficient. Please purchase credits and retry the translation.",
   "progressing.noTranslate":"No translation task now",
   "progressing.contactButton":"Support",
+  "progressing.somethingWentWrong":"Some unexpected errors occurred. Please click the button to contact support for resolution.",
   "contact.title":"Contact Us",
   "contact.description":"If you have any questions or need assistance, please click the button below to contact support.",
   "contact.contactButton":"Contact Support",
@@ -243,5 +246,8 @@
   "word": "word",
   "credit": "credit",
   "Credits to be consumed": "Credits to be consumed",
-  "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible."
+  "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
+  "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.",
+  "Translation Exception": "Translation Exception",
+  "Launched": "Launched"
 }

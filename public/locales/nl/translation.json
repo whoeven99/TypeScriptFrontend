@@ -161,6 +161,7 @@
     "progressing.contact":"De gratis vertalingscredits zijn niet voldoende. Kopen u credits en probeer het opnieuw.",
     "progressing.noTranslate":"Er is momenteel geen vertalingstask",
     "progressing.contactButton":"Contacteer ons",
+    "progressing.somethingWentWrong":"Er is een onverwachte fout opgetreden. Klik op de knop hieronder om ons te contacteren voor een oplossing.",
     "contact.title":"Contacteer ons",
     "contact.description":"Als u vragen of hulp nodig hebt, klik op de knop hieronder om ons te contacteren.",
     "contact.contactButton":"Contacteer ons",
@@ -241,6 +242,11 @@
     "word": "woord",
     "credit": "credit",
     "Credits to be consumed": "Credits te verbruiken",
-    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "Welkom bij onze app! Als u vragen hebt, neem gerust contact met ons op via support@ciwi.ai, en we zullen zo snel mogelijk reageren."
+    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "Welkom bij onze app! Als u vragen hebt, neem gerust contact met ons op via support@ciwi.ai, en we zullen zo snel mogelijk reageren.",
+    "Collection": "Collectie",
+    "Article": "Artikel",
+    "Translation Exception": "Vertalingsexceptie",
+    "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "Sommige inhoud van de winkel voldoet niet aan OpenAI's vertalingspolicy. Neem gerust contact met ons op voor hulp.",
+    "Launched": "Gepubliceerd"
 }
   

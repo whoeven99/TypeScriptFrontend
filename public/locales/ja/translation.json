@@ -161,6 +161,7 @@
     "progressing.contact":"無料の翻訳クレジットが不足しています。クレジットを購入して再試行してください。",
     "progressing.noTranslate":"現在の翻訳タスクはありません",
     "progressing.contactButton":"サポートに連絡する",
+    "progressing.somethingWentWrong":"予期せぬエラーが発生しました。サポートに連絡して解決策を取得してください。",
     "contact.title":"お問い合わせ",
     "contact.description":"ご質問やサポートが必要な場合は、以下のボタンをクリックしてお問い合わせください。",
     "contact.contactButton":"サポートに連絡する",
@@ -241,6 +242,11 @@
     "word": "単語",
     "credit": "クレジット",
     "Credits to be consumed": "使用するクレジット",
-    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "当社のアプリケーションにようこそ！ご質問がありましたら、support@ciwi.aiまでお問い合わせください。迅速にご回答いたします。"
-}
+    "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "当社のアプリケーションにようこそ！ご質問がありましたら、support@ciwi.aiまでお問い合わせください。迅速にご回答いたします。",
+    "Collection": "コレクション",
+    "Article": "記事",
+    "Translation Exception": "翻訳例外",
+    "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "ストアの内容がOpenAIの翻訳ポリシーに違反しています。手動サポートをお問い合わせください。",
+    "Launched": "公開された"
+}   
   
