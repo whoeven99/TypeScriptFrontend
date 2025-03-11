@@ -52,7 +52,7 @@ const PreviewCard: React.FC<PreviewCardProps> = () => {
                 }}
             >
                 <Text>{t('rating.description')}</Text>
-                <Rate defaultValue={count} onChange={(value) => handleRate(value)} />
+                <Rate defaultValue={count} onChange={(value) => handleRate(value)} style={{ minWidth: 132 }} />
             </div>
 
         </Card>
