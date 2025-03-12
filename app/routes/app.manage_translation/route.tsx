@@ -74,7 +74,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             resourceType: itemsCount.resourceType,
           });
           console.log("GetTranslationItemsInfo: ", data);
-          
           return json({ data: data });
         } catch (error) {
           console.error("Error GetTranslationItemsInfo itemsCount:", error);

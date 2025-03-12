@@ -1,5 +1,3 @@
-<link rel="stylesheet" href="{{ 'switcher.css' | asset_url }}">
-
 <ciwiswitcher-form>
   {% form 'localization' %}
     <div
@@ -8,7 +6,20 @@
     >
       <div
         id="selector-box"
-        style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%; display: none"
+        style="
+          background: #fff;
+          border: 1px solid #ccc;
+          padding: 15px;
+          border-radius: 5px;
+          display: none;
+          width: 200px;
+          position: absolute;
+          bottom: 100%;
+          left: 0;
+          margin-bottom: 8px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+          z-index: 1000;
+        "
       >
         <label for="language-switcher" class="language_title">Language</label>
         <div class="select-wrapper">
@@ -55,6 +66,7 @@
       <div
         id="main-box"
         class="main_box"
+        style="position: relative;"
       >
         <span id="display-text" class="main_box_text">{{ localization.language.endonym_name | capitalize }}</span>
         <img
@@ -65,18 +77,13 @@
           width="25%"
           height="25%"
         >
-        <img
-          class="mobile_trans_img"
-          src="{{ 'trans.png' | asset_url }}"
-          alt="Button Image"
-          width="50px"
-          height="50px"
-        >
       </div>
     </div>
     <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
     <input type="hidden" name="currency_code" value="">
     <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">
+    <input type="hidden" name="iptoken" value="4edc3b4d5ca1476accda4d9912c99112">
+    <input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
   {% endform %}
 </ciwiswitcher-form>
 <ciwiswitcher-form>
@@ -100,8 +107,6 @@
         {%- endfor -%}
       </ul>
     </div>
-    <span type="hidden" name="iptoken">4edc3b4d5ca1476accda4d9912c99112</span>
-    <input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
   {% endform %}
 </ciwiswitcher-form>
 
@@ -111,7 +116,11 @@
 {% schema %}
 {
   "name": "Ciwi_Switcher",
-  "target": "body",
-  "settings": []
+  "target": "section",
+  "stylesheet": "switcher.css",
+  "enabled_on": {
+    "templates": ["*"],
+    "groups": ["footer"]
+  }
 }
 {% endschema %}

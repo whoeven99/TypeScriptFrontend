@@ -496,12 +496,12 @@ class CiwiswitcherForm extends HTMLElement {
     const isVisible = box.style.display !== "none";
     box.style.display = isVisible ? "none" : "block";
 
-    // 移动端适配
-    if (window.innerWidth <= 768) {
-      const mainBox = document.getElementById("main-box");
-      mainBox.style.display = isVisible ? "block" : "none";
-      this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
-    }
+    // // 移动端适配
+    // if (window.innerWidth <= 768) {
+    //   const mainBox = document.getElementById("main-box");
+    //   mainBox.style.display = isVisible ? "block" : "none";
+    //   this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
+    // }
 
     // 旋转箭头
     this.rotateArrow("mainbox-arrow-icon", isVisible ? 0 : 180);
@@ -530,11 +530,11 @@ class CiwiswitcherForm extends HTMLElement {
 
   handleOutsideClick(event) {
     if (!this.elements.ciwiContainer.contains(event.target)) {
-      if (window.innerWidth <= 768) {
-        const mainBox = document.getElementById("main-box");
-        this.elements.ciwiContainer.classList.remove("expanded");
-        mainBox.style.display = "block";
-      }
+      // if (window.innerWidth <= 768) {
+      //   const mainBox = document.getElementById("main-box");
+      //   this.elements.ciwiContainer.classList.remove("expanded");
+      //   mainBox.style.display = "block";
+      // }
       this.elements.selectorBox.style.display = "none";
       this.rotateArrow("mainbox-arrow-icon", 0);
     }
@@ -550,8 +550,8 @@ window.onload = async function () {
   shop.remove();
   const IpOpen = await fetchIpSwitch(shop.value);
   if (IpOpen) {
-    const iptoken = document.querySelector('span[name="iptoken"]');
-    const iptokenValue = iptoken.textContent;
+    const iptoken = document.querySelector('input[name="iptoken"]');
+    const iptokenValue = iptoken.value;
     if (iptokenValue) iptoken.remove(); // 移除DOM元素
     const storedLanguage = localStorage.getItem("selectedLanguage");
     const storedCountry = localStorage.getItem("selectedCountry");

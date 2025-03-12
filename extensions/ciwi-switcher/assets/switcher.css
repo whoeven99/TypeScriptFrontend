@@ -1,10 +1,8 @@
 .ciwi_container {
-  width: 200px; /* 窄一些 */
-  /* left: 20px; */
+  width: 200px;
   bottom: 60px;
   right: auto;
   top: auto;
-  position: fixed; /* 改为相对屏幕的位置 */
   height: auto;
   display: block;
   z-index: 9999;
@@ -27,7 +25,6 @@
   overflow: hidden; /* 隐藏超出部分 */
   text-overflow: ellipsis; /* 显示省略号 */
 }
-
 
 .mainarrow_icon {
   position: absolute;
@@ -147,25 +144,25 @@
   border-color: rgb(97, 181, 53); /* 鼠标悬停时的边框颜色 */
 }
 
-.mobile_trans_img {
+/* .mobile_trans_img {
   display: none;
-}
+} */
 
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
   .ciwi_container {
     position: fixed;
     bottom: 60px;
     left: 0;
-    width: 50px; /* 只显示左边 50px */
+    width: 50px; 
     background-color: transparent;
-    transition: width 0.3s ease; /* 宽度变化时使用过渡效果 */
+    transition: width 0.3s ease;
     z-index: 9999;
-    display: block; /* 默认为显示，可以根据需求修改 */
-    height: 50px; /* 设置高度 */
+    display: block; 
+    height: 50px;
   }
 
   .ciwi_container.expanded {
-    width: 200px; /* 展开后显示完整内容 */
+    width: 200px; 
   }
 
   .arrow_icon,
@@ -174,11 +171,11 @@
     display: none;
   }
 
-  /* 展开时显示选择器框在 ciwi_container 上方 */
+  
   .ciwi_container.expanded #selector-box {
-    display: block; /* 选择器框可见 */
+    display: block; 
     position: absolute;
-    top: -182px; /* 将选择器框置于 ciwi_container 之上 */
+    top: -182px; 
     width: 100%;
   }
 
@@ -191,7 +188,7 @@
   .mobile_trans_img {
     display: block;
   }
-}
+} */
 
 body > .skiptranslate {
   display: none;
