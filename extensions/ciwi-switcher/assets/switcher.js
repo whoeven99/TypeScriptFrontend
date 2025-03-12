@@ -62,14 +62,14 @@ async function fetchUserCountryInfo(access_key) {
 }
 
 async function initializeCurrency(data, shop) {
-  let value = localStorage.getItem("selectedCurrency");
+  let value = localStorage.getItem("selectedCurrency");  
   let moneyFormat = document.getElementById("queryMoneyFormat");
   const selectedCurrency = data.find(
     (currency) => currency?.currencyCode === value,
   );
-  const isValueInCurrencies =
-    selectedCurrency && !selectedCurrency.primaryStatus;
 
+  const isValueInCurrencies =
+    selectedCurrency && !selectedCurrency?.primaryStatus;
   const currencySwitcher = document.getElementById("currency-switcher");
   const currencyTitleLabel = document.getElementById("currency-title");
   const currencyInput = document.querySelector('input[name="currency_code"]');
@@ -109,7 +109,6 @@ async function initializeCurrency(data, shop) {
     });
     currencyInput.value = value;
     currencySwitcher.value = value;
-
     data.forEach((currency) => {
       const option = new Option(
         `${currency.currencyCode}(${currency.symbol})`,
@@ -625,7 +624,7 @@ window.onload = async function () {
   }
 
   // 在页面加载时执行初始化
-  const data = await fetchCurrencies(shop.value);
+  const data = await fetchCurrencies(shop.value);  
   if (data) {
     await initializeCurrency(data, shop);
   }
