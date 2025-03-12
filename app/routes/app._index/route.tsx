@@ -28,52 +28,11 @@ export interface WordsType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-
-  const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
-    shop,
-    accessToken,
-  });
-  const shopPrimaryLanguage = shopLanguagesIndex.filter(
-    (language) => language.primary,
-  );
-  const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
-    (language) => !language.primary,
-  );
-  const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
-    (item) => item.locale,
-  );
-
-  const Cstarttime = new Date();
-  const data = await GetTranslateDOByShopNameAndSource({ shop, source: shopPrimaryLanguage[0].locale });
-  console.log("GetTranslateDOByShopNameAndSource: ", data);
-  const Cendtime = new Date();
-  const Ctime = Cendtime.getTime() - Cstarttime.getTime();
-  console.log("Ctime: ", Ctime);
-
-  if (shopLocalesIndex.includes(data.response?.target)) {
-    return {
-      translatingLanguage: {
-        source: data.response?.source || shopPrimaryLanguage[0].locale,
-        target: data.response?.target || "",
-        status: data.response?.status || 0,
-        resourceType: data.response?.resourceType || "",
-      }
-    }
-  } else {
-    return {
-      translatingLanguage: {
-        source: data.response?.source || shopPrimaryLanguage[0].locale,
-        target: "",
-        status: 0,
-        resourceType: "",
-      }
-    };
-  }
+  await authenticate.admin(request);
+  return null;
 }
 const Index = () => {
-  const { translatingLanguage } = useLoaderData<typeof loader>();
+  // const { translatingLanguage } = useLoaderData<typeof loader>();
   // const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
   // const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
   // const [user, setUser] = useState<UserType>();

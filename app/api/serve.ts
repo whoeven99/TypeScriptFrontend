@@ -331,14 +331,6 @@ export const GetTranslationItemsInfo = async ({
     totalNumber: number;
   }[] = [];
   try {
-    console.log("data:", {
-      shopName: shop,
-      accessToken: accessToken,
-      source: source[0],
-      target: target,
-      resourceType: resourceType,
-    });
-
     const response = await axios({
       url: `${process.env.SERVER_URL}/shopify/getTranslationItemsInfo`,
       method: "POST",
@@ -352,7 +344,6 @@ export const GetTranslationItemsInfo = async ({
     });
 
     const data = response.data.response;
-    console.log("GetTranslationItemsInfo: ", data);
     res = [
       ...res,
       ...Object.keys(data).map((key) => {

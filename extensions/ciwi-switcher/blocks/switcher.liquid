@@ -1,0 +1,126 @@
+<ciwiswitcher-form>
+  {% form 'localization' %}
+    <div
+      id="ciwi-container"
+      class="ciwi_container"
+    >
+      <div
+        id="selector-box"
+        style="
+          background: #fff;
+          border: 1px solid #ccc;
+          padding: 15px;
+          border-radius: 5px;
+          display: none;
+          width: 200px;
+          position: absolute;
+          bottom: 100%;
+          left: 0;
+          margin-bottom: 8px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+          z-index: 1000;
+        "
+      >
+        <label for="language-switcher" class="language_title">Language</label>
+        <div class="select-wrapper">
+          <select id="language-switcher" class="ciwi_select">
+            {% for language in localization.available_languages %}
+              <option
+                value="{{language.iso_code}}"
+                {% if language.iso_code == localization.language.iso_code %}
+                  selected
+                {% endif %}
+              >
+                {{ language.endonym_name | capitalize }}
+              </option>
+            {% endfor %}
+          </select>
+          <img
+            id="language-arrow-icon"
+            class="arrow_icon"
+            src="{{ 'arrow.svg' | asset_url }}"
+            alt="Arrow Icon"
+            width="25%"
+            height="25%"
+          >
+        </div>
+        <label for="currency-switcher" class="currency_title" id="currency-title" style="display: none">Currency</label>
+        <div class="select-wrapper">
+          <select id="currency-switcher" class="ciwi_select" style="display: none"></select>
+          <img
+            id="currency-arrow-icon"
+            class="arrow_icon"
+            src="{{ 'arrow.svg' | asset_url }}"
+            alt="Arrow Icon"
+            width="25%"
+            height="25%"
+          >
+        </div>
+        <div class="button_wrapper">
+          <button id="switcher-confirm" class="ciwi_switcher_confirm_button">Confirm</button>
+          <button id="switcher-close" class="ciwi_switcher_cancel_button">Cancel</button>
+        </div>
+      </div>
+      <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
+      <input id="queryMoneyFormat" type="hidden" value="{{ shop.money_format | strip_html }}">
+      <div
+        id="main-box"
+        class="main_box"
+        style="position: relative;"
+      >
+        <span id="display-text" class="main_box_text">{{ localization.language.endonym_name | capitalize }}</span>
+        <img
+          id="mainbox-arrow-icon"
+          class="mainarrow_icon"
+          src="{{ 'arrow.svg' | asset_url }}"
+          alt="Arrow Icon"
+          width="25%"
+          height="25%"
+        >
+      </div>
+    </div>
+    <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
+    <input type="hidden" name="currency_code" value="">
+    <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">
+    <input type="hidden" name="iptoken" value="4edc3b4d5ca1476accda4d9912c99112">
+    <input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
+  {% endform %}
+</ciwiswitcher-form>
+<ciwiswitcher-form>
+  {% form 'localization' %}
+    <div hidden>
+      <ul role="list">
+        {%- for country in localization.available_countries -%}
+          <li>
+            <a
+              href="#"
+              data-value="{{ country.iso_code }}"
+              {% if country.iso_code == localization.country.iso_code %}
+                aria-current="true"
+              {% endif %}
+            >
+              {{- country.name }} |
+              {{ country.currency.iso_code }}
+              {{ country.currency.symbol -}}
+            </a>
+          </li>
+        {%- endfor -%}
+      </ul>
+    </div>
+  {% endform %}
+</ciwiswitcher-form>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" async></script>
+<script src="{{ 'switcher.js' | asset_url }}" async></script>
+
+{% schema %}
+{
+  "name": "Ciwi_Switcher",
+  "target": "section",
+  "stylesheet": "switcher.css",
+  "enabled_on": {
+    "templates": ["*"],
+    "groups": ["footer"]
+  }
+}
+{% endschema %}
