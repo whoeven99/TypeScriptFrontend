@@ -2,7 +2,11 @@
   {% form 'localization' %}
     <div
       id="ciwi-container"
-      class="ciwi_container"
+      style="
+        width: 200px;
+        display: block;
+        z-index: 9999;
+      "
     >
       <div
         id="selector-box"
@@ -14,9 +18,8 @@
           display: none;
           width: 200px;
           position: absolute;
-          bottom: 100%;
-          left: 0;
-          margin-bottom: 8px;
+          left: {{ block.settings.horizontalOffset }}px;
+          top: {{ block.settings.verticalOffset | minus: block.settings.selectionVerticalOffset }}px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.15);
           z-index: 1000;
         "
@@ -66,7 +69,7 @@
       <div
         id="main-box"
         class="main_box"
-        style="position: relative;"
+        style="position: relative; left: {{ block.settings.horizontalOffset }}px; top: {{ block.settings.verticalOffset }}px;"
       >
         <span id="display-text" class="main_box_text">{{ localization.language.endonym_name | capitalize }}</span>
         <img
@@ -112,12 +115,44 @@
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" async></script>
 <script src="{{ 'switcher.js' | asset_url }}" async></script>
+<link rel="stylesheet" href="{{ 'switcher.css' | asset_url }}" async>
 
 {% schema %}
 {
   "name": "Ciwi_Switcher",
   "target": "section",
-  "stylesheet": "switcher.css",
+  "settings": [
+    {
+      "type": "range",
+      "id": "horizontalOffset",
+      "min": -40,
+      "max": 200,
+      "step": 5,
+      "unit": "px",
+      "label": "Horizontal offset",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "verticalOffset",
+      "min": -200,
+      "max": 200,
+      "step": 5,
+      "unit": "px",
+      "label": "Vertical offset",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "selectionVerticalOffset",
+      "min": -250,
+      "max": 250,
+      "step": 5,
+      "unit": "px",
+      "label": "Selection box relative position(Vertical)",
+      "default": 250
+    }
+  ],
   "enabled_on": {
     "templates": ["*"],
     "groups": ["footer"]
