@@ -1,7 +1,7 @@
 // Function to simulate fetching currencies from the backend
 async function fetchCurrencies(shop) {
   const response = await axios({
-    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
+    url: `https://springbackendprod.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
     method: "GET",
   });
 
@@ -23,7 +23,7 @@ async function fetchCurrencies(shop) {
 
 async function fetchAutoRate(shop, currencyCode) {
   const response = await axios({
-    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
+    url: `https://springbackendprod.azurewebsites.net/currency/getCacheData`,
     method: "POST",
     data: {
       shopName: shop,
@@ -37,7 +37,7 @@ async function fetchAutoRate(shop, currencyCode) {
 
 async function fetchIpSwitch(shop) {
   const response = await axios({
-    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/IpSwitch/getSwitchId?shopName=${shop}`,
+    url: `https://springbackendprod.azurewebsites.net/IpSwitch/getSwitchId?shopName=${shop}`,
     method: "GET",
   });
 
@@ -62,14 +62,16 @@ async function fetchUserCountryInfo(access_key) {
 }
 
 async function initializeCurrency(data, shop) {
-  let value = localStorage.getItem("selectedCurrency");  
+  console.log(data);
+  let value = localStorage.getItem("selectedCurrency");
+  console.log(value);
   let moneyFormat = document.getElementById("queryMoneyFormat");
   const selectedCurrency = data.find(
     (currency) => currency?.currencyCode === value,
   );
-
   const isValueInCurrencies =
-    selectedCurrency && !selectedCurrency?.primaryStatus;
+    selectedCurrency && !selectedCurrency.primaryStatus;
+
   const currencySwitcher = document.getElementById("currency-switcher");
   const currencyTitleLabel = document.getElementById("currency-title");
   const currencyInput = document.querySelector('input[name="currency_code"]');
@@ -109,6 +111,7 @@ async function initializeCurrency(data, shop) {
     });
     currencyInput.value = value;
     currencySwitcher.value = value;
+
     data.forEach((currency) => {
       const option = new Option(
         `${currency.currencyCode}(${currency.symbol})`,
@@ -495,12 +498,12 @@ class CiwiswitcherForm extends HTMLElement {
     const isVisible = box.style.display !== "none";
     box.style.display = isVisible ? "none" : "block";
 
-    // // 移动端适配
-    // if (window.innerWidth <= 768) {
-    //   const mainBox = document.getElementById("main-box");
-    //   mainBox.style.display = isVisible ? "block" : "none";
-    //   this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
-    // }
+    // 移动端适配
+    if (window.innerWidth <= 768) {
+      const mainBox = document.getElementById("main-box");
+      mainBox.style.display = isVisible ? "block" : "none";
+      this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
+    }
 
     // 旋转箭头
     this.rotateArrow("mainbox-arrow-icon", isVisible ? 0 : 180);
@@ -529,11 +532,11 @@ class CiwiswitcherForm extends HTMLElement {
 
   handleOutsideClick(event) {
     if (!this.elements.ciwiContainer.contains(event.target)) {
-      // if (window.innerWidth <= 768) {
-      //   const mainBox = document.getElementById("main-box");
-      //   this.elements.ciwiContainer.classList.remove("expanded");
-      //   mainBox.style.display = "block";
-      // }
+      if (window.innerWidth <= 768) {
+        const mainBox = document.getElementById("main-box");
+        this.elements.ciwiContainer.classList.remove("expanded");
+        mainBox.style.display = "block";
+      }
       this.elements.selectorBox.style.display = "none";
       this.rotateArrow("mainbox-arrow-icon", 0);
     }
@@ -549,8 +552,8 @@ window.onload = async function () {
   shop.remove();
   const IpOpen = await fetchIpSwitch(shop.value);
   if (IpOpen) {
-    const iptoken = document.querySelector('input[name="iptoken"]');
-    const iptokenValue = iptoken.value;
+    const iptoken = document.querySelector('span[name="iptoken"]');
+    const iptokenValue = iptoken.textContent;
     if (iptokenValue) iptoken.remove(); // 移除DOM元素
     const storedLanguage = localStorage.getItem("selectedLanguage");
     const storedCountry = localStorage.getItem("selectedCountry");
@@ -623,8 +626,12 @@ window.onload = async function () {
     }
   }
 
+  console.log(shop.value);
+  
   // 在页面加载时执行初始化
-  const data = await fetchCurrencies(shop.value);  
+  const data = await fetchCurrencies(shop.value);
+  console.log(data);
+
   if (data) {
     await initializeCurrency(data, shop);
   }
