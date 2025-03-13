@@ -1,13 +1,3 @@
-.ciwi_container {
-  width: 200px;
-  bottom: 60px;
-  right: auto;
-  top: auto;
-  height: auto;
-  display: block;
-  z-index: 9999;
-}
-
 .main_box {
   position: relative;
   background: #fff;
@@ -70,6 +60,7 @@
 }
 
 .ciwi_switcher_confirm_button:hover {
+  color: rgb(117, 211, 68); /* 字体颜色 */
   background-color: rgb(97, 181, 53); /* 悬停时的背景颜色 */
 }
 
@@ -92,7 +83,6 @@
 .ciwi_switcher_cancel_button:hover {
   color: rgb(117, 211, 68); /* 字体颜色 */
   border: 1px solid rgb(117, 211, 68); /* 悬停时背景颜色 */
-  color: rgb(117, 211, 68); /* 悬停时字体颜色 */
 }
 
 .ciwi_switcher_cancel_button:active {
