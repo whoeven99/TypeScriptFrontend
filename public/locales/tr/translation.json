@@ -249,5 +249,6 @@
     "translateSettings1.title": "Yapay Zeka Modelleri",
     "translateSettings2.title": "dil paketleri",
     "translateSettings3.title": "Çeviri projesi",
-    "translateSettings.title": "Çeviri Ayarları"
+    "translateSettings.title": "Çeviri Ayarları",
+    "Can't find the language you want to translate into? Click here to add a language.": "Çevirmek istediğiniz dil bulunamadı mı? Buraya tıklayarak dil ekleyebilirsiniz."
 }
