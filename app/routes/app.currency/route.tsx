@@ -135,7 +135,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             GetCacheData({ shop, currencyCode }),
           );
           const data = await Promise.allSettled(promises);
-          console.log("rateData: ", data);
           return json({ data });
         } catch (error) {
           console.error("Error rateData currency:", error);

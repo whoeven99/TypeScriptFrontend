@@ -256,5 +256,6 @@
   "Article": "文章",
   "Translation Exception": "翻译异常",
   "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "商店内容不符合 OpenAI 的翻译政策，请联系我们获取手动支持。",
-  "Launched": "已上线"
+  "Launched": "已上线",
+  "Can't find the language you want to translate into? Click here to add a language.": "找不到您想要翻译的语言？点击这里添加语言。"
 }
