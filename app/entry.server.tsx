@@ -54,14 +54,20 @@ export default async function handleRequest(
     case language === "ja" || (languageCode && languageCode === "ja"):
       i18nCode = "ja";
       break;
+    case language === "ko" || (languageCode && languageCode === "ko"):
+      i18nCode = "ko";
+      break;
+    case language === "ru" || (languageCode && languageCode === "ru"):
+      i18nCode = "ru";
+      break;
+    case language === "tr" || (languageCode && languageCode === "tr"):
+      i18nCode = "tr";
+      break;
     case language === "zh-TW":
       i18nCode = "zh-TW";
       break;
     case language === "zh-CN" || language === "zh":
       i18nCode = "zh-CN";
-      break;
-    case language === "ko" || (languageCode && languageCode === "ko"):
-      i18nCode = "ko";
       break;
     default:
       i18nCode = "en";

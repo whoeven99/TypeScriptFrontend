@@ -574,19 +574,6 @@ export const GetTranslate = async ({
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   console.log(source, target);
-
-  try {
-    const response = await queryProductCount({ request });
-    if (response.data.productsCount.count > 500) {
-      return {
-        success: false,
-        errorCode: 10014,
-      };
-    }
-  } catch (error) {
-    console.error("Error occurred in the translation:", error);
-  }
-
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/clickTranslation`,
