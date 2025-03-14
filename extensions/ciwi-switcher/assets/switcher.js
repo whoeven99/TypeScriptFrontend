@@ -65,7 +65,7 @@ async function initializeCurrency(data, shop) {
   console.log(data);
   let value = localStorage.getItem("selectedCurrency");
   console.log(value);
-  let moneyFormat = document.getElementById("queryMoneyFormat");
+  let moneyFormat = document.querySelector('input[name="queryMoneyFormat"]').value;
   const selectedCurrency = data.find(
     (currency) => currency?.currencyCode === value,
   );
@@ -77,7 +77,7 @@ async function initializeCurrency(data, shop) {
   const currencyInput = document.querySelector('input[name="currency_code"]');
 
   const regex = /{{(.*?)}}/;
-  const match = moneyFormat.value.match(regex);
+  const match = moneyFormat.match(regex);
 
   if (match) {
     moneyFormat = match[1];
@@ -499,11 +499,11 @@ class CiwiswitcherForm extends HTMLElement {
     box.style.display = isVisible ? "none" : "block";
 
     // 移动端适配
-    if (window.innerWidth <= 768) {
-      const mainBox = document.getElementById("main-box");
-      mainBox.style.display = isVisible ? "block" : "none";
-      this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
-    }
+    // if (window.innerWidth <= 768) {
+    //   const mainBox = document.getElementById("main-box");
+    //   mainBox.style.display = isVisible ? "block" : "none";
+    //   this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
+    // }
 
     // 旋转箭头
     this.rotateArrow("mainbox-arrow-icon", isVisible ? 0 : 180);
@@ -532,11 +532,11 @@ class CiwiswitcherForm extends HTMLElement {
 
   handleOutsideClick(event) {
     if (!this.elements.ciwiContainer.contains(event.target)) {
-      if (window.innerWidth <= 768) {
-        const mainBox = document.getElementById("main-box");
-        this.elements.ciwiContainer.classList.remove("expanded");
-        mainBox.style.display = "block";
-      }
+      // if (window.innerWidth <= 768) {
+      //   const mainBox = document.getElementById("main-box");
+      //   this.elements.ciwiContainer.classList.remove("expanded");
+      //   mainBox.style.display = "block";
+      // }
       this.elements.selectorBox.style.display = "none";
       this.rotateArrow("mainbox-arrow-icon", 0);
     }
@@ -548,12 +548,12 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
 // Page load handling
 window.onload = async function () {
-  const shop = document.getElementById("queryCiwiId");
+  const shop = document.querySelector('input[name="queryCiwiId"]');
   shop.remove();
   const IpOpen = await fetchIpSwitch(shop.value);
   if (IpOpen) {
-    const iptoken = document.querySelector('span[name="iptoken"]');
-    const iptokenValue = iptoken.textContent;
+    const iptoken = document.querySelector('input[name="iptoken"]');
+    const iptokenValue = iptoken.value;
     if (iptokenValue) iptoken.remove(); // 移除DOM元素
     const storedLanguage = localStorage.getItem("selectedLanguage");
     const storedCountry = localStorage.getItem("selectedCountry");

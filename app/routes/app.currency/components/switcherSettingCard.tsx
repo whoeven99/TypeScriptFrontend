@@ -25,7 +25,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   moneyFormatHtml,
   defaultCurrencyCode,
 }) => {
-  const blockUrl = `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/switcher`;
+  const blockUrl = `https://${shop}/admin/themes/current/editor?context=apps&addAppBlockId=${ciwiSwitcherId}/switcher&target=sectionGroup:footer`;
   const supportUrl =
     "http://ciwi.bogdatech.com/help/uncategorized/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/";
   const [isVisible, setIsVisible] = useState<boolean | undefined>(undefined);
@@ -198,7 +198,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             </Space>
           </Card>
         ) : (
-          <Skeleton.Button active style={{ height: 300 }} block/>
+          <Skeleton.Button active style={{ height: 300 }} block />
         ))}
       {step2Visible &&
         (isVisible !== undefined ? (
@@ -220,18 +220,6 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                   <Text
                     strong
                     style={{
-                      backgroundColor: "rgb(254,211,209)",
-                      color: "rgb(142, 31, 11)",
-                      padding: "2px 10px",
-                      borderRadius: "20px",
-                    }}
-                  >
-                    {t("Uncompleted")}
-                  </Text>
-                ) : (
-                  <Text
-                    strong
-                    style={{
                       backgroundColor: "rgb(224,247,224)",
                       color: "rgb(76,175,80)",
                       padding: "2px 10px",
@@ -239,6 +227,18 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                     }}
                   >
                     {t("Completed")}
+                  </Text>
+                ) : (
+                  <Text
+                    strong
+                    style={{
+                      backgroundColor: "rgb(254,211,209)",
+                      color: "rgb(142, 31, 11)",
+                      padding: "2px 10px",
+                      borderRadius: "20px",
+                    }}
+                  >
+                    {t("Uncompleted")}
                   </Text>
                 )}
               </div>
@@ -260,7 +260,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             </Space>
           </Card>
         ) : (
-          <Skeleton.Button active style={{ height: 200 }} block/>
+          <Skeleton.Button active style={{ height: 200 }} block />
         ))}
     </Space>
   );

@@ -9,64 +9,6 @@
       "
     >
       <div
-        id="selector-box"
-        style="
-          background: #fff;
-          border: 1px solid #ccc;
-          padding: 15px;
-          border-radius: 5px;
-          display: none;
-          width: 200px;
-          position: absolute;
-          left: {{ block.settings.horizontalOffset }}px;
-          top: {{ block.settings.verticalOffset | minus: block.settings.selectionVerticalOffset }}px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-          z-index: 1000;
-        "
-      >
-        <label for="language-switcher" class="language_title">Language</label>
-        <div class="select-wrapper">
-          <select id="language-switcher" class="ciwi_select">
-            {% for language in localization.available_languages %}
-              <option
-                value="{{language.iso_code}}"
-                {% if language.iso_code == localization.language.iso_code %}
-                  selected
-                {% endif %}
-              >
-                {{ language.endonym_name | capitalize }}
-              </option>
-            {% endfor %}
-          </select>
-          <img
-            id="language-arrow-icon"
-            class="arrow_icon"
-            src="{{ 'arrow.svg' | asset_url }}"
-            alt="Arrow Icon"
-            width="25%"
-            height="25%"
-          >
-        </div>
-        <label for="currency-switcher" class="currency_title" id="currency-title" style="display: none">Currency</label>
-        <div class="select-wrapper">
-          <select id="currency-switcher" class="ciwi_select" style="display: none"></select>
-          <img
-            id="currency-arrow-icon"
-            class="arrow_icon"
-            src="{{ 'arrow.svg' | asset_url }}"
-            alt="Arrow Icon"
-            width="25%"
-            height="25%"
-          >
-        </div>
-        <div class="button_wrapper">
-          <button id="switcher-confirm" class="ciwi_switcher_confirm_button">Confirm</button>
-          <button id="switcher-close" class="ciwi_switcher_cancel_button">Cancel</button>
-        </div>
-      </div>
-      <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
-      <input id="queryMoneyFormat" type="hidden" value="{{ shop.money_format | strip_html }}">
-      <div
         id="main-box"
         class="main_box"
         style="position: relative; left: {{ block.settings.horizontalOffset }}px; top: {{ block.settings.verticalOffset }}px;"
@@ -80,9 +22,68 @@
           width="25%"
           height="25%"
         >
+        <div
+          id="selector-box"
+          style="
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+            width: 200px;
+            position: absolute;
+            left: {{ block.settings.horizontalOffset | minus: 1 }}px;
+            bottom: {{ block.settings.verticalOffset | plus: block.settings.selectionVerticalOffset }}px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 1000;
+          "
+        >
+          <label for="language-switcher" class="language_title">Language</label>
+          <div class="select-wrapper">
+            <select id="language-switcher" class="ciwi_select">
+              {% for language in localization.available_languages %}
+                <option
+                  value="{{language.iso_code}}"
+                  {% if language.iso_code == localization.language.iso_code %}
+                    selected
+                  {% endif %}
+                >
+                  {{ language.endonym_name | capitalize }}
+                </option>
+              {% endfor %}
+            </select>
+            <img
+              id="language-arrow-icon"
+              class="arrow_icon"
+              src="{{ 'arrow.svg' | asset_url }}"
+              alt="Arrow Icon"
+              width="25%"
+              height="25%"
+            >
+          </div>
+          <label for="currency-switcher" class="currency_title" id="currency-title" style="display: none"
+            >Currency</label
+          >
+          <div class="select-wrapper">
+            <select id="currency-switcher" class="ciwi_select" style="display: none"></select>
+            <img
+              id="currency-arrow-icon"
+              class="arrow_icon"
+              src="{{ 'arrow.svg' | asset_url }}"
+              alt="Arrow Icon"
+              width="25%"
+              height="25%"
+            >
+          </div>
+          <div class="button_wrapper">
+            <button id="switcher-confirm" class="ciwi_switcher_confirm_button">Confirm</button>
+            <button id="switcher-close" class="ciwi_switcher_cancel_button">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
-    <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
+    <input type="hidden" name="queryCiwiId" value="{{ shop.permanent_domain }}">
+    <input type="hidden" name="queryMoneyFormat" value="{{ shop.money_format | strip_html }}">
     <input type="hidden" name="currency_code" value="">
     <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">
     <input type="hidden" name="iptoken" value="4edc3b4d5ca1476accda4d9912c99112">
@@ -119,7 +120,7 @@
 
 {% schema %}
 {
-  "name": "Ciwi_Switcher",
+  "name": "Ciwi_Switcher_Local",
   "target": "section",
   "settings": [
     {
@@ -150,7 +151,7 @@
       "step": 10,
       "unit": "px",
       "label": "Selection box relative position(Vertical)",
-      "default": 250
+      "default": 50
     }
   ],
   "enabled_on": {
