@@ -1,12 +1,14 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "fb9fc15cbec02bd735e2a5b491cf8409"
-name = "Translate Language AI Adapt"
-handle = "ciwi-translator"
-application_url = "https://typescriptfrontendprod.onrender.com/"
+client_id = "4b05c1caefa9e0761a0538b64159b627"
+name = "Ciwi.ai:FAT(Local)"
+handle = "ciwi_local"
+application_url = "https://2b1eb05bad9c.ngrok.app"
 embedded = true
 
 [build]
+automatically_update_urls_on_dev = true
+dev_store_url = "ciwishop.myshopify.com"
 include_config_on_deploy = true
 
 [access_scopes]
@@ -15,9 +17,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://typescriptfrontendprod.onrender.com/auth/callback",
-  "https://typescriptfrontendprod.onrender.com/auth/shopify/callback",
-  "https://typescriptfrontendprod.onrender.com/api/auth/callback"
+  "https://2b1eb05bad9c.ngrok.app/auth/callback",
+  "https://2b1eb05bad9c.ngrok.app/auth/shopify/callback",
+  "https://2b1eb05bad9c.ngrok.app/api/auth/callback"
 ]
 
 [webhooks]
@@ -25,7 +27,7 @@ api_version = "2024-07"
 
   [[webhooks.subscriptions]]
   topics = [ "app_purchases_one_time/update", "app/uninstalled" ]
-  uri = "https://typescriptfrontendprod.onrender.com/webhooks"
+  uri = "/webhooks"
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 
 [pos]
