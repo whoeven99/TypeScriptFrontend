@@ -206,7 +206,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const Ctime = Cendtime.getTime() - Cstarttime.getTime();
       console.log("Ctime: ", Ctime);
       
-      if (shopLocalesIndex.includes(data.response?.target) && !shopLanguagesWithoutPrimaryIndex.find((item) => item.locale === data.response?.target)?.published) {
+      if (shopLocalesIndex.includes(data.response?.target) && (data.response?.status !== 1 || !shopLanguagesWithoutPrimaryIndex.find((item) => item.locale === data.response?.target)?.published)) {
         return {
           translatingLanguage: {
             source: data.response?.source || shopPrimaryLanguage[0].locale,
@@ -368,7 +368,6 @@ export default function App() {
           {loadingFetcher.data && <Link to="/app/manage_translation">{t("Manage Translation")}</Link>}
           {loadingFetcher.data && <Link to="/app/currency">{t("Currency")}</Link>}
           {loadingFetcher.data && <Link to="/app/glossary">{t("Glossary")}</Link>}
-          {loadingFetcher.data && <Link to="/app/pricing">{t("Pricing")}</Link>}
         </NavMenu>
         <Suspense>
           <Outlet />

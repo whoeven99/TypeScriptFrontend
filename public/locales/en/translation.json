@@ -249,5 +249,6 @@
   "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.": "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
   "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.",
   "Translation Exception": "Translation Exception",
-  "Launched": "Launched"
+  "Launched": "Launched",
+  "Can't find the language you want to translate into? Click here to add a language.": "Can't find the language you want to translate into? Click here to add a language."
 }

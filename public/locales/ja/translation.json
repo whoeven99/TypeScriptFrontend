@@ -247,6 +247,7 @@
     "Article": "記事",
     "Translation Exception": "翻訳例外",
     "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "ストアの内容がOpenAIの翻訳ポリシーに違反しています。手動サポートをお問い合わせください。",
-    "Launched": "公開された"
+    "Launched": "公開された",
+    "Can't find the language you want to translate into? Click here to add a language.": "翻訳したい言語が見つかりませんか？ここをクリックして言語を追加してください。"
 }   
   
