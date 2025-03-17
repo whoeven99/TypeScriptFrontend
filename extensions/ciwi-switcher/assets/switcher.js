@@ -425,7 +425,7 @@ class CiwiswitcherForm extends HTMLElement {
       currencyInput: this.querySelector('input[name="currency_code"]'),
       countryInput: this.querySelector('input[name="country_code"]'),
       confirmButton: this.querySelector("#switcher-confirm"),
-      closeButton: this.querySelector("#switcher-close"),
+      // closeButton: this.querySelector("#switcher-close"),
       mainBox: this.querySelector("#main-box"),
       languageSwitcher: this.querySelector("#language-switcher"),
       currencySwitcher: this.querySelector("#currency-switcher"),
@@ -446,10 +446,10 @@ class CiwiswitcherForm extends HTMLElement {
       "click",
       this.submitForm.bind(this),
     );
-    this.elements.closeButton?.addEventListener(
-      "click",
-      this.toggleSelector.bind(this),
-    );
+    // this.elements.closeButton?.addEventListener(
+    //   "click",
+    //   this.toggleSelector.bind(this),
+    // );
     this.elements.mainBox?.addEventListener(
       "click",
       this.toggleSelector.bind(this),
