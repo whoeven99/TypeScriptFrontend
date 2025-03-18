@@ -31,6 +31,7 @@ import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { useTranslation } from "react-i18next";
+import { SessionService } from "~/utils/session.server";
 
 const { Header, Content } = Layout;
 const { TextArea } = Input;
@@ -60,8 +61,18 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const sessionService = await SessionService.init(request);
+  let shopSession = sessionService.getShopSession();
+  if (!shopSession) {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
+  }
+  const { shop, accessToken } = shopSession;
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
@@ -70,7 +81,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       accessToken,
     });
     const themes = await queryNextTransType({
-      request,
+      shop,
+      accessToken,
       resourceType: "ONLINE_STORE_THEME",
       endCursor: "",
       locale: searchTerm || shopLanguagesLoad[0].locale,
@@ -89,6 +101,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
+  const sessionService = await SessionService.init(request);
+  let shopSession = sessionService.getShopSession();
+  if (!shopSession) {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
+  }
+  const { shop, accessToken } = shopSession;
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -101,7 +125,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     switch (true) {
       case !!startCursor:
         const previousThemes = await queryPreviousTransType({
-          request,
+          shop,
+          accessToken,
           resourceType: "METAFIELD",
           startCursor,
           locale: searchTerm || "",
@@ -109,7 +134,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ previousThemes: previousThemes });
       case !!endCursor:
         const nextThemes = await queryNextTransType({
-          request,
+          shop,
+          accessToken,
           resourceType: "METAFIELD",
           endCursor,
           locale: searchTerm || "",
@@ -118,7 +144,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ nextThemes: nextThemes });
       case !!confirmData:
         const data = await updateManageTranslation({
-          request,
+          shop,
+          accessToken,
           confirmData,
         });
         return json({ data: data });

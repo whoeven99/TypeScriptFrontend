@@ -53,6 +53,7 @@ import TranslationWarnModal from "~/components/translationWarnModal";
 import { updateState } from "~/store/modules/translatingResourceType";
 import PreviewModal from "~/components/previewModal";
 import ScrollNotice from "~/components/ScrollNotice";
+import { SessionService } from "~/utils/session.server";
 
 const { Title, Text } = Typography;
 
@@ -105,12 +106,29 @@ interface FetchType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  // 初始化 session 服务
+  const sessionService = await SessionService.init(request);
+  
+  // 获取 session 数据
+  let shopSession = sessionService.getShopSession();
+
+  // 如果没有 session 数据，则获取并存储
+  if (!shopSession) {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    
+    // 存储到 session
+    sessionService.setShopSession(shopSession);
+  }
+
   const Acreatetime = new Date()
   const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-    shop,
-    accessToken,
+    shop: shopSession.shop,
+    accessToken: shopSession.accessToken,
   });
   const Aendtime = new Date();
 
@@ -124,17 +142,37 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     (language) => !language.primary,
   ).map((item) => item.locale);
   console.log("shopPrimaryLanguage: ", shopPrimaryLanguage);
-  return {
-    shop,
-    shopLanguagesLoad,
-    shopPrimaryLanguage,
-    shopLocalesIndex,
-  };
+
+  // 返回数据和更新后的 cookie
+  return json(
+    {
+      shop: shopSession.shop,
+      shopLanguagesLoad,
+      shopPrimaryLanguage,
+      shopLocalesIndex,
+    },
+    await sessionService.createResponseInit()
+  );
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const sessionService = await SessionService.init(request);
+  
+  // 获取 session 数据
+  let shopSession = sessionService.getShopSession();
+
+  if (!shopSession) {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
+  }
+
+  const { shop, accessToken } = shopSession;
+
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
@@ -154,7 +192,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocalesIndex = loading.shopLocalesIndex;
         const shopPrimaryLanguage = loading.shopPrimaryLanguage;
         const Bcreatetime = new Date()
-        const allMarket: MarketType[] = await queryAllMarket({ request });
+        const allMarket: MarketType[] = await queryAllMarket({
+          shop,
+          accessToken,
+        });
         const Bendtime = new Date();
 
         console.log("Bcreatetime: ", Bcreatetime);
@@ -189,7 +230,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         try {
           const Ccreatetime = new Date()
           let allLanguages: AllLanguagesType[] = await queryAllLanguages({
-            request,
+            shop,
+            accessToken,
           });
           allLanguages = allLanguages.map((language, index) => ({
             ...language,
@@ -220,7 +262,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       case !!addLanguages:
         const data = await mutationShopLocaleEnable({
-          request,
+          shop,
+          accessToken,
           addLanguages,
         }); // 处理逻辑
         return json({ data: data });
@@ -245,7 +288,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               const translateSettings1 = translation.translateSettings1;
               const translateSettings2 = translation.translateSettings2;
               const translateSettings3 = translation.translateSettings3;
-              const data = await GetTranslate({ request, source, target, translateSettings1, translateSettings2, translateSettings3 });
+              const data = await GetTranslate({
+                shop,
+                accessToken,
+                source,
+                target,
+                translateSettings1,
+                translateSettings2,
+                translateSettings3
+              });
               return data;
             }
           }
@@ -257,14 +308,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       case !!publishInfo:
         await mutationShopLocalePublish({
-          request,
+          shop,
+          accessToken,
           publishInfos: [publishInfo],
         });
         return null;
 
       case !!unPublishInfo:
         await mutationShopLocaleUnpublish({
-          request,
+          shop,
+          accessToken,
           publishInfos: [unPublishInfo],
         });
         return null;
@@ -471,7 +524,6 @@ const Index = () => {
 
   useEffect(() => {
     if (!shopLanguagesLoad || !languagesLoad || !languageLocaleInfo) return; // 确保数据加载完成后再执行
-    console.log("shopLanguagesLoad: ", shopLanguagesLoad);
     let data = shopLanguagesLoad.filter((language) => !language.primary).map((lang, i) => ({
       key: i,
       language: lang.name,
@@ -488,20 +540,20 @@ const Index = () => {
       status: languagesLoad.find((language: any) => language.target === lang.locale)?.status || 0,
     }));
     const findItem = data.find((data: any) => data.status === 2);
-      if (findItem && shopPrimaryLanguage) {
-        const formData = new FormData();
-        formData.append(
-          "statusData",
-          JSON.stringify({
-            source: shopPrimaryLanguage[0]?.locale,
-            target: [findItem.locale],
-          }),
-        );
-        statusFetcher.submit(formData, {
-          method: "post",
-          action: "/app",
-        });
-      }
+    if (findItem && shopPrimaryLanguage) {
+      const formData = new FormData();
+      formData.append(
+        "statusData",
+        JSON.stringify({
+          source: shopPrimaryLanguage[0]?.locale,
+          target: [findItem.locale],
+        }),
+      );
+      statusFetcher.submit(formData, {
+        method: "post",
+        action: "/app",
+      });
+    }
     data = data.map((lang, i) => ({
       ...lang,
       localeName: languageLocaleInfo[lang.locale]?.Local || "",

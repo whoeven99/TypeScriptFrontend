@@ -53,20 +53,11 @@ interface LanguageSettingType {
     shopLanguageCodesWithoutPrimary: string[];
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-    await authenticate.admin(request);
-    return null;
-};
-
-export const action = async ({ request }: ActionFunctionArgs) => {
-    return null;
-};
-
 const Index = () => {
     const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
     const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
     const [selectedLanguageCode, setSelectedLanguageCode] = useState<string>("");
-    const [translateSettings1, setTranslateSettings1] = useState<string>("1");
+    const [translateSettings1, setTranslateSettings1] = useState<string>("google");
     const [translateSettings2, setTranslateSettings2] = useState<string>("1");
     const [translateSettings3, setTranslateSettings3] = useState<string[]>(["Products", "Collection", "Article", "Blog titles", "Pages", "Filters", "Metaobjects", "Navigation", "Shop", "Theme", "Delivery", "Shipping"]);
     const [modal, setModal] = useState<string>("");
@@ -109,10 +100,6 @@ const Index = () => {
         //     localStorage.setItem('installTime', new Date().toISOString());
         // }
     }, []);
-
-    useEffect(() => {
-        console.log("languageData: ", languageData);
-    }, [languageData]);
 
     useEffect(() => {
         if (loadingLanguageFetcher.data) {
@@ -208,7 +195,7 @@ const Index = () => {
                 JSON.stringify({
                     primaryLanguage: languageSetting?.primaryLanguageCode,
                     selectedLanguage: selectedItem,
-                    translateSettings1: translateSettings1,
+                    translateSettings1: "google",
                     translateSettings2: translateSettings2,
                     translateSettings3: translateSettings3,
                 }),
@@ -586,6 +573,12 @@ const Index = () => {
 
                                             ))
                                         }
+                                        <Col key="custom key" span={6}>
+                                            <Button type="primary" key="customButton" onClick={() => setTranslateSettings1("custom")} style={{ width: "100%" }}
+                                            >
+                                                {t("Custom API key")}
+                                            </Button>
+                                        </Col>
                                     </Row>
                                 </Space>
                                 <Space direction="vertical" size={16} style={{ display: "flex" }}>

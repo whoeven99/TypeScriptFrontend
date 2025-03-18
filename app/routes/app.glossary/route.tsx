@@ -34,7 +34,7 @@ import { WarningOutlined } from "@ant-design/icons";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
-
+import { SessionService } from "~/utils/session.server";
 const { Title, Text } = Typography;
 
 export interface GLossaryDataType {
@@ -53,8 +53,18 @@ export const loader = async () => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const sessionService = await SessionService.init(request);
+  let shopSession = sessionService.getShopSession();
+  if (!shopSession) {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
+  }
+  const { shop, accessToken } = shopSession;
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);

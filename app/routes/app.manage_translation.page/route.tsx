@@ -73,8 +73,14 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const shop = sessionStorage.getItem("shop") as string;
+  const accessToken = sessionStorage.getItem("accessToken") as string;
+  if (!shop || !accessToken) {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+    sessionStorage.setItem("shop", shop);
+    sessionStorage.setItem("accessToken", accessToken as string);
+  }
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
@@ -83,7 +89,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       accessToken,
     });
     const pages = await queryNextTransType({
-      request,
+      shop,
+      accessToken,
       resourceType: "PAGE",
       endCursor: "",
       locale: searchTerm || shopLanguagesLoad[0].locale,
@@ -102,6 +109,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
+  const shop = sessionStorage.getItem("shop") as string;
+  const accessToken = sessionStorage.getItem("accessToken") as string;
+  if (!shop || !accessToken) {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+    sessionStorage.setItem("shop", shop);
+    sessionStorage.setItem("accessToken", accessToken as string);
+  }
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -114,7 +129,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     switch (true) {
       case !!startCursor:
         const previousPages = await queryPreviousTransType({
-          request,
+          shop,
+          accessToken,
           resourceType: "PAGE",
           startCursor,
           locale: searchTerm || "",
@@ -122,7 +138,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ previousPages: previousPages });
       case !!endCursor:
         const nextPages = await queryNextTransType({
-          request,
+          shop,
+          accessToken,
           resourceType: "PAGE",
           endCursor,
           locale: searchTerm || "",
@@ -130,7 +147,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ nextPages: nextPages });
       case !!confirmData:
         const data = await updateManageTranslation({
-          request,
+          shop,
+          accessToken,
           confirmData,
         });
         return json({ data: data });

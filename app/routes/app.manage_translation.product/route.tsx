@@ -31,6 +31,7 @@ import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
+import { SessionService } from "~/utils/session.server";
 
 const { Sider, Content } = Layout;
 
@@ -94,8 +95,18 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const sessionService = await SessionService.init(request);
+  let shopSession = sessionService.getShopSession();
+  if (!shopSession) {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
+  }
+  const { shop, accessToken } = shopSession;
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
@@ -104,20 +115,23 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       accessToken,
     });
     const products = await queryNextTransType({
-      request,
+      shop,
+      accessToken,
       resourceType: "PRODUCT",
       endCursor: "",
       locale: searchTerm || shopLanguagesLoad[0].locale,
     });
     const product_options = await queryNextNestTransType({
-      request,
+      shop,
+      accessToken,
       resourceType: "PRODUCT",
       nestResourceType: "PRODUCT_OPTION",
       endCursor: "",
       locale: searchTerm || shopLanguagesLoad[0].locale,
     });
     const product_metafields = await queryNextNestTransType({
-      request,
+      shop,
+      accessToken,
       resourceType: "PRODUCT",
       nestResourceType: "METAFIELD",
       endCursor: "",
@@ -140,6 +154,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
+  const sessionService = await SessionService.init(request);
+  let shopSession = sessionService.getShopSession();
+  if (!shopSession) {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
+  }
+  const { shop, accessToken } = shopSession;
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -152,20 +178,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     switch (true) {
       case !!startCursor:
         const previousProducts = await queryPreviousTransType({
-          request,
+          shop,
+          accessToken,
           resourceType: "PRODUCT",
           startCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
         const previousOptions = await queryPreviousNestTransType({
-          request,
+          shop,
+          accessToken,
           resourceType: "PRODUCT",
           nestResourceType: "PRODUCT_OPTION",
           startCursor,
           locale: searchTerm || "",
         });
         const previousMetafields = await queryPreviousNestTransType({
-          request,
+          shop,
+          accessToken,
           resourceType: "PRODUCT",
           nestResourceType: "METAFIELD",
           startCursor,
@@ -178,20 +207,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       case !!endCursor:
         const nextProducts = await queryNextTransType({
-          request,
+          shop,
+          accessToken,
           resourceType: "PRODUCT",
           endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
         const nextOptions = await queryNextNestTransType({
-          request,
+          shop,
+          accessToken,
           resourceType: "PRODUCT",
           nestResourceType: "PRODUCT_OPTION",
           endCursor,
           locale: searchTerm || "",
         });
         const nextMetafields = await queryNextNestTransType({
-          request,
+          shop,
+          accessToken,
           resourceType: "PRODUCT",
           nestResourceType: "METAFIELD",
           endCursor,
@@ -219,7 +251,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return item;
         });
         const data = await updateManageTranslation({
-          request,
+          shop,
+          accessToken,
           confirmData: updatedConfirmData,
         });
         return json({ data: data });

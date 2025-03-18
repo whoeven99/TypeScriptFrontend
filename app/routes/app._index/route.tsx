@@ -28,9 +28,9 @@ export interface WordsType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
   return null;
 }
+
 const Index = () => {
   // const { translatingLanguage } = useLoaderData<typeof loader>();
   // const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);

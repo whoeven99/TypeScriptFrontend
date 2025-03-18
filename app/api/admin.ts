@@ -45,7 +45,7 @@ export const queryShopLanguages = async ({
   accessToken,
 }: {
   shop: string;
-  accessToken: string | undefined;
+  accessToken: string;
 }) => {
   try {
     const query = `{
@@ -75,9 +75,13 @@ export const queryShopLanguages = async ({
   }
 };
 
-export const queryShop = async ({ request }: { request: Request }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+export const queryShop = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string;
+}) => {
   try {
     const query = `{
       shop {
@@ -115,14 +119,60 @@ export const queryShop = async ({ request }: { request: Request }) => {
   }
 };
 
-export const queryTheme = async ({ request }: { request: Request }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+// export const queryTheme = async ({
+//   shop,
+//   accessToken,
+// }: {
+//   shop: string;
+//   accessToken: string;
+// }) => {
+//   try {
+//     const query = `{
+//       themes(roles: MAIN, first: 1) {
+//         nodes {
+//           files(filenames: "config/settings_data.json") {
+//             nodes {
+//               body {
+//                 ... on OnlineStoreThemeFileBodyText {
+//                   __typename
+//                   content
+//                 }
+//               }
+//             }
+//           }
+//         }
+//       }
+//     }`;
+
+//     const response = await axios({
+//       url: `https://${shop}/admin/api/2024-10/graphql.json`,
+//       method: "POST",
+//       headers: {
+//         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+//         "Content-Type": "application/json",
+//       },
+//       data: JSON.stringify({ query }),
+//     });
+//     const res = response.data.data.themes;
+//     return res;
+//   } catch (error) {
+//     console.error("Error queryTheme:", error);
+//     throw error;
+//   }
+// };
+
+export const queryTheme = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string;
+}) => {
   try {
     const query = `{
       themes(roles: MAIN, first: 1) {
         nodes {
-          files(filenames: "config/settings_data.json") {
+          files(filenames: "sections/footer-group.json") {
             nodes {
               body {
                 ... on OnlineStoreThemeFileBodyText {
@@ -153,26 +203,13 @@ export const queryTheme = async ({ request }: { request: Request }) => {
   }
 };
 
-export const queryProductCount = async ({ request }: { request: Request }) => {
-  const { admin } = await authenticate.admin(request);
-
-  const response = await admin.graphql(
-    `#graphql
-      query {
-        productsCount {
-          count
-        }
-      }`,
-  );
-
-  const data = await response.json();
-  console.log("queryProductCount: ", data);
-  return data;
-};
-
-export const queryAllProducts = async (request: Request) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+export const queryAllProducts = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string;
+}) => {
   try {
     const query = `{
       products(first: 250) {
@@ -201,16 +238,16 @@ export const queryAllProducts = async (request: Request) => {
 };
 
 export const queryNextProducts = async ({
-  request,
+  shop,
+  accessToken,
   locale,
   endCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   locale: string;
   endCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       translatableResources(resourceType: PRODUCT, first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
@@ -270,16 +307,16 @@ export const queryNextProducts = async ({
 };
 
 export const queryPreviousProducts = async ({
-  request,
+  shop,
+  accessToken,
   marketId,
   startCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   marketId: string;
   startCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       products(last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
@@ -353,14 +390,14 @@ export const queryPreviousProducts = async ({
 };
 
 export const queryNextCollections = async ({
-  request,
+  shop,
+  accessToken,
   endCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   endCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       collections(first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
@@ -406,14 +443,14 @@ export const queryNextCollections = async ({
 };
 
 export const queryPreviousCollections = async ({
-  request,
+  shop,
+  accessToken,
   startCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   startCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       collections(last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
@@ -459,14 +496,14 @@ export const queryPreviousCollections = async ({
 };
 
 export const queryNextArticles = async ({
-  request,
+  shop,
+  accessToken,
   endCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   endCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       articles(first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
@@ -505,14 +542,14 @@ export const queryNextArticles = async ({
 };
 
 export const queryPreviousArticles = async ({
-  request,
+  shop,
+  accessToken,
   startCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   startCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       articles(last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
@@ -551,14 +588,14 @@ export const queryPreviousArticles = async ({
 };
 
 export const queryNextBlogs = async ({
-  request,
+  shop,
+  accessToken,
   endCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   endCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{       
         blogs(first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
@@ -595,14 +632,14 @@ export const queryNextBlogs = async ({
 };
 
 export const queryPreviousBlogs = async ({
-  request,
+  shop,
+  accessToken,
   startCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   startCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{       
         blogs(last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
@@ -639,14 +676,14 @@ export const queryPreviousBlogs = async ({
 };
 
 export const queryNextPages = async ({
-  request,
+  shop,
+  accessToken,
   endCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   endCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{       
       pages(first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
@@ -683,14 +720,14 @@ export const queryNextPages = async ({
 };
 
 export const queryPreviousPages = async ({
-  request,
+  shop,
+  accessToken,
   startCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   startCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{       
       pages(last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
@@ -727,14 +764,14 @@ export const queryPreviousPages = async ({
 };
 
 export const queryNextNavigations = async ({
-  request,
+  shop,
+  accessToken,
   endCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   endCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       menus(first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
@@ -782,14 +819,14 @@ export const queryNextNavigations = async ({
 };
 
 export const queryPreviousNavigations = async ({
-  request,
+  shop,
+  accessToken,
   startCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   startCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       menus(last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) 
@@ -837,14 +874,14 @@ export const queryPreviousNavigations = async ({
 };
 
 export const queryNextShopMetafields = async ({
-  request,
+  shop,
+  accessToken,
   endCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   endCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       shop {
@@ -881,14 +918,14 @@ export const queryNextShopMetafields = async ({
 };
 
 export const queryPreviousShopMetafields = async ({
-  request,
+  shop,
+  accessToken,
   startCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   startCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       shop {
@@ -925,12 +962,12 @@ export const queryPreviousShopMetafields = async ({
 };
 
 export const queryAllProductMetafields = async ({
-  request,
+  shop,
+  accessToken,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       metafieldDefinitions(ownerType: PRODUCT, first: 250) {
@@ -959,16 +996,16 @@ export const queryAllProductMetafields = async ({
 };
 
 export const queryNextProductMetafields = async ({
-  request,
+  shop,
+  accessToken,
   key,
   endCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   key: string;
   endCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       metafieldDefinitions(ownerType: PRODUCT, key: "${key}", first: 250) {
@@ -1008,16 +1045,16 @@ export const queryNextProductMetafields = async ({
 };
 
 export const queryPreviousProductMetafields = async ({
-  request,
+  shop,
+  accessToken,
   key,
   startCursor,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   key: string;
   startCursor: string | undefined;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       metafieldDefinitions(ownerType: PRODUCT, key: "${key}", first: 1) {
@@ -1057,18 +1094,18 @@ export const queryPreviousProductMetafields = async ({
 };
 
 export const queryNextTransType = async ({
-  request,
+  shop,
+  accessToken,
   resourceType,
   endCursor,
   locale,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   resourceType: string;
   endCursor: string;
   locale: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       translatableResources(resourceType: ${resourceType}, first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
@@ -1114,18 +1151,18 @@ export const queryNextTransType = async ({
 };
 
 export const queryPreviousTransType = async ({
-  request,
+  shop,
+  accessToken,
   resourceType,
   startCursor,
   locale,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   resourceType: string;
   startCursor: string;
   locale: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       translatableResources(resourceType: ${resourceType}, last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
@@ -1171,20 +1208,20 @@ export const queryPreviousTransType = async ({
 };
 
 export const queryNextNestTransType = async ({
-  request,
+  shop,
+  accessToken,
   resourceType,
   nestResourceType,
   endCursor,
   locale,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   resourceType: string;
   nestResourceType: string;
   endCursor: string;
   locale: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       translatableResources(resourceType: ${resourceType}, first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
@@ -1235,20 +1272,20 @@ export const queryNextNestTransType = async ({
 };
 
 export const queryPreviousNestTransType = async ({
-  request,
+  shop,
+  accessToken,
   resourceType,
   nestResourceType,
   startCursor,
   locale,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   resourceType: string;
   nestResourceType: string;
   startCursor: string;
   locale: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const query = `{
       translatableResources(resourceType: ${resourceType}, last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
@@ -1297,9 +1334,13 @@ export const queryPreviousNestTransType = async ({
   }
 };
 
-export const queryAllLanguages = async ({ request }: { request: Request }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+export const queryAllLanguages = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string;
+}) => {
   try {
     const query = `{
       availableLocales {
@@ -1326,9 +1367,13 @@ export const queryAllLanguages = async ({ request }: { request: Request }) => {
   }
 };
 
-export const queryAllMarket = async ({ request }: { request: Request }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+export const queryAllMarket = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string;
+}) => {
   try {
     const query = `{
       markets(first: 250) {
@@ -1364,14 +1409,14 @@ export const queryAllMarket = async ({ request }: { request: Request }) => {
 
 //查询订单状态
 export const queryOrders = async ({
-  request,
+  shop,
+  accessToken,
   id,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   id: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   const query = `{
     node(id: "${id}") {
       ... on AppPurchaseOneTime {
@@ -1398,16 +1443,20 @@ export const queryOrders = async ({
   }
 };
 
-// export const queryAllCustomers = async ({ request }: { request: Request }) => {
-//   const adminAuthResult = await authenticate.admin(request);
-//   const { shop, accessToken } = adminAuthResult.session;
+// export const queryAllCustomers = async ({
+//   shop,
+//   accessToken,
+// }: {
+//   shop: string;
+//   accessToken: string;
+// }) => {
 //   try {
 //     const query = `{
 //       customersCount {
 //         count
-//         precision
-//       }
-//     }`;
+//          precision
+//        }
+//      }`;
 
 //     const response = await axios({
 //       url: `https://${shop}/admin/api/2024-10/graphql.json`,
@@ -1427,17 +1476,17 @@ export const queryOrders = async ({
 // };
 
 export const mutationShopLocaleEnable = async ({
-  request,
+  shop,
+  accessToken,
   addLanguages,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   addLanguages: {
     primaryLanguage: ShopLocalesType | undefined;
     selectedLanguages: string[];
   }; // 接受语言数组
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   let shopLanguages: any[] = [];
   let success = true;
   try {
@@ -1548,14 +1597,14 @@ export const mutationShopLocaleDisable = async ({
 };
 
 export const mutationShopLocalePublish = async ({
-  request,
+  shop,
+  accessToken,
   publishInfos,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   publishInfos: PublishInfoType[]; // 接受语言数组
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     // 遍历语言数组并逐个执行 GraphQL mutation
     for (const publishInfo of publishInfos) {
@@ -1596,14 +1645,14 @@ export const mutationShopLocalePublish = async ({
 };
 
 export const mutationShopLocaleUnpublish = async ({
-  request,
+  shop,
+  accessToken,
   publishInfos,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   publishInfos: UnpublishInfoType[]; // 接受语言数组
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     // 遍历语言数组并逐个执行 GraphQL mutation
     for (const publishInfo of publishInfos) {
@@ -1644,13 +1693,15 @@ export const mutationShopLocaleUnpublish = async ({
 
 //创建一次性订单
 export const mutationAppPurchaseOneTimeCreate = async ({
-  request,
+  shop,
+  accessToken,
   name,
   price,
   test,
   returnUrl,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   name: String;
   price: {
     amount: number;
@@ -1659,8 +1710,6 @@ export const mutationAppPurchaseOneTimeCreate = async ({
   test?: boolean;
   returnUrl: URL;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     // 执行 API 请求
     const response = await axios({
@@ -1711,14 +1760,16 @@ export const mutationAppPurchaseOneTimeCreate = async ({
 
 //创建月度订阅订单
 export const mutationAppSubscriptionCreate = async ({
-  request,
+  shop,
+  accessToken,
   name,
   price,
   test,
   trialDays,
   returnUrl,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   name: String;
   price: {
     amount: number;
@@ -1728,8 +1779,6 @@ export const mutationAppSubscriptionCreate = async ({
   trialDays: number;
   returnUrl: URL;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     // 执行 API 请求
     const response = await axios({
