@@ -23,6 +23,7 @@ import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import dynamic from "next/dynamic";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
+import { SessionService } from "~/utils/session.server";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
@@ -60,8 +61,18 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const sessionService = await SessionService.init(request);
+  let shopSession = sessionService.getShopSession();
+  if (!shopSession) {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
+  }
+  const { shop, accessToken } = shopSession;
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
@@ -69,10 +80,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       shop,
       accessToken,
     });
-    const shopData = await queryShop({ request });
+    const shopData = await queryShop({ shop, accessToken });
     const policyTitle = shopData.shopPolicies;
     const policyBody = await queryNextTransType({
-      request,
+      shop,
+      accessToken,
       resourceType: "SHOP_POLICY",
       endCursor: "",
       locale: searchTerm || shopLanguagesLoad[0].locale,
@@ -104,6 +116,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const sessionService = await SessionService.init(request);
+  let shopSession = sessionService.getShopSession();
+  if (!shopSession) {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
+  }
+  const { shop, accessToken } = shopSession;
   try {
     const formData = await request.formData();
     const confirmData: ConfirmDataType[] = JSON.parse(
@@ -113,7 +137,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     switch (true) {
       case !!confirmData:
         const data = await updateManageTranslation({
-          request,
+          shop,
+          accessToken,
           confirmData,
         });
         return json({ data: data });

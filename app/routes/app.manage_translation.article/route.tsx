@@ -29,6 +29,7 @@ import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
+import { SessionService } from "~/utils/session.server";
 
 const { Sider, Content } = Layout;
 
@@ -75,8 +76,18 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const sessionService = await SessionService.init(request);
+  let shopSession = sessionService.getShopSession();
+  if (!shopSession) {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
+  }
+  const { shop, accessToken } = shopSession;
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
@@ -85,7 +96,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       accessToken,
     });
     const articles = await queryNextTransType({
-      request,
+      shop,
+      accessToken,
       resourceType: "ARTICLE",
       endCursor: "",
       locale: searchTerm || shopLanguagesLoad[0].locale,
@@ -105,6 +117,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
+  const sessionService = await SessionService.init(request);
+  let shopSession = sessionService.getShopSession();
+  if (!shopSession) {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
+  }
+  const { shop, accessToken } = shopSession;
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -117,7 +141,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     switch (true) {
       case !!startCursor:
         const previousArticles = await queryPreviousTransType({
-          request,
+          shop,
+          accessToken: accessToken as string,
           resourceType: "ARTICLE",
           startCursor,
           locale: searchTerm || "",
@@ -125,7 +150,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ previousArticles: previousArticles });
       case !!endCursor:
         const nextArticles = await queryNextTransType({
-          request,
+          shop,
+          accessToken: accessToken as string,
           resourceType: "ARTICLE",
           endCursor,
           locale: searchTerm || "",
@@ -133,7 +159,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ nextArticles: nextArticles });
       case !!confirmData:
         const data = await updateManageTranslation({
-          request,
+          shop,
+          accessToken: accessToken as string,
           confirmData,
         });
         return json({ data: data });

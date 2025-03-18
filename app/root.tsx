@@ -16,65 +16,45 @@ import "./styles.css";
 import "react-quill/dist/quill.snow.css";
 import { json, LoaderFunctionArgs } from "@remix-run/node";
 import { Button, Card, Typography } from "antd";
+import { universalLanguageDetect } from "@unly/universal-language-detector";
+
+const SUPPORTED_LANGUAGES = ['en', 'fr', 'de', 'es', 'it', 'nl', 'pt', 'sv', 'ja', 'ko', 'ru', 'tr', 'uk', 'zh-TW', 'zh-CN'];
+const FALLBACK_LANG = 'en';
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
-    const language =
-      request.headers.get("Accept-Language")?.split(",")[0] || "en";
-    const languageCode = language.split("-")[0];
-    let i18nCode;
-    console.log("Root language: ", language);
-    console.log("Root request.headers.get('Accept-Language'): ", request.headers.get("Accept-Language"));
-    switch (true) {
-      case language === "fr" || (languageCode && languageCode === "fr"):
-        i18nCode = "fr";
-        break;
-      case language === "de" || (languageCode && languageCode === "de"):
-        i18nCode = "de";
-        break;
-      case language === "es" || (languageCode && languageCode === "es"):
-        i18nCode = "es";
-        break;
-      case language === "it" || (languageCode && languageCode === "it"):
-        i18nCode = "it";
-        break;
-      case language === "nl" || (languageCode && languageCode === "nl"):
-        i18nCode = "nl";
-        break;
-      case language === "pt" || (languageCode && languageCode === "pt"):
-        i18nCode = "pt";
-        break;
-      case language === "sv" || (languageCode && languageCode === "sv"):
-        i18nCode = "sv";
-        break;
-      case language === "ja" || (languageCode && languageCode === "ja"):
-        i18nCode = "ja";
-        break;
-      case language === "ko" || (languageCode && languageCode === "ko"):
-        i18nCode = "ko";
-        break;
-      case language === "ru" || (languageCode && languageCode === "ru"):
-        i18nCode = "ru";
-        break;
-      case language === "tr" || (languageCode && languageCode === "tr"):
-        i18nCode = "tr";
-        break;
-      case language === "uk" || (languageCode && languageCode === "uk"):
-        i18nCode = "uk";
-        break;
-      case language === "zh-TW":
-        i18nCode = "zh-TW";
-        break;
-      case language === "zh-CN" || language === "zh":
-        i18nCode = "zh-CN";
-        break;
-      default:
-        i18nCode = "en";
-    }
-    console.log("Root i18nCode: ", i18nCode);
+    const cookieStr = request.headers.get('cookie') || '';
+    const cookiesObj = cookieStr.split(';').reduce((acc: Record<string, string>, cookie) => {
+      const [key, value] = cookie.split('=').map(c => c.trim());
+      if (key && value) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    const i18nCode = universalLanguageDetect({
+      supportedLanguages: SUPPORTED_LANGUAGES, // Whitelist of supported languages, will be used to filter out languages that aren't supported
+      fallbackLanguage: FALLBACK_LANG, // Fallback language in case the user's language cannot be resolved
+      acceptLanguageHeader: request.headers.get("Accept-Language")?.split(",")[0] || 'en', // Optional - Accept-language header will be used when resolving the language on the server side
+      serverCookies: cookiesObj, // Optional - Cookie "i18next" takes precedence over navigator configuration (ex: "i18next: fr"), will only be used on the server side
+      errorHandler: (error, level, origin, context) => { // Optional - Use you own logger here, Sentry, etc.
+        console.log('Custom error handler:');
+        console.error(error);
+
+        // Example if using Sentry in your app:
+        // Sentry.withScope((scope): void => {
+        //   scope.setExtra('level', level);
+        //   scope.setExtra('origin', origin);
+        //   scope.setContext('context', context);
+        //   Sentry.captureException(error);
+        // });
+      },
+    });
+    console.log('Root i18nCode: ', i18nCode);
+
     return json({ i18nCode: i18nCode });
   } catch (error) {
-    console.error("Error get the default language", error);
+    console.error("Error get the default language: ", error);
     return json({ i18nCode: "en" });
   }
 }

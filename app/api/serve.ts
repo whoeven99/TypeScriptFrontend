@@ -1,6 +1,6 @@
 import axios from "axios";
 import { authenticate } from "~/shopify.server";
-import { queryProductCount, queryShop, queryShopLanguages } from "./admin";
+import { queryShop, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
@@ -92,12 +92,10 @@ export const getCredits = async ({
 
 //用户数据初始化检测
 export const InitializationDetection = async ({
-  request,
+  shop,
 }: {
-  request: Request;
+  shop: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/InitializationDetection?shopName=${shop}`,
@@ -113,11 +111,9 @@ export const InitializationDetection = async ({
 
 //用户数据初始化
 //添加用户
-export const UserAdd = async ({ request }: { request: Request }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+export const UserAdd = async ({ shop, accessToken }: { shop: string; accessToken: string }) => {
   try {
-    const shopData = await queryShop({ request });
+    const shopData = await queryShop({ shop, accessToken });
     const shopOwnerName = shopData?.shopOwnerName;
     const lastSpaceIndex = shopOwnerName.lastIndexOf(" ");
     const firstName = shopOwnerName.substring(0, lastSpaceIndex);
@@ -151,12 +147,12 @@ export const UserAdd = async ({ request }: { request: Request }) => {
 
 //插入字符
 export const InsertCharsByShopName = async ({
-  request,
+  shop,
+  accessToken,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const insertCharsByShopNameResponse = await axios({
       url: `${process.env.SERVER_URL}/translationCounter/insertCharsByShopName`,
@@ -177,14 +173,11 @@ export const InsertCharsByShopName = async ({
 
 //添加默认语言包
 export const AddDefaultLanguagePack = async ({
-  request,
+  shop,
 }: {
-  request: Request;
+  shop: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
   console.log("AddDefaultLanguagePackData: ", shop);
-
   try {
     const addDefaultLanguagePackResponse = await axios({
       url: `${process.env.SERVER_URL}/aiLanguagePacks/addDefaultLanguagePack?shopName=${shop}`,
@@ -239,16 +232,16 @@ export const AddUserFreeSubscription = async ({ shop }: { shop: string }) => {
 
 //更新语言数据
 export const InsertShopTranslateInfo = async ({
-  request,
+  shop,
+  accessToken,
   source,
   target,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   source: string;
   target: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     await axios({
       url: `${process.env.SERVER_URL}/translate/insertShopTranslateInfo`,
@@ -529,14 +522,14 @@ export const GetLanguageStatus = async ({
 
 //查询语言待翻译字符数
 export const GetTotalWords = async ({
-  request,
+  shop,
+  accessToken,
   target,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   target: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/shopify/getTotalWords`,
@@ -557,22 +550,22 @@ export const GetTotalWords = async ({
 
 //一键全部翻译
 export const GetTranslate = async ({
-  request,
+  shop,
+  accessToken,
   source,
   target,
   translateSettings1,
   translateSettings2,
   translateSettings3,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   source: string;
   target: string;
   translateSettings1: string;
   translateSettings2: string;
   translateSettings3: string[];
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   console.log(source, target);
   try {
     const response = await axios({
@@ -615,14 +608,14 @@ export const GetTranslate = async ({
 
 //编辑翻译
 // export const updateManageTranslation = async ({
-//   request,
+//   shop,
+//   accessToken,
 //   confirmData,
 // }: {
-//   request: Request;
+//   shop: string;
+//   accessToken: string;
 //   confirmData: ConfirmDataType[];
 // }) => {
-//   const adminAuthResult = await authenticate.admin(request);
-//   const { shop, accessToken } = adminAuthResult.session;
 //   let res: {
 //     success: boolean;
 //     errorMsg: string;
@@ -754,14 +747,14 @@ export const GetTranslate = async ({
 
 //编辑翻译
 export const updateManageTranslation = async ({
-  request,
+  shop,
+  accessToken,
   confirmData,
 }: {
-  request: Request;
+  shop: string;
+  accessToken: string;
   confirmData: ConfirmDataType[];
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
   let res: {
     success: boolean;
     errorMsg: string;
@@ -1040,9 +1033,7 @@ export const updateManageTranslation = async ({
 };
 
 //检测默认货币
-export const InitCurrency = async ({ request }: { request: Request }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
+export const InitCurrency = async ({ shop }: { shop: string }) => {
   console.log("InitCurrency: ", {
     shopName: shop,
   });
@@ -1061,18 +1052,16 @@ export const InitCurrency = async ({ request }: { request: Request }) => {
 
 //更新默认货币
 export const UpdateDefaultCurrency = async ({
-  request,
+  shop,
   currencyName,
   currencyCode,
   primaryStatus,
 }: {
-  request: Request;
+  shop: string;
   currencyName: string;
   currencyCode: string;
   primaryStatus: number;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
   console.log("UpdateDefaultCurrency: ", {
     shopName: shop,
     currencyName: currencyName, // 国家
@@ -1104,18 +1093,16 @@ export const UpdateDefaultCurrency = async ({
 
 //添加用户自定义汇率
 export const AddCurrency = async ({
-  request,
+  shop,
   currencyName,
   currencyCode,
   primaryStatus,
 }: {
-  request: Request;
+  shop: string;
   currencyName: string;
   currencyCode: string;
   primaryStatus: number;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
   console.log("AddCurrency: ", {
     shopName: shop,
     currencyName: currencyName, // 国家
@@ -1165,14 +1152,12 @@ export const AddCurrency = async ({
 
 //删除用户自定义汇率
 export const DeleteCurrency = async ({
-  request,
+  shop,
   id,
 }: {
-  request: Request;
+  shop: string;
   id: number;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/deleteCurrency`,
@@ -1194,18 +1179,16 @@ export const DeleteCurrency = async ({
 
 //更新用户自定义汇率
 export const UpdateCurrency = async ({
-  request,
+  shop,
   updateCurrencies,
 }: {
-  request: Request;
+  shop: string;
   updateCurrencies: {
     id: string;
     rounding: string;
     exchangeRate: string;
   };
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
   try {
     console.log("UpdateCurrency: ", {
       shopName: shop,
@@ -1236,12 +1219,10 @@ export const UpdateCurrency = async ({
 
 //获取用户自定义汇率
 export const GetCurrencyByShopName = async ({
-  request,
+  shop,
 }: {
-  request: Request;
+  shop: string;
 }) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
   console.log("GetCurrencyByShopName: ", shop);
   try {
     const response = await axios({
@@ -1448,7 +1429,7 @@ export const GetGlossaryByShopName = async ({
   accessToken,
 }: {
   shop: string;
-  accessToken: string | undefined;
+  accessToken: string;
 }) => {
   try {
     const response = await axios({

@@ -41,7 +41,7 @@ import { setTableData } from "~/store/modules/currencyDataTable";
 import SwitcherSettingCard from "./components/switcherSettingCard";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
-
+import { SessionService } from "~/utils/session.server";
 const { Title, Text } = Typography;
 
 export interface CurrencyDataType {
@@ -62,8 +62,23 @@ export interface CurrencyType {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop } = adminAuthResult.session;
+    const sessionService = await SessionService.init(request);
+    let shopSession = sessionService.getShopSession();
+    if (!shopSession) {
+      const adminAuthResult = await authenticate.admin(request);
+      const { shop, accessToken } = adminAuthResult.session;
+      shopSession = {
+        shop: shop,
+        accessToken: accessToken as string,
+      };
+      sessionService.setShopSession(shopSession);
+      return json({
+        shop,
+        ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
+        ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
+      });
+    }
+    const { shop } = shopSession;
 
     return json({
       shop,
@@ -78,8 +93,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop } = adminAuthResult.session;
+    const sessionService = await SessionService.init(request);
+    let shopSession = sessionService.getShopSession();
+    if (!shopSession) {
+      const adminAuthResult = await authenticate.admin(request);
+      const { shop, accessToken } = adminAuthResult.session;
+      shopSession = {
+        shop: shop,
+        accessToken: accessToken as string,
+      };
+      sessionService.setShopSession(shopSession);
+    }
+    const { shop, accessToken } = shopSession;
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
     const theme = JSON.parse(formData.get("theme") as string);
@@ -101,9 +126,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     switch (true) {
       case !!loading:
         try {
-          const primaryCurrency = await InitCurrency({ request });
-          const shopLoad = await queryShop({ request });
-          const currencyList = await GetCurrencyByShopName({ request });
+          const primaryCurrency = await InitCurrency({ shop });
+          const shopLoad = await queryShop({ shop, accessToken });
+          const currencyList = await GetCurrencyByShopName({ shop });
           const finalCurrencyList = currencyList || [];
           const moneyFormat = shopLoad.currencyFormats.moneyFormat;
           const moneyWithCurrencyFormat =
@@ -123,7 +148,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       case !!theme:
         try {
-          const data = await queryTheme({ request });
+          const data = await queryTheme({ shop, accessToken });
           return json({ data });
         } catch (error) {
           console.error("Error theme currency:", error);
@@ -143,7 +168,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!updateDefaultCurrency:
         try {
           const data = await UpdateDefaultCurrency({
-            request,
+            shop,
             currencyName: updateDefaultCurrency.currencyName,
             currencyCode: updateDefaultCurrency.currencyCode,
             primaryStatus: updateDefaultCurrency.primaryStatus,
@@ -160,7 +185,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         try {
           const promises = addCurrencies.map((currency: any) =>
             AddCurrency({
-              request,
+              shop,
               currencyName: currency.currencyName,
               currencyCode: currency.currencyCode,
               primaryStatus: currency?.primaryStatus || 0,
@@ -177,14 +202,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       case !!deleteCurrencies:
         const promises = deleteCurrencies.map((currency) =>
-          DeleteCurrency({ request, id: currency }),
+          DeleteCurrency({ shop, id: currency }),
         );
         const data = await Promise.allSettled(promises);
         return json({ data });
       case !!updateCurrencies:
         try {
           const data = await UpdateCurrency({
-            request,
+            shop,
             updateCurrencies,
           });
           return json({ data });
@@ -410,7 +435,7 @@ const Index = () => {
 
       console.log(Object.values(themeData.sections));
       console.log(isAppEnabled);
-      
+
       setSwitcherEnableCardOpen(isAppEnabled);
 
       // if (blocks) {

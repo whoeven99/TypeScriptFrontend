@@ -44,12 +44,12 @@ import { Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
+import { SessionService } from "~/utils/session.server";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
-    await authenticate.admin(request);
     return json({
       apiKey: process.env.SHOPIFY_API_KEY || "",
     });
@@ -60,8 +60,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const sessionService = await SessionService.init(request);
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  const shopSession = {
+    shop: shop,
+    accessToken: accessToken as string,
+  };
+  sessionService.setShopSession(shopSession);
   try {
     const formData = await request.formData();
     // const initialization = JSON.parse(formData.get("initialization") as string);
@@ -92,17 +98,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (loading) {
       try {
-        const data = await InitializationDetection({ request });
-        if (!data?.add) await UserAdd({ request });
+        const data = await InitializationDetection({ shop });
+        if (!data?.add) await UserAdd({ shop, accessToken: accessToken as string });
         if (!data?.insertCharsByShopName)
-          await InsertCharsByShopName({ request });
+          await InsertCharsByShopName({ shop, accessToken: accessToken as string });
         if (!data?.addDefaultLanguagePack)
-          await AddDefaultLanguagePack({ request });
+          await AddDefaultLanguagePack({ shop });
         if (!data?.addUserFreeSubscription)
           await AddUserFreeSubscription({ shop });
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
         });
         const shopPrimaryLanguage = shopLanguagesIndex.filter(
           (language) => language.primary,
@@ -131,7 +137,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
         });
         const shopPrimaryLanguage = shopLanguagesIndex.filter(
           (language) => language.primary,
@@ -182,12 +188,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     if (nearTransaltedData) {
-      const adminAuthResult = await authenticate.admin(request);
-      const { shop, accessToken } = adminAuthResult.session;
-
       const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
         shop,
-        accessToken,
+        accessToken: accessToken as string,
       });
       const shopPrimaryLanguage = shopLanguagesIndex.filter(
         (language) => language.primary,
@@ -205,7 +208,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const Cendtime = new Date();
       const Ctime = Cendtime.getTime() - Cstarttime.getTime();
       console.log("Ctime: ", Ctime);
-      
+
       if (shopLocalesIndex.includes(data.response?.target) && (data.response?.status !== 1 || !shopLanguagesWithoutPrimaryIndex.find((item) => item.locale === data.response?.target)?.published)) {
         return {
           translatingLanguage: {
@@ -247,7 +250,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const source = translation.primaryLanguageCode;
       const target = translation.selectedLanguage;
       const data = await GetTranslate({
-        request,
+        shop,
+        accessToken: accessToken as string,
         source,
         target,
         translateSettings1: translation.translateSettings1,
@@ -275,7 +279,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     if (languageCode) {
-      const totalWords = await GetTotalWords({ request, target: languageCode });
+      const totalWords = await GetTotalWords({ shop, accessToken: accessToken as string, target: languageCode });
       return json({ totalWords });
     }
 
@@ -284,7 +288,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
       );
       const payData = await mutationAppPurchaseOneTimeCreate({
-        request,
+        shop,
+        accessToken: accessToken as string,
         name: payInfo.name,
         price: payInfo.price,
         returnUrl,
