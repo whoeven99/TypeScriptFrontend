@@ -53,19 +53,11 @@ interface LanguageSettingType {
     shopLanguageCodesWithoutPrimary: string[];
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-    return null;
-};
-
-export const action = async ({ request }: ActionFunctionArgs) => {
-    return null;
-};
-
 const Index = () => {
     const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
     const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
     const [selectedLanguageCode, setSelectedLanguageCode] = useState<string>("");
-    const [translateSettings1, setTranslateSettings1] = useState<string>("1");
+    const [translateSettings1, setTranslateSettings1] = useState<string>("google");
     const [translateSettings2, setTranslateSettings2] = useState<string>("1");
     const [translateSettings3, setTranslateSettings3] = useState<string[]>(["Products", "Collection", "Article", "Blog titles", "Pages", "Filters", "Metaobjects", "Navigation", "Shop", "Theme", "Delivery", "Shipping"]);
     const [modal, setModal] = useState<string>("");
@@ -108,10 +100,6 @@ const Index = () => {
         //     localStorage.setItem('installTime', new Date().toISOString());
         // }
     }, []);
-
-    useEffect(() => {
-        console.log("languageData: ", languageData);
-    }, [languageData]);
 
     useEffect(() => {
         if (loadingLanguageFetcher.data) {
@@ -259,31 +247,31 @@ const Index = () => {
     const translateSettings1Options = [
         {
             label: "OpenAI/GPT-4",
-            value: "1"
+            value: "google"
         },
         {
             label: "Google/Gemini-1.5",
-            value: "2"
+            value: "google"
         },
         {
             label: "DeepL/DeepL-translator",
-            value: "3"
+            value: "google"
         },
         {
             label: "Qwen/Qwen-Max",
-            value: "4"
+            value: "google"
         },
         {
             label: "DeepSeek-ai/DeepSeek-V3",
-            value: "5"
+            value: "google"
         },
         {
             label: "Meta/Llama-3",
-            value: "6"
+            value: "google"
         },
         {
             label: "Google/Google translate",
-            value: "7"
+            value: "google"
         }
     ]
 
