@@ -195,7 +195,7 @@ const Index = () => {
                 JSON.stringify({
                     primaryLanguage: languageSetting?.primaryLanguageCode,
                     selectedLanguage: selectedItem,
-                    translateSettings1: translateSettings1,
+                    translateSettings1: "google",
                     translateSettings2: translateSettings2,
                     translateSettings3: translateSettings3,
                 }),
@@ -247,31 +247,31 @@ const Index = () => {
     const translateSettings1Options = [
         {
             label: "OpenAI/GPT-4",
-            value: "google"
+            value: "1"
         },
         {
             label: "Google/Gemini-1.5",
-            value: "google"
+            value: "2"
         },
         {
             label: "DeepL/DeepL-translator",
-            value: "google"
+            value: "3"
         },
         {
             label: "Qwen/Qwen-Max",
-            value: "google"
+            value: "4"
         },
         {
             label: "DeepSeek-ai/DeepSeek-V3",
-            value: "google"
+            value: "5"
         },
         {
             label: "Meta/Llama-3",
-            value: "google"
+            value: "6"
         },
         {
             label: "Google/Google translate",
-            value: "google"
+            value: "7"
         }
     ]
 
@@ -573,6 +573,12 @@ const Index = () => {
 
                                             ))
                                         }
+                                        <Col key="custom key" span={6}>
+                                            <Button type="primary" key="customButton" onClick={() => setTranslateSettings1("custom")} style={{ width: "100%" }}
+                                            >
+                                                {t("Custom API key")}
+                                            </Button>
+                                        </Col>
                                     </Row>
                                 </Space>
                                 <Space direction="vertical" size={16} style={{ display: "flex" }}>
