@@ -574,7 +574,7 @@ const Index = () => {
                                             ))
                                         }
                                         <Col key="custom key" span={6}>
-                                            <Button type="primary" key="customButton" onClick={() => setTranslateSettings1("custom")} style={{ width: "100%" }}
+                                            <Button type="primary" key="customButton" onClick={() => navigate("/app/apikeySetting")} style={{ width: "100%" }}
                                             >
                                                 {t("Custom API key")}
                                             </Button>
