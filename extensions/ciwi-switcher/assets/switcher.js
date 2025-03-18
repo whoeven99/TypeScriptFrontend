@@ -1,7 +1,7 @@
 // Function to simulate fetching currencies from the backend
 async function fetchCurrencies(shop) {
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
     method: "GET",
   });
 
@@ -23,7 +23,7 @@ async function fetchCurrencies(shop) {
 
 async function fetchAutoRate(shop, currencyCode) {
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/currency/getCacheData`,
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
     method: "POST",
     data: {
       shopName: shop,
@@ -36,12 +36,16 @@ async function fetchAutoRate(shop, currencyCode) {
 }
 
 async function fetchIpSwitch(shop) {
+  console.log("shop: ", shop);
+  
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/IpSwitch/getSwitchId?shopName=${shop}`,
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/IpSwitch/getSwitchId?shopName=${shop}`,
     method: "GET",
   });
 
   const res = response.data;
+  console.log("ip自动定位res: ", res);
+  
   if (res?.response) {
     return res.response;
   } else {
@@ -551,6 +555,7 @@ window.onload = async function () {
   const shop = document.querySelector('input[name="queryCiwiId"]');
   shop.remove();
   const IpOpen = await fetchIpSwitch(shop.value);
+  console.log("ip自动定位: ", IpOpen);
   if (IpOpen) {
     const iptoken = document.querySelector('input[name="iptoken"]');
     const iptokenValue = iptoken.value;
@@ -598,6 +603,8 @@ window.onload = async function () {
       }
     } else {
       const IpData = await fetchUserCountryInfo(iptokenValue);
+      console.log("availableCountries: ", availableCountries);
+      console.log("selectedCountry: ", IpData.country_code);
       if (
         IpData?.country_code &&
         availableCountries.includes(IpData.country_code)
@@ -606,15 +613,21 @@ window.onload = async function () {
           countryInput.value = IpData.country_code;
         }
         localStorage.setItem("selectedCountry", countryInput.value);
-        console.log(
-          "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
-        );
       }
     }
+    console.log(
+      "若市场跳转不正确则清除localStorage缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the localStorage cache and manually set the selectedCountry field)",
+    );
     const htmlElement = document.documentElement; // 获取 <html> 元素
     const isInThemeEditor = htmlElement.classList.contains(
       "shopify-design-mode",
     );
+
+    console.log("countryInput.value: ", countryInput.value);
+    console.log("country: ", country);
+    console.log("languageInput.value: ", languageInput.value);
+    console.log("language: ", language);
+
     if (
       (countryInput.value !== country || languageInput.value !== language) &&
       !isInThemeEditor
