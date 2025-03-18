@@ -471,7 +471,6 @@ const Index = () => {
 
   useEffect(() => {
     if (!shopLanguagesLoad || !languagesLoad || !languageLocaleInfo) return; // 确保数据加载完成后再执行
-    console.log("shopLanguagesLoad: ", shopLanguagesLoad);
     let data = shopLanguagesLoad.filter((language) => !language.primary).map((lang, i) => ({
       key: i,
       language: lang.name,

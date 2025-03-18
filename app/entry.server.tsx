@@ -63,6 +63,9 @@ export default async function handleRequest(
     case language === "tr" || (languageCode && languageCode === "tr"):
       i18nCode = "tr";
       break;
+    case language === "uk" || (languageCode && languageCode === "uk"):
+      i18nCode = "uk";
+      break;
     case language === "zh-TW":
       i18nCode = "zh-TW";
       break;
