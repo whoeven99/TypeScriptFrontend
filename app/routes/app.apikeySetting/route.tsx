@@ -58,8 +58,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       //     return json({ data: data });
       //   } catch (error) {
-      //     console.error("Error glossary loading:", error);
-      //     throw new Response("Error glossary loading", { status: 500 });
+      //     console.error("Error apiKeySetting loading:", error);
+      //     throw new Response("Error apiKeySetting loading", { status: 500 });
       //   }
       case !!updateUserAPIKey:
         try {
@@ -72,16 +72,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
           return json({ data: data });
         } catch (error) {
-          console.error("Error glossary loading:", error);
-          throw new Response("Error glossary loading", { status: 500 });
+          console.error("Error apiKeySetting loading:", error);
+          throw new Response("Error apiKeySetting loading", { status: 500 });
         }
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
-    console.error("Error action glossary:", error);
-    throw new Response("Error action glossary", { status: 500 });
+    console.error("Error action apiKeySetting:", error);
+    throw new Response("Error action apiKeySetting", { status: 500 });
   }
 };
 
@@ -117,7 +117,7 @@ const Index = () => {
       count: "",
     }
   ]
-  
+
   return (
     <Page>
       <TitleBar title={t("Translate Settings")} />
