@@ -55,7 +55,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
   } catch (error) {
     console.error("Error during authentication app:", error);
-    return redirect("/");
   }
 };
 
