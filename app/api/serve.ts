@@ -20,6 +20,36 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+//更新用户私人API Key
+export const SaveGoogleKey = async ({
+  shop,
+  modal,
+  apiKey,
+  count,
+}: {
+  shop: string;
+  modal: string;
+  apiKey: string;
+  count: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/privateKey/saveGoogleKey`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        modal: modal,
+        secret: apiKey,
+        count: count,
+      },
+    });
+    console.log("SaveGoogleKey: ", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error update user private api key:", error);
+  }
+};
+
 //获取最新翻译状态
 export const GetTranslateDOByShopNameAndSource = async ({
   shop,

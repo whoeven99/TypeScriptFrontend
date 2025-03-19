@@ -325,15 +325,15 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: blogs.nodes.find(
+          resourceId: blogsData.nodes.find(
             (item: any) => item?.resourceId === selectBlogKey,
           )?.resourceId,
-          locale: blogs.nodes
+          locale: blogsData.nodes
             .find((item: any) => item?.resourceId === selectBlogKey)
             ?.translatableContent.find((item: any) => item.key === key)?.locale,
           key: key,
           value: value, // 初始为空字符串
-          translatableContentDigest: blogs.nodes
+          translatableContentDigest: blogsData.nodes
             .find((item: any) => item?.resourceId === selectBlogKey)
             ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",

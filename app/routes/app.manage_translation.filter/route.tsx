@@ -268,12 +268,12 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: filters.nodes[index]?.resourceId,
-          locale: filters.nodes[index]?.translatableContent[0]?.locale,
+          resourceId: filtersData.nodes[index]?.resourceId,
+          locale: filtersData.nodes[index]?.translatableContent[0]?.locale,
           key: "label",
           value: value, // 初始为空字符串
           translatableContentDigest:
-            filters.nodes[index]?.translatableContent[0]?.digest,
+            filtersData.nodes[index]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
 

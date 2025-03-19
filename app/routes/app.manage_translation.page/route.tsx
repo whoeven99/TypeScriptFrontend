@@ -29,6 +29,7 @@ import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
+import { SessionService } from "~/utils/session.server";
 
 const { Sider, Content } = Layout;
 
@@ -73,14 +74,18 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const shop = sessionStorage.getItem("shop") as string;
-  const accessToken = sessionStorage.getItem("accessToken") as string;
-  if (!shop || !accessToken) {
+  const sessionService = await SessionService.init(request);
+  let shopSession = sessionService.getShopSession();
+  if (!shopSession) {
     const adminAuthResult = await authenticate.admin(request);
     const { shop, accessToken } = adminAuthResult.session;
-    sessionStorage.setItem("shop", shop);
-    sessionStorage.setItem("accessToken", accessToken as string);
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
   }
+  const { shop, accessToken } = shopSession;
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
@@ -109,14 +114,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-  const shop = sessionStorage.getItem("shop") as string;
-  const accessToken = sessionStorage.getItem("accessToken") as string;
-  if (!shop || !accessToken) {
+  const sessionService = await SessionService.init(request);
+  let shopSession = sessionService.getShopSession();
+  if (!shopSession) {
     const adminAuthResult = await authenticate.admin(request);
     const { shop, accessToken } = adminAuthResult.session;
-    sessionStorage.setItem("shop", shop);
-    sessionStorage.setItem("accessToken", accessToken as string);
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
   }
+  const { shop, accessToken } = shopSession;
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -383,15 +392,15 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: pages.nodes.find(
+          resourceId: pagesData.nodes.find(
             (item: any) => item?.resourceId === selectPageKey,
           )?.resourceId,
-          locale: pages.nodes
+          locale: pagesData.nodes
             .find((item: any) => item?.resourceId === selectPageKey)
             ?.translatableContent.find((item: any) => item.key === key)?.locale,
           key: key,
           value: value, // 初始为空字符串
-          translatableContentDigest: pages.nodes
+          translatableContentDigest: pagesData.nodes
             .find((item: any) => item?.resourceId === selectPageKey)
             ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",
