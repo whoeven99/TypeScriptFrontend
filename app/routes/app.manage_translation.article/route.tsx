@@ -403,15 +403,15 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: articles.nodes.find(
+          resourceId: articlesData.nodes.find(
             (item: any) => item?.resourceId === selectArticleKey,
           )?.resourceId,
-          locale: articles.nodes
+          locale: articlesData.nodes
             .find((item: any) => item?.resourceId === selectArticleKey)
             ?.translatableContent.find((item: any) => item.key === key)?.locale,
           key: key,
           value: value, // 初始为空字符串
-          translatableContentDigest: articles.nodes
+          translatableContentDigest: articlesData.nodes
             .find((item: any) => item?.resourceId === selectArticleKey)
             ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",

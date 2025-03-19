@@ -246,7 +246,7 @@ import { SessionService } from "~/utils/session.server";
         },
       },
     ];
-  
+
     const handleInputChange = (key: string, value: string, index: number) => {
       setTranslatedValues((prev) => ({
         ...prev,

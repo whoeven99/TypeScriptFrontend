@@ -362,6 +362,10 @@ const Index = () => {
     },
   ];
 
+  useEffect(() => {
+    console.log("confirmData: ", confirmData);
+  }, [confirmData]);
+
   const handleInputChange = (key: string, value: string, index: number) => {
     setTranslatedValues((prev) => ({
       ...prev,
@@ -383,24 +387,24 @@ const Index = () => {
       } else if (selectNavigationKey === "names") {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: navigations.nodes[index]?.resourceId,
-          locale: navigations.nodes[index]?.translatableContent[0]?.locale,
+          resourceId: navigationsData.nodes[index]?.resourceId,
+          locale: navigationsData.nodes[index]?.translatableContent[0]?.locale,
           key: "title",
           value: value, // 初始为空字符串
           translatableContentDigest:
-            navigations.nodes[index]?.translatableContent[0]?.digest,
+            navigationsData.nodes[index]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
 
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       } else {
         const newItem = {
-          resourceId: navigationItems.nodes[index]?.resourceId,
-          locale: navigationItems.nodes[index]?.translatableContent[0]?.locale,
+          resourceId: itemsData.nodes[index]?.resourceId,
+          locale: itemsData.nodes[index]?.translatableContent[0]?.locale,
           key: "title",
           value: value, // 初始为空字符串
           translatableContentDigest:
-            navigationItems.nodes[index]?.translatableContent[0]?.digest,
+            itemsData.nodes[index]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
 

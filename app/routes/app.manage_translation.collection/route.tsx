@@ -396,20 +396,19 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: collections.nodes.find(
+          resourceId: collectionsData.nodes.find(
             (item: any) => item?.resourceId === selectCollectionKey,
           )?.resourceId,
-          locale: collections.nodes
+          locale: collectionsData.nodes
             .find((item: any) => item?.resourceId === selectCollectionKey)
             ?.translatableContent.find((item: any) => item.key === key)?.locale,
           key: key,
           value: value, // 初始为空字符串
-          translatableContentDigest: collections.nodes
+          translatableContentDigest: collectionsData.nodes
             .find((item: any) => item?.resourceId === selectCollectionKey)
             ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",
         };
-
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       }
     });

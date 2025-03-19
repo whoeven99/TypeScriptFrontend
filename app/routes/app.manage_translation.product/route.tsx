@@ -338,7 +338,7 @@ const Index = () => {
     setTranslatedValues({});
   }, [selectProductKey]);
 
-  useEffect(() => {    
+  useEffect(() => {
     setResourceData(
       [
         {
@@ -667,16 +667,16 @@ const Index = () => {
             locale: productMetafieldsData.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
               ?.nestedTranslatableResources.nodes[
-                count
-              ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
+              count
+            ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
               ?.locale,
             key: key,
             value: value, // 初始为空字符串
             translatableContentDigest: productMetafieldsData.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
               ?.nestedTranslatableResources.nodes[
-                count
-              ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
+              count
+            ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
               ?.digest,
             target: searchTerm || "",
           };
@@ -690,16 +690,16 @@ const Index = () => {
             locale: productOptionsData.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
               ?.nestedTranslatableResources.nodes[
-                count
-              ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
+              count
+            ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
               ?.locale,
             key: key,
             value: value, // 初始为空字符串
             translatableContentDigest: productOptionsData.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
               ?.nestedTranslatableResources.nodes[
-                count
-              ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
+              count
+            ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
               ?.digest,
             target: searchTerm || "",
           };
@@ -715,7 +715,7 @@ const Index = () => {
               ?.locale,
             key: key,
             value: value, // 初始为空字符串
-            translatableContentDigest: products.nodes
+            translatableContentDigest: productsData.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
               ?.translatableContent.find((item: any) => item.key === key)
               ?.digest,
@@ -727,6 +727,7 @@ const Index = () => {
       }
     });
   };
+
   const transBeforeData = ({
     products,
     options,
@@ -781,7 +782,6 @@ const Index = () => {
     const productMetafield = metafields.nodes.find(
       (metafield: any) => metafield?.resourceId === selectProductKey,
     );
-    console.log(product);
     data.key = product?.resourceId;
     data.title = product?.translatableContent.find(
       (item: any) => item.key === "title",

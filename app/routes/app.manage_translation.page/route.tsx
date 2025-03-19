@@ -383,15 +383,15 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: pages.nodes.find(
+          resourceId: pagesData.nodes.find(
             (item: any) => item?.resourceId === selectPageKey,
           )?.resourceId,
-          locale: pages.nodes
+          locale: pagesData.nodes
             .find((item: any) => item?.resourceId === selectPageKey)
             ?.translatableContent.find((item: any) => item.key === key)?.locale,
           key: key,
           value: value, // 初始为空字符串
-          translatableContentDigest: pages.nodes
+          translatableContentDigest: pagesData.nodes
             .find((item: any) => item?.resourceId === selectPageKey)
             ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",

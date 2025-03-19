@@ -268,12 +268,12 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: metafields.nodes[index]?.resourceId,
-          locale: metafields.nodes[index]?.translatableContent[0]?.locale,
+          resourceId: metafieldsData.nodes[index]?.resourceId,
+          locale: metafieldsData.nodes[index]?.translatableContent[0]?.locale,
           key: "value",
           value: value, // 初始为空字符串
           translatableContentDigest:
-            metafields.nodes[index]?.translatableContent[0]?.digest,
+            metafieldsData.nodes[index]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
 
