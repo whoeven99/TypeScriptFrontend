@@ -109,6 +109,15 @@ const Index = () => {
     });
   }
 
+  const translateSettings = [
+    {
+      title: t("Google Gemini"),
+      modal: "google",
+      apiKey: "",
+      count: "",
+    }
+  ]
+  
   return (
     <Page>
       <TitleBar title={t("Translate Settings")} />
@@ -139,7 +148,9 @@ const Index = () => {
           </div>
         </div>
         <Text style={{ marginLeft: "8px" }}>{t("How to obtain the corresponding API Key? Please refer to the Private API Translation Model User Manual.")}</Text>
-        <ApiKeyEditCard title={t("Google Gemini")} modal={"google"} apiKey={""} count={""} minlength={10} onSave={onSave} loading={loadingModal === "google" && fetcher.state === "submitting"} />
+        {translateSettings.map((item) => (
+          <ApiKeyEditCard title={item.title} modal={item.modal} apiKey={item.apiKey} count={item.count} minlength={10} onSave={onSave} loading={loadingModal === item.modal && fetcher.state === "submitting"} />
+        ))}
       </Space>
     </Page>
   );

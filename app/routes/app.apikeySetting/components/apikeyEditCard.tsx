@@ -1,5 +1,5 @@
-import React from 'react';
-import { Card, Input, Button, Tag, Space, Typography } from 'antd';
+import React, { useState } from 'react';
+import { Card, Input, Button, Tag, Space, Typography, message } from 'antd';
 import styles from './ApiKeyEditCard.module.css';
 import { useTranslation } from 'react-i18next';
 
@@ -22,16 +22,33 @@ export const ApiKeyEditCard: React.FC<ApiKeyEditCardProps> = ({
     apiKey = '',
     count = '',
     tags = [],
-    minlength,
+    minlength = 30,
     onSave,
     loading
 }) => {
-    const [apiKeyValue, setApiKeyValue] = React.useState(apiKey);
-    const [countValue, setCountValue] = React.useState(count.toString());
-    const [isEdit, setIsEdit] = React.useState(false);
+    const [apiKeyValue, setApiKeyValue] = useState(apiKey);
+    const [countValue, setCountValue] = useState(count.toString());
+    const [isEdit, setIsEdit] = useState(false);
     const { t } = useTranslation();
 
+    const validateInputs = (): boolean => {
+        if (apiKeyValue.length < minlength) {
+            message.error(t('API Key is not valid'));
+            return false;
+        }
+
+        const countNum = Number(countValue);
+        if (isNaN(countNum) || countNum <= 0) {
+            message.error(t('Count must be a positive number'));
+            return false;
+        }
+
+        return true;
+    };
+
     const handleSave = () => {
+        if (!validateInputs()) return;
+        
         setIsEdit(false);
         onSave?.({
             modal,
@@ -46,6 +63,13 @@ export const ApiKeyEditCard: React.FC<ApiKeyEditCardProps> = ({
         setCountValue('');
     };
 
+    const handleCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        if (value === '' || /^\d+$/.test(value)) {
+            setCountValue(value);
+        }
+    };
+    
     return (
         <Card className={styles.card}>
             <div className={styles.header}>
@@ -69,7 +93,7 @@ export const ApiKeyEditCard: React.FC<ApiKeyEditCardProps> = ({
                         onChange={(e) => setApiKeyValue(e.target.value)}
                         style={{ flex: 12 }}
                         disabled={!isEdit}
-                        
+                        status={isEdit && apiKeyValue && apiKeyValue.length < minlength ? 'error' : ''}
                     />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -77,9 +101,10 @@ export const ApiKeyEditCard: React.FC<ApiKeyEditCardProps> = ({
                     <Input
                         placeholder={t("Count")}
                         value={countValue}
-                        onChange={(e) => setCountValue(e.target.value)}
+                        onChange={handleCountChange}
                         style={{ flex: 12 }}
                         disabled={!isEdit}
+                        status={isEdit && countValue && !/^\d+$/.test(countValue) ? 'error' : ''}
                     />
                 </div>
                 <Space size={[0, 8]} wrap>
