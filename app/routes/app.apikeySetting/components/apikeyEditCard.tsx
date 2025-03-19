@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, Input, Button, Tag, Space, Typography } from 'antd';
 import styles from './ApiKeyEditCard.module.css';
 import { useTranslation } from 'react-i18next';
+import { EyeInvisibleOutlined, EyeTwoTone } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
@@ -42,11 +43,12 @@ export const ApiKeyEditCard: React.FC<ApiKeyEditCardProps> = ({
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     <Text strong style={{ whiteSpace: 'nowrap', marginRight: '8px', flex: 1 }}>{t("API Key")}</Text>
-                    <Input
+                    <Input.Password
                         placeholder={t("API Key")}
                         value={apiKeyValue}
                         onChange={(e) => setApiKeyValue(e.target.value)}
                         style={{ flex: 12 }}
+                        iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
                     />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center' }}>

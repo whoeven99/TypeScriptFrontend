@@ -53,7 +53,7 @@ const Index = () => {
                 tone="base"
               />
             </Button>
-            <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+            <Title style={{ fontSize: "1.25rem", margin: "0" }}>
               {t("Translate Settings")}
             </Title>
           </div>
