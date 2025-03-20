@@ -88,7 +88,7 @@ export const ApiKeyEditCard: React.FC<ApiKeyEditCardProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     <Text strong style={{ whiteSpace: 'nowrap', marginRight: '8px', flex: 1 }}>{t("API Key")}</Text>
                     <Input
-                        placeholder={t("API Key")}
+                        placeholder={t("Please enter API Key")}
                         value={apiKeyValue}
                         onChange={(e) => setApiKeyValue(e.target.value)}
                         style={{ flex: 12 }}
@@ -99,7 +99,7 @@ export const ApiKeyEditCard: React.FC<ApiKeyEditCardProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     <Text strong style={{ whiteSpace: 'nowrap', marginRight: '8px', flex: 1 }}>{t("Count")}</Text>
                     <Input
-                        placeholder={t("Count")}
+                        placeholder={t("Please enter Count")}
                         value={countValue}
                         onChange={handleCountChange}
                         style={{ flex: 12 }}

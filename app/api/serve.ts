@@ -20,6 +20,27 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+//获取用户私人API Key
+export const GetUserData = async ({
+  shop,
+}: {
+  shop: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/private/getUserData`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    console.log("GetUserData: ", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error GetUserData:", error);
+  }
+};
+
 //更新用户私人API Key
 export const SaveGoogleKey = async ({
   shop,
@@ -35,7 +56,7 @@ export const SaveGoogleKey = async ({
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/privateKey/saveGoogleKey`,
-      method: "POST",
+      method: "PUT",
       data: {
         shopName: shop,
         modal: modal,
@@ -46,7 +67,7 @@ export const SaveGoogleKey = async ({
     console.log("SaveGoogleKey: ", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error update user private api key:", error);
+    console.error("Error SaveGoogleKey:", error);
   }
 };
 
@@ -69,7 +90,7 @@ export const GetTranslateDOByShopNameAndSource = async ({
     });
     return response.data;
   } catch (error) {
-    console.error("Error get translate do by shop name and source:", error);
+    console.error("Error GetTranslateDOByShopNameAndSource:", error);
   }
 };
 
@@ -88,7 +109,7 @@ export const GetUserInitTokenByShopName = async ({
     });
     return response.data;
   } catch (error) {
-    console.error("Error get user init token:", error);
+    console.error("Error GetUserInitTokenByShopName:", error);
   }
 };
 
@@ -116,7 +137,7 @@ export const getCredits = async ({
     });
     return response.data;
   } catch (error) {
-    console.error("Error get credits:", error);
+    console.error("Error getCredits:", error);
   }
 };
 
@@ -135,7 +156,7 @@ export const InitializationDetection = async ({
     console.log("InitializationDetection: ", res);
     return res;
   } catch (error) {
-    console.error("Error UpdateUser:", error);
+    console.error("Error InitializationDetection:", error);
   }
 };
 
@@ -171,7 +192,7 @@ export const UserAdd = async ({ shop, accessToken }: { shop: string; accessToken
     });
     console.log("addUserInfoResponse: ", addUserInfoResponse.data);
   } catch (error) {
-    console.error("Error UpdateUser:", error);
+    console.error("Error UserAdd:", error);
   }
 };
 
@@ -197,7 +218,7 @@ export const InsertCharsByShopName = async ({
       insertCharsByShopNameResponse.data,
     );
   } catch (error) {
-    console.error("Error UpdateUser:", error);
+    console.error("Error InsertCharsByShopName:", error);
   }
 };
 
@@ -218,7 +239,7 @@ export const AddDefaultLanguagePack = async ({
       addDefaultLanguagePackResponse.data,
     );
   } catch (error) {
-    console.error("Error UpdateUser:", error);
+    console.error("Error AddDefaultLanguagePack:", error);
   }
 };
 
@@ -236,7 +257,7 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
     );
     return res;
   } catch (error) {
-    console.error("Error get user:", error);
+    console.error("Error GetUserSubscriptionPlan:", error);
   }
 };
 
@@ -256,7 +277,7 @@ export const AddUserFreeSubscription = async ({ shop }: { shop: string }) => {
     );
     return addUserFreeSubscriptionResponse.data.success;
   } catch (error) {
-    console.error("Error chars initialization:", error);
+    console.error("Error AddUserFreeSubscription:", error);
   }
 };
 

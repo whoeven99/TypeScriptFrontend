@@ -11,7 +11,7 @@ import { ApiKeyEditCard } from "./components/apikeyEditCard";
 import { SessionService } from "~/utils/session.server";
 import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs } from "@remix-run/node";
-import { SaveGoogleKey } from "~/api/serve";
+import { GetUserData, SaveGoogleKey } from "~/api/serve";
 import { useEffect, useState } from "react";
 const { Title, Text } = Typography;
 
@@ -48,19 +48,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const loading = JSON.parse(formData.get("loading") as string);
     const updateUserAPIKey = JSON.parse(formData.get("updateUserAPIKey") as string);
     switch (true) {
-      // case !!loading:
-      //   try {
-      //     const data = await GetGlossaryByShopName({
-      //       shop,
-      //       accessToken,
-      //     });
-      //     console.log("GetGlossaryByShopName: ", data);
-
-      //     return json({ data: data });
-      //   } catch (error) {
-      //     console.error("Error apiKeySetting loading:", error);
-      //     throw new Response("Error apiKeySetting loading", { status: 500 });
-      //   }
+      case !!loading:
+        try {
+          const data = await GetUserData({
+            shop,
+          });
+          console.log("GetUserData: ", data);
+          return json({ data: data });
+        } catch (error) {
+          console.error("Error apiKeySetting loading:", error);
+          throw new Response("Error apiKeySetting loading", { status: 500 });
+        }
       case !!updateUserAPIKey:
         try {
           const { modal, apiKey, count } = updateUserAPIKey;
@@ -90,18 +88,35 @@ const Index = () => {
   const navigate = useNavigate();
 
   const [loadingModal, setLoadingModal] = useState<string>("");
+  const [userData, setUserData] = useState<any>(null);
 
-  const fetcher = useFetcher();
+  const loadingfetcher = useFetcher<any>();
+  const updateUserAPIKeyfetcher = useFetcher<any>();
+  
+  useEffect(() => {
+    loadingfetcher.submit({
+      loading: JSON.stringify(true),
+    }, {
+      method: "POST",
+      action: "/app/apikeySetting",
+    });
+  }, []);
 
   useEffect(() => {
-    if (fetcher.data) {
-      console.log("fetcher.data: ", fetcher.data);
+    if (loadingfetcher.data) {
+      console.log("loadingfetcher.data: ", loadingfetcher.data);
     }
-  }, [fetcher.data]);
+  }, [loadingfetcher.data]);
+
+  useEffect(() => {
+    if (updateUserAPIKeyfetcher.data) {
+      console.log("updateUserAPIKeyfetcher.data: ", updateUserAPIKeyfetcher.data);
+    }
+  }, [updateUserAPIKeyfetcher.data]);
 
   const onSave = (values: { modal: string; apiKey: string; count: string }) => {
     setLoadingModal(values.modal);
-    fetcher.submit({
+    updateUserAPIKeyfetcher.submit({
       updateUserAPIKey: JSON.stringify(values),
     }, {
       method: "POST",
@@ -149,7 +164,7 @@ const Index = () => {
         </div>
         <Text style={{ marginLeft: "8px" }}>{t("How to obtain the corresponding API Key? Please refer to the Private API Translation Model User Manual.")}</Text>
         {translateSettings.map((item) => (
-          <ApiKeyEditCard title={item.title} modal={item.modal} apiKey={item.apiKey} count={item.count} minlength={10} onSave={onSave} loading={loadingModal === item.modal && fetcher.state === "submitting"} />
+          <ApiKeyEditCard key={item.modal} title={item.title} modal={item.modal} apiKey={item.apiKey} count={item.count} minlength={30} onSave={onSave} loading={loadingModal === item.modal && updateUserAPIKeyfetcher.state === "submitting"} />
         ))}
       </Space>
     </Page>

@@ -11,7 +11,7 @@
       <div
         id="main-box"
         class="main_box"
-        style="position: relative; left: {{ block.settings.horizontalOffset }}px; top: {{ block.settings.verticalOffset }}px;"
+        style="position: relative; left: {{ block.settings.horizontalOffset }}px; bottom: {{ block.settings.verticalOffset }}px;"
       >
         <span id="display-text" class="main_box_text">{{ localization.language.endonym_name | capitalize }}</span>
         <img
@@ -166,8 +166,8 @@
     border-radius: {{ block.settings.mainBoxBorderRadius }}px;
     width: 200px;
     position: absolute;
-    left: {{ block.settings.horizontalOffset | minus: block.settings.mainBoxBorderSolid }}px;
-    bottom: {{ block.settings.verticalOffset | plus: block.settings.selectionVerticalOffset }}px;
+    left: -{{ block.settings.mainBoxBorderSolid }}px;
+    bottom: {{ block.settings.selectionVerticalOffset }}px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     z-index: 1000;
   }
