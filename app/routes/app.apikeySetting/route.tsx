@@ -112,6 +112,8 @@ const Index = () => {
       console.log("loadingfetcher.data: ", loadingfetcher.data);
       if (loadingfetcher.data.data.success) {
         setUserData(loadingfetcher.data.data.response);
+      } else if (loadingfetcher.data.data.success === false && loadingfetcher.data.data.errorMsg === "用户不存在") {
+        setUserData(null);
       }
     }
   }, [loadingfetcher.data]);
