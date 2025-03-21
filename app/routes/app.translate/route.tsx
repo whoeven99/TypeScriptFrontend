@@ -575,7 +575,7 @@ const Index = () => {
 
                                             ))
                                         }
-                                        {customApikeyData && <Col key="custom key" span={6}>
+                                        {/* {customApikeyData && <Col key="custom key" span={6}>
                                             <Button type={translateSettings1 === "8" ? "primary" : "default"} key={"8"} value={"8"} onClick={() => setTranslateSettings1("8")} style={{ width: "100%" }}
                                             >
                                                 Google Cloud Translation
@@ -586,7 +586,7 @@ const Index = () => {
                                             >
                                                 {t("Custom API key")}
                                             </Button>
-                                        </Col>
+                                        </Col> */}
                                     </Row>
                                 </Space>
                                 <Space direction="vertical" size={16} style={{ display: "flex" }}>
