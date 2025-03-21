@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { Page } from '@shopify/polaris';
 import { TitleBar } from '@shopify/app-bridge-react';
 import ScrollNotice from '~/components/ScrollNotice';
-import UserProfileCard from './components/userProfileCard';
 import { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { useState } from 'react';
 const { Title, Text, Paragraph } = Typography;
@@ -152,7 +151,6 @@ export default function PricingRoute() {
                      ))}
                  </Row>
              </div> */}
-            <UserProfileCard chars={0} totalChars={0} />
         </Page>
     );
 }

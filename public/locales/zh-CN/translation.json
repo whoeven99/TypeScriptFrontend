@@ -257,5 +257,9 @@
   "Translation Exception": "翻译异常",
   "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "商店内容不符合 OpenAI 的翻译政策，请联系我们获取手动支持。",
   "Launched": "已上线",
-  "Can't find the language you want to translate into? Click here to add a language.": "找不到您想要翻译的语言？点击这里添加语言。"
+  "Can't find the language you want to translate into? Click here to add a language.": "找不到您想要翻译的语言？点击这里添加语言。",
+  "Translate Settings": "翻译设置",
+  "How to obtain the corresponding API Key? Please refer to the Private API Translation Model User Manual.": "如何获取相应的 API 密钥？请参考私钥翻译模型用户手册。",
+  "Custom API key": "私有API key",
+  "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "使用此功能时，我们仅消耗相应接口的配额，不会收取任何额外费用。为避免超出第三方 API 配额限制并产生费用，请仔细设置配额限制。"
 }

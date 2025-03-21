@@ -123,7 +123,7 @@ const Index = () => {
         const currentModal = loadingModal;
         cardRefs[currentModal as keyof typeof cardRefs]?.current?.setEditMode(false);
         setLoadingModal("");
-      }else{
+      } else {
         const currentModal = loadingModal;
         cardRefs[currentModal as keyof typeof cardRefs]?.current?.setApiKeyValue("");
         cardRefs[currentModal as keyof typeof cardRefs]?.current?.setCountValue("");
@@ -197,8 +197,11 @@ const Index = () => {
             /> */}
           </div>
           :
-          <Skeleton.Button active style={{ height: "176px" }} block/>
+          <Skeleton.Button active style={{ height: "176px" }} block />
         }
+        <div style={{ marginLeft: "8px" }} >
+          <Text >{t("When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.")}</Text>
+        </div>
       </Space>
     </Page>
   );
