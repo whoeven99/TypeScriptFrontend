@@ -3,6 +3,7 @@ import { Typography } from "antd";
 import AnimatedText from "./animatedText";
 import { useTranslation } from "react-i18next";
 import { openaiLogoBase64 } from '~/constants/images';
+import "./styles.css";
 
 const { Text } = Typography;
 
