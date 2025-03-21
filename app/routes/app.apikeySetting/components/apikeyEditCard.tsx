@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { Card, Input, Button, Tag, Space, Typography, message } from 'antd';
 import styles from './ApiKeyEditCard.module.css';
 import { useTranslation } from 'react-i18next';
@@ -7,29 +7,41 @@ const { Title, Text } = Typography;
 
 interface ApiKeyEditCardProps {
     title: string;
-    modal: string;
+    model: string;
     apiKey?: string;
     count?: string | number;
     tags?: string[];
     minlength?: number;
-    onSave?: (values: { modal: string; apiKey: string; count: string }) => void;
+    onSave?: (values: { model: string; apiKey: string; count: string }) => void;
     loading?: boolean;
 }
 
-export const ApiKeyEditCard: React.FC<ApiKeyEditCardProps> = ({
+export interface ApiKeyEditCardMethods {
+    setEditMode: (isEdit: boolean) => void;
+    setApiKeyValue: (value: string) => void;
+    setCountValue: (value: string) => void;
+}
+
+export const ApiKeyEditCard = forwardRef<ApiKeyEditCardMethods, ApiKeyEditCardProps>(({
     title,
-    modal,
+    model,
     apiKey = '',
     count = '',
     tags = [],
     minlength = 30,
     onSave,
     loading
-}) => {
+}, ref) => {
     const [apiKeyValue, setApiKeyValue] = useState(apiKey);
     const [countValue, setCountValue] = useState(count.toString());
     const [isEdit, setIsEdit] = useState(false);
     const { t } = useTranslation();
+
+    useImperativeHandle(ref, () => ({
+        setEditMode: (value: boolean) => setIsEdit(value),
+        setApiKeyValue: (value: string) => setApiKeyValue(value),
+        setCountValue: (value: string) => setCountValue(value)
+    }));
 
     const validateInputs = (): boolean => {
         if (apiKeyValue.length < minlength) {
@@ -48,13 +60,17 @@ export const ApiKeyEditCard: React.FC<ApiKeyEditCardProps> = ({
 
     const handleSave = () => {
         if (!validateInputs()) return;
-        
-        setIsEdit(false);
         onSave?.({
-            modal,
+            model,
             apiKey: apiKeyValue,
             count: countValue
         });
+    };
+
+    const handleCancel = () => {
+        setIsEdit(false);
+        setApiKeyValue(apiKey);
+        setCountValue(count.toString());
     };
 
     const handleEdit = () => {
@@ -67,19 +83,27 @@ export const ApiKeyEditCard: React.FC<ApiKeyEditCardProps> = ({
         const value = e.target.value;
         if (value === '' || /^\d+$/.test(value)) {
             setCountValue(value);
+            if (Number(value) > 2147483647) {
+                setCountValue("2147483647");
+            }
         }
     };
-    
+
     return (
         <Card className={styles.card}>
             <div className={styles.header}>
                 <Title level={5}>{title}</Title>
                 {isEdit ?
-                    <Button type="primary" onClick={handleSave}>
-                        {t("Save")}
-                    </Button>
+                    <Space>
+                        <Button type="default" onClick={handleCancel} loading={loading}>
+                            {t("Cancel")}
+                        </Button>
+                        <Button type="primary" onClick={handleSave} loading={loading}>
+                            {t("Save")}
+                        </Button>
+                    </Space>
                     :
-                    <Button type="primary" onClick={handleEdit} loading={loading}>
+                    <Button type="primary" onClick={handleEdit}>
                         {t("Edit")}
                     </Button>
                 }
@@ -115,4 +139,4 @@ export const ApiKeyEditCard: React.FC<ApiKeyEditCardProps> = ({
             </Space>
         </Card>
     );
-};
+});

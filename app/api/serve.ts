@@ -21,11 +21,7 @@ interface GroupedDeleteData {
 }
 
 //获取用户私人API Key
-export const GetUserData = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
+export const GetUserData = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/private/getUserData`,
@@ -44,14 +40,14 @@ export const GetUserData = async ({
 //更新用户私人API Key
 export const SaveGoogleKey = async ({
   shop,
-  modal,
+  model,
   apiKey,
   count,
 }: {
   shop: string;
-  modal: string;
+  model: string;
   apiKey: string;
-  count: string;
+  count: number;
 }) => {
   try {
     const response = await axios({
@@ -59,9 +55,9 @@ export const SaveGoogleKey = async ({
       method: "PUT",
       data: {
         shopName: shop,
-        modal: modal,
+        model: model,
         secret: apiKey,
-        count: count,
+        amount: count,
       },
     });
     console.log("SaveGoogleKey: ", response.data);
@@ -142,11 +138,7 @@ export const getCredits = async ({
 };
 
 //用户数据初始化检测
-export const InitializationDetection = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
+export const InitializationDetection = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/InitializationDetection?shopName=${shop}`,
@@ -162,7 +154,13 @@ export const InitializationDetection = async ({
 
 //用户数据初始化
 //添加用户
-export const UserAdd = async ({ shop, accessToken }: { shop: string; accessToken: string }) => {
+export const UserAdd = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string;
+}) => {
   try {
     const shopData = await queryShop({ shop, accessToken });
     const shopOwnerName = shopData?.shopOwnerName;
@@ -223,11 +221,7 @@ export const InsertCharsByShopName = async ({
 };
 
 //添加默认语言包
-export const AddDefaultLanguagePack = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
+export const AddDefaultLanguagePack = async ({ shop }: { shop: string }) => {
   console.log("AddDefaultLanguagePackData: ", shop);
   try {
     const addDefaultLanguagePackResponse = await axios({
@@ -617,31 +611,21 @@ export const GetTranslate = async ({
   translateSettings2: string;
   translateSettings3: string[];
 }) => {
-  console.log(source, target);
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/clickTranslation`,
+      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey" : "translate"}/translate`,
       method: "PUT",
       data: {
         shopName: shop,
         accessToken: accessToken,
         source: source,
         target: target,
-        translateSettings1: translateSettings1,
+        translateSettings1: "google",
         translateSettings2: translateSettings2,
         translateSettings3: translateSettings3,
       },
     });
-    console.log({
-      shopName: shop,
-      accessToken: accessToken,
-      source: source,
-      target: target,
-      translateSettings1: translateSettings1,
-      translateSettings2: translateSettings2,
-      translateSettings3: translateSettings3,
-    });
-
+    console.log(`${shop} ${source}翻译${target}`);
     const res = { ...response.data, target: target };
     console.log("translation: ", res);
     return {
@@ -847,9 +831,12 @@ export const updateManageTranslation = async ({
     // 如果没有实际文本内容则删除
     return textContent === "";
   });
-
-  console.log("itemsToDelete: ", itemsToDelete);
-  console.log("itemsToUpdate: ", itemsToUpdate);
+  if (itemsToDelete.length > 0) {
+    console.log("itemsToDelete: ", itemsToDelete);
+  }
+  if (itemsToUpdate.length > 0) {
+    console.log("itemsToUpdate: ", itemsToUpdate);
+  }
   // 创建并发限制器，最多同时处理5个请求
   const limit = pLimit(7);
 
@@ -1269,11 +1256,7 @@ export const UpdateCurrency = async ({
 };
 
 //获取用户自定义汇率
-export const GetCurrencyByShopName = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
+export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
   console.log("GetCurrencyByShopName: ", shop);
   try {
     const response = await axios({
