@@ -36,12 +36,16 @@ async function fetchAutoRate(shop, currencyCode) {
 }
 
 async function fetchIpSwitch(shop) {
+  console.log("shop: ", shop);
+  
   const response = await axios({
     url: `https://springbackendprod.azurewebsites.net/IpSwitch/getSwitchId?shopName=${shop}`,
     method: "GET",
   });
 
   const res = response.data;
+  console.log("ip自动定位res: ", res);
+  
   if (res?.response) {
     return res.response;
   } else {
@@ -62,8 +66,10 @@ async function fetchUserCountryInfo(access_key) {
 }
 
 async function initializeCurrency(data, shop) {
+  console.log(data);
   let value = localStorage.getItem("selectedCurrency");
-  let moneyFormat = document.getElementById("queryMoneyFormat");
+  console.log(value);
+  let moneyFormat = document.querySelector('input[name="queryMoneyFormat"]').value;
   const selectedCurrency = data.find(
     (currency) => currency?.currencyCode === value,
   );
@@ -75,7 +81,7 @@ async function initializeCurrency(data, shop) {
   const currencyInput = document.querySelector('input[name="currency_code"]');
 
   const regex = /{{(.*?)}}/;
-  const match = moneyFormat.value.match(regex);
+  const match = moneyFormat.match(regex);
 
   if (match) {
     moneyFormat = match[1];
@@ -423,7 +429,7 @@ class CiwiswitcherForm extends HTMLElement {
       currencyInput: this.querySelector('input[name="currency_code"]'),
       countryInput: this.querySelector('input[name="country_code"]'),
       confirmButton: this.querySelector("#switcher-confirm"),
-      closeButton: this.querySelector("#switcher-close"),
+      // closeButton: this.querySelector("#switcher-close"),
       mainBox: this.querySelector("#main-box"),
       languageSwitcher: this.querySelector("#language-switcher"),
       currencySwitcher: this.querySelector("#currency-switcher"),
@@ -444,10 +450,10 @@ class CiwiswitcherForm extends HTMLElement {
       "click",
       this.submitForm.bind(this),
     );
-    this.elements.closeButton?.addEventListener(
-      "click",
-      this.toggleSelector.bind(this),
-    );
+    // this.elements.closeButton?.addEventListener(
+    //   "click",
+    //   this.toggleSelector.bind(this),
+    // );
     this.elements.mainBox?.addEventListener(
       "click",
       this.toggleSelector.bind(this),
@@ -497,11 +503,11 @@ class CiwiswitcherForm extends HTMLElement {
     box.style.display = isVisible ? "none" : "block";
 
     // 移动端适配
-    if (window.innerWidth <= 768) {
-      const mainBox = document.getElementById("main-box");
-      mainBox.style.display = isVisible ? "block" : "none";
-      this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
-    }
+    // if (window.innerWidth <= 768) {
+    //   const mainBox = document.getElementById("main-box");
+    //   mainBox.style.display = isVisible ? "block" : "none";
+    //   this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
+    // }
 
     // 旋转箭头
     this.rotateArrow("mainbox-arrow-icon", isVisible ? 0 : 180);
@@ -530,11 +536,11 @@ class CiwiswitcherForm extends HTMLElement {
 
   handleOutsideClick(event) {
     if (!this.elements.ciwiContainer.contains(event.target)) {
-      if (window.innerWidth <= 768) {
-        const mainBox = document.getElementById("main-box");
-        this.elements.ciwiContainer.classList.remove("expanded");
-        mainBox.style.display = "block";
-      }
+      // if (window.innerWidth <= 768) {
+      //   const mainBox = document.getElementById("main-box");
+      //   this.elements.ciwiContainer.classList.remove("expanded");
+      //   mainBox.style.display = "block";
+      // }
       this.elements.selectorBox.style.display = "none";
       this.rotateArrow("mainbox-arrow-icon", 0);
     }
@@ -546,12 +552,13 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
 // Page load handling
 window.onload = async function () {
-  const shop = document.getElementById("queryCiwiId");
+  const shop = document.querySelector('input[name="queryCiwiId"]');
   shop.remove();
   const IpOpen = await fetchIpSwitch(shop.value);
+  console.log("ip自动定位: ", IpOpen);
   if (IpOpen) {
-    const iptoken = document.querySelector('span[name="iptoken"]');
-    const iptokenValue = iptoken.textContent;
+    const iptoken = document.querySelector('input[name="iptoken"]');
+    const iptokenValue = iptoken.value;
     if (iptokenValue) iptoken.remove(); // 移除DOM元素
     const storedLanguage = localStorage.getItem("selectedLanguage");
     const storedCountry = localStorage.getItem("selectedCountry");
@@ -596,6 +603,8 @@ window.onload = async function () {
       }
     } else {
       const IpData = await fetchUserCountryInfo(iptokenValue);
+      console.log("availableCountries: ", availableCountries);
+      console.log("selectedCountry: ", IpData.country_code);
       if (
         IpData?.country_code &&
         availableCountries.includes(IpData.country_code)
@@ -604,15 +613,21 @@ window.onload = async function () {
           countryInput.value = IpData.country_code;
         }
         localStorage.setItem("selectedCountry", countryInput.value);
-        console.log(
-          "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
-        );
       }
     }
+    console.log(
+      "若市场跳转不正确则清除localStorage缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the localStorage cache and manually set the selectedCountry field)",
+    );
     const htmlElement = document.documentElement; // 获取 <html> 元素
     const isInThemeEditor = htmlElement.classList.contains(
       "shopify-design-mode",
     );
+
+    console.log("countryInput.value: ", countryInput.value);
+    console.log("country: ", country);
+    console.log("languageInput.value: ", languageInput.value);
+    console.log("language: ", language);
+
     if (
       (countryInput.value !== country || languageInput.value !== language) &&
       !isInThemeEditor
@@ -624,8 +639,12 @@ window.onload = async function () {
     }
   }
 
+  console.log(shop.value);
+  
   // 在页面加载时执行初始化
   const data = await fetchCurrencies(shop.value);
+  console.log(data);
+
   if (data) {
     await initializeCurrency(data, shop);
   }
