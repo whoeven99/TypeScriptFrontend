@@ -172,7 +172,7 @@ const Index = () => {
             </Title>
           </div>
         </div>
-        <Text style={{ marginLeft: "8px" }}>{t("How to obtain the corresponding API Key? Please refer to the Private API Translation Model User Manual.")}</Text>
+        {/* <Text style={{ marginLeft: "8px" }}>{t("How to obtain the corresponding API Key? Please refer to the Private API Translation Model User Manual.")}</Text> */}
         {userData ?
           <div>
             <ApiKeyEditCard
