@@ -538,14 +538,6 @@ export const GetLanguageStatus = async ({
   source: string;
   target: string[];
 }) => {
-  console.log([
-    {
-      shopName: shop,
-      source: source,
-      target: target[0],
-    },
-  ]);
-
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/readTranslateDOByArray`,

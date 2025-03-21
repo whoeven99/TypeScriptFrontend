@@ -121,7 +121,7 @@ export const ApiKeyEditCard = forwardRef<ApiKeyEditCardMethods, ApiKeyEditCardPr
                     />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <Text strong style={{ whiteSpace: 'nowrap', marginRight: '8px', flex: 1 }}>{t("Count")}</Text>
+                    <Text strong style={{ whiteSpace: 'nowrap', marginRight: '8px', flex: 1 }}>{t("Quota")}</Text>
                     <Input
                         placeholder={t("Please enter Count")}
                         value={countValue}
