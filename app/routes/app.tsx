@@ -34,6 +34,7 @@ import {
   getCredits,
   GetUserInitTokenByShopName,
   GetTranslateDOByShopNameAndSource,
+  GetUserData,
 } from "~/api/serve";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -171,6 +172,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           published: lang.published,
         }));
 
+        const customApikeyData = await GetUserData({
+          shop,
+        });
+        console.log("GetUserData: ", customApikeyData);
+
         const languageSetting = {
           primaryLanguage: shopPrimaryLanguage[0].name,
           primaryLanguageCode: shopPrimaryLanguage[0].locale,
@@ -179,7 +185,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         };
         console.log(`${shop}根路由正常加载`);
 
-        return json({ data, languageSetting, shop });
+        return json({ data, languageSetting, shop, customApikeyData: customApikeyData?.response?.googleKey });
       } catch (error) {
         console.error("Error languageData app:", error);
         return json({ error: "Error languageData app" }, { status: 500 });
@@ -372,6 +378,7 @@ export default function App() {
           {loadingFetcher.data && <Link to="/app/manage_translation">{t("Manage Translation")}</Link>}
           {loadingFetcher.data && <Link to="/app/currency">{t("Currency")}</Link>}
           {loadingFetcher.data && <Link to="/app/glossary">{t("Glossary")}</Link>}
+          {loadingFetcher.data && <Link to="/app/pricing">{t("Pricing")}</Link>}
         </NavMenu>
         <Suspense>
           <Outlet />

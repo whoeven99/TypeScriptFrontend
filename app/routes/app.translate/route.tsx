@@ -64,6 +64,7 @@ const Index = () => {
     const [translateSettings4, setTranslateSettings4] = useState<string>("1");
     const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
     const [showWarnModal, setShowWarnModal] = useState(false);
+    const [customApikeyData, setCustomApikeyData] = useState<boolean>(false);
     const [source, setSource] = useState("");
     const [target, setTarget] = useState("");
     const dispatch = useDispatch();
@@ -106,6 +107,7 @@ const Index = () => {
             setLanguageData(loadingLanguageFetcher.data.data);
             setLanguageSetting(loadingLanguageFetcher.data.languageSetting);
             setLoadingLanguage(false);
+            setCustomApikeyData(loadingLanguageFetcher.data.customApikeyData);
             shopify.loading(false);
         }
     }, [loadingLanguageFetcher.data]);
@@ -195,7 +197,7 @@ const Index = () => {
                 JSON.stringify({
                     primaryLanguage: languageSetting?.primaryLanguageCode,
                     selectedLanguage: selectedItem,
-                    translateSettings1: "google",
+                    translateSettings1: translateSettings1,
                     translateSettings2: translateSettings2,
                     translateSettings3: translateSettings3,
                 }),
@@ -573,6 +575,12 @@ const Index = () => {
 
                                             ))
                                         }
+                                        {customApikeyData && <Col key="custom key" span={6}>
+                                            <Button type={translateSettings1 === "8" ? "primary" : "default"} key={"8"} value={"8"} onClick={() => setTranslateSettings1("8")} style={{ width: "100%" }}
+                                            >
+                                                Google Cloud Translation
+                                            </Button>
+                                        </Col>}
                                         <Col key="custom key" span={6}>
                                             <Button type="primary" key="customButton" onClick={() => navigate("/app/apikeySetting")} style={{ width: "100%" }}
                                             >

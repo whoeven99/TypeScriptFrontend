@@ -1,24 +1,18 @@
-import { Page, BlockStack } from "@shopify/polaris";
+import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Button, Card, Col, Modal, Row, Skeleton, Space, Table, Typography } from "antd";
+import { Button, Card, Col, Row, Skeleton, Space, Table, Typography } from "antd";
 import {
   Link,
-  useLoaderData,
   useNavigate,
 } from "@remix-run/react";
-import "./styles.css";
-import { ShopLocalesType } from "../app.language/route";
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
-import UserGuideCard from "~/routes/app._index/components/userGuideCard";
-import ContactCard from "~/routes/app._index/components/contactCard";
+import UserGuideCard from "./components/userGuideCard";
+import ContactCard from "./components/contactCard";
 import PreviewCard from "./components/previewCard";
 import ScrollNotice from "~/components/ScrollNotice";
-import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { queryShopLanguages } from "~/api/admin";
 import ProgressingCard from "~/components/progressingCard";
-import { GetTranslateDOByShopNameAndSource } from "~/api/serve";
 
 const { Title, Text } = Typography;
 

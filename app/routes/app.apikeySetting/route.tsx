@@ -1,18 +1,18 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Icon, Page } from "@shopify/polaris";
-import { Button, Space, Typography } from "antd";
+import { Button, message, Skeleton, Space, Typography } from "antd";
 import { json, useFetcher, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import {
   ArrowLeftIcon
 } from '@shopify/polaris-icons';
-import { ApiKeyEditCard } from "./components/apikeyEditCard";
+import { ApiKeyEditCard, ApiKeyEditCardMethods } from './components/apikeyEditCard';
 import { SessionService } from "~/utils/session.server";
 import { authenticate } from "~/shopify.server";
-import { ActionFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { GetUserData, SaveGoogleKey } from "~/api/serve";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 const { Title, Text } = Typography;
 
 export interface GLossaryDataType {
@@ -26,7 +26,7 @@ export interface GLossaryDataType {
   loading: boolean;
 }
 
-export const loader = async () => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   return null;
 };
 
@@ -61,17 +61,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       case !!updateUserAPIKey:
         try {
-          const { modal, apiKey, count } = updateUserAPIKey;
+          const { model, apiKey, count } = updateUserAPIKey;
           const data = await SaveGoogleKey({
             shop,
-            modal,
+            model,
             apiKey,
             count,
           });
           return json({ data: data });
         } catch (error) {
-          console.error("Error apiKeySetting loading:", error);
-          throw new Response("Error apiKeySetting loading", { status: 500 });
+          console.error("Error apiKeySetting action:", error);
+          throw new Response("Error apiKeySetting action", { status: 500 });
         }
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
@@ -92,7 +92,12 @@ const Index = () => {
 
   const loadingfetcher = useFetcher<any>();
   const updateUserAPIKeyfetcher = useFetcher<any>();
-  
+
+  const cardRefs = {
+    google: useRef<ApiKeyEditCardMethods>(null),
+    // ... 其他模型
+  };
+
   useEffect(() => {
     loadingfetcher.submit({
       loading: JSON.stringify(true),
@@ -105,33 +110,38 @@ const Index = () => {
   useEffect(() => {
     if (loadingfetcher.data) {
       console.log("loadingfetcher.data: ", loadingfetcher.data);
+      if (loadingfetcher.data.data.success) {
+        setUserData(loadingfetcher.data.data.response);
+      }
     }
   }, [loadingfetcher.data]);
 
   useEffect(() => {
     if (updateUserAPIKeyfetcher.data) {
-      console.log("updateUserAPIKeyfetcher.data: ", updateUserAPIKeyfetcher.data);
+      // 根据当前加载的模型关闭编辑状态
+      if (updateUserAPIKeyfetcher.data.data.success) {
+        const currentModal = loadingModal;
+        cardRefs[currentModal as keyof typeof cardRefs]?.current?.setEditMode(false);
+        setLoadingModal("");
+      }else{
+        const currentModal = loadingModal;
+        cardRefs[currentModal as keyof typeof cardRefs]?.current?.setApiKeyValue("");
+        cardRefs[currentModal as keyof typeof cardRefs]?.current?.setCountValue("");
+        setLoadingModal("");
+        message.error("count is too large or apikey is incorrect");
+      }
     }
   }, [updateUserAPIKeyfetcher.data]);
 
-  const onSave = (values: { modal: string; apiKey: string; count: string }) => {
-    setLoadingModal(values.modal);
+  const onSave = (values: { model: string; apiKey: string; count: string }) => {
+    setLoadingModal(values.model);
     updateUserAPIKeyfetcher.submit({
       updateUserAPIKey: JSON.stringify(values),
     }, {
       method: "POST",
       action: "/app/apikeySetting",
     });
-  }
-
-  const translateSettings = [
-    {
-      title: t("Google Gemini"),
-      modal: "google",
-      apiKey: "",
-      count: "",
-    }
-  ]
+  };
 
   return (
     <Page>
@@ -163,9 +173,32 @@ const Index = () => {
           </div>
         </div>
         <Text style={{ marginLeft: "8px" }}>{t("How to obtain the corresponding API Key? Please refer to the Private API Translation Model User Manual.")}</Text>
-        {translateSettings.map((item) => (
-          <ApiKeyEditCard key={item.modal} title={item.title} modal={item.modal} apiKey={item.apiKey} count={item.count} minlength={30} onSave={onSave} loading={loadingModal === item.modal && updateUserAPIKeyfetcher.state === "submitting"} />
-        ))}
+        {userData ?
+          <div>
+            <ApiKeyEditCard
+              ref={cardRefs.google}
+              title="Google Cloud Translation"
+              model="google"
+              apiKey={userData?.googleKey}
+              count={userData?.amount}
+              minlength={30}
+              onSave={onSave}
+              loading={loadingModal === "google" && updateUserAPIKeyfetcher.state === "submitting"}
+            />
+            {/* <ApiKeyEditCard
+              ref={cardRefs.openai}
+              title="OpenAI"
+              model="openai"
+              apiKey={userData?.openaiKey}
+              count={userData?.openaiAmount}
+              minlength={30}
+              onSave={onSave}
+              loading={loadingModal === "openai" && updateUserAPIKeyfetcher.state === "submitting"}
+            /> */}
+          </div>
+          :
+          <Skeleton.Button active style={{ height: "176px" }} block/>
+        }
       </Space>
     </Page>
   );
