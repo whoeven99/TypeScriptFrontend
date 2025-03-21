@@ -119,48 +119,6 @@ export const queryShop = async ({
   }
 };
 
-// export const queryTheme = async ({
-//   shop,
-//   accessToken,
-// }: {
-//   shop: string;
-//   accessToken: string;
-// }) => {
-//   try {
-//     const query = `{
-//       themes(roles: MAIN, first: 1) {
-//         nodes {
-//           files(filenames: "config/settings_data.json") {
-//             nodes {
-//               body {
-//                 ... on OnlineStoreThemeFileBodyText {
-//                   __typename
-//                   content
-//                 }
-//               }
-//             }
-//           }
-//         }
-//       }
-//     }`;
-
-//     const response = await axios({
-//       url: `https://${shop}/admin/api/2024-10/graphql.json`,
-//       method: "POST",
-//       headers: {
-//         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
-//         "Content-Type": "application/json",
-//       },
-//       data: JSON.stringify({ query }),
-//     });
-//     const res = response.data.data.themes;
-//     return res;
-//   } catch (error) {
-//     console.error("Error queryTheme:", error);
-//     throw error;
-//   }
-// };
-
 export const queryTheme = async ({
   shop,
   accessToken,
@@ -172,7 +130,7 @@ export const queryTheme = async ({
     const query = `{
       themes(roles: MAIN, first: 1) {
         nodes {
-          files(filenames: "sections/footer-group.json") {
+          files(filenames: "config/settings_data.json") {
             nodes {
               body {
                 ... on OnlineStoreThemeFileBodyText {
@@ -202,6 +160,48 @@ export const queryTheme = async ({
     throw error;
   }
 };
+
+// export const queryTheme = async ({
+//   shop,
+//   accessToken,
+// }: {
+//   shop: string;
+//   accessToken: string;
+// }) => {
+//   try {
+//     const query = `{
+//       themes(roles: MAIN, first: 1) {
+//         nodes {
+//           files(filenames: "sections/footer-group.json") {
+//             nodes {
+//               body {
+//                 ... on OnlineStoreThemeFileBodyText {
+//                   __typename
+//                   content
+//                 }
+//               }
+//             }
+//           }
+//         }
+//       }
+//     }`;
+
+//     const response = await axios({
+//       url: `https://${shop}/admin/api/2024-10/graphql.json`,
+//       method: "POST",
+//       headers: {
+//         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+//         "Content-Type": "application/json",
+//       },
+//       data: JSON.stringify({ query }),
+//     });
+//     const res = response.data.data.themes;
+//     return res;
+//   } catch (error) {
+//     console.error("Error queryTheme:", error);
+//     throw error;
+//   }
+// };
 
 export const queryAllProducts = async ({
   shop,

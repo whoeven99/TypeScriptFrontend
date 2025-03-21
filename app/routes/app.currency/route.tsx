@@ -408,7 +408,7 @@ const Index = () => {
         const switcherJson: any = Object.values(blocks).find(
           (block: any) => block.type === ciwiSwitcherBlocksId,
         );
-        if (!switcherJson || switcherJson.disabled) {
+        if (switcherJson && !switcherJson.disabled) {
           setSwitcherEnableCardOpen(true);
         }
       }
