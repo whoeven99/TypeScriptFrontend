@@ -25,7 +25,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   moneyFormatHtml,
   defaultCurrencyCode,
 }) => {
-  const blockUrl = `https://${shop}/admin/themes/current/editor?context=apps&addAppBlockId=${ciwiSwitcherId}/switcher&target=sectionGroup:footer`;
+  const blockUrl = `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/switcher`;
   const supportUrl =
     "http://ciwi.bogdatech.com/help/uncategorized/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/";
   const [isVisible, setIsVisible] = useState<boolean | undefined>(undefined);
