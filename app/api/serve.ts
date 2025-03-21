@@ -604,8 +604,10 @@ export const GetTranslate = async ({
   translateSettings3: string[];
 }) => {
   try {
+    console.log("translateSettings1: ", translateSettings1);
+    console.log("url: ", `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`);
     const response = await axios({
-      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey" : "translate"}/translate`,
+      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`,
       method: "PUT",
       data: {
         shopName: shop,
