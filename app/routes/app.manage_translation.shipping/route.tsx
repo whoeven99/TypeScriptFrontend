@@ -41,6 +41,7 @@ type TableDataType = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shop = sessionStorage.getItem("shop") as string;
   const accessToken = sessionStorage.getItem("accessToken") as string;
+  
   if (!shop || !accessToken) {
     const adminAuthResult = await authenticate.admin(request);
     const { shop, accessToken } = adminAuthResult.session;

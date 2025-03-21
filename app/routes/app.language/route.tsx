@@ -125,10 +125,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     sessionService.setShopSession(shopSession);
   }
 
+  console.log("shopSession: ", shopSession);
+  
+
+  const { shop, accessToken } = shopSession;
+
   const Acreatetime = new Date()
   const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-    shop: shopSession.shop,
-    accessToken: shopSession.accessToken,
+    shop: shop,
+    accessToken: accessToken,
   });
   const Aendtime = new Date();
 
@@ -146,7 +151,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // 返回数据和更新后的 cookie
   return json(
     {
-      shop: shopSession.shop,
+      shop: shop,
       shopLanguagesLoad,
       shopPrimaryLanguage,
       shopLocalesIndex,

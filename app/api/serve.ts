@@ -20,33 +20,50 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+//获取用户私人API Key
+export const GetUserData = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/private/getUserData`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    console.log("GetUserData: ", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error GetUserData:", error);
+  }
+};
+
 //更新用户私人API Key
 export const SaveGoogleKey = async ({
   shop,
-  modal,
+  model,
   apiKey,
   count,
 }: {
   shop: string;
-  modal: string;
+  model: string;
   apiKey: string;
-  count: string;
+  count: number;
 }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/privateKey/saveGoogleKey`,
-      method: "POST",
+      method: "PUT",
       data: {
         shopName: shop,
-        modal: modal,
+        model: model,
         secret: apiKey,
-        count: count,
+        amount: count,
       },
     });
     console.log("SaveGoogleKey: ", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error update user private api key:", error);
+    console.error("Error SaveGoogleKey:", error);
   }
 };
 
@@ -69,7 +86,7 @@ export const GetTranslateDOByShopNameAndSource = async ({
     });
     return response.data;
   } catch (error) {
-    console.error("Error get translate do by shop name and source:", error);
+    console.error("Error GetTranslateDOByShopNameAndSource:", error);
   }
 };
 
@@ -88,7 +105,7 @@ export const GetUserInitTokenByShopName = async ({
     });
     return response.data;
   } catch (error) {
-    console.error("Error get user init token:", error);
+    console.error("Error GetUserInitTokenByShopName:", error);
   }
 };
 
@@ -116,16 +133,12 @@ export const getCredits = async ({
     });
     return response.data;
   } catch (error) {
-    console.error("Error get credits:", error);
+    console.error("Error getCredits:", error);
   }
 };
 
 //用户数据初始化检测
-export const InitializationDetection = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
+export const InitializationDetection = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/InitializationDetection?shopName=${shop}`,
@@ -135,13 +148,19 @@ export const InitializationDetection = async ({
     console.log("InitializationDetection: ", res);
     return res;
   } catch (error) {
-    console.error("Error UpdateUser:", error);
+    console.error("Error InitializationDetection:", error);
   }
 };
 
 //用户数据初始化
 //添加用户
-export const UserAdd = async ({ shop, accessToken }: { shop: string; accessToken: string }) => {
+export const UserAdd = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string;
+}) => {
   try {
     const shopData = await queryShop({ shop, accessToken });
     const shopOwnerName = shopData?.shopOwnerName;
@@ -171,7 +190,7 @@ export const UserAdd = async ({ shop, accessToken }: { shop: string; accessToken
     });
     console.log("addUserInfoResponse: ", addUserInfoResponse.data);
   } catch (error) {
-    console.error("Error UpdateUser:", error);
+    console.error("Error UserAdd:", error);
   }
 };
 
@@ -197,16 +216,12 @@ export const InsertCharsByShopName = async ({
       insertCharsByShopNameResponse.data,
     );
   } catch (error) {
-    console.error("Error UpdateUser:", error);
+    console.error("Error InsertCharsByShopName:", error);
   }
 };
 
 //添加默认语言包
-export const AddDefaultLanguagePack = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
+export const AddDefaultLanguagePack = async ({ shop }: { shop: string }) => {
   console.log("AddDefaultLanguagePackData: ", shop);
   try {
     const addDefaultLanguagePackResponse = await axios({
@@ -218,7 +233,7 @@ export const AddDefaultLanguagePack = async ({
       addDefaultLanguagePackResponse.data,
     );
   } catch (error) {
-    console.error("Error UpdateUser:", error);
+    console.error("Error AddDefaultLanguagePack:", error);
   }
 };
 
@@ -236,7 +251,7 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
     );
     return res;
   } catch (error) {
-    console.error("Error get user:", error);
+    console.error("Error GetUserSubscriptionPlan:", error);
   }
 };
 
@@ -256,7 +271,7 @@ export const AddUserFreeSubscription = async ({ shop }: { shop: string }) => {
     );
     return addUserFreeSubscriptionResponse.data.success;
   } catch (error) {
-    console.error("Error chars initialization:", error);
+    console.error("Error AddUserFreeSubscription:", error);
   }
 };
 
@@ -523,14 +538,6 @@ export const GetLanguageStatus = async ({
   source: string;
   target: string[];
 }) => {
-  console.log([
-    {
-      shopName: shop,
-      source: source,
-      target: target[0],
-    },
-  ]);
-
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/readTranslateDOByArray`,
@@ -596,31 +603,23 @@ export const GetTranslate = async ({
   translateSettings2: string;
   translateSettings3: string[];
 }) => {
-  console.log(source, target);
   try {
+    console.log("translateSettings1: ", translateSettings1);
+    console.log("url: ", `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`);
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/clickTranslation`,
+      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`,
       method: "PUT",
       data: {
         shopName: shop,
         accessToken: accessToken,
         source: source,
         target: target,
-        translateSettings1: translateSettings1,
+        translateSettings1: "google",
         translateSettings2: translateSettings2,
         translateSettings3: translateSettings3,
       },
     });
-    console.log({
-      shopName: shop,
-      accessToken: accessToken,
-      source: source,
-      target: target,
-      translateSettings1: translateSettings1,
-      translateSettings2: translateSettings2,
-      translateSettings3: translateSettings3,
-    });
-
+    console.log(`${shop} ${source}翻译${target}`);
     const res = { ...response.data, target: target };
     console.log("translation: ", res);
     return {
@@ -826,9 +825,12 @@ export const updateManageTranslation = async ({
     // 如果没有实际文本内容则删除
     return textContent === "";
   });
-
-  console.log("itemsToDelete: ", itemsToDelete);
-  console.log("itemsToUpdate: ", itemsToUpdate);
+  if (itemsToDelete.length > 0) {
+    console.log("itemsToDelete: ", itemsToDelete);
+  }
+  if (itemsToUpdate.length > 0) {
+    console.log("itemsToUpdate: ", itemsToUpdate);
+  }
   // 创建并发限制器，最多同时处理5个请求
   const limit = pLimit(7);
 
@@ -1248,11 +1250,7 @@ export const UpdateCurrency = async ({
 };
 
 //获取用户自定义汇率
-export const GetCurrencyByShopName = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
+export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
   console.log("GetCurrencyByShopName: ", shop);
   try {
     const response = await axios({

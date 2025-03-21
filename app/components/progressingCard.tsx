@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { PhoneOutlined } from "@ant-design/icons";
 import { handleContactSupport } from "~/routes/app._index/route";
+import PaymentModal from "./paymentModal";
 
 const { Text, Title } = Typography;
 
@@ -27,6 +28,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
     const [progress, setProgress] = useState<number>(0);
     const [status, setStatus] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(true);
+    const [paymentModalVisible, setPaymentModalVisible] = useState<boolean>(false);
     const { t } = useTranslation();
     const navigate = useNavigate();
     const fetcher = useFetcher<any>();
@@ -315,168 +317,177 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
     };
 
     return (
-        <Card
-        >
-            <Title level={4}>{t("progressing.title")}</Title>
-            {loading ? <Skeleton.Button active style={{ height: '130px' }} block /> :
-                <Space direction="vertical" style={{ width: '100%' }}>
-                    {status !== 0 ?
-                        <Card>
-                            {/* <Space style={{ width: '100%', }} size="small"> */}
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    width: '100%',  // 确保占满容器宽度
-                                    textAlign: 'center',
-                                    gap: 10,
-                                }}
-                            >
+        <>
+            <Card
+            >
+                <Title level={4}>{t("progressing.title")}</Title>
+                {loading ? <Skeleton.Button active style={{ height: '130px' }} block /> :
+                    <Space direction="vertical" style={{ width: '100%' }}>
+                        {status !== 0 ?
+                            <Card>
+                                {/* <Space style={{ width: '100%', }} size="small"> */}
                                 <div
                                     style={{
                                         display: 'flex',
                                         justifyContent: 'space-between',
-                                        alignItems: 'flex-start',
-                                        width: '80%',  // 确保占满容器宽度
-                                        textAlign: 'center',
-                                        flexDirection: 'column',
-                                        // height: '69px'
-                                    }}
-                                >
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'flex-start',
+                                        alignItems: 'center',
                                         width: '100%',  // 确保占满容器宽度
                                         textAlign: 'center',
-                                        marginBottom: 'auto',
-                                        gap: 30
-                                    }}>
-                                        {/* 左侧部分 */}
+                                        gap: 10,
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'flex-start',
+                                            width: '80%',  // 确保占满容器宽度
+                                            textAlign: 'center',
+                                            flexDirection: 'column',
+                                            // height: '69px'
+                                        }}
+                                    >
                                         <div style={{
                                             display: 'flex',
-                                            maxWidth: '20%',  // 限制最大宽度
-                                            flexDirection: 'column',
-                                            lineHeight: '1.5',
-                                            textAlign: 'left',
-                                            flex: 1
+                                            alignItems: 'flex-start',
+                                            width: '100%',  // 确保占满容器宽度
+                                            textAlign: 'center',
+                                            marginBottom: 'auto',
+                                            gap: 30
                                         }}>
-                                            <Text style={{
-                                                whiteSpace: 'nowrap'  // 防止文字换行
-                                            }}>{t("progressing.target")}</Text>
-                                            <Text style={{
+                                            {/* 左侧部分 */}
+                                            <div style={{
+                                                display: 'flex',
+                                                maxWidth: '20%',  // 限制最大宽度
+                                                flexDirection: 'column',
+                                                lineHeight: '1.5',
                                                 textAlign: 'left',
-                                                fontSize: '24px',
-                                                fontWeight: 600
-                                            }}>{target}</Text>
-                                        </div>
+                                                flex: 1
+                                            }}>
+                                                <Text style={{
+                                                    whiteSpace: 'nowrap'  // 防止文字换行
+                                                }}>{t("progressing.target")}</Text>
+                                                <Text style={{
+                                                    textAlign: 'left',
+                                                    fontSize: '24px',
+                                                    fontWeight: 600
+                                                }}>{target}</Text>
+                                            </div>
 
+                                            <div style={{
+                                                display: 'flex',
+                                                maxWidth: status === 1 ? '100%' : '80%',  // 限制最大宽度
+                                                alignItems: status === 1 ? 'flex-end' : 'center',  // 居中对齐
+                                                textAlign: 'left',
+                                                flex: 7
+                                            }}>
+                                                {
+                                                    status === 1 &&
+                                                    <Text>{t("progressing.finished")}</Text>
+                                                }
+                                                {
+                                                    status === 2 &&
+                                                    <Text>{t("progressing.progressingWithSpace", { item: t(item) })}({itemsCount.translatedNumber}/{itemsCount.totalNumber})</Text>
+                                                }
+                                                {
+                                                    status === 3 &&
+                                                    <Text>⚠️{t("progressing.contact")}</Text>
+                                                }
+                                                {
+                                                    status === 4 &&
+                                                    <Text>{t("progressing.somethingWentWrong")}</Text>
+                                                }
+                                            </div>
+
+                                            {/* 右侧部分 */}
+
+                                        </div>
                                         <div style={{
-                                            display: 'flex',
-                                            maxWidth: status === 1 ? '100%' : '80%',  // 限制最大宽度
-                                            alignItems: status === 1 ? 'flex-end' : 'center',  // 居中对齐
-                                            textAlign: 'left',
-                                            flex: 7
+                                            width: '100%',
+                                            marginTop: 'auto'  // 将进度条推到底部
                                         }}>
-                                            {
-                                                status === 1 &&
-                                                <Text>{t("progressing.finished")}</Text>
-                                            }
-                                            {
-                                                status === 2 &&
-                                                <Text>{t("progressing.progressingWithSpace", { item: t(item) })}({itemsCount.translatedNumber}/{itemsCount.totalNumber})</Text>
-                                            }
-                                            {
-                                                status === 3 &&
-                                                <Text>⚠️{t("progressing.contact")}</Text>
-                                            }
-                                            {
-                                                status === 4 &&
-                                                <Text>{t("progressing.somethingWentWrong")}</Text>
-                                            }
+                                            <Progress
+                                                percent={status === 1 ? 100 : progress}
+                                                status={status === 1 ? 'success' : status === 2 ? 'active' : 'normal'}
+                                                percentPosition={{ align: 'end', type: 'inner' }}
+                                                size={["100%", 20]}
+                                                strokeColor="#007F61"
+                                            />
                                         </div>
-
-                                        {/* 右侧部分 */}
-
                                     </div>
-                                    <div style={{
-                                        width: '100%',
-                                        marginTop: 'auto'  // 将进度条推到底部
-                                    }}>
-                                        <Progress
-                                            percent={status === 1 ? 100 : progress}
-                                            status={status === 1 ? 'success' : status === 2 ? 'active' : 'normal'}
-                                            percentPosition={{ align: 'end', type: 'inner' }}
-                                            size={["100%", 20]}
-                                            strokeColor="#007F61"
-                                        />
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '20%', height: '82px' }}>
-                                    {status === 3 &&
-                                        <div style={{
-                                            width: '100%',  // 限制最大宽度
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: 10,
-                                        }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '20%', height: '82px' }}>
+                                        {status === 3 &&
+                                            <div style={{
+                                                width: '100%',  // 限制最大宽度
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: 10,
+                                            }}>
 
-                                            <Button
-                                                block
-                                                type="primary"
-                                                onClick={() => navigate("/app/translate", { state: { selectedLanguageCode: target } })}
-                                            >
-                                                {t("progressing.buyCredits")}
-                                            </Button>
-                                            <Button
-                                                block
-                                                icon={<PhoneOutlined />}
-                                                onClick={handleContactSupport}
-                                            >
-                                                {t("progressing.contactButton")}
-                                            </Button>
+                                                <Button
+                                                    block
+                                                    type="primary"
+                                                    onClick={() => setPaymentModalVisible(true)}
+                                                >
+                                                    {t("progressing.buyCredits")}
+                                                </Button>
+                                                <Button
+                                                    block
+                                                    icon={<PhoneOutlined />}
+                                                    onClick={handleContactSupport}
+                                                >
+                                                    {t("progressing.contactButton")}
+                                                </Button>
 
-                                        </div>
-                                    }
-                                    {/* {status === 2 &&
+                                            </div>
+                                        }
+                                        {/* {status === 2 &&
                                             <>
                                                 <Text>
                                                     {t("progressing.remaining")}
                                                 </Text>
                                             </>
-                                        } */}
-                                    {status === 4 &&
-                                        <Button
-                                            block
-                                            type="primary"
-                                            icon={<PhoneOutlined />}
-                                            onClick={handleContactSupport}
-                                            style={{ marginTop: 'auto' }}
-                                        >
-                                            {t("progressing.contactButton")}
-                                        </Button>
-                                    }
-                                    {status === 1 &&
-                                        <Button
-                                            block
-                                            type="primary"
-                                            onClick={() => navigate("/app/language", { state: { publishLanguageCode: target } })}
-                                            style={{ marginTop: 'auto' }}
-                                        >
-                                            {t("progressing.publish")}
-                                        </Button>
-                                    }
+                                    } */}
+                                        {status === 4 &&
+                                            <Button
+                                                block
+                                                type="primary"
+                                                icon={<PhoneOutlined />}
+                                                onClick={handleContactSupport}
+                                                style={{ marginTop: 'auto' }}
+                                            >
+                                                {t("progressing.contactButton")}
+                                            </Button>
+                                        }
+                                        {status === 1 &&
+                                            <Button
+                                                block
+                                                type="primary"
+                                                onClick={() => navigate("/app/language", { state: { publishLanguageCode: target } })}
+                                                style={{ marginTop: 'auto' }}
+                                            >
+                                                {t("progressing.publish")}
+                                            </Button>
+                                        }
+                                    </div>
                                 </div>
-                            </div>
-                            {/* </Space> */}
-                        </Card>
-                        :
-                        <Card>
-                            <Text style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '52px' }}>{t("progressing.noTranslate")}</Text>
-                        </Card>
-                    }
-                </Space>}
-        </Card>
+                                {/* </Space> */}
+                            </Card>
+                            :
+                            <Card>
+                                <Text style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '52px' }}>{t("progressing.noTranslate")}</Text>
+                            </Card>
+                        }
+                    </Space>}
+            </Card>
+            {status === 3 && <PaymentModal
+                visible={paymentModalVisible}
+                setVisible={setPaymentModalVisible}
+                source={source}
+                target={target}
+                modal="OpenAI/GPT-4"
+            />}
+        </>
     );
 };
 

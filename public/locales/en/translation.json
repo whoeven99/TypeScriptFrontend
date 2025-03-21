@@ -250,5 +250,10 @@
   "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.",
   "Translation Exception": "Translation Exception",
   "Launched": "Launched",
-  "Can't find the language you want to translate into? Click here to add a language.": "Can't find the language you want to translate into? Click here to add a language."
+  "Can't find the language you want to translate into? Click here to add a language.": "Can't find the language you want to translate into? Click here to add a language.",
+  "Translate Settings": "Translate Settings",
+  "How to obtain the corresponding API Key? Please refer to the Private API Translation Model User Manual.": "How to obtain the corresponding API Key? Please refer to the Private API Translation Model User Manual.",
+  "Custom API key": "Custom API key",
+  "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully."
+
 }
