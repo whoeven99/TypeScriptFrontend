@@ -466,7 +466,7 @@ const Index = () => {
                             {t("Translate Store")}
                         </Title>
                     </div>
-                    <Button type="primary" onClick={() => handleTranslate()}>{t("Translate")}</Button>
+                    {/* <Button type="primary" onClick={() => handleTranslate()}>{t("Translate")}</Button> */}
                 </div>
                 <div style={{ paddingLeft: "8px" }}>
                     <Text>{t("Your store's default language:")}</Text>
