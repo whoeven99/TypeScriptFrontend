@@ -250,5 +250,12 @@
     "translateSettings2.title": "dil paketleri",
     "translateSettings3.title": "Çeviri projesi",
     "translateSettings.title": "Çeviri Ayarları",
-    "Can't find the language you want to translate into? Click here to add a language.": "Çevirmek istediğiniz dil bulunamadı mı? Buraya tıklayarak dil ekleyebilirsiniz."
+    "Can't find the language you want to translate into? Click here to add a language.": "Çevirmek istediğiniz dil bulunamadı mı? Buraya tıklayarak dil ekleyebilirsiniz.",
+    "Translate Settings": "Çeviri Ayarları",
+    "Custom API key": "Özel API Anahtarı",
+    "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "Bu özellik kullanılırken, yalnızca ilgili arayüzün kotasını tüketeceğiz ve ek ücret almayacağız. Üçüncü taraf API kotası sınırlarını aşmaktan kaçınmak ve ücretler oluşturmaktan kaçınmak için kota sınırlarını dikkatlice ayarlayın.",
+    "API Key is not valid": "API Anahtarı geçersiz",
+    "count is too large or apikey is incorrect": "Kota sınırları çok büyük veya API anahtarı geçersiz",
+    "delete user api key success": "Kullanıcı API anahtarı başarıyla silindi",
+    "delete user api key failed": "Kullanıcı API anahtarı silinemedi"
 }

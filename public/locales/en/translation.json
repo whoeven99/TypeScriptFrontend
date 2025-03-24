@@ -252,8 +252,10 @@
   "Launched": "Launched",
   "Can't find the language you want to translate into? Click here to add a language.": "Can't find the language you want to translate into? Click here to add a language.",
   "Translate Settings": "Translate Settings",
-  "How to obtain the corresponding API Key? Please refer to the Private API Translation Model User Manual.": "How to obtain the corresponding API Key? Please refer to the Private API Translation Model User Manual.",
   "Custom API key": "Custom API key",
-  "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully."
-
+  "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.",
+  "API Key is not valid": "API Key is not valid",
+  "count is too large or apikey is incorrect": "count is too large or apikey is incorrect",
+  "delete user api key success": "delete user api key success",
+  "delete user api key failed": "delete user api key failed"
 }
