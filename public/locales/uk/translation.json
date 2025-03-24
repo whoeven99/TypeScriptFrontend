@@ -250,5 +250,12 @@
     "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "Деякий вміст магазину не відповідає політиці перекладу OpenAI, будь ласка, зв'яжіться з нами для ручної підтримки.",
     "Translation Exception": "Помилка перекладу",
     "Launched": "Запущено",
-    "Can't find the language you want to translate into? Click here to add a language.": "Не можете знайти мову, на яку хочете перекласти? Натисніть тут, щоб додати мову."
-  }
+    "Can't find the language you want to translate into? Click here to add a language.": "Не можете знайти мову, на яку хочете перекласти? Натисніть тут, щоб додати мову.",
+    "Translate Settings": "Налаштування перекладу",
+    "Custom API key": "Приватний API ключ",
+    "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "Використовуючи цю функцію, ми споживаємо лише квоту відповідного інтерфейсу та не стягуємо додаткову плату. Щоб уникнути перевищення лімітів квоти API третьої сторони та виникнення витрат, будь ласка, обережно встановіть ліміти квоти.",
+    "API Key is not valid": "Ключ API недійсний",
+    "count is too large or apikey is incorrect": "Ліміт квоти занадто великий або ключ API недійсний",
+    "delete user api key success": "Ключ API користувача видалено успішно",
+    "delete user api key failed": "Ключ API користувача видалено невдало"
+}

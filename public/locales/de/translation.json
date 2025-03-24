@@ -248,6 +248,13 @@
     "Translation Exception": "Übersetzungsausnahme",
     "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "Inhalt des Shops stimmt nicht mit der OpenAI-Übersetzungsrichtlinie überein. Bitte kontaktieren Sie uns für manuelle Unterstützung.",
     "Launched": "Veröffentlicht",
-    "Can't find the language you want to translate into? Click here to add a language.": "Können Sie die Sprache nicht finden, die Sie übersetzen möchten? Klicken Sie hier, um eine Sprache hinzuzufügen."
+    "Can't find the language you want to translate into? Click here to add a language.": "Können Sie die Sprache nicht finden, die Sie übersetzen möchten? Klicken Sie hier, um eine Sprache hinzuzufügen.",
+    "Translate Settings": "Übersetzungseinstellungen",
+    "Custom API key": "Benutzerdefinierter API-Schlüssel",
+    "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "Wenn Sie diese Funktion verwenden, verbrauchen wir nur die Quota der entsprechenden Schnittstelle und belasten Sie keine zusätzlichen Gebühren. Um die Quota-Grenzen der dritten Partei zu vermeiden und Gebühren zu vermeiden, legen Sie die Quota-Grenzen sorgfältig fest.",
+    "API Key is not valid": "API-Schlüssel ist nicht gültig",
+    "count is too large or apikey is incorrect": "Anzahl ist zu groß oder API-Schlüssel ist nicht korrekt",
+    "delete user api key success": "API-Schlüssel des Benutzers wurde erfolgreich gelöscht",
+    "delete user api key failed": "API-Schlüssel des Benutzers konnte nicht gelöscht werden"
 }
     

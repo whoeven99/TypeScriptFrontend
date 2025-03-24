@@ -100,6 +100,8 @@ const Index = () => {
 
   const [loadingModal, setLoadingModal] = useState<string>("");
   const [userData, setUserData] = useState<any>(null);
+  const [apiKey, setApiKey] = useState<string>("");
+  const [count, setCount] = useState<string>("");
 
   const loadingfetcher = useFetcher<any>();
   const updateUserAPIKeyfetcher = useFetcher<any>();
@@ -124,8 +126,12 @@ const Index = () => {
       console.log("loadingfetcher.data: ", loadingfetcher.data);
       if (loadingfetcher.data.data.success) {
         setUserData(loadingfetcher.data.data.response);
+        setApiKey(loadingfetcher.data.data.response.googleKey);
+        setCount(loadingfetcher.data.data.response.amount);
       } else if (loadingfetcher.data.data.success === false && loadingfetcher.data.data.errorMsg === "用户不存在") {
         setUserData(null);
+        setApiKey("");
+        setCount("");
       }
     }
   }, [loadingfetcher.data]);
@@ -135,7 +141,9 @@ const Index = () => {
       // 根据当前加载的模型关闭编辑状态
       if (updateUserAPIKeyfetcher.data.data.success) {
         const currentModal = loadingModal;
-        cardRefs[currentModal as keyof typeof cardRefs]?.current?.setEditMode(false);
+        cardRefs[currentModal as keyof typeof cardRefs]?.current?.setEditMode(false);        
+        setApiKey(updateUserAPIKeyfetcher.data.data.response.secret);
+        setCount(updateUserAPIKeyfetcher.data.data.response.amount);
         setLoadingModal("");
       } else {
         const currentModal = loadingModal;
@@ -152,6 +160,8 @@ const Index = () => {
       if (deleteUserAPIKeyfetcher?.data?.data?.success) {
         console.log("deleteUserAPIKeyfetcher?.data?.data?.response: ", deleteUserAPIKeyfetcher?.data?.data?.response);
         setUserData(deleteUserAPIKeyfetcher?.data?.data?.response);
+        setApiKey("");
+        setCount("");
         message.success("delete user api key success");
       } else {
         message.error("delete user api key failed");
@@ -215,8 +225,8 @@ const Index = () => {
               ref={cardRefs.google}
               title="Google Cloud Translation"
               model="google"
-              apiKey={userData?.googleKey || ""}
-              count={userData?.amount || ""}
+              apiKey={apiKey || ""}
+              count={count || ""}
               minlength={30}
               onSave={onSave}
               onDelete={onDelete}

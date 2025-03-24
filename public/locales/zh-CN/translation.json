@@ -261,5 +261,9 @@
   "Translate Settings": "翻译设置",
   "How to obtain the corresponding API Key? Please refer to the Private API Translation Model User Manual.": "如何获取相应的 API 密钥？请参考私钥翻译模型用户手册。",
   "Custom API key": "私有API key",
-  "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "使用此功能时，我们仅消耗相应接口的配额，不会收取任何额外费用。为避免超出第三方 API 配额限制并产生费用，请仔细设置配额限制。"
+  "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "使用此功能时，我们仅消耗相应接口的配额，不会收取任何额外费用。为避免超出第三方 API 配额限制并产生费用，请仔细设置配额限制。",
+  "API Key is not valid": "API 密钥无效",
+  "count is too large or apikey is incorrect": "限制配额过大或 API 密钥不正确",
+  "delete user api key success": "用户 API 密钥删除成功",
+  "delete user api key failed": "用户 API 密钥删除失败"
 }
