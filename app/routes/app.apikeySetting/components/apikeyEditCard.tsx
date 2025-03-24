@@ -13,6 +13,7 @@ interface ApiKeyEditCardProps {
     tags?: string[];
     minlength?: number;
     onSave?: (values: { model: string; apiKey: string; count: string }) => void;
+    onDelete?: (modal: string) => void;
     loading?: boolean;
 }
 
@@ -30,8 +31,9 @@ export const ApiKeyEditCard = forwardRef<ApiKeyEditCardMethods, ApiKeyEditCardPr
     tags = [],
     minlength = 30,
     onSave,
+    onDelete,
     loading
-}, ref) => {
+}, ref) => {    
     const [apiKeyValue, setApiKeyValue] = useState(apiKey);
     const [countValue, setCountValue] = useState(count.toString());
     const [isEdit, setIsEdit] = useState(false);
@@ -97,6 +99,9 @@ export const ApiKeyEditCard = forwardRef<ApiKeyEditCardMethods, ApiKeyEditCardPr
                     <Space>
                         <Button type="default" onClick={handleCancel} loading={loading}>
                             {t("Cancel")}
+                        </Button>
+                        <Button type="primary" disabled={!apiKeyValue} onClick={() => onDelete?.(model)} loading={loading}>
+                            {t("Delete")}
                         </Button>
                         <Button type="primary" onClick={handleSave} loading={loading}>
                             {t("Save")}

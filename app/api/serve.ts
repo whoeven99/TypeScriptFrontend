@@ -20,6 +20,33 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+//删除用户私人API Key
+export const DeleteUserData = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/private/deleteUserData`,
+      method: "PUT",
+      data: {
+        shopName: shop,
+      },
+    });
+    console.log("DeleteUserData: ", response.data);
+    return {
+      ...response.data,
+      response: {
+        amount: 0,
+        googleKey: null,
+        id: null,
+        openaiKey: null,
+        shopName: shop,
+        usedAmount: null,
+      },
+    };
+  } catch (error) {
+    console.error("Error DeleteUserData:", error);
+  }
+};
+
 //获取用户私人API Key
 export const GetUserData = async ({ shop }: { shop: string }) => {
   try {
@@ -605,7 +632,10 @@ export const GetTranslate = async ({
 }) => {
   try {
     console.log("translateSettings1: ", translateSettings1);
-    console.log("url: ", `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`);
+    console.log(
+      "url: ",
+      `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`,
+    );
     const response = await axios({
       url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`,
       method: "PUT",
