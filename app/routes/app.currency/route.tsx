@@ -433,9 +433,6 @@ const Index = () => {
         )
       );
 
-      console.log(Object.values(themeData.sections));
-      console.log(isAppEnabled);
-
       setSwitcherEnableCardOpen(isAppEnabled);
 
       // if (blocks) {

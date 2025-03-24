@@ -57,7 +57,7 @@ const Index = () => {
     const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
     const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
     const [selectedLanguageCode, setSelectedLanguageCode] = useState<string>("");
-    const [translateSettings1, setTranslateSettings1] = useState<string>("google");
+    const [translateSettings1, setTranslateSettings1] = useState<string>("1");
     const [translateSettings2, setTranslateSettings2] = useState<string>("1");
     const [translateSettings3, setTranslateSettings3] = useState<string[]>(["Products", "Collection", "Article", "Blog titles", "Pages", "Filters", "Metaobjects", "Navigation", "Shop", "Theme", "Delivery", "Shipping"]);
     const [modal, setModal] = useState<string>("");

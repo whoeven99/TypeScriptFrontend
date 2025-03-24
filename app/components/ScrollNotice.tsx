@@ -1,5 +1,8 @@
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import React, { useRef } from 'react';
+import { Typography } from 'antd';
+
+const { Text } = Typography;
 
 interface ScrollNoticeProps {
     text: string;
@@ -35,7 +38,6 @@ const ScrollNotice: React.FC<ScrollNoticeProps> = ({
                 justifyContent: 'center',
                 alignItems: 'center',
                 marginBottom: '10px',
-                color: '#878787',
                 whiteSpace: 'nowrap',
                 textOverflow: 'ellipsis',  // 添加省略号
                 WebkitLineClamp: 1,        // 限制为单行
@@ -53,7 +55,7 @@ const ScrollNotice: React.FC<ScrollNoticeProps> = ({
                     left: '10px',
                 }}
             > */}
-            {text}
+            <Text style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', color: '#878787' }}>{text}</Text>
             {/* </div> */}
         </div>
     );
