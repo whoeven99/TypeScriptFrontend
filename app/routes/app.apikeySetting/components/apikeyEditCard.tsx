@@ -1,4 +1,4 @@
-import React, { useState, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { Card, Input, Button, Tag, Space, Typography, message } from 'antd';
 import styles from './ApiKeyEditCard.module.css';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,7 @@ interface ApiKeyEditCardProps {
     tags?: string[];
     minlength?: number;
     onSave?: (values: { model: string; apiKey: string; count: string }) => void;
+    onDelete?: (modal: string) => void;
     loading?: boolean;
 }
 
@@ -30,12 +31,20 @@ export const ApiKeyEditCard = forwardRef<ApiKeyEditCardMethods, ApiKeyEditCardPr
     tags = [],
     minlength = 30,
     onSave,
+    onDelete,
     loading
 }, ref) => {
+    console.log("apiKey: ", apiKey);
+    console.log("count: ", count);
     const [apiKeyValue, setApiKeyValue] = useState(apiKey);
     const [countValue, setCountValue] = useState(count.toString());
     const [isEdit, setIsEdit] = useState(false);
     const { t } = useTranslation();
+
+    useEffect(() => {
+        setApiKeyValue(apiKey);
+        setCountValue(count.toString());    
+    }, [apiKey, count]);
 
     useImperativeHandle(ref, () => ({
         setEditMode: (value: boolean) => setIsEdit(value),
@@ -98,14 +107,20 @@ export const ApiKeyEditCard = forwardRef<ApiKeyEditCardMethods, ApiKeyEditCardPr
                         <Button type="default" onClick={handleCancel} loading={loading}>
                             {t("Cancel")}
                         </Button>
+
                         <Button type="primary" onClick={handleSave} loading={loading}>
                             {t("Save")}
                         </Button>
                     </Space>
                     :
-                    <Button type="primary" onClick={handleEdit}>
-                        {t("Edit")}
-                    </Button>
+                    <Space>
+                        <Button type="primary" disabled={!apiKeyValue} onClick={() => onDelete?.(model)} loading={loading}>
+                            {t("Delete")}
+                        </Button>
+                        <Button type="primary" onClick={handleEdit}>
+                            {t("Edit")}
+                        </Button>
+                    </Space>
                 }
             </div>
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
@@ -116,7 +131,7 @@ export const ApiKeyEditCard = forwardRef<ApiKeyEditCardMethods, ApiKeyEditCardPr
                         value={apiKeyValue}
                         onChange={(e) => setApiKeyValue(e.target.value)}
                         style={{ flex: 12 }}
-                        disabled={!isEdit}
+                        disabled={!isEdit || loading}
                         status={isEdit && apiKeyValue && apiKeyValue.length < minlength ? 'error' : ''}
                     />
                 </div>
@@ -127,7 +142,7 @@ export const ApiKeyEditCard = forwardRef<ApiKeyEditCardMethods, ApiKeyEditCardPr
                         value={countValue}
                         onChange={handleCountChange}
                         style={{ flex: 12 }}
-                        disabled={!isEdit}
+                        disabled={!isEdit || loading}
                         status={isEdit && countValue && !/^\d+$/.test(countValue) ? 'error' : ''}
                     />
                 </div>
