@@ -260,5 +260,6 @@
     "delete user api key failed": "Kullanıcı API anahtarı silinemedi",
     "Private": "Özel",
     "How to translate with api key? Please refer to": "API anahtarını kullanarak çevirmek için lütfen",
-    "the Private API Translation Model User Manual": "özel API çeviri modeli kullanım kılavuzu"
+    "the Private API Translation Model User Manual": " özel API çeviri modeli kullanım kılavuzu",
+    "Use private api to translate": "Özel API kullanarak çevir"
 }

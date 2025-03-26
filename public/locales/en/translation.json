@@ -260,5 +260,6 @@
   "delete user api key failed": "delete user api key failed",
   "Private": "Private",
   "How to translate with api key? Please refer to": "How to translate with api key? Please refer to",
-  "the Private API Translation Model User Manual": "the Private API Translation Model User Manual"
+  "the Private API Translation Model User Manual": " the Private API Translation Model User Manual",
+  "Use private api to translate": "Use private api to translate"
 }

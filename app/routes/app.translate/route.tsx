@@ -561,9 +561,16 @@ const Index = () => {
                         >
                             <Space direction="vertical" size={24} style={{ display: "flex" }}>
                                 <Space direction="vertical" size={16} style={{ display: "flex" }}>
-                                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                                        {t("translateSettings1.title")}
-                                    </Title>
+                                    <div>
+                                        <Space>
+                                            <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+                                                {t("translateSettings1.title")}
+                                            </Title>
+                                            <Link to={"/app/apikeySetting"} style={{ fontSize: "1rem", margin: "0" }}>
+                                                {t("Use private api to translate")}
+                                            </Link>
+                                        </Space>
+                                    </div>
                                     <Row key={translateSettings1} gutter={[16, 16]}>
                                         {
                                             translateSettings1Options.map((option) => (
@@ -603,27 +610,27 @@ const Index = () => {
                                                     value={"8"}
                                                     onClick={() => setTranslateSettings1("8")}
                                                     style={{
-                                                    width: "100%",
-                                                    position: 'relative',
-                                                    paddingRight: '8px'
-                                                }}
-                                            >
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    left: '50%',
-                                                    transform: 'translateX(-50%)',
-                                                    maxWidth: '100%',
-                                                    whiteSpace: 'nowrap',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    padding: '0 8px'
-                                                }}>
-                                                    Google Cloud Translation
+                                                        width: "100%",
+                                                        position: 'relative',
+                                                        paddingRight: '8px'
+                                                    }}
+                                                >
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        left: '50%',
+                                                        transform: 'translateX(-50%)',
+                                                        maxWidth: '100%',
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        padding: '0 8px'
+                                                    }}>
+                                                        Google Cloud Translation
                                                     </div>
                                                 </Button>
                                             </Badge.Ribbon>
                                         </Col>}
-                                        <Col key="custom key" span={6}>
+                                        {/* <Col key="custom key" span={6}>
                                             <Button
                                                 type="primary"
                                                 key="customButton"
@@ -647,7 +654,7 @@ const Index = () => {
                                                     {t("Private API key")}
                                                 </div>
                                             </Button>
-                                        </Col>
+                                        </Col> */}
                                     </Row>
                                 </Space>
                                 <Space direction="vertical" size={16} style={{ display: "flex" }}>

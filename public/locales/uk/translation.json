@@ -260,5 +260,6 @@
     "delete user api key failed": "Ключ API користувача видалено невдало",
     "Private": "Приватний",
     "How to translate with api key? Please refer to": "Як перекласти з API ключем? Будь ласка, зверніться до",
-    "the Private API Translation Model User Manual": "приватного API-трансляційного моделі користувача"
+    "the Private API Translation Model User Manual": " приватного API-трансляційного моделі користувача",
+    "Use private api to translate": "Використовувати приватний API для перекладу"
 }

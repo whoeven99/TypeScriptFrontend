@@ -258,6 +258,7 @@
     "delete user api key failed": "用戶 API 金鑰刪除失敗",
     "Private": "私有",
     "How to translate with api key? Please refer to": "如何使用 API 金鑰翻譯？請參考",
-    "the Private API Translation Model User Manual": "私鑰翻譯模型用戶手冊"
+    "the Private API Translation Model User Manual": "私鑰翻譯模型用戶手冊",
+    "Use private api to translate": "使用私鑰翻譯"
 }
   

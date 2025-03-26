@@ -258,6 +258,7 @@
     "delete user api key failed": "사용자 API 키 삭제 실패",
     "Private": "비공개",
     "How to translate with api key? Please refer to": "API 키를 사용하여 번역하는 방법을 참조하세요",
-    "the Private API Translation Model User Manual": "비공개 API 번역 모델 사용자 매뉴얼"
+    "the Private API Translation Model User Manual": " 비공개 API 번역 모델 사용자 매뉴얼",
+    "Use private api to translate": "비공개 API를 사용하여 번역"
 } 
   
