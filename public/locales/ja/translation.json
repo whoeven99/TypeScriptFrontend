@@ -250,11 +250,14 @@
     "Launched": "公開された",
     "Can't find the language you want to translate into? Click here to add a language.": "翻訳したい言語が見つかりませんか？ここをクリックして言語を追加してください。",
     "Translate Settings": "翻訳設定",
-    "Custom API key": "カスタムAPIキー",
+    "Private API key": "カスタムAPIキー",
     "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "この機能を使用すると、対応するインターフェースのクォータのみを消費し、追加料金は発生しません。第三者のAPIクォータの制限を超えることなく、料金が発生することを避けるために、クォータの制限を慎重に設定してください。",
     "API Key is not valid": "APIキーが無効です",
     "count is too large or apikey is incorrect": "数が大きすぎるか、APIキーが正しくありません",
     "delete user api key success": "ユーザーのAPIキーが正常に削除されました",
-    "delete user api key failed": "ユーザーのAPIキーの削除に失敗しました"
+    "delete user api key failed": "ユーザーのAPIキーの削除に失敗しました",
+    "Private": "プライベート",
+    "How to translate with api key? Please refer to": "APIキーを使用して翻訳する方法をご覧ください",
+    "the Private API Translation Model User Manual": "プライベートAPI翻訳モデルユーザーズマニュアル"
 }   
   

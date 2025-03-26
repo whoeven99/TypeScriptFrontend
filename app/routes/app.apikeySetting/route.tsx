@@ -1,7 +1,7 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Icon, Page } from "@shopify/polaris";
 import { Button, message, Skeleton, Space, Typography } from "antd";
-import { json, useFetcher, useNavigate } from "@remix-run/react";
+import { json, Link, useFetcher, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import {
@@ -141,7 +141,7 @@ const Index = () => {
       // 根据当前加载的模型关闭编辑状态
       if (updateUserAPIKeyfetcher.data.data.success) {
         const currentModal = loadingModal;
-        cardRefs[currentModal as keyof typeof cardRefs]?.current?.setEditMode(false);        
+        cardRefs[currentModal as keyof typeof cardRefs]?.current?.setEditMode(false);
         setApiKey(updateUserAPIKeyfetcher.data.data.response.secret);
         setCount(updateUserAPIKeyfetcher.data.data.response.amount);
         setLoadingModal("");
@@ -218,7 +218,9 @@ const Index = () => {
             </Title>
           </div>
         </div>
-        {/* <Text style={{ marginLeft: "8px" }}>{t("How to obtain the corresponding API Key? Please refer to the Private API Translation Model User Manual.")}</Text> */}
+        <div>
+          <Text style={{ marginLeft: "8px" }}>{t("How to translate with api key? Please refer to")}</Text><Link to="https://ciwi.bogdatech.com/help/uncategorized/how-to-use-your-own-key-for-translation/" target="_blank" rel="noreferrer">{t(" the Private API Translation Model User Manual")}</Link>
+        </div>
         {userData ?
           <div>
             <ApiKeyEditCard

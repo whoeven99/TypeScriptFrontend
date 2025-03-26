@@ -250,11 +250,14 @@
     "Launched": "已上線",
     "Can't find the language you want to translate into? Click here to add a language.": "找不到您想要翻譯的語言？點擊這裡添加語言。",
     "Translate Settings": "翻譯設定",
-    "Custom API key": "自訂 API 金鑰",
+    "Private API key": "自訂 API 金鑰",
     "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "使用此功能時，我們只消耗相應介面的配額，不會收取任何額外費用。為避免超出第三方 API 配額限制並產生費用，請仔細設置配額限制。",
     "API Key is not valid": "API 金鑰無效",
     "count is too large or apikey is incorrect": "限制配額過大或 API 金鑰不正確",
     "delete user api key success": "用戶 API 金鑰刪除成功",
-    "delete user api key failed": "用戶 API 金鑰刪除失敗"
+    "delete user api key failed": "用戶 API 金鑰刪除失敗",
+    "Private": "私有",
+    "How to translate with api key? Please refer to": "如何使用 API 金鑰翻譯？請參考",
+    "the Private API Translation Model User Manual": "私鑰翻譯模型用戶手冊"
 }
   

@@ -250,11 +250,14 @@
     "Launched": "Gepubliceerd",
     "Can't find the language you want to translate into? Click here to add a language.": "Kan de taal die u wilt vertalen niet vinden? Klik hier om een taal toe te voegen.",
     "Translate Settings": "Vertaalinstellingen",
-    "Custom API key": "Aangepaste API-sleutel",
+    "Private API key": "Privé API-sleutel",
     "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "Wanneer u deze functie gebruikt, gebruiken we alleen de quota van het corresponderende interface en nemen we geen extra kosten in rekening. Om te voorkomen dat u de quotagrenzen van derde partijen overschrijdt en kosten in rekening brengt, stel de quota-grenzen met behulp van deze functie goed in.",
     "API Key is not valid": "API-sleutel is niet geldig",
     "count is too large or apikey is incorrect": "De teller is te groot of de API-sleutel is incorrect",
     "delete user api key success": "De API-sleutel van de gebruiker is succesvol verwijderd",
-    "delete user api key failed": "De API-sleutel van de gebruiker kon niet worden verwijderd"
+    "delete user api key failed": "De API-sleutel van de gebruiker kon niet worden verwijderd",
+    "Private": "Privé",
+    "How to translate with api key? Please refer to": "Hoe vertal je met een API-sleutel? Raadpleeg",
+    "the Private API Translation Model User Manual": "het gebruikershandboek voor het privé API-vertalingmodel"
 }
   
