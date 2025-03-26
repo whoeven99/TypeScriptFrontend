@@ -248,6 +248,17 @@
     "Translation Exception": "Excepción de traducción",
     "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "Algún contenido de la tienda no cumple con la política de traducción de OpenAI, por favor contacte con nosotros para obtener soporte manual.",
     "Launched": "Lanzado",
-    "Can't find the language you want to translate into? Click here to add a language.": "No puede encontrar el idioma que desea traducir? Haga clic aquí para agregar un idioma."
+    "Can't find the language you want to translate into? Click here to add a language.": "No puede encontrar el idioma que desea traducir? Haga clic aquí para agregar un idioma.",
+    "Translate Settings": "Configuración de traducción",
+    "Private API key": "Clave API personalizada",
+    "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "Cuando use esta función, solo consumimos la cuota de la interfaz correspondiente y no cobramos ninguna tarifa adicional. Para evitar superar los límites de cuota de la API de terceros y incurrir en cargos, por favor establezca los límites de cuota cuidadosamente.",
+    "API Key is not valid": "La clave API no es válida",
+    "count is too large or apikey is incorrect": "La cantidad es demasiado grande o la clave API no es correcta",
+    "delete user api key success": "Clave API del usuario eliminada con éxito",
+    "delete user api key failed": "No se pudo eliminar la clave API del usuario",
+    "Private": "Privado",
+    "How to translate with api key? Please refer to": "¿Cómo traduce con una clave API? Por favor, consulte",
+    "the Private API Translation Model User Manual": " el manual de usuario del modelo de traducción de API privada",
+    "Use private api to translate": "Usar API privada para traducir"
 }
   

@@ -248,6 +248,17 @@
     "Translation Exception": "번역 예외",
     "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.": "스토어의 콘텐츠가 OpenAI의 번역 정책에 맞지 않습니다. 수동 지원을 위해 문의하세요.",
     "Launched": "출시됨",
-    "Can't find the language you want to translate into? Click here to add a language.": "원하는 언어를 찾을 수 없습니까? 여기를 클릭하여 언어를 추가하세요."
+    "Can't find the language you want to translate into? Click here to add a language.": "원하는 언어를 찾을 수 없습니까? 여기를 클릭하여 언어를 추가하세요.",
+    "Translate Settings": "번역 설정",
+    "Private API key": "사용자 정의 API 키",
+    "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "이 기능을 사용할 때, 우리는 해당 인터페이스의 할당량만 소비하고 추가 비용을 부담하지 않습니다. 제 3자 API 할당량 한도를 초과하지 않도록 주의하여 할당량 한도를 설정하세요.",
+    "API Key is not valid": "API 키가 유효하지 않습니다",
+    "count is too large or apikey is incorrect": "수가 너무 크거나 API 키가 잘못되었습니다",
+    "delete user api key success": "사용자 API 키 삭제 성공",
+    "delete user api key failed": "사용자 API 키 삭제 실패",
+    "Private": "비공개",
+    "How to translate with api key? Please refer to": "API 키를 사용하여 번역하는 방법을 참조하세요",
+    "the Private API Translation Model User Manual": " 비공개 API 번역 모델 사용자 매뉴얼",
+    "Use private api to translate": "비공개 API를 사용하여 번역"
 } 
   

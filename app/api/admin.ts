@@ -1599,16 +1599,16 @@ export const mutationShopLocaleDisable = async ({
 export const mutationShopLocalePublish = async ({
   shop,
   accessToken,
-  publishInfos,
+  publishInfo,
 }: {
   shop: string;
   accessToken: string;
-  publishInfos: PublishInfoType[]; // 接受语言数组
+  publishInfo: PublishInfoType; // 接受语言数组
 }) => {
+  console.log("publishInfo: ", publishInfo);
   try {
     // 遍历语言数组并逐个执行 GraphQL mutation
-    for (const publishInfo of publishInfos) {
-      const confirmMutation = `
+    const confirmMutation = `
         mutation {
           shopLocaleUpdate(
             locale: "${publishInfo.locale}"
@@ -1627,17 +1627,20 @@ export const mutationShopLocalePublish = async ({
         }
       `;
 
-      // 执行 API 请求
-      const response = await axios({
-        url: `https://${shop}/admin/api/2024-10/graphql.json`,
-        method: "POST",
-        headers: {
-          "X-Shopify-Access-Token": accessToken,
-          "Content-Type": "application/json",
-        },
-        data: JSON.stringify({ query: confirmMutation }),
-      });
-    }
+    // 执行 API 请求
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query: confirmMutation }),
+    });
+    console.log("response: ", response.data);
+    
+    // const res = response.data.data.shopLocaleUpdate.shopLocale;
+    // return res;
   } catch (error) {
     console.error("Error publish shopLanguage:", error);
     throw error;
