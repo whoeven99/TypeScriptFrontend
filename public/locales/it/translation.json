@@ -257,6 +257,7 @@
     "delete user api key failed": "Impossibile eliminare la chiave API dell'utente",
     "Private": "Privato",
     "How to translate with api key? Please refer to": "Come tradurre con una chiave API? Per favore, consulta",
-    "the Private API Translation Model User Manual": "il manuale utente del modello di traduzione API privata"
+    "the Private API Translation Model User Manual": " il manuale utente del modello di traduzione API privata",
+    "Use private api to translate": "Usa API privata per tradurre"
 }
   

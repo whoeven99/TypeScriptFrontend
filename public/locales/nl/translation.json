@@ -258,6 +258,7 @@
     "delete user api key failed": "De API-sleutel van de gebruiker kon niet worden verwijderd",
     "Private": "Privé",
     "How to translate with api key? Please refer to": "Hoe vertal je met een API-sleutel? Raadpleeg",
-    "the Private API Translation Model User Manual": "het gebruikershandboek voor het privé API-vertalingmodel"
+    "the Private API Translation Model User Manual": " het gebruikershandboek voor het privé API-vertalingmodel",
+    "Use private api to translate": "Gebruik privé API voor vertaling"
 }
   
