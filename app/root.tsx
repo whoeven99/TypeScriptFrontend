@@ -222,9 +222,9 @@ export default function App() {
         <head>
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
-          <meta name="shopify-debug" content="web-vitals" />
+          {/* <meta name="shopify-debug" content="web-vitals" /> */}
           <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
-          <script
+          {/* <script
             dangerouslySetInnerHTML={{
               __html: `
                 (async function() {  // 使用立即执行的异步函数
@@ -264,7 +264,7 @@ export default function App() {
                 })();  // 立即执行
               `
             }}
-          />
+          /> */}
           <link rel="preconnect" href="https://cdn.shopify.com/" />
           <link
             rel="stylesheet"
