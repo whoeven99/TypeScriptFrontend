@@ -250,11 +250,14 @@
     "Launched": "Lancé",
     "Can't find the language you want to translate into? Click here to add a language.": "Vous ne trouvez pas la langue que vous souhaitez traduire ? Cliquez ici pour ajouter une langue.",
     "Translate Settings": "Paramètres de traduction",
-    "Custom API key": "Clé API personnalisée",
+    "Private API key": "Clé API personnalisée",
     "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "Lorsque vous utilisez cette fonctionnalité, nous consommons uniquement la quota de l'interface correspondante et ne facturons aucune frais supplémentaires. Pour éviter de dépasser les limites de quota de l'API tierce partie et encourir des frais, veuillez définir les limites de quota avec soin.",
     "API Key is not valid": "La clé API n'est pas valide",
     "count is too large or apikey is incorrect": "Le nombre est trop grand ou la clé API n'est pas correcte",
     "delete user api key success": "Clé API de l'utilisateur supprimée avec succès",
-    "delete user api key failed": "Impossible de supprimer la clé API de l'utilisateur"
+    "delete user api key failed": "Impossible de supprimer la clé API de l'utilisateur",
+    "Private": "Privé",
+    "How to translate with api key? Please refer to": "Comment traduire avec une clé API ? Veuillez consulter",
+    "the Private API Translation Model User Manual": "le manuel d'utilisation du modèle de traduction de l'API privée"
 }
   

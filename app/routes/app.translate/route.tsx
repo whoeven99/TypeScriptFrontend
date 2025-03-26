@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
+    Badge,
     Button,
     Card,
     Checkbox,
@@ -567,24 +568,84 @@ const Index = () => {
                                         {
                                             translateSettings1Options.map((option) => (
                                                 <Col key={option.value} span={6}>
-                                                    <Button type={translateSettings1 === option.value ? "primary" : "default"} key={option.value} value={option.value} onClick={() => setTranslateSettings1(option.value)} style={{ width: "100%" }}
+                                                    <Button
+                                                        type={translateSettings1 === option.value ? "primary" : "default"}
+                                                        key={option.value}
+                                                        value={option.value}
+                                                        onClick={() => setTranslateSettings1(option.value)}
+                                                        style={{
+                                                            width: "100%",
+                                                            position: 'relative',
+                                                            paddingRight: '8px'
+                                                        }}
                                                     >
-                                                        {option.label}
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            left: '50%',
+                                                            transform: 'translateX(-50%)',
+                                                            maxWidth: '100%',
+                                                            whiteSpace: 'nowrap',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            padding: '0 8px'
+                                                        }}>
+                                                            {option.label}
+                                                        </div>
                                                     </Button>
                                                 </Col>
-
                                             ))
                                         }
                                         {customApikeyData && <Col key="custom key" span={6}>
-                                            <Button type={translateSettings1 === "8" ? "primary" : "default"} key={"8"} value={"8"} onClick={() => setTranslateSettings1("8")} style={{ width: "100%" }}
+                                            <Badge.Ribbon text={t("Private")} color="red" style={{ top: -2, right: -8 }}>
+                                                <Button
+                                                    type={translateSettings1 === "8" ? "primary" : "default"}
+                                                    key={"8"}
+                                                    value={"8"}
+                                                    onClick={() => setTranslateSettings1("8")}
+                                                    style={{
+                                                    width: "100%",
+                                                    position: 'relative',
+                                                    paddingRight: '8px'
+                                                }}
                                             >
-                                                Google Cloud Translation
-                                            </Button>
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    left: '50%',
+                                                    transform: 'translateX(-50%)',
+                                                    maxWidth: '100%',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    padding: '0 8px'
+                                                }}>
+                                                    Google Cloud Translation
+                                                    </div>
+                                                </Button>
+                                            </Badge.Ribbon>
                                         </Col>}
                                         <Col key="custom key" span={6}>
-                                            <Button type="primary" key="customButton" onClick={() => navigate("/app/apikeySetting")} style={{ width: "100%" }}
+                                            <Button
+                                                type="primary"
+                                                key="customButton"
+                                                onClick={() => navigate("/app/apikeySetting")}
+                                                style={{
+                                                    width: "100%",
+                                                    position: 'relative',
+                                                    paddingRight: '8px'
+                                                }}
                                             >
-                                                {t("Custom API key")}
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    left: '50%',
+                                                    transform: 'translateX(-50%)',
+                                                    maxWidth: '100%',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    padding: '0 8px'
+                                                }}>
+                                                    {t("Private API key")}
+                                                </div>
                                             </Button>
                                         </Col>
                                     </Row>

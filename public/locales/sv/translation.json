@@ -251,11 +251,14 @@
     "Automotive Parts": "Bildelar",
     "Can't find the language you want to translate into? Click here to add a language.": "Kan du inte hitta det språk du vill översätta till? Klicka här för att lägga till ett språk.",
     "Translate Settings": "Översättningsinställningar",
-    "Custom API key": "Anpassat API-nyckel",
+    "Private API key": "Anpassat API-nyckel",
     "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "När du använder denna funktion, använder vi bara kvoten för motsvarande gränssnitt och kommer inte att debitera några ytterligare avgifter. För att undvika att överskrida gränserna för tredjepartens API-kvot och uppkomma kostnader, vänligen ställ in kvotgränserna noggrant.",
     "API Key is not valid": "API-nyckel är ogiltig",
     "count is too large or apikey is incorrect": "Kvoten är för stor eller API-nyckeln är felaktig",
     "delete user api key success": "Användarens API-nyckel har tagits bort",
-    "delete user api key failed": "Användarens API-nyckel kunde inte tas bort"
+    "delete user api key failed": "Användarens API-nyckel kunde inte tas bort",
+    "Private": "Privat",
+    "How to translate with api key? Please refer to": "Hur översätter du med en API-nyckel? Se",
+    "the Private API Translation Model User Manual": "användarhandboken för det privata API-översättningsmodellen"
 }   
   
