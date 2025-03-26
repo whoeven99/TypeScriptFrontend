@@ -108,10 +108,9 @@ interface FetchType {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   // 初始化 session 服务
   const sessionService = await SessionService.init(request);
-  
+
   // 获取 session 数据
   let shopSession = sessionService.getShopSession();
-
   // 如果没有 session 数据，则获取并存储
   if (!shopSession) {
     const adminAuthResult = await authenticate.admin(request);
@@ -120,13 +119,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       shop: shop,
       accessToken: accessToken as string,
     };
-    
+
     // 存储到 session
     sessionService.setShopSession(shopSession);
   }
-
-  console.log("shopSession: ", shopSession);
-  
 
   const { shop, accessToken } = shopSession;
 
@@ -162,7 +158,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const sessionService = await SessionService.init(request);
-  
+
   // 获取 session 数据
   let shopSession = sessionService.getShopSession();
 
@@ -180,6 +176,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const formData = await request.formData();
+    console.log("formData: ", formData);
     const loading = JSON.parse(formData.get("loading") as string);
     const addData = JSON.parse(formData.get("addData") as string);
     const addLanguages = JSON.parse(formData.get("addLanguages") as string); // 获取语言数组
@@ -315,7 +312,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         await mutationShopLocalePublish({
           shop,
           accessToken,
-          publishInfos: [publishInfo],
+          publishInfo: publishInfo,
         });
         return null;
 
@@ -381,12 +378,7 @@ const Index = () => {
   const [selectedRow, setSelectedRow] = useState<
     LanguagesDataType | undefined
   >();
-  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false); // 控制Modal显示的状态
   const [deleteloading, setDeleteLoading] = useState(false);
-  const [publishMarket, setPublishMarket] = useState<string>();
-  const [publishInfo, setPublishInfo] = useState<PublishInfoType>();
-  const [unPublishInfo, setUnpublishInfo] = useState<UnpublishInfoType>();
-  // const [disable, setDisable] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [showWarnModal, setShowWarnModal] = useState(false);
   const [previewModalVisible, setPreviewModalVisible] =
@@ -402,6 +394,7 @@ const Index = () => {
   const translateFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const addDataFetcher = useFetcher<any>();
+  const publishFetcher = useFetcher<any>();
 
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
@@ -566,25 +559,8 @@ const Index = () => {
     dispatch(setTableData(data));
     if (location.state?.publishLanguageCode && !data.find((item: any) => item.locale === location.state?.publishLanguageCode)?.published) {
       setSelectedRow(data.find((item: any) => item.locale === location.state?.publishLanguageCode) || dataSource.find((item: any) => item.locale === location.state?.publishLanguageCode));
-      setIsPublishModalOpen(true);
     }
   }, [shopLanguagesLoad, languagesLoad, languageLocaleInfo]); // 依赖 shopLanguagesLoad 和 status
-
-  useEffect(() => {
-    if (publishInfo) {
-      const formData = new FormData();
-      formData.append("publishInfo", JSON.stringify(publishInfo)); // 将选中的语言作为字符串发送
-      submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
-    }
-  }, [publishInfo]);
-
-  useEffect(() => {
-    if (unPublishInfo) {
-      const formData = new FormData();
-      formData.append("unPublishInfo", JSON.stringify(unPublishInfo)); // 将选中的语言作为字符串发送
-      submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
-    }
-  }, [unPublishInfo]);
 
   useEffect(() => {
     if (dataSource && dataSource.find((item: any) => item.status === 2)) {
@@ -642,6 +618,7 @@ const Index = () => {
           checked={record.published}
           onChange={(checked) => handlePublishChange(record.locale, checked)}
           loading={record.loading} // 使用每个项的 loading 状态
+        // onClick={() => handleConfirmPublishModal()}
         />
       ),
     },
@@ -687,18 +664,35 @@ const Index = () => {
 
   const handlePublishChange = (locale: string, checked: boolean) => {
     const row = dataSource.find((item: any) => item.locale === locale);
-
-    if (checked) {
+    if (checked && row) {
       dispatch(setPublishLoadingState({ locale, loading: checked }));
       setSelectedRow(row);
-      setIsPublishModalOpen(true);
-    } else {
+      publishFetcher.submit({
+        publishInfo: JSON.stringify({
+          locale: row.locale,
+          shopLocale: { published: true, marketWebPresenceIds: allMarket.find((item: any) => item.primary === true)?.webPresences.nodes[0].id },
+        })
+      }, {
+        method: "POST",
+        action: "/app/language",
+      });
+
+    } else if (!checked && row) {
       dispatch(setPublishState({ locale, published: checked }));
-      if (row)
-        setUnpublishInfo({
+      publishFetcher.submit({
+        unPublishInfo: JSON.stringify({
           locale: row.locale,
           shopLocale: { published: false },
-        });
+        })
+      }, {
+        method: "POST",
+        action: "/app/language",
+      });
+      // if (row)
+      //   setUnpublishInfo({
+      //     locale: row.locale,
+      //     shopLocale: { published: false },
+      //   });
     }
   };
 
@@ -754,35 +748,6 @@ const Index = () => {
     //     ),
     //   );
     // }
-  };
-
-  const handleConfirmPublishModal = () => {
-    if (selectedRow) {
-      dispatch(
-        setPublishConfirmState({
-          locale: selectedRow?.locale,
-          published: true,
-          loading: false,
-        }),
-      );
-      if (selectedRow.locale && publishMarket) {
-        setPublishInfo({
-          locale: selectedRow.locale,
-          shopLocale: { published: true, marketWebPresenceIds: publishMarket },
-        });
-      }
-    }
-    setIsPublishModalOpen(false); // 关闭Modal
-  };
-
-  const handleClosePublishModal = () => {
-    if (selectedRow) {
-      dispatch(
-        setPublishLoadingState({ locale: selectedRow?.locale, loading: false }),
-        setSelectedRow(undefined),
-      );
-    }
-    setIsPublishModalOpen(false); // 关闭Modal
   };
 
   //表格编辑
@@ -894,22 +859,10 @@ const Index = () => {
           primaryLanguage={shopPrimaryLanguage[0]}
         />
         {/* </Suspense> */}
-        {/* <Suspense> */}
         <PreviewModal
           visible={previewModalVisible}
           setVisible={setPreviewModalVisible}
         />
-        {/* </Suspense> */}
-        {/* <Suspense> */}
-        <PublishModal
-          isVisible={isPublishModalOpen} // 父组件控制是否显示
-          onOk={() => handleConfirmPublishModal()}
-          onCancel={() => handleClosePublishModal()}
-          setPublishMarket={setPublishMarket}
-          selectedRow={selectedRow}
-          allMarket={allMarket}
-        />
-        {/* </Suspense> */}
         {showWarnModal && (
           <TranslationWarnModal show={showWarnModal} setShow={setShowWarnModal} />
         )}
