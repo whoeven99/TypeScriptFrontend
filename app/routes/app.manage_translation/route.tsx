@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
 import { SessionService } from "~/utils/session.server";
+import "react-quill/dist/quill.snow.css";
 
 interface ManageMenuDataType {
   label: string;
@@ -486,7 +487,6 @@ const Index = () => {
       } else {
         setCurrent(languageCode);
       }
-      shopify.loading(false);
       setLoading(false);
     }
   }, []);

@@ -7,15 +7,12 @@ import {
   useLoaderData,
   isRouteErrorResponse,
   useRouteError,
-  useSubmit,
-  useNavigate,
 } from "@remix-run/react";
 import { Provider } from "react-redux";
 import store from "./store";
 import "./styles.css";
-import "react-quill/dist/quill.snow.css";
 import { json, LoaderFunctionArgs } from "@remix-run/node";
-import { Button, Card, Typography } from "antd";
+import { useEffect } from "react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
@@ -23,8 +20,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       request.headers.get("Accept-Language")?.split(",")[0] || "en";
     const languageCode = language.split("-")[0];
     let i18nCode;
-    console.log("Server language: ", language);
-    console.log("Server request.headers.get('Accept-Language'): ", request.headers.get("Accept-Language"));
+    console.log("Root language: ", language);
+    console.log("Root request.headers.get('Accept-Language'): ", request.headers.get("Accept-Language"));
     switch (true) {
       case language === "fr" || (languageCode && languageCode === "fr"):
         i18nCode = "fr";
@@ -71,7 +68,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       default:
         i18nCode = "en";
     }
-    console.log("Server i18nCode: ", i18nCode);
+    console.log("Root i18nCode: ", i18nCode);
 
     return json({ i18nCode: i18nCode });
   } catch (error) {
@@ -81,10 +78,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export function ErrorBoundary() {
-  const { Title, Text } = Typography;
   const error = useRouteError();
   console.error("Root Error:", error);
-  const navigate = useNavigate();
   let errorCode = "500";
   if (isRouteErrorResponse(error)) {
     errorCode = error.status.toString();
@@ -167,7 +162,7 @@ export function ErrorBoundary() {
             background: "#f5f5f5",
           }}
         >
-          <Card
+          <div
             style={{
               width: "100%",
               maxWidth: 500,
@@ -175,14 +170,13 @@ export function ErrorBoundary() {
               padding: "24px",
             }}
           >
-            <Title level={1} style={{ fontSize: 72, margin: "24px 0" }}>
+            <h1 style={{ fontSize: 72, margin: "24px 0" }}>
               {errorCode}
-            </Title>
-            <Title level={2} style={{ margin: "24px 0" }}>
+            </h1>
+            <h2 style={{ margin: "24px 0" }}>
               {currentError.title}
-            </Title>
-            <Text
-              type="secondary"
+            </h2>
+            <p
               style={{
                 display: "block",
                 marginBottom: "24px",
@@ -190,8 +184,8 @@ export function ErrorBoundary() {
               }}
             >
               {currentError.message}
-            </Text>
-            <Text
+            </p>
+            <p
               style={{
                 display: "block",
                 marginBottom: "24px",
@@ -200,8 +194,8 @@ export function ErrorBoundary() {
             >
               Please click the "Translate Language AI Adapt" option in the app
               navigation bar again
-            </Text>
-          </Card>
+            </p>
+          </div>
         </div>
         <ScrollRestoration />
         <Scripts />
@@ -216,55 +210,13 @@ export function ErrorBoundary() {
 
 export default function App() {
   const { i18nCode } = useLoaderData<typeof loader>();
+  // console.log("debug: ", shopify.config.debug);
   return (
     <Provider store={store}>
       <html lang={i18nCode}>
         <head>
           <meta charSet="utf-8" />
           <meta name="viewport" content="width=device-width,initial-scale=1" />
-          <meta name="shopify-debug" content="web-vitals" />
-          {/* <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                (async function() {  // 使用立即执行的异步函数
-                  try {
-                    console.log('Script loaded');
-                    
-                    async function processWebVitals(metrics) {
-                      try {
-                        const monitorUrl = 'https://typescriptfrontend.onrender.com';
-                        const data = JSON.stringify(metrics);
-                        console.log("metrics: ", data);
-                        
-                        navigator.sendBeacon(monitorUrl, data);
-                        return data;
-                      } catch (err) {
-                        console.error('Error in processWebVitals:', err);
-                      }
-                    }
-
-                    // 安全地访问 shopify 对象
-                    if (typeof window !== 'undefined' && window.shopify) {
-                      console.log("Shopify object found");
-                      
-                      if (window.shopify.webVitals) {
-                        console.log("WebVitals found");
-                        await window.shopify.webVitals.onReport(processWebVitals);
-                        console.log("shopify.webVitals: ", await window.shopify.webVitals.onReport(processWebVitals));
-                      } else {
-                        console.log("WebVitals not available");
-                      }
-                    } else {
-                      console.log("Shopify object not found");
-                    }
-                  } catch (error) {
-                    console.error('Script error:', error);
-                  }
-                })();  // 立即执行
-              `
-            }}
-          /> */}
           <link rel="preconnect" href="https://cdn.shopify.com/" />
           <link
             rel="stylesheet"
