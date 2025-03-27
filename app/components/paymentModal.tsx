@@ -158,7 +158,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
     }
   }, [payFetcher.data]);
 
-  //分别是10w（3.99美金），20w（6.99美金），50w（15.99美金），100w（29.99美金），300w（79.99美金），500w（99.99美金）
   const options: OptionType[] = [
     {
       key: "option-1",
@@ -239,7 +238,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         comparedPrice: 2000.0,
         currencyCode: "USD",
       },
-      test: true,
     },
   ];
 
