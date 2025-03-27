@@ -29,25 +29,11 @@ export interface OptionType {
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source, target, modal }) => {
-  // const recommendOption: OptionType = {
-  //   key: "option-2",
-  //   name: "20K Credits",
-  //   Credits: 20000,
-  //   price: {
-  //     currentPrice: 17.99,
-  //     comparedPrice: 20.0,
-  //     currencyCode: "USD",
-  //   },
-  // };
   const [selectedOption, setSelectedOption] = useState<OptionType>();
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [credits, setCredits] = useState<number>(0);
   const [multiple1, setMultiple1] = useState<number>(2);
   const [multiple2, setMultiple2] = useState<number>(1);
-  // const [recommendOption, setRecommendOption] = useState<OptionType>();
-  // const totalCharacters = useSelector(
-  //   (state: any) => state.TotalCharacters.count,
-  // );
   const { t } = useTranslation();
   const fetcher = useFetcher<any>();
   const recalculateFetcher = useFetcher<any>();
@@ -60,7 +46,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         (option) => option.Credits >= credits * multiple1 * multiple2,
       ); // 找到第一个符合条件的选项
       if (matchedOption) {
-        // setRecommendOption(matchedOption);
         setSelectedOption(matchedOption);
       }
     }
@@ -180,7 +165,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
       name: "100K",
       Credits: 100000,
       price: {
-        currentPrice: 3.99,
+        currentPrice: 1.99,
         comparedPrice: 100.0,
         currencyCode: "USD",
       },
@@ -190,7 +175,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
       name: "200K",
       Credits: 200000,
       price: {
-        currentPrice: 6.99,
+        currentPrice: 3.99,
         comparedPrice: 20.0,
         currencyCode: "USD",
       },
@@ -200,7 +185,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
       name: "500K",
       Credits: 500000,
       price: {
-        currentPrice: 15.99,
+        currentPrice: 9.99,
         comparedPrice: 100.0,
         currencyCode: "USD",
       },
@@ -210,23 +195,33 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
       name: "1M",
       Credits: 1000000,
       price: {
-        currentPrice: 29.99,
+        currentPrice: 19.99,
         comparedPrice: 200.0,
         currencyCode: "USD",
       },
     },
     {
       key: "option-5",
-      name: "3M",
-      Credits: 3000000,
+      name: "2M",
+      Credits: 2000000,
       price: {
-        currentPrice: 79.99,
-        comparedPrice: 800.0,
+        currentPrice: 39.99,
+        comparedPrice: 200.0,
         currencyCode: "USD",
       },
     },
     {
       key: "option-6",
+      name: "3M",
+      Credits: 3000000,
+      price: {
+        currentPrice: 59.99,
+        comparedPrice: 800.0,
+        currencyCode: "USD",
+      },
+    },
+    {
+      key: "option-7",
       name: "5M",
       Credits: 5000000,
       price: {
@@ -234,6 +229,17 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         comparedPrice: 1000.0,
         currencyCode: "USD",
       },
+    },
+    {
+      key: "option-8",
+      name: "10M",
+      Credits: 10000000,
+      price: {
+        currentPrice: 199.99,
+        comparedPrice: 2000.0,
+        currencyCode: "USD",
+      },
+      test: true,
     },
   ];
 

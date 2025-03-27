@@ -210,7 +210,6 @@ export function ErrorBoundary() {
 
 export default function App() {
   const { i18nCode } = useLoaderData<typeof loader>();
-  // console.log("debug: ", shopify.config.debug);
   return (
     <Provider store={store}>
       <html lang={i18nCode}>
