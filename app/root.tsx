@@ -282,7 +282,6 @@ export default function App() {
             src="//code.tidio.co/inl4rrmds8vvbldv1k6gyc2nzxongl3p.js"
             async
           ></script>
-          <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
         </body>
       </html>
     </Provider>
