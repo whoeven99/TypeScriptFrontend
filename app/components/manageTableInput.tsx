@@ -1,6 +1,7 @@
 import { Input } from "antd";
 import dynamic from "next/dist/shared/lib/dynamic";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import debounce from 'lodash/debounce';
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 const { TextArea } = Input;
@@ -88,20 +89,36 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         />
       );
     } else if (record?.key === "body_html") {
+      const debouncedHandleChange = useMemo(
+        () =>
+          debounce((content: string) => {
+            // 添加内容检查，避免空内容触发更新
+            if (content && content !== translatedValues[record?.key]) {
+              handleInputChange(
+                record.key,
+                content,
+                index ? Number(index + "" + record.index) : record.index,
+              );
+            }
+          }, 300),
+        // 依赖项中移除 handleInputChange，避免不必要的重新创建
+        [record?.key, index, record?.index]
+      );
+
+      // 组件卸载时清理 debounce
+      useEffect(() => {
+        return () => {
+          debouncedHandleChange.cancel();
+        };
+      }, [debouncedHandleChange]);
+
       return (
         <ReactQuill
+          key={`${record?.key}-${record?.default_language}-${translatedValues[record?.key]}`}
           theme="snow"
-          value={translatedValues[record?.key]}
+          value={translatedValues[record?.key] || ''}
           modules={modules}
-          onChange={(content) => {
-            console.log(content);
-            handleInputChange(
-              record.key,
-              content,
-              index ? Number(index + "" + record.index) : record.index,
-            )
-          }
-          }
+          onChange={debouncedHandleChange}
         />
       );
     }

@@ -32,18 +32,6 @@ import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
 const { Sider, Content } = Layout;
 
-interface ConfirmFetcherType {
-  data: {
-    success: boolean;
-    errorMsg: string;
-    data: {
-      resourceId: string;
-      key: string;
-      value?: string;
-    };
-  }[];
-}
-
 interface CollectionType {
   handle: string;
   key: string;
@@ -161,7 +149,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           accessToken,
           confirmData,
         });
-        return json({ data: data });
+        return json({ data: data, confirmData: confirmData });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -215,7 +203,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const submit = useSubmit(); // 使用 useSubmit 钩子
-  const confirmFetcher = useFetcher<ConfirmFetcherType>();
+  const confirmFetcher = useFetcher<any>();
 
   useEffect(() => {
     setHasPrevious(collectionsData.pageInfo.hasPreviousPage);
@@ -294,10 +282,26 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item) => {
+      const errorItem = confirmFetcher.data.data.find((item: any) => {
         item.success === false;
       });
       if (!errorItem) {
+        confirmFetcher.data.confirmData.forEach((item: any) => {
+          const index = collectionsData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
+          if (index !== -1) {
+            const collection = collectionsData.nodes[index].translations.find((option: any) => option.key === item.key);
+            if (collection) {
+              collection.value = item.value;
+            } else {
+              collectionsData.nodes[index].translations.push({
+                key: item.key,
+                value: item.value,
+                outdated: false,
+              });
+            }
+          }
+
+        })
         message.success("Saved successfully");
       } else {
         message.error(errorItem?.errorMsg);
@@ -538,7 +542,7 @@ const Index = () => {
                 onClick={handleConfirm}
                 key={"manage_confirm_button"}
                 type="primary"
-                disabled={confirmLoading}
+                disabled={confirmLoading || !confirmData.length}
                 loading={confirmLoading}
               >
                 {t("Save")}

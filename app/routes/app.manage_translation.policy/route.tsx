@@ -29,17 +29,7 @@ const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 const { Sider, Content } = Layout;
 
-interface ConfirmFetcherType {
-  data: {
-    success: boolean;
-    errorMsg: string;
-    data: {
-      resourceId: string;
-      key: string;
-      value?: string;
-    };
-  }[];
-}
+
 
 interface PolicyType {
   key: string;
@@ -174,7 +164,7 @@ const Index = () => {
 
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const confirmFetcher = useFetcher<ConfirmFetcherType>();
+  const confirmFetcher = useFetcher<any>();
 
   useEffect(() => {
     const data: PolicyType = policies.find(
@@ -316,7 +306,7 @@ const Index = () => {
                 onClick={handleConfirm}
                 key={"manage_confirm_button"}
                 type="primary"
-                disabled={confirmLoading}
+                disabled={confirmLoading || !confirmData.length}
                 loading={confirmLoading}
               >
                 {t("Save")}
