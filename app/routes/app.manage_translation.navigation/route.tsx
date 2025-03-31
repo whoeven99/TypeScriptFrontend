@@ -182,7 +182,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           accessToken,
           confirmData,
         });
-        return json({ data: data });
+        return json({ data: data, confirmData: confirmData });
 
       default: {
         // 如果没有符合条件的 cursor，则抛出错误
@@ -307,6 +307,38 @@ const Index = () => {
         item.success === false;
       });
       if (!errorItem) {
+        console.log("confirmData: ", confirmFetcher.data.confirmData);
+        confirmFetcher.data.confirmData.forEach((item: any) => {
+          if (item.resourceId.split("/")[3] === "Menu") {
+            const index = navigationsData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
+            if (index !== -1) {
+              const navigation = navigationsData.nodes[index].translations.find((option: any) => option.key === item.key);
+              if (navigation) {
+                navigation.value = item.value;
+              } else {
+                navigationsData.nodes[index].translations.push({
+                  key: item.key,
+                  value: item.value,
+                  outdated: false,
+                });
+              }
+            }
+          } else if (item.resourceId.split("/")[3] === "Link") {
+            const index = itemsData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
+            if (index !== -1) {
+              const link = itemsData.nodes[index].translations.find((option: any) => option.key === item.key);
+              if (link) {
+                link.value = item.value;
+              } else {
+                itemsData.nodes[index].translations.push({
+                  key: item.key,
+                  value: item.value,
+                  outdated: false,
+                });
+              }
+            }
+          }
+        })
         message.success("Saved successfully");
       } else {
         message.error(errorItem?.errorMsg);
@@ -351,10 +383,6 @@ const Index = () => {
       },
     },
   ];
-
-  useEffect(() => {
-    console.log("confirmData: ", confirmData);
-  }, [confirmData]);
 
   const handleInputChange = (key: string, value: string, index: number) => {
     setTranslatedValues((prev) => ({
