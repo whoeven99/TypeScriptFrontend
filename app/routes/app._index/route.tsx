@@ -5,7 +5,7 @@ import {
   Link,
   useNavigate,
 } from "@remix-run/react";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import UserGuideCard from "./components/userGuideCard";
 import ContactCard from "./components/contactCard";
@@ -42,6 +42,11 @@ const Index = () => {
   // const dispatch = useDispatch();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    setLoading(true);
+  }, []);
   // const loadingLanguageFetcher = useFetcher<any>();
   // const languageLocalInfoFetcher = useFetcher<any>();
   // const loadingUserFetcher = useFetcher<any>();
@@ -214,7 +219,12 @@ const Index = () => {
                   {t("transLanguageCard1.title")}
                 </Title>
                 <Text >{t("transLanguageCard1.description")}</Text>
-                <Button type="primary" onClick={() => navigate("/app/translate", { state: { from: "/app", selectedLanguageCode: "" } })}>{t("transLanguageCard1.button")}</Button>
+                {
+                  loading ?
+                    <Button type="primary" onClick={() => navigate("/app/translate", { state: { from: "/app", selectedLanguageCode: "" } })}>{t("transLanguageCard1.button")}</Button>
+                    :
+                    <Skeleton.Button active />
+                }
               </Space>
             </Card>
             <ProgressingCard />
@@ -231,7 +241,12 @@ const Index = () => {
                       {t("transLanguageCard2.title")}
                     </Text>
                     <Text >{t("transLanguageCard2.description")}</Text>
-                    <Button type="primary" onClick={() => navigate("/app/manage_translation")}>{t("transLanguageCard2.button")}</Button>
+                    {
+                      loading ?
+                        <Button type="primary" onClick={() => navigate("/app/manage_translation")}>{t("transLanguageCard2.button")}</Button>
+                        :
+                        <Skeleton.Button active />
+                    }
                   </Space>
                 </Card>
               </Col>
@@ -247,7 +262,12 @@ const Index = () => {
                       {t("transLanguageCard3.title")}
                     </Text>
                     <Text >{t("transLanguageCard3.description")}</Text>
-                    <Button type="default" onClick={() => window.open("http://ciwi.bogdatech.com/meet-five-top-translation-experts-supporting-your-e-commerce-business/", "_blank")}>{t("transLanguageCard3.button")}</Button>
+                    {
+                      loading ?
+                        <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/meet-five-top-translation-experts-supporting-your-e-commerce-business/", "_blank")}>{t("transLanguageCard3.button")}</Button>
+                        :
+                        <Skeleton.Button active />
+                    }
                   </Space>
                 </Card>
               </Col>
@@ -279,7 +299,12 @@ const Index = () => {
                   {t("transCurrencyCard1.title")}
                 </Title>
                 <Text >{t("transCurrencyCard1.description")}</Text>
-                <Button type="primary" onClick={() => navigate("/app/currency")}>{t("transCurrencyCard1.button")}</Button>
+                {
+                  loading ?
+                    <Button type="primary" onClick={() => navigate("/app/currency")}>{t("transCurrencyCard1.button")}</Button>
+                    :
+                    <Skeleton.Button active />
+                }
               </Space>
             </Card>
             <Row gutter={16}>
@@ -310,7 +335,12 @@ const Index = () => {
                     </Text>
                     <Text >{t("transCurrencyCard2.description")}</Text>
                     {/* <div style={{ flex: 1 }} /> 添加弹性空间 */}
-                    <Button type="default" onClick={() => window.open("http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/", "_blank")}>{t("transCurrencyCard2.button")}</Button>
+                    {
+                      loading ?
+                        <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/", "_blank")}>{t("transCurrencyCard2.button")}</Button>
+                        :
+                        <Skeleton.Button active />
+                    }
                   </Space>
                 </Card>
               </Col>
@@ -332,7 +362,12 @@ const Index = () => {
                     </Text>
                     <Text >{t("transCurrencyCard3.description")}</Text>
                     {/* <div style={{ flex: 1 }} /> 添加弹性空间 */}
-                    <Button type="default" onClick={() => window.open("http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/", "_blank")}>{t("transCurrencyCard3.button")}</Button>
+                    {
+                      loading ?
+                        <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/", "_blank")}>{t("transCurrencyCard3.button")}</Button>
+                        :
+                        <Skeleton.Button active />
+                    }
                   </Space>
                 </Card>
               </Col>
@@ -370,7 +405,12 @@ const Index = () => {
                   <Title level={4}>
                     {t("planCard.title")}
                   </Title>
-                  <Button type="primary" onClick={handleContactSupport}>{t("planCard.button")}</Button>
+                  {
+                    loading ?
+                      <Button type="primary" onClick={handleContactSupport}>{t("planCard.button")}</Button>
+                      :
+                      <Skeleton.Button active />
+                  }
                 </div>
                 <Text >{t("planCard.description")}</Text>
                 <Table
@@ -398,7 +438,7 @@ const Index = () => {
           >
             {t("Learn more in")}
             <Link
-              to="http://ciwi.bogdatech.com/help"
+              to="https://ciwi.bogdatech.com/help"
               target="_blank"
               style={{ margin: "0 5px" }}
             >
@@ -406,7 +446,7 @@ const Index = () => {
             </Link>
             {t("by")}
             <Link
-              to={"http://ciwi.bogdatech.com/"}
+              to={"https://ciwi.bogdatech.com/"}
               target="_blank"
               style={{ margin: "0 5px" }}
             >

@@ -19,20 +19,11 @@ import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
+import { SessionService } from "~/utils/session.server";
 
 const { Content } = Layout;
 
-interface ConfirmFetcherType {
-  data: {
-    success: boolean;
-    errorMsg: string;
-    data: {
-      resourceId: string;
-      key: string;
-      value?: string;
-    };
-  }[];
-}
+
 
 type TableDataType = {
   key: string;
@@ -43,14 +34,18 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const shop = sessionStorage.getItem("shop") as string;  
-  const accessToken = sessionStorage.getItem("accessToken") as string;
-  if (!shop || !accessToken) {
+  const sessionService = await SessionService.init(request);
+  let shopSession = sessionService.getShopSession();
+  if (!shopSession) {
     const adminAuthResult = await authenticate.admin(request);
     const { shop, accessToken } = adminAuthResult.session;
-    sessionStorage.setItem("shop", shop);
-    sessionStorage.setItem("accessToken", accessToken as string);
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
   }
+  const { shop, accessToken } = shopSession;
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
@@ -80,14 +75,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-  const shop = sessionStorage.getItem("shop") as string;
-  const accessToken = sessionStorage.getItem("accessToken") as string;
-  if (!shop || !accessToken) {
+  const sessionService = await SessionService.init(request);
+  let shopSession = sessionService.getShopSession();
+  if (!shopSession) {
     const adminAuthResult = await authenticate.admin(request);
     const { shop, accessToken } = adminAuthResult.session;
-    sessionStorage.setItem("shop", shop);
-    sessionStorage.setItem("accessToken", accessToken as string);
+    shopSession = {
+      shop: shop,
+      accessToken: accessToken as string,
+    };
+    sessionService.setShopSession(shopSession);
   }
+  const { shop, accessToken } = shopSession;
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -159,7 +158,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const submit = useSubmit(); // 使用 useSubmit 钩子
-  const confirmFetcher = useFetcher<ConfirmFetcherType>();
+  const confirmFetcher = useFetcher<any>();
 
   useEffect(() => {
     setHasPrevious(metaobjectsData.pageInfo.hasPreviousPage);
@@ -180,7 +179,7 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item) => {
+      const errorItem = confirmFetcher.data.data.find((item: any) => {
         item.success === false;
       });
       if (!errorItem) {
@@ -339,7 +338,7 @@ const Index = () => {
                 onClick={handleConfirm}
                 key={"manage_confirm_button"}
                 type="primary"
-                disabled={confirmLoading}
+                disabled={confirmLoading || !confirmData.length}
                 loading={confirmLoading}
               >
                 {t("Save")}

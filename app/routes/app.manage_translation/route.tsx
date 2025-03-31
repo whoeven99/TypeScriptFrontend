@@ -100,8 +100,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         } catch (error) {
           console.error("Error GetTranslationItemsInfo itemsCount:", error);
           return json(
-            { error: "Error GetTranslationItemsInfo itemsCount" },
-            { status: 500 },
+            {
+              success: false,
+              message: "Error GetTranslationItemsInfo itemsCount",
+            }
           );
         }
       default:
