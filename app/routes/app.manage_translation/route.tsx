@@ -112,7 +112,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   } catch (error) {
     console.error("Error action manage_translation:", error);
-    throw new Response("Error action manage_translation", { status: 500 });
+    return json({ success: false, message: "Error action manage_translation" }, { status: 500 });
   }
 };
 

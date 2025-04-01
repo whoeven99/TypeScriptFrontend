@@ -162,9 +162,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
           key: i,
-          src: languageLocaleInfo[lang.locale].countries,
+          src: languageLocaleInfo ? languageLocaleInfo[lang.locale]?.countries : [],
           name: lang.name,
-          localeName: languageLocaleInfo[lang.locale].Local,
+          localeName: languageLocaleInfo ? languageLocaleInfo[lang.locale]?.Local : "",
           locale: lang.locale,
           status:
             languages ? languages.find((language: any) => language.target === lang.locale)

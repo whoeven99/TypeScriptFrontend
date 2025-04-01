@@ -365,7 +365,6 @@ export const InsertTargets = async ({
       return response;
     } catch (error) {
       console.error("Error insert languageInfo:", error);
-      throw error;
     }
   };
 
@@ -528,7 +527,6 @@ export const GetLanguageLocaleInfo = async ({
     return res;
   } catch (error) {
     console.error("Error occurred in the languageData:", error);
-    throw new Error("Error occurred in the languageData");
   }
 };
 
@@ -795,7 +793,6 @@ export const GetTranslate = async ({
 //     return res;
 //   } catch (error) {
 //     console.error("Error occurred in the translation:", error);
-//     throw error; // 向上抛出错误，让调用者处理
 //   }
 // };
 
@@ -1080,7 +1077,6 @@ export const updateManageTranslation = async ({
     return res;
   } catch (error) {
     console.error("Error occurred in the translation:", error);
-    throw error; // 向上抛出错误，让调用者处理
   }
 };
 
