@@ -437,6 +437,10 @@ const Index = () => {
   }, [actionData]);
 
   useEffect(() => {
+    console.log("confirmData: ", confirmData);
+  }, [confirmData]);
+
+  useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
       const errorItem = confirmFetcher.data.data.find((item: any) => {
         item.success === false;
