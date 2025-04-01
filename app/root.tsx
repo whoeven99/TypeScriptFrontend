@@ -216,6 +216,17 @@ export default function App() {
       {/* 设置 HTML 文档的语言属性，删除后页面将无法实现i18 */}
       <html lang={i18nCode}>
         <head>
+          <script async src="https://www.googletagmanager.com/gtag/js?id=G-F1BN24YVJN"></script>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){window.dataLayer.push(arguments)}
+                gtag('js', new Date());
+                gtag('config', 'G-F1BN24YVJN');
+              `
+            }}
+          />
           {/* 下面六行是文件生成时自带的代码, 删除后页面将无法正常显示或者运行*/}
           {/* 设置文档字符编码 */}
           <meta charSet="utf-8" />

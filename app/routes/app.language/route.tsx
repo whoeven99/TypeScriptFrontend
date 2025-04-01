@@ -176,7 +176,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const formData = await request.formData();
-    console.log("formData: ", formData);
     const loading = JSON.parse(formData.get("loading") as string);
     const addData = JSON.parse(formData.get("addData") as string);
     const addLanguages = JSON.parse(formData.get("addLanguages") as string); // 获取语言数组
