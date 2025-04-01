@@ -1,6 +1,7 @@
 import { Input } from "antd";
 import dynamic from "next/dist/shared/lib/dynamic";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import debounce from 'lodash/debounce';
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 const { TextArea } = Input;
@@ -53,6 +54,9 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
 
       ['clean']                                         // remove formatting button
     ],
+    clipboard: {
+      matchVisual: false // 禁用视觉匹配，可以减少自动添加的空格
+    }
   };
 
   useEffect(() => {
@@ -66,7 +70,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         [record?.key]: record?.translated, // 更新对应的 key
       }));
     }
-  }, [record]);
+  }, [record, setTranslatedValues]); 
 
   if (
     handleInputChange &&
@@ -88,20 +92,68 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         />
       );
     } else if (record?.key === "body_html") {
+      const [editorValue, setEditorValue] = useState(translatedValues[record?.key] || '');
+      const [isInitializing, setIsInitializing] = useState(true);
+      
+      useEffect(() => {
+        setIsInitializing(true);
+        setEditorValue(translatedValues[record?.key] || '');
+        const timer = setTimeout(() => {
+          setIsInitializing(false);
+        }, 0);
+        
+        return () => clearTimeout(timer);
+      }, [record?.key, translatedValues]);
+
+      const normalizeHtml = (html: string) => {
+        // 标准化HTML字符串，移除多余空格和换行
+        return html
+          .replace(/\s+/g, ' ')  // 将多个空白字符替换为单个空格
+          .replace(/>\s+</g, '><')  // 移除标签之间的空白
+          .trim();  // 移除首尾空白
+      };
+
+      const debouncedHandleChange = useMemo(
+        () =>
+          debounce((content: string) => {
+            if (!isInitializing) {
+              const normalizedContent = normalizeHtml(content);
+              const normalizedTranslated = normalizeHtml(translatedValues[record?.key] || '');
+              
+              // 打印标准化后的字符串，用于调试
+              console.log('Normalized Content:', normalizedContent);
+              console.log('Normalized Translated:', normalizedTranslated);
+              
+              if (normalizedContent && normalizedContent !== normalizedTranslated) {
+                handleInputChange(
+                  record.key,
+                  content,
+                  index ? Number(index + "" + record.index) : record.index,
+                );
+              }
+            }
+          }, 300),
+        [record?.key, index, record?.index, isInitializing, translatedValues]
+      );
+
+      useEffect(() => {
+        return () => {
+          debouncedHandleChange.cancel();
+        };
+      }, [debouncedHandleChange]);
+
       return (
         <ReactQuill
+          key={`${record?.key}-${record?.default_language}`}
           theme="snow"
-          value={translatedValues[record?.key]}
+          value={editorValue}
           modules={modules}
           onChange={(content) => {
-            console.log(content);
-            handleInputChange(
-              record.key,
-              content,
-              index ? Number(index + "" + record.index) : record.index,
-            )
-          }
-          }
+            setEditorValue(content);
+            if (!isInitializing) {
+              debouncedHandleChange(content);
+            }
+          }}
         />
       );
     }

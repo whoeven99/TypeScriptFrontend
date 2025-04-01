@@ -32,17 +32,7 @@ import { SessionService } from "~/utils/session.server";
 
 const { Content } = Layout;
 
-interface ConfirmFetcherType {
-  data: {
-    success: boolean;
-    errorMsg: string;
-    data: {
-      resourceId: string;
-      key: string;
-      value?: string;
-    };
-  }[];
-}
+
 
 type TableDataType = {
   key: string;
@@ -177,7 +167,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const submit = useSubmit(); // 使用 useSubmit 钩子
-  const confirmFetcher = useFetcher<ConfirmFetcherType>();
+  const confirmFetcher = useFetcher<any>();
 
   useEffect(() => {
     setHasPrevious(deliverysData.pageInfo.hasPreviousPage);
@@ -199,7 +189,7 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item) => {
+      const errorItem = confirmFetcher.data.data.find((item: any) => {
         item.success === false;
       });
       if (!errorItem) {
@@ -362,7 +352,7 @@ const Index = () => {
                 onClick={handleConfirm}
                 key={"manage_confirm_button"}
                 type="primary"
-                disabled={confirmLoading}
+                disabled={confirmLoading || !confirmData.length}
                 loading={confirmLoading}
               >
                 {t("Save")}

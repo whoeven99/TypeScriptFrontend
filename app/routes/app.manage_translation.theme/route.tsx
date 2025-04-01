@@ -36,17 +36,7 @@ import { SessionService } from "~/utils/session.server";
 const { Header, Content } = Layout;
 const { TextArea } = Input;
 
-interface ConfirmFetcherType {
-  data: {
-    success: boolean;
-    errorMsg: string;
-    data: {
-      resourceId: string;
-      key: string;
-      value?: string;
-    };
-  }[];
-}
+
 
 interface SelectType {
   label: string;
@@ -179,7 +169,7 @@ const Index = () => {
 
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const confirmFetcher = useFetcher<ConfirmFetcherType>();
+  const confirmFetcher = useFetcher<any>();
 
   useEffect(() => {
     setThemesData(generateMenuItemsArray(themes));
@@ -355,7 +345,7 @@ const Index = () => {
                 onClick={handleConfirm}
                 key={"manage_confirm_button"}
                 type="primary"
-                disabled={confirmLoading}
+                disabled={confirmLoading || !confirmData.length}
                 loading={confirmLoading}
               >
                 {t("Save")}

@@ -35,18 +35,6 @@ import { SessionService } from "~/utils/session.server";
 
 const { Sider, Content } = Layout;
 
-interface ConfirmFetcherType {
-  data: {
-    success: boolean;
-    errorMsg: string;
-    data: {
-      resourceId: string;
-      key: string;
-      value?: string;
-    };
-  }[];
-}
-
 interface ProductType {
   handle: string;
   key: string;
@@ -235,7 +223,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           nextMetafields: nextMetafields,
         });
       case !!confirmData:
-        const updatedConfirmData = confirmData.map((item) => {
+        const originalConfirmData = confirmData;
+        confirmData.map((item) => {
           // 检查 key 是否是字符串并包含下划线
           if (
             typeof item.key === "string" &&
@@ -253,9 +242,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = await updateManageTranslation({
           shop,
           accessToken,
-          confirmData: updatedConfirmData,
+          confirmData,
         });
-        return json({ data: data });
+        return json({ data: data, confirmData: originalConfirmData });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -320,7 +309,11 @@ const Index = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const submit = useSubmit(); // 使用 useSubmit 钩子
-  const confirmFetcher = useFetcher<ConfirmFetcherType>();
+  const confirmFetcher = useFetcher<any>();
+
+  useEffect(() => {
+    console.log("confirmData: ", confirmData);
+  }, [confirmData]);
 
   useEffect(() => {
     setHasPrevious(productsData.pageInfo.hasPreviousPage);
@@ -334,6 +327,7 @@ const Index = () => {
       metafields: productMetafieldsData,
     });
     setProductData(data);
+    console.log("productData: ", productData?.title);
     setConfirmData([]);
     setTranslatedValues({});
   }, [selectProductKey]);
@@ -443,12 +437,69 @@ const Index = () => {
   }, [actionData]);
 
   useEffect(() => {
+    console.log("confirmData: ", confirmData);
+  }, [confirmData]);
+
+  useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item) => {
+      const errorItem = confirmFetcher.data.data.find((item: any) => {
         item.success === false;
       });
       if (!errorItem) {
         message.success("Saved successfully");
+        confirmFetcher.data.confirmData.forEach((item: any) => {
+          if (item.resourceId.split("/")[3] === "Product") {
+            const index = productsData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
+            if (index !== -1) {
+              const product = productsData.nodes[index].translations.find((option: any) => option.key === item.key);
+              if (product) {
+                product.value = item.value;
+              } else {
+                productsData.nodes[index].translations.push({
+                  key: item.key,
+                  value: item.value,
+                  outdated: false,
+                });
+              }
+            }
+          } else if (item.resourceId.split("/")[3] === "ProductOption") {
+            const index = productOptionsData.nodes.findIndex((productOption: any) => 
+              productOption.nestedTranslatableResources.nodes.some(
+                (option: any) => option.resourceId === item.resourceId
+              )
+            );
+            if (index !== -1) {
+              const productOption = productOptionsData.nodes[index].nestedTranslatableResources.nodes.find((option: any) => option.resourceId === item.resourceId);
+              if (productOption.translations.length > 0) {
+                productOption.translations[0].value = item.value;
+              } else {
+                productOption.translations.push({
+                  key: item.key,
+                  value: item.value,
+                  outdated: false,
+                });
+              }
+            }
+          } else if (item.resourceId.split("/")[3] === "Metafield") {
+            const index = productMetafieldsData.nodes.findIndex((productMetafield: any) => 
+              productMetafield.nestedTranslatableResources.nodes.some(
+                (option: any) => option.resourceId === item.resourceId
+              )
+            );
+            if (index !== -1) {
+              const productMetafield = productMetafieldsData.nodes[index].nestedTranslatableResources.nodes.find((option: any) => option.resourceId === item.resourceId);
+              if (productMetafield.translations.length > 0) {
+                productMetafield.translations[0].value = item.value;
+              } else {
+                productMetafield.translations.push({
+                  key: item.key,
+                  value: item.value,
+                  outdated: false,
+                });
+              }
+            }
+          }
+        })
       } else {
         message.error(errorItem?.errorMsg);
       }
@@ -906,7 +957,7 @@ const Index = () => {
                 onClick={handleConfirm}
                 key={"manage_confirm_button"}
                 type="primary"
-                disabled={confirmLoading}
+                disabled={confirmLoading || !confirmData.length}
                 loading={confirmLoading}
               >
                 {t("Save")}

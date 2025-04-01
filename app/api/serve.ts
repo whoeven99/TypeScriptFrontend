@@ -631,11 +631,6 @@ export const GetTranslate = async ({
   translateSettings3: string[];
 }) => {
   try {
-    console.log("translateSettings1: ", translateSettings1);
-    console.log(
-      "url: ",
-      `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`,
-    );
     const response = await axios({
       url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`,
       method: "PUT",
@@ -823,9 +818,6 @@ export const updateManageTranslation = async ({
       value?: string;
     };
   }[] = [];
-
-  console.log("confirmData: ", confirmData);
-
   confirmData.filter((item) => {
     // 移除所有 HTML 标签，只保留文本内容
     const textContent = item.value?.replace(/<[^>]*>/g, "").trim();
@@ -876,33 +868,31 @@ export const updateManageTranslation = async ({
           // 添加重试机制
           return withRetry(
             async () => {
-              if (item.value && item.value !== "<p><br></p>") {
-                const response = await axios({
-                  url: `${process.env.SERVER_URL}/shopify/updateShopifyDataByTranslateTextRequest`,
-                  method: "POST",
-                  timeout: 10000, // 添加超时设置
-                  data: {
-                    shopName: shop,
-                    accessToken: accessToken,
-                    locale: item.locale,
-                    key: item.key,
-                    value: item.value,
-                    translatableContentDigest: item.translatableContentDigest,
-                    resourceId: item.resourceId,
-                    target: item.target,
-                  },
-                });
+              const response = await axios({
+                url: `${process.env.SERVER_URL}/shopify/updateShopifyDataByTranslateTextRequest`,
+                method: "POST",
+                timeout: 10000, // 添加超时设置
+                data: {
+                  shopName: shop,
+                  accessToken: accessToken,
+                  locale: item.locale,
+                  key: item.key,
+                  value: item.value,
+                  translatableContentDigest: item.translatableContentDigest,
+                  resourceId: item.resourceId,
+                  target: item.target,
+                },
+              });
 
-                return {
-                  success: response.data.success,
-                  errorMsg: response.data.errorMsg,
-                  data: {
-                    resourceId: item.resourceId,
-                    key: item.key,
-                    value: item.value,
-                  },
-                };
-              }
+              return {
+                success: response.data.success,
+                errorMsg: response.data.errorMsg,
+                data: {
+                  resourceId: item.resourceId,
+                  key: item.key,
+                  value: item.value,
+                },
+              };
             },
             {
               maxRetries: 3, // 最多重试3次

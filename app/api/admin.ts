@@ -1636,9 +1636,7 @@ export const mutationShopLocalePublish = async ({
         "Content-Type": "application/json",
       },
       data: JSON.stringify({ query: confirmMutation }),
-    });
-    console.log("response: ", response.data);
-    
+    });    
     // const res = response.data.data.shopLocaleUpdate.shopLocale;
     // return res;
   } catch (error) {
