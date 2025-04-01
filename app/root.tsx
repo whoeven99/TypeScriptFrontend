@@ -69,10 +69,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
     console.log("Root i18nCode: ", i18nCode);
 
-    return json({ i18nCode: i18nCode, gtagId: process.env.G_TAG_ID });
+    return json({ i18nCode: i18nCode });
   } catch (error) {
     console.error("Error get the default language: ", error);
-    return json({ i18nCode: "en", gtagId: process.env.G_TAG_ID });
+    return json({ i18nCode: "en" });
   }
 }
 
@@ -209,21 +209,21 @@ export function ErrorBoundary() {
 
 export default function App() {
   // 从 loader 数据中获取国际化语言代码
-  const { i18nCode, gtagId } = useLoaderData<typeof loader>();
+  const { i18nCode } = useLoaderData<typeof loader>();
   return (
     // 使用 Redux Provider 包装整个应用（用于状态管理，必须）,删除后很多功能无法使用
     <Provider store={store}>
       {/* 设置 HTML 文档的语言属性，删除后页面将无法实现i18 */}
       <html lang={i18nCode}>
         <head>
-          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gtagId}`}></script>
+          <script async src="https://www.googletagmanager.com/gtag/js?id=G-F1BN24YVJN"></script>
           <script
             dangerouslySetInnerHTML={{
               __html: `
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){window.dataLayer.push(arguments)}
                 gtag('js', new Date());
-                gtag('config', '${gtagId}');
+                gtag('config', 'G-F1BN24YVJN');
               `
             }}
           />
