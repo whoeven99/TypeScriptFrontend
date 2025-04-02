@@ -312,10 +312,6 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   useEffect(() => {
-    console.log("confirmData: ", confirmData);
-  }, [confirmData]);
-
-  useEffect(() => {
     setHasPrevious(productsData.pageInfo.hasPreviousPage);
     setHasNext(productsData.pageInfo.hasNextPage);
   }, [productsData]);
@@ -435,10 +431,6 @@ const Index = () => {
       // 如果不存在 nextProducts，可以执行其他逻辑
     }
   }, [actionData]);
-
-  useEffect(() => {
-    console.log("confirmData: ", confirmData);
-  }, [confirmData]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {

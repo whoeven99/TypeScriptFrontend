@@ -216,6 +216,11 @@ export default function App() {
       {/* 设置 HTML 文档的语言属性，删除后页面将无法实现i18 */}
       <html lang={i18nCode}>
         <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-NVPT5XDV');`
+            }}
+          />
           <script async src="https://www.googletagmanager.com/gtag/js?id=G-F1BN24YVJN"></script>
           <script
             dangerouslySetInnerHTML={{
@@ -238,7 +243,6 @@ export default function App() {
             rel="stylesheet"
             href="https://cdn.shopify.com/static/fonts/inter/v4/styles.css"
           /> */}
-          <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" />
           {/* 注入元数据标签，必须 */}
           <Meta />
           {/* 注入链接标签，必须 */}
@@ -247,6 +251,11 @@ export default function App() {
           {typeof document === "undefined" ? "__ANTD__" : ""}
         </head>
         <body>
+          <noscript>
+            <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NVPT5XDV"
+              height="0" width="0" style={{ display: "none", visibility: "hidden" }}>
+            </iframe>
+          </noscript>
           {/* 下面三行是文件生成时自带的代码，删除后页面将失去所有功能 */}
           {/* 渲染路由匹配的组件，必须 */}
           <Outlet />
