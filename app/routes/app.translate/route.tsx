@@ -34,6 +34,8 @@ import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import TranslationWarnModal from "~/components/translationWarnModal";
 import PaymentModal from "~/components/paymentModal";
 import ScrollNotice from "~/components/ScrollNotice";
+import axios from "axios";
+import { SessionService } from "~/utils/session.server";
 
 const { Title, Text } = Typography;
 
@@ -52,6 +54,48 @@ interface LanguageSettingType {
     primaryLanguageCode: string;
     shopLanguagesWithoutPrimary: ShopLocalesType[];
     shopLanguageCodesWithoutPrimary: string[];
+}
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+    const sessionService = await SessionService.init(request);
+    let shopSession = sessionService.getShopSession();
+    if (!shopSession) {
+        const adminAuthResult = await authenticate.admin(request);
+        const { shop, accessToken } = adminAuthResult.session;
+        shopSession = {
+            shop: shop,
+            accessToken: accessToken as string,
+        };
+        sessionService.setShopSession(shopSession);
+    }
+    const { shop, accessToken } = shopSession;
+    const formData = await request.formData();
+    const test = JSON.parse(formData.get("test") as string);
+    if (test) {
+        if (test) {
+            const query = `{
+                shopLocales {
+                    name
+                    locale
+                    primary
+                    published
+                }
+            }`;
+
+            const response = await axios({
+                url: `https://${shop}/admin/api/2024-10/graphql.json`,
+                method: "POST",
+                headers: {
+                    "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+                    "Content-Type": "application/json",
+                },
+                data: JSON.stringify({ query }),
+            });
+            const res = response.data.data.shopLocales;
+
+            return json({ data: res });
+        }
+    }
 }
 
 const Index = () => {
@@ -75,14 +119,16 @@ const Index = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const fetcher = useFetcher<any>();
+    const testFetcher = useFetcher<any>();
 
     const dataSource: LanguagesDataType[] = useSelector(
         (state: any) => state.languageTableData.rows,
     );
 
     useEffect(() => {
+        console.log("dataSource", dataSource);
         const languageFormData = new FormData();
-        languageFormData.append("languageData", JSON.stringify(true));
+        languageFormData.append("languageData", JSON.stringify(dataSource || []));
         loadingLanguageFetcher.submit(languageFormData, {
             method: "post",
             action: "/app",
@@ -101,6 +147,10 @@ const Index = () => {
         // if (!installTime) {
         //     localStorage.setItem('installTime', new Date().toISOString());
         // }
+        testFetcher.submit({ test: JSON.stringify(true) }, {
+            method: "post",
+            action: "/app/translate",
+        });
     }, []);
 
     useEffect(() => {
@@ -108,10 +158,15 @@ const Index = () => {
             setLanguageData(loadingLanguageFetcher.data.data);
             setLanguageSetting(loadingLanguageFetcher.data.languageSetting);
             setLoadingLanguage(false);
-            setCustomApikeyData(loadingLanguageFetcher.data.customApikeyData);
             shopify.loading(false);
         }
     }, [loadingLanguageFetcher.data]);
+
+    useEffect(() => {
+        if (testFetcher.data) {
+            console.log("testFetcher.data", testFetcher.data);
+        }
+    }, [testFetcher.data]);
 
     useEffect(() => {
         if (fetcher.data) {
