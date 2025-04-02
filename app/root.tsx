@@ -12,6 +12,7 @@ import { Provider } from "react-redux";
 import store from "./store";
 import "./styles.css";
 import { json, LoaderFunctionArgs } from "@remix-run/node";
+import { useEffect } from "react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
@@ -210,28 +211,39 @@ export function ErrorBoundary() {
 export default function App() {
   // 从 loader 数据中获取国际化语言代码
   const { i18nCode } = useLoaderData<typeof loader>();
+
+  useEffect(() => {
+    // GTM 初始化脚本
+    const script = document.createElement('script');
+    script.innerHTML = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-NVPT5XDV')`;
+    document.head.appendChild(script);
+
+    // Google Analytics 初始化脚本
+    const gaScript = document.createElement('script');
+    gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-F1BN24YVJN';
+    gaScript.async = true;
+    document.head.appendChild(gaScript);
+
+    const gaInitScript = document.createElement('script');
+    gaInitScript.innerHTML = `
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){window.dataLayer.push(arguments)}
+      gtag('js', new Date());
+      gtag('config', 'G-F1BN24YVJN');
+    `;
+    document.head.appendChild(gaInitScript);
+  }, []);
+
   return (
     // 使用 Redux Provider 包装整个应用（用于状态管理，必须）,删除后很多功能无法使用
     <Provider store={store}>
       {/* 设置 HTML 文档的语言属性，删除后页面将无法实现i18 */}
       <html lang={i18nCode}>
         <head>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-NVPT5XDV');`
-            }}
-          />
-          <script async src="https://www.googletagmanager.com/gtag/js?id=G-F1BN24YVJN"></script>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){window.dataLayer.push(arguments)}
-                gtag('js', new Date());
-                gtag('config', 'G-F1BN24YVJN');
-              `
-            }}
-          />
           {/* 下面六行是文件生成时自带的代码, 删除后页面将无法正常显示或者运行*/}
           {/* 设置文档字符编码 */}
           <meta charSet="utf-8" />

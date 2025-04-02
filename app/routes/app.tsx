@@ -46,6 +46,8 @@ import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
 import { SessionService } from "~/utils/session.server";
+import { useDispatch } from "react-redux";
+import { setTableData } from "~/store/modules/languageTableData";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -98,13 +100,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (loading) {
       try {
-        const data = await InitializationDetection({ shop });
-        if (!data?.add) await UserAdd({ shop, accessToken: accessToken as string });
-        if (!data?.insertCharsByShopName)
+        const init = await InitializationDetection({ shop });
+        if (!init?.add) await UserAdd({ shop, accessToken: accessToken as string });
+        if (!init?.insertCharsByShopName)
           await InsertCharsByShopName({ shop, accessToken: accessToken as string });
-        if (!data?.addDefaultLanguagePack)
+        if (!init?.addDefaultLanguagePack)
           await AddDefaultLanguagePack({ shop });
-        if (!data?.addUserFreeSubscription)
+        if (!init?.addUserFreeSubscription)
           await AddUserFreeSubscription({ shop });
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
@@ -126,7 +128,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           targets: shopLocalesIndex,
         });
 
-        return true
+        const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
+          key: i,
+          src: [],
+          name: lang.name,
+          localeName: "",
+          locale: lang.locale,
+          status: 0,
+          published: lang.published,
+        }));
+
+        return json({ data, success: true });
       } catch (error) {
         console.error("Error loading app:", error);
         return json({ error: "Error loading app" }, { status: 500 });
@@ -351,6 +363,7 @@ export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
   const loadingFetcher = useFetcher<any>();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const formData = new FormData();
@@ -360,6 +373,15 @@ export default function App() {
       action: "/app",
     });
   }, []);
+
+  useEffect(() => {
+    if (loadingFetcher.data) {
+      if (loadingFetcher.data?.success) {
+        console.log("loadingFetcher.data", loadingFetcher.data);
+        dispatch(setTableData(loadingFetcher.data.data));
+      }
+    }
+  }, [loadingFetcher.data]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
