@@ -652,13 +652,13 @@ export const GetTranslate = async ({
     });
     console.log(`${shop} ${source}翻译${target}`);
     const res = { ...response.data, target: target };
-    console.log("translation: ", res);
+    console.log("GetTranslate: ", res);
     return {
       success: true,
       data: res,
     };
   } catch (error) {
-    console.error("Error occurred in the translation:", error);
+    console.error("Error GetTranslate:", error);
     return {
       success: false,
       errorCode: 10014,
