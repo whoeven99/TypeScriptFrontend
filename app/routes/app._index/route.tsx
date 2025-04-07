@@ -164,7 +164,7 @@ const Index = () => {
         key: 1,
         need: t("devplanCard1.title"),
         votes: 100,
-        devStatus: t("In development"),
+        devStatus: t("Launched"),
       },
       {
         key: 2,

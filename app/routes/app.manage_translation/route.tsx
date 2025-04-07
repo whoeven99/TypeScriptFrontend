@@ -112,7 +112,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   } catch (error) {
     console.error("Error action manage_translation:", error);
-    throw new Response("Error action manage_translation", { status: 500 });
+    return json({ success: false, message: "Error action manage_translation" }, { status: 500 });
   }
 };
 
@@ -139,6 +139,7 @@ const Index = () => {
   const filtersFetcher = useFetcher<any>();
   const metaobjectsFetcher = useFetcher<any>();
   const navigationFetcher = useFetcher<any>();
+  const emailFetcher = useFetcher<any>();
   // const policiesFetcher = useFetcher<any>();
   const shopFetcher = useFetcher<any>();
   // const store_metadataFetcher = useFetcher<any>();
@@ -264,6 +265,20 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "navigation",
+    },
+    {
+      key: "email",
+      title: t("Email"),
+      allTranslatedItems:
+        items.find(
+          (item: any) => item?.language === current && item?.type === "EMAIL_TEMPLATE",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) => item?.language === current && item?.type === "EMAIL_TEMPLATE",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "email",
     },
     // {
     //   key: "policies",
@@ -430,6 +445,12 @@ const Index = () => {
       dispatch(updateData(navigationFetcher.data.data));
     }
   }, [navigationFetcher.data]);
+
+  useEffect(() => {
+    if (emailFetcher.data) {
+      dispatch(updateData(emailFetcher.data.data));
+    }
+  }, [emailFetcher.data]);
 
   // useEffect(() => {
   //   if (policiesFetcher.data) {
@@ -605,6 +626,19 @@ const Index = () => {
         }),
       );
       navigationFetcher.submit(navigationFormData, {
+        method: "post",
+        action: "/app/manage_translation",
+      }); // 提交表单请求
+      const emailFormData = new FormData();
+      emailFormData.append(
+        "itemsCount",
+        JSON.stringify({
+          source: primaryLanguage,
+          target: current,
+          resourceType: "Notifications",
+        }),
+      );
+      emailFetcher.submit(emailFormData, {
         method: "post",
         action: "/app/manage_translation",
       }); // 提交表单请求

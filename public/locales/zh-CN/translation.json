@@ -269,5 +269,6 @@
   "Private": "私有",
   "How to translate with api key? Please refer to": "如何使用 API 密钥翻译？请参考",
   "the Private API Translation Model User Manual": "私钥翻译模型用户手册",
-  "Use private api to translate": "使用私钥翻译"
+  "Use private api to translate": "使用私钥翻译",
+  "Email": "电子邮件"
 }

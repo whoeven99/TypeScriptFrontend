@@ -307,7 +307,6 @@ const Index = () => {
         item.success === false;
       });
       if (!errorItem) {
-        console.log("confirmData: ", confirmFetcher.data.confirmData);
         confirmFetcher.data.confirmData.forEach((item: any) => {
           if (item.resourceId.split("/")[3] === "Menu") {
             const index = navigationsData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
