@@ -143,7 +143,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         // }));
 
         // return json({ data, success: true });
-        return null;
+        return true;
       } catch (error) {
         console.error("Error loading app:", error);
         return json({ error: "Error loading app" }, { status: 500 });
