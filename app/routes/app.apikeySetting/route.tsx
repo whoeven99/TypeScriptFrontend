@@ -58,7 +58,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ data: data });
         } catch (error) {
           console.error("Error apiKeySetting loading:", error);
-          throw new Response("Error apiKeySetting loading", { status: 500 });
         }
       case !!updateUserAPIKey:
         try {
@@ -72,7 +71,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ data: data });
         } catch (error) {
           console.error("Error apiKeySetting action:", error);
-          throw new Response("Error apiKeySetting action", { status: 500 });
         }
       case !!deleteUserAPIKey:
         try {
@@ -82,7 +80,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ data: data });
         } catch (error) {
           console.error("Error apiKeySetting action:", error);
-          throw new Response("Error apiKeySetting action", { status: 500 });
         }
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
@@ -90,7 +87,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   } catch (error) {
     console.error("Error action apiKeySetting:", error);
-    throw new Response("Error action apiKeySetting", { status: 500 });
   }
 };
 

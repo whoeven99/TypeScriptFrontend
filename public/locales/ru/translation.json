@@ -261,5 +261,6 @@
     "Private": "Свой",
     "How to translate with api key? Please refer to": "Как перевести с помощью API-ключа? Пожалуйста, обратитесь к",
     "the Private API Translation Model User Manual": " руководству пользователя для частного API-трансляционного модели",
-    "Use private api to translate": "Использовать частный API для перевода"
+    "Use private api to translate": "Использовать частный API для перевода",
+    "Email": "Email"
 }

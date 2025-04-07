@@ -84,7 +84,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ data: data });
         } catch (error) {
           console.error("Error glossary loading:", error);
-          throw new Response("Error glossary loading", { status: 500 });
         }
       case !!updateInfo:
         try {
@@ -104,7 +103,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }
         } catch (error) {
           console.error("Error glossary loading:", error);
-          throw new Response("Error glossary loading", { status: 500 });
         }
       case !!deleteInfo:
         try {
@@ -124,7 +122,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }
         } catch (error) {
           console.error("Error glossary loading:", error);
-          throw new Response("Error glossary loading", { status: 500 });
         }
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
@@ -132,7 +129,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   } catch (error) {
     console.error("Error action glossary:", error);
-    throw new Response("Error action glossary", { status: 500 });
   }
 };
 

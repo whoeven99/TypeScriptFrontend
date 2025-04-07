@@ -81,6 +81,7 @@ const Index = () => {
     );
 
     useEffect(() => {
+        console.log("dataSource", dataSource);
         const languageFormData = new FormData();
         languageFormData.append("languageData", JSON.stringify(true));
         loadingLanguageFetcher.submit(languageFormData, {
