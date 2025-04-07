@@ -74,6 +74,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
     // const initialization = JSON.parse(formData.get("initialization") as string);
     const loading = JSON.parse(formData.get("loading") as string);
+    const languageInit = JSON.parse(formData.get("languageInit") as string);
     const languageData = JSON.parse(formData.get("languageData") as string);
     const nearTransaltedData = JSON.parse(formData.get("nearTransaltedData") as string);
     const userData = JSON.parse(formData.get("userData") as string);
@@ -100,14 +101,59 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (loading) {
       try {
+        const loadingDataStart = new Date();
+        const loadingDataAStart = new Date();
         const init = await InitializationDetection({ shop });
-        if (!init?.add) await UserAdd({ shop, accessToken: accessToken as string });
-        if (!init?.insertCharsByShopName)
+        const loadingDataAEnd = new Date();
+        const loadingDataA = loadingDataAEnd.getTime() - loadingDataAStart.getTime();
+        console.log("loadingDataA: ", loadingDataA);
+
+        const loadingDataBStart = new Date();
+        await UserAdd({ shop, accessToken: accessToken as string, init: init?.add });
+        const loadingDataBEnd = new Date();
+        const loadingDataB = loadingDataBEnd.getTime() - loadingDataBStart.getTime();
+        console.log("loadingDataB: ", loadingDataB);
+
+        if (!init?.insertCharsByShopName) {
+          const loadingDataCStart = new Date();
           await InsertCharsByShopName({ shop, accessToken: accessToken as string });
-        if (!init?.addDefaultLanguagePack)
-          await AddDefaultLanguagePack({ shop });
-        if (!init?.addUserFreeSubscription)
+          const loadingDataCEnd = new Date();
+          const loadingDataC = loadingDataCEnd.getTime() - loadingDataCStart.getTime();
+          console.log("loadingDataC: ", loadingDataC);
+        }
+
+        if (!init?.addUserFreeSubscription) {
+          const loadingDataDStart = new Date();
           await AddUserFreeSubscription({ shop });
+          const loadingDataDEnd = new Date();
+          const loadingDataD = loadingDataDEnd.getTime() - loadingDataDStart.getTime();
+          console.log("loadingDataD: ", loadingDataD);
+        }
+        const loadingDataEnd = new Date();
+        const loadingData = loadingDataEnd.getTime() - loadingDataStart.getTime();
+        console.log("loadingData: ", loadingData);
+        // const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
+        //   key: i,
+        //   src: [],
+        //   name: lang.name,
+        //   localeName: "",
+        //   locale: lang.locale,
+        //   status: 0,
+        //   published: lang.published,
+        // }));
+
+        // return json({ data, success: true });
+        return null;
+      } catch (error) {
+        console.error("Error loading app:", error);
+        return json({ error: "Error loading app" }, { status: 500 });
+      }
+    }
+
+    if (languageInit) {
+      try {
+        const languageInitStart = new Date();
+        const languageInitAStart = new Date();
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken: accessToken as string,
@@ -121,32 +167,34 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
           (item) => item.locale,
         );
+        const languageInitAEnd = new Date();
+        const languageInitA = languageInitAEnd.getTime() - languageInitAStart.getTime();
+        console.log("languageInitA: ", languageInitA);
+
+        const languageInitBStart = new Date();
         await InsertTargets({
           shop,
           accessToken: accessToken!,
           source: shopPrimaryLanguage[0].locale,
           targets: shopLocalesIndex,
         });
+        const languageInitBEnd = new Date();
+        const languageInitB = languageInitBEnd.getTime() - languageInitBStart.getTime();
+        console.log("languageInitB: ", languageInitB);
 
-        const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
-          key: i,
-          src: [],
-          name: lang.name,
-          localeName: "",
-          locale: lang.locale,
-          status: 0,
-          published: lang.published,
-        }));
+        const languageInitEnd = new Date();
+        const languageInit = languageInitEnd.getTime() - languageInitStart.getTime();
+        console.log("languageInit: ", languageInit);
 
-        return json({ data, success: true });
+        return null;
       } catch (error) {
-        console.error("Error loading app:", error);
-        return json({ error: "Error loading app" }, { status: 500 });
+        console.error("Error languageInit app:", error);
       }
     }
-
     if (languageData) {
       try {
+        const languageDataStart = new Date();
+        const languageDataAStart = new Date();
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken: accessToken as string,
@@ -163,13 +211,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const languageLocaleInfo = await GetLanguageLocaleInfo({
           locale: shopLocalesIndex,
         });
+        const languageDataAEnd = new Date();
+        const languageDataA = languageDataAEnd.getTime() - languageDataAStart.getTime();
+        console.log("languageDataA: ", languageDataA);
 
+        const languageDataBStart = new Date();
         const languages = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
-
-        // const response = await axios({
-        //   url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}&&source=${shopPrimaryLanguage[0].locale}`,
-        //   method: "GET",
-        // });
         // const languages = response.data.response;
 
         const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
@@ -183,11 +230,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               ?.status : 0,
           published: lang.published,
         }));
+        const languageDataBEnd = new Date();
+        const languageDataB = languageDataBEnd.getTime() - languageDataBStart.getTime();
+        console.log("languageDataB: ", languageDataB);
 
+        const languageDataCStart = new Date();
         const customApikeyData = await GetUserData({
           shop,
         });
-        console.log("GetUserData: ", customApikeyData);
+        const languageDataC = languageDataCStart.getTime() - languageDataCStart.getTime();
+        console.log("languageDataC: ", languageDataC);
 
         const languageSetting = {
           primaryLanguage: shopPrimaryLanguage[0].name,
@@ -196,6 +248,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
         console.log(`${shop}根路由正常加载`);
+        const languageDataEnd = new Date();
+        const languageData = languageDataEnd.getTime() - languageDataStart.getTime();
+        console.log("languageData: ", languageData);
 
         return json({ data, languageSetting, shop, customApikeyData: customApikeyData?.response?.googleKey });
       } catch (error) {
@@ -205,6 +260,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     if (nearTransaltedData) {
+      const nearTransaltedDataStart = new Date();
+      const nearTransaltedDataAStart = new Date();
       const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
         shop,
         accessToken: accessToken as string,
@@ -218,13 +275,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
         (item) => item.locale,
       );
+      const nearTransaltedDataAEnd = new Date();
+      const nearTransaltedDataA = nearTransaltedDataAEnd.getTime() - nearTransaltedDataAStart.getTime();
+      console.log("nearTransaltedDataA: ", nearTransaltedDataA);
 
-      const Cstarttime = new Date();
+      const nearTransaltedDataBStart = new Date();
       const data = await GetTranslateDOByShopNameAndSource({ shop, source: shopPrimaryLanguage[0].locale });
-      console.log("GetTranslateDOByShopNameAndSource: ", data);
-      const Cendtime = new Date();
-      const Ctime = Cendtime.getTime() - Cstarttime.getTime();
-      console.log("Ctime: ", Ctime);
+      const nearTransaltedDataBEnd = new Date();
+      const nearTransaltedDataB = nearTransaltedDataBEnd.getTime() - nearTransaltedDataBStart.getTime();
+      console.log("nearTransaltedDataB: ", nearTransaltedDataB);
+
+      const nearTransaltedDataEnd = new Date();
+      const nearTransaltedData = nearTransaltedDataEnd.getTime() - nearTransaltedDataStart.getTime();
+      console.log("nearTransaltedData: ", nearTransaltedData);
 
       if (shopLocalesIndex.includes(data.response?.target) && (data.response?.status !== 1 || !shopLanguagesWithoutPrimaryIndex.find((item) => item.locale === data.response?.target)?.published)) {
         return {
@@ -361,14 +424,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
-  const loadingFetcher = useFetcher<any>();
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const loadingFetcher = useFetcher<any>();
+  const languageFetcher = useFetcher<any>();
 
   useEffect(() => {
-    const formData = new FormData();
-    formData.append("loading", JSON.stringify(true));
-    loadingFetcher.submit(formData, {
+    loadingFetcher.submit({ loading: JSON.stringify(true) }, {
+      method: "post",
+      action: "/app",
+    });
+    languageFetcher.submit({ languageInit: JSON.stringify(true) }, {
       method: "post",
       action: "/app",
     });

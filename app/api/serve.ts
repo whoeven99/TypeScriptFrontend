@@ -167,10 +167,16 @@ export const getCredits = async ({
 //用户数据初始化检测
 export const InitializationDetection = async ({ shop }: { shop: string }) => {
   try {
+    const timeA = new Date();
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/InitializationDetection?shopName=${shop}`,
       method: "GET",
     });
+    const timeB = new Date();
+    const time = timeB.getTime() - timeA.getTime();
+    console.log("timeA: ", timeA);
+    console.log("timeB: ", timeB);
+    console.log("timeB - timeA: ", time);
     const res = response.data.response;
     console.log("InitializationDetection: ", res);
     return res;
@@ -184,9 +190,11 @@ export const InitializationDetection = async ({ shop }: { shop: string }) => {
 export const UserAdd = async ({
   shop,
   accessToken,
+  init
 }: {
   shop: string;
   accessToken: string;
+  init: boolean;
 }) => {
   try {
     const shopData = await queryShop({ shop, accessToken });
@@ -209,10 +217,10 @@ export const UserAdd = async ({
       data: {
         shopName: shop,
         accessToken: accessToken,
-        email: shopData.contactEmail || "",
-        firstName: firstName || "",
-        lastName: lastName || "",
-        userTag: shopOwnerName || "",
+        email: init ? "" : shopData.contactEmail || "",
+        firstName: init ? "" : firstName || "",
+        lastName: init ? "" : lastName || "",
+        userTag: init ? "" : shopOwnerName || "",
       },
     });
     console.log("addUserInfoResponse: ", addUserInfoResponse.data);
