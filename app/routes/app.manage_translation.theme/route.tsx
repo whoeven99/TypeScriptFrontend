@@ -191,7 +191,7 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item) => {
+      const errorItem = confirmFetcher.data.data.find((item: any) => {
         item.success === false;
       });
       if (!errorItem) {

@@ -400,49 +400,40 @@ const Index = () => {
 
   useEffect(() => {
     if (themeFetcher.data) {
-      // const switcherData =
-      //   themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
-      // const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
-      // const blocks = JSON.parse(jsonString).current?.blocks;
-      // if (blocks) {
-      //   const switcherJson: any = Object.values(blocks).find(
-      //     (block: any) => block.type === ciwiSwitcherBlocksId,
-      //   );
-      //   if (!switcherJson || switcherJson.disabled) {
-      //     setSwitcherEnableCardOpen(true);
-      //   }
-      // }
       const switcherData =
         themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
       const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
-      const themeData = JSON.parse(jsonString);
-
-      const footer = themeData.sections?.footer;
-      if (footer?.blocks) {
-        const switcherJson: any = Object.values(footer.blocks).find(
+      const blocks = JSON.parse(jsonString).current?.blocks;
+      if (blocks) {
+        const switcherJson: any = Object.values(blocks).find(
           (block: any) => block.type === ciwiSwitcherBlocksId,
         );
-
-        if (switcherJson) {
+        if (!switcherJson || switcherJson.disabled) {
           setSwitcherEnableCardOpen(true);
         }
       }
-      const isAppEnabled = Object.values(themeData.sections).some((section: any) =>
-        section?.blocks && Object.values(section.blocks).some((block: any) =>
-          block.type.includes(ciwiSwitcherBlocksId)
-        )
-      );
+      // const switcherData =
+      //   themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
+      // const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+      // const themeData = JSON.parse(jsonString);
 
-      setSwitcherEnableCardOpen(isAppEnabled);
-
-      // if (blocks) {
-      //   const switcherJson: any = Object.values(blocks).find(
+      // const footer = themeData.sections?.footer;
+      // if (footer?.blocks) {
+      //   const switcherJson: any = Object.values(footer.blocks).find(
       //     (block: any) => block.type === ciwiSwitcherBlocksId,
       //   );
-      //   if (!switcherJson || switcherJson.disabled) {
+
+      //   if (switcherJson) {
       //     setSwitcherEnableCardOpen(true);
       //   }
       // }
+      // const isAppEnabled = Object.values(themeData.sections).some((section: any) =>
+      //   section?.blocks && Object.values(section.blocks).some((block: any) =>
+      //     block.type.includes(ciwiSwitcherBlocksId)
+      //   )
+      // );
+
+      // setSwitcherEnableCardOpen(isAppEnabled);
     }
   }, [themeFetcher.data]);
 

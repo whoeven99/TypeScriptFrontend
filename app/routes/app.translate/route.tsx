@@ -81,7 +81,6 @@ const Index = () => {
     );
 
     useEffect(() => {
-        console.log("dataSource", dataSource);
         const languageFormData = new FormData();
         languageFormData.append("languageData", JSON.stringify(true));
         loadingLanguageFetcher.submit(languageFormData, {
@@ -120,6 +119,7 @@ const Index = () => {
                 message.success(t("The translation task is in progress."));
                 navigate("/app");
             } else {
+                console.log("fetcher.data", fetcher.data);
                 setShowWarnModal(true);
                 const modalSettingOption = translateSettings1Options.find(option => option.value === fetcher.data.data.translateSettings1);
                 setModal(modalSettingOption?.label || "OpenAI/GPT-4");

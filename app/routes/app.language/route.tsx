@@ -40,6 +40,7 @@ import {
   GetLanguageList,
   GetLanguageLocaleInfo,
   GetTranslate,
+  GetUserData,
   GetUserWords,
 } from "~/api/serve";
 import TranslatedIcon from "~/components/translateIcon";
@@ -271,11 +272,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       case !!translation:
         try {
-          const words = await GetUserWords({ shop });
-          if (words) {
-            if (words.chars >= words.totalChars) {
+          // 如果是机器翻译(translateSettings1 === "8")，直接调用翻译接口          
+          if (translation.translateSettings1 === "8") {
+            const words = await GetUserData({ shop });
+            if (!words) {
               return json({
-                success: false, message: "user words limit", data: {
+                success: false,
+                message: "words get error",
+                data: {
                   source: translation.primaryLanguage,
                   target: translation.selectedLanguage.locale,
                   translateSettings1: translation.translateSettings1,
@@ -283,25 +287,63 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                   translateSettings3: translation.translateSettings3,
                 }
               }, { status: 200 });
-            } else {
-              const source = translation.primaryLanguage;
-              const target = translation.selectedLanguage.locale;
-              const translateSettings1 = translation.translateSettings1;
-              const translateSettings2 = translation.translateSettings2;
-              const translateSettings3 = translation.translateSettings3;
-              const data = await GetTranslate({
-                shop,
-                accessToken,
-                source,
-                target,
-                translateSettings1,
-                translateSettings2,
-                translateSettings3
-              });
-              return data;
             }
+
+            const data = await GetTranslate({
+              shop,
+              accessToken,
+              source: translation.primaryLanguage,
+              target: translation.selectedLanguage.locale,
+              translateSettings1: translation.translateSettings1,
+              translateSettings2: translation.translateSettings2,
+              translateSettings3: translation.translateSettings3
+            });
+            return data;
           }
-          return json({ success: false, message: "words get error" }, { status: 200 });
+
+          // 非机器翻译模式才需要检查字符数限制
+          const words = await GetUserWords({ shop });
+
+          if (!words) {
+            return json({
+              success: false,
+              message: "words get error",
+              data: {
+                source: translation.primaryLanguage,
+                target: translation.selectedLanguage.locale,
+                translateSettings1: translation.translateSettings1,
+                translateSettings2: translation.translateSettings2,
+                translateSettings3: translation.translateSettings3,
+              }
+            }, { status: 200 });
+          }
+
+          // 检查字符数是否超限
+          if (words.chars >= words.totalChars) {
+            return json({
+              success: false,
+              message: "user words limit",
+              data: {
+                source: translation.primaryLanguage,
+                target: translation.selectedLanguage.locale,
+                translateSettings1: translation.translateSettings1,
+                translateSettings2: translation.translateSettings2,
+                translateSettings3: translation.translateSettings3,
+              }
+            }, { status: 200 });
+          }
+
+          // 字符数未超限，调用翻译接口
+          const data = await GetTranslate({
+            shop,
+            accessToken,
+            source: translation.primaryLanguage,
+            target: translation.selectedLanguage.locale,
+            translateSettings1: translation.translateSettings1,
+            translateSettings2: translation.translateSettings2,
+            translateSettings3: translation.translateSettings3
+          });
+          return data;
         } catch (error) {
           console.error("Error translation language:", error);
           return json({ error: "Error translation language" }, { status: 500 });

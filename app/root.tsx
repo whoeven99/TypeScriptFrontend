@@ -244,17 +244,18 @@ export default function App() {
       {/* 设置 HTML 文档的语言属性，删除后页面将无法实现i18 */}
       <html lang={i18nCode}>
         <head>
+          <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" rel="preload" />
           {/* 下面六行是文件生成时自带的代码, 删除后页面将无法正常显示或者运行*/}
           {/* 设置文档字符编码 */}
           <meta charSet="utf-8" />
           {/* 设置视口配置，用于响应式设计，删掉后页面将占用整个屏幕 */}
           <meta name="viewport" content="width=device-width,initial-scale=1" />
           {/* 预连接到 Shopify CDN，优化资源加载 */}
-          {/* <link rel="preconnect" href="https://cdn.shopify.com/" />
+          <link rel="preconnect" href="https://cdn.shopify.com/" />
           <link
             rel="stylesheet"
             href="https://cdn.shopify.com/static/fonts/inter/v4/styles.css"
-          /> */}
+          />
           {/* 注入元数据标签，必须 */}
           <Meta />
           {/* 注入链接标签，必须 */}
