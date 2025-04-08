@@ -260,6 +260,12 @@
     "How to translate with api key? Please refer to": "如何使用 API 金鑰翻譯？請參考",
     "the Private API Translation Model User Manual": "私鑰翻譯模型用戶手冊",
     "Use private api to translate": "使用私鑰翻譯",
-    "Email": "電子郵件"
+    "Email": "電子郵件",
+    "Your translation quota": "您的翻譯配額",
+    "{{currentCredits}} / {{maxCredits}} credits used": "<strong>{{currentCredits}}</strong> / {{maxCredits}} 積分已使用",
+    "Permanent quotas · Never expire · Top up anytime.": "永久配額 · 永不過期 · 隨時充電",
+    "The quota has been used up": "配額已用完",
+    "Buy extra credits now to continue using": "立即購買額外積分以繼續使用",
+    "Total pay": "總支付金額"
 }
   

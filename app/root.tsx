@@ -250,11 +250,11 @@ export default function App() {
           {/* 设置视口配置，用于响应式设计，删掉后页面将占用整个屏幕 */}
           <meta name="viewport" content="width=device-width,initial-scale=1" />
           {/* 预连接到 Shopify CDN，优化资源加载 */}
-          {/* <link rel="preconnect" href="https://cdn.shopify.com/" />
+          <link rel="preconnect" href="https://cdn.shopify.com/" />
           <link
             rel="stylesheet"
             href="https://cdn.shopify.com/static/fonts/inter/v4/styles.css"
-          /> */}
+          />
           {/* 注入元数据标签，必须 */}
           <Meta />
           {/* 注入链接标签，必须 */}

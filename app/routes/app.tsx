@@ -143,7 +143,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         // }));
 
         // return json({ data, success: true });
-        return null;
+        return true;
       } catch (error) {
         console.error("Error loading app:", error);
         return json({ error: "Error loading app" }, { status: 500 });
@@ -373,7 +373,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         name: payInfo.name,
         price: payInfo.price,
         returnUrl,
-        test: payInfo.test,
+        test: process.env.NODE_ENV === "test",
       });
       return json({ data: payData });
     }
@@ -466,6 +466,7 @@ export default function App() {
           {loadingFetcher.data && <Link to="/app/manage_translation">{t("Manage Translation")}</Link>}
           {loadingFetcher.data && <Link to="/app/currency">{t("Currency")}</Link>}
           {loadingFetcher.data && <Link to="/app/glossary">{t("Glossary")}</Link>}
+          {loadingFetcher.data && <Link to="/app/pricing">{t("Pricing")}</Link>}
         </NavMenu>
         <Suspense>
           <Outlet />

@@ -262,5 +262,11 @@
     "How to translate with api key? Please refer to": "API anahtarını kullanarak çevirmek için lütfen",
     "the Private API Translation Model User Manual": " özel API çeviri modeli kullanım kılavuzu",
     "Use private api to translate": "Özel API kullanarak çevir",
-    "Email": "Email"
+    "Email": "Email",
+    "Your translation quota": "Çeviri kredisi",
+    "{{currentCredits}} / {{maxCredits}} credits used": "<strong>{{currentCredits}}</strong> / {{maxCredits}} kredi kullanıldı",
+    "Permanent quotas · Never expire · Top up anytime.": "Sürekli kotalar · Asla süre bitmez · Her zaman yükle",
+    "The quota has been used up": "Kota tüketildi",
+    "Buy extra credits now to continue using": "Daha fazla kredi satın alarak devam et",
+    "Total pay": "Toplam ödeme"
 }

@@ -442,10 +442,18 @@ const Index = () => {
       //   const switcherJson: any = Object.values(blocks).find(
       //     (block: any) => block.type === ciwiSwitcherBlocksId,
       //   );
-      //   if (!switcherJson || switcherJson.disabled) {
+
+      //   if (switcherJson) {
       //     setSwitcherEnableCardOpen(true);
       //   }
       // }
+      // const isAppEnabled = Object.values(themeData.sections).some((section: any) =>
+      //   section?.blocks && Object.values(section.blocks).some((block: any) =>
+      //     block.type.includes(ciwiSwitcherBlocksId)
+      //   )
+      // );
+
+      // setSwitcherEnableCardOpen(isAppEnabled);
     }
   }, [themeFetcher.data]);
 

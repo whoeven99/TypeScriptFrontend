@@ -26,20 +26,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 }
 
 const Index = () => {
-  // const { translatingLanguage } = useLoaderData<typeof loader>();
-  // const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
-  // const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
-  // const [user, setUser] = useState<UserType>();
-  // const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
-  // const [limited, setLimited] = useState<boolean>(false);
-  // const [paymentModalVisible, setPaymentModalVisible] =
-  //   useState<boolean>(false);
-  // const [previewModalVisible, setPreviewModalVisible] =
-  //   useState<boolean>(false);
-  // const [newUserModal, setNewUserModal] = useState<boolean>(false);
-  // const [newUserModalLoading, setNewUserModalLoading] =
-  //   useState<boolean>(false);
-  // const dispatch = useDispatch();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(false);
@@ -47,94 +33,6 @@ const Index = () => {
   useEffect(() => {
     setLoading(true);
   }, []);
-  // const loadingLanguageFetcher = useFetcher<any>();
-  // const languageLocalInfoFetcher = useFetcher<any>();
-  // const loadingUserFetcher = useFetcher<any>();
-  // const initializationFetcher = useFetcher<any>();
-
-  // useEffect(() => {
-  //   const languageFormData = new FormData();
-  //   languageFormData.append("languageData", JSON.stringify(true));
-  //   loadingLanguageFetcher.submit(languageFormData, {
-  //     method: "post",
-  //     action: "/app",
-  //   });
-  //   // const userFormData = new FormData();
-  //   // userFormData.append("userData", JSON.stringify(true));
-  //   // loadingUserFetcher.submit(userFormData, {
-  //   //   method: "post",
-  //   //   action: "/app",
-  //   // });
-  //   shopify.loading(true);
-  //   const installTime = localStorage.getItem('installTime')
-  //   if (!installTime) {
-  //     localStorage.setItem('installTime', new Date().toISOString());
-  //   }
-  // }, []);
-
-  // useEffect(() => {
-  //   if (loadingLanguageFetcher.data) {
-  //     setLanguageData(loadingLanguageFetcher.data.data);
-  //     setLanguageSetting(loadingLanguageFetcher.data.languageSetting);
-  //     setLoadingLanguage(false);
-  //     shopify.loading(false);
-  //   }
-  // }, [loadingLanguageFetcher.data]);
-
-
-  // useEffect(() => {
-  //   if (loadingUserFetcher.data) {
-  //     setUser(loadingUserFetcher.data.data);
-  //     if (!loadingUserFetcher.data.data?.plan) {
-  //       // setNewUserModal(true);
-  //     }
-  //   }
-  // }, [loadingUserFetcher.data]);
-
-  // useEffect(() => {
-  //   if (user && user.chars >= user.totalChars) {
-  //     setLimited(true);
-  //   }
-  // }, [user]);
-
-  // useEffect(() => {
-  //   if (initializationFetcher.data && user) {
-  //     if (initializationFetcher.data?.data) {
-  //       setNewUserModal(false);
-  //       setNewUserModalLoading(false);
-  //       setUser({ ...user, totalChars: 50000 });
-  //     }
-  //   }
-  // }, [initializationFetcher.data]);
-
-  // useEffect(() => {
-  //   if (languageData.length) {
-  //     const data = languageData.map((lang) => ({
-  //       key: lang.key,
-  //       language: lang.name,
-  //       localeName: lang.localeName,
-  //       locale: lang.locale,
-  //       primary: false,
-  //       status: lang.status || 0,
-  //       auto_update_translation: false,
-  //       published: lang.published,
-  //       loading: false,
-  //     }));
-  //     dispatch(setTableData(data)); // 只在组件首次渲染时触发
-  //   }
-  // }, [dispatch, languageData]);
-
-  // const onClick = async () => {
-  //   setNewUserModalLoading(true);
-  //   const formData = new FormData();
-  //   formData.append("initialization", JSON.stringify(true));
-  //   initializationFetcher.submit(formData, {
-  //     method: "post",
-  //     action: "/app",
-  //   });
-  // };
-
-
 
   const columns = [
     {
@@ -201,18 +99,8 @@ const Index = () => {
                 {t("dashboard.description1")}
               </Text>
             </div>
-            {/* {user ? (
-            <UserProfileCard
-              setPaymentModalVisible={setPaymentModalVisible}
-              chars={user.chars}
-              totalChars={user.totalChars}
-            />
-          ) : (
-            <Skeleton active />
-          )} */}
             <Card
               bordered={false}
-
             >
               <Space direction="vertical" size="middle" style={{ display: "flex" }}>
                 <Title level={4}>
@@ -282,15 +170,6 @@ const Index = () => {
                 {t("dashboard.description2")}
               </Text>
             </div>
-            {/* {user ? (
-            <UserProfileCard
-              setPaymentModalVisible={setPaymentModalVisible}
-              chars={user.chars}
-              totalChars={user.totalChars}
-            />
-            ) : (
-              <Skeleton active />
-            )} */}
             <Card
               bordered={false}
             >
@@ -382,15 +261,6 @@ const Index = () => {
                 {t("dashboard.description3")}
               </Text>
             </div>
-            {/* {user ? (
-            <UserProfileCard
-              setPaymentModalVisible={setPaymentModalVisible}
-              chars={user.chars}
-              totalChars={user.totalChars}
-            />
-          ) : (
-            <Skeleton active />
-          )} */}
             <Card
               bordered={false}
             >
@@ -454,107 +324,6 @@ const Index = () => {
             </Link>
           </Text>
         </Space>
-        {/* <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>
-              {languageData.length}
-              {t("available languages")}
-            </Title>
-            <div>
-              <Text>{t("Your store's default language:")}</Text>
-              {languageSetting && (
-                <Text strong>
-                  {languageSetting.primaryLanguage ? (
-                    languageSetting.primaryLanguage
-                  ) : (
-                    <Skeleton active paragraph={{ rows: 0 }} />
-                  )}
-                </Text>
-              )}
-            </div>
-          </div>
-          {loadingLanguage ? (
-            <Skeleton active />
-          ) : languageData.length != 0 ? (
-            <div>
-              <Row gutter={[16, 16]}>
-                {languageData.map((language: any, index: number) => (
-                  <Col span={8} key={index}>
-                    {languageSetting && (
-                      <UserLanguageCard
-                        flagUrl={language.src.slice(0, 4)}
-                        primaryLanguageCode={
-                          languageSetting.primaryLanguageCode
-                        }
-                        languageLocaleName={language.localeName}
-                        languageName={language.name}
-                        languageCode={language.locale}
-                        setPreviewModalVisible={setPreviewModalVisible}
-                      // limited={limited}
-                      />
-                    )}
-                  </Col>
-                ))}
-              </Row>
-              <Text
-                style={{
-                  marginTop: "10px",
-                  display: "flex", // 使用 flexbox 来布局
-                  justifyContent: "center", // 水平居中
-                }}
-              >
-                {t("Learn more in")}
-                <Link
-                  to="http://ciwi.bogdatech.com/help"
-                  target="_blank"
-                  style={{ margin: "0 5px" }}
-                >
-                  {t("Ciwi Help Center")}
-                </Link>
-                {t("by")}
-                <Link
-                  to={"http://ciwi.bogdatech.com/"}
-                  target="_blank"
-                  style={{ margin: "0 5px" }}
-                >
-                  {t("Ciwi.ai")}
-                </Link>
-              </Text>
-            </div>
-          ) : (
-            <NoLanguageSetCard />
-          )}
-        </Space>
-        <PreviewModal
-          visible={previewModalVisible}
-          setVisible={setPreviewModalVisible}
-        />
-        {/* <Modal
-          open={newUserModal}
-          footer={
-            <Button
-              type="primary"
-              onClick={onClick}
-              loading={newUserModalLoading}
-              disabled={newUserModalLoading}
-            >
-              {t("OK")}
-            </Button>
-          }
-          closable={false} // 禁用关闭按钮
-          maskClosable={false} // 禁用点击遮罩关闭
-          keyboard={false} // 禁用按 Esc 键关闭
-        >
-          <Title level={4}>{t("Congratulations!")}</Title>
-          <Text>
-            {t(
-              "You have received 50,000 Credits, enabling you to translate into over 137 languages.",
-            )}
-          </Text>
-        </Modal> */}
-        {/* <PaymentModal
-          visible={paymentModalVisible}
-          setVisible={setPaymentModalVisible}
-        /> */}
       </Page>
     </Suspense>
   );
@@ -572,8 +341,6 @@ export const handleContactSupport = () => {
     (window as Window).tidioChatApi?.open();
   } else {
     console.warn('Tidio Chat API not loaded');
-    // 备用方案：打开支持页面
-    // window.open('https://apps.shopify.com/translator-by-ciwi/support', '_blank');
   }
 };
 

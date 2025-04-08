@@ -133,45 +133,8 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                 totalNumber: itemsFetcher.data?.data[0].totalNumber || 0,
                 translatedNumber: itemsFetcher.data?.data[0].translatedNumber || 0,
             });
-            // console.log("itemsCount: ", itemsCount);
-
-            // const statusValue = statusFetcher.data.data[0].status;
-            // setStatus(statusValue);
-            // if (statusValue === 2) {
-            //     setNewResourceType(statusFetcher.data.data[0].resourceType);
-            // } else {
-            //     setNewResourceType("");
-            //     // 状态不为 2 时，轮询会自动停止
-            // }
         }
     }, [itemsFetcher.data]);
-
-    // useEffect(() => {
-    //     if (target) {
-    //         statusFetcher.submit({
-    //             statusData: JSON.stringify({
-    //                 source: source,
-    //                 target: [target],
-    //             }),
-    //         }, {
-    //             method: "POST",
-    //             action: "/app",
-    //         });
-    //     }
-    // }, [target]);
-
-    // useEffect(() => {
-    //     if (statusFetcher.data) {
-    //         if (statusFetcher.data.data) {
-    //             const statusData = statusFetcher.data.data.find((item: any) => item.status === 2);
-    //             console.log(statusData);
-    //             if (statusData) {
-    //                 // setResourceType(statusData.resourceType);
-    //                 setResourceType(statusData.resourceType);
-    //             }
-    //         }
-    //     }
-    // }, [statusFetcher.data]);
 
     useEffect(() => {
         if (resourceType) {
@@ -179,54 +142,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
             setProgress(progress);
         }
     }, [resourceType]);
-
-    // const RESOURCE_TYPES = [
-    //     'PRODUCT',
-    //     'PRODUCT_OPTION',
-    //     'PRODUCT_OPTION_VALUE',
-
-    //     'COLLECTION',
-
-    //     'ONLINE_STORE_THEME',
-    //     'ONLINE_STORE_THEME_APP_EMBED',
-    //     'ONLINE_STORE_THEME_JSON_TEMPLATE',
-    //     'ONLINE_STORE_THEME_SECTION_GROUP',
-    //     'ONLINE_STORE_THEME_SETTINGS_CATEGORY',
-    //     'ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS',
-
-    //     'PACKING_SLIP_TEMPLATE',
-
-    //     'SHOP_POLICY',
-
-    //     'EMAIL_TEMPLATE',
-
-    //     'ONLINE_STORE_THEME_LOCALE_CONTENT',
-
-    //     'MENU',
-
-    //     'LINK',
-
-    //     'DELIVERY_METHOD_DEFINITION',
-
-    //     'FILTER',
-
-    //     'METAFIELD',
-
-    //     'METAOBJECT',
-
-    //     'PAYMENT_GATEWAY',
-
-    //     'SELLING_PLAN',
-    //     'SELLING_PLAN_GROUP',
-
-    //     'SHOP',
-
-    //     'ARTICLE',
-
-    //     'BLOG',
-
-    //     'PAGE'
-    // ];
 
     const calculateProgressByType = (resourceType: string): number => {
         switch (resourceType) {
