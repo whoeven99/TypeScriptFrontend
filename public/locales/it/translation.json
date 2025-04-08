@@ -259,6 +259,12 @@
     "How to translate with api key? Please refer to": "Come tradurre con una chiave API? Per favore, consulta",
     "the Private API Translation Model User Manual": " il manuale utente del modello di traduzione API privata",
     "Use private api to translate": "Usa API privata per tradurre",
-    "Email": "Email"
+    "Email": "Email",
+    "Your translation quota": "La tua quota di traduzione",
+    "{{currentCredits}} / {{maxCredits}} credits used": "<strong>{{currentCredits}}</strong> / {{maxCredits}} crediti utilizzati",
+    "Permanent quotas · Never expire · Top up anytime.": "Quotas permanenti · Non scadono mai · Carica in qualsiasi momento.",
+    "The quota has been used up": "La quota è stata utilizzata",
+    "Buy extra credits now to continue using": "Acquista crediti aggiuntivi per continuare a utilizzare",
+    "Total pay": "Totale pagato"
 }
   
