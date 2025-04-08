@@ -119,11 +119,6 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
             if (!isInitializing) {
               const normalizedContent = normalizeHtml(content);
               const normalizedTranslated = normalizeHtml(translatedValues[record?.key] || '');
-              
-              // 打印标准化后的字符串，用于调试
-              console.log('Normalized Content:', normalizedContent);
-              console.log('Normalized Translated:', normalizedTranslated);
-              
               if (normalizedContent && normalizedContent !== normalizedTranslated) {
                 handleInputChange(
                   record.key,

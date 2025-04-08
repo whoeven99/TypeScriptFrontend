@@ -166,6 +166,8 @@
   "progressing.noTranslate":"No translation task now",
   "progressing.contactButton":"Support",
   "progressing.somethingWentWrong":"Some unexpected errors occurred. Please click the button to contact support for resolution.",
+  "progressing.privateApiKeyAmountLimit":"The private Apikey limit has been reached. Please click the button on the right to reset the limit and restart the translation.",
+  "progressing.apikeySetting":"Reset the limit",
   "contact.title":"Contact Us",
   "contact.description":"If you have any questions or need assistance, please click the button below to contact support.",
   "contact.contactButton":"Contact Support",

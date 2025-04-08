@@ -312,6 +312,10 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                                     status === 4 &&
                                                     <Text>{t("progressing.somethingWentWrong")}</Text>
                                                 }
+                                                {
+                                                    status === 5 &&
+                                                    <Text>{t("progressing.privateApiKeyAmountLimit")}</Text>
+                                                }
                                             </div>
 
                                             {/* 右侧部分 */}
@@ -331,6 +335,23 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '20%', height: '82px' }}>
+                                        {status === 1 &&
+                                            <Button
+                                                block
+                                                type="primary"
+                                                onClick={() => navigate("/app/language", { state: { publishLanguageCode: target } })}
+                                                style={{ marginTop: 'auto' }}
+                                            >
+                                                {t("progressing.publish")}
+                                            </Button>
+                                        }
+                                        {/* {status === 2 &&
+                                            <>
+                                                <Text>
+                                                    {t("progressing.remaining")}
+                                                </Text>
+                                            </>
+                                        } */}
                                         {status === 3 &&
                                             <div style={{
                                                 width: '100%',  // 限制最大宽度
@@ -356,13 +377,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
 
                                             </div>
                                         }
-                                        {/* {status === 2 &&
-                                            <>
-                                                <Text>
-                                                    {t("progressing.remaining")}
-                                                </Text>
-                                            </>
-                                    } */}
                                         {status === 4 &&
                                             <Button
                                                 block
@@ -374,15 +388,30 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
                                                 {t("progressing.contactButton")}
                                             </Button>
                                         }
-                                        {status === 1 &&
-                                            <Button
-                                                block
-                                                type="primary"
-                                                onClick={() => navigate("/app/language", { state: { publishLanguageCode: target } })}
-                                                style={{ marginTop: 'auto' }}
-                                            >
-                                                {t("progressing.publish")}
-                                            </Button>
+                                        {status === 5 &&
+                                            <div style={{
+                                                width: '100%',  // 限制最大宽度
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: 10,
+                                            }}>
+
+                                                <Button
+                                                    block
+                                                    type="primary"
+                                                    onClick={() => navigate("/app/apikeySetting")}
+                                                >
+                                                    {t("progressing.apikeySetting")}
+                                                </Button>
+                                                <Button
+                                                    block
+                                                    icon={<PhoneOutlined />}
+                                                    onClick={handleContactSupport}
+                                                >
+                                                    {t("progressing.contactButton")}
+                                                </Button>
+
+                                            </div>
                                         }
                                     </div>
                                 </div>
