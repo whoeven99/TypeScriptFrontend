@@ -260,6 +260,12 @@
     "How to translate with api key? Please refer to": "API 키를 사용하여 번역하는 방법을 참조하세요",
     "the Private API Translation Model User Manual": " 비공개 API 번역 모델 사용자 매뉴얼",
     "Use private api to translate": "비공개 API를 사용하여 번역",
-    "Email": "이메일"
+    "Email": "이메일",
+    "Your translation quota": "번역 크레딧",
+    "{{currentCredits}} / {{maxCredits}} credits used": "<strong>{{currentCredits}}</strong> / {{maxCredits}} 크레딧 사용됨",
+    "Permanent quotas · Never expire · Top up anytime.": "영구 할당량 · 제한 없음 · 언제든지 충전",
+    "The quota has been used up": "할당량이 소진되었습니다",
+    "Buy extra credits now to continue using": "추가 크레딧을 구매하여 계속 사용",
+    "Total pay": "총 결제 금액"
 } 
   

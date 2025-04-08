@@ -262,5 +262,11 @@
     "How to translate with api key? Please refer to": "Как перевести с помощью API-ключа? Пожалуйста, обратитесь к",
     "the Private API Translation Model User Manual": " руководству пользователя для частного API-трансляционного модели",
     "Use private api to translate": "Использовать частный API для перевода",
-    "Email": "Email"
+    "Email": "Email",
+    "Your translation quota": "Ваш кредит перевода",
+    "{{currentCredits}} / {{maxCredits}} credits used": "<strong>{{currentCredits}}</strong> / {{maxCredits}} кредитов использовано",
+    "Permanent quotas · Never expire · Top up anytime.": "Постоянные квоты · Никогда не истекают · Пополнять в любое время.",
+    "The quota has been used up": "Квота исчерпана",
+    "Buy extra credits now to continue using": "Купить дополнительные кредиты для продолжения использования",
+    "Total pay": "Всего оплачено"
 }

@@ -261,6 +261,12 @@
     "How to translate with api key? Please refer to": "Hur översätter du med en API-nyckel? Se",
     "the Private API Translation Model User Manual": " användarhandboken för det privata API-översättningsmodellen",
     "Use private api to translate": "Använd privat API för översättning",
-    "Email": "Email"
+    "Email": "Email",
+    "Your translation quota": "Din översättningskvot",
+    "{{currentCredits}} / {{maxCredits}} credits used": "<strong>{{currentCredits}}</strong> / {{maxCredits}} krediter använt",
+    "Permanent quotas · Never expire · Top up anytime.": "Permanent kvoter · Inte upphöra · Laddas upp när som helst.",
+    "The quota has been used up": "Kvoten har använts",
+    "Buy extra credits now to continue using": "Köp extra krediter för att fortsätta använda",
+    "Total pay": "Totalt betalat"
 }   
   
