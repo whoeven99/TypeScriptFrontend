@@ -25,7 +25,6 @@ export interface OptionType {
     comparedPrice: number;
     currencyCode: string;
   };
-  test?: boolean;
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source, target, modal }) => {
@@ -249,7 +248,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         amount: selectedOption?.price.currentPrice,
         currencyCode: selectedOption?.price.currencyCode,
       },
-      test: selectedOption?.test,
     };
     const formData = new FormData();
     formData.append("payInfo", JSON.stringify(payInfo));
