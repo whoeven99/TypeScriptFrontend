@@ -129,6 +129,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const loadingDataD = loadingDataDEnd.getTime() - loadingDataDStart.getTime();
           console.log("loadingDataD: ", loadingDataD);
         }
+        if (!init?.addDefaultLanguagePack)
+          await AddDefaultLanguagePack({ shop });
         const loadingDataEnd = new Date();
         const loadingData = loadingDataEnd.getTime() - loadingDataStart.getTime();
         console.log("loadingData: ", loadingData);
