@@ -373,7 +373,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         name: payInfo.name,
         price: payInfo.price,
         returnUrl,
-        test: payInfo.test,
+        test: process.env.NODE_ENV === "development",
       });
       return json({ data: payData });
     }
