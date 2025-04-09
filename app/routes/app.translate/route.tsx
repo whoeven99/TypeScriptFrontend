@@ -115,11 +115,10 @@ const Index = () => {
 
     useEffect(() => {
         if (fetcher.data) {
-            if (fetcher.data.success) {
+            if (fetcher.data?.success) {
                 message.success(t("The translation task is in progress."));
                 navigate("/app");
             } else {
-                console.log("fetcher.data", fetcher.data);
                 setShowWarnModal(true);
                 const modalSettingOption = translateSettings1Options.find(option => option.value === fetcher.data.data.translateSettings1);
                 setModal(modalSettingOption?.label || "OpenAI/GPT-4");

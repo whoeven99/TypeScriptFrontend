@@ -275,11 +275,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           // 如果是机器翻译(translateSettings1 === "8")，直接调用翻译接口          
           if (translation.translateSettings1 === "8") {
             const words = await GetUserData({ shop });
-            if (!words) {
+            if (!words || !words.success) {
               return json({
                 success: false,
                 message: "words get error",
                 data: {
+                  shop,
+                  accessToken,
+                  source: translation.primaryLanguage,
+                  target: translation.selectedLanguage.locale,
+                  translateSettings1: translation.translateSettings1,
+                  translateSettings2: translation.translateSettings2,
+                  translateSettings3: translation.translateSettings3,
+                }
+              }, { status: 200 });
+            }
+
+            if (typeof words.response?.usedAmount === "number" && words.response.usedAmount >= words.response.amount) {
+              return json({
+                success: false,
+                message: "words limit reached",
+                data: {
+                  shop,
+                  accessToken,
                   source: translation.primaryLanguage,
                   target: translation.selectedLanguage.locale,
                   translateSettings1: translation.translateSettings1,
@@ -739,56 +757,6 @@ const Index = () => {
 
   const handleTranslate = async (locale: string) => {
     navigate("/app/translate", { state: { from: "/app/language", selectedLanguageCode: locale } });
-    // const selectedItem = dataSource.find(
-    //   (item: LanguagesDataType) => item.locale === locale,
-    // );
-    // const selectedTranslatingItem = dataSource.find(
-    //   (item: LanguagesDataType) => item.status === 2,
-    // );
-    // if (selectedItem && !selectedTranslatingItem) {
-    //   const formData = new FormData();
-    //   formData.append(
-    //     "translation",
-    //     JSON.stringify({
-    //       primaryLanguage: primaryLanguage,
-    //       selectedLanguage: selectedItem,
-    //     }),
-    //   ); // 将选中的语言作为字符串发送
-    //   translateFetcher.submit(formData, {
-    //     method: "post",
-    //     action: "/app/language",
-    //   }); // 提交表单请求
-    //   const installTime = localStorage.getItem('installTime')
-    //   if (!installTime) {
-    //     localStorage.setItem('installTime', new Date().toISOString());
-    //   } else {
-    //     const createTime = new Date(installTime);
-    //     const currentTime = new Date();
-
-    //     // 计算时间差（毫秒）
-    //     const timeDifference = currentTime.getTime() - createTime.getTime();
-
-    //     // 转换为天数（1天 = 24 * 60 * 60 * 1000 毫秒）
-    //     const daysDifference = Math.floor(timeDifference / (24 * 60 * 60 * 1000));
-
-    //     // 如果超过3天，显示评分弹窗
-    //     if (daysDifference >= 3) {
-    //       // 检查localStorage是否已经显示过
-    //       const hasShownRating = localStorage.getItem('hasShownRating');
-    //       if (!hasShownRating) {
-    //         setPreviewModalVisible(true);
-    //         // 标记已经显示过
-    //         localStorage.setItem('hasShownRating', 'true');
-    //       }
-    //     }
-    //   }
-    // } else {
-    //   message.error(
-    //     t(
-    //       "The translation task is in progress. Please try translating again later.",
-    //     ),
-    //   );
-    // }
   };
 
   //表格编辑
