@@ -138,7 +138,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           accessToken,
           confirmData,
         });
-        return json({ data: data });
+        return json({ data: data, confirmData });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
@@ -156,7 +156,7 @@ const Index = () => {
   const [searchInput, setSearchInput] = useState("");
   const [selectData, setSelectData] = useState<SelectType[]>();
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [themesData, setThemesData] = useState([]);
+  const [themesData, setThemesData] = useState<any>([]);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
@@ -195,6 +195,15 @@ const Index = () => {
         item.success === false;
       });
       if (!errorItem) {
+        confirmFetcher.data.confirmData.forEach((item: any) => {
+          console.log(item);
+          console.log(themesData);
+          const index = themesData.findIndex((option: any) => option.key === item.key);
+          console.log(index);
+          if (index !== -1) {
+            themesData[index].translated = item.value;
+          }
+        })
         message.success("Saved successfully");
       } else {
         message.error(errorItem?.errorMsg);
