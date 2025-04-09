@@ -87,7 +87,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
   } catch (error) {
     console.error("Error during authentication currency:", error);
-    return redirect("/");
   }
 };
 
