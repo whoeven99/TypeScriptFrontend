@@ -140,7 +140,7 @@ const Index = () => {
   const metaobjectsFetcher = useFetcher<any>();
   const navigationFetcher = useFetcher<any>();
   const emailFetcher = useFetcher<any>();
-  // const policiesFetcher = useFetcher<any>();
+  const policiesFetcher = useFetcher<any>();
   const shopFetcher = useFetcher<any>();
   // const store_metadataFetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
@@ -280,22 +280,22 @@ const Index = () => {
       sync_status: false,
       navigation: "email",
     },
-    // {
-    //   key: "policies",
-    //   title: t("Policies"),
-    //   allTranslatedItems:
-    //     items.find(
-    //       (item: any) =>
-    //         item?.language === current && item?.type === "SHOP_POLICY",
-    //     )?.translatedNumber ?? undefined,
-    //   allItems:
-    //     items.find(
-    //       (item: any) =>
-    //         item?.language === current && item?.type === "SHOP_POLICY",
-    //     )?.totalNumber ?? undefined,
-    //   sync_status: false,
-    //   navigation: "policy",
-    // },
+    {
+      key: "policies",
+      title: t("Policies"),
+      allTranslatedItems:
+        items.find(
+          (item: any) =>
+            item?.language === current && item?.type === "SHOP_POLICY",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) =>
+            item?.language === current && item?.type === "SHOP_POLICY",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "policy",
+    },
     {
       key: "shop",
       title: t("Shop"),
@@ -452,11 +452,11 @@ const Index = () => {
     }
   }, [emailFetcher.data]);
 
-  // useEffect(() => {
-  //   if (policiesFetcher.data) {
-  //     dispatch(updateData(policiesFetcher.data.data));
-  //   }
-  // }, [policiesFetcher.data]);
+  useEffect(() => {
+    if (policiesFetcher.data) {
+      dispatch(updateData(policiesFetcher.data.data));
+    }
+  }, [policiesFetcher.data]);
 
   useEffect(() => {
     if (shopFetcher.data) {
@@ -642,19 +642,19 @@ const Index = () => {
         method: "post",
         action: "/app/manage_translation",
       }); // 提交表单请求
-      // const policiesFormData = new FormData();
-      // policiesFormData.append(
-      //   "policiesItems",
-      //   JSON.stringify({
-      //     source: primaryLanguage,
-      //     target: current,
-      //     resourceType: "Policies",
-      //   }),
-      // );
-      // policiesFetcher.submit(policiesFormData, {
-      //   method: "post",
-      //   action: "/app/manage_translation",
-      // }); // 提交表单请求
+      const policiesFormData = new FormData();
+      policiesFormData.append(
+        "itemsCount",
+        JSON.stringify({
+          source: primaryLanguage,
+          target: current,
+          resourceType: "Policies",
+        }),
+      );
+      policiesFetcher.submit(policiesFormData, {
+        method: "post",
+        action: "/app/manage_translation",
+      }); // 提交表单请求
       const shopFormData = new FormData();
       shopFormData.append(
         "itemsCount",

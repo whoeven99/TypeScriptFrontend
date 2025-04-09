@@ -78,7 +78,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const languageData = JSON.parse(formData.get("languageData") as string);
     const nearTransaltedData = JSON.parse(formData.get("nearTransaltedData") as string);
     const userData = JSON.parse(formData.get("userData") as string);
-    const translation = JSON.parse(formData.get("translation") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
     const payInfo = JSON.parse(formData.get("payInfo") as string);
@@ -326,21 +325,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.error("Error userData app:", error);
         return json({ error: "Error userData app" }, { status: 500 });
       }
-    }
-
-    if (translation) {
-      const source = translation.primaryLanguageCode;
-      const target = translation.selectedLanguage;
-      const data = await GetTranslate({
-        shop,
-        accessToken: accessToken as string,
-        source,
-        target,
-        translateSettings1: translation.translateSettings1,
-        translateSettings2: translation.translateSettings2,
-        translateSettings3: translation.translateSettings3,
-      });
-      return json({ data: data });
     }
 
     if (statusData) {
