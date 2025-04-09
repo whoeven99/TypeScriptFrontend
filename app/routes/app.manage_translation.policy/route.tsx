@@ -24,24 +24,9 @@ import dynamic from "next/dynamic";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
-
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+import ManageTableInput from "~/components/manageTableInput";
 
 const { Sider, Content } = Layout;
-
-
-
-interface PolicyType {
-  key: string;
-  body: string;
-  title: string;
-  locale: string;
-  digest: string;
-  translations: {
-    key: string;
-    body: string | undefined;
-  };
-}
 
 type TableDataType = {
   key: string | number | undefined;
@@ -66,37 +51,23 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      shop,
-      accessToken,
-    });
-    const shopData = await queryShop({ shop, accessToken });
-    const policyTitle = shopData.shopPolicies;
-    const policyBody = await queryNextTransType({
+    let locale = searchTerm;
+    if (!locale) {
+      const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+        shop,
+        accessToken,
+      });
+      locale = shopLanguagesLoad[0].locale;
+    }
+    const policies = await queryNextTransType({
       shop,
       accessToken,
       resourceType: "SHOP_POLICY",
       endCursor: "",
-      locale: searchTerm || shopLanguagesLoad[0].locale,
-    });
-
-    const policies = policyTitle.map((title: any, index: number) => {
-      const body = policyBody.nodes[index];
-      return {
-        title: title.title,
-        key: title.id,
-        body: title.body,
-        locale: body?.translatableContent[0].locale,
-        digest: body?.translatableContent[0].digest,
-        translations: {
-          key: body?.resourceId,
-          value: body?.translations[0]?.value,
-        },
-      };
+      locale: locale,
     });
     return json({
       searchTerm,
-      shopLanguagesLoad,
       policies,
     });
   } catch (error) {
@@ -123,7 +94,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
-
     switch (true) {
       case !!confirmData:
         const data = await updateManageTranslation({
@@ -131,7 +101,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           accessToken,
           confirmData,
         });
-        return json({ data: data });
+        return json({ data: data, confirmData });
+      default:
+        // 你可以在这里处理一个默认的情况，如果没有符合的条件
+        return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
     console.error("Error action policy:", error);
@@ -140,22 +113,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { searchTerm, shopLanguagesLoad, policies } =
+  const { searchTerm, policies } =
     useLoaderData<typeof loader>();
 
   const exMenuData = (policies: any) => {
-    const data = policies.map((policy: PolicyType) => ({
-      key: policy.key,
-      label: policy.title,
+    const data = policies.nodes.map((policy: any) => ({
+      key: policy.resourceId,
+      label: policy.translatableContent.find((item: any) => item.key === "body")
+        .value,
     }));
     return data;
   };
 
   const items: MenuProps["items"] = exMenuData(policies);
   const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [policyData, setPolicyData] = useState<PolicyType>();
+  const [policyData, setPolicyData] = useState<any>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [selectPolicyKey, setSelectPolicyKey] = useState(policies[0].key);
+  const [selectPolicyKey, setSelectPolicyKey] = useState(policies.nodes[0]?.resourceId);
+  const [translatedValues, setTranslatedValues] = useState<{ [key: string]: string }>({});
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const {
@@ -167,30 +142,21 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   useEffect(() => {
-    const data: PolicyType = policies.find(
-      (policy: any) => policy.key === selectPolicyKey,
+    const data: any = policies.nodes.find(
+      (policy: any) => policy.resourceId === selectPolicyKey,
     );
-    setConfirmData([
-      {
-        resourceId: data?.translations.key,
-        locale: data.locale,
-        key: "body",
-        value: "",
-        translatableContentDigest: data.digest,
-        target: searchTerm || "",
-      },
-    ]);
-    setPolicyData(data);
     setConfirmData([]);
+    setPolicyData(data);
+    setTranslatedValues({});
   }, [selectPolicyKey]);
 
   useEffect(() => {
     setResourceData([
       {
-        key: policyData?.key,
+        key: "body",
         resource: "Content",
-        default_language: policyData?.body,
-        translated: policyData?.translations?.body,
+        default_language: policyData?.translatableContent[0]?.value,
+        translated: policyData?.translations[0]?.value,
       },
     ]);
   }, [policyData]);
@@ -201,6 +167,21 @@ const Index = () => {
         item.success === false;
       });
       if (!errorItem) {
+        confirmFetcher.data.confirmData.forEach((item: any) => {
+          const index = policies.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
+          if (index !== -1) {
+            const policy = policies.nodes[index].translations.find((option: any) => option.key === item.key);
+            if (policy) {
+              policy.value = item.value;
+            } else {
+              policies.nodes[index].translations.push({
+                key: item.key,
+                value: item.value,
+                outdated: false,
+              });
+            }
+          }
+        })
         message.success("Saved successfully");
       } else {
         message.error(errorItem?.errorMsg);
@@ -226,7 +207,7 @@ const Index = () => {
       width: "45%",
       render: (_: any, record: TableDataType) => {
         return (
-          <ReactQuill theme="snow" defaultValue={record?.default_language} />
+          <ManageTableInput record={record} textarea={false} />
         );
       },
     },
@@ -238,10 +219,12 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           record && (
-            <ReactQuill
-              theme="snow"
-              defaultValue={record?.translated}
-              onChange={(content) => handleInputChange(record?.key, content)}
+            <ManageTableInput
+              record={record}
+              translatedValues={translatedValues}
+              setTranslatedValues={setTranslatedValues}
+              handleInputChange={handleInputChange}
+              textarea={false}
             />
           )
         );
@@ -249,15 +232,39 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (
-    key: string | number | undefined,
-    value: string,
-  ) => {
-    setConfirmData(
-      confirmData.map((item) =>
-        item.key === key ? { ...item, value: value } : item,
-      ),
-    );
+  const handleInputChange = (key: string, value: string) => {
+    setTranslatedValues((prev) => ({
+      ...prev,
+      [key]: value, // 更新对应的 key
+    }));
+    setConfirmData((prevData) => {
+      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+
+      if (existingItemIndex !== -1) {
+        // 如果 key 存在，更新其对应的 value
+        const updatedConfirmData = [...prevData];
+        updatedConfirmData[existingItemIndex] = {
+          ...updatedConfirmData[existingItemIndex],
+          value: value,
+        };
+        return updatedConfirmData;
+      } else {
+        // 如果 key 不存在，新增一条数据
+        const newItem = {
+          resourceId: policyData.resourceId,
+          locale: policyData.translatableContent.find(
+            (item: any) => item.key === key,
+          )?.locale,
+          key: key,
+          value: value, // 初始为空字符串
+          translatableContentDigest: policyData.translatableContent.find(
+            (item: any) => item.key === key,
+          )?.digest,
+          target: searchTerm || "",
+        };
+        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+      }
+    });
   };
 
   const onClick = (e: any) => {
@@ -281,7 +288,7 @@ const Index = () => {
 
   return (
     <div>
-      {policies.length ? (
+      {policies.nodes.length ? (
         <Modal
           open={isVisible}
           onCancel={onCancel}
@@ -324,7 +331,6 @@ const Index = () => {
             <Sider style={{ background: colorBgContainer }} width={200}>
               <Menu
                 mode="inline"
-                defaultSelectedKeys={[policies[0].id]}
                 defaultOpenKeys={["sub1"]}
                 style={{ height: "100%" }}
                 items={menuData}
@@ -345,8 +351,7 @@ const Index = () => {
       ) : (
         <Modal open={isVisible} footer={null} onCancel={onCancel}>
           <Result
-            title="The specified fields were not found in the store.
-"
+            title="The specified fields were not found in the store."
             extra={
               <Button type="primary" onClick={onCancel}>
                 OK

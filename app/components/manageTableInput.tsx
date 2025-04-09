@@ -28,7 +28,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   handleInputChange,
   textarea,
   index,
-}) => {
+}) => {  
   const [defaultValue, setDefaultValue] = useState<string>(
     record?.default_language || "",
   );
@@ -91,7 +91,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
           }
         />
       );
-    } else if (record?.key === "body_html") {
+    } else if (record?.key === "body_html" || record?.key === "body") {
       const [editorValue, setEditorValue] = useState(translatedValues[record?.key] || '');
       const [isInitializing, setIsInitializing] = useState(true);
       
@@ -173,7 +173,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
           autoSize={{ minRows: 1, maxRows: 6 }}
         />
       );
-    } else if (record?.key === "body_html") {
+    } else if (record?.key === "body_html" || record?.key === "body") {
       return <ReactQuill theme="snow" value={defaultValue} readOnly modules={modules} />;
     }
     return <Input disabled value={defaultValue} />;

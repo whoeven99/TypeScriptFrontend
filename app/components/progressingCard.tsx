@@ -14,7 +14,7 @@ interface ProgressingCardProps {
 const ProgressingCard: React.FC<ProgressingCardProps> = ({
 }) => {
     // const [data, setData] = useState<any>(null);
-    const [item, setItem] = useState("Products");
+    const [item, setItem] = useState("");
     const [itemsCount, setItemsCount] = useState<{
         totalNumber: number;
         translatedNumber: number;
@@ -34,11 +34,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
     const fetcher = useFetcher<any>();
     const statusFetcher = useFetcher<any>();
     const itemsFetcher = useFetcher<any>();
-    // const target = useSelector((state: any) =>
-    //     state.languageTableData.rows.find(
-    //         (item: any) => item.status === 2,
-    //     ),
-    // );
 
     useEffect(() => {
         fetcher.submit({
