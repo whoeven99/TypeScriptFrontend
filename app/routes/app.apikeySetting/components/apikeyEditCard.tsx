@@ -34,8 +34,6 @@ export const ApiKeyEditCard = forwardRef<ApiKeyEditCardMethods, ApiKeyEditCardPr
     onDelete,
     loading
 }, ref) => {
-    console.log("apiKey: ", apiKey);
-    console.log("count: ", count);
     const [apiKeyValue, setApiKeyValue] = useState(apiKey);
     const [countValue, setCountValue] = useState(count.toString());
     const [isEdit, setIsEdit] = useState(false);

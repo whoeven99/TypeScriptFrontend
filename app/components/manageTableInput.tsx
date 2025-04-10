@@ -3,6 +3,9 @@ import dynamic from "next/dist/shared/lib/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import debounce from 'lodash/debounce';
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+import { franc } from 'franc-min';
+import "./styles.css";
+import { useSelector } from "react-redux";
 
 const { TextArea } = Input;
 
@@ -18,8 +21,29 @@ interface ManageTableInputProps {
   >;
   handleInputChange?: (key: string, value: string, index: number) => void;
   textarea: boolean;
+  isRtl?: boolean;
   index?: number;
 }
+
+const modules = {
+  toolbar: [
+    ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+    ['blockquote', 'code-block'],
+    [{ 'direction': 'rtl' }],                         // text direction
+
+    [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+
+    [{ 'color': [] }],          // dropdown with defaults from theme
+    [{ 'font': [] }],
+    [{ 'align': [] }],
+
+    ['clean']                                         // remove formatting button
+  ],
+  clipboard: {
+    matchVisual: false // 禁用视觉匹配，可以减少自动添加的空格
+  }
+};
 
 const ManageTableInput: React.FC<ManageTableInputProps> = ({
   record,
@@ -27,42 +51,14 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   setTranslatedValues,
   handleInputChange,
   textarea,
+  isRtl,
   index,
-}) => {  
-  const [defaultValue, setDefaultValue] = useState<string>(
-    record?.default_language || "",
-  );
-
-  const modules = {
-    toolbar: [
-      ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
-      ['blockquote', 'code-block'],
-      // ['link', 'image', 'video', 'formula'],
-
-      // [{ 'header': 1 }, { 'header': 2 }],               // custom button values
-      // [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'list': 'check' }],
-      // [{ 'script': 'sub' }, { 'script': 'super' }],      // superscript/subscript
-      // [{ 'indent': '-1' }, { 'indent': '+1' }],          // outdent/indent
-      [{ 'direction': 'rtl' }],                         // text direction
-
-      [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-
-      [{ 'color': [] }],          // dropdown with defaults from theme
-      [{ 'font': [] }],
-      [{ 'align': [] }],
-
-      ['clean']                                         // remove formatting button
-    ],
-    clipboard: {
-      matchVisual: false // 禁用视觉匹配，可以减少自动添加的空格
-    }
-  };
-
-  useEffect(() => {
-    setDefaultValue(record?.default_language || "");
+}) => {
+  const defaultValue = useMemo(() => {
+    return record?.default_language || "";
   }, [record?.default_language]);
-
+  const locale = useSelector((state: any) => state.userConfig.locale);
+  
   useEffect(() => {
     if (setTranslatedValues) {
       setTranslatedValues((prev) => ({
@@ -70,7 +66,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         [record?.key]: record?.translated, // 更新对应的 key
       }));
     }
-  }, [record, setTranslatedValues]); 
+  }, [record, setTranslatedValues]);
 
   if (
     handleInputChange &&
@@ -89,19 +85,20 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
               index ? Number(index + "" + record.index) : record.index,
             )
           }
+          className={isRtl ? "rtl-input" : ""}
         />
       );
     } else if (record?.key === "body_html" || record?.key === "body") {
       const [editorValue, setEditorValue] = useState(translatedValues[record?.key] || '');
       const [isInitializing, setIsInitializing] = useState(true);
-      
+
       useEffect(() => {
         setIsInitializing(true);
         setEditorValue(translatedValues[record?.key] || '');
         const timer = setTimeout(() => {
           setIsInitializing(false);
         }, 0);
-        
+
         return () => clearTimeout(timer);
       }, [record?.key, translatedValues]);
 
@@ -139,7 +136,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
 
       return (
         <ReactQuill
-          key={`${record?.key}-${record?.default_language}`}
+          key={`${record?.key}-${record?.translated}`}
           theme="snow"
           value={editorValue}
           modules={modules}
@@ -162,6 +159,8 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
             index ? Number(index + "" + record.index) : index || record.index,
           )
         }
+        // dir="auto"  // 自动检测文本方向
+        className={isRtl ? "rtl-input" : ""}
       />
     );
   } else {
@@ -171,12 +170,13 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
           disabled
           value={defaultValue}
           autoSize={{ minRows: 1, maxRows: 6 }}
+          className={locale === "ar" ? "rtl-input" : ""}
         />
       );
     } else if (record?.key === "body_html" || record?.key === "body") {
-      return <ReactQuill theme="snow" value={defaultValue} readOnly modules={modules} />;
+      return <ReactQuill key={`${record?.key}-${record?.default_language}`} theme="snow" value={defaultValue} readOnly modules={modules} />;
     }
-    return <Input disabled value={defaultValue} />;
+    return <Input disabled value={defaultValue} className={locale === "ar" ? "rtl-input" : ""} />;
   }
 };
 

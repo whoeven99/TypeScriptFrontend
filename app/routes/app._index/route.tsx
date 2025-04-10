@@ -131,7 +131,7 @@ const Index = () => {
                     <Text >{t("transLanguageCard2.description")}</Text>
                     {
                       loading ?
-                        <Button type="primary" onClick={() => navigate("/app/manage_translation")}>{t("transLanguageCard2.button")}</Button>
+                        <Button type="primary" onClick={() => navigate("/app/language")}>{t("transLanguageCard2.button")}</Button>
                         :
                         <Skeleton.Button active />
                     }
