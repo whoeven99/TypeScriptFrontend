@@ -24,9 +24,7 @@ import {
   queryNextTransType,
   queryPreviousNestTransType,
   queryPreviousTransType,
-  queryShopLanguages,
 } from "~/api/admin";
-import { ShopLocalesType } from "../app.language/route";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
@@ -98,16 +96,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      shop,
-      accessToken,
-    });
     const products = await queryNextTransType({
       shop,
       accessToken,
       resourceType: "PRODUCT",
       endCursor: "",
-      locale: searchTerm || shopLanguagesLoad[0].locale,
+      locale: searchTerm || "",
     });
     const product_options = await queryNextNestTransType({
       shop,
@@ -115,7 +109,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       resourceType: "PRODUCT",
       nestResourceType: "PRODUCT_OPTION",
       endCursor: "",
-      locale: searchTerm || shopLanguagesLoad[0].locale,
+      locale: searchTerm || "",
     });
     const product_metafields = await queryNextNestTransType({
       shop,
@@ -123,7 +117,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       resourceType: "PRODUCT",
       nestResourceType: "METAFIELD",
       endCursor: "",
-      locale: searchTerm || shopLanguagesLoad[0].locale,
+      locale: searchTerm || "",
     });
 
     return json({
@@ -131,7 +125,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       products,
       product_options,
       product_metafields,
-      shopLanguagesLoad,
     });
   } catch (error) {
     console.error("Error load product:", error);
@@ -260,7 +253,6 @@ const Index = () => {
     products,
     product_options,
     product_metafields,
-    shopLanguagesLoad,
     searchTerm,
   } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
@@ -323,7 +315,6 @@ const Index = () => {
       metafields: productMetafieldsData,
     });
     setProductData(data);
-    console.log("productData: ", productData?.title);
     setConfirmData([]);
     setTranslatedValues({});
   }, [selectProductKey]);
@@ -529,6 +520,7 @@ const Index = () => {
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
             textarea={false}
+            isRtl={searchTerm === "ar"}
           />
         );
       },
@@ -564,6 +556,7 @@ const Index = () => {
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
             textarea={false}
+            isRtl={searchTerm === "ar"}
           />
         );
       },
@@ -604,6 +597,7 @@ const Index = () => {
             handleInputChange={handleInputChange}
             textarea={false}
             index={1}
+            isRtl={searchTerm === "ar"}
           />
         );
       },
@@ -644,6 +638,7 @@ const Index = () => {
             handleInputChange={handleInputChange}
             textarea={false}
             index={2}
+            isRtl={searchTerm === "ar"}
           />
         );
       },

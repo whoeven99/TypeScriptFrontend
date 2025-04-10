@@ -23,7 +23,6 @@ import {
   queryPreviousTransType,
   queryShopLanguages,
 } from "~/api/admin";
-import { ShopLocalesType } from "../app.language/route";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
@@ -58,21 +57,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      shop,
-      accessToken,
-    });
     const filters = await queryNextTransType({
       shop,
       accessToken,
       resourceType: "FILTER",
       endCursor: "",
-      locale: searchTerm || shopLanguagesLoad[0].locale,
+      locale: searchTerm || "",
     });
 
     return json({
       searchTerm,
-      shopLanguagesLoad,
       filters,
     });
   } catch (error) {
@@ -142,7 +136,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { searchTerm, shopLanguagesLoad, filters } =
+  const { searchTerm, filters } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
@@ -231,6 +225,7 @@ const Index = () => {
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
             textarea={false}
+            isRtl={searchTerm === "ar"}
           />
         );
       },

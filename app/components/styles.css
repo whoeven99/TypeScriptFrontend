@@ -170,3 +170,15 @@
 .circle.error {
   border-color: #ff4d4f;
 }
+
+/* manageTableInput */
+.rtl-input {
+  /* 基础RTL支持 */
+  text-align: right;
+  direction: rtl;
+}
+
+.rtl-input input {
+  text-align: right;
+  direction: rtl;
+}

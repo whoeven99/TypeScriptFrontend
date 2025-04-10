@@ -79,15 +79,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             shop,
             accessToken,
           });
-          console.log("GetGlossaryByShopName: ", data);
-
           return json({ data: data });
         } catch (error) {
           console.error("Error glossary loading:", error);
         }
       case !!updateInfo:
         try {
-          console.log("updateInfo: ", updateInfo);
           if (updateInfo.key >= 0) {
             const data = await UpdateTargetTextById({
               shop: shop,
@@ -162,7 +159,6 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data) {
-      console.log(loadingFetcher.data.data.glossaryTableData);
       dispatch(
         setGLossaryTableData(loadingFetcher.data.data.glossaryTableData),
       );
@@ -174,7 +170,6 @@ const Index = () => {
 
   useEffect(() => {
     if (deleteFetcher.data) {
-      console.log(deleteFetcher.data);
       let newData = [...dataSource];
       // 遍历 deleteFetcher.data
       deleteFetcher.data.data.forEach((res: any) => {
@@ -328,8 +323,6 @@ const Index = () => {
     selectedRowKeys,
     onChange: onSelectChange,
   };
-  console.log(shopLocales);
-
   return (
     <Page>
       <TitleBar title={t("Glossary")} />

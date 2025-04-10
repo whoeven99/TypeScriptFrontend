@@ -24,7 +24,7 @@ redirect_urls = [
 api_version = "2024-07"
 
   [[webhooks.subscriptions]]
-  topics = [ "app_purchases_one_time/update", "app/uninstalled" ]
+  topics = [ "app_purchases_one_time/update", "app/uninstalled", "locales/create" ]
   uri = "/webhooks"
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 

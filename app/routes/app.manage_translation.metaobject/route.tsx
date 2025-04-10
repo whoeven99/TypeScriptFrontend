@@ -12,9 +12,7 @@ import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   queryNextTransType,
   queryPreviousTransType,
-  queryShopLanguages,
 } from "~/api/admin";
-import { ShopLocalesType } from "../app.language/route";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
@@ -22,8 +20,6 @@ import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
 
 const { Content } = Layout;
-
-
 
 type TableDataType = {
   key: string;
@@ -49,21 +45,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      shop,
-      accessToken,
-    });
     const metaobjects = await queryNextTransType({
       shop,
       accessToken,
       resourceType: "METAOBJECT",
       endCursor: "",
-      locale: searchTerm || shopLanguagesLoad[0].locale,
+      locale: searchTerm || "",
     });
 
     return json({
       searchTerm,
-      shopLanguagesLoad,
       metaobjects,
     });
   } catch (error) {
@@ -133,8 +124,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { searchTerm, shopLanguagesLoad, metaobjects } =
-    useLoaderData<typeof loader>();
+  const { searchTerm, metaobjects } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const [isVisible, setIsVisible] = useState<boolean>(true);
@@ -221,6 +211,7 @@ const Index = () => {
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
             textarea={false}
+            isRtl={searchTerm === "ar"}
           />
         );
       },

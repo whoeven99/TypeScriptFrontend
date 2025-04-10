@@ -7,11 +7,9 @@ import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import { Outlet, useFetcher, useLoaderData, useLocation } from "@remix-run/react";
-import AttentionCard from "~/components/attentionCard";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
-import React from "react";
-import { GetTranslationItemsInfo, GetUserWords } from "~/api/serve";
+import { GetTranslationItemsInfo } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import { WordsType } from "../app._index/route";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
@@ -21,6 +19,7 @@ import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
 import { SessionService } from "~/utils/session.server";
 import "react-quill/dist/quill.snow.css";
+import { setLocale } from "~/store/modules/userConfig";
 
 interface ManageMenuDataType {
   label: string;
@@ -58,13 +57,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     shop,
     accessToken,
   });
+
   const url = new URL(request.url);
   const languageCode = url.searchParams.get('language');
-  // const words = await GetUserWords({ shop });
   return json({
     shopLanguages: shopLanguages,
     languageCode: languageCode
-    // words: words,
   });
 };
 
@@ -381,15 +379,18 @@ const Index = () => {
       navigation: "shipping",
     },
   ];
-  // useEffect(() => {
-  //   const formData = new FormData();
-  //   formData.append("loading", JSON.stringify(true));
-  //   fetcher.submit(formData, {
-  //     method: "post",
-  //     action: "/app/manage_translation",
-  //   });
-  //   shopify.loading(true);
-  // }, []);
+
+  useEffect(() => {
+    // const formData = new FormData();
+    // formData.append("loading", JSON.stringify(true));
+    // fetcher.submit(formData, {
+    //   method: "post",
+    //   action: "/app/manage_translation",
+    // });
+    // shopify.loading(true);
+    const locale = shopLanguages.find((language) => language.primary === true)?.locale;
+    dispatch(setLocale(locale || ""));
+  }, []);
 
   // useEffect(() => {
   //   if (fetcher.data) {
@@ -464,12 +465,6 @@ const Index = () => {
     }
   }, [shopFetcher.data]);
 
-  // useEffect(() => {
-  //   if (store_metadataFetcher.data) {
-  //     dispatch(updateData(store_metadataFetcher.data.data));
-  //   }
-  // }, [store_metadataFetcher.data]);
-
   useEffect(() => {
     if (themeFetcher.data) {
       dispatch(updateData(themeFetcher.data.data));
@@ -487,10 +482,6 @@ const Index = () => {
       dispatch(updateData(shippingFetcher.data.data));
     }
   }, [shippingFetcher.data]);
-
-  // useEffect(() => {
-  //   if (words && words.chars > words.totalChars) setDisable(true);
-  // }, [words]);
 
   useEffect(() => {
     if (shopLanguages && shopLanguages?.length) {

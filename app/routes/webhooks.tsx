@@ -6,6 +6,7 @@ import {
   CleanData,
   DeleteData,
   InsertOrUpdateOrder,
+  InsertTargets,
   RequestData,
   SendPurchaseSuccessEmail,
   Uninstall,
@@ -14,6 +15,9 @@ import {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop, session, admin, payload } =
     await authenticate.webhook(request);
+
+  const adminAuthResult = await authenticate.admin(request);
+  const { accessToken } = adminAuthResult.session;
 
   if (!admin && topic !== "SHOP_REDACT") {
     // The admin context isn't returned if the webhook fired after a shop was uninstalled.
@@ -97,6 +101,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         break;
       } catch (error) {
         console.error("Error processing purchase:", error);
+        return new Response(null, { status: 200 });
+      }
+    case "LOCALES_CREATE":
+      try {
+        if (payload) {
+          new Response(null, { status: 200 });
+          console.log("payload: ", payload);
+          
+          // await InsertTargets({ shop, accessToken: accessToken as string, source: "webhook", targets: ["customers"] });
+        }
+        break;
+      } catch (error) {
+        console.error("Error LOCALES_CREATE:", error);
         return new Response(null, { status: 200 });
       }
     case "CUSTOMERS_DATA_REQUEST":
