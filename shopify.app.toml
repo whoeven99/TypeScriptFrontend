@@ -3,7 +3,7 @@
 client_id = "4b05c1caefa9e0761a0538b64159b627"
 name = "Ciwi.ai:FAT(Local)"
 handle = "ciwi_local"
-application_url = "https://0740fc60010c.ngrok.app"
+application_url = "https://bb9f22f0750b.ngrok.app"
 embedded = true
 
 [build]
@@ -17,16 +17,20 @@ scopes = "read_content,read_legal_policies,read_markets,read_online_store_naviga
 
 [auth]
 redirect_urls = [
-  "https://0740fc60010c.ngrok.app/auth/callback",
-  "https://0740fc60010c.ngrok.app/auth/shopify/callback",
-  "https://0740fc60010c.ngrok.app/api/auth/callback"
+  "https://bb9f22f0750b.ngrok.app/auth/callback",
+  "https://bb9f22f0750b.ngrok.app/auth/shopify/callback",
+  "https://bb9f22f0750b.ngrok.app/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
   [[webhooks.subscriptions]]
-  topics = [ "app_purchases_one_time/update", "app/uninstalled", "locales/create" ]
+  topics = [
+  "app_purchases_one_time/update",
+  "app/uninstalled",
+  "locales/create"
+]
   uri = "/webhooks"
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 
