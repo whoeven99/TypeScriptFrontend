@@ -262,7 +262,7 @@
     "Use private api to translate": "Gebruik privé API voor vertaling",
     "Email": "E-mail",
     "Your translation quota": "Uw vertalingquota",
-    "{{currentCredits}} / {{maxCredits}} credits used": "<strong>{{currentCredits}}</strong> / {{maxCredits}} credits gebruikt",
+    "{{currentCredits}} has been used, {{maxCredits}} available.": "<strong>{{currentCredits}}</strong> is gebruikt, <strong>{{maxCredits}}</strong> beschikbaar",
     "Permanent quotas · Never expire · Top up anytime.": "Permanent quotas · Never expire · Top up anytime.",
     "The quota has been used up": "De quota is opgebruikt",
     "Buy extra credits now to continue using": "Koop extra credits om verder te gebruiken",

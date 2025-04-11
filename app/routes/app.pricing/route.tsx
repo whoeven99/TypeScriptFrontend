@@ -227,7 +227,7 @@ const Index = () => {
                         </div>
                         {maxCredits ? <div
                             dangerouslySetInnerHTML={{
-                                __html: t("{{currentCredits}} / {{maxCredits}} credits used", {
+                                __html: t("{{currentCredits}} has been used, {{maxCredits}} available.", {
                                     currentCredits: currentCredits.toLocaleString(),
                                     maxCredits: maxCredits.toLocaleString()
                                 })
