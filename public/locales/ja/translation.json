@@ -262,7 +262,7 @@
     "Use private api to translate": "プライベートAPIを使用して翻訳する",
     "Email": "メール",
     "Your translation quota": "翻訳クレジット",
-    "{{currentCredits}} / {{maxCredits}} credits used": "<strong>{{currentCredits}}</strong> / {{maxCredits}} クレジット使用済み",
+    "{{currentCredits}} has been used, {{maxCredits}} available.": "<strong>{{currentCredits}}</strong> 使用済み, <strong>{{maxCredits}}</strong> 利用可能",
     "Permanent quotas · Never expire · Top up anytime.": "永久クォータ · 期限なし · 随時充填",
     "The quota has been used up": "クレジットが不足しています",
     "Buy extra credits now to continue using": "クレジットを購入して継続使用する",
