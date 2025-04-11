@@ -23,6 +23,7 @@ import {
   PublishInfoType,
   queryAllLanguages,
   queryAllMarket,
+  queryProductsCount,
   queryShopLanguages,
   UnpublishInfoType,
 } from "~/api/admin";
@@ -334,6 +335,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 translateSettings3: translation.translateSettings3,
               }
             }, { status: 200 });
+          }
+
+          if (words.totalChars === 200000) {
+            const productsCount = await queryProductsCount({ shop, accessToken })
+            if (productsCount >= 1) {
+              return json({
+                success: false,
+                message: "products count limit reached 1000",
+                data: {
+                  source: translation.primaryLanguage,
+                  target: translation.selectedLanguage.locale,
+                  translateSettings1: translation.translateSettings1,
+                  translateSettings2: translation.translateSettings2,
+                  translateSettings3: translation.translateSettings3,
+                }
+              }, { status: 200 });
+            }
           }
 
           // 检查字符数是否超限
