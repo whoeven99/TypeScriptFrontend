@@ -16,9 +16,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop, session, admin, payload } =
     await authenticate.webhook(request);
 
-  const adminAuthResult = await authenticate.admin(request);
-  const { accessToken } = adminAuthResult.session;
-
   if (!admin && topic !== "SHOP_REDACT") {
     // The admin context isn't returned if the webhook fired after a shop was uninstalled.
     // The SHOP_REDACT webhook will be fired up to 48 hours after a shop uninstalls the app.
