@@ -272,7 +272,7 @@
   "Use private api to translate": "使用私钥翻译",
   "Email": "电子邮件",
   "Your translation quota": "您的翻译额度",
-  "{{currentCredits}} / {{maxCredits}} credits used": "<strong>{{currentCredits}}</strong> / {{maxCredits}} 字符已使用",
+  "{{currentCredits}} has been used, {{maxCredits}} available.": "<strong>{{currentCredits}}</strong> 已使用, <strong>{{maxCredits}}</strong> 可用",
   "Permanent quotas · Never expire · Top up anytime.": "永久额度保障 · 无时间限制 · 随用随充",
   "The quota has been used up": "额度已用完",
   "Buy extra credits now to continue using": "立即购买额外字符包继续使用",

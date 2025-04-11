@@ -14,13 +14,10 @@ import {
   useFetcher,
   useLoaderData,
   useNavigate,
-  useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryNextTransType, queryShop, queryShopLanguages } from "~/api/admin";
-import { ShopLocalesType } from "../app.language/route";
+import { queryNextTransType } from "~/api/admin";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
-import dynamic from "next/dynamic";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
@@ -51,20 +48,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    let locale = searchTerm;
-    if (!locale) {
-      const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-        shop,
-        accessToken,
-      });
-      locale = shopLanguagesLoad[0].locale;
-    }
     const policies = await queryNextTransType({
       shop,
       accessToken,
       resourceType: "SHOP_POLICY",
       endCursor: "",
-      locale: locale,
+      locale: searchTerm || "",
     });
     return json({
       searchTerm,
@@ -225,6 +214,7 @@ const Index = () => {
               setTranslatedValues={setTranslatedValues}
               handleInputChange={handleInputChange}
               textarea={false}
+              isRtl={searchTerm === "ar"}
             />
           )
         );

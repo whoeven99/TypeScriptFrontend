@@ -111,8 +111,8 @@ const Index = () => {
     const creditOptions: OptionType[] = [
         {
             key: "option-1",
-            name: "100K",
-            Credits: 100000,
+            name: "500K",
+            Credits: 500000,
             price: {
                 currentPrice: 1.99,
                 comparedPrice: 100.0,
@@ -121,8 +121,8 @@ const Index = () => {
         },
         {
             key: "option-2",
-            name: "200K",
-            Credits: 200000,
+            name: "1M",
+            Credits: 1000000,
             price: {
                 currentPrice: 3.99,
                 comparedPrice: 20.0,
@@ -131,18 +131,28 @@ const Index = () => {
         },
         {
             key: "option-3",
-            name: "500K",
-            Credits: 500000,
+            name: "2M",
+            Credits: 2000000,
             price: {
-                currentPrice: 9.99,
+                currentPrice: 7.99,
                 comparedPrice: 100.0,
                 currencyCode: "USD",
             },
         },
         {
             key: "option-4",
-            name: "1M",
-            Credits: 1000000,
+            name: "3M",
+            Credits: 3000000,
+            price: {
+                currentPrice: 11.99,
+                comparedPrice: 200.0,
+                currencyCode: "USD",
+            },
+        },
+        {
+            key: "option-5",
+            name: "5M",
+            Credits: 5000000,
             price: {
                 currentPrice: 19.99,
                 comparedPrice: 200.0,
@@ -150,41 +160,31 @@ const Index = () => {
             },
         },
         {
-            key: "option-5",
-            name: "2M",
-            Credits: 2000000,
+            key: "option-6",
+            name: "10M",
+            Credits: 10000000,
             price: {
                 currentPrice: 39.99,
-                comparedPrice: 200.0,
-                currencyCode: "USD",
-            },
-        },
-        {
-            key: "option-6",
-            name: "3M",
-            Credits: 3000000,
-            price: {
-                currentPrice: 59.99,
                 comparedPrice: 800.0,
                 currencyCode: "USD",
             },
         },
         {
             key: "option-7",
-            name: "5M",
-            Credits: 5000000,
+            name: "20M",
+            Credits: 20000000,
             price: {
-                currentPrice: 99.99,
+                currentPrice: 79.99,
                 comparedPrice: 1000.0,
                 currencyCode: "USD",
             },
         },
         {
             key: "option-8",
-            name: "10M",
-            Credits: 10000000,
+            name: "30M",
+            Credits: 30000000,
             price: {
-                currentPrice: 199.99,
+                currentPrice: 119.99,
                 comparedPrice: 2000.0,
                 currencyCode: "USD",
             },
@@ -227,7 +227,7 @@ const Index = () => {
                         </div>
                         {maxCredits ? <div
                             dangerouslySetInnerHTML={{
-                                __html: t("{{currentCredits}} / {{maxCredits}} credits used", {
+                                __html: t("{{currentCredits}} has been used, {{maxCredits}} available.", {
                                     currentCredits: currentCredits.toLocaleString(),
                                     maxCredits: maxCredits.toLocaleString()
                                 })

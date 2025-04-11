@@ -4,6 +4,7 @@ import selectLanguageDataSlice from "./modules/selectLanguageData";
 import currencyTableDataSlice from "./modules/currencyDataTable";
 import glossaryTableDataSlice from "./modules/glossaryTableData"
 import TotalCharactersSlice from "./modules/totalCharacters";
+import userConfigSlice from "./modules/userConfig";
 import translatingResourceTypeSlice from "./modules/translatingResourceType";
 import { configureStore } from "@reduxjs/toolkit";
 
@@ -16,6 +17,7 @@ const store = configureStore({
     glossaryTableData:glossaryTableDataSlice,
     totalCharacters:TotalCharactersSlice,
     translatingResourceType:translatingResourceTypeSlice,
+    userConfig:userConfigSlice,
   },
 });
 

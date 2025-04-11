@@ -4,16 +4,15 @@ import {
   useFetcher,
   useLoaderData,
   useNavigate,
-  useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryNextTransType, queryShopLanguages } from "~/api/admin";
-import { ShopLocalesType } from "../app.language/route";
+import { queryNextTransType } from "~/api/admin";
 import dynamic from "next/dynamic";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
+import ManageTableInput from "~/components/manageTableInput";
 
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
@@ -45,21 +44,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
   const { shop, accessToken } = shopSession;
   try {
-    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      shop,
-      accessToken,
-    });
     const shippings = await queryNextTransType({
       shop,
       accessToken,
       resourceType: "PACKING_SLIP_TEMPLATE",
       endCursor: "",
-      locale: searchTerm || shopLanguagesLoad[0].locale,
+      locale: searchTerm || "",
     });
 
     return json({
       searchTerm,
-      shopLanguagesLoad,
       shippings,
     });
   } catch (error) {
@@ -103,7 +97,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { searchTerm, shopLanguagesLoad, shippings } =
+  const { searchTerm, shippings } =
     useLoaderData<typeof loader>();
 
   const [isVisible, setIsVisible] = useState<boolean>(true);
@@ -111,6 +105,9 @@ const Index = () => {
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [translatedValues, setTranslatedValues] = useState<{
+    [key: string]: string;
+  }>({});
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -159,10 +156,9 @@ const Index = () => {
       width: "45%",
       render: (_: any, record: TableDataType) => {
         return (
-          <ReactQuill
-            theme="snow"
-            defaultValue={record?.default_language}
-            readOnly
+          <ManageTableInput
+            record={record}
+            textarea={false}
           />
         );
       },
@@ -175,12 +171,13 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           record && (
-            <ReactQuill
-              theme="snow"
-              defaultValue={record?.translated}
-              onChange={(content) =>
-                handleInputChange(record.key, content, record.index)
-              }
+            <ManageTableInput
+              record={record}
+              translatedValues={translatedValues}
+              setTranslatedValues={setTranslatedValues}
+              handleInputChange={handleInputChange}
+              textarea={false}
+              isRtl={searchTerm === "ar"}
             />
           )
         );
@@ -189,6 +186,10 @@ const Index = () => {
   ];
 
   const handleInputChange = (key: string, value: string, index: number) => {
+    setTranslatedValues((prev: any) => ({
+      ...prev,
+      [key]: value, // 更新对应的 key
+    }));
     setConfirmData((prevData) => {
       const existingItemIndex = prevData.findIndex((item) => item.key === key);
 

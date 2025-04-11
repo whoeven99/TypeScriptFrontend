@@ -266,7 +266,7 @@
   "the Private API Translation Model User Manual": " the Private API Translation Model User Manual",
   "Use private api to translate": "Use private api to translate",
   "Your translation quota": "Your translation quota",
-  "{{currentCredits}} / {{maxCredits}} credits used": "<strong>{{currentCredits}}</strong> / {{maxCredits}} credits used",
+  "{{currentCredits}} has been used, {{maxCredits}} available.": "<strong>{{currentCredits}}</strong> has been used, {{maxCredits}} available.",
   "Permanent quotas · Never expire · Top up anytime.": "Permanent quotas · Never expire · Top up anytime.",
   "The quota has been used up": "The quota has been used up",
   "Buy extra credits now to continue using": "Buy extra credits now to continue using",

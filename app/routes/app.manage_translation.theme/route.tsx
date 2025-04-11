@@ -66,20 +66,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      shop,
-      accessToken,
-    });
     const themes = await queryNextTransType({
       shop,
       accessToken,
       resourceType: "ONLINE_STORE_THEME",
       endCursor: "",
-      locale: searchTerm || shopLanguagesLoad[0].locale,
+      locale: searchTerm || "",
     });
     return json({
       searchTerm,
-      shopLanguagesLoad,
       themes,
     });
   } catch (error) {
@@ -150,11 +145,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { searchTerm, shopLanguagesLoad, themes } =
+  const { searchTerm, themes } =
     useLoaderData<typeof loader>();
 
   const [searchInput, setSearchInput] = useState("");
-  const [selectData, setSelectData] = useState<SelectType[]>();
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [themesData, setThemesData] = useState<any>([]);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
@@ -178,16 +172,6 @@ const Index = () => {
   useEffect(() => {
     setResourceData(themesData);
   }, [themesData]);
-
-  useEffect(() => {
-    const newArray = shopLanguagesLoad
-      .filter((language) => !language.primary)
-      .map((language) => ({
-        label: language.name,
-        value: language.locale,
-      }));
-    setSelectData(newArray);
-  }, [shopLanguagesLoad]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -243,6 +227,7 @@ const Index = () => {
               setTranslatedValues={setTranslatedValues}
               handleInputChange={handleInputChange}
               textarea={true}
+              isRtl={searchTerm === "ar"}
             />
           )
         );

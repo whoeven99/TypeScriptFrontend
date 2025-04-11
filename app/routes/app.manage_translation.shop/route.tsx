@@ -57,21 +57,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      shop,
-      accessToken,
-    });
     const shops = await queryNextTransType({
       shop,
       accessToken,
       resourceType: "SHOP",
       endCursor: "",
-      locale: searchTerm || shopLanguagesLoad[0].locale,
+      locale: searchTerm || "",
     });
 
     return json({
       searchTerm,
-      shopLanguagesLoad,
       shops,
     });
   } catch (error) {
@@ -141,8 +136,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { searchTerm, shopLanguagesLoad, shops } =
-    useLoaderData<typeof loader>();
+  const { searchTerm, shops } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const [isVisible, setIsVisible] = useState<boolean>(true);
@@ -230,6 +224,7 @@ const Index = () => {
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
             textarea={false}
+            isRtl={searchTerm === "ar"}
           />
         );
       },

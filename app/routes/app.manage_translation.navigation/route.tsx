@@ -23,13 +23,12 @@ import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   queryNextTransType,
   queryPreviousTransType,
-  queryShopLanguages,
 } from "~/api/admin";
-import { ShopLocalesType } from "../app.language/route";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
+import ManageTableInput from "~/components/manageTableInput";
 
 const { Sider, Content } = Layout;
 
@@ -68,28 +67,23 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-      shop,
-      accessToken,
-    });
     const navigations = await queryNextTransType({
       shop,
       accessToken,
       resourceType: "MENU",
       endCursor: "",
-      locale: searchTerm || shopLanguagesLoad[0].locale,
+      locale: searchTerm || "",
     });
     const navigationItems = await queryNextTransType({
       shop,
       accessToken,
       resourceType: "LINK",
       endCursor: "",
-      locale: searchTerm || shopLanguagesLoad[0].locale,
+      locale: searchTerm || "",
     });
 
     return json({
       searchTerm,
-      shopLanguagesLoad,
       navigations,
       navigationItems,
     });
@@ -196,7 +190,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { searchTerm, shopLanguagesLoad, navigations, navigationItems } =
+  const { searchTerm, navigations, navigationItems } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
@@ -360,7 +354,7 @@ const Index = () => {
       key: "default_language",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return <Input disabled value={record?.default_language} />;
+        return <ManageTableInput record={record} textarea={false} />;
       },
     },
     {
@@ -371,11 +365,13 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           record && (
-            <Input
-              value={translatedValues[record?.key]}
-              onChange={(e) =>
-                handleInputChange(record.key, e.target.value, record.index)
-              }
+            <ManageTableInput
+              record={record}
+              translatedValues={translatedValues}
+              setTranslatedValues={setTranslatedValues}
+              handleInputChange={handleInputChange}
+              textarea={false}
+              isRtl={searchTerm === "ar"}
             />
           )
         );

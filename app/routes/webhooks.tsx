@@ -6,6 +6,7 @@ import {
   CleanData,
   DeleteData,
   InsertOrUpdateOrder,
+  InsertTargets,
   RequestData,
   SendPurchaseSuccessEmail,
   Uninstall,
@@ -14,6 +15,9 @@ import {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop, session, admin, payload } =
     await authenticate.webhook(request);
+
+  const adminAuthResult = await authenticate.admin(request);
+  const { accessToken } = adminAuthResult.session;
 
   if (!admin && topic !== "SHOP_REDACT") {
     // The admin context isn't returned if the webhook fired after a shop was uninstalled.
@@ -42,37 +46,37 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           let credits = 0;
           let price = 0;
           switch (payload?.app_purchase_one_time.name) {
-            case "100K Credits":
-              credits = 100000;
-              price = 1.99;
-              break;
-            case "200K Credits":
-              credits = 200000;
-              price = 3.99;
-              break;
             case "500K Credits":
               credits = 500000;
-              price = 9.99;
+              price = 1.99;
               break;
             case "1M Credits":
               credits = 1000000;
-              price = 19.99;
+              price = 3.99;
               break;
             case "2M Credits":
               credits = 2000000;
-              price = 39.99;
+              price = 7.99;
               break;
             case "3M Credits":
               credits = 3000000;
-              price = 59.99;
+              price = 11.99;
               break;
             case "5M Credits":
               credits = 5000000;
-              price = 99.99;
+              price = 19.99;
               break;
             case "10M Credits":
               credits = 10000000;
-              price = 199.99;
+              price = 39.99;
+              break;
+            case "20M Credits":
+              credits = 20000000;
+              price =79.99;
+              break;
+            case "30M Credits":
+              credits = 30000000;
+              price = 119.99;
               break;
           }
           new Response(null, { status: 200 });
@@ -99,6 +103,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.error("Error processing purchase:", error);
         return new Response(null, { status: 200 });
       }
+    // case "LOCALES_CREATE":
+    //   try {
+    //     if (payload) {
+    //       new Response(null, { status: 200 });
+    //       console.log("payload: ", payload);
+          
+    //       // await InsertTargets({ shop, accessToken: accessToken as string, source: "webhook", targets: ["customers"] });
+    //     }
+    //     break;
+    //   } catch (error) {
+    //     console.error("Error LOCALES_CREATE:", error);
+    //     return new Response(null, { status: 200 });
+    //   }
     case "CUSTOMERS_DATA_REQUEST":
       try {
         new Response(null, { status: 200 });
