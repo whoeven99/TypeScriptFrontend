@@ -64,7 +64,7 @@ const Index = () => {
     const [modal, setModal] = useState<string>("");
     const [translateSettings4, setTranslateSettings4] = useState<string>("1");
     const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
-    const [showWarnModal, setShowWarnModal] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [customApikeyData, setCustomApikeyData] = useState<boolean>(false);
     const [source, setSource] = useState("");
     const [target, setTarget] = useState("");
@@ -118,37 +118,16 @@ const Index = () => {
             if (fetcher.data?.success) {
                 message.success(t("The translation task is in progress."));
                 navigate("/app");
+            } else if (fetcher.data?.message === "words get error") {
+                message.error(t("The query of the remaining credits failed. Please try again."));
             } else {
-                setShowWarnModal(true);
+                message.warning(t(`${fetcher.data?.message}`))
+                setShowPaymentModal(true);
                 const modalSettingOption = translateSettings1Options.find(option => option.value === fetcher.data.data.translateSettings1);
                 setModal(modalSettingOption?.label || "OpenAI/GPT-4");
             }
         }
     }, [fetcher.data]);
-    // useEffect(() => {
-    //   if (loadingUserFetcher.data) {
-    //     setUser(loadingUserFetcher.data.data);
-    //     if (!loadingUserFetcher.data.data?.plan) {
-    //       // setNewUserModal(true);
-    //     }
-    //   }
-    // }, [loadingUserFetcher.data]);
-
-    // useEffect(() => {
-    //   if (user && user.chars >= user.totalChars) {
-    //     setLimited(true);
-    //   }
-    // }, [user]);
-
-    // useEffect(() => {
-    //   if (initializationFetcher.data && user) {
-    //     if (initializationFetcher.data?.data) {
-    //       setNewUserModal(false);
-    //       setNewUserModalLoading(false);
-    //       setUser({ ...user, totalChars: 50000 });
-    //     }
-    //   }
-    // }, [initializationFetcher.data]);
 
     useEffect(() => {
         if (languageData.length) {
@@ -209,31 +188,6 @@ const Index = () => {
             });
             setSource(languageSetting?.primaryLanguageCode);
             setTarget(selectedLanguageCode);
-            // 提交表单请求
-            // const installTime = localStorage.getItem('installTime')
-            // if (!installTime) {
-            //     localStorage.setItem('installTime', new Date().toISOString());
-            // } else {
-            //     const createTime = new Date(installTime);
-            //     const currentTime = new Date();
-
-            //     // 计算时间差（毫秒）
-            //     const timeDifference = currentTime.getTime() - createTime.getTime();
-
-            // 转换为天数（1天 = 24 * 60 * 60 * 1000 毫秒）
-            // const daysDifference = Math.floor(timeDifference / (24 * 60 * 60 * 1000));
-
-            // 如果超过3天，显示评分弹窗
-            // if (daysDifference >= 3) {
-            //     // 检查localStorage是否已经显示过
-            //     const hasShownRating = localStorage.getItem('hasShownRating');
-            //     if (!hasShownRating) {
-            //         setPreviewModalVisible(true);
-            //         // 标记已经显示过
-            //         localStorage.setItem('hasShownRating', 'true');
-            //     }
-            // }
-            // }
         } else {
             message.error(
                 t(
@@ -716,8 +670,8 @@ const Index = () => {
                     <NoLanguageSetCard />
                 )}
             </Space>
-            {showWarnModal && (
-                <PaymentModal visible={showWarnModal} setVisible={setShowWarnModal} source={source} target={target} modal={modal} />
+            {showPaymentModal && (
+                <PaymentModal visible={showPaymentModal} setVisible={setShowPaymentModal} source={source} target={target} modal={modal} />
             )}
         </Page>
     );
