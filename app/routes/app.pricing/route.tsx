@@ -1,6 +1,6 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Space, Row, Col, Card, Progress, Button, Typography, Alert, Skeleton, Popover } from "antd";
+import { Space, Row, Col, Card, Progress, Button, Typography, Alert, Skeleton, Popover, Badge } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import ScrollNotice from "~/components/ScrollNotice";
@@ -10,9 +10,9 @@ import { SessionService } from "~/utils/session.server";
 import { authenticate } from "~/shopify.server";
 import { useFetcher } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
-import { QuestionCircleOutlined } from "@ant-design/icons";
+import { CheckOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
     const sessionService = await SessionService.init(request);
@@ -191,6 +191,70 @@ const Index = () => {
         },
     ];
 
+    const plans = [
+        {
+            title: 'Starter',
+            price: '1.99',
+            subtitle: t('pricing.for_individuals'),
+            buttonText: t('pricing.try_free'),
+            buttonType: 'default',
+            disabled: false,
+            features: [
+                '5,000 words one time',
+                '1 translated language',
+                'Add 153 currencies',
+                'Edit translation',
+                'Customize Switcher',
+                'Global Search',
+                'Shopify payment integration'
+            ]
+        },
+        {
+            title: 'Basic',
+            price: '7.99',
+            subtitle: t('pricing.for_small_teams'),
+            buttonText: t('pricing.try_free'),
+            features: [
+                '30,000 words/month',
+                '5 translated languages',
+                'Multilingual SEO',
+                'Auto switch Currency',
+                'Glossary',
+                'Export & Import'
+            ]
+        },
+        {
+            title: 'Pro',
+            price: '19.99',
+            subtitle: t('pricing.for_growing'),
+            buttonText: t('pricing.try_free'),
+            features: [
+                '80,000 words/month',
+                '20 translated languages',
+                'Auto update translation',
+                'Auto switch Language',
+                'Visual Editor',
+                'Image translation'
+            ]
+        },
+        {
+            title: 'Premium',
+            price: '39.99',
+            subtitle: t('pricing.for_growing'),
+            buttonText: t('pricing.try_free'),
+            isRecommended: true,
+            features: [
+                '80,000 words/month',
+                '20 translated languages',
+                'Auto update translation',
+                'Auto switch Language',
+                'Visual Editor',
+                'Image translation'
+            ]
+        }
+    ];
+
+
     // 模拟当前积分数据
     const isQuotaExceeded = currentCredits >= maxCredits && maxCredits > 0;
 
@@ -300,6 +364,85 @@ const Index = () => {
                         </Button>
                     </Space>
                 </Card>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <Row gutter={[24, 24]}>
+                        {plans.map((plan, index) => (
+                            <Col
+                                key={plan.title}
+                                xs={24}
+                                sm={24}
+                                md={24}
+                                lg={6}
+                                style={{ display: 'flex' }}
+                            >
+                                <Badge.Ribbon
+                                    text={t('pricing.recommended')}
+                                    color="#1890ff"
+                                    style={{
+                                        display: plan.isRecommended ? 'block' : 'none',
+                                        right: -8
+                                    }}
+                                >
+                                    <Card
+                                        hoverable
+                                        style={{
+                                            flex: 1,
+                                            height: '100%',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            position: 'relative',
+                                            borderColor: plan.isRecommended ? '#1890ff' : undefined,
+                                            minWidth: "220px"
+                                        }}
+                                        styles={{
+                                            body: {
+                                                flex: 1,
+                                                display: 'flex',
+                                                flexDirection: 'column'
+                                            }
+                                        }}
+                                    >
+                                        <Title level={4}>{plan.title}</Title>
+                                        <div style={{ margin: '16px 0' }}>
+                                            <Text style={{ fontSize: '32px', fontWeight: 'bold' }}>
+                                                ${plan.price}
+                                            </Text>
+                                            <Text style={{ fontSize: '16px' }}>/月</Text>
+                                        </div>
+                                        <Paragraph type="secondary">{plan.subtitle}</Paragraph>
+
+                                        <Button
+                                            type={plan.isRecommended ? 'primary' : 'default'}
+                                            size="large"
+                                            block
+                                            disabled={plan.disabled}
+                                            style={{ marginBottom: '24px' }}
+                                        >
+                                            {plan.buttonText}
+                                        </Button>
+
+                                        <div style={{ flex: 1 }}>
+                                            {plan.features.map((feature, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    style={{
+                                                        marginBottom: '12px',
+                                                        display: 'flex',
+                                                        alignItems: 'flex-start',
+                                                        gap: '8px'
+                                                    }}
+                                                >
+                                                    <CheckOutlined style={{ color: '#52c41a' }} />
+                                                    <Text>{feature}</Text>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </Card>
+                                </Badge.Ribbon>
+                            </Col>
+                        ))}
+                    </Row>
+                </div>
             </Space>
         </Page>
     );
