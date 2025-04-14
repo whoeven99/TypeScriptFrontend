@@ -205,7 +205,7 @@ export const UserAdd = async ({
     console.log("addUserInfoData: ", {
       shopName: shop,
       accessToken: accessToken,
-      email: shopData.contactEmail,
+      email: shopData.email,
       firstName: firstName,
       lastName: lastName,
       userTag: shopOwnerName,
@@ -217,7 +217,7 @@ export const UserAdd = async ({
       data: {
         shopName: shop,
         accessToken: accessToken,
-        email: init ? "" : shopData.contactEmail || "",
+        email: init ? "" : shopData.email || "",
         firstName: init ? "" : firstName || "",
         lastName: init ? "" : lastName || "",
         userTag: init ? "" : shopOwnerName || "",
@@ -1432,8 +1432,6 @@ export const AddCharsByShopName = async ({
   amount: number;
 }) => {
   try {
-    console.log("shop: ", shop);
-    console.log("amount: ", amount);
     const response = await axios({
       url: `${process.env.SERVER_URL}/translationCounter/addCharsByShopName`,
       method: "POST",
@@ -1443,7 +1441,7 @@ export const AddCharsByShopName = async ({
       },
     });
     const res = response.data;
-    console.log(res);
+    return res;
   } catch (error) {
     console.error("Error fetching add chars:", error);
   }
