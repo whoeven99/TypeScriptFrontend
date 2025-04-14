@@ -217,7 +217,7 @@ export const UserAdd = async ({
       data: {
         shopName: shop,
         accessToken: accessToken,
-        email: init ? "" : shopData.contactEmail || "",
+        email: init ? "" : shopData.email || "",
         firstName: init ? "" : firstName || "",
         lastName: init ? "" : lastName || "",
         userTag: init ? "" : shopOwnerName || "",
