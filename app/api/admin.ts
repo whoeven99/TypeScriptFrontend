@@ -87,7 +87,7 @@ export const queryShop = async ({
       shop {
         name
         shopOwnerName
-        contactEmail
+        email
         currencyCode
         myshopifyDomain
         currencyFormats {

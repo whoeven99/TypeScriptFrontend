@@ -337,12 +337,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             }, { status: 200 });
           }
 
-          if (words.totalChars === 200000) {
+          if (typeof words?.totalChars === "number" && words?.totalChars === 200000) {
             const productsCount = await queryProductsCount({ shop, accessToken })
-            if (productsCount >= 1) {
+            console.log(`${shop} productsCount: `, productsCount);
+            if (productsCount >= 10) {
               return json({
                 success: false,
-                message: "products count limit reached 1000",
+                message: "products count limit reached 5000",
                 data: {
                   source: translation.primaryLanguage,
                   target: translation.selectedLanguage.locale,
