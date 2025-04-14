@@ -69,7 +69,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               break;
             case "20M Credits":
               credits = 20000000;
-              price =79.99;
+              price = 79.99;
               break;
             case "30M Credits":
               credits = 30000000;
@@ -77,23 +77,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               break;
           }
           new Response(null, { status: 200 });
-          await Promise.all([
-            InsertOrUpdateOrder({
-              id: payload?.app_purchase_one_time.admin_graphql_api_id,
-              status: payload?.app_purchase_one_time.status,
-            }),
-
-            payload?.app_purchase_one_time.status === "ACTIVE"
-              ? Promise.all([
-                AddCharsByShopName({ shop, amount: credits }),
-                SendPurchaseSuccessEmail({
-                  shop,
-                  credit: credits,
-                  price: price,
-                }),
-              ])
-              : Promise.resolve(),
-          ]);
+          InsertOrUpdateOrder({
+            id: payload?.app_purchase_one_time.admin_graphql_api_id,
+            status: payload?.app_purchase_one_time.status,
+          });
+          if (payload?.app_purchase_one_time.status === "ACTIVE") {
+            const addChars = await AddCharsByShopName({ shop, amount: credits });
+            console.log("addChars: ", addChars);
+            if (addChars?.success) {
+              SendPurchaseSuccessEmail({
+                shop,
+                credit: credits,
+                price: price,
+              });
+            } else {
+              console.warn("addChars error! ! ! ")
+            }
+          }
         }
         break;
       } catch (error) {
@@ -105,7 +105,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     //     if (payload) {
     //       new Response(null, { status: 200 });
     //       console.log("payload: ", payload);
-          
+
     //       // await InsertTargets({ shop, accessToken: accessToken as string, source: "webhook", targets: ["customers"] });
     //     }
     //     break;

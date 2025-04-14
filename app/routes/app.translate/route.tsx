@@ -71,7 +71,6 @@ const Index = () => {
     const dispatch = useDispatch();
     const { t } = useTranslation();
     const loadingLanguageFetcher = useFetcher<any>();
-    const languageLocalInfoFetcher = useFetcher<any>();
     const navigate = useNavigate();
     const location = useLocation();
     const fetcher = useFetcher<any>();
