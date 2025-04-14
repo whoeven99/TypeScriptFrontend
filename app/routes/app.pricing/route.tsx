@@ -11,6 +11,7 @@ import { authenticate } from "~/shopify.server";
 import { useFetcher } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
 import { CheckOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import "./style.css"
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -196,60 +197,80 @@ const Index = () => {
             title: 'Starter',
             price: '1.99',
             subtitle: t('pricing.for_individuals'),
-            buttonText: t('pricing.try_free'),
+            buttonText: t('pricing.current_plan'),
             buttonType: 'default',
-            disabled: false,
+            disabled: true,
             features: [
-                '5,000 words one time',
-                '1 translated language',
-                'Add 153 currencies',
-                'Edit translation',
-                'Customize Switcher',
-                'Global Search',
-                'Shopify payment integration'
+                t('500,000 credits/month'),
+                t('8 main languages'),
+                t('500 products translation'),
+                t('Extra purchase characters'),
+                t('Editable translation content'),
+                t('Glossary (10 entries)'),
+                t('Currency converter'),
+                t('Language/currency switcher')
             ]
         },
         {
             title: 'Basic',
             price: '7.99',
             subtitle: t('pricing.for_small_teams'),
-            buttonText: t('pricing.try_free'),
+            buttonText: t('pricing.get_start'),
             features: [
-                '30,000 words/month',
-                '5 translated languages',
-                'Multilingual SEO',
-                'Auto switch Currency',
-                'Glossary',
-                'Export & Import'
+                t('2,000,000 credits/month'),
+                t('Unlimited product translation'),
+                t('Extra purchase characters'),
+                t('Editable translation content'),
+                t('Multiple AI model translation'),
+                t('Private AI model translation'),
+                t('Glossary (20 entries)'),
+                t('Currency converter'),
+                t('Support HTML/URL translation'),
+                t('Language/currency switcher'),
+                t('Third-party app translation')
             ]
         },
         {
             title: 'Pro',
             price: '19.99',
             subtitle: t('pricing.for_growing'),
-            buttonText: t('pricing.try_free'),
+            buttonText: t('pricing.get_start'),
             features: [
-                '80,000 words/month',
-                '20 translated languages',
-                'Auto update translation',
-                'Auto switch Language',
-                'Visual Editor',
-                'Image translation'
+                t('5,000,000 credits/month'),
+                t('Unlimited product translation'),
+                t('Extra purchase characters'),
+                t('Editable translation content'),
+                t('Multiple AI model translation'),
+                t('Private AI model translation'),
+                t('IP auto switch'),
+                t('Glossary (50 entries)'),
+                t('Currency converter'),
+                t('Support HTML/URL translation'),
+                t('Language/currency switcher'),
+                t('Third-party app translation')
             ]
         },
         {
             title: 'Premium',
             price: '39.99',
-            subtitle: t('pricing.for_growing'),
-            buttonText: t('pricing.try_free'),
+            subtitle: t('pricing.for_large_teams'),
+            buttonText: t('pricing.get_start'),
             isRecommended: true,
             features: [
-                '80,000 words/month',
-                '20 translated languages',
-                'Auto update translation',
-                'Auto switch Language',
-                'Visual Editor',
-                'Image translation'
+                t('10,000,000 credits/month'),
+                t('Unlimited product translation'),
+                t('Extra purchase characters'),
+                t('Editable translation content'),
+                t('Multiple AI model translation'),
+                t('Private AI model translation'),
+                t('IP auto switch'),
+                t('Glossary (50 entries)'),
+                t('Currency converter'),
+                t('Support HTML/URL translation'),
+                t('Language/currency switcher'),
+                t('Third-party app translation'),
+                t('Auto translation'),
+                t('Translation expert human check')
             ]
         }
     ];
@@ -364,23 +385,25 @@ const Index = () => {
                         </Button>
                     </Space>
                 </Card>
-                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                    <Row gutter={[24, 24]}>
+                <div style={{ maxWidth: '1500px', margin: '0 auto' }}>  {/* 增加最大宽度 */}
+                    <Row gutter={[16, 16]}>  {/* 减小间距从24到16 */}
                         {plans.map((plan, index) => (
                             <Col
                                 key={plan.title}
                                 xs={24}
                                 sm={24}
-                                md={24}
+                                md={12}
                                 lg={6}
-                                style={{ display: 'flex' }}
+                                style={{
+                                    display: 'flex', width: "100%"
+                                }}
                             >
                                 <Badge.Ribbon
                                     text={t('pricing.recommended')}
                                     color="#1890ff"
                                     style={{
                                         display: plan.isRecommended ? 'block' : 'none',
-                                        right: -8
+                                        right: -8,
                                     }}
                                 >
                                     <Card
@@ -392,31 +415,32 @@ const Index = () => {
                                             flexDirection: 'column',
                                             position: 'relative',
                                             borderColor: plan.isRecommended ? '#1890ff' : undefined,
-                                            minWidth: "220px"
+                                            minWidth: "220px",  // 减小卡片宽度
                                         }}
                                         styles={{
                                             body: {
                                                 flex: 1,
                                                 display: 'flex',
-                                                flexDirection: 'column'
+                                                flexDirection: 'column',
+                                                padding: '16px',  // 减小内边距
                                             }
                                         }}
                                     >
-                                        <Title level={4}>{plan.title}</Title>
-                                        <div style={{ margin: '16px 0' }}>
-                                            <Text style={{ fontSize: '32px', fontWeight: 'bold' }}>
+                                        <Title level={5}>{plan.title}</Title> {/* 调整标题大小 */}
+                                        <div style={{ margin: '12px 0' }}> {/* 减小外边距 */}
+                                            <Text style={{ fontSize: '28px', fontWeight: 'bold' }}> {/* 调整价格字体大小 */}
                                                 ${plan.price}
                                             </Text>
-                                            <Text style={{ fontSize: '16px' }}>/月</Text>
+                                            <Text style={{ fontSize: '14px' }}>/月</Text>
                                         </div>
-                                        <Paragraph type="secondary">{plan.subtitle}</Paragraph>
+                                        <Paragraph type="secondary" style={{ fontSize: '13px' }}>{plan.subtitle}</Paragraph>
 
                                         <Button
                                             type={plan.isRecommended ? 'primary' : 'default'}
-                                            size="large"
+                                            size="middle"  // 调整按钮大小
                                             block
                                             disabled={plan.disabled}
-                                            style={{ marginBottom: '24px' }}
+                                            style={{ marginBottom: '20px' }}
                                         >
                                             {plan.buttonText}
                                         </Button>
@@ -426,14 +450,17 @@ const Index = () => {
                                                 <div
                                                     key={idx}
                                                     style={{
-                                                        marginBottom: '12px',
+                                                        marginBottom: '8px',  // 减小特性项间距
                                                         display: 'flex',
                                                         alignItems: 'flex-start',
-                                                        gap: '8px'
+                                                        gap: '6px'  // 减小图标和文字间距
                                                     }}
                                                 >
-                                                    <CheckOutlined style={{ color: '#52c41a' }} />
-                                                    <Text>{feature}</Text>
+                                                    <CheckOutlined style={{
+                                                        color: '#52c41a',
+                                                        fontSize: '12px'  // 减小图标大小
+                                                    }} />
+                                                    <Text style={{ fontSize: '13px' }}>{feature}</Text>
                                                 </div>
                                             ))}
                                         </div>
