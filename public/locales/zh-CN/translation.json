@@ -250,7 +250,9 @@
     "for_small_teams": "适用于小型团队",
     "for_growing": "适用于成长型企业",
     "current_plan": "当前方案",
-    "try_free": "免费试用"
+    "try_free": "免费试用",
+    "get_start": "开始使用",
+    "for_large_teams": "适用于大型团队"
   },
   "Collection": "收藏夹",
   "Article": "文章",

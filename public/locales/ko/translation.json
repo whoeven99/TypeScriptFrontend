@@ -266,6 +266,16 @@
     "Permanent quotas · Never expire · Top up anytime.": "영구 할당량 · 제한 없음 · 언제든지 충전",
     "The quota has been used up": "할당량이 소진되었습니다",
     "Buy extra credits now to continue using": "추가 크레딧을 구매하여 계속 사용",
-    "Total pay": "총 결제 금액"
+    "Total pay": "총 결제 금액",
+    "pricing": {
+        "recommended": "추천",
+        "for_individuals": "개인용",
+        "for_small_teams": "소규모 팀용",
+        "for_growing": "성장 중 기업용",
+        "current_plan": "현재 플랜",    
+        "try_free": "무료 체험",
+        "get_start": "시작하기",
+        "for_large_teams": "대규모 팀용"
+    }
 } 
   

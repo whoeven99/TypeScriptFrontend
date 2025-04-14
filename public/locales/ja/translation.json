@@ -266,6 +266,17 @@
     "Permanent quotas · Never expire · Top up anytime.": "永久クォータ · 期限なし · 随時充填",
     "The quota has been used up": "クレジットが不足しています",
     "Buy extra credits now to continue using": "クレジットを購入して継続使用する",
-    "Total pay": "総支払額"
+    "Total pay": "総支払額",
+    "pricing": {
+        "recommended": "推奨",
+        "for_individuals": "個人向け",
+        "for_small_teams": "小規模チーム向け",
+        "for_growing": "成長中企業向け",
+        "current_plan": "現在のプラン",
+        "try_free": "無料で試す",
+        "get_start": "開始する",
+        "for_large_teams": "大規模チーム向け"
+    },
+    "Pricing": "価格"
 }   
   

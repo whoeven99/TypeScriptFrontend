@@ -268,5 +268,15 @@
     "Permanent quotas · Never expire · Top up anytime.": "Постоянные квоты · Никогда не истекают · Пополнять в любое время.",
     "The quota has been used up": "Квота исчерпана",
     "Buy extra credits now to continue using": "Купить дополнительные кредиты для продолжения использования",
-    "Total pay": "Всего оплачено"
+    "Total pay": "Всего оплачено",
+    "pricing": {
+        "recommended": "Рекомендуемый",
+        "for_individuals": "Для индивидуальных",
+        "for_small_teams": "Для малых команд",
+        "for_growing": "Для растущих компаний",
+        "current_plan": "Текущий план",
+        "try_free": "Попробовать бесплатно",
+        "get_start": "Начать",
+        "for_large_teams": "Для больших команд"
+    }
 }
