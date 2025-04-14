@@ -268,5 +268,15 @@
     "Permanent quotas · Never expire · Top up anytime.": "Sürekli kotalar · Asla süre bitmez · Her zaman yükle",
     "The quota has been used up": "Kota tüketildi",
     "Buy extra credits now to continue using": "Daha fazla kredi satın alarak devam et",
-    "Total pay": "Toplam ödeme"
+    "Total pay": "Toplam ödeme",
+    "pricing": {
+        "recommended": "Önerilen",
+        "for_individuals": "Kişisel",
+        "for_small_teams": "Küçük Takım",
+        "for_growing": "Büyüyen Şirketler",
+        "current_plan": "Mevcut Plan",
+        "try_free": "Ücretsiz Deneyin",
+        "get_start": "Başla",
+        "for_large_teams": "Büyük Takımlar"
+    }
 }
