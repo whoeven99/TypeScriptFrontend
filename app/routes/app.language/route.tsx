@@ -339,7 +339,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           if (words.totalChars === 200000) {
             const productsCount = await queryProductsCount({ shop, accessToken })
-            if (productsCount >= 1) {
+            if (productsCount >= 1000) {
               return json({
                 success: false,
                 message: "products count limit reached 1000",
