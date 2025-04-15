@@ -140,86 +140,87 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
 
     const calculateProgressByType = (resourceType: string): number => {
         switch (resourceType) {
-            case 'ONLINE_STORE_THEME':
-                setItem("Theme");
-                return 28;
-            case 'ONLINE_STORE_THEME_APP_EMBED':
-                setItem("Theme");
-                return 30;
-            case 'ONLINE_STORE_THEME_JSON_TEMPLATE':
-                setItem("Theme");
-                return 32;
-            case 'ONLINE_STORE_THEME_SECTION_GROUP':
-                setItem("Theme");
-                return 34;
-            case 'ONLINE_STORE_THEME_SETTINGS_CATEGORY':
-                setItem("Theme");
-                return 36;
-            case 'ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS':
-                setItem("Theme");
-                return 38;
-            case 'ONLINE_STORE_THEME_LOCALE_CONTENT':
-                setItem("Theme");
-                return 40;
-            case 'PRODUCT':
-                setItem("Products");
-                return 42;
-            case 'PRODUCT_OPTION':
-                setItem("Products");
-                return 44;
-            case 'PRODUCT_OPTION_VALUE':
-                setItem("Products");
-                return 46;
+            // case 'ONLINE_STORE_THEME':
+            //     setItem("Theme");
+            //     return 28;
+            // case 'ONLINE_STORE_THEME_APP_EMBED':
+            //     setItem("Theme");
+            //     return 30;
+            // case 'ONLINE_STORE_THEME_JSON_TEMPLATE':
+            //     setItem("Theme");
+            //     return 32;
+            // case 'ONLINE_STORE_THEME_SECTION_GROUP':
+            //     setItem("Theme");
+            //     return 34;
+            // case 'ONLINE_STORE_THEME_SETTINGS_CATEGORY':
+            //     setItem("Theme");
+            //     return 36;
+            // case 'ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS':
+            //     setItem("Theme");
+            //     return 38;
+            // case 'ONLINE_STORE_THEME_LOCALE_CONTENT':
+            //     setItem("Theme");
+            //     return 40;
+
             case 'COLLECTION':
                 setItem("Collection");
-                return 48;
+                return 20;
             case 'PACKING_SLIP_TEMPLATE':
                 setItem("Shipping");
-                return 50;
+                return 30;
             case 'SHOP_POLICY':
                 setItem("Shipping");
-                return 50;
+                return 40;
             case 'EMAIL_TEMPLATE':
                 setItem("Shipping");
-                return 60;
+                return 43;
             case 'MENU':
                 setItem("Navigation");
-                return 65;
+                return 45;
             case 'LINK':
                 setItem("Navigation");
-                return 67;
+                return 48;
             case 'DELIVERY_METHOD_DEFINITION':
                 setItem("Delivery");
-                return 70;
+                return 50;
             case 'FILTER':
                 setItem("Filters");
-                return 73;
+                return 52;
             case 'METAFIELD':
                 setItem("Filters");
-                return 73;
+                return 54;
             case 'METAOBJECT':
                 setItem("Metaobjects");
-                return 75;
+                return 56;
             case 'PAYMENT_GATEWAY':
                 setItem("Metaobjects");
-                return 77;
+                return 58;
             case 'SELLING_PLAN':
                 setItem("Metaobjects");
-                return 80;
+                return 60;
             case 'SELLING_PLAN_GROUP':
                 setItem("Shop");
-                return 83;
+                return 65;
             case 'SHOP':
                 setItem("Shop");
-                return 85;
+                return 70;
             case 'ARTICLE':
                 setItem("Article");
-                return 90;
+                return 75;
             case 'BLOG':
                 setItem("Blog titles");
-                return 95;
+                return 80;
             case 'PAGE':
                 setItem("Pages");
+                return 85;
+            case 'PRODUCT':
+                setItem("Products");
+                return 90;
+            case 'PRODUCT_OPTION':
+                setItem("Products");
+                return 95;
+            case 'PRODUCT_OPTION_VALUE':
+                setItem("Products");
                 return 99;
             default:
                 return 0;

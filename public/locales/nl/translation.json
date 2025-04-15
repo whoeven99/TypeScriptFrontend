@@ -266,6 +266,17 @@
     "Permanent quotas · Never expire · Top up anytime.": "Permanent quotas · Never expire · Top up anytime.",
     "The quota has been used up": "De quota is opgebruikt",
     "Buy extra credits now to continue using": "Koop extra credits om verder te gebruiken",
-    "Total pay": "Totaal betaald"
+    "Total pay": "Totaal betaald",
+    "pricing": {
+        "recommended": "Aanbeveling",
+        "for_individuals": "Voor individuen",
+        "for_small_teams": "Voor kleine teams",
+        "for_growing": "Voor groeiende bedrijven",
+        "current_plan": "Huidig plan",
+        "try_free": "Probeer gratis",
+        "get_start": "Starten",
+        "for_large_teams": "Voor grote teams"
+    },
+    "Pricing": "Prijs"
 }
   

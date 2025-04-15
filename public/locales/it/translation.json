@@ -265,6 +265,17 @@
     "Permanent quotas · Never expire · Top up anytime.": "Quotas permanenti · Non scadono mai · Carica in qualsiasi momento.",
     "The quota has been used up": "La quota è stata utilizzata",
     "Buy extra credits now to continue using": "Acquista crediti aggiuntivi per continuare a utilizzare",
-    "Total pay": "Totale pagato"
+    "Total pay": "Totale pagato",
+    "pricing": {
+        "recommended": "Consigliato",
+        "for_individuals": "Per individui",
+        "for_small_teams": "Per piccoli team",
+        "for_growing": "Per aziende in crescita",
+        "current_plan": "Piano corrente",
+        "try_free": "Prova gratis",
+        "get_start": "Inizia",
+        "for_large_teams": "Per grandi team"
+    },
+    "Pricing": "Prezzi"
 }
   

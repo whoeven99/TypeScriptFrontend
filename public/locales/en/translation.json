@@ -270,5 +270,15 @@
   "Permanent quotas · Never expire · Top up anytime.": "Permanent quotas · Never expire · Top up anytime.",
   "The quota has been used up": "The quota has been used up",
   "Buy extra credits now to continue using": "Buy extra credits now to continue using",
-  "Total pay": "Total pay"
+  "Total pay": "Total pay",
+  "pricing": {
+    "recommended": "Recommended",
+    "for_individuals": "For individuals",
+    "for_small_teams": "For small teams",
+    "for_growing": "For growing companies",
+    "current_plan": "Current plan",
+    "try_free": "Try for free",
+    "get_start": "Get started",
+    "for_large_teams": "For large teams"
+  }
 }
