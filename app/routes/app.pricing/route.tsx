@@ -2,15 +2,17 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import { Space, Row, Col, Card, Progress, Button, Typography, Alert, Skeleton, Popover, Badge } from "antd";
 import { useTranslation } from "react-i18next";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ScrollNotice from "~/components/ScrollNotice";
 import { ActionFunctionArgs } from "@remix-run/node";
-import { GetUserWords } from "~/api/serve";
+import { GetUserSubscriptionPlan, GetUserWords } from "~/api/serve";
 import { SessionService } from "~/utils/session.server";
 import { authenticate } from "~/shopify.server";
 import { useFetcher } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
 import { CheckOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import "./style.css"
+import { mutationAppSubscriptionCreate } from "~/api/admin";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -29,19 +31,70 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const { shop, accessToken } = shopSession;
     try {
         const formData = await request.formData();
-        const loading = JSON.parse(formData.get("loading") as string);
+        const words = JSON.parse(formData.get("words") as string);
+        const planInfo = JSON.parse(formData.get("planInfo") as string);
+        const payForPlan = JSON.parse(formData.get("payForPlan") as string);
         switch (true) {
-            case !!loading:
+            case !!words:
                 try {
                     const data = await GetUserWords({
                         shop,
                     });
+                    return data
+                } catch (error) {
+                    console.error("Error loading action:", error);
+                    return null;
+                }
 
+            case !!planInfo:
+                try {
+                    const data = await GetUserSubscriptionPlan({
+                        shop,
+                    });
                     return data;
                 } catch (error) {
-                    console.error("Error glossary loading:", error);
+                    console.error("Error planInfo action:", error);
+                    return "Free";
+                }
+            case !!payForPlan:
+                try {
+                    const data = await GetUserSubscriptionPlan({
+                        shop,
+                    });
+                    if (data === payForPlan.title) {
+                        return data;
+                    } else {
+                        const returnUrl = new URL(
+                            `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
+                        )
+                        const res = await mutationAppSubscriptionCreate({
+                            shop,
+                            accessToken,
+                            name: payForPlan.title,
+                            price: {
+                                amount: payForPlan.price,
+                                currencyCode: "USD",
+                            },
+                            trialDays: 0,
+                            returnUrl,
+                            test: process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test",
+                        });
+                        return {
+                            ...res,
+                            appSubscription: {
+                                ...res.appSubscription,
+                                price: {
+                                    amount: payForPlan.price,
+                                    currencyCode: "USD",
+                                },
+                            },
+                        };
+                    }
+                } catch (error) {
+                    console.error("Error planInfo action:", error);
                 }
         }
+        return null;
     } catch (error) {
         console.error("Error pricing action:", error);
     }
@@ -51,35 +104,52 @@ const Index = () => {
     const [currentCredits, setCurrentCredits] = useState(0);
     const [maxCredits, setMaxCredits] = useState(0);
     const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
+    const [selectedPlan, setSelectedPlan] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [buyButtonLoading, setBuyButtonLoading] = useState(false);
+    const isQuotaExceeded = useMemo(() => currentCredits >= maxCredits && maxCredits > 0, [currentCredits, maxCredits]);
     const { t } = useTranslation();
-    const fetcher = useFetcher<any>();
+    const wordsfetcher = useFetcher<any>();
+    const planfetcher = useFetcher<any>();
     const payFetcher = useFetcher<any>();
     const orderFetcher = useFetcher<any>();
+    const payForPlanFetcher = useFetcher<any>();
 
     useEffect(() => {
         setIsLoading(false);
-        fetcher.submit({ loading: true }, { method: "POST" });
+        wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
+        planfetcher.submit({ planInfo: JSON.stringify(true) }, { method: "POST" });
     }, []);
 
     useEffect(() => {
-        if (fetcher.data) {
-            setCurrentCredits(fetcher.data.chars);
-            setMaxCredits(fetcher.data.totalChars);
+        if (wordsfetcher.data) {
+            setCurrentCredits(wordsfetcher.data.chars);
+            setMaxCredits(wordsfetcher.data.totalChars);
         }
-    }, [fetcher.data]);
+    }, [wordsfetcher.data]);
 
     useEffect(() => {
-        if (payFetcher.data) {
+        if (planfetcher.data) {
+            setSelectedPlan(planfetcher.data);
+        }
+    }, [planfetcher.data]);
+
+    useEffect(() => {
+        if (payFetcher.data || payForPlanFetcher.data) {
             if (
-                payFetcher.data.data.data.appPurchaseOneTimeCreate.appPurchaseOneTime &&
-                payFetcher.data.data.data.appPurchaseOneTimeCreate.confirmationUrl
+                (payFetcher.data?.data?.data?.appPurchaseOneTimeCreate?.appPurchaseOneTime &&
+                    payFetcher.data?.data?.data?.appPurchaseOneTimeCreate?.confirmationUrl) || (
+                    payForPlanFetcher.data?.appSubscription &&
+                    payForPlanFetcher.data?.confirmationUrl
+                )
             ) {
                 const order =
-                    payFetcher.data.data.data.appPurchaseOneTimeCreate.appPurchaseOneTime;
+                    payFetcher.data?.data?.data?.appPurchaseOneTimeCreate?.appPurchaseOneTime ||
+                    payForPlanFetcher.data?.appSubscription;
+                console.log("order: ", order);
                 const confirmationUrl =
-                    payFetcher.data.data.data.appPurchaseOneTimeCreate.confirmationUrl;
+                    payFetcher.data?.data?.data?.appPurchaseOneTimeCreate?.confirmationUrl ||
+                    payForPlanFetcher.data?.confirmationUrl;
                 const orderInfo = {
                     id: order.id,
                     amount: order.price.amount,
@@ -97,16 +167,20 @@ const Index = () => {
                 open(confirmationUrl, "_top");
             }
             if (
-                payFetcher.data.data.data.appPurchaseOneTimeCreate.userErrors.length
+                payFetcher.data?.data?.data?.appPurchaseOneTimeCreate?.userErrors?.length ||
+                payForPlanFetcher.data?.userErrors?.length
             ) {
                 setBuyButtonLoading(false);
                 console.log(
-                    payFetcher.data.data.data.appPurchaseOneTimeCreate.userErrors[0]
-                        .message,
+                    payFetcher.data?.data?.data?.appPurchaseOneTimeCreate?.userErrors[0]
+                        ?.message ||
+                    payForPlanFetcher.data?.userErrors[0]
+                        ?.message,
                 );
             }
         }
-    }, [payFetcher.data]);
+    }, [payFetcher.data, payForPlanFetcher.data]);
+
 
     const creditOptions: OptionType[] = [
         {
@@ -196,67 +270,88 @@ const Index = () => {
             title: 'Starter',
             price: '1.99',
             subtitle: t('pricing.for_individuals'),
-            buttonText: t('pricing.try_free'),
+            buttonText: selectedPlan === 'Starter' ? t('pricing.current_plan') : t('pricing.get_start'),
             buttonType: 'default',
-            disabled: false,
+            disabled: selectedPlan === 'Starter',
             features: [
-                '5,000 words one time',
-                '1 translated language',
-                'Add 153 currencies',
-                'Edit translation',
-                'Customize Switcher',
-                'Global Search',
-                'Shopify payment integration'
+                t('500,000 credits/month'),
+                t('8 main languages'),
+                t('500 products translation'),
+                t('Extra purchase characters'),
+                t('Editable translation content'),
+                t('Glossary (10 entries)'),
+                t('Currency converter'),
+                t('Language/currency switcher')
             ]
         },
         {
             title: 'Basic',
             price: '7.99',
             subtitle: t('pricing.for_small_teams'),
-            buttonText: t('pricing.try_free'),
+            buttonText: selectedPlan === 'Basic' ? t('pricing.current_plan') : t('pricing.get_start'),
+            buttonType: 'default',
+            disabled: selectedPlan === 'Basic',
             features: [
-                '30,000 words/month',
-                '5 translated languages',
-                'Multilingual SEO',
-                'Auto switch Currency',
-                'Glossary',
-                'Export & Import'
+                t('2,000,000 credits/month'),
+                t('Unlimited product translation'),
+                t('Extra purchase characters'),
+                t('Editable translation content'),
+                t('Multiple AI model translation'),
+                t('Private AI model translation'),
+                t('Glossary (20 entries)'),
+                t('Currency converter'),
+                t('Support HTML/URL translation'),
+                t('Language/currency switcher'),
+                t('Third-party app translation')
             ]
         },
         {
             title: 'Pro',
             price: '19.99',
             subtitle: t('pricing.for_growing'),
-            buttonText: t('pricing.try_free'),
+            buttonText: selectedPlan === 'Pro' ? t('pricing.current_plan') : t('pricing.get_start'),
+            buttonType: 'default',
+            disabled: selectedPlan === 'Pro',
             features: [
-                '80,000 words/month',
-                '20 translated languages',
-                'Auto update translation',
-                'Auto switch Language',
-                'Visual Editor',
-                'Image translation'
+                t('5,000,000 credits/month'),
+                t('Unlimited product translation'),
+                t('Extra purchase characters'),
+                t('Editable translation content'),
+                t('Multiple AI model translation'),
+                t('Private AI model translation'),
+                t('IP auto switch'),
+                t('Glossary (50 entries)'),
+                t('Currency converter'),
+                t('Support HTML/URL translation'),
+                t('Language/currency switcher'),
+                t('Third-party app translation')
             ]
         },
         {
             title: 'Premium',
             price: '39.99',
-            subtitle: t('pricing.for_growing'),
-            buttonText: t('pricing.try_free'),
+            subtitle: t('pricing.for_large_teams'),
+            buttonText: selectedPlan === 'Premium' ? t('pricing.current_plan') : t('pricing.get_start'),
+            disabled: selectedPlan === 'Premium',
             isRecommended: true,
             features: [
-                '80,000 words/month',
-                '20 translated languages',
-                'Auto update translation',
-                'Auto switch Language',
-                'Visual Editor',
-                'Image translation'
+                t('10,000,000 credits/month'),
+                t('Unlimited product translation'),
+                t('Extra purchase characters'),
+                t('Editable translation content'),
+                t('Multiple AI model translation'),
+                t('Private AI model translation'),
+                t('IP auto switch'),
+                t('Glossary (50 entries)'),
+                t('Currency converter'),
+                t('Support HTML/URL translation'),
+                t('Language/currency switcher'),
+                t('Third-party app translation'),
+                t('Auto translation'),
+                t('Translation expert human check')
             ]
         }
     ];
-
-
-    // 模拟当前积分数据
-    const isQuotaExceeded = currentCredits >= maxCredits && maxCredits > 0;
 
     const handlePay = () => {
         setBuyButtonLoading(true);
@@ -273,6 +368,11 @@ const Index = () => {
             method: "post",
             action: "/app",
         });
+    }
+
+    const handlePayForPlan = (plan: any) => {
+        setBuyButtonLoading(true);
+        payForPlanFetcher.submit({ payForPlan: JSON.stringify(plan) }, { method: "POST" });
     }
 
     return (
@@ -364,23 +464,25 @@ const Index = () => {
                         </Button>
                     </Space>
                 </Card>
-                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                    <Row gutter={[24, 24]}>
+                <div style={{ maxWidth: '1500px', margin: '0 auto' }}>  {/* 增加最大宽度 */}
+                    <Row gutter={[16, 16]}>  {/* 减小间距从24到16 */}
                         {plans.map((plan, index) => (
                             <Col
                                 key={plan.title}
                                 xs={24}
                                 sm={24}
-                                md={24}
+                                md={12}
                                 lg={6}
-                                style={{ display: 'flex' }}
+                                style={{
+                                    display: 'flex', width: "100%"
+                                }}
                             >
                                 <Badge.Ribbon
                                     text={t('pricing.recommended')}
                                     color="#1890ff"
                                     style={{
                                         display: plan.isRecommended ? 'block' : 'none',
-                                        right: -8
+                                        right: -8,
                                     }}
                                 >
                                     <Card
@@ -392,31 +494,35 @@ const Index = () => {
                                             flexDirection: 'column',
                                             position: 'relative',
                                             borderColor: plan.isRecommended ? '#1890ff' : undefined,
-                                            minWidth: "220px"
+                                            minWidth: "220px",  // 减小卡片宽度
                                         }}
                                         styles={{
                                             body: {
                                                 flex: 1,
                                                 display: 'flex',
-                                                flexDirection: 'column'
+                                                flexDirection: 'column',
+                                                padding: '16px',  // 减小内边距
                                             }
                                         }}
+                                        loading={!selectedPlan}
                                     >
-                                        <Title level={4}>{plan.title}</Title>
-                                        <div style={{ margin: '16px 0' }}>
-                                            <Text style={{ fontSize: '32px', fontWeight: 'bold' }}>
+                                        <Title level={5}>{plan.title}</Title> {/* 调整标题大小 */}
+                                        <div style={{ margin: '12px 0' }}> {/* 减小外边距 */}
+                                            <Text style={{ fontSize: '28px', fontWeight: 'bold' }}> {/* 调整价格字体大小 */}
                                                 ${plan.price}
                                             </Text>
-                                            <Text style={{ fontSize: '16px' }}>/月</Text>
+                                            <Text style={{ fontSize: '14px' }}>/月</Text>
                                         </div>
-                                        <Paragraph type="secondary">{plan.subtitle}</Paragraph>
+                                        <Paragraph type="secondary" style={{ fontSize: '13px' }}>{plan.subtitle}</Paragraph>
 
                                         <Button
                                             type={plan.isRecommended ? 'primary' : 'default'}
-                                            size="large"
+                                            size="middle"  // 调整按钮大小
                                             block
                                             disabled={plan.disabled}
-                                            style={{ marginBottom: '24px' }}
+                                            style={{ marginBottom: '20px' }}
+                                            onClick={() => handlePayForPlan(plan)}
+                                            loading={buyButtonLoading}
                                         >
                                             {plan.buttonText}
                                         </Button>
@@ -426,14 +532,17 @@ const Index = () => {
                                                 <div
                                                     key={idx}
                                                     style={{
-                                                        marginBottom: '12px',
+                                                        marginBottom: '8px',  // 减小特性项间距
                                                         display: 'flex',
                                                         alignItems: 'flex-start',
-                                                        gap: '8px'
+                                                        gap: '6px'  // 减小图标和文字间距
                                                     }}
                                                 >
-                                                    <CheckOutlined style={{ color: '#52c41a' }} />
-                                                    <Text>{feature}</Text>
+                                                    <CheckOutlined style={{
+                                                        color: '#52c41a',
+                                                        fontSize: '12px'  // 减小图标大小
+                                                    }} />
+                                                    <Text style={{ fontSize: '13px' }}>{feature}</Text>
                                                 </div>
                                             ))}
                                         </div>

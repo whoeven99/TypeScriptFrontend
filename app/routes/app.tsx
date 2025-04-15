@@ -327,15 +327,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (statusData) {
       try {
-        if (statusData) {
-          const data = await GetLanguageStatus({
-            shop,
-            source: statusData.source,
-            target: statusData.target,
-          });
-          console.log("GetLanguageStatus: ", data);
-          return json({ data });
-        }
+        const data = await GetLanguageStatus({
+          shop,
+          source: statusData.source,
+          target: statusData.target,
+        });
+        console.log("GetLanguageStatus: ", data);
+        return json({ data });
       } catch (error) {
         console.error("Error statusData app:", error);
         return json({ error: "Error statusData app" }, { status: 500 });

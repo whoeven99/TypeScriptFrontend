@@ -190,7 +190,7 @@ export const InitializationDetection = async ({ shop }: { shop: string }) => {
 export const UserAdd = async ({
   shop,
   accessToken,
-  init
+  init,
 }: {
   shop: string;
   accessToken: string;
@@ -279,12 +279,12 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
       url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
       method: "GET",
     });
-    const res = getUserSubscriptionPlanResponse.data.success;
-    console.log(
-      "getUserSubscriptionPlanResponse: ",
-      getUserSubscriptionPlanResponse.data,
-    );
-    return res;
+    if (getUserSubscriptionPlanResponse.data?.success) {
+      const res = getUserSubscriptionPlanResponse.data?.response;
+      return res;
+    } else {
+      return "Free";
+    }
   } catch (error) {
     console.error("Error GetUserSubscriptionPlan:", error);
   }
