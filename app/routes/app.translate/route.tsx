@@ -120,7 +120,7 @@ const Index = () => {
             } else if (fetcher.data?.message === "words get error") {
                 message.error(t("The query of the remaining credits failed. Please try again."));
             } else {
-                message.warning(t(`${fetcher.data?.message}`))
+                // message.warning(t(`${fetcher.data?.message}`))
                 setShowPaymentModal(true);
                 const modalSettingOption = translateSettings1Options.find(option => option.value === fetcher.data.data.translateSettings1);
                 setModal(modalSettingOption?.label || "OpenAI/GPT-4");

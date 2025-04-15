@@ -113,6 +113,41 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     //     console.error("Error LOCALES_CREATE:", error);
     //     return new Response(null, { status: 200 });
     //   }
+    case "APP_SUBSCRIPTIONS_UPDATE":
+      try {
+        new Response(null, { status: 200 });
+        let credits = 0;
+        let price = 0;
+        switch (payload?.app_subscription.name) {
+          case "Starter":
+            credits = 500000;
+            price = 1.99;
+            break;
+          case "Basic":
+            credits = 2000000;
+            price = 7.99;
+            break;
+          case "Pro":
+            credits = 5000000;
+            price = 19.99;
+            break;
+          case "Premium":
+            credits = 10000000;
+            price = 39.99;
+            break;
+        }
+        InsertOrUpdateOrder({
+          id: payload?.app_purchase_one_time.admin_graphql_api_id,
+          status: payload?.app_purchase_one_time.status,
+        });
+        if (payload?.app_purchase_one_time.status === "ACTIVE") {
+          
+        }
+
+      } catch (error) {
+        console.error("Error APP_SUBSCRIPTIONS_UPDATE:", error);
+        return new Response(null, { status: 200 });
+      }
     case "CUSTOMERS_DATA_REQUEST":
       try {
         new Response(null, { status: 200 });
