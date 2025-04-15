@@ -71,7 +71,6 @@ export const queryShopLanguages = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shoplocales:", error);
-    
   }
 };
 
@@ -115,7 +114,6 @@ export const queryShop = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop:", error);
-    
   }
 };
 
@@ -157,7 +155,6 @@ export const queryTheme = async ({
     return res;
   } catch (error) {
     console.error("Error queryTheme:", error);
-    
   }
 };
 
@@ -199,7 +196,7 @@ export const queryTheme = async ({
 //     return res;
 //   } catch (error) {
 //     console.error("Error queryTheme:", error);
-//     
+//
 //   }
 // };
 
@@ -332,7 +329,6 @@ export const queryNextProducts = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop products:", error);
-    
   }
 };
 
@@ -415,7 +411,6 @@ export const queryPreviousProducts = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop products:", error);
-    
   }
 };
 
@@ -468,7 +463,6 @@ export const queryNextCollections = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop collections:", error);
-    
   }
 };
 
@@ -521,7 +515,6 @@ export const queryPreviousCollections = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop collections:", error);
-    
   }
 };
 
@@ -567,7 +560,6 @@ export const queryNextArticles = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop articles:", error);
-    
   }
 };
 
@@ -613,7 +605,6 @@ export const queryPreviousArticles = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop articles:", error);
-    
   }
 };
 
@@ -657,7 +648,6 @@ export const queryNextBlogs = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop blogs:", error);
-    
   }
 };
 
@@ -701,7 +691,6 @@ export const queryPreviousBlogs = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop blogs:", error);
-    
   }
 };
 
@@ -745,7 +734,6 @@ export const queryNextPages = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop pages:", error);
-    
   }
 };
 
@@ -789,7 +777,6 @@ export const queryPreviousPages = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop pages:", error);
-    
   }
 };
 
@@ -844,7 +831,6 @@ export const queryNextNavigations = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop menus:", error);
-    
   }
 };
 
@@ -899,7 +885,6 @@ export const queryPreviousNavigations = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop menus:", error);
-    
   }
 };
 
@@ -943,7 +928,6 @@ export const queryNextShopMetafields = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop metafields:", error);
-    
   }
 };
 
@@ -987,7 +971,6 @@ export const queryPreviousShopMetafields = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop metafields:", error);
-    
   }
 };
 
@@ -1021,7 +1004,6 @@ export const queryAllProductMetafields = async ({
     return res;
   } catch (error) {
     console.error("Error fetching product metafields:", error);
-    
   }
 };
 
@@ -1070,7 +1052,6 @@ export const queryNextProductMetafields = async ({
     return res;
   } catch (error) {
     console.error("Error fetching product metafields:", error);
-    
   }
 };
 
@@ -1119,7 +1100,6 @@ export const queryPreviousProductMetafields = async ({
     return res;
   } catch (error) {
     console.error("Error fetching product metafields:", error);
-    
   }
 };
 
@@ -1176,7 +1156,6 @@ export const queryNextTransType = async ({
     return res;
   } catch (error) {
     console.error("Error fetching translation data:", error);
-    
   }
 };
 
@@ -1233,7 +1212,6 @@ export const queryPreviousTransType = async ({
     return res;
   } catch (error) {
     console.error("Error fetching translation data:", error);
-    
   }
 };
 
@@ -1297,7 +1275,6 @@ export const queryNextNestTransType = async ({
     return res;
   } catch (error) {
     console.error("Error fetching translation data:", error);
-    
   }
 };
 
@@ -1360,7 +1337,6 @@ export const queryPreviousNestTransType = async ({
     return res;
   } catch (error) {
     console.error("Error fetching translation data:", error);
-    
   }
 };
 
@@ -1393,7 +1369,6 @@ export const queryAllLanguages = async ({
     return res;
   } catch (error) {
     console.error("Error fetching all languages:", error);
-    
   }
 };
 
@@ -1433,7 +1408,6 @@ export const queryAllMarket = async ({
     return res;
   } catch (error) {
     console.error("Error fetching all markets:", error);
-    
   }
 };
 
@@ -1469,7 +1443,6 @@ export const queryOrders = async ({
     return res;
   } catch (error) {
     console.error("Error fetching orders:", error);
-    
   }
 };
 
@@ -1501,7 +1474,7 @@ export const queryOrders = async ({
 //     return res;
 //   } catch (error) {
 //     console.error("Error fetching all orders:", error);
-//     
+//
 //   }
 // };
 
@@ -1572,7 +1545,6 @@ export const mutationShopLocaleEnable = async ({
     return shopLanguages;
   } catch (error) {
     console.error("Error mutating shop languages:", error);
-    
   }
 };
 
@@ -1622,7 +1594,6 @@ export const mutationShopLocaleDisable = async ({
     return res || language.locale;
   } catch (error) {
     console.error("Error mutating shop languages:", error);
-    
   }
 };
 
@@ -1671,7 +1642,6 @@ export const mutationShopLocalePublish = async ({
     // return res;
   } catch (error) {
     console.error("Error publish shopLanguage:", error);
-    
   }
 };
 
@@ -1718,7 +1688,6 @@ export const mutationShopLocaleUnpublish = async ({
     }
   } catch (error) {
     console.error("Error publish shopLanguage:", error);
-    
   }
 };
 
@@ -1785,7 +1754,6 @@ export const mutationAppPurchaseOneTimeCreate = async ({
     return res;
   } catch (error) {
     console.error("Payment failed:", error);
-    
   }
 };
 
@@ -1820,13 +1788,14 @@ export const mutationAppSubscriptionCreate = async ({
         "Content-Type": "application/json",
       },
       data: {
-        query: `mutation AppSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $returnUrl: URL!, $trialDays: Int!, $test: Boolean) {
+        query: `mutation AppSubscriptionCreate($name: String!, $lineItems: [AppSubscriptionLineItemInput!]!, $replacementBehavior: AppSubscriptionReplacementBehavior, $returnUrl: URL!, $trialDays: Int!, $test: Boolean) {
           appSubscriptionCreate(
             name: $name
             returnUrl: $returnUrl
             lineItems: $lineItems
             trialDays: $trialDays
             test: $test
+            replacementBehavior: $replacementBehavior
           ) {
             userErrors {
               field
@@ -1846,7 +1815,7 @@ export const mutationAppSubscriptionCreate = async ({
           }
         }`,
         variables: {
-          name: `${name} Credits`,
+          name: `${name}`,
           returnUrl: returnUrl,
           lineItems: [
             {
@@ -1860,15 +1829,15 @@ export const mutationAppSubscriptionCreate = async ({
               },
             },
           ],
+          replacementBehavior: "APPLY_ON_NEXT_BILLING_CYCLE",
           trialDays: trialDays,
           test: test || false,
         },
       },
     });
-    const res = response.data;
+    const res = response.data.data.appSubscriptionCreate;
     return res;
   } catch (error) {
     console.error("Payment failed:", error);
-    
   }
 };
