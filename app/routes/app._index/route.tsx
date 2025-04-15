@@ -123,19 +123,26 @@ const Index = () => {
                   style={{
                     height: "100%",
                   }}
+                  styles={{
+                    body: {
+                      height: "100%",
+                    }
+                  }}
                 >
-                  <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-                    <Text strong>
-                      {t("transLanguageCard2.title")}
-                    </Text>
-                    <Text >{t("transLanguageCard2.description")}</Text>
+                  <div style={{ height: "100%", display: "flex", justifyContent: "space-between", flexDirection: "column" }}>
+                    <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+                      <Text strong>
+                        {t("transLanguageCard2.title")}
+                      </Text>
+                      <Text >{t("transLanguageCard2.description")}</Text>
+                    </Space>
                     {
                       loading ?
-                        <Button type="primary" onClick={() => navigate("/app/language")}>{t("transLanguageCard2.button")}</Button>
+                        <Button type="primary" onClick={() => navigate("/app/language")} style={{ alignSelf: 'flex-start' }}>{t("transLanguageCard2.button")}</Button>
                         :
                         <Skeleton.Button active />
                     }
-                  </Space>
+                  </div>
                 </Card>
               </Col>
               <Col xs={24} sm={24} md={12}>
@@ -149,13 +156,22 @@ const Index = () => {
                     <Text strong>
                       {t("transLanguageCard3.title")}
                     </Text>
-                    <Text >{t("transLanguageCard3.description")}</Text>
-                    {
+                    <div style={{ display: "flex", flexDirection: "row-reverse", gap: "10px", justifyContent: "flex-start" }}>
+                      <img src="https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/safeicon-min.png" alt="safe" style={{ width: "50px", height: "50px", borderRadius: "4px" }} />
+                      <div style={{ marginRight: "auto" }}>
+                        <div dangerouslySetInnerHTML={{ __html: t("transLanguageCard3.description1") }} />
+                        <div dangerouslySetInnerHTML={{ __html: t("transLanguageCard3.description2") }} />
+                        <div dangerouslySetInnerHTML={{ __html: t("transLanguageCard3.description3") }} />
+                        <div dangerouslySetInnerHTML={{ __html: t("transLanguageCard3.description4") }} />
+                        <div dangerouslySetInnerHTML={{ __html: t("transLanguageCard3.description5") }} />
+                      </div>
+                    </div>
+                    {/* {
                       loading ?
                         <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/meet-five-top-translation-experts-supporting-your-e-commerce-business/", "_blank")}>{t("transLanguageCard3.button")}</Button>
                         :
                         <Skeleton.Button active />
-                    }
+                    } */}
                   </Space>
                 </Card>
               </Col>
