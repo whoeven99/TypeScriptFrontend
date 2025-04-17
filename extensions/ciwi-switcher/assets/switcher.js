@@ -65,7 +65,7 @@ async function fetchLanguageLocaleInfo(locale) {
   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getImageInfo`,
+      url: `https://springbackendprod.azurewebsites.net/shopify/getImageInfo`,
       method: "POST",
       data: updatedLocales,
     });
