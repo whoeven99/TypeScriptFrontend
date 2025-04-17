@@ -20,6 +20,23 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+//修改用户计划
+export const UpdateUserPlan = async ({ shop, plan }: { shop: string, plan: number }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/checkUserPlan`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        plan: plan,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error UpdateUserPlan:", error);
+  }
+};
+
 //删除用户私人API Key
 export const DeleteUserData = async ({ shop }: { shop: string }) => {
   try {
@@ -272,7 +289,7 @@ export const AddDefaultLanguagePack = async ({ shop }: { shop: string }) => {
   }
 };
 
-//新用户判断
+//获取用户计划
 export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
   try {
     const getUserSubscriptionPlanResponse = await axios({

@@ -10,6 +10,7 @@ import {
   RequestData,
   SendPurchaseSuccessEmail,
   Uninstall,
+  UpdateUserPlan,
 } from "~/api/serve";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -118,32 +119,45 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         new Response(null, { status: 200 });
         let credits = 0;
         let price = 0;
+        let plan = 0;
         switch (payload?.app_subscription.name) {
           case "Starter":
             credits = 500000;
             price = 1.99;
+            plan = 3;
             break;
           case "Basic":
             credits = 2000000;
             price = 7.99;
+            plan = 4;
             break;
           case "Pro":
             credits = 5000000;
             price = 19.99;
+            plan = 5;
             break;
           case "Premium":
             credits = 10000000;
             price = 39.99;
+            plan = 6;
             break;
         }
         InsertOrUpdateOrder({
-          id: payload?.app_purchase_one_time.admin_graphql_api_id,
-          status: payload?.app_purchase_one_time.status,
+          id: payload?.app_subscription.admin_graphql_api_id,
+          status: payload?.app_subscription.status,
         });
-        if (payload?.app_purchase_one_time.status === "ACTIVE") {
-          
+        if (payload?.app_subscription.status === "ACTIVE") {
+          const addChars = await AddCharsByShopName({ shop, amount: credits });
+          console.log("addChars: ", addChars);
+          if (addChars?.success) {
+            UpdateUserPlan({ shop, plan });
+            SendPurchaseSuccessEmail({
+              shop,
+              credit: credits,
+              price: price,
+            });
+          }
         }
-
       } catch (error) {
         console.error("Error APP_SUBSCRIPTIONS_UPDATE:", error);
         return new Response(null, { status: 200 });

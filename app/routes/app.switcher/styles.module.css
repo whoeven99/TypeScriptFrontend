@@ -1,13 +1,15 @@
-.ciwi_container {
-  width: 200px; /* 窄一些 */
-  /* left: 20px; */
-  bottom: 60px;
-  right: auto;
-  top: auto;
-  position: fixed; /* 改为相对屏幕的位置 */
-  height: auto;
-  display: block;
-  z-index: 9999;
+.switcher_container {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.switcher_editor {
+  flex: 1;
+}
+
+.switcher_preview {
+  flex: 2;
 }
 
 .main_box {
@@ -15,34 +17,43 @@
   background: #fff;
   padding: 10px;
   border-radius: 5px;
-  border: 1px solid rgb(217, 217, 217);
+  border: 1px solid rgb(217, 217, 217); /* 边框颜色 */
   cursor: pointer;
-  user-select: none;
-  display: flex;
-  align-items: center; /* 垂直居中 */
-  gap: 8px;
-  height: 40px; /* 明确设置高度 */
 }
 
 .main_box_text {
-  display: inline-block;
-  line-height: 20px; /* 与图片高度一致 */
-  vertical-align: middle;
-  margin: 0;
-  padding: 0;
-  font-size: 14px; /* 明确设置字体大小 */
+  display: flex;
+  justify-content: center;
+  align-items: center; /* 使文本垂直居中 */
+  white-space: nowrap; /* 防止文本换行 */
+  overflow: hidden; /* 隐藏超出部分 */
+  text-overflow: ellipsis; /* 显示省略号 */
 }
 
 .mainarrow_icon {
   position: absolute;
-  right: 0; /* 改用右侧固定距离 */
+  width: 25% !important;
+  height: 25% !important;
+  border: 0 !important;
+  top: 40%; /* 垂直居中 */
+  left: 75%; /* 水平居中 */
+  pointer-events: none; /* 防止图标影响选择框的点击 */
+  transform-origin: center; /* 设置旋转中心为自身中心 */
   transition: transform 0.3s ease; /* 平滑过渡 */
 }
 
 .button_wrapper {
   display: flex; /* 启用 Flexbox 布局 */
+  justify-content: space-between; /* 将按钮分布在两端 */
   align-items: center; /* 垂直居中按钮 */
   width: 100%; /* 使容器占满父元素的宽度 */
+}
+
+.ciwi_switcher_confirm_button,
+.ciwi_switcher_cancel_button {
+  border-radius: 6px; /* 边框圆角 */
+  padding: 4px 15px; /* 按钮内边距 */
+  font-size: 14px; /* 字体大小 */
 }
 
 .language_title,
@@ -53,12 +64,7 @@
 
 /* 确认按钮 */
 .ciwi_switcher_confirm_button {
-  height: 40px;
-  width: 100%;
-  border-radius: 6px; /* 边框圆角 */
-  padding: 12px; /* 按钮内边距 */
-  font-size: 14px; /* 字体大小 */
-  background-color: #000; /* 按钮背景颜色 */
+  background-color: rgb(117, 211, 68); /* 按钮背景颜色 */
   color: white; /* 字体颜色 */
   border: none; /* 去掉默认边框 */
   cursor: pointer; /* 鼠标指针样式 */
@@ -68,10 +74,32 @@
 }
 
 .ciwi_switcher_confirm_button:hover {
-  background-color: #333
+  background-color: rgb(97, 181, 53); /* 悬停时的背景颜色 */
 }
 
 .ciwi_switcher_confirm_button:active {
+  transform: scale(0.98); /* 点击时的反馈效果，按钮缩小 */
+}
+
+/* 关闭按钮 */
+.ciwi_switcher_cancel_button {
+  background-color: white; /* 按钮背景颜色 */
+  color: rgb(117, 211, 68); /* 字体颜色 */
+  border: 1px solid rgb(217, 217, 217); /* 边框颜色 */
+  cursor: pointer; /* 鼠标指针样式 */
+  transition:
+    background-color 0.3s,
+    transform 0.2s ease,
+    color 0.3s; /* 增加过渡效果 */
+}
+
+.ciwi_switcher_cancel_button:hover {
+  color: rgb(117, 211, 68); /* 字体颜色 */
+  border: 1px solid rgb(117, 211, 68); /* 悬停时背景颜色 */
+  color: rgb(117, 211, 68); /* 悬停时字体颜色 */
+}
+
+.ciwi_switcher_cancel_button:active {
   transform: scale(0.98); /* 点击时的反馈效果，按钮缩小 */
 }
 
@@ -143,8 +171,7 @@
 
   .arrow_icon,
   .mainarrow_icon,
-  .main_box_text,
-  .main_box_flag {
+  .main_box_text {
     display: none;
   }
 
@@ -187,122 +214,7 @@ a[href="https://translate.google.com"]
   visibility: hidden !important;
 }
 [class^="VIpgJd-"], /* 匹配所有以 'VIpgJd-' 开头的类名 */
-[class*="VIpgJd-"] {
+  [class*="VIpgJd-"] {
   /* 匹配所有包含 'VIpgJd-' 的类名 */
   display: none !important;
-}
-
-.custom-selector {
-  position: relative;
-  width: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, sans-serif;
-}
-
-.selector-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-  margin-bottom: 10px;
-  height: 40px;
-}
-
-.selected-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.country-flag {
-  width: 30px;
-  height: 20px;
-  object-fit: cover;
-  border-radius: 2px;
-  border: 1px solid #ddd;
-  min-width: 30px; /* 保持最小宽度 */
-  opacity: 0; /* 初始状态完全透明 */
-  transition: opacity 0.3s ease; /* 平滑过渡效果 */
-}
-
-/* 当图片加载完成时显示 */
-.country-flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"])
-{
-  opacity: 1;
-}
-
-.arrow-icon {
-  font-size: 12px;
-  transition: transform 0.2s;
-}
-
-.custom-selector.open .arrow-icon {
-  transform: rotate(180deg);
-}
-
-.options-container {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 4px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  display: none;
-  z-index: 1000;
-}
-
-.custom-selector.open .options-container {
-  display: block;
-}
-
-.options-list {
-  max-height: 135px;
-  overflow-y: auto;
-}
-
-.option-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.option-item:hover {
-  background-color: #f5f5f5;
-}
-
-.option-item.selected {
-  background-color: #f0f0f0;
-}
-
-.currency-code {
-  color: #666;
-  font-size: 0.9em;
-}
-
-/* 滚动条样式 */
-.options-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.options-list::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-.options-list::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
-}
-
-.options-list::-webkit-scrollbar-thumb:hover {
-  background: #555;
 }

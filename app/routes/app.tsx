@@ -449,6 +449,7 @@ export default function App() {
           {loadingFetcher.data && <Link to="/app/language">{t("Language")}</Link>}
           {loadingFetcher.data && <Link to="/app/manage_translation">{t("Manage Translation")}</Link>}
           {loadingFetcher.data && <Link to="/app/currency">{t("Currency")}</Link>}
+          {loadingFetcher.data && <Link to="/app/switcher">{t("Switcher")}</Link>}
           {loadingFetcher.data && <Link to="/app/glossary">{t("Glossary")}</Link>}
           {loadingFetcher.data && <Link to="/app/pricing">{t("Pricing")}</Link>}
         </NavMenu>
