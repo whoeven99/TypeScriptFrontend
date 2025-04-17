@@ -63,7 +63,6 @@ async function fetchUserCountryInfo(access_key) {
 async function fetchLanguageLocaleInfo(locale) {
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
-  console.log(updatedLocales);
   try {
     const response = await axios({
       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getImageInfo`,
@@ -71,7 +70,6 @@ async function fetchLanguageLocaleInfo(locale) {
       data: updatedLocales,
     });
     const data = response.data.response;
-    console.log(data);
 
     const res = Object.keys(data).reduce((acc, key) => {
       // 将 key 中的 "_" 替换为 "-"
@@ -89,7 +87,6 @@ async function fetchLanguageLocaleInfo(locale) {
 async function initializeCurrency(data, shop) {
   let value = localStorage.getItem("selectedCurrency");
   let moneyFormat = document.getElementById("queryMoneyFormat");
-  console.log(value);
   const selectedCurrency = data.find(
     (currency) => currency?.currencyCode === value,
   );
@@ -606,27 +603,18 @@ class CiwiswitcherForm extends HTMLElement {
     const selectedCurrencyText = this.querySelector(
       ".selected-option .selected-text[data-type='currency']",
     );
+    const selectedFlag = this.querySelector(".selected-option .country-flag");
+    const mainBoxFlag = this.querySelector("#main-language-flag");
     const option = event.currentTarget;
     const value = option.dataset.value;
     const text = option.querySelector(".option-text")?.textContent;
     const flag = option.querySelector(".country-flag")?.src;
     const selectorType = option.closest(".custom-selector")?.dataset.type; // 获取选择器类型
 
-    console.log("Option clicked:", {
-      option,
-      value,
-      text,
-      flag,
-      selectorType,
-      elements: this.elements,
-    });
-
-    console.log(selectedCurrencyText);
-
     if (selectorType === "language") {
       // 更新选中项显示
-      if (this.elements.selectedFlag) {
-        this.elements.selectedFlag.src = flag;
+      if (selectedFlag) {
+        selectedFlag.src = flag;
       }
       if (this.elements.selectedLanguageText) {
         this.elements.selectedLanguageText.textContent = text;
@@ -635,6 +623,9 @@ class CiwiswitcherForm extends HTMLElement {
       languageOptions?.forEach((opt) => opt.classList.remove("selected"));
       option.classList.add("selected");
       this.elements.languageInput.value = value;
+      if (mainBoxFlag) {
+        mainBoxFlag.src = flag;
+      }
     } else if (selectorType === "currency") {
       if (selectedCurrencyText) {
         selectedCurrencyText.textContent = text;
@@ -662,12 +653,6 @@ class CiwiswitcherForm extends HTMLElement {
       } else if (selectedCurrency) {
         displayText.textContent = selectedCurrency;
       }
-    }
-
-    // 显示 main-box
-    const mainBox = document.getElementById("main-box");
-    if (mainBox) {
-      mainBox.style.display = "block";
     }
 
     // 移除移动端展开状态
@@ -767,10 +752,7 @@ window.onload = async function () {
   const languageCodes = Array.from(
     document.querySelectorAll(".option-item[data-type='language']"),
   ).map((option) => option.dataset.value);
-  console.log(languageCodes);
-
   const languageLocaleData = await fetchLanguageLocaleInfo(languageCodes);
-  console.log(languageLocaleData);
 
   const languageOptions = document.querySelectorAll(
     ".option-item[data-type='language']",
@@ -801,16 +783,22 @@ window.onload = async function () {
       'input[name="language_code"]',
     ).value;
     const countryCode = languageLocaleData[currentLangCode]?.countries[0];
+    const mainLanguageFlag = document.getElementById("main-language-flag");
+    const optionFlagImg = document.createElement("img");
+    optionFlagImg.className = "country-flag";
+    optionFlagImg.src = countryCode;
+    optionFlagImg.alt = "";
 
     if (countryCode) {
-      const flagImg = document.createElement("img");
-      flagImg.className = "country-flag";
-      flagImg.src = countryCode;
-      flagImg.alt = "";
-
-      selectedOption.insertBefore(flagImg, selectedOption.firstChild);
+      selectedOption.insertBefore(optionFlagImg, selectedOption.firstChild);
+    }
+    if (mainLanguageFlag) {
+      mainLanguageFlag.src = countryCode;
+      mainLanguageFlag.hidden = false;
     }
   }
+
+  // 为main-box添加国旗
 
   if (IpOpen) {
     const iptoken = document.querySelector('span[name="iptoken"]');
@@ -889,8 +877,6 @@ window.onload = async function () {
 
   // 在页面加载时执行初始化
   const data = await fetchCurrencies(shop.value);
-  console.log(data);
-
   if (data) {
     await initializeCurrency(data, shop);
   }
