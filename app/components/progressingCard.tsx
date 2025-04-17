@@ -170,7 +170,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
                 setItem("Filters");
                 return 52;
             case "METAFIELD":
-                setItem("Filters");
+                setItem("Store metadata");
                 return 54;
             case "METAOBJECT":
                 setItem("Metaobjects");
