@@ -140,7 +140,7 @@ const Index = () => {
   const emailFetcher = useFetcher<any>();
   const policiesFetcher = useFetcher<any>();
   const shopFetcher = useFetcher<any>();
-  // const store_metadataFetcher = useFetcher<any>();
+  const store_metadataFetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
   const deliveryFetcher = useFetcher<any>();
   const shippingFetcher = useFetcher<any>();
@@ -308,22 +308,22 @@ const Index = () => {
       sync_status: false,
       navigation: "shop",
     },
-    // {
-    //   key: "store_metadata",
-    //   title: t("Store metadata"),
-    //   allTranslatedItems:
-    //     items.find(
-    //       (item: any) =>
-    //         item?.language === current && item?.type === "METAFIELD",
-    //     )?.translatedNumber ?? undefined,
-    //   allItems:
-    //     items.find(
-    //       (item: any) =>
-    //         item?.language === current && item?.type === "METAFIELD",
-    //     )?.totalNumber ?? undefined,
-    //   sync_status: false,
-    //   navigation: "metafield",
-    // },
+    {
+      key: "store_metadata",
+      title: t("Store metadata"),
+      allTranslatedItems:
+        items.find(
+          (item: any) =>
+            item?.language === current && item?.type === "METAFIELD",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        items.find(
+          (item: any) =>
+            item?.language === current && item?.type === "METAFIELD",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "metafield",
+    },
     {
       key: "theme",
       title: t("Theme"),
@@ -464,6 +464,12 @@ const Index = () => {
       dispatch(updateData(shopFetcher.data.data));
     }
   }, [shopFetcher.data]);
+
+  useEffect(() => {
+    if (store_metadataFetcher.data) {
+      dispatch(updateData(store_metadataFetcher.data.data));
+    }
+  }, [store_metadataFetcher.data]);
 
   useEffect(() => {
     if (themeFetcher.data) {
@@ -659,19 +665,19 @@ const Index = () => {
         method: "post",
         action: "/app/manage_translation",
       }); // 提交表单请求
-      // const store_metadataFormData = new FormData();
-      // store_metadataFormData.append(
-      //   "store_metadataItems",
-      //   JSON.stringify({
-      //     source: primaryLanguage,
-      //     target: current,
-      //     resourceType: "Store metadata",
-      //   }),
-      // );
-      // store_metadataFetcher.submit(store_metadataFormData, {
-      //   method: "post",
-      //   action: "/app/manage_translation",
-      // }); // 提交表单请求
+      const store_metadataFormData = new FormData();
+      store_metadataFormData.append(
+        "itemsCount",
+        JSON.stringify({
+          source: primaryLanguage,
+          target: current,
+          resourceType: "Store metadata",
+        }),
+      );
+      store_metadataFetcher.submit(store_metadataFormData, {
+        method: "post",
+        action: "/app/manage_translation",
+      }); // 提交表单请求
       const themeFormData = new FormData();
       themeFormData.append(
         "itemsCount",
