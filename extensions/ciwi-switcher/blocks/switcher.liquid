@@ -10,48 +10,75 @@
         id="selector-box"
         style="background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; margin-bottom: 5px; width: 100%; display: none"
       >
-        <label for="language-switcher" class="language_title">Language</label>
-        <div class="select-wrapper">
-          <select id="language-switcher" class="ciwi_select">
-            {% for language in localization.available_languages %}
-              <option
-                value="{{language.iso_code}}"
-                {% if language.iso_code == localization.language.iso_code %}
-                  selected
-                {% endif %}
+        <div
+          id="language-switcher-container"
+        >
+          <div class="custom-selector" data-type="language">
+            <div class="selector-header" data-type="language">
+              <div class="selected-option" data-type="language">
+                <span class="selected-text" data-type="language">
+                  {{- localization.language.endonym_name | capitalize -}}
+                </span>
+              </div>
+              <img
+                id="currency-arrow-icon"
+                class="arrow_icon"
+                src="{{ 'arrow.svg' | asset_url }}"
+                alt="Arrow Icon"
+                width="25%"
+                height="25%"
               >
-                {{ language.endonym_name | capitalize }}
-              </option>
-            {% endfor %}
-          </select>
-          <img
-            id="language-arrow-icon"
-            class="arrow_icon"
-            src="{{ 'arrow.svg' | asset_url }}"
-            alt="Arrow Icon"
-            width="25%"
-            height="25%"
-          >
+            </div>
+            <div class="options-container" data-type="language">
+              <div class="options-list">
+                {% for language in localization.available_languages %}
+                  <div
+                    class="option-item {% if language.iso_code == localization.language.iso_code %}selected{% endif %}"
+                    data-value="{{ language.iso_code }}"
+                    data-type="language"
+                  >
+                    {% comment %}
+                      <img
+                        class="country-flag"
+                        src="{{ 'flags/' | append: language.iso_code | downcase | append: '.svg' | asset_url }}"
+                        alt=""
+                      >
+                    {% endcomment %}
+                    <span class="option-text">{{ language.endonym_name | capitalize }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
         </div>
-        <label for="currency-switcher" class="currency_title" id="currency-title" style="display: none">Currency</label>
-        <div class="select-wrapper">
-          <select id="currency-switcher" class="ciwi_select" style="display: none"></select>
-          <img
-            id="currency-arrow-icon"
-            class="arrow_icon"
-            src="{{ 'arrow.svg' | asset_url }}"
-            alt="Arrow Icon"
-            width="25%"
-            height="25%"
-          >
+        <div
+          id="currency-switcher-container"
+          style="display: none"
+        >
+          <div class="custom-selector" data-type="currency">
+            <div class="selector-header" data-type="currency">
+              <div class="selected-option" data-type="currency">
+                <span class="selected-text" data-type="currency"></span>
+              </div>
+              <img
+                id="currency-arrow-icon"
+                class="arrow_icon"
+                src="{{ 'arrow.svg' | asset_url }}"
+                alt="Arrow Icon"
+                width="25%"
+                height="25%"
+              >
+            </div>
+
+            <div class="options-container">
+              <div class="options-list"></div>
+            </div>
+          </div>
         </div>
         <div class="button_wrapper">
           <button id="switcher-confirm" class="ciwi_switcher_confirm_button">Confirm</button>
-          <button id="switcher-close" class="ciwi_switcher_cancel_button">Cancel</button>
         </div>
       </div>
-      <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
-      <input id="queryMoneyFormat" type="hidden" value="{{ shop.money_format | strip_html }}">
       <div
         id="main-box"
         class="main_box"
@@ -74,6 +101,8 @@
         >
       </div>
     </div>
+    <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
+    <input id="queryMoneyFormat" type="hidden" value="{{ shop.money_format | strip_html }}">
     <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
     <input type="hidden" name="currency_code" value="">
     <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">

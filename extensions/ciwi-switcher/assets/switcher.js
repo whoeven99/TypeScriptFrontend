@@ -1,4 +1,3 @@
-// Function to simulate fetching currencies from the backend
 async function fetchCurrencies(shop) {
   const response = await axios({
     url: `https://springbackendprod.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
@@ -61,17 +60,46 @@ async function fetchUserCountryInfo(access_key) {
   }
 }
 
+async function fetchLanguageLocaleInfo(locale) {
+  // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
+  const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
+  console.log(updatedLocales);
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getImageInfo`,
+      method: "POST",
+      data: updatedLocales,
+    });
+    const data = response.data.response;
+    console.log(data);
+
+    const res = Object.keys(data).reduce((acc, key) => {
+      // 将 key 中的 "_" 替换为 "-"
+      const newKey = key.replace("_", "-");
+      // 保持原来的值，重新赋值给新键
+      acc[newKey] = data[key];
+      return acc;
+    }, {});
+    return res;
+  } catch (error) {
+    console.error("Error occurred in the languageData:", error);
+  }
+}
+
 async function initializeCurrency(data, shop) {
   let value = localStorage.getItem("selectedCurrency");
   let moneyFormat = document.getElementById("queryMoneyFormat");
+  console.log(value);
   const selectedCurrency = data.find(
     (currency) => currency?.currencyCode === value,
   );
   const isValueInCurrencies =
     selectedCurrency && !selectedCurrency.primaryStatus;
 
-  const currencySwitcher = document.getElementById("currency-switcher");
-  const currencyTitleLabel = document.getElementById("currency-title");
+  // 获取新的选择器元素
+  const customSelector = document.getElementById("currency-switcher-container");
+  const selectedOption = customSelector?.querySelector(".selected-option");
+  const optionsList = customSelector?.querySelector(".options-list");
   const currencyInput = document.querySelector('input[name="currency_code"]');
 
   const regex = /{{(.*?)}}/;
@@ -82,8 +110,7 @@ async function initializeCurrency(data, shop) {
   }
 
   if (isValueInCurrencies) {
-    currencySwitcher.style.display = "block";
-    currencyTitleLabel.style.display = "block";
+    customSelector.style.display = "block";
     let rate = selectedCurrency.exchangeRate;
     if (selectedCurrency.exchangeRate == "Auto") {
       rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
@@ -91,6 +118,8 @@ async function initializeCurrency(data, shop) {
         rate = 1;
       }
     }
+
+    // 更新价格显示
     const prices = document.querySelectorAll(".ciwi-money");
     prices.forEach((price) => {
       const priceText = price.innerText;
@@ -107,48 +136,116 @@ async function initializeCurrency(data, shop) {
         price.innerText = transformedPrice;
       }
     });
-    currencyInput.value = value;
-    currencySwitcher.value = value;
 
-    data.forEach((currency) => {
-      const option = new Option(
-        `${currency.currencyCode}(${currency.symbol})`,
-        currency.currencyCode,
-      );
-      if (currency.currencyCode == value) {
-        option.selected = true;
-      }
-      currencySwitcher.add(option);
-    });
+    // 更新输入值和选中项
+    currencyInput.value = value;
+
+    // 清空并重新生成选项
+    if (optionsList) {
+      optionsList.innerHTML = "";
+      data.forEach((currency) => {
+        const optionItem = document.createElement("div");
+        optionItem.className = `option-item ${currency.currencyCode === value ? "selected" : ""}`;
+        optionItem.dataset.value = currency.currencyCode;
+        optionItem.dataset.type = "currency";
+        optionItem.innerHTML = `
+          <span class="option-text">${currency.currencyCode}</span>
+          <span class="currency-symbol">(${currency.symbol})</span>
+        `;
+
+        // 为新创建的选项添加点击事件监听器
+        optionItem.addEventListener("click", function (e) {
+          // 获取 CiwiswitcherForm 实例
+          const form = document.querySelector("ciwiswitcher-form");
+          if (form) {
+            form.handleOptionClick(e);
+          }
+        });
+
+        optionsList.appendChild(optionItem);
+
+        // 如果是选中项，更新选择器头部显示
+        if (currency.currencyCode === value && selectedOption) {
+          selectedOption.innerHTML = `
+            <span class="selected-text" data-type="currency">${currency.currencyCode}</span>
+            <span class="currency-symbol">(${currency.symbol})</span>
+          `;
+        }
+      });
+    }
+
     updateDisplayText();
   } else if (data.length) {
-    currencySwitcher.style.display = "block";
-    currencyTitleLabel.style.display = "block";
-    currencyInput.value = data[0];
-    currencySwitcher.value = data[0]?.currencyCode;
-    data.forEach((currency) => {
-      const option = new Option(
-        `${currency.currencyCode}(${currency.symbol})`,
-        currency.currencyCode,
-      );
-      if (currency.primaryStatus) {
-        option.selected = true;
-      }
-      currencySwitcher.add(option);
-    });
+    customSelector.style.display = "block";
+    const primaryCurrency =
+      data.find((currency) => currency.primaryStatus) || data[0];
+    currencyInput.value = primaryCurrency.currencyCode;
+
+    // 清空并重新生成选项
+    if (optionsList) {
+      optionsList.innerHTML = "";
+      data.forEach((currency) => {
+        const optionItem = document.createElement("div");
+        optionItem.className = `option-item ${currency.primaryStatus ? "selected" : ""}`;
+        optionItem.dataset.value = currency.currencyCode;
+        optionItem.dataset.type = "currency";
+        optionItem.innerHTML = `
+          <span class="option-text">${currency.currencyCode}</span>
+          <span class="currency-symbol">(${currency.symbol})</span>
+        `;
+
+        // 为新创建的选项添加点击事件监听器
+        optionItem.addEventListener("click", function (e) {
+          const form = document.querySelector("ciwiswitcher-form");
+          if (form) {
+            form.handleOptionClick(e);
+          }
+        });
+
+        optionsList.appendChild(optionItem);
+
+        // 如果是主要货币，更新选择器头部显示
+        if (currency.primaryStatus && selectedOption) {
+          selectedOption.innerHTML = `
+            <span class="selected-text" data-type="currency">${currency.currencyCode}</span>
+            <span class="currency-symbol">(${currency.symbol})</span>
+          `;
+        }
+      });
+    }
     updateDisplayText();
   }
 }
 
 // Function to update the display text
 function updateDisplayText() {
-  const currency =
-    document.getElementById("currency-switcher").selectedOptions[0]?.value ||
+  // 获取货币选择器中当前选中的值
+  const currencySelector = document.querySelector(
+    '.custom-selector[data-type="currency"]',
+  );
+  const selectedCurrencyText =
+    currencySelector?.querySelector(".selected-text")?.textContent ||
     "undefined";
-  const displayTextElement = document.getElementById("display-text");
-  displayTextElement.textContent += ` / ${currency}`; // Append currency to display text
-}
 
+  // 获取语言选择器中当前选中的值
+  const languageSelector = document.querySelector(
+    '.custom-selector[data-type="language"]',
+  );
+  const selectedLanguageText =
+    languageSelector?.querySelector(".selected-text")?.textContent || "";
+
+  // 更新显示文本
+  const displayTextElement = document.getElementById("display-text");
+  if (displayTextElement) {
+    // 如果已经有语言文本，添加货币文本
+    if (selectedLanguageText) {
+      displayTextElement.textContent = `${selectedLanguageText} / ${selectedCurrencyText}`;
+    } else {
+      // 如果只有货币文本
+      displayTextElement.textContent = selectedCurrencyText;
+    }
+  }
+}
 // Function to transform the price according to selected currency
 function transform(
   price,
@@ -423,10 +520,30 @@ class CiwiswitcherForm extends HTMLElement {
       currencyInput: this.querySelector('input[name="currency_code"]'),
       countryInput: this.querySelector('input[name="country_code"]'),
       confirmButton: this.querySelector("#switcher-confirm"),
-      closeButton: this.querySelector("#switcher-close"),
       mainBox: this.querySelector("#main-box"),
-      languageSwitcher: this.querySelector("#language-switcher"),
-      currencySwitcher: this.querySelector("#currency-switcher"),
+      languageSelector: this.querySelector(
+        ".custom-selector[data-type='language']",
+      ),
+      currencySelector: this.querySelector(
+        ".custom-selector[data-type='currency']",
+      ),
+      languageHeader: this.querySelector(
+        ".selector-header[data-type='language']",
+      ),
+      currencyHeader: this.querySelector(
+        ".selector-header[data-type='currency']",
+      ),
+      languageOptionsContainer: this.querySelector(
+        ".options-container[data-type='language']",
+      ),
+      currencyOptionsContainer: this.querySelector(
+        ".options-container[data-type='currency']",
+      ),
+      selectedFlag: this.querySelector(".selected-option .country-flag"),
+      selectedLanguageText: this.querySelector(
+        ".selected-option .selected-text[data-type='language']",
+      ),
+      options: this.querySelectorAll(".option-item"),
     };
 
     // 初始化所有事件监听
@@ -444,41 +561,144 @@ class CiwiswitcherForm extends HTMLElement {
       "click",
       this.submitForm.bind(this),
     );
-    this.elements.closeButton?.addEventListener(
-      "click",
-      this.toggleSelector.bind(this),
-    );
+
     this.elements.mainBox?.addEventListener(
       "click",
       this.toggleSelector.bind(this),
     );
 
-    // 语言切换器事件
-    this.elements.languageSwitcher?.addEventListener(
-      "change",
-      this.updateLanguage.bind(this),
-    );
-    this.elements.languageSwitcher?.addEventListener("focus", () =>
-      this.rotateArrow("language-arrow-icon", 180),
-    );
-    this.elements.languageSwitcher?.addEventListener("blur", () =>
-      this.rotateArrow("language-arrow-icon", 0),
-    );
+    // 修改语言选择器的点击事件
+    this.elements.languageHeader?.addEventListener("click", () => {
+      // 关闭货币选择器
+      this.elements.currencySelector?.classList.remove("open");
+      // 切换语言选择器
+      this.elements.languageSelector?.classList.toggle("open");
+    });
 
-    // 货币切换器事件
-    this.elements.currencySwitcher?.addEventListener(
-      "change",
-      this.updateCurrency.bind(this),
-    );
-    this.elements.currencySwitcher?.addEventListener("focus", () =>
-      this.rotateArrow("currency-arrow-icon", 180),
-    );
-    this.elements.currencySwitcher?.addEventListener("blur", () =>
-      this.rotateArrow("currency-arrow-icon", 0),
-    );
+    // 修改货币选择器的点击事件
+    this.elements.currencyHeader?.addEventListener("click", () => {
+      // 关闭语言选择器
+      this.elements.languageSelector?.classList.remove("open");
+      // 切换货币选择器
+      this.elements.currencySelector?.classList.toggle("open");
+    });
+
+    // 修改选项点击事件
+    this.elements.options?.forEach((option) => {
+      option.addEventListener("click", (e) => {
+        this.handleOptionClick(e);
+        // 关闭所有选择器
+        this.closeAllSelectors();
+      });
+    });
 
     // 点击外部关闭
     document.addEventListener("click", this.handleOutsideClick.bind(this));
+  }
+
+  handleOptionClick(event) {
+    const languageOptions = this.querySelectorAll(
+      ".option-item[data-type='language']",
+    );
+    const currencyOptions = this.querySelectorAll(
+      ".option-item[data-type='currency']",
+    );
+    const selectedCurrencyText = this.querySelector(
+      ".selected-option .selected-text[data-type='currency']",
+    );
+    const option = event.currentTarget;
+    const value = option.dataset.value;
+    const text = option.querySelector(".option-text")?.textContent;
+    const flag = option.querySelector(".country-flag")?.src;
+    const selectorType = option.closest(".custom-selector")?.dataset.type; // 获取选择器类型
+
+    console.log("Option clicked:", {
+      option,
+      value,
+      text,
+      flag,
+      selectorType,
+      elements: this.elements,
+    });
+
+    console.log(selectedCurrencyText);
+
+    if (selectorType === "language") {
+      // 更新选中项显示
+      if (this.elements.selectedFlag) {
+        this.elements.selectedFlag.src = flag;
+      }
+      if (this.elements.selectedLanguageText) {
+        this.elements.selectedLanguageText.textContent = text;
+      }
+      // 更新选中状态
+      languageOptions?.forEach((opt) => opt.classList.remove("selected"));
+      option.classList.add("selected");
+      this.elements.languageInput.value = value;
+    } else if (selectorType === "currency") {
+      if (selectedCurrencyText) {
+        selectedCurrencyText.textContent = text;
+      }
+      // 更新选中状态
+      currencyOptions?.forEach((opt) => opt.classList.remove("selected"));
+      option.classList.add("selected");
+      this.elements.currencyInput.value = value;
+    }
+
+    // 更新 main-box 显示文本
+    const displayText = document.getElementById("display-text");
+    if (displayText) {
+      const selectedLanguage =
+        this.elements.languageSelector?.querySelector(".selected-text")
+          ?.textContent || "";
+      const selectedCurrency =
+        this.elements.currencySelector?.querySelector(".selected-text")
+          ?.textContent || "";
+
+      if (selectedLanguage && selectedCurrency) {
+        displayText.textContent = `${selectedLanguage} / ${selectedCurrency}`;
+      } else if (selectedLanguage) {
+        displayText.textContent = selectedLanguage;
+      } else if (selectedCurrency) {
+        displayText.textContent = selectedCurrency;
+      }
+    }
+
+    // 显示 main-box
+    const mainBox = document.getElementById("main-box");
+    if (mainBox) {
+      mainBox.style.display = "block";
+    }
+
+    // 移除移动端展开状态
+    if (window.innerWidth <= 768) {
+      this.elements.ciwiContainer.classList.remove("expanded");
+    }
+
+    // 重置箭头方向
+    this.rotateArrow("mainbox-arrow-icon", 0);
+
+    // 关闭所有选择器
+    this.closeAllSelectors();
+  }
+
+  handleOutsideClick(event) {
+    if (!this.elements.ciwiContainer.contains(event.target)) {
+      if (window.innerWidth <= 768) {
+        const mainBox = document.getElementById("main-box");
+        this.elements.ciwiContainer.classList.remove("expanded");
+        mainBox.style.display = "block";
+      }
+      this.elements.selectorBox.style.display = "none";
+      this.rotateArrow("mainbox-arrow-icon", 0);
+    }
+
+    if (
+      this.elements.selector &&
+      !this.elements.selector.contains(event.target)
+    ) {
+      this.elements.selector.classList.remove("open");
+    }
   }
 
   submitForm(event) {
@@ -528,16 +748,10 @@ class CiwiswitcherForm extends HTMLElement {
     }
   }
 
-  handleOutsideClick(event) {
-    if (!this.elements.ciwiContainer.contains(event.target)) {
-      if (window.innerWidth <= 768) {
-        const mainBox = document.getElementById("main-box");
-        this.elements.ciwiContainer.classList.remove("expanded");
-        mainBox.style.display = "block";
-      }
-      this.elements.selectorBox.style.display = "none";
-      this.rotateArrow("mainbox-arrow-icon", 0);
-    }
+  // 添加一个关闭所有选择器的方法
+  closeAllSelectors() {
+    this.elements.languageSelector?.classList.remove("open");
+    this.elements.currencySelector?.classList.remove("open");
   }
 }
 
@@ -549,10 +763,59 @@ window.onload = async function () {
   const shop = document.getElementById("queryCiwiId");
   shop.remove();
   const IpOpen = await fetchIpSwitch(shop.value);
+  //获取所有语言代码
+  const languageCodes = Array.from(
+    document.querySelectorAll(".option-item[data-type='language']"),
+  ).map((option) => option.dataset.value);
+  console.log(languageCodes);
+
+  const languageLocaleData = await fetchLanguageLocaleInfo(languageCodes);
+  console.log(languageLocaleData);
+
+  const languageOptions = document.querySelectorAll(
+    ".option-item[data-type='language']",
+  );
+
+  languageOptions.forEach((option) => {
+    const langCode = option.dataset.value;
+    const countryCode = languageLocaleData[langCode]?.countries[0];
+
+    if (countryCode) {
+      // 创建并插入国旗图片
+      const flagImg = document.createElement("img");
+      flagImg.className = "country-flag";
+      flagImg.src = countryCode;
+      flagImg.alt = "";
+
+      // 将图片插入到选项的最前面
+      option.insertBefore(flagImg, option.firstChild);
+    }
+  });
+
+  // 为当前选中的语言添加国旗
+  const selectedOption = document.querySelector(
+    ".selector-header[data-type='language'] .selected-option",
+  );
+  if (selectedOption) {
+    const currentLangCode = document.querySelector(
+      'input[name="language_code"]',
+    ).value;
+    const countryCode = languageLocaleData[currentLangCode]?.countries[0];
+
+    if (countryCode) {
+      const flagImg = document.createElement("img");
+      flagImg.className = "country-flag";
+      flagImg.src = countryCode;
+      flagImg.alt = "";
+
+      selectedOption.insertBefore(flagImg, selectedOption.firstChild);
+    }
+  }
+
   if (IpOpen) {
     const iptoken = document.querySelector('span[name="iptoken"]');
     const iptokenValue = iptoken.textContent;
-    if (iptokenValue) iptoken.remove(); // 移除DOM元素
+    if (iptokenValue) iptoken.remove();
     const storedLanguage = localStorage.getItem("selectedLanguage");
     const storedCountry = localStorage.getItem("selectedCountry");
     const languageInput = document.querySelector('input[name="language_code"]');
@@ -626,6 +889,8 @@ window.onload = async function () {
 
   // 在页面加载时执行初始化
   const data = await fetchCurrencies(shop.value);
+  console.log(data);
+
   if (data) {
     await initializeCurrency(data, shop);
   }
