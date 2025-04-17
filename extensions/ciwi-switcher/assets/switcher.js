@@ -632,6 +632,7 @@ class CiwiswitcherForm extends HTMLElement {
       option.classList.add("selected");
       this.elements.languageInput.value = value;
     } else if (selectorType === "currency") {
+      console.log(selectedCurrencyText);
       if (selectedCurrencyText) {
         selectedCurrencyText.textContent = text;
       }
