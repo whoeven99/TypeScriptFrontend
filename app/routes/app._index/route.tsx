@@ -166,12 +166,6 @@ const Index = () => {
                         <div dangerouslySetInnerHTML={{ __html: t("transLanguageCard3.description5") }} />
                       </div>
                     </div>
-                    {/* {
-                      loading ?
-                        <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/meet-five-top-translation-experts-supporting-your-e-commerce-business/", "_blank")}>{t("transLanguageCard3.button")}</Button>
-                        :
-                        <Skeleton.Button active />
-                    } */}
                   </Space>
                 </Card>
               </Col>
@@ -229,7 +223,6 @@ const Index = () => {
                       {t("transCurrencyCard2.title")}
                     </Text>
                     <Text >{t("transCurrencyCard2.description")}</Text>
-                    {/* <div style={{ flex: 1 }} /> 添加弹性空间 */}
                     {
                       loading ?
                         <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/", "_blank")}>{t("transCurrencyCard2.button")}</Button>
@@ -256,7 +249,6 @@ const Index = () => {
                       {t("transCurrencyCard3.title")}
                     </Text>
                     <Text >{t("transCurrencyCard3.description")}</Text>
-                    {/* <div style={{ flex: 1 }} /> 添加弹性空间 */}
                     {
                       loading ?
                         <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/", "_blank")}>{t("transCurrencyCard3.button")}</Button>
