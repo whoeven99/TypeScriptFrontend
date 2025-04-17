@@ -3,7 +3,7 @@
 client_id = "fb9fc15cbec02bd735e2a5b491cf8409"
 name = "Translate Language AI Adapt"
 handle = "ciwi-translator"
-application_url = "https://typescriptfrontendprod.onrender.com/"
+application_url = "https://typescriptfrontendprod.onrender.com"
 embedded = true
 
 [build]
