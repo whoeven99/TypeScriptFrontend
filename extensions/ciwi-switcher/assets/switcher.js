@@ -60,17 +60,19 @@ async function fetchUserCountryInfo(access_key) {
   }
 }
 
-async function GetLanguageLocaleInfo(locale) {
+async function fetchLanguageLocaleInfo(locale) {
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
-
+  console.log(updatedLocales);
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getImageInfo`,
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getImageInfo`,
       method: "POST",
       data: updatedLocales,
     });
     const data = response.data.response;
+    console.log(data);
+
     const res = Object.keys(data).reduce((acc, key) => {
       // 将 key 中的 "_" 替换为 "-"
       const newKey = key.replace("_", "-");
@@ -165,7 +167,7 @@ async function initializeCurrency(data, shop) {
         // 如果是选中项，更新选择器头部显示
         if (currency.currencyCode === value && selectedOption) {
           selectedOption.innerHTML = `
-            <span class="selected-text">${currency.currencyCode}</span>
+            <span class="selected-text" data-type="currency">${currency.currencyCode}</span>
             <span class="currency-symbol">(${currency.symbol})</span>
           `;
         }
@@ -205,7 +207,7 @@ async function initializeCurrency(data, shop) {
         // 如果是主要货币，更新选择器头部显示
         if (currency.primaryStatus && selectedOption) {
           selectedOption.innerHTML = `
-            <span class="selected-text">${currency.currencyCode}</span>
+            <span class="selected-text" data-type="currency">${currency.currencyCode}</span>
             <span class="currency-symbol">(${currency.symbol})</span>
           `;
         }
@@ -619,6 +621,8 @@ class CiwiswitcherForm extends HTMLElement {
       elements: this.elements,
     });
 
+    console.log(selectedCurrencyText);
+
     if (selectorType === "language") {
       // 更新选中项显示
       if (this.elements.selectedFlag) {
@@ -632,7 +636,6 @@ class CiwiswitcherForm extends HTMLElement {
       option.classList.add("selected");
       this.elements.languageInput.value = value;
     } else if (selectorType === "currency") {
-      console.log(selectedCurrencyText);
       if (selectedCurrencyText) {
         selectedCurrencyText.textContent = text;
       }
@@ -760,6 +763,55 @@ window.onload = async function () {
   const shop = document.getElementById("queryCiwiId");
   shop.remove();
   const IpOpen = await fetchIpSwitch(shop.value);
+  //获取所有语言代码
+  const languageCodes = Array.from(
+    document.querySelectorAll(".option-item[data-type='language']"),
+  ).map((option) => option.dataset.value);
+  console.log(languageCodes);
+
+  const languageLocaleData = await fetchLanguageLocaleInfo(languageCodes);
+  console.log(languageLocaleData);
+
+  const languageOptions = document.querySelectorAll(
+    ".option-item[data-type='language']",
+  );
+
+  languageOptions.forEach((option) => {
+    const langCode = option.dataset.value;
+    const countryCode = languageLocaleData[langCode]?.countries[0];
+
+    if (countryCode) {
+      // 创建并插入国旗图片
+      const flagImg = document.createElement("img");
+      flagImg.className = "country-flag";
+      flagImg.src = countryCode;
+      flagImg.alt = "";
+
+      // 将图片插入到选项的最前面
+      option.insertBefore(flagImg, option.firstChild);
+    }
+  });
+
+  // 为当前选中的语言添加国旗
+  const selectedOption = document.querySelector(
+    ".selector-header[data-type='language'] .selected-option",
+  );
+  if (selectedOption) {
+    const currentLangCode = document.querySelector(
+      'input[name="language_code"]',
+    ).value;
+    const countryCode = languageLocaleData[currentLangCode]?.countries[0];
+
+    if (countryCode) {
+      const flagImg = document.createElement("img");
+      flagImg.className = "country-flag";
+      flagImg.src = countryCode;
+      flagImg.alt = "";
+
+      selectedOption.insertBefore(flagImg, selectedOption.firstChild);
+    }
+  }
+
   if (IpOpen) {
     const iptoken = document.querySelector('span[name="iptoken"]');
     const iptokenValue = iptoken.textContent;

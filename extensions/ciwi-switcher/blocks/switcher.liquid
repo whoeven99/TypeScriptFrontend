@@ -16,13 +16,6 @@
           <div class="custom-selector" data-type="language">
             <div class="selector-header" data-type="language">
               <div class="selected-option" data-type="language">
-                {% comment %}
-                  <img
-                    class="country-flag"
-                    src="{{ 'flags/' | append: localization.language.iso_code | downcase | append: '.svg' | asset_url }}"
-                    alt=""
-                  >
-                {% endcomment %}
                 <span class="selected-text" data-type="language">
                   {{- localization.language.endonym_name | capitalize -}}
                 </span>

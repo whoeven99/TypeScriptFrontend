@@ -46,26 +46,26 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
         );
     }, []);
 
-    useEffect(() => {
-        let timeoutId: NodeJS.Timeout;
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
 
-        // 当状态为 2 时，开始轮询
-        if (status === 2) {
-            const pollStatus = () => {
-                // 状态查询请求
-                const statusformData = new FormData();
-                statusformData.append(
-                    "statusData",
-                    JSON.stringify({
-                        source: source,
-                        target: [target],
-                    }),
-                );
+    // 当状态为 2 时，开始轮询
+    if (status === 2) {
+      const pollStatus = () => {
+        // 状态查询请求
+        const statusformData = new FormData();
+        statusformData.append(
+          "statusData",
+          JSON.stringify({
+            source: source,
+            target: [target],
+          }),
+        );
 
-                statusFetcher.submit(statusformData, {
-                    method: "post",
-                    action: "/app",
-                });
+        statusFetcher.submit(statusformData, {
+          method: "post",
+          action: "/app",
+        });
 
                 // 项目计数请求
                 const itemsFormData = new FormData();
@@ -78,36 +78,36 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
                     }),
                 );
 
-                itemsFetcher.submit(itemsFormData, {
-                    method: "post",
-                    action: "/app/manage_translation",
-                });
+        itemsFetcher.submit(itemsFormData, {
+          method: "post",
+          action: "/app/manage_translation",
+        });
 
-                // 设置下一次轮询
-                timeoutId = setTimeout(pollStatus, 5000);
-            };
+        // 设置下一次轮询
+        timeoutId = setTimeout(pollStatus, 5000);
+      };
 
-            // 开始首次轮询
-            pollStatus();
+      // 开始首次轮询
+      pollStatus();
 
-            // 清理函数
-            return () => {
-                if (timeoutId) {
-                    clearTimeout(timeoutId);
-                }
-            };
+      // 清理函数
+      return () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
         }
-    }, [status, source, target, item]); // 添加 item 到依赖数组
+      };
+    }
+  }, [status, source, target, item]); // 添加 item 到依赖数组
 
-    useEffect(() => {
-        if (fetcher.data?.translatingLanguage) {
-            setSource(fetcher.data?.translatingLanguage.source);
-            setTarget(fetcher.data?.translatingLanguage.target);
-            setResourceType(fetcher.data?.translatingLanguage.resourceType);
-            setStatus(fetcher.data?.translatingLanguage.status);
-            setLoading(false);
-        }
-    }, [fetcher.data]);
+  useEffect(() => {
+    if (fetcher.data?.translatingLanguage) {
+      setSource(fetcher.data?.translatingLanguage.source);
+      setTarget(fetcher.data?.translatingLanguage.target);
+      setResourceType(fetcher.data?.translatingLanguage.resourceType);
+      setStatus(fetcher.data?.translatingLanguage.status);
+      setLoading(false);
+    }
+  }, [fetcher.data]);
 
     useEffect(() => {
         if (statusFetcher.data?.data) {
@@ -126,22 +126,22 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
         }
     }, [statusFetcher.data]);
 
-    useEffect(() => {
-        if (itemsFetcher.data?.data && itemsFetcher.data?.data.length > 0) {
-            console.log("itemsFetcher.data?.data: ", itemsFetcher.data?.data);
-            setItemsCount({
-                totalNumber: itemsFetcher.data?.data[0].totalNumber || 0,
-                translatedNumber: itemsFetcher.data?.data[0].translatedNumber || 0,
-            });
-        }
-    }, [itemsFetcher.data]);
+  useEffect(() => {
+    if (itemsFetcher.data?.data && itemsFetcher.data?.data.length > 0) {
+      console.log("itemsFetcher.data?.data: ", itemsFetcher.data?.data);
+      setItemsCount({
+        totalNumber: itemsFetcher.data?.data[0].totalNumber || 0,
+        translatedNumber: itemsFetcher.data?.data[0].translatedNumber || 0,
+      });
+    }
+  }, [itemsFetcher.data]);
 
-    useEffect(() => {
-        if (resourceType) {
-            const progress = calculateProgressByType(resourceType);
-            setProgress(progress);
-        }
-    }, [resourceType]);
+  useEffect(() => {
+    if (resourceType) {
+      const progress = calculateProgressByType(resourceType);
+      setProgress(progress);
+    }
+  }, [resourceType]);
 
     const calculateProgressByType = (resourceType: string): number => {
         switch (resourceType) {
@@ -170,7 +170,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
                 setItem("Filters");
                 return 52;
             case "METAFIELD":
-                setItem("Filters");
+                setItem("Store metadata");
                 return 54;
             case "METAOBJECT":
                 setItem("Metaobjects");
