@@ -143,7 +143,8 @@
 
   .arrow_icon,
   .mainarrow_icon,
-  .main_box_text {
+  .main_box_text,
+  .main_box_flag {
     display: none;
   }
 
