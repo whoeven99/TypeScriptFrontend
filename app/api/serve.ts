@@ -502,6 +502,7 @@ export const GetLanguageLocaleInfo = async ({
 }: {
   locale: string[];
 }) => {
+  console.log("locale: ", locale);
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
 
@@ -512,6 +513,7 @@ export const GetLanguageLocaleInfo = async ({
       data: updatedLocales,
     });
     const data = response.data.response;
+    console.log("data: ", data);
     const res = Object.keys(data).reduce(
       (
         acc: {
