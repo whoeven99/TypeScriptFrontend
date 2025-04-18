@@ -114,8 +114,6 @@ const Index = () => {
     const payFetcher = useFetcher<any>();
     const orderFetcher = useFetcher<any>();
     const payForPlanFetcher = useFetcher<any>();
-    console.log(selectedPlan);
-
 
     useEffect(() => {
         setIsLoading(false);
@@ -272,9 +270,9 @@ const Index = () => {
             title: 'Starter',
             price: '1.99',
             subtitle: t('pricing.for_individuals'),
-            buttonText: selectedPlan === '3' ? t('pricing.current_plan') : t('pricing.get_start'),
+            buttonText: selectedPlan === 3 ? t('pricing.current_plan') : t('pricing.get_start'),
             buttonType: 'default',
-            disabled: selectedPlan === '3',
+            disabled: selectedPlan === 3,
             features: [
                 t('500,000 credits/month'),
                 t('8 main languages'),
@@ -290,9 +288,9 @@ const Index = () => {
             title: 'Basic',
             price: '7.99',
             subtitle: t('pricing.for_small_teams'),
-            buttonText: selectedPlan === '4' ? t('pricing.current_plan') : t('pricing.get_start'),
+            buttonText: selectedPlan === 4 ? t('pricing.current_plan') : t('pricing.get_start'),
             buttonType: 'default',
-            disabled: selectedPlan === '4',
+            disabled: selectedPlan === 4,
             features: [
                 t('2,000,000 credits/month'),
                 t('Unlimited product translation'),
@@ -311,9 +309,9 @@ const Index = () => {
             title: 'Pro',
             price: '19.99',
             subtitle: t('pricing.for_growing'),
-            buttonText: selectedPlan === '5' ? t('pricing.current_plan') : t('pricing.get_start'),
+            buttonText: selectedPlan === 5 ? t('pricing.current_plan') : t('pricing.get_start'),
             buttonType: 'default',
-            disabled: selectedPlan === '5',
+            disabled: selectedPlan === 5,
             features: [
                 t('5,000,000 credits/month'),
                 t('Unlimited product translation'),
@@ -333,8 +331,8 @@ const Index = () => {
             title: 'Premium',
             price: '39.99',
             subtitle: t('pricing.for_large_teams'),
-            buttonText: selectedPlan === '6' ? t('pricing.current_plan') : t('pricing.get_start'),
-            disabled: selectedPlan === '6',
+            buttonText: selectedPlan === 6 ? t('pricing.current_plan') : t('pricing.get_start'),
+            disabled: selectedPlan === 6,
             isRecommended: true,
             features: [
                 t('10,000,000 credits/month'),

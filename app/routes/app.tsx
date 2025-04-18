@@ -100,50 +100,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (loading) {
       try {
-        const loadingDataStart = new Date();
-        const loadingDataAStart = new Date();
         const init = await InitializationDetection({ shop });
-        const loadingDataAEnd = new Date();
-        const loadingDataA = loadingDataAEnd.getTime() - loadingDataAStart.getTime();
-        console.log("loadingDataA: ", loadingDataA);
-
-        const loadingDataBStart = new Date();
         await UserAdd({ shop, accessToken: accessToken as string, init: init?.add });
-        const loadingDataBEnd = new Date();
-        const loadingDataB = loadingDataBEnd.getTime() - loadingDataBStart.getTime();
-        console.log("loadingDataB: ", loadingDataB);
-
         if (!init?.insertCharsByShopName) {
-          const loadingDataCStart = new Date();
           await InsertCharsByShopName({ shop, accessToken: accessToken as string });
-          const loadingDataCEnd = new Date();
-          const loadingDataC = loadingDataCEnd.getTime() - loadingDataCStart.getTime();
-          console.log("loadingDataC: ", loadingDataC);
         }
-
         if (!init?.addUserFreeSubscription) {
-          const loadingDataDStart = new Date();
           await AddUserFreeSubscription({ shop });
-          const loadingDataDEnd = new Date();
-          const loadingDataD = loadingDataDEnd.getTime() - loadingDataDStart.getTime();
-          console.log("loadingDataD: ", loadingDataD);
         }
-        if (!init?.addDefaultLanguagePack)
+        if (!init?.addDefaultLanguagePack) {
           await AddDefaultLanguagePack({ shop });
-        const loadingDataEnd = new Date();
-        const loadingData = loadingDataEnd.getTime() - loadingDataStart.getTime();
-        console.log("loadingData: ", loadingData);
-        // const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
-        //   key: i,
-        //   src: [],
-        //   name: lang.name,
-        //   localeName: "",
-        //   locale: lang.locale,
-        //   status: 0,
-        //   published: lang.published,
-        // }));
-
-        // return json({ data, success: true });
+        }
         return true;
       } catch (error) {
         console.error("Error loading app:", error);
@@ -153,8 +120,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (languageInit) {
       try {
-        const languageInitStart = new Date();
-        const languageInitAStart = new Date();
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken: accessToken as string,
@@ -168,24 +133,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
           (item) => item.locale,
         );
-        const languageInitAEnd = new Date();
-        const languageInitA = languageInitAEnd.getTime() - languageInitAStart.getTime();
-        console.log("languageInitA: ", languageInitA);
 
-        const languageInitBStart = new Date();
         await InsertTargets({
           shop,
           accessToken: accessToken!,
           source: shopPrimaryLanguage[0].locale,
           targets: shopLocalesIndex,
         });
-        const languageInitBEnd = new Date();
-        const languageInitB = languageInitBEnd.getTime() - languageInitBStart.getTime();
-        console.log("languageInitB: ", languageInitB);
-
-        const languageInitEnd = new Date();
-        const languageInit = languageInitEnd.getTime() - languageInitStart.getTime();
-        console.log("languageInit: ", languageInit);
 
         return null;
       } catch (error) {
@@ -194,8 +148,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
     if (languageData) {
       try {
-        const languageDataStart = new Date();
-        const languageDataAStart = new Date();
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken: accessToken as string,
@@ -212,13 +164,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const languageLocaleInfo = await GetLanguageLocaleInfo({
           locale: shopLocalesIndex,
         });
-        const languageDataAEnd = new Date();
-        const languageDataA = languageDataAEnd.getTime() - languageDataAStart.getTime();
-        console.log("languageDataA: ", languageDataA);
 
-        const languageDataBStart = new Date();
         const languages = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
-        // const languages = response.data.response;
 
         const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
           key: i,
@@ -231,16 +178,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               ?.status : 0,
           published: lang.published,
         }));
-        const languageDataBEnd = new Date();
-        const languageDataB = languageDataBEnd.getTime() - languageDataBStart.getTime();
-        console.log("languageDataB: ", languageDataB);
 
-        const languageDataCStart = new Date();
         const customApikeyData = await GetUserData({
           shop,
         });
-        const languageDataC = languageDataCStart.getTime() - languageDataCStart.getTime();
-        console.log("languageDataC: ", languageDataC);
 
         const languageSetting = {
           primaryLanguage: shopPrimaryLanguage[0].name,
@@ -248,10 +189,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
-        console.log(`${shop}根路由正常加载`);
-        const languageDataEnd = new Date();
-        const languageData = languageDataEnd.getTime() - languageDataStart.getTime();
-        console.log("languageData: ", languageData);
 
         return json({ data, languageSetting, shop, customApikeyData: customApikeyData?.response?.googleKey });
       } catch (error) {
@@ -452,9 +389,7 @@ export default function App() {
           {loadingFetcher.data && <Link to="/app/glossary">{t("Glossary")}</Link>}
           {loadingFetcher.data && <Link to="/app/pricing">{t("Pricing")}</Link>}
         </NavMenu>
-        <Suspense>
-          <Outlet />
-        </Suspense>
+        <Outlet />
       </ConfigProvider>
     </AppProvider >
   );

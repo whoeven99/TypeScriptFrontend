@@ -103,7 +103,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         console.log("recalculateFetcher.data.data.response: ", recalculateFetcher.data.data.response);
         const { id, translationId, shopName, ...rest } = recalculateFetcher.data.data.response;
         let credits = 0;
-        console.log("rest: ", rest);
         Object.entries(rest).forEach(([key, value]) => {
           if (value !== null) {
             credits += value as number;
