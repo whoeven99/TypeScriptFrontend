@@ -28,15 +28,68 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 };
 
+const initialLocalization = {
+    languages: [
+        {
+            iso_code: "zh",
+            name: "Chinese",
+            localeName: "简体中文",
+            flag: "/flags/CN.webp",
+            selected: true,
+        },
+        {
+            iso_code: "kr",
+            name: "Korean",
+            localeName: "한국어",
+            flag: "/flags/KR.webp",
+            selected: false,
+        },
+        {
+            iso_code: "fr",
+            name: "French",
+            localeName: "Français",
+            flag: "/flags/FR.webp",
+            selected: false,
+        },
+    ],
+    currencies: [
+        {
+            iso_code: "USD",
+            symbol: "$",
+            localeName: "USD",
+            selected: true,
+        },
+        {
+            iso_code: "EUR",
+            symbol: "€",
+            localeName: "EUR",
+            selected: false,
+        },
+        {
+            iso_code: "CNY",
+            symbol: "¥",
+            localeName: "CNY",
+            selected: false,
+        },
+    ]
+}
+
 const Index = () => {
     const [isSwitcherEnabled, setIsSwitcherEnabled] = useState(false);
     const [isGeoLocationEnabled, setIsGeoLocationEnabled] = useState(false);
     const [isIncludedFlag, setIsIncludedFlag] = useState(false);
+    const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+    const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
+    const [isSelectorOpen, setIsSelectorOpen] = useState(false);
     const [switcherSelectedOption, setSwitcherSelectedOption] = useState("language");
     const [fontColor, setFontColor] = useState("#000000");
     const [backgroundColor, setBackgroundColor] = useState("#ffffff");
+    const [buttonColor, setButtonColor] = useState("#ffffff");
+    const [buttonBackgroundColor, setButtonBackgroundColor] = useState("#000000");
+    const [optionBorderColor, setOptionBorderColor] = useState("#ccc");
     const [backgroundTransparency, setBackgroundTransparency] = useState(0);
     const [switcherPosition, setSwitcherPosition] = useState("top_left");
+    const [localization, setLocalization] = useState(initialLocalization);
 
     const { t } = useTranslation();
     const fetcher = useFetcher<any>();
@@ -58,6 +111,10 @@ const Index = () => {
         }
     }, [fetcher.data]);
 
+    useEffect(() => {
+        console.log(localization);
+    }, [localization]);
+
     const handleSwitcherEnabledChange = (checked: boolean) => {
         setIsSwitcherEnabled(checked);
     };
@@ -70,14 +127,6 @@ const Index = () => {
         setIsIncludedFlag(checked);
     };
 
-    const handleFontColorChange = (color: string) => {
-        setFontColor(color);
-    };
-
-    const handleBackgroundColorChange = (color: string) => {
-        setBackgroundColor(color);
-    };
-
     const handleBackgroundTransparencyChange = (value: number) => {
         setBackgroundTransparency(value);
     };
@@ -88,6 +137,45 @@ const Index = () => {
 
     const handleGeoLocationEnabledChange = (checked: boolean) => {
         setIsGeoLocationEnabled(checked);
+    };
+
+    const handleLanguageClick = () => {
+        setIsLanguageOpen(!isLanguageOpen);
+    };
+
+    const handleCurrencyClick = () => {
+        setIsCurrencyOpen(!isCurrencyOpen);
+    };
+
+    const handleSelectorClick = () => {
+        setIsSelectorOpen(!isSelectorOpen);
+        setIsLanguageOpen(false);
+        setIsCurrencyOpen(false);
+    };
+
+    const handleOptionClick = (value: string) => {
+        setIsLanguageOpen(false);
+        setIsCurrencyOpen(false);
+
+        if (localization.languages.find(language => language.iso_code === value)) {
+            localization.languages.forEach(language => {
+                if (language.iso_code !== value) {
+                    language.selected = false;
+                } else {
+                    language.selected = true;
+                }
+            });
+            setLocalization({ ...localization });
+        } else if (localization.currencies.find(currency => currency.iso_code === value)) {
+            localization.currencies.forEach(currency => {
+                if (currency.iso_code !== value) {
+                    currency.selected = false;
+                } else {
+                    currency.selected = true;
+                }
+            });
+            setLocalization({ ...localization });
+        }
     };
 
     const switcherOptions = [
@@ -124,18 +212,6 @@ const Index = () => {
         }
     ];
 
-    const localization = {
-        languages: [
-            {
-                iso_code: "en",
-                name: "English",
-            },
-            {
-                iso_code: "zh",
-                name: "Chinese",
-            }
-        ]
-    }
     return (
         <Page>
             <TitleBar title={t("Switcher")} />
@@ -157,18 +233,30 @@ const Index = () => {
                             <Card>
                                 <Space direction="vertical" size="middle" style={{ display: "flex" }}>
                                     <Title level={5}>{t("Selector style configuration:")}</Title>
-                                    {/* <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                         <Text>{t("Included flag:")}</Text>
                                         <Switch checked={isIncludedFlag} onChange={handleIncludedFlagChange} />
-                                    </div> */}
-                                    <div style={{ display: "flex", flexDirection: "row", gap: 20 }}>
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                                         <div style={{ flex: 1, flexDirection: "column", display: "flex", justifyContent: "space-between" }}>
                                             <Text>{t("Font Color:")}</Text>
-                                            <ColorPicker style={{ alignSelf: 'flex-start' }} value={fontColor} onChange={(e) => handleFontColorChange(e.toHexString())} showText />
+                                            <ColorPicker style={{ alignSelf: 'flex-start' }} value={fontColor} onChange={(e) => setFontColor(e.toHexString())} showText />
                                         </div>
                                         <div style={{ flex: 1, flexDirection: "column", display: "flex", justifyContent: "space-between" }}>
                                             <Text>{t("Background Color:")}</Text>
-                                            <ColorPicker style={{ alignSelf: 'flex-start' }} value={backgroundColor} onChange={(e) => handleBackgroundColorChange(e.toHexString())} showText />
+                                            <ColorPicker style={{ alignSelf: 'flex-start' }} value={backgroundColor} onChange={(e) => setBackgroundColor(e.toHexString())} showText />
+                                        </div>
+                                        <div style={{ flex: 1, flexDirection: "column", display: "flex", justifyContent: "space-between" }}>
+                                            <Text>{t("Button Color:")}</Text>
+                                            <ColorPicker style={{ alignSelf: 'flex-start' }} value={buttonColor} onChange={(e) => setButtonColor(e.toHexString())} showText />
+                                        </div>
+                                        <div style={{ flex: 1, flexDirection: "column", display: "flex", justifyContent: "space-between" }}>
+                                            <Text>{t("Button Background Color:")}</Text>
+                                            <ColorPicker style={{ alignSelf: 'flex-start' }} value={buttonBackgroundColor} onChange={(e) => setButtonBackgroundColor(e.toHexString())} showText />
+                                        </div>
+                                        <div style={{ flex: 1, flexDirection: "column", display: "flex", justifyContent: "space-between" }}>
+                                            <Text>{t("Option Border Color:")}</Text>
+                                            <ColorPicker style={{ alignSelf: 'flex-start' }} value={optionBorderColor} onChange={(e) => setOptionBorderColor(e.toHexString())} showText />
                                         </div>
                                     </div>
                                     <div>
@@ -193,7 +281,7 @@ const Index = () => {
                     <div className={styles.switcher_preview}>
                         <Card>
                             <Title level={4}>{t("Preview")}</Title>
-                            {/* <div style={{
+                            <div style={{
                                 position: 'relative',
                                 width: '100%',
                                 height: '400px',
@@ -223,6 +311,7 @@ const Index = () => {
                                         height: "auto",
                                         display: "block",
                                         zIndex: "9999",
+                                        color: fontColor,
                                     }}
                                 >
                                     <div
@@ -230,86 +319,182 @@ const Index = () => {
                                         style={{
                                             width: "200px",
                                             position: "absolute", // 改为绝对定位
-                                            top: switcherPosition === "top_left" || switcherPosition === "top_right" ? "43px" : (switcherSelectedOption === "language_and_currency" ? "-222px" : "-142px"),            // 位于顶部
+                                            top: switcherPosition === "top_left" || switcherPosition === "top_right" ? "40px" : (switcherSelectedOption === "language_and_currency" ? "-170px" : "-120px"),            // 位于顶部
                                             left: "50%",         // 水平居中
                                             transform: "translateX(-50%)", // 精确居中
                                             height: "auto",
-                                            display: "block",
+                                            display: isSelectorOpen ? "block" : "none",
                                             zIndex: "2",
                                         }}
                                     >
                                         <div
                                             id="selector-box"
-                                            style={{ background: "#fff", border: "1px solid #ccc", padding: "15px", borderRadius: "5px", marginBottom: "5px", width: "100%" }}
+                                            style={{
+                                                background: backgroundColor,
+                                                border: "1px solid #ccc",
+                                                padding: "15px",
+                                                borderRadius: "5px",
+                                                marginBottom: "5px",
+                                                width: "100%"
+                                            }}
                                         >
-                                            <div style={{
-                                                display: `${switcherSelectedOption === "language" || switcherSelectedOption === "language_and_currency" ? "block" : "none"}`,
-                                                marginBottom: "10px",
-                                            }}>
-                                                <label className={styles.language_title}>Language</label>
-                                                <div className={styles.select_wrapper}>
-                                                    <select id="language-switcher" className={styles.ciwi_select}>
-                                                        {localization.languages.map((language) => (
-                                                            <option key={language.iso_code} value={language.iso_code}>
-                                                                {language.name}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                            <div
+                                                style={{
+                                                    display: `${switcherSelectedOption === "language" || switcherSelectedOption === "language_and_currency" ? "block" : "none"}`,
+                                                    marginBottom: "10px",
+                                                }}
+                                            >
+                                                <div
+                                                    className={styles.custom_selector}
+                                                    data-type="language"
+                                                    onClick={handleLanguageClick}
+                                                >
+                                                    <div
+                                                        className={styles.selector_header}
+                                                        data-type="language"
+                                                        style={{
+                                                            backgroundColor: backgroundColor,
+                                                            border: `1px solid ${optionBorderColor}`,
+                                                        }}>
+                                                        <div className={styles.selected_option} data-type="language">
+                                                            {isIncludedFlag && <img
+                                                                className={styles.country_flag}
+                                                                src={localization.languages.find(language => language.selected)?.flag}
+                                                                alt=""
+                                                                width="25%"
+                                                                height="25%"
+                                                            />}
+                                                            <span className={styles.selected_text} data-type="language">
+                                                                {localization.languages.find(language => language.selected)?.localeName}
+                                                            </span>
+                                                        </div>
+                                                        <img
+                                                            id="currency-arrow-icon"
+                                                            className={styles.arrow_icon}
+                                                            src="/arrow.svg"
+                                                            alt="Arrow Icon"
+                                                            width="25%"
+                                                            height="25%"
+                                                        />
+                                                    </div>
+                                                    <div
+                                                        className={styles.options_container}
+                                                        data-type="language"
+                                                        style={{
+                                                            display: isLanguageOpen ? "block" : "none",
+                                                            backgroundColor: backgroundColor,
+                                                            zIndex: "2000",
+                                                        }}>
+                                                        <div
+                                                            className={styles.options_list}
+                                                            style={{
+                                                                border: `1px solid ${optionBorderColor}`,
+                                                            }}
+                                                        >
+                                                            {localization.languages.map((language) => (
+                                                                <div
+                                                                    className={styles.option_item}
+                                                                    data-value={language.iso_code}
+                                                                    data-type="language"
+                                                                    onClick={() => handleOptionClick(language.iso_code)}
+                                                                    key={language.iso_code}
+                                                                >
+                                                                    {isIncludedFlag && <img
+                                                                        className={styles.country_flag}
+                                                                        src={language.flag}
+                                                                        alt=""
+                                                                        width="25%"
+                                                                        height="25%"
+                                                                    />}
+                                                                    <span className={styles.option_text}>{language.localeName}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                // <img
-                                                //     id="language-arrow-icon"
-                                                //     className={styles.arrow_icon}
-                                                //     src="/arrow.svg"
-                                                //     alt="Arrow Icon"
-                                                //     width="25%"
-                                                //     height="25%"
-                                                // /> 
                                             </div>
-                                            <div style={{ 
+                                            <div style={{
                                                 display: `${switcherSelectedOption === "currency" || switcherSelectedOption === "language_and_currency" ? "block" : "none"}`,
                                                 marginBottom: "10px",
                                             }}>
-                                                <label className={styles.currency_title} id="currency-title">Currency</label>
-                                                <div className={styles.select_wrapper}>
-                                                    <select id="currency-switcher" className={styles.ciwi_select}>
-                                                        {localization.languages.map((language) => (
-                                                            <option key={language.iso_code} value={language.iso_code}>
-                                                                {language.name}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                    // <img
-                                                    //     id="currency-arrow-icon"
-                                                    //     className={styles.arrow_icon}
-                                                    //     src="/arrow.svg"
-                                                    //     alt="Arrow Icon"
-                                                    //     width="25%"
-                                                    //     height="25%"
-                                                    // /> 
+                                                <div className={styles.custom_selector} data-type="currency" onClick={handleCurrencyClick}>
+                                                    <div
+                                                        className={styles.selector_header}
+                                                        data-type="currency"
+                                                        style={{
+                                                            backgroundColor: backgroundColor,
+                                                            border: `1px solid ${optionBorderColor}`,
+                                                        }}
+                                                    >
+                                                        <div className={styles.selected_option} data-type="currency">
+                                                            <span className={styles.selected_text} data-type="currency">{localization.currencies.find(currency => currency.selected)?.localeName}({localization.currencies.find(currency => currency.selected)?.symbol})</span>
+                                                        </div>
+                                                        <img
+                                                            id="currency-arrow-icon"
+                                                            className={styles.arrow_icon}
+                                                            src="/arrow.svg"
+                                                            alt="Arrow Icon"
+                                                            width="25%"
+                                                            height="25%"
+                                                        />
+                                                    </div>
+
+                                                    <div className={styles.options_container} data-type="currency" style={{ display: isCurrencyOpen ? "block" : "none" }}>
+                                                        <div
+                                                            className={styles.options_list}
+                                                            style={{
+                                                                backgroundColor: backgroundColor,
+                                                                border: `1px solid ${optionBorderColor}`,
+                                                            }}
+                                                        >
+                                                            {localization.currencies.map((currency) => (
+                                                                <div className={styles.option_item} data-value={currency.iso_code} data-type="currency" key={currency.iso_code} onClick={() => handleOptionClick(currency.iso_code)}>
+                                                                    <span className={styles.option_text}>{currency.localeName}</span>
+                                                                    <span className={styles.currency_code}>({currency.symbol})</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className={styles.button_wrapper}>
-                                                <button id="switcher-confirm" className={styles.ciwi_switcher_confirm_button}>Confirm</button>
-                                                <button id="switcher-close" className={styles.ciwi_switcher_cancel_button}>Cancel</button>
+                                                <button
+                                                    id="switcher-confirm"
+                                                    className={styles.ciwi_switcher_confirm_button}
+                                                    style={{
+                                                        backgroundColor: buttonBackgroundColor,
+                                                        color: buttonColor,
+                                                    }}
+                                                >Confirm</button>
                                             </div>
                                         </div>
                                     </div>
                                     <div
                                         id="main-box"
                                         style={{
-                                            position: "absolute", // 改为绝对定位
-                                            // bottom: "0",         // 位于底部
-                                            left: "50%",         // 水平居中
-                                            transform: "translateX(-50%)", // 精确居中
-                                            width: "200px",      // 设置宽度
-                                            background: "#fff",  // 添加背景色
-                                            padding: "10px",     // 添加内边距
-                                            borderRadius: "5px", // 圆角
-                                            border: "1px solid #ccc", // 边框
-                                            cursor: "pointer"    // 鼠标指针
+                                            position: "relative",
+                                            background: backgroundColor,
+                                            padding: "10px",
+                                            borderRadius: "5px",
+                                            border: "1px solid rgb(217, 217, 217)",
+                                            cursor: "pointer",
+                                            userSelect: "none",
+                                            display: "flex",
+                                            alignItems: "center", /* 垂直居中 */
+                                            justifyContent: isIncludedFlag ? "" : "center",
+                                            gap: "8px",
+                                            height: "40px", /* 明确设置高度 */
                                         }}
+                                        onClick={handleSelectorClick}
                                     >
-                                        <span id="display-text" className={styles.main_box_text}>{localization.languages[0].name + " / " + localization.languages[1].name}</span>
+                                        {isIncludedFlag && <img
+                                            className={styles.country_flag}
+                                            src={localization.languages.find(language => language.selected)?.flag}
+                                            alt=""
+                                            width="25%"
+                                            height="25%"
+                                        />}
+                                        <span id="display-text" className={styles.main_box_text}>{localization.languages.find(language => language.selected)?.localeName + " / " + localization.currencies.find(currency => currency.selected)?.localeName}</span>
                                         <img
                                             id="mainbox-arrow-icon"
                                             className={styles.mainarrow_icon}
@@ -327,7 +512,7 @@ const Index = () => {
                                         />
                                     </div>
                                 </div>
-                            </div> */}
+                            </div>
                         </Card>
                     </div>
                 </div>

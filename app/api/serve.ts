@@ -23,14 +23,16 @@ interface GroupedDeleteData {
 //修改用户计划
 export const UpdateUserPlan = async ({ shop, plan }: { shop: string, plan: number }) => {
   try {
+    console.log("UpdateUserPlan: ", shop, plan);
     const response = await axios({
-      url: `${process.env.SERVER_URL}/checkUserPlan`,
+      url: `${process.env.SERVER_URL}/user/checkUserPlan`,
       method: "POST",
       data: {
         shopName: shop,
-        plan: plan,
+        planId: plan,
       },
     });
+    console.log("UpdateUserPlan: ", response.data);  
     return response.data;
   } catch (error) {
     console.error("Error UpdateUserPlan:", error);
@@ -219,15 +221,6 @@ export const UserAdd = async ({
     const lastSpaceIndex = shopOwnerName.lastIndexOf(" ");
     const firstName = shopOwnerName.substring(0, lastSpaceIndex);
     const lastName = shopOwnerName.substring(lastSpaceIndex + 1);
-    console.log("addUserInfoData: ", {
-      shopName: shop,
-      accessToken: accessToken,
-      email: shopData.email,
-      firstName: firstName,
-      lastName: lastName,
-      userTag: shopOwnerName,
-    });
-
     const addUserInfoResponse = await axios({
       url: `${process.env.SERVER_URL}/user/add`,
       method: "POST",
@@ -300,7 +293,7 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
       const res = getUserSubscriptionPlanResponse.data?.response;
       return res;
     } else {
-      return "Free";
+      return "1";
     }
   } catch (error) {
     console.error("Error GetUserSubscriptionPlan:", error);
@@ -317,10 +310,6 @@ export const AddUserFreeSubscription = async ({ shop }: { shop: string }) => {
         shopName: shop,
       },
     });
-    console.log(
-      "addUserFreeSubscriptionResponse: ",
-      addUserFreeSubscriptionResponse.data,
-    );
     return addUserFreeSubscriptionResponse.data.success;
   } catch (error) {
     console.error("Error AddUserFreeSubscription:", error);
@@ -351,7 +340,7 @@ export const InsertShopTranslateInfo = async ({
       },
     });
   } catch (error) {
-    console.error("Error insert languageInfo:", error);
+    console.error("Error InsertShopTranslateInfo:", error);
   }
 };
 
@@ -389,7 +378,7 @@ export const InsertTargets = async ({
 
       return response;
     } catch (error) {
-      console.error("Error insert languageInfo:", error);
+      console.error("Error InsertTargets:", error);
     }
   };
 
@@ -519,7 +508,6 @@ export const GetLanguageLocaleInfo = async ({
 }: {
   locale: string[];
 }) => {
-  console.log("locale: ", locale);
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
 
@@ -530,7 +518,6 @@ export const GetLanguageLocaleInfo = async ({
       data: updatedLocales,
     });
     const data = response.data.response;
-    console.log("data: ", data);
     const res = Object.keys(data).reduce(
       (
         acc: {
