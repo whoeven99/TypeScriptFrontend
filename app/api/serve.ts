@@ -21,6 +21,22 @@ interface GroupedDeleteData {
 }
 
 //修改用户计划
+export const UpdateStatus = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/translate/updateStatus`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    console.log("UpdateStatus: ", response.data);  
+  } catch (error) {
+    console.error("Error UpdateStatus:", error);
+  }
+};
+
+//修改用户计划
 export const UpdateUserPlan = async ({ shop, plan }: { shop: string, plan: number }) => {
   try {
     console.log("UpdateUserPlan: ", shop, plan);
@@ -659,10 +675,7 @@ export const GetTranslate = async ({
     console.log(`${shop} ${source}翻译${target}`);
     const res = { ...response.data, target: target };
     console.log("GetTranslate: ", res);
-    return {
-      success: true,
-      data: res,
-    };
+    return res;
   } catch (error) {
     console.error("Error GetTranslate:", error);
     return {

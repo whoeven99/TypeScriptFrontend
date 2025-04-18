@@ -168,6 +168,8 @@
   "progressing.somethingWentWrong":"Some unexpected errors occurred. Please click the button to contact support for resolution.",
   "progressing.privateApiKeyAmountLimit":"The private Apikey limit has been reached. Please click the button on the right to reset the limit and restart the translation.",
   "progressing.apikeySetting":"Reset the limit",
+  "progressing.hasPayed":"Your translation credits have been added. Please proceed with the translation.",
+  "progressing.reTranslate":"Translate",
   "contact.title":"Contact Us",
   "contact.description":"If you have any questions or need assistance, please click the button below to contact support.",
   "contact.contactButton":"Contact Support",
