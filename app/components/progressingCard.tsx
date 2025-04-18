@@ -48,15 +48,19 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
     }, []);
 
     useEffect(() => {
+        if (translateFetcher.data) {
+            if (translateFetcher.data?.success) {
+                setStatus(2)
+                setResourceType("COLLECTION")
+            }
+        }
+    }, [translateFetcher.data]);
+
+    useEffect(() => {
         let timeoutId: NodeJS.Timeout;
 
-        if (translateFetcher.data) {
-            console.log("translateFetcher.data: ", translateFetcher.data);
-        }
-
         // 当状态为 2 时，开始轮询
-        if (status === 2 || translateFetcher.data?.success) {
-            setStatus(2)
+        if (status === 2) {
             const pollStatus = () => {
                 // 状态查询请求
                 const statusformData = new FormData();
