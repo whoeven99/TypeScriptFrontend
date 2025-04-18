@@ -100,48 +100,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (loading) {
       try {
-        const loadingDataStart = new Date();
-        const loadingDataAStart = new Date();
         const init = await InitializationDetection({ shop });
-        const loadingDataAEnd = new Date();
-        const loadingDataA = loadingDataAEnd.getTime() - loadingDataAStart.getTime();
-        console.log("loadingDataA: ", loadingDataA);
-
-        const loadingDataBStart = new Date();
         await UserAdd({ shop, accessToken: accessToken as string, init: init?.add });
-        const loadingDataBEnd = new Date();
-        const loadingDataB = loadingDataBEnd.getTime() - loadingDataBStart.getTime();
-        console.log("loadingDataB: ", loadingDataB);
-
         if (!init?.insertCharsByShopName) {
-          const loadingDataCStart = new Date();
           await InsertCharsByShopName({ shop, accessToken: accessToken as string });
-          const loadingDataCEnd = new Date();
-          const loadingDataC = loadingDataCEnd.getTime() - loadingDataCStart.getTime();
-          console.log("loadingDataC: ", loadingDataC);
         }
-
         if (!init?.addUserFreeSubscription) {
-          const loadingDataDStart = new Date();
           await AddUserFreeSubscription({ shop });
-          const loadingDataDEnd = new Date();
-          const loadingDataD = loadingDataDEnd.getTime() - loadingDataDStart.getTime();
-          console.log("loadingDataD: ", loadingDataD);
         }
-        const loadingDataEnd = new Date();
-        const loadingData = loadingDataEnd.getTime() - loadingDataStart.getTime();
-        console.log("loadingData: ", loadingData);
-        // const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
-        //   key: i,
-        //   src: [],
-        //   name: lang.name,
-        //   localeName: "",
-        //   locale: lang.locale,
-        //   status: 0,
-        //   published: lang.published,
-        // }));
-
-        // return json({ data, success: true });
+        if (!init?.addDefaultLanguagePack) {
+          await AddDefaultLanguagePack({ shop });
+        }
         return true;
       } catch (error) {
         console.error("Error loading app:", error);
@@ -451,9 +420,7 @@ export default function App() {
           {loadingFetcher.data && <Link to="/app/glossary">{t("Glossary")}</Link>}
           {loadingFetcher.data && <Link to="/app/pricing">{t("Pricing")}</Link>}
         </NavMenu>
-        <Suspense>
-          <Outlet />
-        </Suspense>
+        <Outlet />
       </ConfigProvider>
     </AppProvider >
   );
