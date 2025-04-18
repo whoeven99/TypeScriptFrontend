@@ -259,10 +259,10 @@ const Index = () => {
                                             <ColorPicker style={{ alignSelf: 'flex-start' }} value={optionBorderColor} onChange={(e) => setOptionBorderColor(e.toHexString())} showText />
                                         </div>
                                     </div>
-                                    <div>
+                                    {/* <div>
                                         <Text style={{ display: "block" }}>{t("Background transparency:")}</Text>
                                         <Slider value={backgroundTransparency} onChange={(e) => handleBackgroundTransparencyChange(e)} />
-                                    </div>
+                                    </div> */}
                                     <div>
                                         <Text style={{ display: "block" }}>{t("Selector position:")}</Text>
                                         <Select options={switcherPositionOptions} style={{ width: "100%" }} value={switcherPosition} onChange={handleSwitcherPositionChange} />
