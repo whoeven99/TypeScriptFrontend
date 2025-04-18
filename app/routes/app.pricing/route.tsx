@@ -100,7 +100,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 };
 
-const Index = () => {    
+const Index = () => {
     const [currentCredits, setCurrentCredits] = useState(0);
     const [maxCredits, setMaxCredits] = useState(0);
     const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
@@ -189,7 +189,7 @@ const Index = () => {
             Credits: 500000,
             price: {
                 currentPrice: 1.99,
-                comparedPrice: 100.0,
+                comparedPrice: 3.99,
                 currencyCode: "USD",
             },
         },
@@ -199,7 +199,7 @@ const Index = () => {
             Credits: 1000000,
             price: {
                 currentPrice: 3.99,
-                comparedPrice: 20.0,
+                comparedPrice: 7.99,
                 currencyCode: "USD",
             },
         },
@@ -209,7 +209,7 @@ const Index = () => {
             Credits: 2000000,
             price: {
                 currentPrice: 7.99,
-                comparedPrice: 100.0,
+                comparedPrice: 15.99,
                 currencyCode: "USD",
             },
         },
@@ -219,7 +219,7 @@ const Index = () => {
             Credits: 3000000,
             price: {
                 currentPrice: 11.99,
-                comparedPrice: 200.0,
+                comparedPrice: 23.99,
                 currencyCode: "USD",
             },
         },
@@ -229,7 +229,7 @@ const Index = () => {
             Credits: 5000000,
             price: {
                 currentPrice: 19.99,
-                comparedPrice: 200.0,
+                comparedPrice: 39.99,
                 currencyCode: "USD",
             },
         },
@@ -239,7 +239,7 @@ const Index = () => {
             Credits: 10000000,
             price: {
                 currentPrice: 39.99,
-                comparedPrice: 800.0,
+                comparedPrice: 79.99,
                 currencyCode: "USD",
             },
         },
@@ -249,7 +249,7 @@ const Index = () => {
             Credits: 20000000,
             price: {
                 currentPrice: 79.99,
-                comparedPrice: 1000.0,
+                comparedPrice: 159.99,
                 currencyCode: "USD",
             },
         },
@@ -259,7 +259,7 @@ const Index = () => {
             Credits: 30000000,
             price: {
                 currentPrice: 119.99,
-                comparedPrice: 2000.0,
+                comparedPrice: 239.99,
                 currencyCode: "USD",
             },
         },
@@ -416,8 +416,11 @@ const Index = () => {
                 )}
                 <Card style={{ textAlign: 'center' }} loading={isLoading}>
                     {/* 价格选项 */}
-                    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                        <Title level={3} style={{ textAlign: 'left' }}>{t("Buy Credits")}</Title>
+                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                        <div style={{ textAlign: 'left', display: 'flex', alignItems: 'flex-end', marginBottom: 10 }}>
+                            <Title level={3} style={{ marginBottom: 0, marginRight: 10 }}>{t("Buy Credits")}</Title>
+                            <Text style={{ color: 'red', fontWeight: 'bold' }}>{t("Limited-time 50% off")}</Text>
+                        </div>
                         <Row gutter={[16, 16]}>
                             {creditOptions.map((option) => (
                                 <Col
@@ -433,23 +436,33 @@ const Index = () => {
                                         style={{
                                             textAlign: 'center',
                                             borderColor: JSON.stringify(selectedOption) === JSON.stringify(option) ? '#007F61' : undefined,
-                                            cursor: 'pointer'
+                                            borderWidth: JSON.stringify(selectedOption) === JSON.stringify(option) ? '2px' : '1px',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            height: '150px'
                                         }}
                                         onClick={() => setSelectedOption(option)}
                                     >
-                                        <div style={{ width: '100%' }}>
-                                            <Title level={5} style={{ marginBottom: 0, fontWeight: 600 }}>{option.Credits.toLocaleString()} {t("Credits")}</Title>
-                                            <Title level={3} style={{ margin: 0, color: '#007F61', fontWeight: 700 }}>${option.price.currentPrice}</Title>
-                                        </div>
+                                        <Text style={{ fontSize: '16px', fontWeight: 500, display: 'block', marginBottom: '8px' }}>
+                                            {option.Credits.toLocaleString()} {t("Credits")}
+                                        </Text>
+                                        <Title level={3} style={{ margin: 0, color: '#007F61', fontWeight: 700 }}>
+                                            ${option.price.currentPrice.toFixed(2)}
+                                        </Title>
+                                        <Text delete type="secondary" style={{ fontSize: '14px' }}>
+                                            ${option.price.comparedPrice.toFixed(2)}
+                                        </Text>
                                     </Card>
                                 </Col>
                             ))}
                         </Row>
                         {/* 购买区域 */}
-                        <Text type="secondary" style={{ margin: 0 }}>
+                        <Text type="secondary" style={{ margin: '16px 0 8px 0' }}>
                             {t("Total pay")}: ${selectedOption ?
-                                creditOptions.find(option => JSON.stringify(selectedOption) === JSON.stringify(option))?.price.currentPrice
-                                    .toFixed(2) :
+                                selectedOption.price.currentPrice.toFixed(2) :
                                 '0.00'
                             }
                         </Text>
@@ -464,8 +477,8 @@ const Index = () => {
                         </Button>
                     </Space>
                 </Card>
-                <div style={{ maxWidth: '1500px', margin: '0 auto' }}>  {/* 增加最大宽度 */}
-                    <Row gutter={[16, 16]}>  {/* 减小间距从24到16 */}
+                <div style={{ maxWidth: '1500px', margin: '0 auto' }}>
+                    <Row gutter={[16, 16]}>
                         {plans.map((plan, index) => (
                             <Col
                                 key={plan.title}
@@ -494,21 +507,21 @@ const Index = () => {
                                             flexDirection: 'column',
                                             position: 'relative',
                                             borderColor: plan.isRecommended ? '#1890ff' : undefined,
-                                            minWidth: "220px",  // 减小卡片宽度
+                                            minWidth: "220px",
                                         }}
                                         styles={{
                                             body: {
                                                 flex: 1,
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                padding: '16px',  // 减小内边距
+                                                padding: '16px',
                                             }
                                         }}
                                         loading={!selectedPlan}
                                     >
-                                        <Title level={5}>{plan.title}</Title> {/* 调整标题大小 */}
-                                        <div style={{ margin: '12px 0' }}> {/* 减小外边距 */}
-                                            <Text style={{ fontSize: '28px', fontWeight: 'bold' }}> {/* 调整价格字体大小 */}
+                                        <Title level={5}>{plan.title}</Title>
+                                        <div style={{ margin: '12px 0' }}>
+                                            <Text style={{ fontSize: '28px', fontWeight: 'bold' }}>
                                                 ${plan.price}
                                             </Text>
                                             <Text style={{ fontSize: '14px' }}>/月</Text>
@@ -517,7 +530,7 @@ const Index = () => {
 
                                         <Button
                                             type={plan.isRecommended ? 'primary' : 'default'}
-                                            size="middle"  // 调整按钮大小
+                                            size="middle"
                                             block
                                             disabled={plan.disabled}
                                             style={{ marginBottom: '20px' }}
@@ -532,15 +545,15 @@ const Index = () => {
                                                 <div
                                                     key={idx}
                                                     style={{
-                                                        marginBottom: '8px',  // 减小特性项间距
+                                                        marginBottom: '8px',
                                                         display: 'flex',
                                                         alignItems: 'flex-start',
-                                                        gap: '6px'  // 减小图标和文字间距
+                                                        gap: '6px'
                                                     }}
                                                 >
                                                     <CheckOutlined style={{
                                                         color: '#52c41a',
-                                                        fontSize: '12px'  // 减小图标大小
+                                                        fontSize: '12px'
                                                     }} />
                                                     <Text style={{ fontSize: '13px' }}>{feature}</Text>
                                                 </div>
