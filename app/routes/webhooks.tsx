@@ -10,6 +10,7 @@ import {
   RequestData,
   SendPurchaseSuccessEmail,
   Uninstall,
+  UpdateStatus,
   UpdateUserPlan,
 } from "~/api/serve";
 
@@ -86,6 +87,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             const addChars = await AddCharsByShopName({ shop, amount: credits });
             console.log("addChars: ", addChars);
             if (addChars?.success) {
+              UpdateStatus({ shop });
               SendPurchaseSuccessEmail({
                 shop,
                 credit: credits,
@@ -151,6 +153,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.log("addChars: ", addChars);
           if (addChars?.success) {
             UpdateUserPlan({ shop, plan });
+            UpdateStatus({ shop });
             SendPurchaseSuccessEmail({
               shop,
               credit: credits,

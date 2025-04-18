@@ -20,7 +20,7 @@ const TranslatedIcon: React.FC<TranslatedIconProps> = ({ status, value }) => {
     setIsError(status === -1);
     setIsTranslated(status === 1);
     setIsTranslating(status === 2);
-    setIsPartlyTranslated(status === 3 || status === 5);
+    setIsPartlyTranslated(status === 3 || status === 5 || status === 6);
     setIsTranslateException(status === 4);
   }, [status]);
 

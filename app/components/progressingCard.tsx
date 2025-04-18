@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Card, Progress, Skeleton, Space, Typography } from "antd";
+import { Button, Card, message, Progress, Skeleton, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { PhoneOutlined } from "@ant-design/icons";
@@ -33,6 +33,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
     const fetcher = useFetcher<any>();
     const statusFetcher = useFetcher<any>();
     const itemsFetcher = useFetcher<any>();
+    const translateFetcher = useFetcher<any>();
 
     useEffect(() => {
         fetcher.submit(
@@ -46,26 +47,31 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
         );
     }, []);
 
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    useEffect(() => {
+        let timeoutId: NodeJS.Timeout;
 
-    // 当状态为 2 时，开始轮询
-    if (status === 2) {
-      const pollStatus = () => {
-        // 状态查询请求
-        const statusformData = new FormData();
-        statusformData.append(
-          "statusData",
-          JSON.stringify({
-            source: source,
-            target: [target],
-          }),
-        );
+        if (translateFetcher.data) {
+            console.log("translateFetcher.data: ", translateFetcher.data);
+        }
 
-        statusFetcher.submit(statusformData, {
-          method: "post",
-          action: "/app",
-        });
+        // 当状态为 2 时，开始轮询
+        if (status === 2 || translateFetcher.data?.success) {
+            setStatus(2)
+            const pollStatus = () => {
+                // 状态查询请求
+                const statusformData = new FormData();
+                statusformData.append(
+                    "statusData",
+                    JSON.stringify({
+                        source: source,
+                        target: [target],
+                    }),
+                );
+
+                statusFetcher.submit(statusformData, {
+                    method: "post",
+                    action: "/app",
+                });
 
                 // 项目计数请求
                 const itemsFormData = new FormData();
@@ -78,36 +84,36 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
                     }),
                 );
 
-        itemsFetcher.submit(itemsFormData, {
-          method: "post",
-          action: "/app/manage_translation",
-        });
+                itemsFetcher.submit(itemsFormData, {
+                    method: "post",
+                    action: "/app/manage_translation",
+                });
 
-        // 设置下一次轮询
-        timeoutId = setTimeout(pollStatus, 5000);
-      };
+                // 设置下一次轮询
+                timeoutId = setTimeout(pollStatus, 5000);
+            };
 
-      // 开始首次轮询
-      pollStatus();
+            // 开始首次轮询
+            pollStatus();
 
-      // 清理函数
-      return () => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
+            // 清理函数
+            return () => {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+            };
         }
-      };
-    }
-  }, [status, source, target, item]); // 添加 item 到依赖数组
+    }, [status, source, target, item, translateFetcher.data]); // 添加 item 到依赖数组
 
-  useEffect(() => {
-    if (fetcher.data?.translatingLanguage) {
-      setSource(fetcher.data?.translatingLanguage.source);
-      setTarget(fetcher.data?.translatingLanguage.target);
-      setResourceType(fetcher.data?.translatingLanguage.resourceType);
-      setStatus(fetcher.data?.translatingLanguage.status);
-      setLoading(false);
-    }
-  }, [fetcher.data]);
+    useEffect(() => {
+        if (fetcher.data?.translatingLanguage) {
+            setSource(fetcher.data?.translatingLanguage.source);
+            setTarget(fetcher.data?.translatingLanguage.target);
+            setResourceType(fetcher.data?.translatingLanguage.resourceType);
+            setStatus(fetcher.data?.translatingLanguage.status);
+            setLoading(false);
+        }
+    }, [fetcher.data]);
 
     useEffect(() => {
         if (statusFetcher.data?.data) {
@@ -126,22 +132,22 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
         }
     }, [statusFetcher.data]);
 
-  useEffect(() => {
-    if (itemsFetcher.data?.data && itemsFetcher.data?.data.length > 0) {
-      console.log("itemsFetcher.data?.data: ", itemsFetcher.data?.data);
-      setItemsCount({
-        totalNumber: itemsFetcher.data?.data[0].totalNumber || 0,
-        translatedNumber: itemsFetcher.data?.data[0].translatedNumber || 0,
-      });
-    }
-  }, [itemsFetcher.data]);
+    useEffect(() => {
+        if (itemsFetcher.data?.data && itemsFetcher.data?.data.length > 0) {
+            console.log("itemsFetcher.data?.data: ", itemsFetcher.data?.data);
+            setItemsCount({
+                totalNumber: itemsFetcher.data?.data[0].totalNumber || 0,
+                translatedNumber: itemsFetcher.data?.data[0].translatedNumber || 0,
+            });
+        }
+    }, [itemsFetcher.data]);
 
-  useEffect(() => {
-    if (resourceType) {
-      const progress = calculateProgressByType(resourceType);
-      setProgress(progress);
-    }
-  }, [resourceType]);
+    useEffect(() => {
+        if (resourceType) {
+            const progress = calculateProgressByType(resourceType);
+            setProgress(progress);
+        }
+    }, [resourceType]);
 
     const calculateProgressByType = (resourceType: string): number => {
         switch (resourceType) {
@@ -229,6 +235,26 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
             default:
                 return 0;
         }
+    };
+
+    const handleReTranslate = () => {
+        translateFetcher.submit(
+            {
+                translation: JSON.stringify({
+                    primaryLanguage: source,
+                    selectedLanguage: {
+                        locale: target,
+                    },
+                    translateSettings1: "1",
+                    translateSettings2: "1",
+                    translateSettings3: [],
+                }),
+            },
+            {
+                method: "post",
+                action: "/app/language",
+            },
+        )
     };
 
     return (
@@ -332,6 +358,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
                                                 {status === 5 && (
                                                     <Text>
                                                         {t("progressing.privateApiKeyAmountLimit")}
+                                                    </Text>
+                                                )}
+                                                {status === 6 && (
+                                                    <Text>
+                                                        🎉{t("progressing.hasPayed")}
                                                     </Text>
                                                 )}
                                             </div>
@@ -449,6 +480,16 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
                                                     {t("progressing.contactButton")}
                                                 </Button>
                                             </div>
+                                        )}
+                                        {status === 6 && (
+                                            <Button
+                                                block
+                                                type="primary"
+                                                onClick={handleReTranslate}
+                                                style={{ marginTop: "auto" }}
+                                            >
+                                                {t("progressing.reTranslate")}
+                                            </Button>
                                         )}
                                     </div>
                                 </div>
