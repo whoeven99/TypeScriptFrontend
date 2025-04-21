@@ -4,6 +4,8 @@ import {
   useFetcher,
   useLoaderData,
   useNavigate,
+  useSearchParams,
+  useLocation,
 } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType } from "~/api/admin";
@@ -97,10 +99,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
   const { searchTerm, shippings } =
     useLoaderData<typeof loader>();
 
-  const [isVisible, setIsVisible] = useState<boolean>(true);
+  const [isVisible, setIsVisible] = useState(() => {
+    return !!searchParams.get('language');
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const [shippingsData, setShippingsData] = useState(shippings);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
@@ -126,6 +134,16 @@ const Index = () => {
     }));
     setResourceData(Data);
   }, []);
+
+  useEffect(() => {
+    if (shippings) {
+      setIsLoading(false);
+    }
+  }, [shippings]);
+
+  useEffect(() => {
+    setIsVisible(!!searchParams.get('language'));
+  }, [location]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -235,7 +253,9 @@ const Index = () => {
 
   return (
     <div>
-      {resourceData.length ? (
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : resourceData.length ? (
         <Modal
           open={isVisible}
           onCancel={onCancel}
@@ -285,10 +305,15 @@ const Index = () => {
           </Layout>
         </Modal>
       ) : (
-        <Modal open={isVisible} footer={null} onCancel={onCancel}>
+        <Modal
+          open={isVisible}
+          footer={null}
+          onCancel={onCancel}
+          destroyOnClose={true}
+          maskClosable={false}
+        >
           <Result
-            title="The specified fields were not found in the store.
-"
+            title="The specified fields were not found in the store."
             extra={
               <Button type="primary" onClick={onCancel}>
                 OK

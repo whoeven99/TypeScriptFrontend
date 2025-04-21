@@ -14,7 +14,9 @@ import {
     useActionData,
     useFetcher,
     useLoaderData,
+    useLocation,
     useNavigate,
+    useSearchParams,
     useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
 import { Pagination } from "@shopify/polaris";
@@ -56,6 +58,10 @@ type TableDataType = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
     const sessionService = await SessionService.init(request);
     let shopSession = sessionService.getShopSession();
+    // 如果没有 language 参数，直接返回空数据
+    const url = new URL(request.url);
+    const searchTerm = url.searchParams.get("language");
+
     if (!shopSession) {
         const adminAuthResult = await authenticate.admin(request);
         const { shop, accessToken } = adminAuthResult.session;
@@ -66,8 +72,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         sessionService.setShopSession(shopSession);
     }
     const { shop, accessToken } = shopSession;
-    const url = new URL(request.url);
-    const searchTerm = url.searchParams.get("language");
     try {
         const emails = await queryNextTransType({
             shop,
@@ -148,9 +152,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
+    const [searchParams] = useSearchParams();
+    const location = useLocation();
+
+    const [isVisible, setIsVisible] = useState(() => {
+        return !!searchParams.get('language');
+    });
+
+
     const { searchTerm, emails } =
         useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
+    const [isLoading, setIsLoading] = useState(true);
 
     const exMenuData = (emails: any) => {
         const data = emails.nodes.map((email: any) => ({
@@ -163,7 +176,6 @@ const Index = () => {
     };
 
     const items: MenuProps["items"] = exMenuData(emails);
-    const [isVisible, setIsVisible] = useState<boolean>(true);
     const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
     const [emailsData, setEmailsData] = useState(emails);
     const [emailData, setEmailData] = useState<EmailType>();
@@ -243,6 +255,16 @@ const Index = () => {
             // 如果不存在 nextEmails，可以执行其他逻辑
         }
     }, [actionData]);
+
+    useEffect(() => {
+        if (emails) {
+            setIsLoading(false);
+        }
+    }, [emails]);
+
+    useEffect(() => {
+        setIsVisible(!!searchParams.get('language'));
+    }, [location]);
 
     useEffect(() => {
         if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -433,7 +455,9 @@ const Index = () => {
 
     return (
         <div>
-            {emails.nodes.length ? (
+            {isLoading ? (
+                <div>Loading...</div>
+            ) : emails.nodes.length ? (
                 <Modal
                     open={isVisible}
                     onCancel={onCancel}
@@ -506,7 +530,13 @@ const Index = () => {
                     </Layout>
                 </Modal>
             ) : (
-                <Modal open={isVisible} footer={null} onCancel={onCancel}>
+                <Modal
+                    open={isVisible}
+                    footer={null}
+                    onCancel={onCancel}
+                    destroyOnClose={true}
+                    maskClosable={false}
+                >
                     <Result
                         title="The specified fields were not found in the store.
   "

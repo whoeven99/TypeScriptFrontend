@@ -16,7 +16,9 @@ import {
   useLoaderData,
   useNavigate,
   useSubmit,
-} from "@remix-run/react"; // 引入 useNavigate
+  useLocation,
+  useSearchParams,
+} from "@remix-run/react"; // 引入 useNavigate, useLocation, useSearchParams
 import { Pagination } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
@@ -56,6 +58,11 @@ type TableDataType = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const sessionService = await SessionService.init(request);
   let shopSession = sessionService.getShopSession();
+  
+  // 如果没有 language 参数，直接返回空数据
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
+
   if (!shopSession) {
     const adminAuthResult = await authenticate.admin(request);
     const { shop, accessToken } = adminAuthResult.session;
@@ -66,8 +73,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     sessionService.setShopSession(shopSession);
   }
   const { shop, accessToken } = shopSession;
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
   try {
     const blogs = await queryNextTransType({
       shop,
@@ -148,8 +153,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { searchTerm, blogs } =
-    useLoaderData<typeof loader>();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  
+  const [isVisible, setIsVisible] = useState(() => {
+    return !!searchParams.get('language');
+  });
+  
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const { searchTerm, blogs } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const exMenuData = (blogs: any) => {
@@ -162,7 +175,6 @@ const Index = () => {
   };
 
   const items: MenuProps["items"] = exMenuData(blogs);
-  const [isVisible, setIsVisible] = useState<boolean>(true);
   const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
   const [blogsData, setBlogsData] = useState(blogs);
   const [blogData, setBlogData] = useState<BlogType>();
@@ -270,6 +282,16 @@ const Index = () => {
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
+
+  useEffect(() => {
+    if (blogs) {
+      setIsLoading(false);
+    }
+  }, [blogs]);
+
+  useEffect(() => {
+    setIsVisible(!!searchParams.get('language'));
+  }, [location]);
 
   const resourceColumns = [
     {
@@ -418,11 +440,15 @@ const Index = () => {
 
   return (
     <div>
-      {blogs.nodes.length ? (
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : blogs.nodes.length ? (
         <Modal
           open={isVisible}
           onCancel={onCancel}
           width={"100%"}
+          destroyOnClose={true}
+          maskClosable={false}
           footer={[
             <div
               key={"footer_buttons"}
@@ -488,10 +514,15 @@ const Index = () => {
           </Layout>
         </Modal>
       ) : (
-        <Modal open={isVisible} footer={null} onCancel={onCancel}>
+        <Modal 
+          open={isVisible} 
+          footer={null} 
+          onCancel={onCancel}
+          destroyOnClose={true}
+          maskClosable={false}
+        >
           <Result
-            title="The specified fields were not found in the store.
-"
+            title="The specified fields were not found in the store."
             extra={
               <Button type="primary" onClick={onCancel}>
                 OK
