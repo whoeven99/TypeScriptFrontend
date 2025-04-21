@@ -37,6 +37,8 @@
   position: absolute;
   right: 0; /* 改用右侧固定距离 */
   transition: transform 0.3s ease; /* 平滑过渡 */
+  width: 25% !important;
+  height: 25% !important;
 }
 
 .button_wrapper {

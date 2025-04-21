@@ -753,7 +753,7 @@ window.onload = async function () {
     languageSeletor: true,
     currencySelector: true,
     IpOpen: true,
-    includedFlag: false,
+    includedFlag: true,
     fontColor: "#000",
     backgroundColor: "#fff",
     buttonColor: "#fff",
