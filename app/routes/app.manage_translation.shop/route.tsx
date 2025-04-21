@@ -13,7 +13,9 @@ import {
   useActionData,
   useFetcher,
   useLoaderData,
+  useLocation,
   useNavigate,
+  useSearchParams,
   useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
 import { Pagination } from "@shopify/polaris";
@@ -136,11 +138,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
   const { searchTerm, shops } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
-  const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [shopsData, setFiltersData] = useState(shops);
+  const [isVisible, setIsVisible] = useState(() => {
+    return !!searchParams.get('language');
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [shopsData, setShopsData] = useState(shops);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
@@ -172,13 +180,23 @@ const Index = () => {
   useEffect(() => {
     if (actionData && "nextFilters" in actionData) {
       // 在这里处理 nexts
-      setFiltersData(actionData.nextFilters);
+      setShopsData(actionData.nextFilters);
     } else if (actionData && "previousFilters" in actionData) {
-      setFiltersData(actionData.previousFilters);
+      setShopsData(actionData.previousFilters);
     } else {
       // 如果不存在 nexts，可以执行其他逻辑
     }
   }, [actionData]);
+
+  useEffect(() => {
+    if (shops) {
+      setIsLoading(false);
+    }
+  }, [shops]);
+
+  useEffect(() => {
+    setIsVisible(!!searchParams.get('language'));
+  }, [location]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -321,7 +339,9 @@ const Index = () => {
 
   return (
     <div>
-      {resourceData.length ? (
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : resourceData.length ? (
         <Modal
           open={isVisible}
           onCancel={onCancel}
@@ -385,7 +405,13 @@ const Index = () => {
           </Layout>
         </Modal>
       ) : (
-        <Modal open={isVisible} footer={null} onCancel={onCancel}>
+        <Modal
+          open={isVisible}
+          footer={null}
+          onCancel={onCancel}
+          destroyOnClose={true}
+          maskClosable={false}
+        >
           <Result
             title="The specified fields were not found in the store.
 "
