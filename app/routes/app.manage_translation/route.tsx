@@ -18,7 +18,6 @@ import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
 import { SessionService } from "~/utils/session.server";
-import "react-quill/dist/quill.snow.css";
 import { setLocale } from "~/store/modules/userConfig";
 
 interface ManageMenuDataType {
