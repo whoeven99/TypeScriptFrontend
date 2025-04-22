@@ -348,7 +348,6 @@ export default function App() {
   const [isClient, setIsClient] = useState(false);
 
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const loadingFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
 
@@ -363,15 +362,6 @@ export default function App() {
       action: "/app",
     });
   }, []);
-
-  useEffect(() => {
-    if (loadingFetcher.data) {
-      if (loadingFetcher.data?.success) {
-        console.log("loadingFetcher.data", loadingFetcher.data);
-        dispatch(setTableData(loadingFetcher.data.data));
-      }
-    }
-  }, [loadingFetcher.data]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

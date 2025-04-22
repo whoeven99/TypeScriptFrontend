@@ -122,6 +122,9 @@ export default async function handleRequest(
 
   markup = markup.replace("__ANTD__", styleText);
 
+  const tidioScript = '<script src="//code.tidio.co/inl4rrmds8vvbldv1k6gyc2nzxongl3p.js" async></script>';
+  markup = markup.replace('</body>', `${tidioScript}</body>`);
+
   responseHeaders.set("Content-Type", "text/html");
 
   return new Response("<!DOCTYPE html>" + markup, {

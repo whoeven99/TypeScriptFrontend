@@ -271,11 +271,6 @@ export default function App() {
             {/* 注入页面脚本，必须 */}
             <Scripts />
           </div>
-          {/* 集成 Tidio 在线客服脚本，删除后页面将无法使用在线客服 */}
-          {/* <script
-            src="//code.tidio.co/inl4rrmds8vvbldv1k6gyc2nzxongl3p.js"
-            async
-          ></script> */}
         </body>
       </html>
     </Provider>
