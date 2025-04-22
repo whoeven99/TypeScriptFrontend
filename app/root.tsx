@@ -264,10 +264,12 @@ export default function App() {
           {/* 下面三行是文件生成时自带的代码，删除后页面将失去所有功能 */}
           {/* 渲染路由匹配的组件，必须 */}
           <Suspense fallback={<div>Loading...</div>}>
-            <Outlet />
+            <div style={{ display: isClient ? "block" : "none" }}>
+              <Outlet />
+              <ScrollRestoration />
+              <Scripts />
+            </div>
           </Suspense>
-          <ScrollRestoration />
-          <Scripts />
         </body>
       </html>
     </Provider>
