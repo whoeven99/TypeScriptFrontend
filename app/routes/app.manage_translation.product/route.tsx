@@ -14,7 +14,9 @@ import {
   useActionData,
   useFetcher,
   useLoaderData,
+  useLocation,
   useNavigate,
+  useSearchParams,
   useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
 import { Pagination } from "@shopify/polaris";
@@ -249,6 +251,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
   const {
     products,
     product_options,
@@ -268,7 +273,10 @@ const Index = () => {
   };
 
   const items: MenuProps["items"] = exMenuData(products);
-  const [isVisible, setIsVisible] = useState<boolean>(true);
+  const [isVisible, setIsVisible] = useState(() => {
+    return !!searchParams.get('language');
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
   const [productsData, setProductsData] = useState(products);
   const [productOptionsData, setProductOptionsData] = useState(product_options);
@@ -424,6 +432,16 @@ const Index = () => {
   }, [actionData]);
 
   useEffect(() => {
+    if (products) {
+      setIsLoading(false);
+    }
+  }, [products]);
+
+  useEffect(() => {
+    setIsVisible(!!searchParams.get('language'));
+  }, [location]);
+
+  useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
       const errorItem = confirmFetcher.data.data.find((item: any) => {
         item.success === false;
@@ -446,7 +464,7 @@ const Index = () => {
               }
             }
           } else if (item.resourceId.split("/")[3] === "ProductOption") {
-            const index = productOptionsData.nodes.findIndex((productOption: any) => 
+            const index = productOptionsData.nodes.findIndex((productOption: any) =>
               productOption.nestedTranslatableResources.nodes.some(
                 (option: any) => option.resourceId === item.resourceId
               )
@@ -464,7 +482,7 @@ const Index = () => {
               }
             }
           } else if (item.resourceId.split("/")[3] === "Metafield") {
-            const index = productMetafieldsData.nodes.findIndex((productMetafield: any) => 
+            const index = productMetafieldsData.nodes.findIndex((productMetafield: any) =>
               productMetafield.nestedTranslatableResources.nodes.some(
                 (option: any) => option.resourceId === item.resourceId
               )
@@ -919,7 +937,9 @@ const Index = () => {
 
   return (
     <div>
-      {productsData.nodes.length ? (
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : productsData.nodes.length ? (
         <Modal
           open={isVisible}
           onCancel={onCancel}
@@ -1008,7 +1028,13 @@ const Index = () => {
           </Layout>
         </Modal>
       ) : (
-        <Modal open={isVisible} footer={null} onCancel={onCancel}>
+        <Modal
+          open={isVisible}
+          footer={null}
+          onCancel={onCancel}
+          destroyOnClose={true}
+          maskClosable={false}
+        >
           <Result
             title="The specified fields were not found in the store.
 "

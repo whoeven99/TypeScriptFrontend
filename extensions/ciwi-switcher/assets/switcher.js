@@ -759,7 +759,8 @@ window.onload = async function () {
     buttonColor: "#fff",
     buttonBackgroundColor: "#000",
     optionBorderColor: "#ccc",
-    selectorPosition: "bottom-left",
+    selectorPosition: "top-left",
+    positionData: 10,
   };
 
   if (data.languageSeletor) {
@@ -821,7 +822,7 @@ window.onload = async function () {
           mainLanguageFlag.hidden = false;
         }
       }
-    }else{
+    } else {
       const mainBox = document.getElementById("main-box");
       mainBox.style.justifyContent = "center";
     }
@@ -932,11 +933,47 @@ window.onload = async function () {
   }
 
   if (switcher) {
+    const selectorBox = document.getElementById("selector-box");
     const confirmButton = document.querySelector(
       ".ciwi_switcher_confirm_button",
     );
     confirmButton.style.backgroundColor = data.buttonBackgroundColor;
     confirmButton.style.color = data.buttonColor;
+    if (
+      data.selectorPosition === "top-left" ||
+      data.selectorPosition === "top-right"
+    ) {
+      // 当位置在顶部时，选择器框在下方展开
+      selectorBox.style.top = "100%"; // 设置顶部距离为主框高度
+      selectorBox.style.bottom = "auto";
+      selectorBox.style.transform = "none"; // 清除transform
+    } else {
+      // 当位置在底部时，选择器框在上方展开
+      selectorBox.style.bottom = "100%"; // 设置底部距离为主框高度
+      selectorBox.style.top = "auto";
+      selectorBox.style.transform = "none";
+    }
+
+    if (data.selectorPosition === "top-left") {
+      switcher.style.top = data?.positionData.toString() + "%" || "10%";
+      switcher.style.right = "auto";
+      switcher.style.bottom = "auto";
+    }
+    if (data.selectorPosition === "bottom-left") {
+      switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
+      switcher.style.right = "auto";
+      switcher.style.top = "auto";
+    }
+    if (data.selectorPosition === "top-left") {
+      switcher.style.top = data?.positionData.toString() + "%" || "10%";
+      switcher.style.left = "auto";
+      switcher.style.bottom = "auto";
+    }
+    if (data.selectorPosition === "bottom-right") {
+      switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
+      switcher.style.left = "auto";
+      switcher.style.top = "auto";
+    }
     switcher.style.display = "block";
   }
 };

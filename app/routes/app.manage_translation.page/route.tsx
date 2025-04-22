@@ -14,7 +14,9 @@ import {
   useActionData,
   useFetcher,
   useLoaderData,
+  useLocation,
   useNavigate,
+  useSearchParams,
   useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
 import { Pagination } from "@shopify/polaris";
@@ -64,6 +66,10 @@ type TableDataType = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const sessionService = await SessionService.init(request);
   let shopSession = sessionService.getShopSession();
+  // 如果没有 language 参数，直接返回空数据
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
+
   if (!shopSession) {
     const adminAuthResult = await authenticate.admin(request);
     const { shop, accessToken } = adminAuthResult.session;
@@ -74,8 +80,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     sessionService.setShopSession(shopSession);
   }
   const { shop, accessToken } = shopSession;
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
+
   try {
     const pages = await queryNextTransType({
       shop,
@@ -155,6 +160,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
   const { searchTerm, pages } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
@@ -169,7 +177,11 @@ const Index = () => {
   };
 
   const items: MenuProps["items"] = exMenuData(pages);
-  const [isVisible, setIsVisible] = useState<boolean>(true);
+  const [isVisible, setIsVisible] = useState(() => {
+    return !!searchParams.get('language');
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
   const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
   const [pagesData, setPagesData] = useState(pages);
   const [pageData, setPageData] = useState<PageType>();
@@ -270,6 +282,16 @@ const Index = () => {
       // 如果不存在 nextPages，可以执行其他逻辑
     }
   }, [actionData]);
+
+  useEffect(() => {
+    if (pages) {
+      setIsLoading(false);
+    }
+  }, [pages]);
+
+  useEffect(() => {
+    setIsVisible(!!searchParams.get('language'));
+  }, [location]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -512,8 +534,9 @@ const Index = () => {
 
   return (
     <div>
-      {" "}
-      {pages.nodes.length ? (
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : pages.nodes.length ? (
         <Modal
           open={isVisible}
           onCancel={onCancel}
@@ -587,7 +610,13 @@ const Index = () => {
           </Layout>
         </Modal>
       ) : (
-        <Modal open={isVisible} footer={null} onCancel={onCancel}>
+        <Modal
+          open={isVisible}
+          footer={null}
+          onCancel={onCancel}
+          destroyOnClose={true}
+          maskClosable={false}
+        >
           <Result
             title="The specified fields were not found in the store.
 "

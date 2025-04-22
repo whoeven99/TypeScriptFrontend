@@ -12,7 +12,7 @@ import { Provider } from "react-redux";
 import store from "./store";
 import "./styles.css";
 import { json, LoaderFunctionArgs } from "@remix-run/node";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
@@ -211,8 +211,10 @@ export function ErrorBoundary() {
 export default function App() {
   // 从 loader 数据中获取国际化语言代码
   const { i18nCode } = useLoaderData<typeof loader>();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     // GTM 初始化脚本
     const script = document.createElement('script');
     script.innerHTML = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -244,20 +246,11 @@ export default function App() {
       {/* 设置 HTML 文档的语言属性，删除后页面将无法实现i18 */}
       <html lang={i18nCode}>
         <head>
-          {/* 下面六行是文件生成时自带的代码, 删除后页面将无法正常显示或者运行*/}
-          {/* 设置文档字符编码 */}
-          <meta charSet="utf-8" />
-          {/* 设置视口配置，用于响应式设计，删掉后页面将占用整个屏幕 */}
-          <meta name="viewport" content="width=device-width,initial-scale=1" />
-          {/* 预连接到 Shopify CDN，优化资源加载 */}
+          <meta charSet="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
           <link rel="preconnect" href="https://cdn.shopify.com/" />
-          <link
-            rel="stylesheet"
-            href="https://cdn.shopify.com/static/fonts/inter/v4/styles.css"
-          />
-          {/* 注入元数据标签，必须 */}
+          <link rel="stylesheet" href="https://cdn.shopify.com/static/fonts/inter/v4/styles.css" />
           <Meta />
-          {/* 注入链接标签，必须 */}
           <Links />
           {/* 服务端渲染时的 AntD 样式占位符，删除后页面将无法预加载antd组件库的css */}
           {typeof document === "undefined" ? "__ANTD__" : ""}
@@ -270,16 +263,19 @@ export default function App() {
           </noscript>
           {/* 下面三行是文件生成时自带的代码，删除后页面将失去所有功能 */}
           {/* 渲染路由匹配的组件，必须 */}
-          <Outlet />
-          {/* 处理页面滚动位置的恢复，必须 */}
-          <ScrollRestoration />
-          {/* 注入页面脚本，必须 */}
-          <Scripts />
+          <div style={{ visibility: isClient ? 'visible' : 'hidden' }}>
+            <Outlet />
+
+            {/* 处理页面滚动位置的恢复，必须 */}
+            <ScrollRestoration />
+            {/* 注入页面脚本，必须 */}
+            <Scripts />
+          </div>
           {/* 集成 Tidio 在线客服脚本，删除后页面将无法使用在线客服 */}
-          <script
+          {/* <script
             src="//code.tidio.co/inl4rrmds8vvbldv1k6gyc2nzxongl3p.js"
             async
-          ></script>
+          ></script> */}
         </body>
       </html>
     </Provider>

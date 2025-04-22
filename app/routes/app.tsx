@@ -41,7 +41,7 @@ import {
   mutationAppPurchaseOneTimeCreate,
   queryShopLanguages,
 } from "~/api/admin";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
@@ -345,12 +345,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
+  const [isClient, setIsClient] = useState(false);
+
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const loadingFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
 
   useEffect(() => {
+    setIsClient(true);
     loadingFetcher.submit({ loading: JSON.stringify(true) }, {
       method: "post",
       action: "/app",
@@ -379,16 +382,16 @@ export default function App() {
           },
         }}
       >
-        <NavMenu>
+        {isClient && <NavMenu>
           <Link to="/app" rel="home">
             Home
           </Link>
-          {loadingFetcher.data && <Link to="/app/language">{t("Language")}</Link>}
-          {loadingFetcher.data && <Link to="/app/manage_translation">{t("Manage Translation")}</Link>}
-          {loadingFetcher.data && <Link to="/app/currency">{t("Currency")}</Link>}
-          {loadingFetcher.data && <Link to="/app/glossary">{t("Glossary")}</Link>}
-          {loadingFetcher.data && <Link to="/app/pricing">{t("Pricing")}</Link>}
-        </NavMenu>
+          <Link to="/app/language">{t("Language")}</Link>
+          <Link to="/app/manage_translation">{t("Manage Translation")}</Link>
+          <Link to="/app/currency">{t("Currency")}</Link>
+          <Link to="/app/glossary">{t("Glossary")}</Link>
+          <Link to="/app/pricing">{t("Pricing")}</Link>
+        </NavMenu>}
         <Outlet />
       </ConfigProvider>
     </AppProvider >
