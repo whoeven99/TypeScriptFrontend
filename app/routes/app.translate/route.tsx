@@ -1,25 +1,19 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Icon, Page } from "@shopify/polaris";
 import { Suspense, useEffect, useState } from "react";
-import { authenticate } from "~/shopify.server";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
     Badge,
     Button,
     Card,
     Checkbox,
     Col,
-    Flex,
     message,
-    Popover,
     Radio,
     RadioChangeEvent,
     Row,
     Select,
     Skeleton,
     Space,
-    Switch,
-    Table,
     Typography,
 } from "antd";
 import { useTranslation } from "react-i18next";
@@ -29,7 +23,7 @@ import {
 import { Link, useFetcher, useLocation, useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { LanguagesDataType, ShopLocalesType } from "../app.language/route";
-import { setStatusState, setTableData } from "~/store/modules/languageTableData";
+import { setTableData } from "~/store/modules/languageTableData";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import TranslationWarnModal from "~/components/translationWarnModal";
 import PaymentModal from "~/components/paymentModal";

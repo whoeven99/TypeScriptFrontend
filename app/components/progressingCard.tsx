@@ -82,7 +82,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
                 itemsFormData.append(
                     "itemsCount",
                     JSON.stringify({
-                        source: [source],
+                        source: source,
                         target: target,
                         resourceType: item, // 使用当前的 item
                     }),
