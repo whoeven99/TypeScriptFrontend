@@ -9,18 +9,13 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType } from "~/api/admin";
-import dynamic from "next/dynamic";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
 import ManageTableInput from "~/components/manageTableInput";
 
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
-
 const { Content } = Layout;
-
-
 
 type TableDataType = {
   key: string;
