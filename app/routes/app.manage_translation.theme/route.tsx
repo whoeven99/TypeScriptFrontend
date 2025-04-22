@@ -35,9 +35,6 @@ import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
 
 const { Header, Content } = Layout;
-const { TextArea } = Input;
-
-
 
 interface SelectType {
   label: string;
@@ -227,7 +224,7 @@ const Index = () => {
       key: "default_language",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return <ManageTableInput record={record} textarea={true} />;
+        return <ManageTableInput record={record} />;
       },
     },
     {
@@ -243,7 +240,6 @@ const Index = () => {
               translatedValues={translatedValues}
               setTranslatedValues={setTranslatedValues}
               handleInputChange={handleInputChange}
-              textarea={true}
               isRtl={searchTerm === "ar"}
             />
           )

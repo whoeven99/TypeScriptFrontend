@@ -127,7 +127,10 @@ const Index = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const { key } = location.state || {}; // 提取传递的状态
+  const isClient = typeof window !== 'undefined';
+
   const items = useSelector((state: any) => state.languageItemsData);
+
   // const fetcher = useFetcher<FetchType>();
   const productsFetcher = useFetcher<any>();
   const collectionsFetcher = useFetcher<any>();
@@ -728,7 +731,7 @@ const Index = () => {
     <Page>
       <TitleBar title={t("Manage Translation")} />
       <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
-      {!loading && !menuData?.length ? (
+      {!loading && !menuData?.length && isClient ? (
         <div
           style={{
             display: "flex",
@@ -740,64 +743,62 @@ const Index = () => {
           <NoLanguageSetCard />
         </div>
       ) : (
-        <div>
-          <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-            {/* <AttentionCard
+        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+          {/* <AttentionCard
               title={t("Translation credits have been exhausted.")}
               content={t(
                 "The translation cannot be completed due to exhausted credits.",
               )}
               show={disable}
             /> */}
-            {menuData?.length ? (
-              <div className="manage-header">
-                <Menu
-                  onClick={onClick}
-                  selectedKeys={[current]}
-                  mode="horizontal"
-                  items={menuData}
-                  style={{
-                    backgroundColor: "transparent", // 背景透明
-                    borderBottom: "none", // 去掉底部边框
-                    color: "#000", // 文本颜色
-                    minWidth: "80%",
-                  }}
-                />
-              </div>
-            ) : (
-              <Skeleton.Button active block />
-            )}
-
-            <div className="manage-content-wrap">
-              <div className="manage-content-left">
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{ display: "flex" }}
-                >
-                  <div className="search-input"></div>
-                  <ManageTranslationsCard
-                    cardTitle={t("Products")}
-                    dataSource={productsDataSource}
-                    current={current}
-                  />
-                  <ManageTranslationsCard
-                    cardTitle={t("Online Store")}
-                    dataSource={onlineStoreDataSource}
-                    current={current}
-                  />
-                  <ManageTranslationsCard
-                    cardTitle={t("Settings")}
-                    dataSource={settingsDataSource}
-                    current={current}
-                  />
-                </Space>
-              </div>
-              <div className="manage-content-right"></div>
+          {menuData?.length ? (
+            <div className="manage-header">
+              <Menu
+                onClick={onClick}
+                selectedKeys={[current]}
+                mode="horizontal"
+                items={menuData}
+                style={{
+                  backgroundColor: "transparent", // 背景透明
+                  borderBottom: "none", // 去掉底部边框
+                  color: "#000", // 文本颜色
+                  minWidth: "80%",
+                }}
+              />
             </div>
-          </Space>
+          ) : (
+            <Skeleton.Button active block />
+          )}
+
+          <div className="manage-content-wrap">
+            <div className="manage-content-left">
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ display: "flex" }}
+              >
+                <div className="search-input"></div>
+                <ManageTranslationsCard
+                  cardTitle={t("Products")}
+                  dataSource={productsDataSource}
+                  current={current}
+                />
+                <ManageTranslationsCard
+                  cardTitle={t("Online Store")}
+                  dataSource={onlineStoreDataSource}
+                  current={current}
+                />
+                <ManageTranslationsCard
+                  cardTitle={t("Settings")}
+                  dataSource={settingsDataSource}
+                  current={current}
+                />
+              </Space>
+            </div>
+            <div className="manage-content-right"></div>
+          </div>
           <Outlet />
-        </div>
+        </Space>
       )}
     </Page>
   );
