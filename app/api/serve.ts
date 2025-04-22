@@ -414,10 +414,11 @@ export const GetTranslationItemsInfo = async ({
 }: {
   shop: string;
   accessToken: string | undefined;
-  source: string[];
+  source: string;
   target: string;
   resourceType: string;
 }) => {
+  console.log("GetTranslationItemsInfo: ", shop, accessToken, source, target, resourceType);
   let res: {
     language: string;
     type: string;
@@ -431,7 +432,7 @@ export const GetTranslationItemsInfo = async ({
       data: {
         shopName: shop,
         accessToken: accessToken,
-        source: source[0],
+        source: source,
         target: target,
         resourceType: resourceType,
       },
@@ -451,7 +452,7 @@ export const GetTranslationItemsInfo = async ({
     ];
     return res;
   } catch (error) {
-    console.error("Error fetching updating translation items:", error);
+    console.error("Error GetTranslationItemsInfo:", error);
   }
 };
 
