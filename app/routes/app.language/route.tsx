@@ -814,21 +814,20 @@ const Index = () => {
   };
 
   return (
-    <>
-      <Page>
-        <TitleBar title={t("Language")} />
-        <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
-        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <div>
-            <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-              {t("Languages")}
-            </Title>
-            {/* <Suspense fallback={<Skeleton active paragraph={{ rows: 0 }} />}> */}
-            <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
-            {/* </Suspense> */}
-          </div>
-          {/* <ProgressingCard /> */}
-          {/* <Suspense fallback={<Skeleton active />}>
+    <Page>
+      <TitleBar title={t("Language")} />
+      <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
+      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <div>
+          <Title style={{ fontSize: "1.25rem", display: "inline" }}>
+            {t("Languages")}
+          </Title>
+          {/* <Suspense fallback={<Skeleton active paragraph={{ rows: 0 }} />}> */}
+          <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
+          {/* </Suspense> */}
+        </div>
+        {/* <ProgressingCard /> */}
+        {/* <Suspense fallback={<Skeleton active />}>
             <AttentionCard
               title={t("Translation word credits have been exhausted.")}
               content={t(
@@ -837,65 +836,62 @@ const Index = () => {
               show={disable}
             />
           </Suspense> */}
-          <div className="languageTable_action">
-            <Flex
-              align="center"
-              justify="space-between" // 使按钮左右分布
-              style={{ width: "100%", marginBottom: "16px" }}
-            >
-              <Flex align="center" gap="middle">
-                <Button
-                  type="primary"
-                  onClick={handleDelete}
-                  disabled={!hasSelected}
-                  loading={deleteloading}
-                >
-                  {t("Delete")}
-                </Button>
-                {hasSelected
-                  ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
-                  : null}
-              </Flex>
-              <div>
-                <Space>
-                  <Button type="default" onClick={PreviewClick}>
-                    {t("Preview store")}
-                  </Button>
-                  <Button type="primary" onClick={handleOpenModal}>
-                    {t("Add Language")}
-                  </Button>
-                </Space>
-              </div>
+        <div className="languageTable_action">
+          <Flex
+            align="center"
+            justify="space-between" // 使按钮左右分布
+            style={{ width: "100%", marginBottom: "16px" }}
+          >
+            <Flex align="center" gap="middle">
+              <Button
+                type="primary"
+                onClick={handleDelete}
+                disabled={!hasSelected}
+                loading={deleteloading}
+              >
+                {t("Delete")}
+              </Button>
+              {hasSelected
+                ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
+                : null}
             </Flex>
-            {/* <Suspense fallback={<Skeleton active />}> */}
-            <Table
-              rowSelection={rowSelection}
-              columns={columns}
-              dataSource={dataSource}
-              style={{ width: "100%" }}
-              loading={deleteloading || loading}
-            />
-            {/* </Suspense> */}
-          </div>
-        </Space>
-        {/* <Suspense> */}
-        <AddLanguageModal
-          isVisible={isLanguageModalOpen}
-          setIsModalOpen={setIsLanguageModalOpen}
-          allLanguages={allLanguages}
-          languageLocaleInfo={languageLocaleInfo}
-          primaryLanguage={shopPrimaryLanguage[0]}
-        />
-        {/* </Suspense> */}
-        <PreviewModal
-          visible={previewModalVisible}
-          setVisible={setPreviewModalVisible}
-        />
-        {showWarnModal && (
-          <TranslationWarnModal show={showWarnModal} setShow={setShowWarnModal} />
-        )}
-      </Page>
-    </>
+            <div>
+              <Space>
+                <Button type="default" onClick={PreviewClick}>
+                  {t("Preview store")}
+                </Button>
+                <Button type="primary" onClick={handleOpenModal}>
+                  {t("Add Language")}
+                </Button>
+              </Space>
+            </div>
+          </Flex>
+          {/* <Suspense fallback={<Skeleton active />}> */}
+          <Table
+            rowSelection={rowSelection}
+            columns={columns}
+            dataSource={dataSource}
+            style={{ width: "100%" }}
+            loading={deleteloading || loading}
+          />
+          {/* </Suspense> */}
+        </div>
+      </Space>
+      <AddLanguageModal
+        isVisible={isLanguageModalOpen}
+        setIsModalOpen={setIsLanguageModalOpen}
+        allLanguages={allLanguages}
+        languageLocaleInfo={languageLocaleInfo}
+        primaryLanguage={shopPrimaryLanguage[0]}
+      />
+      <PreviewModal
+        visible={previewModalVisible}
+        setVisible={setPreviewModalVisible}
+      />
+      {showWarnModal && (
+        <TranslationWarnModal show={showWarnModal} setShow={setShowWarnModal} />
+      )}
+    </Page>
   );
 };
 
