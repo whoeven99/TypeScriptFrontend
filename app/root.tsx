@@ -12,7 +12,7 @@ import { Provider } from "react-redux";
 import store from "./store";
 import "./styles.css";
 import { json, LoaderFunctionArgs } from "@remix-run/node";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
@@ -263,14 +263,13 @@ export default function App() {
           </noscript>
           {/* 下面三行是文件生成时自带的代码，删除后页面将失去所有功能 */}
           {/* 渲染路由匹配的组件，必须 */}
-          <div style={{ visibility: isClient ? 'visible' : 'hidden' }}>
-            <Outlet />
-
-            {/* 处理页面滚动位置的恢复，必须 */}
-            <ScrollRestoration />
-            {/* 注入页面脚本，必须 */}
-            <Scripts />
-          </div>
+          <Suspense fallback={<div>Loading...</div>}>
+            <div style={{ display: isClient ? "block" : "none" }}>
+              <Outlet />
+              <ScrollRestoration />
+              <Scripts />
+            </div>
+          </Suspense>
         </body>
       </html>
     </Provider>
