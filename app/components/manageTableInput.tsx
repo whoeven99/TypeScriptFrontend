@@ -2,7 +2,6 @@ import { Input } from "antd";
 // import dynamic from "next/dist/shared/lib/dynamic";
 import { useEffect, useMemo } from "react";
 // import debounce from 'lodash/debounce';
-// const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 // import { franc } from 'franc-min';
 import "./styles.css";
 import { useSelector } from "react-redux";
