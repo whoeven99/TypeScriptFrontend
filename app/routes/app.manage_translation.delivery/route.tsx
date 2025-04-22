@@ -229,7 +229,7 @@ const Index = () => {
       key: "default_language",
       width: "45%",
       render: (_: any, record: TableDataType) => {
-        return <ManageTableInput record={record} textarea={true} />;
+        return <ManageTableInput record={record} />;
       },
     },
     {
@@ -244,7 +244,6 @@ const Index = () => {
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
-            textarea={true}
             isRtl={searchTerm === "ar"}
           />
         );

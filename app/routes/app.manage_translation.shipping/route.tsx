@@ -176,7 +176,6 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
-            textarea={false}
           />
         );
       },
@@ -194,7 +193,6 @@ const Index = () => {
               translatedValues={translatedValues}
               setTranslatedValues={setTranslatedValues}
               handleInputChange={handleInputChange}
-              textarea={false}
               isRtl={searchTerm === "ar"}
             />
           )
