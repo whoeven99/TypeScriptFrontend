@@ -1,6 +1,6 @@
 import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Button, Card, Col, Row, Skeleton, Space, Table, Typography } from "antd";
+import { Button, Card, Col, Row, Skeleton, Space, Spin, Table, Typography } from "antd";
 import {
   Link,
   useNavigate,
@@ -28,11 +28,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    setLoading(true);
-  }, []);
 
   const columns = [
     {
@@ -106,12 +101,7 @@ const Index = () => {
                 {t("transLanguageCard1.title")}
               </Title>
               <Text >{t("transLanguageCard1.description")}</Text>
-              {
-                loading ?
-                  <Button type="primary" onClick={() => navigate("/app/translate", { state: { from: "/app", selectedLanguageCode: "" } })}>{t("transLanguageCard1.button")}</Button>
-                  :
-                  <Skeleton.Button active />
-              }
+              <Button type="primary" onClick={() => navigate("/app/translate", { state: { from: "/app", selectedLanguageCode: "" } })}>{t("transLanguageCard1.button")}</Button>
             </Space>
           </Card>
           <ProgressingCard />
@@ -135,12 +125,7 @@ const Index = () => {
                     </Text>
                     <Text >{t("transLanguageCard2.description")}</Text>
                   </Space>
-                  {
-                    loading ?
-                      <Button type="primary" onClick={() => navigate("/app/language")} style={{ alignSelf: 'flex-start' }}>{t("transLanguageCard2.button")}</Button>
-                      :
-                      <Skeleton.Button active />
-                  }
+                  <Button type="primary" onClick={() => navigate("/app/language")} style={{ alignSelf: 'flex-start' }}>{t("transLanguageCard2.button")}</Button>
                 </div>
               </Card>
             </Col>
@@ -187,12 +172,7 @@ const Index = () => {
                 {t("transCurrencyCard1.title")}
               </Title>
               <Text >{t("transCurrencyCard1.description")}</Text>
-              {
-                loading ?
-                  <Button type="primary" onClick={() => navigate("/app/currency")}>{t("transCurrencyCard1.button")}</Button>
-                  :
-                  <Skeleton.Button active />
-              }
+              <Button type="primary" onClick={() => navigate("/app/currency")}>{t("transCurrencyCard1.button")}</Button>
             </Space>
           </Card>
           <Row gutter={16}>
@@ -222,12 +202,7 @@ const Index = () => {
                     {t("transCurrencyCard2.title")}
                   </Text>
                   <Text >{t("transCurrencyCard2.description")}</Text>
-                  {
-                    loading ?
-                      <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/", "_blank")}>{t("transCurrencyCard2.button")}</Button>
-                      :
-                      <Skeleton.Button active />
-                  }
+                  <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/", "_blank")}>{t("transCurrencyCard2.button")}</Button>
                 </Space>
               </Card>
             </Col>
@@ -248,12 +223,7 @@ const Index = () => {
                     {t("transCurrencyCard3.title")}
                   </Text>
                   <Text >{t("transCurrencyCard3.description")}</Text>
-                  {
-                    loading ?
-                      <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/", "_blank")}>{t("transCurrencyCard3.button")}</Button>
-                      :
-                      <Skeleton.Button active />
-                  }
+                  <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/", "_blank")}>{t("transCurrencyCard3.button")}</Button>
                 </Space>
               </Card>
             </Col>
@@ -282,12 +252,7 @@ const Index = () => {
                 <Title level={4}>
                   {t("planCard.title")}
                 </Title>
-                {
-                  loading ?
-                    <Button type="primary" onClick={handleContactSupport}>{t("planCard.button")}</Button>
-                    :
-                    <Skeleton.Button active />
-                }
+                <Button type="primary" onClick={handleContactSupport}>{t("planCard.button")}</Button>
               </div>
               <Text >{t("planCard.description")}</Text>
               <Table
@@ -332,7 +297,7 @@ const Index = () => {
         </Text>
       </Space>
     </Page>
-  );
+  )
 };
 
 export const handleContactSupport = () => {
