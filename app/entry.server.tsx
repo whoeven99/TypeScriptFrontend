@@ -12,8 +12,10 @@ import Backend from "i18next-fs-backend";
 import { resolve } from "node:path";
 import { ConfigProvider } from "antd";
 import { createCache, extractStyle, StyleProvider } from "@ant-design/cssinjs";
+import { renderHeadToString } from 'remix-island';
+import { Head } from './root'
 
-const ABORT_DELAY = 5000;
+const ABORT_DELAY = 10000;
 
 export default async function handleRequest(
   request: Request,
@@ -117,13 +119,20 @@ export default async function handleRequest(
     );
   }
 
+
   let markup = renderToString(<MainApp />);
+
+  const head = renderHeadToString({ request, remixContext, Head })
+
+  markup = markup.replace(
+    /(<html[^>]*>)(<body)/,
+    `$1${head}$2`
+  );
+  console.log("markup: ", markup);
+
   const styleText = extractStyle(cache);
 
-  markup = markup.replace("__ANTD__", styleText);
-
-  const tidioScript = '<script src="//code.tidio.co/inl4rrmds8vvbldv1k6gyc2nzxongl3p.js" async></script>';
-  markup = markup.replace('</body>', `${tidioScript}</body>`);
+  markup = markup.split('</head>').join(`${styleText}</head>`);
 
   responseHeaders.set("Content-Type", "text/html");
 
