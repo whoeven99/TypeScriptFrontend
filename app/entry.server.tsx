@@ -13,7 +13,7 @@ import { resolve } from "node:path";
 import { ConfigProvider } from "antd";
 import { createCache, extractStyle, StyleProvider } from "@ant-design/cssinjs";
 
-const ABORT_DELAY = 5000;
+const ABORT_DELAY = 10000;
 
 export default async function handleRequest(
   request: Request,
