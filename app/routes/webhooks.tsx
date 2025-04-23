@@ -3,6 +3,7 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import {
   AddCharsByShopName,
+  AddSubscriptionQuotaRecord,
   CleanData,
   DeleteData,
   InsertOrUpdateOrder,
@@ -152,6 +153,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const addChars = await AddCharsByShopName({ shop, amount: credits });
           console.log("addChars: ", addChars);
           if (addChars?.success) {
+            AddSubscriptionQuotaRecord({ subscriptionId: payload?.app_subscription.admin_graphql_api_id });
             UpdateUserPlan({ shop, plan });
             UpdateStatus({ shop });
             SendPurchaseSuccessEmail({
