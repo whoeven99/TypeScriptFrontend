@@ -21,6 +21,22 @@ interface GroupedDeleteData {
 }
 
 //修改用户计划
+export const AddSubscriptionQuotaRecord = async ({ subscriptionId }: { subscriptionId: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/subscriptionQuotaRecord/addSubscriptionQuotaRecord`,
+      method: "PUT",
+      data: {
+        subscriptionId: subscriptionId,
+      },
+    });
+    console.log("AddSubscriptionQuotaRecord: ", response.data);  
+  } catch (error) {
+    console.error("Error UpdateStatus:", error);
+  }
+};
+
+//修改用户计划
 export const UpdateStatus = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
