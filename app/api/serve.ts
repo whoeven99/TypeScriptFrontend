@@ -30,7 +30,6 @@ export const AddSubscriptionQuotaRecord = async ({ subscriptionId }: { subscript
         subscriptionId: subscriptionId,
       },
     });
-    console.log("AddSubscriptionQuotaRecord: ", response.data);  
   } catch (error) {
     console.error("Error UpdateStatus:", error);
   }
@@ -46,7 +45,6 @@ export const UpdateStatus = async ({ shop }: { shop: string }) => {
         shopName: shop,
       },
     });
-    console.log("UpdateStatus: ", response.data);  
   } catch (error) {
     console.error("Error UpdateStatus:", error);
   }
@@ -55,7 +53,6 @@ export const UpdateStatus = async ({ shop }: { shop: string }) => {
 //修改用户计划
 export const UpdateUserPlan = async ({ shop, plan }: { shop: string, plan: number }) => {
   try {
-    console.log("UpdateUserPlan: ", shop, plan);
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/checkUserPlan`,
       method: "POST",
@@ -64,7 +61,6 @@ export const UpdateUserPlan = async ({ shop, plan }: { shop: string, plan: numbe
         planId: plan,
       },
     });
-    console.log("UpdateUserPlan: ", response.data);  
     return response.data;
   } catch (error) {
     console.error("Error UpdateUserPlan:", error);
