@@ -128,7 +128,6 @@ export default async function handleRequest(
     /(<html[^>]*>)(<body)/,
     `$1${head}$2`
   );
-  console.log("markup: ", markup);
 
   const styleText = extractStyle(cache);
 
