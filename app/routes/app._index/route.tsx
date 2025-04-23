@@ -47,37 +47,37 @@ const Index = () => {
     },
   ];
 
-  // const data: {
-  //   key: number;
-  //   need: string;
-  //   votes: number;
-  //   devStatus: string;
-  // }[] = [
-  //     {
-  //       key: 1,
-  //       need: t("devplanCard1.title"),
-  //       votes: 100,
-  //       devStatus: t("Launched"),
-  //     },
-  //     {
-  //       key: 2,
-  //       need: t("devplanCard2.title"),
-  //       votes: 35,
-  //       devStatus: t("Launched"),
-  //     },
-  //     {
-  //       key: 3,
-  //       need: t("devplanCard3.title"),
-  //       votes: 35,
-  //       devStatus: t("In development"),
-  //     },
-  //     {
-  //       key: 4,
-  //       need: t("devplanCard4.title"),
-  //       votes: 25,
-  //       devStatus: t("In development"),
-  //     },
-  //   ];
+  const data: {
+    key: number;
+    need: string;
+    votes: number;
+    devStatus: string;
+  }[] = [
+      {
+        key: 1,
+        need: t("devplanCard1.title"),
+        votes: 100,
+        devStatus: t("Launched"),
+      },
+      {
+        key: 2,
+        need: t("devplanCard2.title"),
+        votes: 35,
+        devStatus: t("Launched"),
+      },
+      {
+        key: 3,
+        need: t("devplanCard3.title"),
+        votes: 35,
+        devStatus: t("In development"),
+      },
+      {
+        key: 4,
+        need: t("devplanCard4.title"),
+        votes: 25,
+        devStatus: t("In development"),
+      },
+    ];
 
   return (
     <Page>
@@ -85,14 +85,14 @@ const Index = () => {
       <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
       <Space direction="vertical" size="large" style={{ display: "flex" }}>
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          {/* <div style={{ paddingLeft: "8px" }}>
+          <div style={{ paddingLeft: "8px" }}>
             <Title level={3}>
               {t("dashboard.title1")}
             </Title>
             <Text strong>
               {t("dashboard.description1")}
             </Text>
-          </div> */}
+          </div>
           <Card
             bordered={false}
           >
@@ -101,10 +101,7 @@ const Index = () => {
                 {t("transLanguageCard1.title")}
               </Title>
               <Text >{t("transLanguageCard1.description")}</Text>
-              {
-
-                <Button type="primary" onClick={() => navigate("/app/translate", { state: { from: "/app", selectedLanguageCode: "" } })}>{t("transLanguageCard1.button")}</Button>
-              }
+              <Button type="primary" onClick={() => navigate("/app/translate", { state: { from: "/app", selectedLanguageCode: "" } })}>{t("transLanguageCard1.button")}</Button>
             </Space>
           </Card>
           <ProgressingCard />
@@ -128,11 +125,7 @@ const Index = () => {
                     </Text>
                     <Text >{t("transLanguageCard2.description")}</Text>
                   </Space>
-                  {
-
-                    <Button type="primary" onClick={() => navigate("/app/language")} style={{ alignSelf: 'flex-start' }}>{t("transLanguageCard2.button")}</Button>
-
-                  }
+                  <Button type="primary" onClick={() => navigate("/app/language")} style={{ alignSelf: 'flex-start' }}>{t("transLanguageCard2.button")}</Button>
                 </div>
               </Card>
             </Col>
@@ -179,11 +172,7 @@ const Index = () => {
                 {t("transCurrencyCard1.title")}
               </Title>
               <Text >{t("transCurrencyCard1.description")}</Text>
-              {
-
-                <Button type="primary" onClick={() => navigate("/app/currency")}>{t("transCurrencyCard1.button")}</Button>
-
-              }
+              <Button type="primary" onClick={() => navigate("/app/currency")}>{t("transCurrencyCard1.button")}</Button>
             </Space>
           </Card>
           <Row gutter={16}>
@@ -213,11 +202,7 @@ const Index = () => {
                     {t("transCurrencyCard2.title")}
                   </Text>
                   <Text >{t("transCurrencyCard2.description")}</Text>
-                  {
-
-                    <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/", "_blank")}>{t("transCurrencyCard2.button")}</Button>
-
-                  }
+                  <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/", "_blank")}>{t("transCurrencyCard2.button")}</Button>
                 </Space>
               </Card>
             </Col>
@@ -238,11 +223,7 @@ const Index = () => {
                     {t("transCurrencyCard3.title")}
                   </Text>
                   <Text >{t("transCurrencyCard3.description")}</Text>
-                  {
-
-                    <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/", "_blank")}>{t("transCurrencyCard3.button")}</Button>
-
-                  }
+                  <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/", "_blank")}>{t("transCurrencyCard3.button")}</Button>
                 </Space>
               </Card>
             </Col>
@@ -257,7 +238,7 @@ const Index = () => {
               {t("dashboard.description3")}
             </Text>
           </div>
-          {/* <Card
+          <Card
             bordered={false}
           >
             <Space direction="vertical" size="middle" style={{ display: "flex" }}>
@@ -280,7 +261,7 @@ const Index = () => {
                 pagination={false}
               />
             </Space>
-          </Card> */}
+          </Card>
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
               <ContactCard onClick={handleContactSupport} />
