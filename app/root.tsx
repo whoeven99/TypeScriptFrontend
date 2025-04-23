@@ -11,6 +11,7 @@ import store from "./store";
 import "./styles.css";
 import { json, LoaderFunctionArgs } from "@remix-run/node";
 import { useEffect, useState } from "react";
+import { createHead } from 'remix-island'
 
 export async function loader({ request }: LoaderFunctionArgs) {
   try {
@@ -208,65 +209,66 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function App() {
   // 从 loader 数据中获取国际化语言代码
   const { i18nCode } = useLoaderData<typeof loader>();
-  const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => {    
-    setIsClient(true);
-    // // GTM 初始化脚本
-    // const script = document.createElement('script');
-    // script.innerHTML = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    //   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    //   j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    //   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    //   })(window,document,'script','dataLayer','GTM-NVPT5XDV')`;
-    // document.head.appendChild(script);
+  useEffect(() => {
+    // GTM 初始化脚本
+    const script = document.createElement('script');
+    script.innerHTML = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-NVPT5XDV')`;
+    document.head.appendChild(script);
 
-    // // Google Analytics 初始化脚本
-    // const gaScript = document.createElement('script');
-    // gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-F1BN24YVJN';
-    // gaScript.async = true;
-    // document.head.appendChild(gaScript);
+    // Google Analytics 初始化脚本
+    const gaScript = document.createElement('script');
+    gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-F1BN24YVJN';
+    gaScript.async = true;
+    document.head.appendChild(gaScript);
 
-    // const gaInitScript = document.createElement('script');
-    // gaInitScript.innerHTML = `
-    //   window.dataLayer = window.dataLayer || [];
-    //   function gtag(){window.dataLayer.push(arguments)}
-    //   gtag('js', new Date());
-    //   gtag('config', 'G-F1BN24YVJN');
-    // `;
-    // document.head.appendChild(gaInitScript);
+    const gaInitScript = document.createElement('script');
+    gaInitScript.innerHTML = `
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){window.dataLayer.push(arguments)}
+      gtag('js', new Date());
+      gtag('config', 'G-F1BN24YVJN');
+    `;
+    document.head.appendChild(gaInitScript);
   }, []);
 
   return (
     // 使用 Redux Provider 包装整个应用（用于状态管理，必须）,删除后很多功能无法使用
     <Provider store={store}>
-      {/* 设置 HTML 文档的语言属性，删除后页面将无法实现i18 */}
       <html lang={i18nCode}>
-        <head>
-          <meta charSet="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-          <link rel="preconnect" href="https://cdn.shopify.com/" />
-          <link rel="stylesheet" href="https://cdn.shopify.com/static/fonts/inter/v4/styles.css" />
-          <Meta />
-          <Links />
-          {/* 服务端渲染时的 AntD 样式占位符，删除后页面将无法预加载antd组件库的css */}
-          {typeof document === "undefined" ? "__ANTD__" : ""}
-        </head>
+        <Head />
         <body>
-          {/* <noscript>
-            <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NVPT5XDV"
-              height="0" width="0" style={{ display: "none", visibility: "hidden" }}>
-            </iframe>
-          </noscript> */}
-          {/* 下面三行是文件生成时自带的代码，删除后页面将失去所有功能 */}
-          {/* 渲染路由匹配的组件，必须 */}
-          <div style={{ visibility: isClient ? "visible" : "hidden" }}>
+          <div id="root">
+            <noscript>
+              <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NVPT5XDV"
+                height="0" width="0" style={{ display: "none", visibility: "hidden" }}>
+              </iframe>
+            </noscript>
             <Outlet />
             <ScrollRestoration />
             <Scripts />
+            <script src="//code.tidio.co/inl4rrmds8vvbldv1k6gyc2nzxongl3p.js" async></script>
           </div>
         </body>
       </html>
     </Provider>
   );
 }
+
+export const Head = createHead(() => (
+  <head>
+    <meta charSet="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="preconnect" href="https://cdn.shopify.com/" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.shopify.com/static/fonts/inter/v4/styles.css"
+    />
+    <Meta />
+    <Links />
+  </head>
+));

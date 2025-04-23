@@ -36,7 +36,7 @@ async function hydrate() {
   startTransition(() => {
     const cache = createCache();
     hydrateRoot(
-      document,
+      document.getElementById('root')!,
       <I18nextProvider i18n={i18next}>
         <StyleProvider cache={cache}>
           <ConfigProvider
