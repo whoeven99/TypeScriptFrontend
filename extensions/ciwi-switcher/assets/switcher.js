@@ -654,12 +654,6 @@ class CiwiswitcherForm extends HTMLElement {
         displayText.textContent = selectedCurrency;
       }
     }
-
-    // 移除移动端展开状态
-    if (window.innerWidth <= 768) {
-      this.elements.ciwiContainer.classList.remove("expanded");
-    }
-
     // 重置箭头方向
     this.rotateArrow("mainbox-arrow-icon", 0);
 
@@ -758,7 +752,7 @@ window.onload = async function () {
     buttonColor: "#fff",
     buttonBackgroundColor: "#000",
     optionBorderColor: "#ccc",
-    selectorPosition: "top-left",
+    selectorPosition: "bottom-left",
     positionData: 10,
   };
 
