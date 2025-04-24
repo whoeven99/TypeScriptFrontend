@@ -494,7 +494,7 @@ const Index = () => {
                                     text={t('pricing.recommended')}
                                     color="#1890ff"
                                     style={{
-                                        display: plan.isRecommended ? 'block' : 'none',
+                                        display: plan.isRecommended && selectedPlan <= 2 && selectedPlan ? 'block' : 'none',
                                         right: -8,
                                     }}
                                 >
@@ -506,7 +506,7 @@ const Index = () => {
                                             display: 'flex',
                                             flexDirection: 'column',
                                             position: 'relative',
-                                            borderColor: plan.isRecommended ? '#1890ff' : undefined,
+                                            borderColor: plan.disabled ? '#007F61' : plan.isRecommended && selectedPlan <= 2 && selectedPlan ? '#1890ff' : undefined,
                                             minWidth: "220px",
                                         }}
                                         styles={{
@@ -529,7 +529,7 @@ const Index = () => {
                                         <Paragraph type="secondary" style={{ fontSize: '13px' }}>{plan.subtitle}</Paragraph>
 
                                         <Button
-                                            type={plan.isRecommended ? 'primary' : 'default'}
+                                            type={plan.isRecommended && selectedPlan <= 2 && selectedPlan ? 'primary' : 'default'}
                                             size="middle"
                                             block
                                             disabled={plan.disabled}
