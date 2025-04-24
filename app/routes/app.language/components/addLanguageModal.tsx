@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Modal, Input, Table, Space, message, Button } from "antd";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Modal, Input, Table, Space, message, Button, InputRef } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import SelectedTag from "../../../components/selectedTag";
 import {
@@ -39,7 +39,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   const updatedLocales = allLanguages
     .filter((lang) => lang.isoCode != primaryLanguage?.locale)
     .map((item) => item.isoCode);
-  const addLanguages: AddLanguageType[] = allLanguages
+  const addLanguages: AddLanguageType[] = useMemo(() => allLanguages
     .filter((lang) => lang.isoCode != primaryLanguage?.locale)
     .map((lang, i) => ({
       key: lang.key,
@@ -47,9 +47,9 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       src: languageLocaleInfo[updatedLocales[i]]
         ? languageLocaleInfo[updatedLocales[i]]?.countries
         : [],
-      name: `${lang.name}(${languageLocaleInfo[updatedLocales[i]].Local})`,
+      name: `${lang.name}(${languageLocaleInfo[updatedLocales[i]]?.Local})`,
       state: "", // 默认值为 false
-    }));
+    })), [allLanguages, languageLocaleInfo, primaryLanguage]);
   const [allSelectedKeys, setAllSelectedKeys] = useState<React.Key[]>([]); // 保存所有选中的key
   const [searchInput, setSearchInput] = useState("");
   const [filteredLanguages, setFilteredLanguages] =
@@ -63,6 +63,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
     (state: any) => state.languageTableData.rows,
   );
   const dispatch = useDispatch();
+  const searchRef = useRef<InputRef>(null);
   const addFetcher = useFetcher<any>();
   const { t } = useTranslation();
 
@@ -111,7 +112,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
 
     // 更新过滤后的语言状态
     setFilteredLanguages(sortedFilteredLanguages);
-  }, [selectedLanguage, allLanguages, isVisible]);
+  }, [allLanguages, isVisible]);
 
   useEffect(() => {
     const addedCurrencies = allSelectedKeys
@@ -121,9 +122,19 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
     setAllSelectedLanguage(addedCurrencies);
   }, [allSelectedKeys]);
 
+  useEffect(() => {
+    if (addLanguages) {
+      handleSearch({ target: { value: searchRef.current?.input?.value } } as React.ChangeEvent<HTMLInputElement>);
+    }
+  }, [addLanguages]);
+
   // 搜索逻辑
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    if(value === undefined) {
+      return;
+    }
+
     setSearchInput(value);
 
     if (value.trim() === "") {
@@ -336,6 +347,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
       ]}
     >
       <Input
+        ref={searchRef}
         placeholder={t("Search languages...")}
         prefix={<SearchOutlined />}
         value={searchInput}
