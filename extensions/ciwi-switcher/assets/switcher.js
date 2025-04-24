@@ -194,8 +194,6 @@ async function initializeCurrency(data, shop) {
         }
       });
     }
-
-    updateDisplayText();
   } else if (data.length) {
     customSelector.style.display = "block";
     const primaryCurrency =
@@ -234,35 +232,40 @@ async function initializeCurrency(data, shop) {
         }
       });
     }
-    updateDisplayText();
   }
 }
 
 // Function to update the display text
-function updateDisplayText() {
+function updateDisplayText(lang, cur) {
+  let selectedLanguageText = "";
+  let selectedCurrencyText = "";
   // 获取货币选择器中当前选中的值
-  const currencySelector = document.querySelector(
-    '.custom-selector[data-type="currency"]',
-  );
-  const selectedCurrencyText =
-    currencySelector?.querySelector(".selected-text")?.textContent ||
-    "undefined";
+  if (lang) {
+    // 获取语言选择器中当前选中的值
+    const languageSelector = document.querySelector(
+      '.custom-selector[data-type="language"]',
+    );
+    selectedLanguageText =
+      languageSelector?.querySelector(".selected-text")?.textContent || "";
+  }
 
-  // 获取语言选择器中当前选中的值
-  const languageSelector = document.querySelector(
-    '.custom-selector[data-type="language"]',
-  );
-  const selectedLanguageText =
-    languageSelector?.querySelector(".selected-text")?.textContent || "";
-
+  if (cur) {
+    const currencySelector = document.querySelector(
+      '.custom-selector[data-type="currency"]',
+    );
+    selectedCurrencyText =
+      currencySelector?.querySelector(".selected-text")?.textContent ||
+      "undefined";
+  }
   // 更新显示文本
   const displayTextElement = document.getElementById("display-text");
   if (displayTextElement) {
     // 如果已经有语言文本，添加货币文本
-    if (selectedLanguageText) {
+    if (selectedLanguageText && selectedCurrencyText) {
       displayTextElement.textContent = `${selectedLanguageText} / ${selectedCurrencyText}`;
-    } else {
-      // 如果只有货币文本
+    } else if (selectedLanguageText) {
+      displayTextElement.textContent = selectedLanguageText;
+    } else if (selectedCurrencyText) {
       displayTextElement.textContent = selectedCurrencyText;
     }
   }
@@ -670,11 +673,21 @@ class CiwiswitcherForm extends HTMLElement {
         this.elements.currencySelector?.querySelector(".selected-text")
           ?.textContent || "";
 
-      if (selectedLanguage && selectedCurrency) {
+      const languageSelectorContainer = document.getElementById(
+        "language-switcher-container",
+      );
+      const currencySelectorContainer = document.getElementById(
+        "currency-switcher-container",
+      );
+
+      if (
+        languageSelectorContainer.style.display === "block" &&
+        currencySelectorContainer.style.display === "block"
+      ) {
         displayText.textContent = `${selectedLanguage} / ${selectedCurrency}`;
-      } else if (selectedLanguage) {
+      } else if (languageSelectorContainer.style.display === "block") {
         displayText.textContent = selectedLanguage;
-      } else if (selectedCurrency) {
+      } else if (currencySelectorContainer.style.display === "block") {
         displayText.textContent = selectedCurrency;
       }
     }
@@ -783,6 +796,9 @@ window.onload = async function () {
     );
     languageSelectorSelectedOption.style.backgroundColor = data.backgroundColor;
     languageSelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
+
+    const mainLanguageFlag = document.getElementById("main-language-flag");
+
     if (data.includedFlag) {
       //获取所有语言代码
       const languageCodes = Array.from(
@@ -814,7 +830,6 @@ window.onload = async function () {
           'input[name="language_code"]',
         ).value;
         const countryCode = languageLocaleData[currentLangCode]?.countries[0];
-        const mainLanguageFlag = document.getElementById("main-language-flag");
         const optionFlagImg = document.createElement("img");
         optionFlagImg.className = "country-flag";
         optionFlagImg.src = countryCode;
@@ -827,9 +842,6 @@ window.onload = async function () {
           mainLanguageFlag.hidden = false;
         }
       }
-    } else {
-      const mainBox = document.getElementById("main-box");
-      mainBox.style.justifyContent = "center";
     }
     if (data.ipOpen) {
       const iptoken = document.querySelector('span[name="iptoken"]');
@@ -929,6 +941,14 @@ window.onload = async function () {
     if (currencyData) {
       await initializeCurrency(currencyData, shop);
     }
+    const mainLanguageFlag = document.getElementById("main-language-flag");
+    if (mainLanguageFlag) {
+      mainLanguageFlag.hidden = true;
+    }
+    const mainBox = document.getElementById("main-box");
+    if (mainBox) {
+      mainBox.style.justifyContent = "center";
+    }
   }
 
   if (switcher) {
@@ -974,9 +994,10 @@ window.onload = async function () {
     }
     if (data.selectorPosition === "bottom_right") {
       switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
-      switcher.style.left = "auto";
+      switcher.style.right = "0";
       switcher.style.top = "auto";
     }
+    updateDisplayText(data.languageSelector, data.currencySelector);
     switcher.style.display = "block";
   }
 };

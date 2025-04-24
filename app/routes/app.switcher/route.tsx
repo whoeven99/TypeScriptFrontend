@@ -296,6 +296,10 @@ const Index = () => {
                     languageSelector: false,
                     currencySelector: true
                 });
+                setIsIncludedFlag(false);
+                handleEditData({
+                    includedFlag: false,
+                });
                 break;
         }
     };
@@ -429,7 +433,7 @@ const Index = () => {
                                     <Title level={5}>{t("Selector style configuration:")}</Title>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                         <Text>{t("Included flag:")}</Text>
-                                        <Switch checked={isIncludedFlag} onChange={(checked) => handleEditData({ includedFlag: checked })} />
+                                        <Switch disabled={!languageSelector} checked={isIncludedFlag} onChange={(checked) => handleEditData({ includedFlag: checked })} />
                                     </div>
                                     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                                         <div style={{ flex: 1, flexDirection: "column", display: "flex", justifyContent: "space-between" }}>
@@ -534,7 +538,7 @@ const Index = () => {
                                         >
                                             <div
                                                 style={{
-                                                    display: `${languageSelector && currencySelector ? "block" : "none"}`,
+                                                    display: `${languageSelector ? "block" : "none"}`,
                                                     marginBottom: "10px",
                                                 }}
                                             >
