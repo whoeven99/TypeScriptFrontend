@@ -61,33 +61,13 @@ export interface CurrencyType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  try {
-    const sessionService = await SessionService.init(request);
-    let shopSession = sessionService.getShopSession();
-    if (!shopSession) {
-      const adminAuthResult = await authenticate.admin(request);
-      const { shop, accessToken } = adminAuthResult.session;
-      shopSession = {
-        shop: shop,
-        accessToken: accessToken as string,
-      };
-      sessionService.setShopSession(shopSession);
-      return json({
-        shop,
-        ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
-        ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
-      });
-    }
-    const { shop } = shopSession;
-
-    return json({
-      shop,
-      ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
-      ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
-    });
-  } catch (error) {
-    console.error("Error during authentication currency:", error);
-  }
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  return json({
+    shop,
+    ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
+    ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -394,10 +374,6 @@ const Index = () => {
   }, [loadingFetcher.data]);
 
   useEffect(() => {
-    console.log(switcherEnableCardOpen);
-  }, [switcherEnableCardOpen]);
-
-  useEffect(() => {
     if (themeFetcher.data) {
       const switcherData =
         themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
@@ -687,23 +663,15 @@ const Index = () => {
           <Skeleton active paragraph={{ rows: 0 }} />
         )}
         <Flex gap="middle" vertical>
-          <div className="ip_action">
-            <Flex align="center" gap="middle">
-              <Text>
-                {t("After setting, you can")}
-                <Link url={userShop} target="_blank">
-                  {t("Preview")}
-                </Link>
-                {t("to view the prices in different currencies.")}
-              </Text>
-            </Flex>
-            {!loading && <div>
-              <Popover content={t("Automatically switch to the target language and currency.")}>
-                <Text strong>Geolocation{" "}</Text>
-                <Switch onChange={onIpChange} checked={ip} loading={ipFetcher.state === "submitting"} />
-              </Popover>
-            </div>}
-          </div>
+          <Flex align="center" gap="middle">
+            <Text>
+              {t("After setting, you can")}
+              <Link url={userShop} target="_blank">
+                {t("Preview")}
+              </Link>
+              {t("to view the prices in different currencies.")}
+            </Text>
+          </Flex>
           <Input
             placeholder={t("Search currencies...")}
             prefix={<SearchOutlined />}

@@ -1,0 +1,13 @@
+.translateSettings1Options {
+    width: 100%;
+    position: relative;
+    padding-right: 8px;
+    border-color: #d9d9d9;
+    color: #0f0f0f;
+    cursor: pointer;
+}
+
+.translateSettings1Options:hover {
+    border-color: #168c6d;
+    color: #168c6d;
+}

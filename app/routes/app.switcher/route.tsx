@@ -1,53 +1,81 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Space, Card, Typography, Switch, Select, ColorPicker, Slider, Button } from "antd";
+import { Space, Card, Typography, Switch, Select, ColorPicker, Slider, Button, message } from "antd";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import styles from "./styles.module.css";
 import { useEffect, useState } from "react";
 import { ActionFunctionArgs } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
-
+import { SaveAndUpdateData, WidgetConfigurations } from "~/api/serve";
+import { authenticate } from "~/shopify.server";
 const { Text, Title } = Typography;
 
 interface EditData {
     shopName: string;
     includedFlag: boolean;
-    languageSeletor: boolean;
-    currencySeletor: boolean;
-    IpOpen: boolean;
+    languageSelector: boolean;
+    currencySelector: boolean;
+    ipOpen: boolean;
     fontColor: string;
     backgroundColor: string;
     buttonColor: string;
     buttonBackgroundColor: string;
     optionBorderColor: string;
-    switcherPosition: string;
+    selectorPosition: string;
     positionData: number;
 }
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-    const formData = await request.formData();
-    const loading = formData.get("loading") as string;
-    const editData = formData.get("editData") as string;
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop, accessToken } = adminAuthResult.session;
+
     try {
+        const formData = await request.formData();
+        const loading = JSON.parse(formData.get("loading") as string);
+        const editData = JSON.parse(formData.get("editData") as string);
         switch (true) {
             case !!loading:
-                return {
-                    shopName: "test",
-                    includedFlag: true,
-                    languageSeletor: true,
-                    currencySeletor: true,
-                    IpOpen: true,
-                    fontColor: "#000000",
-                    backgroundColor: "#ffffff",
-                    buttonColor: "#ffffff",
-                    buttonBackgroundColor: "#000000",
-                    optionBorderColor: "#ccc",
-                    switcherPosition: "top_left",
-                    positionData: 10,
+                try {
+                    const data = await WidgetConfigurations({
+                        shop: shop,
+                    });
+                    const initData = {
+                        shopName: shop,
+                        includedFlag: true,
+                        languageSelector: true,
+                        currencySelector: true,
+                        ipOpen: false,
+                        fontColor: "#000000",
+                        backgroundColor: "#ffffff",
+                        buttonColor: "#ffffff",
+                        buttonBackgroundColor: "#000000",
+                        optionBorderColor: "#ccc",
+                        selectorPosition: "top_left",
+                        positionData: 10,
+                    }
+                    if (data.success && typeof data.response === "object") {
+                        const filteredResponse = Object.fromEntries(
+                            Object.entries(data.response).filter(([_, value]) => value !== null)
+                        );
+                        const res = {
+                            ...initData,
+                            ...filteredResponse,
+                        }
+                        return res;
+                    } else {
+                        return initData;
+                    }
+                } catch (error) {
+                    console.error("Error switcher loading:", error);
                 }
             case !!editData:
-                return JSON.parse(editData);
+                try {
+                    const data = SaveAndUpdateData(editData);
+                    return data
+                } catch (error) {
+                    console.error("Error switcher editData:", error);
+                }
             default:
                 return null;
         }
@@ -106,14 +134,14 @@ const Index = () => {
     // const [isSwitcherEnabled, setIsSwitcherEnabled] = useState(false);
     const [isGeoLocationEnabled, setIsGeoLocationEnabled] = useState(false);
     const [isIncludedFlag, setIsIncludedFlag] = useState(false);
-    const [languageSeletor, setLanguageSeletor] = useState(true);
-    const [currencySeletor, setCurrencySeletor] = useState(true);
+    const [languageSelector, setLanguageSelector] = useState(true);
+    const [currencySelector, setCurrencySelector] = useState(true);
     const [fontColor, setFontColor] = useState("#000000");
     const [backgroundColor, setBackgroundColor] = useState("#ffffff");
     const [buttonColor, setButtonColor] = useState("#ffffff");
     const [buttonBackgroundColor, setButtonBackgroundColor] = useState("#000000");
     const [optionBorderColor, setOptionBorderColor] = useState("#ccc");
-    const [switcherPosition, setSwitcherPosition] = useState("top_left");
+    const [selectorPosition, setSelectorPosition] = useState("top_left");
     const [positionData, setPositionData] = useState<number>(0);
     const [isLanguageOpen, setIsLanguageOpen] = useState(false);
     const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
@@ -124,15 +152,15 @@ const Index = () => {
     const [editData, setEditData] = useState<EditData>({
         shopName: "",
         includedFlag: false,
-        languageSeletor: false,
-        currencySeletor: false,
-        IpOpen: false,
+        languageSelector: false,
+        currencySelector: false,
+        ipOpen: false,
         fontColor: "",
         backgroundColor: "",
         buttonColor: "",
         buttonBackgroundColor: "",
         optionBorderColor: "",
-        switcherPosition: "",
+        selectorPosition: "",
         positionData: 0,
     });
     const [isEdit, setIsEdit] = useState(false);
@@ -154,37 +182,47 @@ const Index = () => {
 
     useEffect(() => {
         if (fetcher.data) {
+            console.log("fetcher.data: ", fetcher.data);
             setOriginalData(fetcher.data);
             setIsIncludedFlag(fetcher.data.includedFlag);
-            setLanguageSeletor(fetcher.data.languageSeletor);
-            setCurrencySeletor(fetcher.data.currencySeletor);
-            setIsGeoLocationEnabled(fetcher.data.IpOpen);
+            setLanguageSelector(fetcher.data.languageSelector);
+            setCurrencySelector(fetcher.data.currencySelector);
+            setIsGeoLocationEnabled(fetcher.data.ipOpen);
             setFontColor(fetcher.data.fontColor);
             setBackgroundColor(fetcher.data.backgroundColor);
             setButtonColor(fetcher.data.buttonColor);
             setButtonBackgroundColor(fetcher.data.buttonBackgroundColor);
             setOptionBorderColor(fetcher.data.optionBorderColor);
-            setSwitcherPosition(fetcher.data.switcherPosition);
+            setSelectorPosition(fetcher.data.selectorPosition);
             setPositionData(fetcher.data.positionData);
             setEditData(fetcher.data);
             setIsLoading(false);
-            // setIsGeoLocationEnabled(fetcher.data.geoLocationEnabled);
         }
     }, [fetcher.data]);
 
     useEffect(() => {
-        if (languageSeletor && !currencySeletor) {
-            setMainBoxText(localization.languages.find(language => language.selected)?.localeName as string);
-        } else if (!languageSeletor && currencySeletor) {
-            setMainBoxText(localization.currencies.find(currency => currency.selected)?.localeName as string);
-        } else if (languageSeletor && currencySeletor) {
-            setMainBoxText(localization.languages.find(language => language.selected)?.localeName + " / " + localization.currencies.find(currency => currency.selected)?.localeName);
+        if (editFetcher.data) {
+            if (editFetcher.data.success) {
+                setOriginalData(editFetcher.data.response);
+                setEditData(editFetcher.data.response);
+                message.success(t("Switcher configuration updated successfully"));
+            } else {
+                message.error(t("Switcher configuration update failed"));
+            }
         }
-    }, [languageSeletor, currencySeletor, localization]);
+    }, [editFetcher.data]);
 
     useEffect(() => {
-        console.log(editData);
-        console.log(fetcher.data);
+        if (languageSelector && !currencySelector) {
+            setMainBoxText(localization.languages.find(language => language.selected)?.localeName as string);
+        } else if (!languageSelector && currencySelector) {
+            setMainBoxText(localization.currencies.find(currency => currency.selected)?.localeName as string);
+        } else if (languageSelector && currencySelector) {
+            setMainBoxText(localization.languages.find(language => language.selected)?.localeName + " / " + localization.currencies.find(currency => currency.selected)?.localeName);
+        }
+    }, [languageSelector, currencySelector, localization]);
+
+    useEffect(() => {
         if (originalData && editData.shopName && (JSON.stringify(editData) !== JSON.stringify(originalData))) {
             setIsEdit(true);
         } else {
@@ -199,13 +237,13 @@ const Index = () => {
                 case "includedFlag":
                     setIsIncludedFlag(value as boolean);
                     break;
-                case "languageSeletor":
-                    setLanguageSeletor(value as boolean);
+                case "languageSelector":
+                    setLanguageSelector(value as boolean);
                     break;
-                case "currencySeletor":
-                    setCurrencySeletor(value as boolean);
+                case "currencySelector":
+                    setCurrencySelector(value as boolean);
                     break;
-                case "IpOpen":
+                case "ipOpen":
                     setIsGeoLocationEnabled(value as boolean);
                     break;
                 case "fontColor":
@@ -223,8 +261,8 @@ const Index = () => {
                 case "optionBorderColor":
                     setOptionBorderColor(value as string);
                     break;
-                case "switcherPosition":
-                    setSwitcherPosition(value as string);
+                case "selectorPosition":
+                    setSelectorPosition(value as string);
                     break;
                 case "positionData":
                     setPositionData(value as number);
@@ -240,24 +278,23 @@ const Index = () => {
     }
 
     const handleOptionChange = (value: string) => {
-        console.log(value);
         switch (value) {
             case "language_and_currency":
                 handleEditData({
-                    languageSeletor: true,
-                    currencySeletor: true
+                    languageSelector: true,
+                    currencySelector: true
                 });
                 break;
             case "language":
                 handleEditData({
-                    languageSeletor: true,
-                    currencySeletor: false
+                    languageSelector: true,
+                    currencySelector: false
                 });
                 break;
             case "currency":
                 handleEditData({
-                    languageSeletor: false,
-                    currencySeletor: true
+                    languageSelector: false,
+                    currencySelector: true
                 });
                 break;
         }
@@ -315,15 +352,15 @@ const Index = () => {
     const handleCancel = () => {
         if (originalData) {
             setIsIncludedFlag(originalData.includedFlag);
-            setLanguageSeletor(originalData.languageSeletor);
-            setCurrencySeletor(originalData.currencySeletor);
-            setIsGeoLocationEnabled(originalData.IpOpen);
+            setLanguageSelector(originalData.languageSelector);
+            setCurrencySelector(originalData.currencySelector);
+            setIsGeoLocationEnabled(originalData.ipOpen);
             setFontColor(originalData.fontColor);
             setBackgroundColor(originalData.backgroundColor);
             setButtonColor(originalData.buttonColor);
             setButtonBackgroundColor(originalData.buttonBackgroundColor);
             setOptionBorderColor(originalData.optionBorderColor);
-            setSwitcherPosition(originalData.switcherPosition);
+            setSelectorPosition(originalData.selectorPosition);
             setPositionData(originalData.positionData);
             setEditData(originalData);
         }
@@ -385,7 +422,7 @@ const Index = () => {
                             </Card> */}
                             <Card loading={isLoading}>
                                 <Title level={5}>{t("Selector type configuration:")}</Title>
-                                <Select options={switcherOptions} style={{ width: "100%" }} value={languageSeletor && currencySeletor ? "language_and_currency" : languageSeletor ? "language" : "currency"} onChange={handleOptionChange} />
+                                <Select options={switcherOptions} style={{ width: "100%" }} value={languageSelector && currencySelector ? "language_and_currency" : languageSelector ? "language" : "currency"} onChange={handleOptionChange} />
                             </Card>
                             <Card loading={isLoading}>
                                 <Space direction="vertical" size="middle" style={{ display: "flex" }}>
@@ -418,7 +455,7 @@ const Index = () => {
                                     </div>
                                     <div>
                                         <Text style={{ display: "block" }}>{t("Selector position:")}</Text>
-                                        <Select options={switcherPositionOptions} style={{ width: "100%" }} value={switcherPosition} onChange={(value) => handleEditData({ switcherPosition: value })} />
+                                        <Select options={switcherPositionOptions} style={{ width: "100%" }} value={selectorPosition} onChange={(value) => handleEditData({ selectorPosition: value })} />
                                     </div>
                                     <div>
                                         <Text style={{ display: "block" }}>{t("Selector position data:")}</Text>
@@ -427,10 +464,10 @@ const Index = () => {
                                 </Space>
                             </Card>
                             <Card loading={isLoading}>
-                                <Title level={5}>{t("Selector IP position configuration:")}</Title>
+                                <Title level={5}>{t("Selector Auto IP position configuration:")}</Title>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <Text> {t("Geolocation: ")}</Text>
-                                    <Switch checked={isGeoLocationEnabled} onChange={(checked) => handleEditData({ IpOpen: checked })} />
+                                    <Text>Geolocation: </Text>
+                                    <Switch checked={isGeoLocationEnabled} onChange={(checked) => handleEditData({ ipOpen: checked })} />
                                 </div>
                             </Card>
                         </Space>
@@ -463,8 +500,8 @@ const Index = () => {
                                     style={{
                                         width: "200px",
                                         position: "relative",
-                                        top: switcherPosition === "top_left" || switcherPosition === "top_right" ? (positionData * 82 / 100).toString() + "%" : ((100 - positionData) * 82 / 100).toString() + "%",
-                                        left: switcherPosition === "top_left" || switcherPosition === "bottom_left" ? "0" : "calc(100% - 200px)",
+                                        top: selectorPosition === "top_left" || selectorPosition === "top_right" ? (positionData * 82 / 100).toString() + "%" : ((100 - positionData) * 82 / 100).toString() + "%",
+                                        left: selectorPosition === "top_left" || selectorPosition === "bottom_left" ? "0" : "calc(100% - 200px)",
                                         height: "auto",
                                         display: "block",
                                         zIndex: "9999",
@@ -476,7 +513,7 @@ const Index = () => {
                                         style={{
                                             width: "200px",
                                             position: "absolute", // 改为绝对定位
-                                            top: switcherPosition === "top_left" || switcherPosition === "top_right" ? "40px" : (languageSeletor && currencySeletor ? "-170px" : "-120px"),            // 位于顶部
+                                            top: selectorPosition === "top_left" || selectorPosition === "top_right" ? "40px" : (languageSelector && currencySelector ? "-170px" : "-120px"),            // 位于顶部
                                             left: "50%",         // 水平居中
                                             transform: "translateX(-50%)", // 精确居中
                                             height: "auto",
@@ -497,7 +534,7 @@ const Index = () => {
                                         >
                                             <div
                                                 style={{
-                                                    display: `${languageSeletor && currencySeletor ? "block" : "none"}`,
+                                                    display: `${languageSelector && currencySelector ? "block" : "none"}`,
                                                     marginBottom: "10px",
                                                 }}
                                             >
@@ -571,7 +608,7 @@ const Index = () => {
                                                 </div>
                                             </div>
                                             <div style={{
-                                                display: `${currencySeletor ? "block" : "none"}`,
+                                                display: `${currencySelector ? "block" : "none"}`,
                                                 marginBottom: "10px",
                                             }}>
                                                 <div className={styles.custom_selector} data-type="currency" onClick={handleCurrencyClick}>
@@ -661,13 +698,6 @@ const Index = () => {
                                             alt="Arrow Icon"
                                             width="25%"
                                             height="25%"
-                                        />
-                                        <img
-                                            className={styles.mobile_trans_img}
-                                            src="/trans.png"
-                                            alt="Button Image"
-                                            width="50px"
-                                            height="50px"
                                         />
                                     </div>
                                 </div>

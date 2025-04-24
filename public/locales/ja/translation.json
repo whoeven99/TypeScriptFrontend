@@ -284,6 +284,21 @@
         "get_start": "開始する",
         "for_large_teams": "大規模チーム向け"
     },
-    "Pricing": "価格"
+    "Pricing": "価格",
+    "Delete successfully": "削除に成功しました",
+    "Selector type configuration:": "セレクターのタイプを設定する:",
+    "Selector style configuration:": "セレクターのスタイルを設定する:",
+    "Included flag:": "含めるフラグ:",
+    "Font Color:": "フォントカラー:",
+    "Background Color:": "背景色:",
+    "Button Color:": "ボタンカラー:",
+    "Button Background Color:": "ボタン背景色:",
+    "Option Border Color:": "オプションの境界色:",
+    "Selector position:": "セレクターの位置:",
+    "Selector position data:": "セレクターの位置データ:",
+    "Selector Auto IP position configuration:": "セレクターの自動IP位置設定:",
+    "Switcher configuration updated successfully": "スイッチャーの設定が正常に更新されました",
+    "Switcher configuration update failed": "スイッチャーの設定の更新に失敗しました",
+    "Switcher": "スイッチャー"
 }   
   

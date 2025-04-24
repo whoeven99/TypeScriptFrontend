@@ -21,7 +21,82 @@ interface GroupedDeleteData {
 }
 
 //修改用户计划
-export const AddSubscriptionQuotaRecord = async ({ subscriptionId }: { subscriptionId: string }) => {
+export const WidgetConfigurations = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/widgetConfigurations/getData`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error("Error WidgetConfigurations:", error);
+  }
+};
+
+//修改用户计划
+export const SaveAndUpdateData = async ({
+  shopName,
+  languageSelector,
+  currencySelector,
+  ipOpen,
+  includedFlag,
+  fontColor,
+  backgroundColor,
+  buttonColor,
+  buttonBackgroundColor,
+  optionBorderColor,
+  selectorPosition,
+  positionData,
+}: {
+  shopName: string;
+  languageSelector: boolean;
+  currencySelector: boolean;
+  ipOpen: boolean;
+  includedFlag: boolean;
+  fontColor: string;
+  backgroundColor: string;
+  buttonColor: string;
+  buttonBackgroundColor: string;
+  optionBorderColor: string;
+  selectorPosition: string;
+  positionData: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/widgetConfigurations/saveAndUpdateData`,
+      method: "POST",
+      data: {
+        shopName: shopName,
+        languageSelector: languageSelector,
+        currencySelector: currencySelector,
+        ipOpen: ipOpen,
+        includedFlag: includedFlag,
+        fontColor: fontColor,
+        backgroundColor: backgroundColor,
+        buttonColor: buttonColor,
+        buttonBackgroundColor: buttonBackgroundColor,
+        optionBorderColor: optionBorderColor,
+        selectorPosition: selectorPosition,
+        positionData: positionData,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error WidgetConfigurations:", error);
+  }
+};
+
+//修改用户计划
+export const AddSubscriptionQuotaRecord = async ({
+  subscriptionId,
+}: {
+  subscriptionId: string;
+}) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/subscriptionQuotaRecord/addSubscriptionQuotaRecord`,
@@ -51,7 +126,13 @@ export const UpdateStatus = async ({ shop }: { shop: string }) => {
 };
 
 //修改用户计划
-export const UpdateUserPlan = async ({ shop, plan }: { shop: string, plan: number }) => {
+export const UpdateUserPlan = async ({
+  shop,
+  plan,
+}: {
+  shop: string;
+  plan: number;
+}) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/checkUserPlan`,
@@ -430,7 +511,14 @@ export const GetTranslationItemsInfo = async ({
   target: string;
   resourceType: string;
 }) => {
-  console.log("GetTranslationItemsInfo: ", shop, accessToken, source, target, resourceType);
+  console.log(
+    "GetTranslationItemsInfo: ",
+    shop,
+    accessToken,
+    source,
+    target,
+    resourceType,
+  );
   let res: {
     language: string;
     type: string;

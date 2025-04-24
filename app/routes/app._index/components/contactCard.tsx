@@ -31,7 +31,6 @@ const ContactCard: React.FC<ContactCardProps> = ({ onClick }) => {
             >
                 <Space direction="vertical" size="middle" style={{
                     display: "flex",
-                    alignItems: "flex-start",
                     justifyContent: "space-between",
                     flex: 1
                 }}>
@@ -42,14 +41,14 @@ const ContactCard: React.FC<ContactCardProps> = ({ onClick }) => {
                     <Text>
                         {t("contact.description")}
                     </Text>
-
-                    <Button
-                        type="primary"
-                        icon={<PhoneOutlined />}
-                        onClick={onClick}
-                    >
-                        {t("contact.contactButton")}
-                    </Button>
+                    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                        <Button
+                            icon={<PhoneOutlined />}
+                            onClick={onClick}
+                        >
+                            {t("contact.contactButton")}
+                        </Button>
+                    </div>
                 </Space>
             </Card>
         </Suspense>

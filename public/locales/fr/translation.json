@@ -284,6 +284,21 @@
         "get_start": "Commencer",
         "for_large_teams": "Pour les grandes équipes"
     },
-    "Pricing": "Prix"
+    "Pricing": "Prix",
+    "Delete successfully": "Supprimé avec succès",
+    "Selector type configuration:": "Configuration du type de sélecteur:",
+    "Selector style configuration:": "Configuration du style du sélecteur:",
+    "Included flag:": "Indicateur inclus:",
+    "Font Color:": "Couleur de la police:",
+    "Background Color:": "Couleur de fond:",
+    "Button Color:": "Couleur du bouton:",
+    "Button Background Color:": "Couleur de fond du bouton:",
+    "Option Border Color:": "Couleur de la bordure de l'option:",
+    "Selector position:": "Position du sélecteur:",
+    "Selector position data:": "Données de la position du sélecteur:",
+    "Selector Auto IP position configuration:": "Configuration de la position automatique du sélecteur IP:",
+    "Switcher configuration updated successfully": "Configuration du sélecteur mise à jour avec succès",
+    "Switcher configuration update failed": "Impossible de mettre à jour la configuration du sélecteur",
+    "Switcher": "Sélecteur"
 }
   

@@ -285,5 +285,20 @@
         "try_free": "Попробовать бесплатно",
         "get_start": "Начать",
         "for_large_teams": "Для больших команд"
-    }
+    },
+    "Delete successfully": "Удалено успешно",
+    "Selector type configuration:": "Конфигурация типа селектора:",
+    "Selector style configuration:": "Конфигурация стиля селектора:",
+    "Included flag:": "Включить флаг:",
+    "Font Color:": "Цвет шрифта:",
+    "Background Color:": "Цвет фона:",
+    "Button Color:": "Цвет кнопки:",
+    "Button Background Color:": "Цвет фона кнопки:",
+    "Option Border Color:": "Цвет границы опции:",
+    "Selector position:": "Положение селектора:",
+    "Selector position data:": "Данные положения селектора:",
+    "Selector Auto IP position configuration:": "Конфигурация автоматического IP-положения селектора:",
+    "Switcher configuration updated successfully": "Конфигурация переключателя обновлена успешно",
+    "Switcher configuration update failed": "Конфигурация переключателя не обновлена",
+    "Switcher": "Переключатель"
 }

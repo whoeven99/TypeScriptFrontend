@@ -284,6 +284,21 @@
         "get_start": "Starten",
         "for_large_teams": "Voor grote teams"
     },
-    "Pricing": "Prijs"
+    "Pricing": "Prijs",
+    "Delete successfully": "Succesvol verwijderd",
+    "Selector type configuration:": "Selectortypeconfiguratie:",
+    "Selector style configuration:": "Selectiestijlconfiguratie:",
+    "Included flag:": "Inclusief vlag:",
+    "Font Color:": "Tekstkleur:",
+    "Background Color:": "Achtergrondkleur:",
+    "Button Color:": "Knopkleur:",
+    "Button Background Color:": "Knopachtergrondkleur:",
+    "Option Border Color:": "Optiegrenskleur:",
+    "Selector position:": "Selectiepositie:",
+    "Selector position data:": "Selectiepositiedata:",
+    "Selector Auto IP position configuration:": "Selectie-IP-positieconfiguratie:",
+    "Switcher configuration updated successfully": "Switcher-configuratie bijgewerkt",
+    "Switcher configuration update failed": "Switcher-configuratie bijwerken mislukt",
+    "Switcher": "Switcher"
 }
   

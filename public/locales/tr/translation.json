@@ -285,5 +285,20 @@
         "try_free": "Ücretsiz Deneyin",
         "get_start": "Başla",
         "for_large_teams": "Büyük Takımlar"
-    }
+    },
+    "Delete successfully": "Başarıyla silindi",
+    "Selector type configuration:": "Seçici tipi yapılandırma:",
+    "Selector style configuration:": "Seçici stili yapılandırma:",
+    "Included flag:": "Dahil olan bayrak:",
+    "Font Color:": "Font Rengi:",
+    "Background Color:": "Arka Plan Rengi:",
+    "Button Color:": "Buton Rengi:",
+    "Button Background Color:": "Buton Arka Plan Rengi:",
+    "Option Border Color:": "Seçici Sınır Rengi:",
+    "Selector position:": "Seçici Konumu:",
+    "Selector position data:": "Seçici Konum Verileri:",
+    "Selector Auto IP position configuration:": "Seçici Otomatik IP Konumu Yapılandırma:",
+    "Switcher configuration updated successfully": "Değiştirici yapılandırması başarıyla güncellendi",
+    "Switcher configuration update failed": "Değiştirici yapılandırması güncellenemedi",
+    "Switcher": "Değiştirici"
 }

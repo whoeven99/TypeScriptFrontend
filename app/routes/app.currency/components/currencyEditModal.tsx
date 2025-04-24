@@ -169,7 +169,6 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
           justifyContent: "center",
           alignItems: "center",
           width: "100%",
-          marginTop: "-12px",
           gap: "12px"        // 使用 gap 替代 marginRight
         }}>
           <Button
