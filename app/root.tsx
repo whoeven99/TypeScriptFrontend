@@ -1,6 +1,7 @@
 import {
   isRouteErrorResponse,
   Links,
+  LiveReload,
   Meta,
   Outlet,
   Scripts,
@@ -183,7 +184,7 @@ export default function App() {
 }
 
 export const Head = createHead(() => (
-  <head>
+  <>
     <meta charSet="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <link rel="preconnect" href="https://cdn.shopify.com/" />
@@ -193,5 +194,5 @@ export const Head = createHead(() => (
     />
     <Meta />
     <Links />
-  </head>
+  </>
 ));
