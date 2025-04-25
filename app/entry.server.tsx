@@ -27,8 +27,6 @@ export default async function handleRequest(
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   const languageCode = language.split("-")[0];
   let i18nCode;
-  console.log("Server language: ", language);
-  console.log("Server request.headers.get('Accept-Language'): ", request.headers.get("Accept-Language"));
   switch (true) {
     case language === "fr" || (languageCode && languageCode === "fr"):
       i18nCode = "fr";
@@ -75,7 +73,6 @@ export default async function handleRequest(
     default:
       i18nCode = "en";
   }
-  console.log("Server i18nCode: ", i18nCode);
 
   addDocumentResponseHeaders(request, responseHeaders);
   const userAgent = request.headers.get("user-agent");
@@ -122,20 +119,16 @@ export default async function handleRequest(
 
   let markup = renderToString(<MainApp />);
 
-  const head = renderHeadToString({ request, remixContext, Head })
-
-  markup = markup.replace(
-    /(<html[^>]*>)(<body)/,
-    `$1${head}$2`
-  );
-
+  let head = renderHeadToString({ request, remixContext, Head })
+  
   const styleText = extractStyle(cache);
 
-  markup = markup.split('</head>').join(`${styleText}</head>`);
+  head = head.split('</head>').join(`${styleText}</head>`);
+  const html = `<!DOCTYPE html><html lang="${language}">${head}<body><div id="root">${markup}</div></body></html>`;
 
   responseHeaders.set("Content-Type", "text/html");
 
-  return new Response("<!DOCTYPE html>" + markup, {
+  return new Response(html, {
     status: responseStatusCode,
     headers: responseHeaders,
   });

@@ -131,7 +131,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
   // 搜索逻辑
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if(value === undefined) {
+    if (value === undefined) {
       return;
     }
 
@@ -338,7 +338,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
             onClick={handleConfirm}
             key={"manage_confirm_button"}
             type="primary"
-            disabled={confirmButtonDisable}
+            disabled={confirmButtonDisable || allSelectedLanguage.length === 0}
             loading={confirmButtonDisable}
           >
             {t("Add")}

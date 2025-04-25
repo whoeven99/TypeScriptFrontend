@@ -23,7 +23,7 @@ interface EditData {
     buttonBackgroundColor: string;
     optionBorderColor: string;
     selectorPosition: string;
-    positionData: number;
+    positionData: string;
 }
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -142,7 +142,7 @@ const Index = () => {
     const [buttonBackgroundColor, setButtonBackgroundColor] = useState("#000000");
     const [optionBorderColor, setOptionBorderColor] = useState("#ccc");
     const [selectorPosition, setSelectorPosition] = useState("top_left");
-    const [positionData, setPositionData] = useState<number>(0);
+    const [positionData, setPositionData] = useState<string>("0");
     const [isLanguageOpen, setIsLanguageOpen] = useState(false);
     const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
     const [isSelectorOpen, setIsSelectorOpen] = useState(false);
@@ -161,7 +161,7 @@ const Index = () => {
         buttonBackgroundColor: "",
         optionBorderColor: "",
         selectorPosition: "",
-        positionData: 0,
+        positionData: "0",
     });
     const [isEdit, setIsEdit] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -182,7 +182,6 @@ const Index = () => {
 
     useEffect(() => {
         if (fetcher.data) {
-            console.log("fetcher.data: ", fetcher.data);
             setOriginalData(fetcher.data);
             setIsIncludedFlag(fetcher.data.includedFlag);
             setLanguageSelector(fetcher.data.languageSelector);
@@ -265,7 +264,7 @@ const Index = () => {
                     setSelectorPosition(value as string);
                     break;
                 case "positionData":
-                    setPositionData(value as number);
+                    setPositionData(value as string);
                     break;
             }
         });
@@ -463,7 +462,7 @@ const Index = () => {
                                     </div>
                                     <div>
                                         <Text style={{ display: "block" }}>{t("Selector position data:")}</Text>
-                                        <Slider value={positionData} onChange={(e) => handleEditData({ positionData: e })} />
+                                        <Slider value={Number(positionData)} onChange={(e) => handleEditData({ positionData: e.toString() })} />
                                     </div>
                                 </Space>
                             </Card>
@@ -504,7 +503,7 @@ const Index = () => {
                                     style={{
                                         width: "200px",
                                         position: "relative",
-                                        top: selectorPosition === "top_left" || selectorPosition === "top_right" ? (positionData * 82 / 100).toString() + "%" : ((100 - positionData) * 82 / 100).toString() + "%",
+                                        top: selectorPosition === "top_left" || selectorPosition === "top_right" ? (Number(positionData) * 82 / 100).toString() + "%" : ((100 - Number(positionData)) * 82 / 100).toString() + "%",
                                         left: selectorPosition === "top_left" || selectorPosition === "bottom_left" ? "0" : "calc(100% - 200px)",
                                         height: "auto",
                                         display: "block",

@@ -300,6 +300,13 @@
     "Selector Auto IP position configuration:": "Väljarens automatiska IP-positionkonfiguration:",
     "Switcher configuration updated successfully": "Väljarens konfiguration har uppdaterats",
     "Switcher configuration update failed": "Väljarens konfiguration kunde inte uppdateras",
-    "Switcher": "Väljare"
+    "Switcher": "Väljare",
+    "Language Switcher": "Språkval",
+    "Currency Switcher": "Valuta",
+    "Language and Currency Switcher": "Språk och valuta",
+    "Top Left": "Övre vänster",
+    "Top Right": "Övre höger",
+    "Bottom Left": "Nedre vänster",
+    "Bottom Right": "Nedre höger"
 }   
   

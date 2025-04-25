@@ -30,7 +30,7 @@ export const WidgetConfigurations = async ({ shop }: { shop: string }) => {
         shopName: shop,
       },
     });
-    
+
     return response.data;
   } catch (error) {
     console.error("Error WidgetConfigurations:", error);
@@ -295,18 +295,11 @@ export const getCredits = async ({
 //用户数据初始化检测
 export const InitializationDetection = async ({ shop }: { shop: string }) => {
   try {
-    const timeA = new Date();
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/InitializationDetection?shopName=${shop}`,
       method: "GET",
     });
-    const timeB = new Date();
-    const time = timeB.getTime() - timeA.getTime();
-    console.log("timeA: ", timeA);
-    console.log("timeB: ", timeB);
-    console.log("timeB - timeA: ", time);
     const res = response.data.response;
-    console.log("InitializationDetection: ", res);
     return res;
   } catch (error) {
     console.error("Error InitializationDetection:", error);
@@ -1345,8 +1338,6 @@ export const DeleteCurrency = async ({
     });
 
     const res = response.data;
-    console.log(res);
-
     return res;
   } catch (error) {
     console.error("Error delete currency:", error);
@@ -1395,7 +1386,6 @@ export const UpdateCurrency = async ({
 
 //获取用户自定义汇率
 export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
-  console.log("GetCurrencyByShopName: ", shop);
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/getCurrencyByShopName?shopName=${shop}`,
@@ -1688,14 +1678,6 @@ export const InsertGlossaryInfo = async ({
   data: any;
 }) => {
   try {
-    console.log({
-      shopName: shop,
-      sourceText: data.sourceText,
-      targetText: data.targetText,
-      rangeCode: data.rangeCode,
-      caseSensitive: data.type,
-      status: 1,
-    });
     const response = await axios({
       url: `${process.env.SERVER_URL}/glossary/insertGlossaryInfo`,
       method: "POST",

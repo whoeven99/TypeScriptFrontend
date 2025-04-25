@@ -300,6 +300,12 @@
   "Selector Auto IP position configuration:": "Selector Auto IP position configuration:",
   "Switcher configuration updated successfully": "Switcher configuration updated successfully",
   "Switcher configuration update failed": "Switcher configuration update failed",
-  "Switcher": "Switcher"
-
+  "Switcher": "Switcher",
+  "Language Switcher": "Language Switcher",
+  "Currency Switcher": "Currency Switcher",
+  "Language and Currency Switcher": "Language and Currency Switcher",
+  "Top Left": "Top Left",
+  "Top Right": "Top Right",
+  "Bottom Left": "Bottom Left",
+  "Bottom Right": "Bottom Right"
 }

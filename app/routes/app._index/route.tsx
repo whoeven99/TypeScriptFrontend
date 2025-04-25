@@ -28,6 +28,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(false);
+  }, []);
 
   const columns = [
     {
@@ -104,12 +109,19 @@ const Index = () => {
               </Title>
               <Text>{t("transLanguageCard1.description")}</Text>
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <Button
-                  type="primary"
-                  onClick={() => navigate("/app/translate", { state: { from: "/app", selectedLanguageCode: "" } })}
-                >
-                  {t("transLanguageCard1.button")}
-                </Button>
+                {isLoading
+                  ?
+                  <Skeleton.Button
+                    active
+                  />
+                  :
+                  <Button
+                    type="primary"
+                    onClick={() => navigate("/app/translate", { state: { from: "/app", selectedLanguageCode: "" } })}
+                  >
+                    {t("transLanguageCard1.button")}
+                  </Button>
+                }
               </div>
             </Space>
           </Card>
@@ -134,7 +146,19 @@ const Index = () => {
                     </Text>
                     <Text >{t("transLanguageCard2.description")}</Text>
                   </Space>
-                  <Button onClick={() => navigate("/app/language")} style={{ marginLeft: "auto", alignSelf: 'flex-start' }}>{t("transLanguageCard2.button")}</Button>
+                  {isLoading
+                    ?
+                    <Skeleton.Button
+                      active
+                    />
+                    :
+                    <Button
+                      onClick={() => navigate("/app/language")}
+                      style={{ marginLeft: "auto", alignSelf: 'flex-start' }}
+                    >
+                      {t("transLanguageCard2.button")}
+                    </Button>
+                  }
                 </div>
               </Card>
             </Col>
@@ -182,7 +206,19 @@ const Index = () => {
               </Title>
               <Text >{t("transCurrencyCard1.description")}</Text>
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                <Button type="primary" onClick={() => navigate("/app/currency")}>{t("transCurrencyCard1.button")}</Button>
+                {isLoading
+                  ?
+                  <Skeleton.Button
+                    active
+                  />
+                  :
+                  <Button
+                    type="primary"
+                    onClick={() => navigate("/app/currency")}
+                  >
+                    {t("transCurrencyCard1.button")}
+                  </Button>
+                }
               </div>
             </Space>
           </Card>
@@ -213,11 +249,18 @@ const Index = () => {
                   </Text>
                   <Text >{t("transCurrencyCard2.description")}</Text>
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <Button
-                      onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/", "_blank")}
-                    >
-                      {t("transCurrencyCard2.button")}
-                    </Button>
+                    {isLoading
+                      ?
+                      <Skeleton.Button
+                        active
+                      />
+                      :
+                      <Button
+                        onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/", "_blank")}
+                      >
+                        {t("transCurrencyCard2.button")}
+                      </Button>
+                    }
                   </div>
                 </Space>
               </Card>
@@ -240,7 +283,18 @@ const Index = () => {
                   </Text>
                   <Text >{t("transCurrencyCard3.description")}</Text>
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <Button type="default" onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/", "_blank")}>{t("transCurrencyCard3.button")}</Button>
+                    {isLoading
+                      ?
+                      <Skeleton.Button
+                        active
+                      />
+                      :
+                      <Button
+                        onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/", "_blank")}
+                      >
+                        {t("transCurrencyCard3.button")}
+                      </Button>
+                    }
                   </div>
                 </Space>
               </Card>
@@ -270,11 +324,19 @@ const Index = () => {
                 <Title level={4}>
                   {t("planCard.title")}
                 </Title>
-                <Button
-                  onClick={handleContactSupport}
-                >
-                  {t("planCard.button")}
-                </Button>
+
+                {isLoading
+                  ?
+                  <Skeleton.Button
+                    active
+                  />
+                  :
+                  <Button
+                    onClick={handleContactSupport}
+                  >
+                    {t("planCard.button")}
+                  </Button>
+                }
               </div>
               <Text >{t("planCard.description")}</Text>
               <Table

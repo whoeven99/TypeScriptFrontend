@@ -28,7 +28,6 @@ import {
   DeleteCurrency,
   GetCacheData,
   GetCurrencyByShopName,
-  GetSwitchId,
   InitCurrency,
   InsertSwitch,
   UpdateCurrency,
@@ -98,9 +97,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const updateCurrencies = JSON.parse(
       formData.get("updateCurrencies") as string,
     );
-    const ip = JSON.parse(
-      formData.get("ip") as string,
-    );
 
     switch (true) {
       case !!loading:
@@ -112,14 +108,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const moneyFormat = shopLoad.currencyFormats.moneyFormat;
           const moneyWithCurrencyFormat =
             shopLoad.currencyFormats.moneyWithCurrencyFormat;
-          const ip = await GetSwitchId({ shopName: shop });
           return json({
             primaryCurrency,
             defaultCurrencyCode: shopLoad.currencyCode,
             currencyList: finalCurrencyList,
             moneyFormat,
             moneyWithCurrencyFormat,
-            ip,
           });
         } catch (error) {
           console.error("Error loading currency:", error);
@@ -199,21 +193,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             { status: 500 },
           );
         }
-      case !!ip:
-        try {
-          const data = await InsertSwitch({
-            shopName: ip.shop,
-            switchId: ip.ip,
-          });
 
-          return json({ data });
-        } catch (error) {
-          console.error("Error updateCurrencies currency:", error);
-          return json(
-            { error: "Error updateCurrencies currency" },
-            { status: 500 },
-          );
-        }
     }
     return null;
   } catch (error) {
@@ -255,7 +235,6 @@ const Index = () => {
   const [filteredData, setFilteredData] = useState<
     CurrencyDataType[] | undefined
   >(dataSource);
-  const [ip, setIp] = useState(false);
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -264,7 +243,6 @@ const Index = () => {
   const rateFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
   const initCurrencyFetcher = useFetcher<any>();
-  const ipFetcher = useFetcher<any>();
 
   useEffect(() => {
     const loadingFormData = new FormData();
@@ -331,7 +309,6 @@ const Index = () => {
           "text/html",
         ).documentElement.textContent,
       );
-      setIp(loadingFetcher.data.ip);
       shopify.loading(false);
       setLoading(false);
       const primaryCurrency = loadingFetcher.data.primaryCurrency;
@@ -445,18 +422,6 @@ const Index = () => {
       setFilteredData(newData);
     }
   }, [deleteFetcher.data]);
-
-  useEffect(() => {
-    if (ipFetcher.data) {
-      if (ipFetcher.data.data.success) {
-        if (ipFetcher.data.data.response) {
-          setIp(true);
-        } else {
-          setIp(false);
-        }
-      }
-    }
-  }, [ipFetcher.data])
 
   useEffect(() => {
     setOriginalData(dataSource);
@@ -602,18 +567,6 @@ const Index = () => {
       });
     }
     setDeleteLoading(true);
-  };
-
-  const onIpChange = (checked: boolean) => {
-    const formData = new FormData();
-    formData.append("ip", JSON.stringify({
-      shop,
-      ip: checked ? 1 : 0,
-    }));
-    ipFetcher.submit(formData, {
-      method: "post",
-      action: "/app/currency",
-    });
   };
 
   return (

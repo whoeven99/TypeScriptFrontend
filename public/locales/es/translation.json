@@ -299,6 +299,13 @@
     "Selector Auto IP position configuration:": "Configuración de la posición automática del selector IP:",
     "Switcher configuration updated successfully": "Configuración del selector actualizada con éxito",
     "Switcher configuration update failed": "No se pudo actualizar la configuración del selector",
-    "Switcher": "Selector"
+    "Switcher": "Selector",
+    "Language Switcher": "Selector de idioma",
+    "Currency Switcher": "Selector de moneda",
+    "Language and Currency Switcher": "Selector de idioma y moneda",
+    "Top Left": "Arriba a la izquierda",
+    "Top Right": "Arriba a la derecha",
+    "Bottom Left": "Abajo a la izquierda",
+    "Bottom Right": "Abajo a la derecha"
 }
   

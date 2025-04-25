@@ -300,5 +300,12 @@
     "Selector Auto IP position configuration:": "Seçici Otomatik IP Konumu Yapılandırma:",
     "Switcher configuration updated successfully": "Değiştirici yapılandırması başarıyla güncellendi",
     "Switcher configuration update failed": "Değiştirici yapılandırması güncellenemedi",
-    "Switcher": "Değiştirici"
+    "Switcher": "Değiştirici",
+    "Language Switcher": "Dil Değiştirici",
+    "Currency Switcher": "Para Birimi Değiştirici",
+    "Language and Currency Switcher": "Dil ve Para Birimi Değiştirici",
+    "Top Left": "Üst Sol",
+    "Top Right": "Üst Sağ",
+    "Bottom Left": "Alt Sol",
+    "Bottom Right": "Alt Sağ"
 }

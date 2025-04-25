@@ -298,6 +298,13 @@
     "Selector Auto IP position configuration:": "선택기 자동 IP 위치 구성:",
     "Switcher configuration updated successfully": "스위처 구성이 성공적으로 업데이트되었습니다",
     "Switcher configuration update failed": "스위처 구성 업데이트 실패",
-    "Switcher": "스위처"
+    "Switcher": "스위처",
+    "Language Switcher": "언어 스위처",
+    "Currency Switcher": "통화 스위처",
+    "Language and Currency Switcher": "언어와 통화 스위처",
+    "Top Left": "상단 왼쪽",
+    "Top Right": "상단 오른쪽",
+    "Bottom Left": "하단 왼쪽",
+    "Bottom Right": "하단 오른쪽"
 } 
   

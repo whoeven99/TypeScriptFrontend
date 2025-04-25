@@ -299,6 +299,13 @@
     "Selector Auto IP position configuration:": "選擇器自動IP位置配置：",
     "Switcher configuration updated successfully": "切換器配置更新成功",
     "Switcher configuration update failed": "切換器配置更新失敗",
-    "Switcher": "切換器"
+    "Switcher": "切換器",
+    "Language Switcher": "語言切換器",
+    "Currency Switcher": "貨幣切換器",
+    "Language and Currency Switcher": "語言和貨幣切換器",
+    "Top Left": "頂部左側",
+    "Top Right": "頂部右側",
+    "Bottom Left": "底部左側",
+    "Bottom Right": "底部右側"
 }
   

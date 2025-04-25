@@ -194,10 +194,7 @@ const Index = () => {
       });
       if (!errorItem) {
         confirmFetcher.data.confirmData.forEach((item: any) => {
-          console.log(item);
-          console.log(themesData);
           const index = themesData.findIndex((option: any) => option.key === item.key);
-          console.log(index);
           if (index !== -1) {
             themesData[index].translated = item.value;
           }

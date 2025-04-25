@@ -300,5 +300,12 @@
     "Selector Auto IP position configuration:": "Конфигурация автоматического IP-положения селектора:",
     "Switcher configuration updated successfully": "Конфигурация переключателя обновлена успешно",
     "Switcher configuration update failed": "Конфигурация переключателя не обновлена",
-    "Switcher": "Переключатель"
+    "Switcher": "Переключатель",
+    "Language Switcher": "Переключатель языка",
+    "Currency Switcher": "Переключатель валюты",
+    "Language and Currency Switcher": "Переключатель языка и валюты",
+    "Top Left": "Верхний левый",
+    "Top Right": "Верхний правый",
+    "Bottom Left": "Нижний левый",
+    "Bottom Right": "Нижний правый"
 }

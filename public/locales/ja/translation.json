@@ -299,6 +299,13 @@
     "Selector Auto IP position configuration:": "セレクターの自動IP位置設定:",
     "Switcher configuration updated successfully": "スイッチャーの設定が正常に更新されました",
     "Switcher configuration update failed": "スイッチャーの設定の更新に失敗しました",
-    "Switcher": "スイッチャー"
+    "Switcher": "スイッチャー",
+    "Language Switcher": "言語スイッチャー",
+    "Currency Switcher": "通貨スイッチャー",
+    "Language and Currency Switcher": "言語と通貨スイッチャー",
+    "Top Left": "上部左",
+    "Top Right": "上部右",
+    "Bottom Left": "下部左",
+    "Bottom Right": "下部右"
 }   
   
