@@ -51,7 +51,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                         buttonColor: "#ffffff",
                         buttonBackgroundColor: "#000000",
                         optionBorderColor: "#ccc",
-                        selectorPosition: "top_left",
+                        selectorPosition: "bottom_left",
                         positionData: 10,
                     }
                     if (data.success && typeof data.response === "object") {
