@@ -98,9 +98,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
 
   useEffect(() => {
     if (recalculateFetcher.data) {
-      console.log("recalculateFetcher.data: ", recalculateFetcher.data);
       if (recalculateFetcher.data.data.success) {
-        console.log("recalculateFetcher.data.data.response: ", recalculateFetcher.data.data.response);
         const { id, translationId, shopName, ...rest } = recalculateFetcher.data.data.response;
         let credits = 0;
         Object.entries(rest).forEach(([key, value]) => {

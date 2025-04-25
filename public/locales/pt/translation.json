@@ -284,6 +284,28 @@
         "get_start": "Começar",
         "for_large_teams": "Para times grandes"
     },
-    "Pricing": "Preços"
+    "Pricing": "Preços",
+    "Delete successfully": "Excluído com sucesso",
+    "Selector type configuration:": "Configuração do tipo de seletor:",
+    "Selector style configuration:": "Configuração do estilo do seletor:",
+    "Included flag:": "Flag incluída:",
+    "Font Color:": "Cor da fonte:",
+    "Background Color:": "Cor de fundo:",
+    "Button Color:": "Cor do botão:",
+    "Button Background Color:": "Cor de fundo do botão:",
+    "Option Border Color:": "Cor da borda da opção:",
+    "Selector position:": "Posição do seletor:",
+    "Selector position data:": "Dados da posição do seletor:",
+    "Selector Auto IP position configuration:": "Configuração da posição automática do IP do seletor:",
+    "Switcher configuration updated successfully": "Configuração do seletor atualizada com sucesso",
+    "Switcher configuration update failed": "Configuração do seletor não pôde ser atualizada",
+    "Switcher": "Seletor",
+    "Language Switcher": "Seletor de idioma",
+    "Currency Switcher": "Seletor de moeda",
+    "Language and Currency Switcher": "Seletor de idioma e moeda",
+    "Top Left": "Topo esquerdo",
+    "Top Right": "Topo direito",
+    "Bottom Left": "Inferior esquerdo",
+    "Bottom Right": "Inferior direito"
 }
   

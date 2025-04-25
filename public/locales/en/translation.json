@@ -285,5 +285,27 @@
     "try_free": "Try for free",
     "get_start": "Get started",
     "for_large_teams": "For large teams"
-  }
+  },
+  "Delete successfully": "Delete successfully",
+  "Selector type configuration:": "Selector type configuration:",
+  "Selector style configuration:": "Selector style configuration:",
+  "Included flag:": "Included flag:",
+  "Font Color:": "Font Color:",
+  "Background Color:": "Background Color:",
+  "Button Color:": "Button Color:",
+  "Button Background Color:": "Button Background Color:",
+  "Option Border Color:": "Option Border Color:",
+  "Selector position:": "Selector position:",
+  "Selector position data:": "Selector position data:",
+  "Selector Auto IP position configuration:": "Selector Auto IP position configuration:",
+  "Switcher configuration updated successfully": "Switcher configuration updated successfully",
+  "Switcher configuration update failed": "Switcher configuration update failed",
+  "Switcher": "Switcher",
+  "Language Switcher": "Language Switcher",
+  "Currency Switcher": "Currency Switcher",
+  "Language and Currency Switcher": "Language and Currency Switcher",
+  "Top Left": "Top Left",
+  "Top Right": "Top Right",
+  "Bottom Left": "Bottom Left",
+  "Bottom Right": "Bottom Right"
 }

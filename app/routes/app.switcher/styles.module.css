@@ -1,13 +1,112 @@
-.ciwi_container {
-  width: 200px; /* 窄一些 */
-  /* left: 20px; */
-  bottom: 60px;
-  right: auto;
-  top: auto;
-  position: fixed; /* 改为相对屏幕的位置 */
-  height: auto;
-  display: block;
-  z-index: 9999;
+.switcher_container {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.switcher_editor {
+  flex: 1;
+}
+
+.switcher_preview {
+  flex: 2;
+}
+
+@media (max-width: 768px) {
+  .arrow_icon,
+  .mainarrow_icon,
+  .main_box_text {
+    display: none;
+  }
+
+  .main_box {
+    padding: 0%;
+    border: 0;
+    background-color: transparent !important;
+  }
+
+  .switcher_container {
+    flex-direction: column; /* 改为上下布局 */
+    gap: 10px; /* 调整间距 */
+  }
+
+  .switcher_editor,
+  .switcher_preview {
+    flex: none; /* 取消 flex 比例 */
+    width: 100%; /* 占满宽度 */
+  }
+
+  .main_box {
+    max-width: 200px; /* 限制主按钮最大宽度 */
+    margin: 0 auto; /* 水平居中 */
+  }
+
+  /* 调整选项列表的样式 */
+  .options_container {
+    position: fixed; /* 固定定位 */
+    bottom: 120px; /* 距离底部的距离 */
+    left: 0;
+    width: 100%;
+    margin: 0;
+    border-radius: 8px 8px 0 0; /* 上圆角 */
+  }
+
+  .options_list {
+    max-height: 50vh; /* 最大高度为视窗高度的一半 */
+    border-radius: 8px 8px 0 0;
+  }
+
+  /* 移动端按钮样式优化 */
+  .button_wrapper {
+    flex-direction: column; /* 按钮垂直排列 */
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .ciwi_switcher_confirm_button,
+  .ciwi_switcher_cancel_button {
+    width: 100%; /* 按钮占满宽度 */
+    height: 44px; /* 增加按钮高度，更容易点击 */
+  }
+
+  /* 隐藏不需要的元素 */
+  .arrow_icon,
+  .mainarrow_icon {
+    display: none;
+  }
+
+  /* 显示移动端专用图标 */
+  .mobile_trans_img {
+    display: block;
+    width: 24px;
+    height: 24px;
+    margin: 0 auto;
+  }
+}
+
+body > .skiptranslate {
+  display: none;
+}
+.goog-logo-link {
+  display: none !important;
+}
+.goog-te-gadget {
+  color: transparent !important;
+}
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+}
+a[href="https://translate.google.com"]
+{
+  display: none !important;
+}
+.goog-te-gadget-simple {
+  visibility: hidden !important;
+}
+[class^="VIpgJd-"], /* 匹配所有以 'VIpgJd-' 开头的类名 */
+    [class*="VIpgJd-"] {
+  /* 匹配所有包含 'VIpgJd-' 的类名 */
+  display: none !important;
 }
 
 .main_box {
@@ -37,20 +136,12 @@
   position: absolute;
   right: 0; /* 改用右侧固定距离 */
   transition: transform 0.3s ease; /* 平滑过渡 */
-  width: 25% !important;
-  height: 25% !important;
 }
 
 .button_wrapper {
   display: flex; /* 启用 Flexbox 布局 */
   align-items: center; /* 垂直居中按钮 */
   width: 100%; /* 使容器占满父元素的宽度 */
-}
-
-.language_title,
-.currency_title {
-  margin-bottom: 5px;
-  font: weight 600px;
 }
 
 /* 确认按钮 */
@@ -70,7 +161,7 @@
 }
 
 .ciwi_switcher_confirm_button:hover {
-  background-color: #333
+  background-color: #333;
 }
 
 .ciwi_switcher_confirm_button:active {
@@ -99,49 +190,6 @@
   display: none;
 }
 
-@media (max-width: 768px) {
-  .ciwi_container {
-    position: fixed;
-    bottom: 60px;
-    left: 0;
-    width: 50px; /* 只显示左边 50px */
-    background-color: transparent;
-    transition: width 0.3s ease; /* 宽度变化时使用过渡效果 */
-    z-index: 9999;
-    display: block; /* 默认为显示，可以根据需求修改 */
-    height: 50px; /* 设置高度 */
-  }
-
-  .ciwi_container.expanded {
-    width: 200px; /* 展开后显示完整内容 */
-  }
-
-  .arrow_icon,
-  .mainarrow_icon,
-  .main_box_text,
-  .main_box_flag {
-    display: none;
-  }
-
-  /* 展开时显示选择器框在 ciwi_container 上方 */
-  .ciwi_container.expanded #selector-box {
-    display: block; /* 选择器框可见 */
-    position: absolute;
-    top: -182px; /* 将选择器框置于 ciwi_container 之上 */
-    width: 100%;
-  }
-
-  .main_box {
-    padding: 0%;
-    border: 0;
-    background-color: transparent !important;
-  }
-
-  .mobile_trans_img {
-    display: block;
-  }
-}
-
 body > .skiptranslate {
   display: none;
 }
@@ -162,38 +210,36 @@ a[href="https://translate.google.com"]
   visibility: hidden !important;
 }
 [class^="VIpgJd-"], /* 匹配所有以 'VIpgJd-' 开头的类名 */
-[class*="VIpgJd-"] {
+  [class*="VIpgJd-"] {
   /* 匹配所有包含 'VIpgJd-' 的类名 */
   display: none !important;
 }
 
-.custom-selector {
+.custom_selector {
   position: relative;
   width: 100%;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
     Ubuntu, Cantarell, sans-serif;
 }
 
-.selector-header {
+.selector_header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 12px;
-  border: 1px solid #ddd;
   border-radius: 4px;
-  background: #fff;
   cursor: pointer;
   margin-bottom: 10px;
   height: 40px;
 }
 
-.selected-option {
+.selected_option {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.country-flag {
+.country_flag {
   width: 30px;
   height: 20px;
   object-fit: cover;
@@ -205,44 +251,41 @@ a[href="https://translate.google.com"]
 }
 
 /* 当图片加载完成时显示 */
-.country-flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"])
+.country_flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"])
 {
   opacity: 1;
 }
 
-.arrow-icon {
+.arrow_icon {
   font-size: 12px;
   transition: transform 0.2s;
 }
 
-.custom-selector.open .arrow-icon {
+.custom_selector.open .arrow_icon {
   transform: rotate(180deg);
 }
 
-.options-container {
+.options_container {
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
   margin-top: 4px;
-  background: #fff;
-  border: 1px solid #ddd;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  display: none;
   z-index: 1000;
 }
 
-.custom-selector.open .options-container {
+.custom_selector.open .options_container {
   display: block;
 }
 
-.options-list {
+.options_list {
   max-height: 135px;
   overflow-y: auto;
 }
 
-.option-item {
+.option_item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -251,29 +294,32 @@ a[href="https://translate.google.com"]
   transition: background-color 0.2s;
 }
 
-.option-item:hover {
+.option_item:hover {
   background-color: #f5f5f5;
 }
 
-.currency-code {
-  color: #666;
+.option_item.selected {
+  background-color: #f0f0f0;
+}
+
+.currency_code {
   font-size: 0.9em;
 }
 
 /* 滚动条样式 */
-.options-list::-webkit-scrollbar {
+.options_list::-webkit-scrollbar {
   width: 6px;
 }
 
-.options-list::-webkit-scrollbar-track {
+.options_list::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
 
-.options-list::-webkit-scrollbar-thumb {
+.options_list::-webkit-scrollbar-thumb {
   background: #888;
   border-radius: 3px;
 }
 
-.options-list::-webkit-scrollbar-thumb:hover {
+.options_list::-webkit-scrollbar-thumb:hover {
   background: #555;
 }

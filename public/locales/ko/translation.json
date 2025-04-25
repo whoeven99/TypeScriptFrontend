@@ -283,6 +283,28 @@
         "try_free": "무료 체험",
         "get_start": "시작하기",
         "for_large_teams": "대규모 팀용"
-    }
+    },
+    "Delete successfully": "삭제 성공",
+    "Selector type configuration:": "선택기 유형 구성:",
+    "Selector style configuration:": "선택기 스타일 구성:",
+    "Included flag:": "포함 플래그:",
+    "Font Color:": "글꼴 색상:",
+    "Background Color:": "배경 색상:",
+    "Button Color:": "버튼 색상:",
+    "Button Background Color:": "버튼 배경 색상:",
+    "Option Border Color:": "옵션 테두리 색상:",
+    "Selector position:": "선택기 위치:",
+    "Selector position data:": "선택기 위치 데이터:",
+    "Selector Auto IP position configuration:": "선택기 자동 IP 위치 구성:",
+    "Switcher configuration updated successfully": "스위처 구성이 성공적으로 업데이트되었습니다",
+    "Switcher configuration update failed": "스위처 구성 업데이트 실패",
+    "Switcher": "스위처",
+    "Language Switcher": "언어 스위처",
+    "Currency Switcher": "통화 스위처",
+    "Language and Currency Switcher": "언어와 통화 스위처",
+    "Top Left": "상단 왼쪽",
+    "Top Right": "상단 오른쪽",
+    "Bottom Left": "하단 왼쪽",
+    "Bottom Right": "하단 오른쪽"
 } 
   

@@ -285,6 +285,28 @@
         "get_start": "Börja",
         "for_large_teams": "För stora team"
     },
-    "Pricing": "Pris"
+    "Pricing": "Pris",
+    "Delete successfully": "Radera lyckades",
+    "Selector type configuration:": "Väljarens typkonfiguration:",
+    "Selector style configuration:": "Väljarens stilkonfiguration:",
+    "Included flag:": "Inkluderad flagga:",
+    "Font Color:": "Textfärg:",
+    "Background Color:": "Bakgrundsfärg:",
+    "Button Color:": "Knappfärg:",
+    "Button Background Color:": "Knappbakgrundsfärg:",
+    "Option Border Color:": "Väljarens gränsfärg:",
+    "Selector position:": "Väljarens position:",
+    "Selector position data:": "Väljarens positiondata:",
+    "Selector Auto IP position configuration:": "Väljarens automatiska IP-positionkonfiguration:",
+    "Switcher configuration updated successfully": "Väljarens konfiguration har uppdaterats",
+    "Switcher configuration update failed": "Väljarens konfiguration kunde inte uppdateras",
+    "Switcher": "Väljare",
+    "Language Switcher": "Språkval",
+    "Currency Switcher": "Valuta",
+    "Language and Currency Switcher": "Språk och valuta",
+    "Top Left": "Övre vänster",
+    "Top Right": "Övre höger",
+    "Bottom Left": "Nedre vänster",
+    "Bottom Right": "Nedre höger"
 }   
   

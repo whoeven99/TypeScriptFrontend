@@ -7,6 +7,8 @@ application_url = "https://typescriptfrontendprod.onrender.com"
 embedded = true
 
 [build]
+automatically_update_urls_on_dev = true
+dev_store_url = "ciwishop.myshopify.com"
 include_config_on_deploy = true
 
 [access_scopes]

@@ -198,8 +198,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     if (nearTransaltedData) {
-      const nearTransaltedDataStart = new Date();
-      const nearTransaltedDataAStart = new Date();
       const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
         shop,
         accessToken: accessToken as string,
@@ -213,19 +211,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
         (item) => item.locale,
       );
-      const nearTransaltedDataAEnd = new Date();
-      const nearTransaltedDataA = nearTransaltedDataAEnd.getTime() - nearTransaltedDataAStart.getTime();
-      console.log("nearTransaltedDataA: ", nearTransaltedDataA);
 
-      const nearTransaltedDataBStart = new Date();
       const data = await GetTranslateDOByShopNameAndSource({ shop, source: shopPrimaryLanguage[0].locale });
-      const nearTransaltedDataBEnd = new Date();
-      const nearTransaltedDataB = nearTransaltedDataBEnd.getTime() - nearTransaltedDataBStart.getTime();
-      console.log("nearTransaltedDataB: ", nearTransaltedDataB);
-
-      const nearTransaltedDataEnd = new Date();
-      const nearTransaltedData = nearTransaltedDataEnd.getTime() - nearTransaltedDataStart.getTime();
-      console.log("nearTransaltedData: ", nearTransaltedData);
 
       if (shopLocalesIndex.includes(data.response?.target) && (data.response?.status !== 1 || !shopLanguagesWithoutPrimaryIndex.find((item) => item.locale === data.response?.target)?.published)) {
         return {

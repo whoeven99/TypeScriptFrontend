@@ -284,6 +284,28 @@
       "try_free": "免費試用",
       "get_start": "開始使用",
       "for_large_teams": "適合大型團隊"
-    }
+    },
+    "Delete successfully": "刪除成功",
+    "Selector type configuration:": "選擇器類型配置：", 
+    "Selector style configuration:": "選擇器樣式配置：",
+    "Included flag:": "包含國旗：",
+    "Font Color:": "字體顏色：",
+    "Background Color:": "背景顏色：",
+    "Button Color:": "按鈕顏色：",
+    "Button Background Color:": "按鈕背景顏色：",
+    "Option Border Color:": "選項邊框顏色：",
+    "Selector position:": "選擇器位置：",
+    "Selector position data:": "選擇器位置數據：",
+    "Selector Auto IP position configuration:": "選擇器自動IP位置配置：",
+    "Switcher configuration updated successfully": "切換器配置更新成功",
+    "Switcher configuration update failed": "切換器配置更新失敗",
+    "Switcher": "切換器",
+    "Language Switcher": "語言切換器",
+    "Currency Switcher": "貨幣切換器",
+    "Language and Currency Switcher": "語言和貨幣切換器",
+    "Top Left": "頂部左側",
+    "Top Right": "頂部右側",
+    "Bottom Left": "底部左側",
+    "Bottom Right": "底部右側"
 }
   

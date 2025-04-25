@@ -124,10 +124,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
             const statusValue = statusFetcher.data?.data[0].status;
             setStatus(statusValue);
             if (statusValue === 2) {
-                console.log(
-                    "statusFetcher.data?.data[0].resourceType: ",
-                    statusFetcher.data?.data[0].resourceType,
-                );
                 setResourceType(statusFetcher.data?.data[0].resourceType || "");
             } else {
                 setResourceType("");

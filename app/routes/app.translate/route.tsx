@@ -1,6 +1,6 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Icon, Page } from "@shopify/polaris";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import {
     Badge,
     Button,
@@ -28,6 +28,7 @@ import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import TranslationWarnModal from "~/components/translationWarnModal";
 import PaymentModal from "~/components/paymentModal";
 import ScrollNotice from "~/components/ScrollNotice";
+import styles from "./styles.module.css";
 
 const { Title, Text } = Typography;
 
@@ -62,7 +63,9 @@ const Index = () => {
     const [customApikeyData, setCustomApikeyData] = useState<boolean>(false);
     const [source, setSource] = useState("");
     const [target, setTarget] = useState("");
+    const [languageCardWarnText, setLanguageCardWarnText] = useState<string>("");
     const dispatch = useDispatch();
+    const languageCardRef = useRef<HTMLDivElement>(null);
     const { t } = useTranslation();
     const loadingLanguageFetcher = useFetcher<any>();
     const navigate = useNavigate();
@@ -150,11 +153,10 @@ const Index = () => {
             return;
         }
         if (!selectedLanguageCode) {
-            message.error(
-                t(
-                    "Please select a language to translate first.",
-                ),
-            );
+            if (languageCardRef.current) {
+                languageCardRef.current.style.border = "1px solid red";
+            }
+            setLanguageCardWarnText("Please select a language to translate first.");
             return;
         }
         const selectedItem = dataSource.find(
@@ -191,6 +193,12 @@ const Index = () => {
     };
 
     const onChange = (e: RadioChangeEvent) => {
+        if (languageCardRef.current) {
+            languageCardRef.current.style.border = "1px solid #f0f0f0";
+        }
+        if (languageCardWarnText) {
+            setLanguageCardWarnText("");
+        }
         setSelectedLanguageCode(e.target.value);
     };
 
@@ -414,7 +422,12 @@ const Index = () => {
                             {t("Translate Store")}
                         </Title>
                     </div>
-                    <Button type="primary" onClick={() => handleTranslate()} loading={fetcher.state === "submitting"} disabled={fetcher.state === "submitting"}>{t("Translate")}</Button>
+                    {
+                        languageSetting?.primaryLanguageCode ?
+                            <Button type="primary" onClick={() => handleTranslate()} loading={fetcher.state === "submitting"} disabled={fetcher.state === "submitting"} style={{ visibility: languageData.length != 0 ? "visible" : "hidden" }}>{t("Translate")}</Button>
+                            :
+                            <Skeleton.Button active />
+                    }
                 </div>
                 <div style={{ paddingLeft: "8px" }}>
                     <Text>{t("Your store's default language:")}</Text>
@@ -432,12 +445,11 @@ const Index = () => {
                     <Skeleton.Button active style={{ height: 600 }} block />
                 ) : languageData.length != 0 ? (
                     <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-                        <div
-                        >
+                        <>
                             <Card
+                                ref={languageCardRef}
                                 style={{
                                     width: '100%',
-                                    marginBottom: "16px"
                                 }}
                             >
                                 <Radio.Group
@@ -488,9 +500,10 @@ const Index = () => {
                                         ))}
                                     </div>
                                 </Radio.Group>
+                                <Text style={{ display: "block", marginTop: "12px" }}>{t(languageCardWarnText)}</Text>
                             </Card>
                             <Link to={"/app/language"} style={{ paddingLeft: "8px" }}>{t("Can't find the language you want to translate into? Click here to add a language.")}</Link>
-                        </div>
+                        </>
                         <div style={{ paddingLeft: "8px" }}>
                             <Title level={5} style={{ fontSize: "1.25rem", margin: "0" }}>
                                 {t("translateSettings.title")}
@@ -523,15 +536,14 @@ const Index = () => {
                                             translateSettings1Options.map((option) => (
                                                 <Col key={option.value} span={6}>
                                                     <Button
-                                                        type={translateSettings1 === option.value ? "primary" : "default"}
                                                         key={option.value}
                                                         value={option.value}
                                                         onClick={() => setTranslateSettings1(option.value)}
-                                                        style={{
-                                                            width: "100%",
-                                                            position: 'relative',
-                                                            paddingRight: '8px'
-                                                        }}
+                                                        className={styles.translateSettings1Options}
+                                                        style={translateSettings1 === option.value ? {
+                                                            borderColor: "#168c6d",
+                                                            color: "#168c6d"
+                                                        } : undefined}
                                                     >
                                                         <div style={{
                                                             position: 'absolute',
@@ -552,14 +564,13 @@ const Index = () => {
                                         {customApikeyData && <Col key="custom key" span={6}>
                                             <Badge.Ribbon text={t("Private")} color="red" style={{ top: -2, right: -8 }}>
                                                 <Button
-                                                    type={translateSettings1 === "8" ? "primary" : "default"}
                                                     key={"8"}
                                                     value={"8"}
                                                     onClick={() => setTranslateSettings1("8")}
+                                                    className={styles.translateSettings1Options}
                                                     style={{
-                                                        width: "100%",
-                                                        position: 'relative',
-                                                        paddingRight: '8px'
+                                                        borderColor: translateSettings1 === "8" ? "#168c6d" : "#d9d9d9",
+                                                        color: translateSettings1 === "8" ? "#168c6d" : "rgba(0, 0, 0, 0.88)"
                                                     }}
                                                 >
                                                     <div style={{
@@ -577,31 +588,6 @@ const Index = () => {
                                                 </Button>
                                             </Badge.Ribbon>
                                         </Col>}
-                                        {/* <Col key="custom key" span={6}>
-                                            <Button
-                                                type="primary"
-                                                key="customButton"
-                                                onClick={() => navigate("/app/apikeySetting")}
-                                                style={{
-                                                    width: "100%",
-                                                    position: 'relative',
-                                                    paddingRight: '8px'
-                                                }}
-                                            >
-                                                <div style={{
-                                                    position: 'absolute',
-                                                    left: '50%',
-                                                    transform: 'translateX(-50%)',
-                                                    maxWidth: '100%',
-                                                    whiteSpace: 'nowrap',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    padding: '0 8px'
-                                                }}>
-                                                    {t("Private API key")}
-                                                </div>
-                                            </Button>
-                                        </Col> */}
                                     </Row>
                                 </Space>
                                 <Space direction="vertical" size={16} style={{ display: "flex" }}>
@@ -639,23 +625,6 @@ const Index = () => {
                                     >
                                     </Checkbox.Group>
                                 </Space>
-                                {/* <Title level={5} style={{ fontSize: "1.25rem", margin: "0" }}>
-                                    {t("translateSettings4.title")}
-                                </Title>
-                                <Radio.Group
-                                    defaultValue={1}
-                                    value={translateSettings4}
-                                    options={translateSettings4Options}
-                                    style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                                        width: '100%'
-                                    }}
-                                    optionType="button"
-                                    buttonStyle="solid"
-                                    onChange={(e) => setTranslateSettings4(e.target.value)}
-                                >
-                                </Radio.Group> */}
                             </Space>
                         </Card>
                     </Space>

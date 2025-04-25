@@ -28,7 +28,6 @@ import {
   DeleteCurrency,
   GetCacheData,
   GetCurrencyByShopName,
-  GetSwitchId,
   InitCurrency,
   InsertSwitch,
   UpdateCurrency,
@@ -61,33 +60,13 @@ export interface CurrencyType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  try {
-    const sessionService = await SessionService.init(request);
-    let shopSession = sessionService.getShopSession();
-    if (!shopSession) {
-      const adminAuthResult = await authenticate.admin(request);
-      const { shop, accessToken } = adminAuthResult.session;
-      shopSession = {
-        shop: shop,
-        accessToken: accessToken as string,
-      };
-      sessionService.setShopSession(shopSession);
-      return json({
-        shop,
-        ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
-        ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
-      });
-    }
-    const { shop } = shopSession;
-
-    return json({
-      shop,
-      ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
-      ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
-    });
-  } catch (error) {
-    console.error("Error during authentication currency:", error);
-  }
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  return json({
+    shop,
+    ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
+    ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -118,9 +97,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const updateCurrencies = JSON.parse(
       formData.get("updateCurrencies") as string,
     );
-    const ip = JSON.parse(
-      formData.get("ip") as string,
-    );
 
     switch (true) {
       case !!loading:
@@ -132,14 +108,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const moneyFormat = shopLoad.currencyFormats.moneyFormat;
           const moneyWithCurrencyFormat =
             shopLoad.currencyFormats.moneyWithCurrencyFormat;
-          const ip = await GetSwitchId({ shopName: shop });
           return json({
             primaryCurrency,
             defaultCurrencyCode: shopLoad.currencyCode,
             currencyList: finalCurrencyList,
             moneyFormat,
             moneyWithCurrencyFormat,
-            ip,
           });
         } catch (error) {
           console.error("Error loading currency:", error);
@@ -219,21 +193,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             { status: 500 },
           );
         }
-      case !!ip:
-        try {
-          const data = await InsertSwitch({
-            shopName: ip.shop,
-            switchId: ip.ip,
-          });
 
-          return json({ data });
-        } catch (error) {
-          console.error("Error updateCurrencies currency:", error);
-          return json(
-            { error: "Error updateCurrencies currency" },
-            { status: 500 },
-          );
-        }
     }
     return null;
   } catch (error) {
@@ -275,7 +235,6 @@ const Index = () => {
   const [filteredData, setFilteredData] = useState<
     CurrencyDataType[] | undefined
   >(dataSource);
-  const [ip, setIp] = useState(false);
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -284,7 +243,6 @@ const Index = () => {
   const rateFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
   const initCurrencyFetcher = useFetcher<any>();
-  const ipFetcher = useFetcher<any>();
 
   useEffect(() => {
     const loadingFormData = new FormData();
@@ -351,7 +309,6 @@ const Index = () => {
           "text/html",
         ).documentElement.textContent,
       );
-      setIp(loadingFetcher.data.ip);
       shopify.loading(false);
       setLoading(false);
       const primaryCurrency = loadingFetcher.data.primaryCurrency;
@@ -392,10 +349,6 @@ const Index = () => {
       }
     }
   }, [loadingFetcher.data]);
-
-  useEffect(() => {
-    console.log(switcherEnableCardOpen);
-  }, [switcherEnableCardOpen]);
 
   useEffect(() => {
     if (themeFetcher.data) {
@@ -489,18 +442,6 @@ const Index = () => {
       setFilteredData(newData);
     }
   }, [deleteFetcher.data]);
-
-  useEffect(() => {
-    if (ipFetcher.data) {
-      if (ipFetcher.data.data.success) {
-        if (ipFetcher.data.data.response) {
-          setIp(true);
-        } else {
-          setIp(false);
-        }
-      }
-    }
-  }, [ipFetcher.data])
 
   useEffect(() => {
     setOriginalData(dataSource);
@@ -648,18 +589,6 @@ const Index = () => {
     setDeleteLoading(true);
   };
 
-  const onIpChange = (checked: boolean) => {
-    const formData = new FormData();
-    formData.append("ip", JSON.stringify({
-      shop,
-      ip: checked ? 1 : 0,
-    }));
-    ipFetcher.submit(formData, {
-      method: "post",
-      action: "/app/currency",
-    });
-  };
-
   return (
     <Page>
       <TitleBar title={t("Currency")}></TitleBar>
@@ -707,23 +636,15 @@ const Index = () => {
           <Skeleton active paragraph={{ rows: 0 }} />
         )}
         <Flex gap="middle" vertical>
-          <div className="ip_action">
-            <Flex align="center" gap="middle">
-              <Text>
-                {t("After setting, you can")}
-                <Link url={userShop} target="_blank">
-                  {t("Preview")}
-                </Link>
-                {t("to view the prices in different currencies.")}
-              </Text>
-            </Flex>
-            {!loading && <div>
-              <Popover content={t("Automatically switch to the target language and currency.")}>
-                <Text strong>Geolocation{" "}</Text>
-                <Switch onChange={onIpChange} checked={ip} loading={ipFetcher.state === "submitting"} />
-              </Popover>
-            </div>}
-          </div>
+          <Flex align="center" gap="middle">
+            <Text>
+              {t("After setting, you can")}
+              <Link url={userShop} target="_blank">
+                {t("Preview")}
+              </Link>
+              {t("to view the prices in different currencies.")}
+            </Text>
+          </Flex>
           <Input
             placeholder={t("Search currencies...")}
             prefix={<SearchOutlined />}

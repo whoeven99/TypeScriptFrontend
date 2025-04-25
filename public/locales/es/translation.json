@@ -284,6 +284,28 @@
         "get_start": "Comenzar",
         "for_large_teams": "Para equipos grandes"
     },
-    "Pricing": "Precios"
+    "Pricing": "Precios",
+    "Delete successfully": "Eliminado con éxito",
+    "Selector type configuration:": "Configuración del tipo de selector:",
+    "Selector style configuration:": "Configuración del estilo del selector:",
+    "Included flag:": "Bandera incluida:",
+    "Font Color:": "Color de la fuente:",
+    "Background Color:": "Color del fondo:",
+    "Button Color:": "Color del botón:",
+    "Button Background Color:": "Color del fondo del botón:",
+    "Option Border Color:": "Color del borde de la opción:",
+    "Selector position:": "Posición del selector:",
+    "Selector position data:": "Datos de la posición del selector:",
+    "Selector Auto IP position configuration:": "Configuración de la posición automática del selector IP:",
+    "Switcher configuration updated successfully": "Configuración del selector actualizada con éxito",
+    "Switcher configuration update failed": "No se pudo actualizar la configuración del selector",
+    "Switcher": "Selector",
+    "Language Switcher": "Selector de idioma",
+    "Currency Switcher": "Selector de moneda",
+    "Language and Currency Switcher": "Selector de idioma y moneda",
+    "Top Left": "Arriba a la izquierda",
+    "Top Right": "Arriba a la derecha",
+    "Bottom Left": "Abajo a la izquierda",
+    "Bottom Right": "Abajo a la derecha"
 }
   

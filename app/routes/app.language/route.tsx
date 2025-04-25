@@ -29,8 +29,6 @@ import {
 } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  setLocaleNameState,
-  setPublishConfirmState,
   setPublishLoadingState,
   setPublishState,
   setStatusState,
@@ -48,14 +46,11 @@ import TranslatedIcon from "~/components/translateIcon";
 import { WordsType } from "../app._index/route";
 import { useTranslation } from "react-i18next";
 import PrimaryLanguage from "./components/primaryLanguage";
-import PublishModal from "./components/publishModal";
 import AddLanguageModal from "./components/addLanguageModal";
 import TranslationWarnModal from "~/components/translationWarnModal";
 // import ProgressingCard from "~/components/progressingCard";
-import { updateState } from "~/store/modules/translatingResourceType";
 import PreviewModal from "~/components/previewModal";
 import ScrollNotice from "~/components/ScrollNotice";
-import { SessionService } from "~/utils/session.server";
 
 const { Title, Text } = Typography;
 
@@ -108,36 +103,14 @@ interface FetchType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  // 初始化 session 服务
-  const sessionService = await SessionService.init(request);
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
 
-  // 获取 session 数据
-  let shopSession = sessionService.getShopSession();
-  // 如果没有 session 数据，则获取并存储
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-
-    // 存储到 session
-    sessionService.setShopSession(shopSession);
-  }
-
-  const { shop, accessToken } = shopSession;
-
-  const Acreatetime = new Date()
   const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
     shop: shop,
-    accessToken: accessToken,
+    accessToken: accessToken as string,
   });
-  const Aendtime = new Date();
 
-  console.log("Acreatetime: ", Acreatetime);
-  console.log("Aendtime: ", Aendtime);
-  console.log("Atiming: ", Aendtime.getTime() - Acreatetime.getTime());
   const shopPrimaryLanguage = shopLanguagesLoad.filter(
     (language) => language.primary,
   );
@@ -154,28 +127,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       shopPrimaryLanguage,
       shopLocalesIndex,
     },
-    await sessionService.createResponseInit()
   );
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-
-  // 获取 session 数据
-  let shopSession = sessionService.getShopSession();
-
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-
-  const { shop, accessToken } = shopSession;
-
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
@@ -194,34 +151,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!loading:
         const shopLocalesIndex = loading.shopLocalesIndex;
         const shopPrimaryLanguage = loading.shopPrimaryLanguage;
-        const Bcreatetime = new Date()
         const allMarket: MarketType[] = await queryAllMarket({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
         });
-        const Bendtime = new Date();
-
-        console.log("Bcreatetime: ", Bcreatetime);
-        console.log("Bendtime: ", Bendtime);
-        console.log("Btiming: ", Bendtime.getTime() - Bcreatetime.getTime());
-
-        const Ccreatetime = new Date()
         const languageLocaleInfo = await GetLanguageLocaleInfo({
           locale: shopLocalesIndex,
         });
-        const Cendtime = new Date();
-        console.log("Ccreatetime: ", Ccreatetime);
-        console.log("Cendtime: ", Cendtime);
-        console.log("Ctiming: ", Cendtime.getTime() - Ccreatetime.getTime());
-
-        const Ecreatetime = new Date()
         const languagesLoad = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
-        const Eendtime = new Date();
-        console.log("Ecreatetime: ", Ecreatetime);
-        console.log("Eendtime: ", Eendtime);
-        console.log("Etiming: ", Eendtime.getTime() - Ecreatetime.getTime());
-
-
         return json({
           shop: shop,
           allMarket: allMarket,
@@ -231,29 +168,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       case !!addData:
         try {
-          const Ccreatetime = new Date()
           let allLanguages: AllLanguagesType[] = await queryAllLanguages({
             shop,
-            accessToken,
+            accessToken: accessToken as string,
           });
           allLanguages = allLanguages.map((language, index) => ({
             ...language,
             key: index,
           }));
-          const Cendtime = new Date();
-          console.log("Ccreatetime: ", Ccreatetime);
-          console.log("Cendtime: ", Cendtime);
-          console.log("Ctiming: ", Cendtime.getTime() - Ccreatetime.getTime());
 
-          const Dcreatetime = new Date()
           const allCountryCode = allLanguages.map((item) => item.isoCode);
           const languageLocaleInfo = await GetLanguageLocaleInfo({
             locale: allCountryCode,
           });
-          const Dendtime = new Date();
-          console.log("Dcreatetime: ", Dcreatetime);
-          console.log("Dendtime: ", Dendtime);
-          console.log("Dtiming: ", Dendtime.getTime() - Dcreatetime.getTime());
           return json({
             success: true,
             data: { allLanguages: allLanguages, languageLocaleInfo: languageLocaleInfo, }
@@ -266,7 +193,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!addLanguages:
         const data = await mutationShopLocaleEnable({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           addLanguages,
         }); // 处理逻辑
         return json({ data: data });
@@ -282,7 +209,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 message: "words get error",
                 data: {
                   shop,
-                  accessToken,
+                  accessToken: accessToken as string,
                   source: translation.primaryLanguage,
                   target: translation.selectedLanguage.locale,
                   translateSettings1: translation.translateSettings1,
@@ -298,7 +225,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 message: "words limit reached",
                 data: {
                   shop,
-                  accessToken,
+                  accessToken: accessToken as string,
                   source: translation.primaryLanguage,
                   target: translation.selectedLanguage.locale,
                   translateSettings1: translation.translateSettings1,
@@ -310,7 +237,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
             const data = await GetTranslate({
               shop,
-              accessToken,
+              accessToken: accessToken as string,
               source: translation.primaryLanguage,
               target: translation.selectedLanguage.locale,
               translateSettings1: translation.translateSettings1,
@@ -338,7 +265,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }
 
           if (typeof words?.totalChars === "number" && words?.totalChars === 200000) {
-            const productsCount = await queryProductsCount({ shop, accessToken })
+            const productsCount = await queryProductsCount({ shop, accessToken: accessToken as string })
             console.log(`${shop} productsCount: `, productsCount);
             if (productsCount >= 5000) {
               return json({
@@ -373,7 +300,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           // 字符数未超限，调用翻译接口
           const data = await GetTranslate({
             shop,
-            accessToken,
+            accessToken: accessToken as string,
             source: translation.primaryLanguage,
             target: translation.selectedLanguage.locale,
             translateSettings1: translation.translateSettings1,
@@ -389,7 +316,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!publishInfo:
         await mutationShopLocalePublish({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           publishInfo: publishInfo,
         });
         return null;
@@ -397,7 +324,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!unPublishInfo:
         await mutationShopLocaleUnpublish({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           publishInfos: [unPublishInfo],
         });
         return null;
@@ -409,7 +336,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               async (item: LanguagesDataType) => {
                 return mutationShopLocaleDisable({
                   shop,
-                  accessToken,
+                  accessToken: accessToken as string,
                   language: item,
                   primaryLanguageCode: deleteData.primaryLanguageCode,
                 });
@@ -556,6 +483,7 @@ const Index = () => {
       setSelectedRowKeys([]);
       // 结束加载状态
       setDeleteLoading(false);
+      message.success(t("Delete successfully"));
     }
   }, [deleteFetcher.data]);
 
@@ -822,20 +750,8 @@ const Index = () => {
           <Title style={{ fontSize: "1.25rem", display: "inline" }}>
             {t("Languages")}
           </Title>
-          {/* <Suspense fallback={<Skeleton active paragraph={{ rows: 0 }} />}> */}
           <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
-          {/* </Suspense> */}
         </div>
-        {/* <ProgressingCard /> */}
-        {/* <Suspense fallback={<Skeleton active />}>
-            <AttentionCard
-              title={t("Translation word credits have been exhausted.")}
-              content={t(
-                "The translation cannot be completed due to exhausted credits.",
-              )}
-              show={disable}
-            />
-          </Suspense> */}
         <div className="languageTable_action">
           <Flex
             align="center"
@@ -844,16 +760,17 @@ const Index = () => {
           >
             <Flex align="center" gap="middle">
               <Button
-                type="primary"
                 onClick={handleDelete}
                 disabled={!hasSelected}
                 loading={deleteloading}
               >
                 {t("Delete")}
               </Button>
-              {hasSelected
-                ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
-                : null}
+              <Text style={{ color: "#007F61" }}>
+                {hasSelected
+                  ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
+                  : null}
+              </Text>
             </Flex>
             <div>
               <Space>

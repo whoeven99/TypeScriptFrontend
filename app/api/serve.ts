@@ -21,7 +21,82 @@ interface GroupedDeleteData {
 }
 
 //修改用户计划
-export const AddSubscriptionQuotaRecord = async ({ subscriptionId }: { subscriptionId: string }) => {
+export const WidgetConfigurations = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/widgetConfigurations/getData`,
+      method: "POST",
+      data: {
+        shopName: shop,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error WidgetConfigurations:", error);
+  }
+};
+
+//修改用户计划
+export const SaveAndUpdateData = async ({
+  shopName,
+  languageSelector,
+  currencySelector,
+  ipOpen,
+  includedFlag,
+  fontColor,
+  backgroundColor,
+  buttonColor,
+  buttonBackgroundColor,
+  optionBorderColor,
+  selectorPosition,
+  positionData,
+}: {
+  shopName: string;
+  languageSelector: boolean;
+  currencySelector: boolean;
+  ipOpen: boolean;
+  includedFlag: boolean;
+  fontColor: string;
+  backgroundColor: string;
+  buttonColor: string;
+  buttonBackgroundColor: string;
+  optionBorderColor: string;
+  selectorPosition: string;
+  positionData: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/widgetConfigurations/saveAndUpdateData`,
+      method: "POST",
+      data: {
+        shopName: shopName,
+        languageSelector: languageSelector,
+        currencySelector: currencySelector,
+        ipOpen: ipOpen,
+        includedFlag: includedFlag,
+        fontColor: fontColor,
+        backgroundColor: backgroundColor,
+        buttonColor: buttonColor,
+        buttonBackgroundColor: buttonBackgroundColor,
+        optionBorderColor: optionBorderColor,
+        selectorPosition: selectorPosition,
+        positionData: positionData,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error WidgetConfigurations:", error);
+  }
+};
+
+//修改用户计划
+export const AddSubscriptionQuotaRecord = async ({
+  subscriptionId,
+}: {
+  subscriptionId: string;
+}) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/subscriptionQuotaRecord/addSubscriptionQuotaRecord`,
@@ -51,7 +126,13 @@ export const UpdateStatus = async ({ shop }: { shop: string }) => {
 };
 
 //修改用户计划
-export const UpdateUserPlan = async ({ shop, plan }: { shop: string, plan: number }) => {
+export const UpdateUserPlan = async ({
+  shop,
+  plan,
+}: {
+  shop: string;
+  plan: number;
+}) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/checkUserPlan`,
@@ -214,18 +295,11 @@ export const getCredits = async ({
 //用户数据初始化检测
 export const InitializationDetection = async ({ shop }: { shop: string }) => {
   try {
-    const timeA = new Date();
     const response = await axios({
       url: `${process.env.SERVER_URL}/user/InitializationDetection?shopName=${shop}`,
       method: "GET",
     });
-    const timeB = new Date();
-    const time = timeB.getTime() - timeA.getTime();
-    console.log("timeA: ", timeA);
-    console.log("timeB: ", timeB);
-    console.log("timeB - timeA: ", time);
     const res = response.data.response;
-    console.log("InitializationDetection: ", res);
     return res;
   } catch (error) {
     console.error("Error InitializationDetection:", error);
@@ -430,7 +504,14 @@ export const GetTranslationItemsInfo = async ({
   target: string;
   resourceType: string;
 }) => {
-  console.log("GetTranslationItemsInfo: ", shop, accessToken, source, target, resourceType);
+  console.log(
+    "GetTranslationItemsInfo: ",
+    shop,
+    accessToken,
+    source,
+    target,
+    resourceType,
+  );
   let res: {
     language: string;
     type: string;
@@ -1257,8 +1338,6 @@ export const DeleteCurrency = async ({
     });
 
     const res = response.data;
-    console.log(res);
-
     return res;
   } catch (error) {
     console.error("Error delete currency:", error);
@@ -1307,7 +1386,6 @@ export const UpdateCurrency = async ({
 
 //获取用户自定义汇率
 export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
-  console.log("GetCurrencyByShopName: ", shop);
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/getCurrencyByShopName?shopName=${shop}`,
@@ -1600,14 +1678,6 @@ export const InsertGlossaryInfo = async ({
   data: any;
 }) => {
   try {
-    console.log({
-      shopName: shop,
-      sourceText: data.sourceText,
-      targetText: data.targetText,
-      rangeCode: data.rangeCode,
-      caseSensitive: data.type,
-      status: 1,
-    });
     const response = await axios({
       url: `${process.env.SERVER_URL}/glossary/insertGlossaryInfo`,
       method: "POST",
