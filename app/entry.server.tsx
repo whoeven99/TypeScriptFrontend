@@ -120,11 +120,10 @@ export default async function handleRequest(
   let markup = renderToString(<MainApp />);
 
   let head = renderHeadToString({ request, remixContext, Head })
-  
+
   const styleText = extractStyle(cache);
 
-  head = head.split('</head>').join(`${styleText}</head>`);
-  const html = `<!DOCTYPE html><html lang="${language}">${head}<body><div id="root">${markup}</div></body></html>`;
+  const html = `<!DOCTYPE html><html lang="${language}">${head}${styleText}<body><div id="root">${markup}</div></body></html>`;
 
   responseHeaders.set("Content-Type", "text/html");
 

@@ -41,13 +41,11 @@ import {
   mutationAppPurchaseOneTimeCreate,
   queryShopLanguages,
 } from "~/api/admin";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
 import { SessionService } from "~/utils/session.server";
-import { useDispatch } from "react-redux";
-import { setTableData } from "~/store/modules/languageTableData";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
