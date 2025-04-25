@@ -1,6 +1,7 @@
 import {
   isRouteErrorResponse,
   Links,
+  LiveReload,
   Meta,
   Outlet,
   Scripts,
@@ -167,7 +168,7 @@ export default function App() {
     // 使用 Redux Provider 包装整个应用（用于状态管理，必须）,删除后很多功能无法使用
     <>
       <Provider store={store}>
-        <Head />
+        <Head/>
         <noscript>
           <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NVPT5XDV"
             height="0" width="0" style={{ display: "none", visibility: "hidden" }}>
@@ -183,7 +184,7 @@ export default function App() {
 }
 
 export const Head = createHead(() => (
-  <head>
+  <>
     <meta charSet="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <link rel="preconnect" href="https://cdn.shopify.com/" />
@@ -193,5 +194,5 @@ export const Head = createHead(() => (
     />
     <Meta />
     <Links />
-  </head>
+  </>
 ));
