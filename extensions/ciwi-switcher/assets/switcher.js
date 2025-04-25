@@ -941,13 +941,15 @@ window.onload = async function () {
     if (currencyData) {
       await initializeCurrency(currencyData, shop);
     }
-    const mainLanguageFlag = document.getElementById("main-language-flag");
-    if (mainLanguageFlag) {
-      mainLanguageFlag.hidden = true;
-    }
-    const mainBox = document.getElementById("main-box");
-    if (mainBox) {
-      mainBox.style.justifyContent = "center";
+    if (!data.languageSelector) {
+      const mainLanguageFlag = document.getElementById("main-language-flag");
+      if (mainLanguageFlag) {
+        mainLanguageFlag.hidden = true;
+      }
+      const mainBox = document.getElementById("main-box");
+      if (mainBox) {
+        mainBox.style.justifyContent = "center";
+      }
     }
   }
 
