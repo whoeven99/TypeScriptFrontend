@@ -55,7 +55,7 @@
     "Action": "Aktion",
     "Recommend": "Empfehlen",
     "Manual Rate": "Manueller Kurs",
-    "Deleted successfully": "Erfolgreich gelöscht",
+    "Delete successfully": "Erfolgreich gelöscht",
     "Add Currency": "Währung hinzufügen",
     "Delete": "Löschen",
     "No languages to translate.": "Keine Sprachen zum Übersetzen.",
@@ -210,7 +210,8 @@
     "translateSettings1.title": "Verwendete AI-Modelle",
     "translateSettings2.title": "Verwendete Sprachpakete",
     "translateSettings3.title": "Übersetzungsmodul-Einstellungen",
-    "translateSettings.title": "Übersetzungseinstellungen",
+    "translateSettings.title1": "Zielsprache",
+    "translateSettings.title2": "Übersetzungseinstellungen",
     "Please set the primary language first.": "Bitte setzen Sie zuerst die Standardsprache.",
     "Please select a language to translate first.": "Bitte wählen Sie zuerst eine Sprache zum Übersetzen.",
     "General": "Allgemein",
@@ -259,7 +260,7 @@
     "Translate Settings": "Übersetzungseinstellungen",
     "Private API key": "Benutzerdefinierter API-Schlüssel",
     "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "Wenn Sie diese Funktion verwenden, verbrauchen wir nur die Quota der entsprechenden Schnittstelle und belasten Sie keine zusätzlichen Gebühren. Um die Quota-Grenzen der dritten Partei zu vermeiden und Gebühren zu vermeiden, legen Sie die Quota-Grenzen sorgfältig fest.",
-    "API Key is not valid": "API-Schlüssel ist nicht gültig",
+    "The API key is not valid": "API-Schlüssel ist nicht gültig",
     "count is too large or apikey is incorrect": "Anzahl ist zu groß oder API-Schlüssel ist nicht korrekt",
     "delete user api key success": "API-Schlüssel des Benutzers wurde erfolgreich gelöscht",
     "delete user api key failed": "API-Schlüssel des Benutzers konnte nicht gelöscht werden",
@@ -285,7 +286,6 @@
         "for_large_teams": "Für große Teams"
     },
     "Pricing": "Preisgestaltung",
-    "Delete successfully": "Erfolgreich gelöscht",
     "Selector type configuration:": "Selektor-Typ-Konfiguration:",
     "Selector style configuration:": "Selektor-Stil-Konfiguration:",
     "Included flag:": "Eingeschlossener Flag:",
@@ -306,6 +306,12 @@
     "Top Left": "Oben links",
     "Top Right": "Oben rechts",
     "Bottom Left": "Unten links",
-    "Bottom Right": "Unten rechts"
+    "Bottom Right": "Unten rechts",
+    "Delete failed": "Löschen fehlgeschlagen",
+    "Exchange rate must be a positive number": "Wechselkurs muss eine positive Zahl sein",
+    "The exchange rate must be a positive number": "Wechselkurs muss eine positive Zahl sein",
+    "The exchange rate must be less than 2147483647": "Wechselkurs muss kleiner als 2147483647 sein",
+    "Quota must be a positive number": "Kontingent muss eine positive Zahl sein",
+    "The API key format is incorrect": "API-Schlüsselformat ist nicht korrekt"
 }
     

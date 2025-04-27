@@ -146,7 +146,7 @@ const Index = () => {
         cardRefs[currentModal as keyof typeof cardRefs]?.current?.setApiKeyValue("");
         cardRefs[currentModal as keyof typeof cardRefs]?.current?.setCountValue("");
         setLoadingModal("");
-        message.error("count is too large or apikey is incorrect");
+        shopify.toast.show(t('The API key is not valid'));
       }
     }
   }, [updateUserAPIKeyfetcher.data]);
@@ -158,9 +158,9 @@ const Index = () => {
         setUserData(deleteUserAPIKeyfetcher?.data?.data?.response);
         setApiKey("");
         setCount("");
-        message.success("delete user api key success");
+        shopify.toast.show(t("Delete successfully"));
       } else {
-        message.error("delete user api key failed");
+        shopify.toast.show(t("Delete failed"));
       }
     }
   }, [deleteUserAPIKeyfetcher.data]);

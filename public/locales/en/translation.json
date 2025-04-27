@@ -55,7 +55,7 @@
   "Action": "Action",
   "Recommend": "Recommend",
   "Manual Rate": "Manual Rate",
-  "Deleted successfully": "Deleted successfully",
+  "Delete successfully": "Delete successfully",
   "Add Currency": "Add Currency",
   "Delete": "Delete",
   "No languages to translate.": "No languages to translate.",
@@ -214,7 +214,8 @@
   "translateSettings1.title": "AI Models",
   "translateSettings2.title": "language packs",
   "translateSettings3.title": "Translation project",
-  "translateSettings.title": "Translation Settings",
+  "translateSettings.title1": "Target language",
+  "translateSettings.title2": "Translation Settings",
   "Please set the primary language first.": "Please set the primary language first.",
   "Please select a language to translate first.": "Please select a language to translate first.",
   "General": "General",
@@ -262,7 +263,7 @@
   "Translate Settings": "Translate Settings",
   "Private API key": "Private API key",
   "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.",
-  "API Key is not valid": "API Key is not valid",
+  "The API key is not valid": "The API key is not valid",
   "count is too large or apikey is incorrect": "count is too large or apikey is incorrect",
   "delete user api key success": "delete user api key success",
   "delete user api key failed": "delete user api key failed",
@@ -286,7 +287,6 @@
     "get_start": "Get started",
     "for_large_teams": "For large teams"
   },
-  "Delete successfully": "Delete successfully",
   "Selector type configuration:": "Selector type configuration:",
   "Selector style configuration:": "Selector style configuration:",
   "Included flag:": "Included flag:",
@@ -307,5 +307,11 @@
   "Top Left": "Top Left",
   "Top Right": "Top Right",
   "Bottom Left": "Bottom Left",
-  "Bottom Right": "Bottom Right"
+  "Bottom Right": "Bottom Right",
+  "Exchange rate must be a positive number": "Exchange rate must be a positive number",
+  "The exchange rate must be a positive number": "The exchange rate must be a positive number",
+  "The exchange rate must be less than 2147483647": "The exchange rate must be less than 2147483647",
+  "Quota must be a positive number": "Quota must be a positive number",
+  "The API key format is incorrect": "The API key format is incorrect",
+  "Delete failed": "Delete failed"
 }

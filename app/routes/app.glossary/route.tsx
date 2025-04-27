@@ -179,7 +179,7 @@ const Index = () => {
             (item: GLossaryDataType) => item.key !== res.value.response.id,
           );
         } else {
-          message.error(res.value.errorMsg);
+          shopify.toast.show(res.value.errorMsg);
         }
       });
       dispatch(setGLossaryTableData(newData)); // 更新表格数据
@@ -191,7 +191,7 @@ const Index = () => {
   useEffect(() => {
     if (statusFetcher.data) {
       if (statusFetcher.data?.data?.success) {
-        message.success(t("Saved successfully"));
+        shopify.toast.show(t("Saved successfully"));
         dispatch(
           setGLossaryStatusLoadingState({
             key: statusFetcher.data.data.response.id,
@@ -200,7 +200,7 @@ const Index = () => {
           }),
         );
       } else {
-        message.error(statusFetcher.data?.data?.errorMsg);
+        shopify.toast.show(statusFetcher.data?.data?.errorMsg);
         dispatch(
           setGLossaryStatusLoadingState({
             key: statusFetcher.data.data.response.id,
@@ -236,7 +236,7 @@ const Index = () => {
 
   const handleIsModalOpen = (title: string, key: number) => {
     if (title === "Create rule" && dataSource.length >= 10) {
-      message.error(t("You can add up to 10 translation rules"));
+      shopify.toast.show(t("You can add up to 10 translation rules"));
     } else {
       setTitle(t(title));
       setGlossaryModalId(key);
@@ -365,7 +365,6 @@ const Index = () => {
             >
               <Flex align="center" gap="middle">
                 <Button
-                  type="primary"
                   onClick={handleDelete}
                   disabled={!hasSelected}
                   loading={deleteLoading}

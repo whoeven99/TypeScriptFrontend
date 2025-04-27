@@ -1,5 +1,5 @@
-import React, { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
-import { Card, Input, Button, Tag, Space, Typography, message } from 'antd';
+import React, { useState, forwardRef, useImperativeHandle, useEffect, useRef } from 'react';
+import { Card, Input, Button, Tag, Space, Typography, message, InputRef } from 'antd';
 import styles from './ApiKeyEditCard.module.css';
 import { useTranslation } from 'react-i18next';
 
@@ -37,11 +37,15 @@ export const ApiKeyEditCard = forwardRef<ApiKeyEditCardMethods, ApiKeyEditCardPr
     const [apiKeyValue, setApiKeyValue] = useState(apiKey);
     const [countValue, setCountValue] = useState(count.toString());
     const [isEdit, setIsEdit] = useState(false);
+    const [apiKeyError, setApiKeyError] = useState(false);
+    const [countError, setCountError] = useState(false);
     const { t } = useTranslation();
+    const apiKeyRef = useRef<InputRef>(null);
+    const countRef = useRef<InputRef>(null);
 
     useEffect(() => {
         setApiKeyValue(apiKey);
-        setCountValue(count.toString());    
+        setCountValue(count.toString());
     }, [apiKey, count]);
 
     useImperativeHandle(ref, () => ({
@@ -52,15 +56,23 @@ export const ApiKeyEditCard = forwardRef<ApiKeyEditCardMethods, ApiKeyEditCardPr
 
     const validateInputs = (): boolean => {
         if (apiKeyValue.length < minlength) {
-            message.error(t('API Key is not valid'));
+            setApiKeyError(true);
+            if (apiKeyRef.current?.input) {
+                apiKeyRef.current.input.style.borderColor = 'red';
+            }
             return false;
         }
+        setApiKeyError(false);
 
         const countNum = Number(countValue);
         if (isNaN(countNum) || countNum <= 0) {
-            message.error(t('Count must be a positive number'));
+            setCountError(true);
+            if (countRef.current?.input) {
+                countRef.current.input.style.borderColor = 'red';
+            }
             return false;
         }
+        setCountError(false);
 
         return true;
     };
@@ -78,6 +90,14 @@ export const ApiKeyEditCard = forwardRef<ApiKeyEditCardMethods, ApiKeyEditCardPr
         setIsEdit(false);
         setApiKeyValue(apiKey);
         setCountValue(count.toString());
+        setApiKeyError(false);
+        setCountError(false);
+        if (apiKeyRef.current?.input) {
+            apiKeyRef.current.input.style.borderColor = '';
+        }
+        if (countRef.current?.input) {
+            countRef.current.input.style.borderColor = '';
+        }
     };
 
     const handleEdit = () => {
@@ -105,50 +125,80 @@ export const ApiKeyEditCard = forwardRef<ApiKeyEditCardMethods, ApiKeyEditCardPr
                         <Button type="default" onClick={handleCancel} loading={loading}>
                             {t("Cancel")}
                         </Button>
-
                         <Button type="primary" onClick={handleSave} loading={loading}>
                             {t("Save")}
                         </Button>
                     </Space>
                     :
                     <Space>
-                        <Button type="primary" disabled={!apiKeyValue} onClick={() => onDelete?.(model)} loading={loading}>
+                        <Button disabled={!apiKeyValue} onClick={() => onDelete?.(model)} loading={loading}>
                             {t("Delete")}
                         </Button>
-                        <Button type="primary" onClick={handleEdit}>
+                        <Button onClick={handleEdit}>
                             {t("Edit")}
                         </Button>
                     </Space>
                 }
             </div>
-            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <Text strong style={{ whiteSpace: 'nowrap', marginRight: '8px', flex: 1 }}>{t("API Key")}</Text>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Text strong style={{
+                        whiteSpace: 'nowrap',
+                        width: '50px'  // 固定宽度，根据实际文本长度调整
+                    }}>
+                        {t("API Key")}
+                    </Text>
                     <Input
+                        ref={apiKeyRef}
                         placeholder={t("Please enter API Key")}
                         value={apiKeyValue}
                         onChange={(e) => setApiKeyValue(e.target.value)}
-                        style={{ flex: 12 }}
+                        style={{ flex: 1 }}  // 输入框占据剩余空间
                         disabled={!isEdit || loading}
-                        status={isEdit && apiKeyValue && apiKeyValue.length < minlength ? 'error' : ''}
                     />
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <Text strong style={{ whiteSpace: 'nowrap', marginRight: '8px', flex: 1 }}>{t("Quota")}</Text>
+                {/* 错误提示放在下方，并且与输入框左对齐 */}
+                <div style={{
+                    marginLeft: '60px',  // 80px(标签宽度) + 8px(间距)
+                    visibility: isEdit && apiKeyError ? 'visible' : 'hidden',
+                    marginBottom: '4px'
+                }}>
+                    <Text type="danger" strong>
+                        {t("The API key format is incorrect")}
+                    </Text>
+                </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Text strong style={{
+                        whiteSpace: 'nowrap',
+                        width: '50px'  // 固定宽度，根据实际文本长度调整
+                    }}>
+                        {t("Quota")}
+                    </Text>
                     <Input
-                        placeholder={t("Please enter Count")}
+                        ref={countRef}
+                        placeholder={t("Please enter Quota")}
                         value={countValue}
                         onChange={handleCountChange}
-                        style={{ flex: 12 }}
+                        style={{ flex: 1 }}  // 输入框占据剩余空间
                         disabled={!isEdit || loading}
-                        status={isEdit && countValue && !/^\d+$/.test(countValue) ? 'error' : ''}
                     />
                 </div>
-                <Space size={[0, 8]} wrap>
-                    {tags.map((tag, index) => (
-                        <Tag key={index}>{tag}</Tag>
-                    ))}
-                </Space>
+                {/* 错误提示放在下方，并且与输入框左对齐 */}
+                <div style={{
+                    marginLeft: '60px',  // 80px(标签宽度) + 8px(间距)
+                    visibility: isEdit && countError ? 'visible' : 'hidden',
+                }}>
+                    <Text type="danger" strong>
+                        {t('Quota must be a positive number')}
+                    </Text>
+                </div>
+            </div>
+            <Space size={[0, 8]} wrap>
+                {tags.map((tag, index) => (
+                    <Tag key={index}>{tag}</Tag>
+                ))}
             </Space>
         </Card>
     );

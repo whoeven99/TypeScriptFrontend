@@ -55,7 +55,7 @@
     "Action": "アクション",
     "Recommend": "推奨",
     "Manual Rate": "手動レート",
-    "Deleted successfully": "削除に成功しました",
+    "Delete successfully": "削除に成功しました",
     "Add Currency": "通貨を追加",
     "Delete": "削除",
     "No languages to translate.": "翻訳する言語はありません。",
@@ -210,7 +210,8 @@
     "translateSettings1.title": "使用されたAIモデル",
     "translateSettings2.title": "使用された言語パック",
     "translateSettings3.title": "翻訳モジュールの設定",
-    "translateSettings.title": "翻訳設定",
+    "translateSettings.title1": "対象言語",
+    "translateSettings.title2": "翻訳設定",
     "Please set the primary language first.": "まず、プライマリ言語を設定してください。",
     "Please select a language to translate first.": "まず、翻訳する言語を選択してください。",
     "General": "総類",
@@ -259,7 +260,7 @@
     "Translate Settings": "翻訳設定",
     "Private API key": "カスタムAPIキー",
     "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "この機能を使用すると、対応するインターフェースのクォータのみを消費し、追加料金は発生しません。第三者のAPIクォータの制限を超えることなく、料金が発生することを避けるために、クォータの制限を慎重に設定してください。",
-    "API Key is not valid": "APIキーが無効です",
+    "The API key is not valid": "APIキーが無効です",
     "count is too large or apikey is incorrect": "数が大きすぎるか、APIキーが正しくありません",
     "delete user api key success": "ユーザーのAPIキーが正常に削除されました",
     "delete user api key failed": "ユーザーのAPIキーの削除に失敗しました",
@@ -285,7 +286,6 @@
         "for_large_teams": "大規模チーム向け"
     },
     "Pricing": "価格",
-    "Delete successfully": "削除に成功しました",
     "Selector type configuration:": "セレクターのタイプを設定する:",
     "Selector style configuration:": "セレクターのスタイルを設定する:",
     "Included flag:": "含めるフラグ:",
@@ -306,6 +306,12 @@
     "Top Left": "上部左",
     "Top Right": "上部右",
     "Bottom Left": "下部左",
-    "Bottom Right": "下部右"
+    "Bottom Right": "下部右",
+    "Delete failed": "削除に失敗しました",
+    "Exchange rate must be a positive number": "交換レートは正の数である必要があります",
+    "The exchange rate must be a positive number": "交換レートは正の数である必要があります",
+    "The exchange rate must be less than 2147483647": "交換レートは2147483647より小さくなければなりません",
+    "Quota must be a positive number": "クォータは正の数である必要があります",
+    "The API key format is incorrect": "APIキーの形式が正しくありません"
 }   
   

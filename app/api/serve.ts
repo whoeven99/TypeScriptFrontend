@@ -106,11 +106,11 @@ export const AddSubscriptionQuotaRecord = async ({
       },
     });
   } catch (error) {
-    console.error("Error UpdateStatus:", error);
+    console.error("Error AddSubscriptionQuotaRecord:", error);
   }
 };
 
-//修改用户计划
+//付费后更新状态
 export const UpdateStatus = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
@@ -1463,7 +1463,6 @@ export const GetCacheData = async ({
   currencyCode: string;
 }) => {
   try {
-    console.log("currencyCode: ", currencyCode);
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/getCacheData`,
       method: "POST",
