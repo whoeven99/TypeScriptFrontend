@@ -313,6 +313,11 @@
     "The exchange rate must be a positive number": "Växelkurs måste vara ett positivt tal",
     "The exchange rate must be less than 2147483647": "Växelkurs måste vara mindre än 2147483647",
     "Quota must be a positive number": "Kvot måste vara ett positivt tal",
-    "The API key format is incorrect": "API-nyckelformatet är felaktigt"
+    "The API key format is incorrect": "API-nyckelformatet är felaktigt",
+    "You cannot add two conflicting rules.": "Du kan inte lägga till två konflikterande regler.",
+    "You can add up to {{count}} translation rules": "Du kan lägga till upp till {{count}} översättningsregler",
+    "Please select a language": "Välj ett språk",
+    "The 20 language limit has been reached": "20 språkgräns har uppnåtts",
+    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "På grund av Shopify's språkgräns kan du bara lägga till upp till 20 språk. Ta bort några språk och fortsätt."
 }   
   

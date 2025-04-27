@@ -312,6 +312,11 @@
     "The exchange rate must be a positive number": "Wisselkoers moet een positief getal zijn",
     "The exchange rate must be less than 2147483647": "Wisselkoers moet minder dan 2147483647 zijn",
     "Quota must be a positive number": "Quota moet een positief getal zijn",
-    "The API key format is incorrect": "API-sleutelformaat is incorrect"
+    "The API key format is incorrect": "API-sleutelformaat is incorrect",
+    "You cannot add two conflicting rules.": "U kunt twee conflicterende regels niet toevoegen.",
+    "You can add up to {{count}} translation rules": "U kunt maximaal {{count}} vertalingregels toevoegen",
+    "Please select a language": "Selecteer een taal",
+    "The 20 language limit has been reached": "20 taallimiet bereikt",
+    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "Op basis van de taallimiet van Shopify kunt u maximaal 20 talen toevoegen. Verwijder enkele talen en ga verder."
 }
   

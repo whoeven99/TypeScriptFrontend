@@ -312,6 +312,11 @@
     "The exchange rate must be a positive number": "交換レートは正の数である必要があります",
     "The exchange rate must be less than 2147483647": "交換レートは2147483647より小さくなければなりません",
     "Quota must be a positive number": "クォータは正の数である必要があります",
-    "The API key format is incorrect": "APIキーの形式が正しくありません"
+    "The API key format is incorrect": "APIキーの形式が正しくありません",
+    "You cannot add two conflicting rules.": "2つの競合するルールを追加できません。",
+    "You can add up to {{count}} translation rules": "最大{{count}}個の翻訳ルールを追加できます",
+    "Please select a language": "言語を選択してください",
+    "The 20 language limit has been reached": "20言語制限に達しました",
+    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "Shopifyの言語制限により、最大20の言語を追加できます。言語を削除して続けてください。"
 }   
   

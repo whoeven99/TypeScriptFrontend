@@ -312,6 +312,11 @@
     "The exchange rate must be a positive number": "匯率必須是一個正數",
     "The exchange rate must be less than 2147483647": "匯率必須小於2147483647",
     "Quota must be a positive number": "配額必須是一個正數",
-    "The API key format is incorrect": "API 金鑰格式不正確"
+    "The API key format is incorrect": "API 金鑰格式不正確",
+    "You cannot add two conflicting rules.": "您不能添加兩個衝突的規則。",
+    "You can add up to {{count}} translation rules": "您最多可以添加{{count}}個翻譯規則",
+    "Please select a language": "請選擇一個語言",
+    "The 20 language limit has been reached": "20語言限制已達到",
+    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "基於 Shopify 的語言限制，您只能添加最多 20 種語言。請刪除一些語言然後繼續。"
 }
   

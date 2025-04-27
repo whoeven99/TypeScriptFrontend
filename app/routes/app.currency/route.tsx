@@ -589,9 +589,12 @@ const Index = () => {
           </Title>
           <div className="currency-action">
             <Space>
-              {hasSelected ? `Selected ${selectedRowKeys.length} items` : null}
+              <Text
+                style={{ color: "#007F61" }}
+              >
+                {hasSelected ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}` : null}
+              </Text>
               <Button
-                type="primary"
                 onClick={() => handleDelete()}
                 disabled={!hasSelected}
                 loading={deleteloading}

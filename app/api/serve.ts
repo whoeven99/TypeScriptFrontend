@@ -195,12 +195,10 @@ export const GetUserData = async ({ shop }: { shop: string }) => {
 //更新用户私人API Key
 export const SaveGoogleKey = async ({
   shop,
-  model,
   apiKey,
   count,
 }: {
   shop: string;
-  model: string;
   apiKey: string;
   count: number;
 }) => {
@@ -210,7 +208,7 @@ export const SaveGoogleKey = async ({
       method: "PUT",
       data: {
         shopName: shop,
-        model: model,
+        model: "google",
         secret: apiKey,
         amount: count,
       },
