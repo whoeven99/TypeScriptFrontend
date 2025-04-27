@@ -313,5 +313,10 @@
   "The exchange rate must be less than 2147483647": "The exchange rate must be less than 2147483647",
   "Quota must be a positive number": "Quota must be a positive number",
   "The API key format is incorrect": "The API key format is incorrect",
-  "Delete failed": "Delete failed"
+  "Delete failed": "Delete failed",
+  "You cannot add two conflicting rules.": "You cannot add two conflicting rules.",
+  "You can add up to {{count}} translation rules": "You can add up to {{count}} translation rules",
+  "Please select a language": "Please select a language",
+  "The 20 language limit has been reached": "The 20 language limit has been reached",
+  "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue."
 }

@@ -74,6 +74,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const loading = JSON.parse(formData.get("loading") as string);
     const languageInit = JSON.parse(formData.get("languageInit") as string);
     const languageData = JSON.parse(formData.get("languageData") as string);
+    const customApikeyData = JSON.parse(formData.get("customApikeyData") as string);
     const nearTransaltedData = JSON.parse(formData.get("nearTransaltedData") as string);
     const userData = JSON.parse(formData.get("userData") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
@@ -159,11 +160,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
           (item) => item.locale,
         );
-        const languageLocaleInfo = await GetLanguageLocaleInfo({
-          locale: shopLocalesIndex,
-        });
-
-        const languages = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
+        const [languageLocaleInfo, languages] = await Promise.all([
+          GetLanguageLocaleInfo({ locale: shopLocalesIndex }),
+          GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale }),
+        ]);
 
         const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
           key: i,
@@ -177,10 +177,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           published: lang.published,
         }));
 
-        const customApikeyData = await GetUserData({
-          shop,
-        });
-
         const languageSetting = {
           primaryLanguage: shopPrimaryLanguage[0].name,
           primaryLanguageCode: shopPrimaryLanguage[0].locale,
@@ -188,11 +184,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
 
-        return json({ data, languageSetting, shop, customApikeyData: customApikeyData?.response?.googleKey });
+        return json({ data, languageSetting, shop });
       } catch (error) {
         console.error("Error languageData app:", error);
         return json({ error: "Error languageData app" }, { status: 500 });
       }
+    }
+
+    if (customApikeyData) {
+      const customApikeyData = await GetUserData({
+        shop,
+      });
+      return json({ customApikeyData: customApikeyData?.response?.googleKey });
     }
 
     if (nearTransaltedData) {

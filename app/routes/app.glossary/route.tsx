@@ -185,6 +185,7 @@ const Index = () => {
       dispatch(setGLossaryTableData(newData)); // 更新表格数据
       setSelectedRowKeys([]);
       setDeleteLoading(false);
+      shopify.toast.show(t("Delete successfully"));
     }
   }, [deleteFetcher.data]);
 
@@ -236,7 +237,7 @@ const Index = () => {
 
   const handleIsModalOpen = (title: string, key: number) => {
     if (title === "Create rule" && dataSource.length >= 10) {
-      shopify.toast.show(t("You can add up to 10 translation rules"));
+      shopify.toast.show(t("You can add up to {{count}} translation rules", { count: 10 }));
     } else {
       setTitle(t(title));
       setGlossaryModalId(key);

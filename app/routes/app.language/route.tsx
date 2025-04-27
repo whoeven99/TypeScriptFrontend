@@ -9,6 +9,8 @@ import {
   Switch,
   Skeleton,
   message,
+  Modal,
+  MenuProps,
 } from "antd";
 import { lazy, Suspense, useEffect, useState, startTransition } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
@@ -379,20 +381,17 @@ const Index = () => {
   const [languageLocaleInfo, setLanguageLocaleInfo] = useState<any>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
-  const [selectedRow, setSelectedRow] = useState<
-    LanguagesDataType | undefined
-  >();
   const [deleteloading, setDeleteLoading] = useState(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [showWarnModal, setShowWarnModal] = useState(false);
   const [previewModalVisible, setPreviewModalVisible] =
     useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [mobileModalVisible, setMobileModalVisible] = useState<boolean>(false);
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
-  const submit = useSubmit(); // 使用 useSubmit 钩子
   const loadingFetcher = useFetcher<FetchType>();
   const deleteFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
@@ -413,6 +412,7 @@ const Index = () => {
       method: "post",
       action: "/app/language",
     });
+    setIsMobile(window.innerWidth < 768);
     shopify.loading(true);
   }, []);
 
@@ -545,9 +545,9 @@ const Index = () => {
       localeName: languageLocaleInfo[lang.locale]?.Local || "",
     }));
     dispatch(setTableData(data));
-    if (location.state?.publishLanguageCode && !data.find((item: any) => item.locale === location.state?.publishLanguageCode)?.published) {
-      setSelectedRow(data.find((item: any) => item.locale === location.state?.publishLanguageCode) || dataSource.find((item: any) => item.locale === location.state?.publishLanguageCode));
-    }
+    // if (location.state?.publishLanguageCode && !data.find((item: any) => item.locale === location.state?.publishLanguageCode)?.published) {
+    //   setSelectedRow(data.find((item: any) => item.locale === location.state?.publishLanguageCode) || dataSource.find((item: any) => item.locale === location.state?.publishLanguageCode));
+    // }
   }, [shopLanguagesLoad, languagesLoad, languageLocaleInfo]); // 依赖 shopLanguagesLoad 和 status
 
   useEffect(() => {
@@ -573,7 +573,34 @@ const Index = () => {
     }
   }, [dataSource]);
 
-  const columns = [
+  const items: MenuProps['items'] = [
+    {
+      key: '1',
+      label: (
+        <a target="_blank" rel="noopener noreferrer" href="https://www.antgroup.com">
+          {t("Translate")}
+        </a>
+      ),
+    },
+    {
+      key: '2',
+      label: (
+        <a target="_blank" rel="noopener noreferrer" href="https://www.aliyun.com">
+          2nd menu item
+        </a>
+      ),
+    },
+    {
+      key: '3',
+      label: (
+        <a target="_blank" rel="noopener noreferrer" href="https://www.luohanacademy.com">
+          3rd menu item
+        </a>
+      ),
+    },
+  ];
+
+  const desktopColumns = [
     {
       title: t("Language"),
       dataIndex: "language",
@@ -618,7 +645,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button
-            onClick={() => handleTranslate(record.locale)}
+            onClick={() => navigate("/app/translate", { state: { from: "/app/language", selectedLanguageCode: record.locale } })}
             style={{ width: "100px" }}
             type="primary"
           >
@@ -634,6 +661,33 @@ const Index = () => {
             {t("Manage")}
           </Button>
         </Space>
+      ),
+    },
+  ];
+
+  const mobileColumns = [
+    {
+      title: t("Language"),
+      dataIndex: "language",
+      key: "language",
+      width: "30%",
+    },
+    {
+      title: t("Status"),
+      dataIndex: "status",
+      key: "status",
+      width: "40%",
+      render: (_: any, record: any) => {
+        return <TranslatedIcon status={record.status} />;
+      },
+    },
+    {
+      title: t("Action"),
+      dataIndex: "action",
+      key: "action",
+      width: "30%",
+      render: () => (
+        <Button type="primary" onClick={() => setMobileModalVisible(true)}>{t("Manage")}</Button>
       ),
     },
   ];
@@ -658,7 +712,6 @@ const Index = () => {
     const row = dataSource.find((item: any) => item.locale === locale);
     if (checked && row) {
       dispatch(setPublishLoadingState({ locale, loading: checked }));
-      setSelectedRow(row);
       publishFetcher.submit({
         publishInfo: JSON.stringify({
           locale: row.locale,
@@ -688,10 +741,6 @@ const Index = () => {
     }
   };
 
-  const handleTranslate = async (locale: string) => {
-    navigate("/app/translate", { state: { from: "/app/language", selectedLanguageCode: locale } });
-  };
-
   //表格编辑
   const handleDelete = () => {
     const targets = dataSource.filter((item: LanguagesDataType) =>
@@ -710,14 +759,9 @@ const Index = () => {
     setDeleteLoading(true);
   };
 
-  const onSelectChange = (newSelectedRowKeys: any) => {
-    console.log("newSelectedRowKeys: ", newSelectedRowKeys);
-    setSelectedRowKeys(newSelectedRowKeys);
-  };
-
   const rowSelection = {
     selectedRowKeys,
-    onChange: onSelectChange,
+    onChange: (newSelectedRowKeys: any) => setSelectedRowKeys(newSelectedRowKeys),
   };
 
   const hasSelected = selectedRowKeys.length > 0;
@@ -772,7 +816,7 @@ const Index = () => {
           {/* <Suspense fallback={<Skeleton active />}> */}
           <Table
             rowSelection={rowSelection}
-            columns={columns}
+            columns={isMobile ? mobileColumns : desktopColumns}
             dataSource={dataSource}
             style={{ width: "100%" }}
             loading={deleteloading || loading}
@@ -792,8 +836,28 @@ const Index = () => {
         setVisible={setPreviewModalVisible}
       />
       {showWarnModal && (
-        <TranslationWarnModal show={showWarnModal} setShow={setShowWarnModal} />
+        <Modal
+          open={showWarnModal}
+          onCancel={() => setShowWarnModal(false)}
+          title={t("The 20 language limit has been reached")}
+          footer={
+            <Button onClick={() => setShowWarnModal(false)}>
+              {t("Cancel")}
+            </Button>
+          }
+        >
+          <Text>
+            {t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")}
+          </Text>
+        </Modal>
       )}
+      {mobileModalVisible && <Modal
+        open={mobileModalVisible}
+        onCancel={() => setMobileModalVisible(false)}
+        title={t("Manage")}
+      >
+        <Text>{t("Manage")}</Text>
+      </Modal>}
     </Page>
   );
 };

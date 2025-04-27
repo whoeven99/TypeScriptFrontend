@@ -312,6 +312,11 @@
     "The exchange rate must be a positive number": "La tasa de cambio debe ser un número positivo",
     "The exchange rate must be less than 2147483647": "La tasa de cambio debe ser menor que 2147483647",
     "Quota must be a positive number": "El cuota debe ser un número positivo",
-    "The API key format is incorrect": "El formato de la clave API no es correcto"
+    "The API key format is incorrect": "El formato de la clave API no es correcto",
+    "You cannot add two conflicting rules.": "No puede agregar dos reglas de traducción conflictivas.",
+    "You can add up to {{count}} translation rules": "Puede agregar hasta {{count}} reglas de traducción",
+    "Please select a language": "Por favor seleccione un idioma",
+    "The 20 language limit has been reached": "El límite de 20 idiomas ha sido alcanzado",
+    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "Basado en el límite de idiomas de Shopify, solo puede agregar hasta 20 idiomas. Por favor, elimine algunos idiomas y continúe."
 }
   

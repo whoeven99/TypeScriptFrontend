@@ -45,12 +45,12 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   const [saveButtonDisable, setSaveButtonDisable] = useState<boolean>(true);
   const [exRateError, setExRateError] = useState<boolean>(false);
   const [exRateErrorMsg, setExRateErrorMsg] = useState<string>("");
+  const [exRateStatus, setExRateStatus] = useState<"warning" | "error" | "">("");
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const updateFetcher = useFetcher<any>();
   const dataSource = useSelector((state: any) => state.currencyTableData.rows);
   const title = `${t("Edit")} ${selectedRow?.currency}`;
-  const exRateRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (updateFetcher.data) {
@@ -110,6 +110,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
       ) {
         setSaveButtonDisable(false);
       }
+      setExRateStatus("");
     }
   }, [exRateSelectValue, exRateValue, isVisible]);
 
@@ -132,9 +133,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
       if (exRateValue > 2147483647) {
         setExRateError(true);
         setExRateErrorMsg(t("Exchange rate must be less than 2147483647"));
-        if (exRateRef.current) {
-          exRateRef.current.style.borderColor = "red";
-        }
+        setExRateStatus("error");
         setUpdateFetcherLoading(false);
         return;
       }
@@ -142,14 +141,9 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
       if (exRateValue < 0 || typeof exRateValue !== "number") {
         setExRateError(true);
         setExRateErrorMsg(t("Exchange rate must be a positive number"));
-        if (exRateRef.current) {
-          exRateRef.current.style.borderColor = "red";
-        }
+        setExRateStatus("error");
         setUpdateFetcherLoading(false);
         return;
-      }
-      if (exRateRef.current) {
-        exRateRef.current.style.borderColor = "";
       }
       setExRateError(false);
       setExRateErrorMsg("");
@@ -241,11 +235,11 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Text>1 {defaultCurrencyCode} =</Text>
               <InputNumber
-                ref={exRateRef}
                 placeholder={t("Please enter Exchange rate")}
                 value={exRateValue}
                 style={{ width: 120 }}
                 onChange={(e) => setExRateValue(e || 0)}
+                status={exRateStatus}
               />
               <Text>{selectedRow?.currencyCode}</Text>
             </div>

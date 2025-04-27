@@ -71,6 +71,7 @@ const Index = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const fetcher = useFetcher<any>();
+    const customApiKeyFetcher = useFetcher<any>();
 
     const dataSource: LanguagesDataType[] = useSelector(
         (state: any) => state.languageTableData.rows,
@@ -83,20 +84,15 @@ const Index = () => {
             method: "post",
             action: "/app",
         });
-        // const userFormData = new FormData();
-        // userFormData.append("userData", JSON.stringify(true));
-        // loadingUserFetcher.submit(userFormData, {
-        //   method: "post",
-        //   action: "/app",
-        // });
+        const customApiKeyFormData = new FormData();
+        customApiKeyFormData.append("customApikeyData", JSON.stringify(true));
+        customApiKeyFetcher.submit(customApiKeyFormData, {
+            method: "post",
+            action: "/app",
+        });
         if (location) {
             setSelectedLanguageCode(location?.state?.selectedLanguageCode || "");
         }
-        shopify.loading(true);
-        // const installTime = localStorage.getItem('installTime')
-        // if (!installTime) {
-        //     localStorage.setItem('installTime', new Date().toISOString());
-        // }
     }, []);
 
     useEffect(() => {
@@ -104,10 +100,14 @@ const Index = () => {
             setLanguageData(loadingLanguageFetcher.data.data);
             setLanguageSetting(loadingLanguageFetcher.data.languageSetting);
             setLoadingLanguage(false);
-            setCustomApikeyData(loadingLanguageFetcher.data.customApikeyData);
-            shopify.loading(false);
         }
     }, [loadingLanguageFetcher.data]);
+
+    useEffect(() => {
+        if (customApiKeyFetcher.data) {
+            setCustomApikeyData(customApiKeyFetcher.data.customApikeyData);
+        }
+    }, [customApiKeyFetcher.data]);
 
     useEffect(() => {
         if (fetcher.data) {
@@ -446,7 +446,7 @@ const Index = () => {
                     <Skeleton.Button active style={{ height: 600 }} block />
                 ) : languageData.length != 0 ? (
                     <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-                        <div style={{ paddingLeft: "8px" }}>    
+                        <div style={{ paddingLeft: "8px" }}>
                             <Title level={2} style={{ margin: "0" }}>
                                 {t("translateSettings.title1")}
                             </Title>
