@@ -67,7 +67,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
             },
           ];
           dispatch(updateTableData(data));
-          message.success(t("Add success"));
+          shopify.toast.show(t("Add success"));
           setFilteredCurrencies(defaultData);
           setConfirmButtonDisable(false);
           setAllSelectedKeys([]);
@@ -76,7 +76,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
           setIsModalOpen(false);
         } else {
           setConfirmButtonDisable(false);
-          message.error(res.value.errorMsg);
+          shopify.toast.show(res.value.errorMsg);
         }
       });
     }

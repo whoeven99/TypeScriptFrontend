@@ -48,7 +48,6 @@ import { useTranslation } from "react-i18next";
 import PrimaryLanguage from "./components/primaryLanguage";
 import AddLanguageModal from "./components/addLanguageModal";
 import TranslationWarnModal from "~/components/translationWarnModal";
-// import ProgressingCard from "~/components/progressingCard";
 import PreviewModal from "~/components/previewModal";
 import ScrollNotice from "~/components/ScrollNotice";
 
@@ -396,7 +395,6 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const loadingFetcher = useFetcher<FetchType>();
   const deleteFetcher = useFetcher<any>();
-  const translateFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const addDataFetcher = useFetcher<any>();
   const publishFetcher = useFetcher<any>();
@@ -445,29 +443,13 @@ const Index = () => {
   }, [addDataFetcher.data]);
 
   useEffect(() => {
-    if (translateFetcher.data) {
-      if (translateFetcher.data.success) {
-        message.success(t("The translation task is in progress."));
-        dispatch(
-          setStatusState({
-            target: translateFetcher.data.data.target,
-            status: 2,
-          }),
-        );
-      } else {
-        setShowWarnModal(true);
-      }
-    }
-  }, [translateFetcher.data]);
-
-  useEffect(() => {
     if (deleteFetcher.data) {
       const deleteData = deleteFetcher.data.data.reduce(
         (acc: any[], item: any) => {
           if (item.status === "fulfilled") {
             acc.push(item.value);
           } else {
-            message.error(`Deletion failed for "${item.value}"`);
+            shopify.toast.show(`Deletion failed for "${item.value}"`);
           }
           return acc;
         },
@@ -483,7 +465,7 @@ const Index = () => {
       setSelectedRowKeys([]);
       // 结束加载状态
       setDeleteLoading(false);
-      message.success(t("Delete successfully"));
+      shopify.toast.show(t("Delete successfully"));
     }
   }, [deleteFetcher.data]);
 
@@ -657,6 +639,10 @@ const Index = () => {
   ];
 
   const handleOpenModal = () => {
+    if (dataSource.length === 20) {
+      setShowWarnModal(true);
+      return;
+    }
     startTransition(() => {
       setIsLanguageModalOpen((prev) => !prev); // 你的状态更新逻辑
     });

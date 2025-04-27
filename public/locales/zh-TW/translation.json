@@ -55,7 +55,7 @@
     "Action": "動作",
     "Recommend": "推薦",
     "Manual Rate": "手動匯率",
-    "Deleted successfully": "刪除成功",
+    "Delete successfully": "刪除成功",
     "Add Currency": "添加貨幣",
     "Delete": "刪除",
     "No languages to translate.": "沒有語言需要翻譯。",
@@ -210,7 +210,8 @@
     "translateSettings1.title":"使用的AI模型",
     "translateSettings2.title":"使用的語言包",
     "translateSettings3.title":"翻譯模組設定",
-    "translateSettings.title":"翻譯設定",
+    "translateSettings.title1":"目標語言",
+    "translateSettings.title2":"翻譯設定",
     "Please set the primary language first.": "請先設置主要語言。",
     "Please select a language to translate first.": "請先選擇要翻譯的語言。",
     "General": "總類",
@@ -259,7 +260,7 @@
     "Translate Settings": "翻譯設定",
     "Private API key": "自訂 API 金鑰",
     "When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.": "使用此功能時，我們只消耗相應介面的配額，不會收取任何額外費用。為避免超出第三方 API 配額限制並產生費用，請仔細設置配額限制。",
-    "API Key is not valid": "API 金鑰無效",
+    "The API key is not valid": "API 金鑰無效",
     "count is too large or apikey is incorrect": "限制配額過大或 API 金鑰不正確",
     "delete user api key success": "用戶 API 金鑰刪除成功",
     "delete user api key failed": "用戶 API 金鑰刪除失敗",
@@ -285,7 +286,6 @@
       "get_start": "開始使用",
       "for_large_teams": "適合大型團隊"
     },
-    "Delete successfully": "刪除成功",
     "Selector type configuration:": "選擇器類型配置：", 
     "Selector style configuration:": "選擇器樣式配置：",
     "Included flag:": "包含國旗：",
@@ -306,6 +306,12 @@
     "Top Left": "頂部左側",
     "Top Right": "頂部右側",
     "Bottom Left": "底部左側",
-    "Bottom Right": "底部右側"
+    "Bottom Right": "底部右側",
+    "Delete failed": "刪除失敗",
+    "Exchange rate must be a positive number": "匯率必須是一個正數",
+    "The exchange rate must be a positive number": "匯率必須是一個正數",
+    "The exchange rate must be less than 2147483647": "匯率必須小於2147483647",
+    "Quota must be a positive number": "配額必須是一個正數",
+    "The API key format is incorrect": "API 金鑰格式不正確"
 }
   

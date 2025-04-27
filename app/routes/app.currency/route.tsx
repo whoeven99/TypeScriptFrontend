@@ -415,7 +415,7 @@ const Index = () => {
         }
       });
       dispatch(setTableData(newData));
-      message.success(t("Deleted successfully"));
+      shopify.toast.show(t("Delete successfully"));
       setDeleteLoading(false);
       setSelectedRowKeys([]);
       setOriginalData(newData);

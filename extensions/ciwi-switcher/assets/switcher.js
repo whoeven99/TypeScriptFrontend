@@ -22,7 +22,7 @@ async function fetchSwitcherConfig(shop) {
     selectorPosition: "bottom_left",
     positionData: 10,
   };
-  if (data.success && typeof data.response === "object") {
+  if (data.success && typeof data.response === "object" && data.response !== null) {
     const filteredResponse = Object.fromEntries(
       Object.entries(data.response).filter(([_, value]) => value !== null),
     );
@@ -844,8 +844,8 @@ window.onload = async function () {
       }
     }
     if (data.ipOpen) {
-      const iptoken = document.querySelector('span[name="iptoken"]');
-      const iptokenValue = iptoken.textContent;
+      const iptoken = document.querySelector('input[name="iptoken"]');
+      const iptokenValue = iptoken.value;
       if (iptokenValue) iptoken.remove();
       const storedLanguage = localStorage.getItem("selectedLanguage");
       const storedCountry = localStorage.getItem("selectedCountry");

@@ -96,10 +96,10 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           };
         }
         dispatch(updateGLossaryTableData(data));
-        message.success("Saved successfully");
+        shopify.toast.show("Saved successfully");
         handleCloseModal();
       } else {
-        message.error(updateFetcher.data.data.errorMsg);
+        shopify.toast.show(updateFetcher.data.data.errorMsg);
         setConfirmButtonDisable(false);
       }
     }
@@ -190,13 +190,13 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       });
       setConfirmButtonDisable(true);
     } else if (!isValid) {
-      message.warning(
+      shopify.toast.showwarning(
         t("There are empty fields. Please complete all the required information."),
       );
     } else if (!isOversizeError) {
-      message.error(t("You can add up to 5 translation rules"));
+      shopify.toast.show(t("You can add up to 5 translation rules"));
     } else {
-      message.error(t("You cannot add two conflicting rules."));
+      shopify.toast.show(t("You cannot add two conflicting rules."));
     }
   };
 

@@ -54,7 +54,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                         selectorPosition: "bottom_left",
                         positionData: 10,
                     }
-                    if (data.success && typeof data.response === "object") {
+                    console.log("data: ", data.response);
+                    if (data.success && typeof data.response === "object" && data.response !== null) {
                         const filteredResponse = Object.fromEntries(
                             Object.entries(data.response).filter(([_, value]) => value !== null)
                         );
@@ -204,9 +205,9 @@ const Index = () => {
             if (editFetcher.data.success) {
                 setOriginalData(editFetcher.data.response);
                 setEditData(editFetcher.data.response);
-                message.success(t("Switcher configuration updated successfully"));
+                shopify.toast.show(t("Switcher configuration updated successfully"));
             } else {
-                message.error(t("Switcher configuration update failed"));
+                shopify.toast.show(t("Switcher configuration update failed"));
             }
         }
     }, [editFetcher.data]);

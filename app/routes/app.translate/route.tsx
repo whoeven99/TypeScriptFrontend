@@ -7,6 +7,7 @@ import {
     Card,
     Checkbox,
     Col,
+    Divider,
     message,
     Radio,
     RadioChangeEvent,
@@ -25,7 +26,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { LanguagesDataType, ShopLocalesType } from "../app.language/route";
 import { setTableData } from "~/store/modules/languageTableData";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
-import TranslationWarnModal from "~/components/translationWarnModal";
 import PaymentModal from "~/components/paymentModal";
 import ScrollNotice from "~/components/ScrollNotice";
 import styles from "./styles.module.css";
@@ -112,10 +112,10 @@ const Index = () => {
     useEffect(() => {
         if (fetcher.data) {
             if (fetcher.data?.success) {
-                message.success(t("The translation task is in progress."));
+                shopify.toast.show(t("The translation task is in progress."));
                 navigate("/app");
             } else if (fetcher.data?.message === "words get error") {
-                message.error(t("The query of the remaining credits failed. Please try again."));
+                shopify.toast.show(t("The query of the remaining credits failed. Please try again."));
             } else {
                 // message.warning(t(`${fetcher.data?.message}`))
                 setShowPaymentModal(true);
@@ -145,7 +145,7 @@ const Index = () => {
 
     const handleTranslate = async () => {
         if (!languageSetting?.primaryLanguageCode) {
-            message.error(
+            shopify.toast.show(
                 t(
                     "Please set the primary language first.",
                 ),
@@ -184,7 +184,7 @@ const Index = () => {
             setSource(languageSetting?.primaryLanguageCode);
             setTarget(selectedLanguageCode);
         } else {
-            message.error(
+            shopify.toast.show(
                 t(
                     "The translation task is in progress. Please try translating again later.",
                 ),
@@ -418,7 +418,7 @@ const Index = () => {
                                 tone="base"
                             />
                         </Button>
-                        <Title style={{ fontSize: "1.25rem", margin: "0" }}>
+                        <Title level={1} style={{ margin: "0" }}>
                             {t("Translate Store")}
                         </Title>
                     </div>
@@ -429,8 +429,9 @@ const Index = () => {
                             <Skeleton.Button active />
                     }
                 </div>
+                <Divider style={{ margin: "0" }} />
                 <div style={{ paddingLeft: "8px" }}>
-                    <Text>{t("Your store's default language:")}</Text>
+                    <Text >{t("Your store's default language:")}</Text>
                     {languageSetting && (
                         <Text strong>
                             {languageSetting.primaryLanguage ? (
@@ -445,6 +446,11 @@ const Index = () => {
                     <Skeleton.Button active style={{ height: 600 }} block />
                 ) : languageData.length != 0 ? (
                     <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+                        <div style={{ paddingLeft: "8px" }}>    
+                            <Title level={2} style={{ margin: "0" }}>
+                                {t("translateSettings.title1")}
+                            </Title>
+                        </div>
                         <>
                             <Card
                                 ref={languageCardRef}
@@ -505,8 +511,8 @@ const Index = () => {
                             <Link to={"/app/language"} style={{ paddingLeft: "8px" }}>{t("Can't find the language you want to translate into? Click here to add a language.")}</Link>
                         </>
                         <div style={{ paddingLeft: "8px" }}>
-                            <Title level={5} style={{ fontSize: "1.25rem", margin: "0" }}>
-                                {t("translateSettings.title")}
+                            <Title level={2} style={{ margin: "0" }}>
+                                {t("translateSettings.title2")}
                             </Title>
                             {/* <Text style={{ margin: "0" }}>
                                 {t("translateSettings.description")}

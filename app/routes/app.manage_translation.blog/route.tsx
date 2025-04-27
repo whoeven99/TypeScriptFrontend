@@ -274,9 +274,9 @@ const Index = () => {
             }
           }
         })
-        message.success("Saved successfully");
+        shopify.toast.show("Saved successfully");
       } else {
-        message.error(errorItem?.errorMsg);
+        shopify.toast.show(errorItem?.errorMsg);
       }
       setConfirmData([]);
     }
