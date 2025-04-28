@@ -318,5 +318,6 @@
     "You can add up to {{count}} translation rules": "Вы можете добавить до {{count}} правил перевода",
     "Please select a language": "Пожалуйста, выберите язык",
     "The 20 language limit has been reached": "20 язык ограничение достигнуто",
-    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "На основе ограничения языка Shopify, вы можете добавить до 20 языков. Пожалуйста, удалите некоторые языки и продолжите."
+    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "На основе ограничения языка Shopify, вы можете добавить до 20 языков. Пожалуйста, удалите некоторые языки и продолжите.",
+    "Auto translate": "Автоматический перевод"
 }

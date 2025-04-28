@@ -318,5 +318,6 @@
     "You can add up to {{count}} translation rules": "En fazla {{count}} çeviri kuralı ekleyebilirsiniz",
     "Please select a language": "Bir dil seçin",
     "The 20 language limit has been reached": "20 dil sınırı aşıldı",
-    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "Shopify'nin dil sınırına göre, en fazla 20 dil ekleyebilirsiniz. Lütfen bazı dilleri silin ve devam edin."
+    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "Shopify'nin dil sınırına göre, en fazla 20 dil ekleyebilirsiniz. Lütfen bazı dilleri silin ve devam edin.",
+    "Auto translate": "Otomatik çeviri"
 }

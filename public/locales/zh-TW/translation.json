@@ -317,6 +317,7 @@
     "You can add up to {{count}} translation rules": "您最多可以添加{{count}}個翻譯規則",
     "Please select a language": "請選擇一個語言",
     "The 20 language limit has been reached": "20語言限制已達到",
-    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "基於 Shopify 的語言限制，您只能添加最多 20 種語言。請刪除一些語言然後繼續。"
+    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "基於 Shopify 的語言限制，您只能添加最多 20 種語言。請刪除一些語言然後繼續。",
+    "Auto translate": "自動翻譯"
 }
   
