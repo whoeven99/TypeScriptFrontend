@@ -8,7 +8,7 @@
   z-index: 9999;
 }
 
-.main_box {
+.ciwi_main_box {
   position: relative;
   background: #fff;
   padding: 10px;
@@ -127,10 +127,10 @@
     width: 100%;
   }
 
-  .main_box {
+  .ciwi_main_box {
     padding: 0%;
     border: 0;
-    background-color: transparent !important;
+    background-color: transparent;
   }
 
   .mobile_trans_img {
