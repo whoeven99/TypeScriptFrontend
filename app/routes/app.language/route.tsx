@@ -10,7 +10,6 @@ import {
   Skeleton,
   message,
   Modal,
-  MenuProps,
 } from "antd";
 import { lazy, Suspense, useEffect, useState, startTransition } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
@@ -31,25 +30,26 @@ import {
 } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  setAutoTranslateLoadingState,
+  setAutoTranslateState,
   setPublishLoadingState,
   setPublishState,
   setStatusState,
   setTableData,
 } from "~/store/modules/languageTableData";
-import AttentionCard from "~/components/attentionCard";
 import {
   GetLanguageList,
   GetLanguageLocaleInfo,
   GetTranslate,
   GetUserData,
   GetUserWords,
+  UpdateAutoTranslateByData,
 } from "~/api/serve";
 import TranslatedIcon from "~/components/translateIcon";
 import { WordsType } from "../app._index/route";
 import { useTranslation } from "react-i18next";
 import PrimaryLanguage from "./components/primaryLanguage";
 import AddLanguageModal from "./components/addLanguageModal";
-import TranslationWarnModal from "~/components/translationWarnModal";
 import PreviewModal from "~/components/previewModal";
 import ScrollNotice from "~/components/ScrollNotice";
 
@@ -75,9 +75,10 @@ export interface LanguagesDataType {
   locale: string;
   primary: boolean;
   status: number;
-  auto_update_translation: boolean;
+  autoTranslate: boolean;
   published: boolean;
-  loading: boolean;
+  publishLoading: boolean;
+  autoTranslateLoading: boolean;
 }
 
 export interface MarketType {
@@ -118,11 +119,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shopLocalesIndex = shopLanguagesLoad.filter(
     (language) => !language.primary,
   ).map((item) => item.locale);
-  console.log("shopPrimaryLanguage: ", shopPrimaryLanguage);
-
   // 返回数据和更新后的 cookie
   return json(
     {
+      sever: process.env.SERVER_URL,
       shop: shop,
       shopLanguagesLoad,
       shopPrimaryLanguage,
@@ -267,7 +267,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           if (typeof words?.totalChars === "number" && words?.totalChars === 200000) {
             const productsCount = await queryProductsCount({ shop, accessToken: accessToken as string })
-            console.log(`${shop} productsCount: `, productsCount);
             if (productsCount >= 5000) {
               return json({
                 success: false,
@@ -315,20 +314,30 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
 
       case !!publishInfo:
-        await mutationShopLocalePublish({
-          shop,
-          accessToken: accessToken as string,
-          publishInfo: publishInfo,
-        });
-        return null;
+        try {
+          await mutationShopLocalePublish({
+            shop,
+            accessToken: accessToken as string,
+            publishInfo: publishInfo,
+          });
+          return null;
+        } catch (error) {
+          console.error("Error publishInfo language:", error);
+          return json({ error: "Error publishInfo language" }, { status: 500 });
+        }
 
       case !!unPublishInfo:
-        await mutationShopLocaleUnpublish({
-          shop,
-          accessToken: accessToken as string,
-          publishInfos: [unPublishInfo],
-        });
-        return null;
+        try {
+          await mutationShopLocaleUnpublish({
+            shop,
+            accessToken: accessToken as string,
+            publishInfos: [unPublishInfo],
+          });
+          return null;
+        } catch (error) {
+          console.error("Error unPublishInfo language:", error);
+          return json({ error: "Error unPublishInfo language" }, { status: 500 });
+        }
 
       case !!deleteData:
         try {
@@ -351,7 +360,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 console.error("Request failed:", result.reason);
               }
             });
-            console.log("deleteData: ", data);
             return json({ data: data });
           }
         } catch (error) {
@@ -369,12 +377,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, shopLanguagesLoad, shopPrimaryLanguage, shopLocalesIndex } = useLoaderData<typeof loader>();
-  // const [shop, setShop] = useState<string>("");
-  // const [primaryLanguage, setPrimaryLanguage] = useState<ShopLocalesType>();
-  // const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>(
-  //   [],
-  // );
+  const { shop, shopLanguagesLoad, shopPrimaryLanguage, shopLocalesIndex, sever } = useLoaderData<typeof loader>();
   const [allLanguages, setAllLanguages] = useState<AllLanguagesType[]>([]);
   const [allMarket, setAllMarket] = useState<MarketType[]>([]);
   const [languagesLoad, setLanguagesLoad] = useState<any>(null);
@@ -387,7 +390,7 @@ const Index = () => {
   const [previewModalVisible, setPreviewModalVisible] =
     useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(false);
-  const [mobileModalVisible, setMobileModalVisible] = useState<boolean>(false);
+  const hasSelected = selectedRowKeys.length > 0;
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -418,16 +421,9 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data) {
-      // setShop(loadingFetcher.data.shop);
-      // setShopLanguagesLoad(loadingFetcher.data.shopLanguagesLoad);
       setAllMarket(loadingFetcher.data.allMarket);
       setLanguagesLoad(loadingFetcher.data.languagesLoad);
       setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
-      // setPrimaryLanguage(
-      //   loadingFetcher.data.shopLanguagesLoad?.find(
-      //     (lang) => lang.primary === true,
-      //   ),
-      // );
       shopify.loading(false);
       setLoading(false);
     }
@@ -470,7 +466,8 @@ const Index = () => {
   }, [deleteFetcher.data]);
 
   useEffect(() => {
-    if (statusFetcher.data) {
+    if (statusFetcher.data?.data) {
+      console.log("statusFetcher.data?.data: ", statusFetcher.data?.data);
       const items = statusFetcher.data?.data.map((item: any) => {
         if (item?.status === 2) {
           return item;
@@ -480,7 +477,7 @@ const Index = () => {
           );
         }
       });
-      if (items[0] !== undefined) {
+      if (items[0] !== undefined && items[0].status === 2) {
         // 加入10秒的延时
         const delayTimeout = setTimeout(() => {
           const formData = new FormData();
@@ -517,13 +514,15 @@ const Index = () => {
       locale: lang.locale,
       primary: lang.primary,
       status: 0,
-      auto_update_translation: false,
+      autoTranslate: false,
       published: lang.published,
-      loading: false,
+      publishLoading: false,
+      autoTranslateLoading: false,
     }));
     data = data.map((lang, i) => ({
       ...lang,
       status: languagesLoad.find((language: any) => language.target === lang.locale)?.status || 0,
+      autoTranslate: languagesLoad.find((language: any) => language.target === lang.locale)?.autoTranslate || false,
     }));
     const findItem = data.find((data: any) => data.status === 2);
     if (findItem && shopPrimaryLanguage) {
@@ -573,34 +572,7 @@ const Index = () => {
     }
   }, [dataSource]);
 
-  const items: MenuProps['items'] = [
-    {
-      key: '1',
-      label: (
-        <a target="_blank" rel="noopener noreferrer" href="https://www.antgroup.com">
-          {t("Translate")}
-        </a>
-      ),
-    },
-    {
-      key: '2',
-      label: (
-        <a target="_blank" rel="noopener noreferrer" href="https://www.aliyun.com">
-          2nd menu item
-        </a>
-      ),
-    },
-    {
-      key: '3',
-      label: (
-        <a target="_blank" rel="noopener noreferrer" href="https://www.luohanacademy.com">
-          3rd menu item
-        </a>
-      ),
-    },
-  ];
-
-  const desktopColumns = [
+  const columns = [
     {
       title: t("Language"),
       dataIndex: "language",
@@ -618,7 +590,7 @@ const Index = () => {
       title: t("Status"),
       dataIndex: "status",
       key: "status",
-      width: "20%",
+      width: "15%",
       render: (_: any, record: any) => {
         return <TranslatedIcon status={record.status} />;
       },
@@ -627,12 +599,26 @@ const Index = () => {
       title: t("Publish"),
       dataIndex: "published",
       key: "published",
-      width: "20%",
+      width: "10%",
       render: (_: any, record: any) => (
         <Switch
           checked={record.published}
           onChange={(checked) => handlePublishChange(record.locale, checked)}
-          loading={record.loading} // 使用每个项的 loading 状态
+          loading={record.publishLoading} // 使用每个项的 loading 状态
+        // onClick={() => handleConfirmPublishModal()}
+        />
+      ),
+    },
+    {
+      title: t("Auto Translation"),
+      dataIndex: "autoTranslate",
+      key: "autoTranslate",
+      width: "20%",
+      render: (_: any, record: any) => (
+        <Switch
+          checked={record.autoTranslate}
+          onChange={(checked) => handleAutoUpdateTranslationChange(record.locale, checked)}
+          loading={record.autoTranslateLoading} // 使用每个项的 loading 状态
         // onClick={() => handleConfirmPublishModal()}
         />
       ),
@@ -641,11 +627,11 @@ const Index = () => {
       title: t("Action"),
       dataIndex: "action",
       key: "action",
-      width: "30%",
+      width: "25%",
       render: (_: any, record: any) => (
         <Space>
           <Button
-            onClick={() => navigate("/app/translate", { state: { from: "/app/language", selectedLanguageCode: record.locale } })}
+            onClick={() => handleTranslate(record.locale)}
             style={{ width: "100px" }}
             type="primary"
           >
@@ -661,33 +647,6 @@ const Index = () => {
             {t("Manage")}
           </Button>
         </Space>
-      ),
-    },
-  ];
-
-  const mobileColumns = [
-    {
-      title: t("Language"),
-      dataIndex: "language",
-      key: "language",
-      width: "30%",
-    },
-    {
-      title: t("Status"),
-      dataIndex: "status",
-      key: "status",
-      width: "40%",
-      render: (_: any, record: any) => {
-        return <TranslatedIcon status={record.status} />;
-      },
-    },
-    {
-      title: t("Action"),
-      dataIndex: "action",
-      key: "action",
-      width: "30%",
-      render: () => (
-        <Button type="primary" onClick={() => setMobileModalVisible(true)}>{t("Manage")}</Button>
       ),
     },
   ];
@@ -711,7 +670,7 @@ const Index = () => {
   const handlePublishChange = (locale: string, checked: boolean) => {
     const row = dataSource.find((item: any) => item.locale === locale);
     if (checked && row) {
-      dispatch(setPublishLoadingState({ locale, loading: checked }));
+      dispatch(setPublishLoadingState({ locale, loading: true }));
       publishFetcher.submit({
         publishInfo: JSON.stringify({
           locale: row.locale,
@@ -721,7 +680,6 @@ const Index = () => {
         method: "POST",
         action: "/app/language",
       });
-
     } else if (!checked && row) {
       dispatch(setPublishState({ locale, published: checked }));
       publishFetcher.submit({
@@ -733,12 +691,26 @@ const Index = () => {
         method: "POST",
         action: "/app/language",
       });
-      // if (row)
-      //   setUnpublishInfo({
-      //     locale: row.locale,
-      //     shopLocale: { published: false },
-      //   });
     }
+  };
+
+  const handleAutoUpdateTranslationChange = async (locale: string, checked: boolean) => {
+    dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
+    const row = dataSource.find((item: any) => item.locale === locale);
+    if (row) {
+      const data = await UpdateAutoTranslateByData({ shopName: shop, source: shopPrimaryLanguage[0]?.locale, target: row.locale, autoTranslate: checked, sever: sever || "" });
+      if (data?.success) {
+        dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
+        dispatch(setAutoTranslateState({ locale, autoTranslate: checked }));
+        setLanguagesLoad(languagesLoad.map((item: any) =>
+          item.target === locale ? { ...item, autoTranslate: checked } : { ...item, autoTranslate: false }
+        ));
+      }
+    }
+  };
+
+  const handleTranslate = async (locale: string) => {
+    navigate("/app/translate", { state: { from: "/app/language", selectedLanguageCode: locale } });
   };
 
   //表格编辑
@@ -761,10 +733,10 @@ const Index = () => {
 
   const rowSelection = {
     selectedRowKeys,
-    onChange: (newSelectedRowKeys: any) => setSelectedRowKeys(newSelectedRowKeys),
+    onChange: (e: any) => {
+      setSelectedRowKeys(e);
+    },
   };
-
-  const hasSelected = selectedRowKeys.length > 0;
 
   const PreviewClick = () => {
     const shopUrl = `https://${shop}`;
@@ -813,15 +785,15 @@ const Index = () => {
               </Space>
             </div>
           </Flex>
-          {/* <Suspense fallback={<Skeleton active />}> */}
           <Table
+            virtual={isMobile}
+            scroll={isMobile ? { x: 700 } : {}}
             rowSelection={rowSelection}
-            columns={isMobile ? mobileColumns : desktopColumns}
+            columns={columns}
             dataSource={dataSource}
             style={{ width: "100%" }}
             loading={deleteloading || loading}
           />
-          {/* </Suspense> */}
         </div>
       </Space>
       <AddLanguageModal
@@ -851,13 +823,6 @@ const Index = () => {
           </Text>
         </Modal>
       )}
-      {mobileModalVisible && <Modal
-        open={mobileModalVisible}
-        onCancel={() => setMobileModalVisible(false)}
-        title={t("Manage")}
-      >
-        <Text>{t("Manage")}</Text>
-      </Modal>}
     </Page>
   );
 };

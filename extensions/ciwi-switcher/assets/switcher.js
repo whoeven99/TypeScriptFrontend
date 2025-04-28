@@ -964,7 +964,6 @@ window.onload = async function () {
     selectorBox.style.backgroundColor = data.backgroundColor;
     mainBox.style.backgroundColor = data.backgroundColor;
     switcher.style.color = data.fontColor;
-    console.log("data.selectorPosition: ", data.selectorPosition);
     if (
       data.selectorPosition === "top_left" ||
       data.selectorPosition === "top_right"

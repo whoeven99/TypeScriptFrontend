@@ -20,6 +20,36 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const UpdateAutoTranslateByData = async ({
+  shopName,
+  source,
+  target,
+  autoTranslate,
+  sever,
+}: {
+  shopName: string;
+  source: string;
+  target: string;
+  autoTranslate: boolean;
+  sever: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${sever}/translate/updateAutoTranslateByData `,
+      method: "POST",
+      data: {
+        shopName: shopName,
+        source: source,
+        target: target,
+        autoTranslate: autoTranslate,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error UpdateAutoTranslateByData:", error);
+  }
+};
+
 //修改用户计划
 export const WidgetConfigurations = async ({ shop }: { shop: string }) => {
   try {
@@ -665,10 +695,7 @@ export const GetLanguageList = async ({
       url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}&&source=${source}`,
       method: "GET",
     });
-
     const res = response.data.response;
-    console.log("GetLanguageList: ", res);
-
     return res;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);
@@ -1201,9 +1228,6 @@ export const updateManageTranslation = async ({
 
 //检测默认货币
 export const InitCurrency = async ({ shop }: { shop: string }) => {
-  console.log("InitCurrency: ", {
-    shopName: shop,
-  });
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/initCurrency?shopName=${shop}`,
@@ -1229,14 +1253,6 @@ export const UpdateDefaultCurrency = async ({
   currencyCode: string;
   primaryStatus: number;
 }) => {
-  console.log("UpdateDefaultCurrency: ", {
-    shopName: shop,
-    currencyName: currencyName, // 国家
-    currencyCode: currencyCode, // 货币代码
-    rounding: null,
-    exchangeRate: null,
-    primaryStatus: primaryStatus,
-  });
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/updateDefaultCurrency`,

@@ -134,7 +134,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
 
     useEffect(() => {
         if (itemsFetcher.data?.data && itemsFetcher.data?.data.length > 0) {
-            console.log("itemsFetcher.data?.data: ", itemsFetcher.data?.data);
             setItemsCount({
                 totalNumber: itemsFetcher.data?.data[0].totalNumber || 0,
                 translatedNumber: itemsFetcher.data?.data[0].translatedNumber || 0,
