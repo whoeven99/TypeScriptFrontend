@@ -318,6 +318,7 @@
     "You can add up to {{count}} translation rules": "Du kan lägga till upp till {{count}} översättningsregler",
     "Please select a language": "Välj ett språk",
     "The 20 language limit has been reached": "20 språkgräns har uppnåtts",
-    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "På grund av Shopify's språkgräns kan du bara lägga till upp till 20 språk. Ta bort några språk och fortsätt."
+    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "På grund av Shopify's språkgräns kan du bara lägga till upp till 20 språk. Ta bort några språk och fortsätt.",
+    "Auto translate": "Automatisk översättning"
 }   
   

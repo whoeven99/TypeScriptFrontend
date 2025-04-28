@@ -317,6 +317,7 @@
     "You can add up to {{count}} translation rules": "Vous pouvez ajouter jusqu'à {{count}} règles de traduction",
     "Please select a language": "Veuillez sélectionner une langue",
     "The 20 language limit has been reached": "La limite de 20 langues a été atteinte",
-    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "Sur la base de la limite de langues de Shopify, vous ne pouvez ajouter que jusqu'à 20 langues. Veuillez supprimer certaines langues et continuer."
+    "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "Sur la base de la limite de langues de Shopify, vous ne pouvez ajouter que jusqu'à 20 langues. Veuillez supprimer certaines langues et continuer.",
+    "Auto translate": "Traduire automatiquement"
 }
   
