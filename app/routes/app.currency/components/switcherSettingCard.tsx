@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 const { Title, Text, Paragraph } = Typography;
 
 interface SwitcherSettingCardProps {
+  loading: boolean;
   isEnable: boolean;
   shop: string;
   ciwiSwitcherId: string;
@@ -17,6 +18,7 @@ interface SwitcherSettingCardProps {
 }
 
 const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
+  loading,
   isEnable,
   shop,
   ciwiSwitcherId,
@@ -97,7 +99,9 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
     >
       <Space direction="vertical" size="small" style={{ display: "flex" }}>
         {step1Visible &&
-          (isVisible !== undefined ? (
+          (loading ? (
+            <Skeleton.Button active style={{ height: 300 }} block />
+          ) : (
             <Card
               title={t("Step 1: Set up Currency Format")}
               extra={
@@ -207,11 +211,11 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                 </div>
               </Space>
             </Card>
-          ) : (
-            <Skeleton.Button active style={{ height: 300 }} block />
           ))}
         {step2Visible &&
-          (isVisible !== undefined ? (
+          (loading ? (
+            <Skeleton.Button active style={{ height: 300 }} block />
+          ) : (
             <Card
               title={t("Step 2: Enable switcher")}
               extra={
@@ -269,8 +273,6 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                 </Text>
               </Space>
             </Card>
-          ) : (
-            <Skeleton.Button active style={{ height: 200 }} block />
           ))}
       </Space>
     </ConfigProvider>

@@ -88,6 +88,13 @@ export const queryShop = async ({
         shopOwnerName
         email
         currencyCode
+        currencySettings(first: 100) {
+          nodes {
+            currencyCode
+            currencyName
+            enabled
+          }
+        }
         myshopifyDomain
         currencyFormats {
           moneyFormat

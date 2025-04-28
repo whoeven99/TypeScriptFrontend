@@ -10,7 +10,6 @@ import {
   Skeleton,
   message,
   Modal,
-  MenuProps,
 } from "antd";
 import { lazy, Suspense, useEffect, useState, startTransition } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
@@ -36,7 +35,6 @@ import {
   setStatusState,
   setTableData,
 } from "~/store/modules/languageTableData";
-import AttentionCard from "~/components/attentionCard";
 import {
   GetLanguageList,
   GetLanguageLocaleInfo,
@@ -370,11 +368,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { shop, shopLanguagesLoad, shopPrimaryLanguage, shopLocalesIndex } = useLoaderData<typeof loader>();
-  // const [shop, setShop] = useState<string>("");
-  // const [primaryLanguage, setPrimaryLanguage] = useState<ShopLocalesType>();
-  // const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>(
-  //   [],
-  // );
   const [allLanguages, setAllLanguages] = useState<AllLanguagesType[]>([]);
   const [allMarket, setAllMarket] = useState<MarketType[]>([]);
   const [languagesLoad, setLanguagesLoad] = useState<any>(null);
@@ -387,7 +380,7 @@ const Index = () => {
   const [previewModalVisible, setPreviewModalVisible] =
     useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(false);
-  const [mobileModalVisible, setMobileModalVisible] = useState<boolean>(false);
+  const hasSelected = selectedRowKeys.length > 0;
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -573,34 +566,7 @@ const Index = () => {
     }
   }, [dataSource]);
 
-  const items: MenuProps['items'] = [
-    {
-      key: '1',
-      label: (
-        <a target="_blank" rel="noopener noreferrer" href="https://www.antgroup.com">
-          {t("Translate")}
-        </a>
-      ),
-    },
-    {
-      key: '2',
-      label: (
-        <a target="_blank" rel="noopener noreferrer" href="https://www.aliyun.com">
-          2nd menu item
-        </a>
-      ),
-    },
-    {
-      key: '3',
-      label: (
-        <a target="_blank" rel="noopener noreferrer" href="https://www.luohanacademy.com">
-          3rd menu item
-        </a>
-      ),
-    },
-  ];
-
-  const desktopColumns = [
+  const columns = [
     {
       title: t("Language"),
       dataIndex: "language",
@@ -645,7 +611,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button
-            onClick={() => navigate("/app/translate", { state: { from: "/app/language", selectedLanguageCode: record.locale } })}
+            onClick={() => handleTranslate(record.locale)}
             style={{ width: "100px" }}
             type="primary"
           >
@@ -661,33 +627,6 @@ const Index = () => {
             {t("Manage")}
           </Button>
         </Space>
-      ),
-    },
-  ];
-
-  const mobileColumns = [
-    {
-      title: t("Language"),
-      dataIndex: "language",
-      key: "language",
-      width: "30%",
-    },
-    {
-      title: t("Status"),
-      dataIndex: "status",
-      key: "status",
-      width: "40%",
-      render: (_: any, record: any) => {
-        return <TranslatedIcon status={record.status} />;
-      },
-    },
-    {
-      title: t("Action"),
-      dataIndex: "action",
-      key: "action",
-      width: "30%",
-      render: () => (
-        <Button type="primary" onClick={() => setMobileModalVisible(true)}>{t("Manage")}</Button>
       ),
     },
   ];
@@ -741,6 +680,10 @@ const Index = () => {
     }
   };
 
+  const handleTranslate = async (locale: string) => {
+    navigate("/app/translate", { state: { from: "/app/language", selectedLanguageCode: locale } });
+  };
+
   //表格编辑
   const handleDelete = () => {
     const targets = dataSource.filter((item: LanguagesDataType) =>
@@ -761,10 +704,10 @@ const Index = () => {
 
   const rowSelection = {
     selectedRowKeys,
-    onChange: (newSelectedRowKeys: any) => setSelectedRowKeys(newSelectedRowKeys),
+    onChange: (e: any) => {
+      setSelectedRowKeys(e);
+    },
   };
-
-  const hasSelected = selectedRowKeys.length > 0;
 
   const PreviewClick = () => {
     const shopUrl = `https://${shop}`;
@@ -813,15 +756,15 @@ const Index = () => {
               </Space>
             </div>
           </Flex>
-          {/* <Suspense fallback={<Skeleton active />}> */}
           <Table
+            virtual={isMobile}
+            scroll={isMobile ? { x: 700 } : {}}
             rowSelection={rowSelection}
-            columns={isMobile ? mobileColumns : desktopColumns}
+            columns={columns}
             dataSource={dataSource}
             style={{ width: "100%" }}
             loading={deleteloading || loading}
           />
-          {/* </Suspense> */}
         </div>
       </Space>
       <AddLanguageModal
@@ -851,13 +794,6 @@ const Index = () => {
           </Text>
         </Modal>
       )}
-      {mobileModalVisible && <Modal
-        open={mobileModalVisible}
-        onCancel={() => setMobileModalVisible(false)}
-        title={t("Manage")}
-      >
-        <Text>{t("Manage")}</Text>
-      </Modal>}
     </Page>
   );
 };

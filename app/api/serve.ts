@@ -1201,9 +1201,6 @@ export const updateManageTranslation = async ({
 
 //检测默认货币
 export const InitCurrency = async ({ shop }: { shop: string }) => {
-  console.log("InitCurrency: ", {
-    shopName: shop,
-  });
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/initCurrency?shopName=${shop}`,
@@ -1229,14 +1226,6 @@ export const UpdateDefaultCurrency = async ({
   currencyCode: string;
   primaryStatus: number;
 }) => {
-  console.log("UpdateDefaultCurrency: ", {
-    shopName: shop,
-    currencyName: currencyName, // 国家
-    currencyCode: currencyCode, // 货币代码
-    rounding: null,
-    exchangeRate: null,
-    primaryStatus: primaryStatus,
-  });
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/currency/updateDefaultCurrency`,

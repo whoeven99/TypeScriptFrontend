@@ -71,19 +71,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
-    const sessionService = await SessionService.init(request);
-    let shopSession = sessionService.getShopSession();
-    if (!shopSession) {
-      const adminAuthResult = await authenticate.admin(request);
-      const { shop, accessToken } = adminAuthResult.session;
-      shopSession = {
-        shop: shop,
-        accessToken: accessToken as string,
-      };
-      sessionService.setShopSession(shopSession);
-    }
-    const { shop, accessToken } = shopSession;
+    const { session, admin } = await authenticate.admin(request);
+    const { shop, accessToken } = session;
     const formData = await request.formData();
+    const init = JSON.parse(formData.get("init") as string);
     const loading = JSON.parse(formData.get("loading") as string);
     const theme = JSON.parse(formData.get("theme") as string);
     const rateData = JSON.parse(formData.get("rateData") as string);
@@ -99,30 +90,86 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
 
     switch (true) {
-      case !!loading:
+      case !!init:
         try {
           const primaryCurrency = await InitCurrency({ shop });
-          const shopLoad = await queryShop({ shop, accessToken });
-          const currencyList = await GetCurrencyByShopName({ shop });
-          const finalCurrencyList = currencyList || [];
+          const shopLoad = await queryShop({ shop, accessToken: accessToken as string });
+          const url = new URL("/currencies.json", request.url).toString();
+          const currencyLocaleData = await fetch(url)
+            .then((response) => response.json())
+            .catch((error) => console.error("Error loading currencies:", error));
+          if (!primaryCurrency && shopLoad.currencyCode) {
+            const currencyData = shopLoad.currencySettings.nodes
+              .filter((item1: any) => item1.enabled)
+              .filter((item2: any) => item2.currencyCode !== shopLoad.currencyCode)
+              .map((item3: any) => ({
+                currencyName: currencyLocaleData.find((item4: any) => item4.currencyCode === item3.currencyCode).currencyName,
+                currencyCode: item3.currencyCode,
+                primaryStatus: 0,
+              }));
+            currencyData.push({
+              currencyName: currencyLocaleData.find((item: any) => item.currencyCode === shopLoad.currencyCode).currencyName,
+              currencyCode: shopLoad.currencyCode,
+              primaryStatus: 1,
+            });
+            const promises = currencyData.map((currency: any) =>
+              AddCurrency({
+                shop,
+                currencyName: currency.currencyName,
+                currencyCode: currency.currencyCode,
+                primaryStatus: currency?.primaryStatus || 0,
+              }),
+            );
+            await Promise.allSettled(promises);
+          }
+          if (primaryCurrency && shopLoad.currencyCode !== primaryCurrency.currencyCode) {
+            await UpdateDefaultCurrency({ shop, currencyName: currencyLocaleData.find((item: any) => item.currencyCode === shopLoad.currencyCode).currencyName, currencyCode: shopLoad.currencyCode, primaryStatus: 1 });
+          }
           const moneyFormat = shopLoad.currencyFormats.moneyFormat;
           const moneyWithCurrencyFormat =
             shopLoad.currencyFormats.moneyWithCurrencyFormat;
           return json({
             primaryCurrency,
             defaultCurrencyCode: shopLoad.currencyCode,
-            currencyList: finalCurrencyList,
+            currencyLocaleData: currencyLocaleData,
             moneyFormat,
             moneyWithCurrencyFormat,
           });
+        } catch (error) {
+          console.error("Error init currency:", error);
+          return json({ error: "Error init currency" }, { status: 500 });
+        }
+      case !!loading:
+        try {
+          const currencyList = await GetCurrencyByShopName({ shop });
+          return json({ currencyList });
         } catch (error) {
           console.error("Error loading currency:", error);
           return json({ error: "Error loading currency" }, { status: 500 });
         }
       case !!theme:
         try {
-          const data = await queryTheme({ shop, accessToken });
-          return json({ data });
+          const response = await admin.graphql(
+            `#graphql
+            query {
+              themes(roles: MAIN, first: 1) {
+                nodes {
+                  files(filenames: "config/settings_data.json") { 
+                    nodes {
+                      body {
+                        ... on OnlineStoreThemeFileBodyText {
+                          __typename
+                          content
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }`,
+          );
+          const data = await response.json();
+          return json({ data: data.data.themes });
         } catch (error) {
           console.error("Error theme currency:", error);
           return json({ error: "Error theme currency" }, { status: 500 });
@@ -208,6 +255,7 @@ const Index = () => {
   const userShop = `https://${shop}`;
   const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
   const [loading, setLoading] = useState<boolean>(true);
+  const [cardLoading, setCardLoading] = useState<boolean>(true);
   const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>("");
   const [searchInput, setSearchInput] = useState("");
   const [currencyData, setCurrencyData] = useState<CurrencyType[]>([]);
@@ -226,6 +274,7 @@ const Index = () => {
   const [selectedRow, setSelectedRow] = useState<
     CurrencyDataType | undefined
   >();
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const dataSource: CurrencyDataType[] = useSelector(
     (state: any) => state.currencyTableData.rows,
   );
@@ -238,16 +287,16 @@ const Index = () => {
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
+  const initFetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
   const rateFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
-  const initCurrencyFetcher = useFetcher<any>();
 
   useEffect(() => {
-    const loadingFormData = new FormData();
-    loadingFormData.append("loading", JSON.stringify(true));
-    loadingFetcher.submit(loadingFormData, {
+    const initFormData = new FormData();
+    initFormData.append("init", JSON.stringify(true));
+    initFetcher.submit(initFormData, {
       method: "post",
       action: "/app/currency",
     });
@@ -258,31 +307,42 @@ const Index = () => {
       method: "post",
       action: "/app/currency",
     });
-
-    fetch("/currencies.json")
-      .then((response) => response.json())
-      .then((data) => {
-        setCurrencyData(data);
-        setAddCurrencies(
-          data.filter(
-            (item: CurrencyType) => item.currencyCode !== defaultCurrencyCode,
-          ),
-        );
-      })
-      .catch((error) => console.error("Error loading currencies:", error));
-
-    shopify.loading(true);
+    setIsMobile(window.innerWidth < 768);
   }, []);
 
   useEffect(() => {
-    if (loadingFetcher.data && currencyData.length) {
-      setDefaultCurrencyCode(loadingFetcher.data.defaultCurrencyCode);
+    if (initFetcher.data) {
+      const parser = new DOMParser();
+      setMoneyFormatHtml(
+        parser.parseFromString(initFetcher.data.moneyFormat, "text/html")
+          .documentElement.textContent,
+      );
+      setMoneyWithCurrencyFormatHtml(
+        parser.parseFromString(
+          initFetcher.data.moneyWithCurrencyFormat,
+          "text/html",
+        ).documentElement.textContent,
+      );
+      setDefaultCurrencyCode(initFetcher.data.defaultCurrencyCode);
+      setCurrencyData(initFetcher.data.currencyLocaleData);
+      setAddCurrencies(initFetcher.data.currencyLocaleData.filter((item: any) => item.currencyCode !== initFetcher.data.defaultCurrencyCode));
       const defaultCurrency = currencyData.find(
-        (item) => item.currencyCode === loadingFetcher.data.defaultCurrencyCode,
+        (item) => item.currencyCode === initFetcher.data.defaultCurrencyCode,
       );
       if (defaultCurrency) {
         setDefaultSymbol(defaultCurrency.symbol);
       }
+      const loadingFormData = new FormData();
+      loadingFormData.append("loading", JSON.stringify(true));
+      loadingFetcher.submit(loadingFormData, {
+        method: "post",
+        action: "/app/currency",
+      });
+    }
+  }, [initFetcher.data]);
+
+  useEffect(() => {
+    if (loadingFetcher.data) {
       const tableData = loadingFetcher.data.currencyList?.filter(
         (item: any) => !item?.primaryStatus,
       );
@@ -298,55 +358,7 @@ const Index = () => {
         method: "post",
         action: "/app/currency",
       });
-      const parser = new DOMParser();
-      setMoneyFormatHtml(
-        parser.parseFromString(loadingFetcher.data.moneyFormat, "text/html")
-          .documentElement.textContent,
-      );
-      setMoneyWithCurrencyFormatHtml(
-        parser.parseFromString(
-          loadingFetcher.data.moneyWithCurrencyFormat,
-          "text/html",
-        ).documentElement.textContent,
-      );
-      shopify.loading(false);
       setLoading(false);
-      const primaryCurrency = loadingFetcher.data.primaryCurrency;
-      if (!primaryCurrency && defaultCurrency) {
-        const formData = new FormData();
-        formData.append(
-          "addCurrencies",
-          JSON.stringify([
-            {
-              currencyName: defaultCurrency.currencyName,
-              currencyCode: defaultCurrency.currencyCode,
-              primaryStatus: 1,
-            },
-          ]),
-        );
-        initCurrencyFetcher.submit(formData, {
-          method: "post",
-          action: "/app/currency",
-        });
-      } else if (
-        primaryCurrency?.currencyCode !==
-        loadingFetcher.data.defaultCurrencyCode &&
-        defaultCurrency
-      ) {
-        const formData = new FormData();
-        formData.append(
-          "updateDefaultCurrency",
-          JSON.stringify({
-            currencyName: defaultCurrency.currencyName,
-            currencyCode: defaultCurrency.currencyCode,
-            primaryStatus: 1,
-          }),
-        );
-        initCurrencyFetcher.submit(formData, {
-          method: "post",
-          action: "/app/currency",
-        });
-      }
     }
   }, [loadingFetcher.data]);
 
@@ -364,6 +376,7 @@ const Index = () => {
           setSwitcherEnableCardOpen(true);
         }
       }
+      setCardLoading(false);
       // const switcherData =
       //   themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
       // const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
@@ -575,6 +588,7 @@ const Index = () => {
       <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <SwitcherSettingCard
+          loading={cardLoading}
           settingUrl={settingUrl}
           moneyFormatHtml={moneyFormatHtml}
           moneyWithCurrencyFormatHtml={moneyWithCurrencyFormatHtml}
@@ -636,6 +650,8 @@ const Index = () => {
             style={{ marginBottom: 16 }}
           />
           <Table
+            virtual={isMobile}
+            scroll={isMobile ? { x: 900 } : {}}
             rowSelection={rowSelection}
             columns={columns}
             dataSource={filteredData}
