@@ -66,12 +66,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
 
   useEffect(() => {
     if (fetcher.data) {
-      console.log("fetcher.data: ", fetcher.data);
       if (fetcher.data.data.success) {
-        console.log("fetcher.data.data.response: ", fetcher.data.data.response);
         const { id, translationId, shopName, ...rest } = fetcher.data.data.response;
         let credits = 0;
-        console.log("rest: ", rest);
         Object.entries(rest).forEach(([key, value]) => {
           if (value !== null) {
             credits += value as number;
@@ -146,10 +143,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         payFetcher.data.data.data.appPurchaseOneTimeCreate.userErrors.length
       ) {
         setBuyButtonLoading(false);
-        console.log(
-          payFetcher.data.data.data.appPurchaseOneTimeCreate.userErrors[0]
-            .message,
-        );
       }
     }
   }, [payFetcher.data]);

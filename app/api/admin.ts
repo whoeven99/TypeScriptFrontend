@@ -1613,7 +1613,6 @@ export const mutationShopLocalePublish = async ({
   accessToken: string;
   publishInfo: PublishInfoType; // 接受语言数组
 }) => {
-  console.log("publishInfo: ", publishInfo);
   try {
     // 遍历语言数组并逐个执行 GraphQL mutation
     const confirmMutation = `

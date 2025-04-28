@@ -246,11 +246,6 @@ const Index = () => {
     }
   };
 
-  const onSelectChange = (newSelectedRowKeys: any) => {
-    console.log(selectedRowKeys);
-    setSelectedRowKeys(newSelectedRowKeys);
-  };
-
   const columns = [
     {
       title: t("Status"),
@@ -326,10 +321,12 @@ const Index = () => {
     },
   ];
   const hasSelected = selectedRowKeys.length > 0;
+
   const rowSelection = {
     selectedRowKeys,
-    onChange: onSelectChange,
+    onChange: (e: any) => setSelectedRowKeys(e),
   };
+
   return (
     <Page>
       <TitleBar title={t("Glossary")} />

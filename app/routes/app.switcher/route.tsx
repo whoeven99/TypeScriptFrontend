@@ -54,7 +54,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                         selectorPosition: "bottom_left",
                         positionData: 10,
                     }
-                    console.log("data: ", data.response);
                     if (data.success && typeof data.response === "object" && data.response !== null) {
                         const filteredResponse = Object.fromEntries(
                             Object.entries(data.response).filter(([_, value]) => value !== null)
