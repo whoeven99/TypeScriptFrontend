@@ -133,7 +133,7 @@ const Index = () => {
   const [title, setTitle] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
-  // const [deleteloading, setDeleteLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [shopLocales, setShopLocales] = useState<ShopLocalesType[]>([]);
   const [isGlossaryModalOpen, setIsGlossaryModalOpen] =
@@ -154,6 +154,7 @@ const Index = () => {
       method: "post",
       action: "/app/glossary",
     });
+    setIsMobile(window.innerWidth < 768);
     shopify.loading(true);
   }, []);
 
@@ -179,19 +180,20 @@ const Index = () => {
             (item: GLossaryDataType) => item.key !== res.value.response.id,
           );
         } else {
-          message.error(res.value.errorMsg);
+          shopify.toast.show(res.value.errorMsg);
         }
       });
       dispatch(setGLossaryTableData(newData)); // 更新表格数据
       setSelectedRowKeys([]);
       setDeleteLoading(false);
+      shopify.toast.show(t("Delete successfully"));
     }
   }, [deleteFetcher.data]);
 
   useEffect(() => {
     if (statusFetcher.data) {
       if (statusFetcher.data?.data?.success) {
-        message.success(t("Saved successfully"));
+        shopify.toast.show(t("Saved successfully"));
         dispatch(
           setGLossaryStatusLoadingState({
             key: statusFetcher.data.data.response.id,
@@ -200,7 +202,7 @@ const Index = () => {
           }),
         );
       } else {
-        message.error(statusFetcher.data?.data?.errorMsg);
+        shopify.toast.show(statusFetcher.data?.data?.errorMsg);
         dispatch(
           setGLossaryStatusLoadingState({
             key: statusFetcher.data.data.response.id,
@@ -236,7 +238,7 @@ const Index = () => {
 
   const handleIsModalOpen = (title: string, key: number) => {
     if (title === "Create rule" && dataSource.length >= 10) {
-      message.error(t("You can add up to 10 translation rules"));
+      shopify.toast.show(t("You can add up to {{count}} translation rules", { count: 10 }));
     } else {
       setTitle(t(title));
       setGlossaryModalId(key);
@@ -244,16 +246,12 @@ const Index = () => {
     }
   };
 
-  const onSelectChange = (newSelectedRowKeys: any) => {
-    console.log(selectedRowKeys);
-    setSelectedRowKeys(newSelectedRowKeys);
-  };
-
   const columns = [
     {
       title: t("Status"),
       dataIndex: "status",
       key: "status",
+      width: "10%",
       render: (_: any, record: any) => (
         <Switch
           checked={record?.status}
@@ -266,16 +264,19 @@ const Index = () => {
       title: t("Text"),
       dataIndex: "sourceText",
       key: "sourceText",
+      width: "25%",
     },
     {
       title: t("Translation text"),
       dataIndex: "targetText",
       key: "targetText",
+      width: "25%",
     },
     {
       title: t("Apply for"),
       dataIndex: "language",
       key: "language",
+      width: "20%",
       render: (_: any, record: any) => {
         return record.language ? (
           <Text>{record.language}</Text>
@@ -294,6 +295,7 @@ const Index = () => {
       title: t("Case"),
       dataIndex: "type",
       key: "type",
+      width: "10%",
       render: (_: any, record: any) => {
         return record.type ? (
           <Text>{t("Case-sensitive")}</Text>
@@ -306,6 +308,7 @@ const Index = () => {
       title: t("Action"),
       dataIndex: "action",
       key: "action",
+      width: "10%",
       render: (_: any, record: any) => (
         <Space>
           <Button
@@ -318,10 +321,12 @@ const Index = () => {
     },
   ];
   const hasSelected = selectedRowKeys.length > 0;
+
   const rowSelection = {
     selectedRowKeys,
-    onChange: onSelectChange,
+    onChange: (e: any) => setSelectedRowKeys(e),
   };
+
   return (
     <Page>
       <TitleBar title={t("Glossary")} />
@@ -365,7 +370,6 @@ const Index = () => {
             >
               <Flex align="center" gap="middle">
                 <Button
-                  type="primary"
                   onClick={handleDelete}
                   disabled={!hasSelected}
                   loading={deleteLoading}
@@ -389,6 +393,8 @@ const Index = () => {
             </Flex>
             <Suspense fallback={<Skeleton active />}>
               <Table
+                virtual={isMobile}
+                scroll={isMobile ? { x: 900 } : {}}
                 rowSelection={rowSelection}
                 columns={columns}
                 loading={deleteLoading || loading}

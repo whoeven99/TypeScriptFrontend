@@ -13,27 +13,20 @@ const TranslationWarnModal: React.FC<TranslationWarnModalProps> = ({
   setShow,
 }) => {
   const { t } = useTranslation();
-
-  const handleContactSupport = () => {
-    window.open("mailto:support@ciwi.ai", "_blank");
-    setShow(false);
-  };
-
   return (
     // 添加 Modal 组件
     <Modal
       open={show}
       onCancel={() => setShow(false)}
-      title="Translation limit reached"
+      title={t("The 20 language limit has been reached")}
       footer={
-        <Button type="primary" onClick={() => handleContactSupport()}>
-          Contact Support
+        <Button onClick={() => setShow(false)}>
+          {t("Cancel")}
         </Button>
       }
     >
       <Text>
-        Sorry, your store is too large to continue translating. Please contact
-        our team for support.
+        {t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")}
       </Text>
     </Modal>
   );

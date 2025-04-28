@@ -1,18 +1,19 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Icon, Page } from "@shopify/polaris";
-import { Button, message, Skeleton, Space, Typography } from "antd";
+import { Button, Card, Input, message, Skeleton, Space, Typography } from "antd";
 import { json, Link, useFetcher, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import {
   ArrowLeftIcon
 } from '@shopify/polaris-icons';
-import { ApiKeyEditCard, ApiKeyEditCardMethods } from './components/apikeyEditCard';
 import { SessionService } from "~/utils/session.server";
 import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { DeleteUserData, GetUserData, SaveGoogleKey } from "~/api/serve";
 import { useEffect, useState, useRef } from "react";
+import styles from './styles.module.css';
+
 const { Title, Text } = Typography;
 
 export interface GLossaryDataType {
@@ -61,10 +62,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       case !!updateUserAPIKey:
         try {
-          const { model, apiKey, count } = updateUserAPIKey;
+          const { apiKey, count } = updateUserAPIKey;
           const data = await SaveGoogleKey({
             shop,
-            model,
             apiKey,
             count,
           });
@@ -91,22 +91,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-
-  const [loadingModal, setLoadingModal] = useState<string>("");
   const [userData, setUserData] = useState<any>(null);
   const [apiKey, setApiKey] = useState<string>("");
-  const [count, setCount] = useState<string>("");
+  const [count, setCount] = useState<string>("0");
+  const [isEdit, setIsEdit] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState(false);
+  const [countError, setCountError] = useState(false);
+  const [apiKeyStatus, setApiKeyStatus] = useState<"warning" | "error" | "">("");
+  const [countStatus, setCountStatus] = useState<"warning" | "error" | "">("");
+  const [apiKeyErrorMsg, setApiKeyErrorMsg] = useState<string>("The API key format is incorrect");
 
   const loadingfetcher = useFetcher<any>();
   const updateUserAPIKeyfetcher = useFetcher<any>();
   const deleteUserAPIKeyfetcher = useFetcher<any>();
 
-  const cardRefs = {
-    google: useRef<ApiKeyEditCardMethods>(null),
-    // ... 其他模型
-  };
+  const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadingfetcher.submit({
@@ -119,7 +119,6 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingfetcher.data) {
-      console.log("loadingfetcher.data: ", loadingfetcher.data);
       if (loadingfetcher.data.data.success) {
         setUserData(loadingfetcher.data.data.response);
         setApiKey(loadingfetcher.data.data.response.googleKey);
@@ -136,17 +135,18 @@ const Index = () => {
     if (updateUserAPIKeyfetcher.data) {
       // 根据当前加载的模型关闭编辑状态
       if (updateUserAPIKeyfetcher.data.data.success) {
-        const currentModal = loadingModal;
-        cardRefs[currentModal as keyof typeof cardRefs]?.current?.setEditMode(false);
+        setUserData({
+          ...userData,
+          googleKey: updateUserAPIKeyfetcher.data.data.response.secret,
+          amount: updateUserAPIKeyfetcher.data.data.response.amount,
+        });
         setApiKey(updateUserAPIKeyfetcher.data.data.response.secret);
         setCount(updateUserAPIKeyfetcher.data.data.response.amount);
-        setLoadingModal("");
+        setIsEdit(false);
       } else {
-        const currentModal = loadingModal;
-        cardRefs[currentModal as keyof typeof cardRefs]?.current?.setApiKeyValue("");
-        cardRefs[currentModal as keyof typeof cardRefs]?.current?.setCountValue("");
-        setLoadingModal("");
-        message.error("count is too large or apikey is incorrect");
+        setApiKeyError(true);
+        setApiKeyStatus("error");
+        setApiKeyErrorMsg(t("The API key is not valid"));
       }
     }
   }, [updateUserAPIKeyfetcher.data]);
@@ -154,19 +154,41 @@ const Index = () => {
   useEffect(() => {
     if (deleteUserAPIKeyfetcher?.data) {
       if (deleteUserAPIKeyfetcher?.data?.data?.success) {
-        console.log("deleteUserAPIKeyfetcher?.data?.data?.response: ", deleteUserAPIKeyfetcher?.data?.data?.response);
         setUserData(deleteUserAPIKeyfetcher?.data?.data?.response);
         setApiKey("");
         setCount("");
-        message.success("delete user api key success");
+        setUserData({
+          ...userData,
+          googleKey: "",
+          amount: 0,
+        });
+        shopify.toast.show(t("Delete successfully"));
       } else {
-        message.error("delete user api key failed");
+        shopify.toast.show(t("Delete failed"));
       }
     }
   }, [deleteUserAPIKeyfetcher.data]);
 
-  const onSave = (values: { model: string; apiKey: string; count: string }) => {
-    setLoadingModal(values.model);
+  const handleSave = (values: { apiKey: string; count: string }) => {
+    if (apiKey.length < 30) {
+      setApiKeyError(true);
+      setApiKeyStatus("error");
+      setApiKeyErrorMsg(t("The API key format is incorrect"));
+      return;
+    }
+    setApiKeyStatus("");
+    setApiKeyError(false);
+
+    const countNum = Number(count);
+    if (isNaN(countNum) || countNum <= 0 || countNum > 2147483647) {
+      setCountError(true);
+      setCountStatus("error");
+      return;
+    }
+    
+    setCountStatus("");
+    setCountError(false);
+
     updateUserAPIKeyfetcher.submit({
       updateUserAPIKey: JSON.stringify(values),
     }, {
@@ -175,14 +197,39 @@ const Index = () => {
     });
   };
 
-  const onDelete = (modal: string) => {
-    setLoadingModal(modal);
+  const handleCancel = () => {
+    setIsEdit(false);
+    setApiKeyStatus("");
+    setCountStatus("");
+    setApiKeyError(false);
+    setCountError(false);
+    setApiKey(userData.googleKey);
+    setCount(userData.amount);
+  };
+
+  const handleDelete = () => {
     deleteUserAPIKeyfetcher.submit({
       deleteUserAPIKey: JSON.stringify(true),
     }, {
       method: "POST",
       action: "/app/apikeySetting",
     });
+  };
+
+  const handleEdit = () => {
+    setIsEdit(true);
+    setApiKey('');
+    setCount('');
+  };
+
+  const handleCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '' || /^\d+$/.test(value)) {
+      setCount(value);
+      if (Number(value) > 2147483647) {
+        setCount("2147483647");
+      }
+    }
   };
 
   return (
@@ -218,29 +265,90 @@ const Index = () => {
           <Text style={{ marginLeft: "8px" }}>{t("How to translate with api key? Please refer to")}</Text><Link to="https://ciwi.bogdatech.com/help/uncategorized/how-to-use-your-own-key-for-translation/" target="_blank" rel="noreferrer">{t("the Private API Translation Model User Manual")}</Link>
         </div>
         {userData ?
-          <div>
-            <ApiKeyEditCard
-              ref={cardRefs.google}
-              title="Google Cloud Translation"
-              model="google"
-              apiKey={apiKey || ""}
-              count={count || ""}
-              minlength={30}
-              onSave={onSave}
-              onDelete={onDelete}
-              loading={loadingModal === "google" && (updateUserAPIKeyfetcher.state === "submitting" || deleteUserAPIKeyfetcher.state === "submitting")}
-            />
-            {/* <ApiKeyEditCard
-              ref={cardRefs.openai}
-              title="OpenAI"
-              model="openai"
-              apiKey={userData?.openaiKey}
-              count={userData?.openaiAmount}
-              minlength={30}
-              onSave={onSave}
-              loading={loadingModal === "openai" && updateUserAPIKeyfetcher.state === "submitting"}
-            /> */}
-          </div>
+          <Card className={styles.card}>
+            <div className={styles.header}>
+              <Title level={5}>Google Cloud Translation</Title>
+              {isEdit ?
+                <Space>
+                  <Button type="default" onClick={handleCancel} loading={loadingfetcher.state === "submitting"}>
+                    {t("Cancel")}
+                  </Button>
+                  <Button type="primary" onClick={() => handleSave({ apiKey: apiKey, count: count })} loading={updateUserAPIKeyfetcher.state === "submitting"}>
+                    {t("Save")}
+                  </Button>
+                </Space>
+                :
+                <Space>
+                  <Button disabled={!apiKey} onClick={handleDelete} loading={deleteUserAPIKeyfetcher.state === "submitting"}>
+                    {t("Delete")}
+                  </Button>
+                  <Button onClick={handleEdit}>
+                    {t("Edit")}
+                  </Button>
+                </Space>
+              }
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Text strong style={{
+                  whiteSpace: 'nowrap',
+                  width: '50px'  // 固定宽度，根据实际文本长度调整
+                }}>
+                  {t("API Key")}
+                </Text>
+                <Input
+                  placeholder={t("Please enter API Key")}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  style={{ flex: 1 }}  // 输入框占据剩余空间
+                  disabled={!isEdit || loadingfetcher.state === "submitting"}
+                  status={apiKeyStatus}
+                />
+              </div>
+              {/* 错误提示放在下方，并且与输入框左对齐 */}
+              <div style={{
+                marginLeft: '60px',  // 80px(标签宽度) + 8px(间距)
+                visibility: isEdit && apiKeyError ? 'visible' : 'hidden',
+                marginBottom: '4px'
+              }}>
+                <Text type="danger" strong>
+                  {apiKeyErrorMsg}
+                </Text>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Text strong style={{
+                  whiteSpace: 'nowrap',
+                  width: '50px'  // 固定宽度，根据实际文本长度调整
+                }}>
+                  {t("Quota")}
+                </Text>
+                <Input
+                  placeholder={t("Please enter Quota")}
+                  value={count}
+                  onChange={handleCountChange}
+                  style={{ flex: 1 }}  // 输入框占据剩余空间
+                  disabled={!isEdit || loadingfetcher.state === "submitting"}
+                  status={countStatus}
+                />
+              </div>
+              {/* 错误提示放在下方，并且与输入框左对齐 */}
+              <div style={{
+                marginLeft: '60px',  // 80px(标签宽度) + 8px(间距)
+                visibility: isEdit && countError ? 'visible' : 'hidden',
+              }}>
+                <Text type="danger" strong>
+                  {t('Quota must be a positive number')}
+                </Text>
+              </div>
+            </div>
+            {/* <Space size={[0, 8]} wrap>
+              {tags.map((tag, index) => (
+                <Tag key={index}>{tag}</Tag>
+              ))}
+            </Space> */}
+          </Card>
           :
           <Skeleton.Button active style={{ height: "176px" }} block />
         }

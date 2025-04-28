@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Banner, Button } from "@shopify/polaris";
-import PaymentModal from "./paymentModal";
 import { useTranslation } from "react-i18next";
 
 interface AttentionCardProps {
@@ -40,10 +39,6 @@ const AttentionCard: React.FC<AttentionCardProps> = ({
           </div>
         </Banner>
       )}
-      <PaymentModal
-        visible={paymentModalVisible}
-        setVisible={setPaymentModalVisible}
-      />
     </div>
   );
 };

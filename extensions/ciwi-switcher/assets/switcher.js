@@ -845,8 +845,8 @@ window.onload = async function () {
       }
     }
     if (data.ipOpen) {
-      const iptoken = document.querySelector('span[name="iptoken"]');
-      const iptokenValue = iptoken.textContent;
+      const iptoken = document.querySelector('input[name="iptoken"]');
+      const iptokenValue = iptoken.value;
       if (iptokenValue) iptoken.remove();
       const storedLanguage = localStorage.getItem("selectedLanguage");
       const storedCountry = localStorage.getItem("selectedCountry");
@@ -965,7 +965,6 @@ window.onload = async function () {
     selectorBox.style.backgroundColor = data.backgroundColor;
     mainBox.style.backgroundColor = data.backgroundColor;
     switcher.style.color = data.fontColor;
-    console.log("data.selectorPosition: ", data.selectorPosition);
     if (
       data.selectorPosition === "top_left" ||
       data.selectorPosition === "top_right"

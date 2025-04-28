@@ -6,8 +6,6 @@ import { setStatusState } from "~/store/modules/languageTableData";
 import TranslatedIcon from "~/components/translateIcon";
 import { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
-import TranslationWarnModal from "~/components/translationWarnModal";
-import { updateState } from "~/store/modules/translatingResourceType";
 const { Text } = Typography;
 
 interface UserLanguageCardProps {
@@ -122,7 +120,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
       if (!translateFetcher.data?.data?.success) {
         setShowWarnModal(true);
       } else {
-        message.success(t("The translation task is in progress."));
+        shopify.toast.show(t("The translation task is in progress."));
         dispatch(
           setStatusState({
             target: translateFetcher.data?.data.target,
@@ -172,7 +170,7 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
         }
       }
     } else {
-      message.error(
+      shopify.toast.show(
         t(
           "The translation task is in progress. Please try translating again later.",
         ),
@@ -186,7 +184,6 @@ const UserLanguageCard: React.FC<UserLanguageCardProps> = ({
 
   return (
     <>
-      <TranslationWarnModal show={showWarnModal} setShow={setShowWarnModal} />
       <Card style={{ textAlign: "center", padding: "20px" }}>
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div className="flag_container">

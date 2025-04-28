@@ -10,10 +10,8 @@
 
 .ciwi_main_box {
   position: relative;
-  background: #fff;
   padding: 10px;
   border-radius: 5px;
-  border: 1px solid rgb(217, 217, 217);
   cursor: pointer;
   user-select: none;
   display: flex;

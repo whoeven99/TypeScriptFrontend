@@ -146,7 +146,6 @@ const Index = () => {
                 const order =
                     payFetcher.data?.data?.data?.appPurchaseOneTimeCreate?.appPurchaseOneTime ||
                     payForPlanFetcher.data?.appSubscription;
-                console.log("order: ", order);
                 const confirmationUrl =
                     payFetcher.data?.data?.data?.appPurchaseOneTimeCreate?.confirmationUrl ||
                     payForPlanFetcher.data?.confirmationUrl;
@@ -171,12 +170,6 @@ const Index = () => {
                 payForPlanFetcher.data?.userErrors?.length
             ) {
                 setBuyButtonLoading(false);
-                console.log(
-                    payFetcher.data?.data?.data?.appPurchaseOneTimeCreate?.userErrors[0]
-                        ?.message ||
-                    payForPlanFetcher.data?.userErrors[0]
-                        ?.message,
-                );
             }
         }
     }, [payFetcher.data, payForPlanFetcher.data]);

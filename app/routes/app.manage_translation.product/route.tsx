@@ -447,7 +447,7 @@ const Index = () => {
         item.success === false;
       });
       if (!errorItem) {
-        message.success("Saved successfully");
+        shopify.toast.show("Saved successfully");
         confirmFetcher.data.confirmData.forEach((item: any) => {
           if (item.resourceId.split("/")[3] === "Product") {
             const index = productsData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
@@ -502,7 +502,7 @@ const Index = () => {
           }
         })
       } else {
-        message.error(errorItem?.errorMsg);
+        shopify.toast.show(errorItem?.errorMsg);
       }
       setConfirmData([]);
     }

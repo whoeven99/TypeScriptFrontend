@@ -199,9 +199,9 @@ const Index = () => {
             themesData[index].translated = item.value;
           }
         })
-        message.success("Saved successfully");
+        shopify.toast.show("Saved successfully");
       } else {
-        message.error(errorItem?.errorMsg);
+        shopify.toast.show(errorItem?.errorMsg);
       }
       setConfirmData([]);
     }
@@ -272,9 +272,6 @@ const Index = () => {
             themes.nodes[0]?.translatableContent.find((item: any) => item.key === key)?.digest || themes.nodes[0]?.translatableContent[0]?.digest || "",
           target: searchTerm || "",
         };
-
-        console.log(newItem);
-
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       }
     });

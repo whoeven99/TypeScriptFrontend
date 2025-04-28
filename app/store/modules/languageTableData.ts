@@ -37,22 +37,6 @@ const languageTableDataSlice = createSlice({
         }
       });
     },
-    setPublishConfirmState: (
-      state,
-      action: PayloadAction<{
-        locale: string;
-        published: boolean;
-        loading: boolean;
-      }>,
-    ) => {
-      const row = state.rows.find(
-        (item) => item.locale === action.payload.locale,
-      );
-      if (row) {
-        row.loading = action.payload.loading;
-        row.published = action.payload.published;
-      }
-    },
     setPublishState: (
       state,
       action: PayloadAction<{ locale: string; published: boolean }>,
@@ -72,9 +56,39 @@ const languageTableDataSlice = createSlice({
         (item) => item.locale === action.payload.locale,
       );
       if (row) {
-        row.loading = action.payload.loading;
+        row.publishLoading = action.payload.loading;
       }
     },
+    setAutoTranslateState: (
+      state,
+      action: PayloadAction<{ locale: string; autoTranslate: boolean }>,
+    ) => {
+      const row = state.rows.find(
+        (item) => item.locale === action.payload.locale,
+      );
+      if (row) {
+        row.autoTranslate = action.payload.autoTranslate;
+        if (action.payload.autoTranslate) {
+          state.rows.forEach((item) => {
+            if (item.locale !== action.payload.locale) {
+              item.autoTranslate = false;
+            }
+          });
+        }
+      }
+    },
+    setAutoTranslateLoadingState: (
+      state,
+      action: PayloadAction<{ locale: string; loading: boolean }>,
+    ) => {
+      const row = state.rows.find(
+        (item) => item.locale === action.payload.locale,
+      );
+      if (row) {
+        row.autoTranslateLoading = action.payload.loading;
+      }
+    },
+
     setStatusState: (
       state,
       action: PayloadAction<{ target: string; status: number }>,
@@ -103,8 +117,9 @@ const languageTableDataSlice = createSlice({
 export const {
   setTableData,
   updateTableData,
-  setPublishConfirmState,
   setPublishLoadingState,
+  setAutoTranslateState,
+  setAutoTranslateLoadingState,
   setPublishState,
   setStatusState,
   setLocaleNameState,

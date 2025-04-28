@@ -88,6 +88,13 @@ export const queryShop = async ({
         shopOwnerName
         email
         currencyCode
+        currencySettings(first: 100) {
+          nodes {
+            currencyCode
+            currencyName
+            enabled
+          }
+        }
         myshopifyDomain
         currencyFormats {
           moneyFormat
@@ -1606,7 +1613,6 @@ export const mutationShopLocalePublish = async ({
   accessToken: string;
   publishInfo: PublishInfoType; // 接受语言数组
 }) => {
-  console.log("publishInfo: ", publishInfo);
   try {
     // 遍历语言数组并逐个执行 GraphQL mutation
     const confirmMutation = `

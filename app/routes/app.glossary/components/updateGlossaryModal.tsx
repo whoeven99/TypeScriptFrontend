@@ -48,6 +48,9 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   ]);
   const [confirmButtonDisable, setConfirmButtonDisable] =
     useState<boolean>(false);
+  const [sourceTextError, setSourceTextError] = useState<boolean>(false);
+  const [targetTextError, setTargetTextError] = useState<boolean>(false);
+  const [rangeCodeError, setRangeCodeError] = useState<boolean>(false);
   const [sourceTextStatus, setSourceTextStatus] = useState<
     "" | "warning" | "error"
   >("");
@@ -57,16 +60,14 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   const [rangeCodeStatus, setRangeCodeStatus] = useState<
     "" | "warning" | "error"
   >("");
+  const [sourceTextErrorMsg, setSourceTextErrorMsg] = useState<string>("");
+  const [targetTextErrorMsg, setTargetTextErrorMsg] = useState<string>("");
+  const [rangeCodeErrorMsg, setRangeCodeErrorMsg] = useState<string>("");
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const updateFetcher = useFetcher<any>();
   const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
-  const data = useSelector((state: any) =>
-    state.glossaryTableData.rows.find(
-      (row: GLossaryDataType) => row.key === id,
-    ),
-  );
 
   useEffect(() => {
     if (updateFetcher.data) {
@@ -96,10 +97,10 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           };
         }
         dispatch(updateGLossaryTableData(data));
-        message.success("Saved successfully");
+        shopify.toast.show("Saved successfully");
         handleCloseModal();
       } else {
-        message.error(updateFetcher.data.data.errorMsg);
+        shopify.toast.show(updateFetcher.data.data.errorMsg);
         setConfirmButtonDisable(false);
       }
     }
@@ -107,6 +108,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
 
   useEffect(() => {
     if (isVisible) {
+      const data = dataSource.find((item: any) => item.key === id);
       if (data) {
         setSourceText(data.sourceText);
         setTargetText(data.targetText);
@@ -121,6 +123,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           }),
         );
         setOptions([...options, ...localeOptions]);
+        setRangeCode("ALL");
       }
     }
   }, [isVisible]);
@@ -132,19 +135,25 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
     // Reset status
     // Validate fields
     if (!sourceText) {
-      setSourceTextStatus("warning");
+      setSourceTextStatus("error");
+      setSourceTextError(true);
+      setSourceTextErrorMsg(t("Please enter original text"));
       isValid = false;
     }
     if (!targetText) {
-      setTargetTextStatus("warning");
+      setTargetTextStatus("error");
+      setTargetTextError(true);
+      setTargetTextErrorMsg(t("Please enter escaped text"));
       isValid = false;
     }
     if (!rangeCode || !options.find((option) => option.value === rangeCode)) {
-      setRangeCodeStatus("warning");
+      setRangeCodeStatus("error");
+      setRangeCodeError(true);
+      setRangeCodeErrorMsg(t("Please select a language"));
       isValid = false;
     }
 
-    if (title === "Create rule" && dataSource.length >= 5) {
+    if (title === "Create rule" && dataSource.length >= 10) {
       isOversizeError = false;
     }
 
@@ -171,7 +180,17 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       }
     });
 
-    if (isValid && isSameRuleError && isSameRuleError) {
+    if (isValid && isSameRuleError && isOversizeError) {
+      setSourceTextStatus("");
+      setSourceTextError(false);
+      setSourceTextErrorMsg("");
+      setTargetTextStatus("");
+      setTargetTextError(false);
+      setTargetTextErrorMsg("");
+      setRangeCodeStatus("");
+      setRangeCodeError(false);
+      setRangeCodeErrorMsg("");
+      const data = dataSource.find((item: any) => item.key === id);
       const formData = new FormData();
       formData.append(
         "updateInfo",
@@ -189,14 +208,11 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
         action: "/app/glossary",
       });
       setConfirmButtonDisable(true);
-    } else if (!isValid) {
-      message.warning(
-        t("There are empty fields. Please complete all the required information."),
-      );
+
     } else if (!isOversizeError) {
-      message.error(t("You can add up to 5 translation rules"));
+      shopify.toast.show(t("You can add up to {{count}} translation rules", { count: 10 }));
     } else {
-      message.error(t("You cannot add two conflicting rules."));
+      shopify.toast.show(t("You cannot add two conflicting rules."));
     }
   };
 
@@ -216,31 +232,12 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
     setSourceTextStatus("");
     setTargetTextStatus("");
     setRangeCodeStatus("");
-  };
-
-  const onSourceTextChange: InputProps["onChange"] = (e) => {
-    if (e) {
-      setSourceTextStatus("");
-      setSourceText(e.target.value);
-    }
-  };
-
-  const onTargetTextChange: InputProps["onChange"] = (e) => {
-    if (e) {
-      setTargetTextStatus("");
-      setTargetText(e.target.value);
-    }
-  };
-
-  const onRangeCodeChange: SelectProps["onChange"] = (e) => {
-    if (e) {
-      setRangeCodeStatus("");
-      setRangeCode(e);
-    }
-  };
-
-  const onCheckboxChange: CheckboxProps["onChange"] = (e) => {
-    setChecked(e.target.checked);
+    setSourceTextError(false);
+    setTargetTextError(false);
+    setRangeCodeError(false);
+    setSourceTextErrorMsg("");
+    setTargetTextErrorMsg("");
+    setRangeCodeErrorMsg("");
   };
 
   return (
@@ -280,45 +277,65 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             display: "flex",
             width: "100%",
             justifyContent: "center",
-            alignItems: "center",
+            alignItems: "flex-start",
+            gap: 8,
           }}
         >
-          <Input
-            style={{ flex: 1 }}
-            placeholder={t("Please enter original text")}
-            value={sourceText}
-            onChange={onSourceTextChange}
-            status={sourceTextStatus}
-          />
-          <Text
-            style={{
-              margin: "0 8px",
-            }}
-          >
-            {t("to")}
-          </Text>
-          <Input
-            style={{ flex: 1 }}
-            placeholder={t("Please enter escaped text")}
-            value={targetText}
-            onChange={onTargetTextChange}
-            status={targetTextStatus}
-          />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            <Input
+              placeholder={t("Please enter original text")}
+              value={sourceText}
+              onChange={(e) => {
+                setSourceText(e.target.value);
+              }}
+              status={sourceTextStatus}
+            />
+            {sourceTextError && (
+              <Text type="danger" style={{ marginTop: 2 }}>
+                {sourceTextErrorMsg}
+              </Text>
+            )}
+          </div>
+          <Text style={{ margin: "0 8px", lineHeight: "32px" }}>{t("to")}</Text>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            <Input
+              placeholder={t("Please enter escaped text")}
+              value={targetText}
+              onChange={(e) => {
+                setTargetText(e.target.value);
+              }}
+              status={targetTextStatus}
+            />
+            {targetTextError && (
+              <Text type="danger" style={{ marginTop: 2 }}>
+                {targetTextErrorMsg}
+              </Text>
+            )}
+          </div>
         </div>
         <Text strong>{t("Apply for")}</Text>
-        <Select
-          options={options}
-          style={{ width: "200px" }}
-          onChange={onRangeCodeChange}
-          value={
-            options.some((option) => option.value === rangeCode)
-              ? rangeCode
-              : undefined
-          }
-          status={rangeCodeStatus}
-        />
+        <div style={{ display: "flex", flexDirection: "column", width: 200 }}>
+          <Select
+            options={options}
+            style={{ width: "100%" }}
+            onChange={(e) => {
+              setRangeCode(e);
+            }}
+            value={rangeCode}
+            status={rangeCodeStatus}
+          />
+          {rangeCodeError && (
+            <Text type="danger" style={{ fontSize: 12, marginTop: 2 }}>
+              {rangeCodeErrorMsg}
+            </Text>
+          )}
+        </div>
         <Text strong>{t("Match by")}</Text>
-        <Checkbox checked={checked} onChange={onCheckboxChange}>
+        <Checkbox checked={checked} onChange={
+          (e) => {
+            setChecked(e.target.checked);
+          }
+        }>
           {t("Case-sensitive")}
         </Checkbox>
       </Space>

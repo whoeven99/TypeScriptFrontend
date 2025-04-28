@@ -9,7 +9,7 @@
     >
       <div
         id="selector-box"
-        style="position: absolute; width: 100%; background: #fff; border: 1px solid #ccc; padding: 15px; border-radius: 5px; display: none"
+        style="position: absolute; width: 100%; background: #fff; padding: 15px; border-radius: 5px; display: none"
       >
         <div
           id="language-switcher-container"
@@ -117,6 +117,8 @@
     <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
     <input type="hidden" name="currency_code" value="">
     <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">
+    <input type="hidden" name="iptoken" value="4edc3b4d5ca1476accda4d9912c99112">
+    <input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
   {% endform %}
 </ciwiswitcher-form>
 <ciwiswitcher-form>
@@ -140,8 +142,6 @@
         {%- endfor -%}
       </ul>
     </div>
-    <span type="hidden" name="iptoken">4edc3b4d5ca1476accda4d9912c99112</span>
-    <input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
   {% endform %}
 </ciwiswitcher-form>
 

@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
+  Input,
   InputNumber,
+  InputRef,
   message,
   Modal,
   Select,
@@ -37,10 +39,13 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
 }) => {
   const [exRateSelectValue, setExRateSelectValue] = useState<string>();
   const [roundingSelectValue, setRoundingSelectValue] = useState<string>();
-  const [exRateValue, setExRateValue] = useState<number | null>();
+  const [exRateValue, setExRateValue] = useState<number>(0);
   const [updateFetcherLoading, setUpdateFetcherLoading] =
     useState<boolean>(false);
   const [saveButtonDisable, setSaveButtonDisable] = useState<boolean>(true);
+  const [exRateError, setExRateError] = useState<boolean>(false);
+  const [exRateErrorMsg, setExRateErrorMsg] = useState<string>("");
+  const [exRateStatus, setExRateStatus] = useState<"warning" | "error" | "">("");
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const updateFetcher = useFetcher<any>();
@@ -64,13 +69,14 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
           },
         ];
         dispatch(updateTableData(data));
-        message.success(t("Saved successfully"));
+        shopify.toast.show(t("Saved successfully"));
         setIsModalOpen(false);
         setExRateSelectValue(undefined);
         setRoundingSelectValue(undefined);
-        setExRateValue(null);
+        setExRateValue(0);
       } else {
-        message.error(updateFetcher.data?.data.errorMsg);
+        setExRateError(true);
+        setExRateErrorMsg(updateFetcher.data?.data.errorMsg);
       }
     }
     setUpdateFetcherLoading(false);
@@ -81,7 +87,9 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
       setExRateSelectValue("Auto");
     } else {
       setExRateSelectValue("Manual Rate");
-      setExRateValue(Number(selectedRow?.exchangeRate));
+      if (selectedRow?.exchangeRate !== null && typeof selectedRow?.exchangeRate === "number") {
+        setExRateValue(selectedRow?.exchangeRate);
+      }
     }
     setRoundingSelectValue(selectedRow?.rounding);
   }, [isVisible]);
@@ -102,10 +110,12 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
       ) {
         setSaveButtonDisable(false);
       }
+      setExRateStatus("");
     }
   }, [exRateSelectValue, exRateValue, isVisible]);
 
   const handleConfirm = () => {
+    setUpdateFetcherLoading(true);
     if (exRateSelectValue === "Auto") {
       const okdata = {
         id: selectedRow?.key,
@@ -119,7 +129,24 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         method: "post",
         action: "/app/currency",
       }); // 提交表单请求
-    } else {
+    } else if (exRateSelectValue === "Manual Rate") {      
+      if (exRateValue > 2147483647) {
+        setExRateError(true);
+        setExRateErrorMsg(t("Exchange rate must be less than 2147483647"));
+        setExRateStatus("error");
+        setUpdateFetcherLoading(false);
+        return;
+      }
+      
+      if (exRateValue < 0 || typeof exRateValue !== "number") {
+        setExRateError(true);
+        setExRateErrorMsg(t("Exchange rate must be a positive number"));
+        setExRateStatus("error");
+        setUpdateFetcherLoading(false);
+        return;
+      }
+      setExRateError(false);
+      setExRateErrorMsg("");
       const okdata = {
         id: selectedRow?.key,
         rounding: roundingSelectValue,
@@ -133,22 +160,19 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         action: "/app/currency",
       }); // 提交表单请求
     }
-    setUpdateFetcherLoading(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false); // 关闭Modal
     setExRateSelectValue(undefined);
     setRoundingSelectValue(undefined);
-    setExRateValue(null);
+    setExRateError(false);
+    setExRateErrorMsg("");
+    setExRateValue(0);
   };
 
   const handleExRateSelectChange = (value: string) => {
     setExRateSelectValue(value);
-  };
-
-  const handleExRateChange = (value: number | null) => {
-    setExRateValue(value);
   };
 
   const handleRoundingSelectChange = (value: string) => {
@@ -190,7 +214,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         </div>,
       ]}
     >
-      <Space direction="vertical" size="small" style={{ display: "flex" }}>
+      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <div>
           <Title level={5}>{t("Exchange rate")}</Title>
           <Select
@@ -200,35 +224,47 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
             options={exRateColumns}
             onChange={handleExRateSelectChange}
           />
-          {exRateSelectValue === "Auto" ? (
-            <Text>
+          {exRateSelectValue === "Auto" && (
+            <div style={{ marginBottom: '8px' }}>
               {selectedRow?.currency}{t("will fluctuate based on market rates.")}.
-            </Text>
-          ) : (
-            <Space className="manual_rate_input">
-              <Text>1 {defaultCurrencyCode} =</Text>
-              <InputNumber
-                defaultValue={Number(selectedRow?.exchangeRate)}
-                style={{ width: 120 }}
-                min={0}
-                value={exRateValue}
-                onChange={handleExRateChange}
-              />
-              <span>{selectedRow?.currencyCode}</span>
-            </Space>
+            </div>
           )}
         </div>
-        <div>
-          <Title level={5}>{t("Rounding")}</Title>
-          <Select
-            defaultValue={selectedRow?.rounding}
-            value={roundingSelectValue}
-            style={{ width: "100%" }}
-            options={roundingColumns}
-            onChange={handleRoundingSelectChange}
-          />
-        </div>
+        {exRateSelectValue !== "Auto" && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Text>1 {defaultCurrencyCode} =</Text>
+              <InputNumber
+                placeholder={t("Please enter Exchange rate")}
+                value={exRateValue}
+                style={{ width: 120 }}
+                onChange={(e) => setExRateValue(e || 0)}
+                status={exRateStatus}
+              />
+              <Text>{selectedRow?.currencyCode}</Text>
+            </div>
+            {/* 错误提示放在下方，并且与输入框左对齐 */}
+            <div style={{
+              marginLeft: '60px',  // 80px(标签宽度) + 8px(间距)
+              visibility: exRateError ? 'visible' : 'hidden',
+            }}>
+              <Text type="danger" strong>
+                {t(exRateErrorMsg)}
+              </Text>
+            </div>
+          </div>
+        )}
       </Space>
+      <div>
+        <Title level={5}>{t("Rounding")}</Title>
+        <Select
+          defaultValue={selectedRow?.rounding}
+          value={roundingSelectValue}
+          style={{ width: "100%" }}
+          options={roundingColumns}
+          onChange={handleRoundingSelectChange}
+        />
+      </div>
     </Modal>
   );
 };

@@ -84,7 +84,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
         loading: false,
       }));
       dispatch(updateTableData(data));
-      message.success(t("Add success"));
+      shopify.toast.show(t("Add success"));
     }
     setIsModalOpen(false);
     setConfirmButtonDisable(false);
@@ -191,7 +191,7 @@ const AddLanguageModal: React.FC<LanguageModalProps> = ({
     // 检查是否超过20
     if (addedLanguagesCount > 20) {
       // 弹出错误提示
-      message.error("Your have reach your shopify plan limit(Max<=20)");
+      shopify.toast.show("Your have reach your shopify plan limit(Max<=20)");
       return;
     }
     const addKeys = [...new Set([...allSelectedKeys, ...newSelectedRowKeys])];

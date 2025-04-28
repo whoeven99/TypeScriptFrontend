@@ -204,9 +204,9 @@ const Index = () => {
             if (editFetcher.data.success) {
                 setOriginalData(editFetcher.data.response);
                 setEditData(editFetcher.data.response);
-                message.success(t("Switcher configuration updated successfully"));
+                shopify.toast.show(t("Switcher configuration updated successfully"));
             } else {
-                message.error(t("Switcher configuration update failed"));
+                shopify.toast.show(t("Switcher configuration update failed"));
             }
         }
     }, [editFetcher.data]);
