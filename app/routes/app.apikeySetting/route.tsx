@@ -13,6 +13,7 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { DeleteUserData, GetUserData, SaveGoogleKey } from "~/api/serve";
 import { useEffect, useState, useRef } from "react";
 import styles from './styles.module.css';
+import { ExclamationCircleOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
@@ -99,7 +100,7 @@ const Index = () => {
   const [countError, setCountError] = useState(false);
   const [apiKeyStatus, setApiKeyStatus] = useState<"warning" | "error" | "">("");
   const [countStatus, setCountStatus] = useState<"warning" | "error" | "">("");
-  const [apiKeyErrorMsg, setApiKeyErrorMsg] = useState<string>("The API key format is incorrect");
+  const [apiKeyErrorMsg, setApiKeyErrorMsg] = useState<string>(" The API key format is incorrect");
 
   const loadingfetcher = useFetcher<any>();
   const updateUserAPIKeyfetcher = useFetcher<any>();
@@ -185,7 +186,7 @@ const Index = () => {
       setCountStatus("error");
       return;
     }
-    
+
     setCountStatus("");
     setCountError(false);
 
@@ -234,7 +235,10 @@ const Index = () => {
 
   return (
     <Page>
-      <TitleBar title={t("Translate Settings")} />
+      <TitleBar title={t("Translate Settings")} >
+        <button variant="breadcrumb" onClick={() => navigate("/app/translate")}>{t("Translate Store")}</button>
+        <button variant="breadcrumb">{t("Translate Settings")}</button>
+      </TitleBar>
       <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <div
@@ -311,7 +315,8 @@ const Index = () => {
                 visibility: isEdit && apiKeyError ? 'visible' : 'hidden',
                 marginBottom: '4px'
               }}>
-                <Text type="danger" strong>
+                <Text type="danger">
+                  <ExclamationCircleOutlined style={{ marginRight: "4px" }} />
                   {apiKeyErrorMsg}
                 </Text>
               </div>
@@ -338,7 +343,8 @@ const Index = () => {
                 marginLeft: '60px',  // 80px(标签宽度) + 8px(间距)
                 visibility: isEdit && countError ? 'visible' : 'hidden',
               }}>
-                <Text type="danger" strong>
+                <Text type="danger">
+                  <ExclamationCircleOutlined style={{ marginRight: "4px" }} />
                   {t('Quota must be a positive number')}
                 </Text>
               </div>

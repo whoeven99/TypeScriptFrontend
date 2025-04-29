@@ -18,6 +18,7 @@ import { ShopLocalesType } from "~/routes/app.language/route";
 import { GLossaryDataType } from "../route";
 import { updateGLossaryTableData } from "~/store/modules/glossaryTableData";
 import { useTranslation } from "react-i18next";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -208,11 +209,12 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
         action: "/app/glossary",
       });
       setConfirmButtonDisable(true);
-
     } else if (!isOversizeError) {
       shopify.toast.show(t("You can add up to {{count}} translation rules", { count: 10 }));
-    } else {
+      return;
+    } else if (!isSameRuleError) {
       shopify.toast.show(t("You cannot add two conflicting rules."));
+      return;
     }
   };
 
@@ -292,6 +294,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             />
             {sourceTextError && (
               <Text type="danger" style={{ marginTop: 2 }}>
+                <ExclamationCircleOutlined style={{ display: sourceTextError ? "inline-block" : "none", marginRight: "4px" }} />
                 {sourceTextErrorMsg}
               </Text>
             )}
@@ -308,6 +311,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             />
             {targetTextError && (
               <Text type="danger" style={{ marginTop: 2 }}>
+                <ExclamationCircleOutlined style={{ display: targetTextError ? "inline-block" : "none", marginRight: "4px" }} />
                 {targetTextErrorMsg}
               </Text>
             )}
@@ -325,7 +329,8 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             status={rangeCodeStatus}
           />
           {rangeCodeError && (
-            <Text type="danger" style={{ fontSize: 12, marginTop: 2 }}>
+            <Text type="danger" style={{ marginTop: 2 }}>
+              <ExclamationCircleOutlined style={{ display: rangeCodeError ? "inline-block" : "none", marginRight: "4px" }} />
               {rangeCodeErrorMsg}
             </Text>
           )}

@@ -29,6 +29,7 @@ import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import PaymentModal from "~/components/paymentModal";
 import ScrollNotice from "~/components/ScrollNotice";
 import styles from "./styles.module.css";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
@@ -396,10 +397,14 @@ const Index = () => {
 
     return (
         <Page>
-            <TitleBar title={t("Translate Store")} />
+            <TitleBar title={t("Translate Store")} >
+                <button variant="breadcrumb" onClick={() => navigate("/app")}>{t("Dashboard")}</button>
+                <button variant="breadcrumb">{t("Translate Store")}</button>
+                <button variant="primary" onClick={() => handleTranslate()}>{t("Translate")}</button>
+            </TitleBar>
             <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
             <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-                <div
+                {/* <div
                     style={{
                         display: "flex",
                         justifyContent: "space-between",
@@ -428,7 +433,7 @@ const Index = () => {
                             :
                             <Skeleton.Button active />
                     }
-                </div>
+                </div> */}
                 <Divider style={{ margin: "0" }} />
                 <div style={{ paddingLeft: "8px" }}>
                     <Text >{t("Your store's default language:")}</Text>
@@ -506,7 +511,10 @@ const Index = () => {
                                         ))}
                                     </div>
                                 </Radio.Group>
-                                <Text style={{ display: "block", marginTop: "12px" }}>{t(languageCardWarnText)}</Text>
+                                <Text type="danger" style={{ display: "block", marginTop: "12px" }}>
+                                    <ExclamationCircleOutlined style={{ display: languageCardWarnText ? "inline-block" : "none", marginRight: "4px" }} />
+                                    {t(languageCardWarnText)}
+                                </Text>
                             </Card>
                             <Link to={"/app/language"} style={{ paddingLeft: "8px" }}>{t("Can't find the language you want to translate into? Click here to add a language.")}</Link>
                         </>

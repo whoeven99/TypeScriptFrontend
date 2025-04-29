@@ -16,6 +16,7 @@ import { CurrencyDataType } from "../route";
 import { useDispatch, useSelector } from "react-redux";
 import { updateTableData } from "~/store/modules/currencyDataTable";
 import { useTranslation } from "react-i18next";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
@@ -248,7 +249,8 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
               marginLeft: '60px',  // 80px(标签宽度) + 8px(间距)
               visibility: exRateError ? 'visible' : 'hidden',
             }}>
-              <Text type="danger" strong>
+              <Text type="danger">
+                <ExclamationCircleOutlined style={{ marginRight: "4px" }} />
                 {t(exRateErrorMsg)}
               </Text>
             </div>

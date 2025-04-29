@@ -8,7 +8,6 @@ import {
 import { login } from "../../shopify.server";
 
 import styles from "./styles.module.css";
-import { AppError } from "~/utils/retry";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
