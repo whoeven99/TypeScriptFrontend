@@ -22,7 +22,11 @@ async function fetchSwitcherConfig(shop) {
     selectorPosition: "bottom_left",
     positionData: 10,
   };
-  if (data.success && typeof data.response === "object" && data.response !== null) {
+  if (
+    data.success &&
+    typeof data.response === "object" &&
+    data.response !== null
+  ) {
     const filteredResponse = Object.fromEntries(
       Object.entries(data.response).filter(([_, value]) => value !== null),
     );
@@ -779,6 +783,7 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 window.onload = async function () {
   const switcher = document.getElementById("ciwi-container");
   const shop = document.getElementById("queryCiwiId");
+  const mainBox = document.getElementById("main-box");
   shop.remove();
   const data = await fetchSwitcherConfig(shop.value);
 
@@ -956,14 +961,12 @@ window.onload = async function () {
 
   if (switcher) {
     const selectorBox = document.getElementById("selector-box");
-    const mainBox = document.getElementById("main-box");
     const confirmButton = document.querySelector(
       ".ciwi_switcher_confirm_button",
     );
     confirmButton.style.backgroundColor = data.buttonBackgroundColor;
     confirmButton.style.color = data.buttonColor;
     selectorBox.style.backgroundColor = data.backgroundColor;
-    mainBox.style.backgroundColor = data.backgroundColor;
     switcher.style.color = data.fontColor;
     if (
       data.selectorPosition === "top_left" ||
@@ -1002,4 +1005,17 @@ window.onload = async function () {
     updateDisplayText(data.languageSelector, data.currencySelector);
     switcher.style.display = "block";
   }
+
+  function setMainBoxBg() {
+    if (window.innerWidth > 768) {
+      mainBox.style.backgroundColor = data.backgroundColor;
+    } else {
+      mainBox.style.backgroundColor = ""; // 或者设置为移动端的默认色
+    }
+  }
+
+  // 初始赋值
+  setMainBoxBg();
+  // 监听窗口变化
+  window.addEventListener("resize", setMainBoxBg);
 };
