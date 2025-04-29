@@ -20,6 +20,28 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const SendSubscribeSuccessEmail = async ({
+  id,
+  shopName,
+}: {
+  id: string;
+  shopName: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/orders/sendSubscribeSuccessEmail`,
+      method: "POST",
+      data: {
+        id: id,
+        shopName: shopName,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error SendSubscribeSuccessEmail:", error);
+  }
+};
+
 export const UpdateAutoTranslateByData = async ({
   shopName,
   source,
