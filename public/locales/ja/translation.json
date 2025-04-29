@@ -318,6 +318,21 @@
     "Please select a language": "言語を選択してください",
     "The 20 language limit has been reached": "20言語制限に達しました",
     "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "Shopifyの言語制限により、最大20の言語を追加できます。言語を削除して続けてください。",
-    "Auto translate": "自動翻訳"
+    "Auto translate": "自動翻訳",
+    "{{credits}} credits/month": "{{credits}} クレジット/月",
+    "8 main languages": "8 主言語",
+    "500 products translation": "500 製品翻訳",
+    "Extra purchase characters": "追加購入文字",
+    "Editable translation content": "編集可能な翻訳コンテンツ",
+    "Glossary ({{count}} entries)": "用語集 ({{count}} エントリ)",
+    "Currency converter": "通貨変換器",
+    "Language/currency switcher": "言語/通貨スイッチャー",
+    "Unlimited product translation": "無制限の製品翻訳",
+    "Multiple AI model translation": "複数のAIモデル翻訳",
+    "Private AI model translation": "プライベートAIモデル翻訳",
+    "Support HTML/URL translation": "HTML/URL翻訳サポート",
+    "Third-party app translation": "第三者アプリ翻訳",
+    "IP auto switch": "IP自動切り替え",
+    "Translation expert human check": "翻訳専門家の人間チェック"
 }   
   

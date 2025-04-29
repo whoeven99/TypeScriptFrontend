@@ -318,5 +318,20 @@
   "Please select a language": "请选择一个语言",
   "The 20 language limit has been reached": "20语言限制已达到",
   "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "基于 Shopify 的语言限制，您只能添加最多 20 种语言。请删除一些语言然后继续。",
-  "Auto translate": "自动翻译"
+  "Auto translate": "自动翻译",
+  "{{credits}} credits/month": "{{credits}} 积分/月", 
+  "8 main languages": "8 主语言",
+  "500 products translation": "500 产品翻译",
+  "Extra purchase characters": "额外购买字符",
+  "Editable translation content": "可编辑的翻译内容",
+  "Glossary ({{count}} entries)": "术语表 ({{count}} 条目)",
+  "Currency converter": "货币转换器",
+  "Language/currency switcher": "语言/货币切换器",
+  "Unlimited product translation": "无限产品翻译",
+  "Multiple AI model translation": "多 AI 模型翻译",
+  "Private AI model translation": "私有 AI 模型翻译",
+  "Support HTML/URL translation": "支持 HTML/URL 翻译",
+  "Third-party app translation": "第三方应用翻译",
+  "IP auto switch": "IP 自动切换",
+  "Translation expert human check": "翻译专家人工检查"
 }

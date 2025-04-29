@@ -319,5 +319,20 @@
   "Please select a language": "Please select a language",
   "The 20 language limit has been reached": "The 20 language limit has been reached",
   "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.",
-  "Auto translate": "Auto translate"
+  "Auto translate": "Auto translate",
+  "{{credits}} credits/month": "{{credits}} credits/month",
+  "8 main languages": "8 main languages",
+  "500 products translation": "500 products translation",
+  "Extra purchase characters": "Extra purchase characters",
+  "Editable translation content": "Editable translation content",
+  "Glossary ({{count}} entries)": "Glossary ({{count}} entries)",
+  "Currency converter": "Currency converter",
+  "Language/currency switcher": "Language/currency switcher",
+  "Unlimited product translation": "Unlimited product translation",
+  "Multiple AI model translation": "Multiple AI model translation",
+  "Private AI model translation": "Private AI model translation",
+  "Support HTML/URL translation": "Support HTML/URL translation",
+  "Third-party app translation": "Third-party app translation",
+  "IP auto switch": "IP auto switch",
+  "Translation expert human check": "Translation expert human check"
 }

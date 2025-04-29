@@ -10,6 +10,7 @@ import {
   InsertTargets,
   RequestData,
   SendPurchaseSuccessEmail,
+  SendSubscribeSuccessEmail,
   Uninstall,
   UpdateStatus,
   UpdateUserPlan,
@@ -156,10 +157,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             AddSubscriptionQuotaRecord({ subscriptionId: payload?.app_subscription.admin_graphql_api_id });
             UpdateUserPlan({ shop, plan });
             UpdateStatus({ shop });
-            SendPurchaseSuccessEmail({
-              shop,
-              credit: credits,
-              price: price,
+            SendSubscribeSuccessEmail({
+              id: payload?.app_subscription.admin_graphql_api_id,
+              shopName: shop,
             });
           }
         }

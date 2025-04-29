@@ -317,6 +317,21 @@
     "Please select a language": "Per favore seleziona una lingua",
     "The 20 language limit has been reached": "Il limite di 20 lingue è stato raggiunto",
     "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "Sulla base del limite di lingue di Shopify, puoi aggiungere solo fino a 20 lingue. Per favore, elimina alcune lingue e continua.",
-    "Auto translate": "Traduci automaticamente"
+    "Auto translate": "Traduci automaticamente",
+    "{{credits}} credits/month": "{{credits}} crediti/mese",
+    "8 main languages": "8 lingue principali",
+    "500 products translation": "500 traduzioni di prodotti",
+    "Extra purchase characters": "Caratteri di acquisto extra",
+    "Editable translation content": "Contenuto di traduzione modificabile",
+    "Glossary ({{count}} entries)": "Glossario ({{count}} voci)",
+    "Currency converter": "Convertitore di valuta",
+    "Language/currency switcher": "Selettore di lingua e valuta",
+    "Unlimited product translation": "Traduzione di prodotti illimitata",
+    "Multiple AI model translation": "Traduzione con più modelli AI",
+    "Private AI model translation": "Traduzione con modello AI privato",
+    "Support HTML/URL translation": "Supporto traduzione HTML/URL",
+    "Third-party app translation": "Traduzione app terzizie",
+    "IP auto switch": "Cambio IP automatico",
+    "Translation expert human check": "Verifica umana del traduttore esperto"
 }
   
