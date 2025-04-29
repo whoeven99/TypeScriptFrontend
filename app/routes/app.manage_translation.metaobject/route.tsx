@@ -32,26 +32,14 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  // 如果没有 language 参数，直接返回空数据
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   try {
     const metaobjects = await queryNextTransType({
       shop,
-      accessToken,
+      accessToken: accessToken as string,
       resourceType: "METAOBJECT",
       endCursor: "",
       locale: searchTerm || "",
@@ -132,13 +120,14 @@ const Index = () => {
   const location = useLocation();
 
   const { searchTerm, metaobjects } = useLoaderData<typeof loader>();
+  console.log("metaobjects", metaobjects);
+  
   const actionData = useActionData<typeof action>();
 
   const [isVisible, setIsVisible] = useState(() => {
     return !!searchParams.get('language');
   });
   const [isLoading, setIsLoading] = useState(true);
-
   const [metaobjectsData, setMetaobjectsData] = useState(metaobjects);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);

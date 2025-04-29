@@ -383,13 +383,25 @@ const Index = () => {
   ];
 
   useEffect(() => {
-    // const formData = new FormData();
-    // formData.append("loading", JSON.stringify(true));
-    // fetcher.submit(formData, {
-    //   method: "post",
-    //   action: "/app/manage_translation",
-    // });
-    // shopify.loading(true);
+    if (shopLanguages && shopLanguages?.length) {
+      const primaryLanguage = shopLanguages.filter(
+        (language) => language.primary,
+      );
+      setPrimaryLanguage(primaryLanguage[0].locale);
+      const newArray = shopLanguages
+        .filter((language) => !language.primary)
+        .map((language) => ({
+          label: language.name,
+          key: language.locale,
+        }));
+      setMenuData(newArray);
+      if (!languageCode) {
+        setCurrent(newArray[0]?.key);
+      } else {
+        setCurrent(languageCode);
+      }
+      setLoading(false);
+    }
     const locale = shopLanguages.find((language) => language.primary === true)?.locale;
     dispatch(setLocale(locale || ""));
   }, []);
@@ -490,28 +502,6 @@ const Index = () => {
       dispatch(updateData(shippingFetcher.data.data));
     }
   }, [shippingFetcher.data]);
-
-  useEffect(() => {
-    if (shopLanguages && shopLanguages?.length) {
-      const primaryLanguage = shopLanguages.filter(
-        (language) => language.primary,
-      );
-      setPrimaryLanguage(primaryLanguage[0].locale);
-      const newArray = shopLanguages
-        .filter((language) => !language.primary)
-        .map((language) => ({
-          label: language.name,
-          key: language.locale,
-        }));
-      setMenuData(newArray);
-      if (!languageCode) {
-        setCurrent(newArray[0]?.key);
-      } else {
-        setCurrent(languageCode);
-      }
-      setLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     const foundItem = menuData?.find((item) => item.key === key);

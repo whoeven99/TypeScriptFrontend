@@ -9,10 +9,8 @@ import {
   Table,
   Typography,
   Skeleton,
-  Switch,
-  Popover,
 } from "antd";
-import { ActionFunctionArgs, LoaderFunctionArgs, redirect } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { json } from "@remix-run/node";
 import { useEffect, useState } from "react";
@@ -29,7 +27,6 @@ import {
   GetCacheData,
   GetCurrencyByShopName,
   InitCurrency,
-  InsertSwitch,
   UpdateCurrency,
   UpdateDefaultCurrency,
 } from "~/api/serve";

@@ -1,6 +1,6 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
@@ -139,6 +139,11 @@ const Index = () => {
   const [isGlossaryModalOpen, setIsGlossaryModalOpen] =
     useState<boolean>(false);
   const [glossaryModalId, setGlossaryModalId] = useState<number>(-1);
+  const hasSelected = useMemo(() => {
+    return selectedRowKeys.length > 0;
+  }, [selectedRowKeys])
+
+
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const loadingFetcher = useFetcher<any>();
@@ -264,13 +269,13 @@ const Index = () => {
       title: t("Text"),
       dataIndex: "sourceText",
       key: "sourceText",
-      width: "25%",
+      width: "20%",
     },
     {
       title: t("Translation text"),
       dataIndex: "targetText",
       key: "targetText",
-      width: "25%",
+      width: "20%",
     },
     {
       title: t("Apply for"),
@@ -295,7 +300,7 @@ const Index = () => {
       title: t("Case"),
       dataIndex: "type",
       key: "type",
-      width: "10%",
+      width: "15%",
       render: (_: any, record: any) => {
         return record.type ? (
           <Text>{t("Case-sensitive")}</Text>
@@ -308,7 +313,7 @@ const Index = () => {
       title: t("Action"),
       dataIndex: "action",
       key: "action",
-      width: "10%",
+      width: "15%",
       render: (_: any, record: any) => (
         <Space>
           <Button
@@ -320,7 +325,6 @@ const Index = () => {
       ),
     },
   ];
-  const hasSelected = selectedRowKeys.length > 0;
 
   const rowSelection = {
     selectedRowKeys,

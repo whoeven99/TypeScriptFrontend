@@ -610,7 +610,7 @@ const Index = () => {
       ),
     },
     {
-      title: t("Auto Translation"),
+      title: t("Auto translate"),
       dataIndex: "autoTranslate",
       key: "autoTranslate",
       width: "20%",

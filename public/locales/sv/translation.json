@@ -319,6 +319,21 @@
     "Please select a language": "Välj ett språk",
     "The 20 language limit has been reached": "20 språkgräns har uppnåtts",
     "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "På grund av Shopify's språkgräns kan du bara lägga till upp till 20 språk. Ta bort några språk och fortsätt.",
-    "Auto translate": "Automatisk översättning"
+    "Auto translate": "Automatisk översättning",
+    "{{credits}} credits/month": "{{credits}} krediter/månad",
+    "8 main languages": "8 huvudsakliga språk",
+    "500 products translation": "500 produktöversättning",
+    "Extra purchase characters": "Extra köp tecken",
+    "Editable translation content": "Redigerbar översättningsinnehåll",
+    "Glossary ({{count}} entries)": "Glossarium ({{count}} poster)",
+    "Currency converter": "Valutaomvandlare",
+    "Language/currency switcher": "Språk/valutaomvandlare",
+    "Unlimited product translation": "Oändlig produktöversättning",
+    "Multiple AI model translation": "Flera AI-modellöversättning",
+    "Private AI model translation": "Privat AI-modellöversättning",
+    "Support HTML/URL translation": "Stöd för HTML/URL-översättning",
+    "Third-party app translation": "Tredjepartsuppgift",
+    "IP auto switch": "IP-automatiskt växling",
+    "Translation expert human check": "Översättningsexpert mänsklig kontroll"
 }   
   
