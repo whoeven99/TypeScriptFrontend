@@ -6,7 +6,6 @@ import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   Button,
   Flex,
-  message,
   Popover,
   Skeleton,
   Space,
@@ -24,9 +23,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import {
   setGLossaryStatusLoadingState,
-  setGLossaryStatusState,
   setGLossaryTableData,
-  updateGLossaryTableData,
 } from "~/store/modules/glossaryTableData";
 import { ShopLocalesType } from "../app.language/route";
 import UpdateGlossaryModal from "./components/updateGlossaryModal";
@@ -48,7 +45,10 @@ export interface GLossaryDataType {
   loading: boolean;
 }
 
-export const loader = async () => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  console.log(`${shop} load glossary`);
   return null;
 };
 
@@ -141,8 +141,7 @@ const Index = () => {
   const [glossaryModalId, setGlossaryModalId] = useState<number>(-1);
   const hasSelected = useMemo(() => {
     return selectedRowKeys.length > 0;
-  }, [selectedRowKeys])
-
+  }, [selectedRowKeys]);
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -243,7 +242,9 @@ const Index = () => {
 
   const handleIsModalOpen = (title: string, key: number) => {
     if (title === "Create rule" && dataSource.length >= 10) {
-      shopify.toast.show(t("You can add up to {{count}} translation rules", { count: 10 }));
+      shopify.toast.show(
+        t("You can add up to {{count}} translation rules", { count: 10 }),
+      );
     } else {
       setTitle(t(title));
       setGlossaryModalId(key);
@@ -334,7 +335,11 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Glossary")} />
-      <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
+      <ScrollNotice
+        text={t(
+          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
+        )}
+      />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <Title style={{ fontSize: "1.25rem", display: "inline" }}>
           {t("Glossary")}

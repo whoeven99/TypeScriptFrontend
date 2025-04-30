@@ -29,6 +29,9 @@ export interface GLossaryDataType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  console.log(`${shop} load apikeySetting`);
   return null;
 };
 

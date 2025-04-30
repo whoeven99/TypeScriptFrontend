@@ -119,7 +119,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shopLocalesIndex = shopLanguagesLoad.filter(
     (language) => !language.primary,
   ).map((item) => item.locale);
-  // 返回数据和更新后的 cookie
+
+  console.log(`${shop} load language`);
+
   return json(
     {
       sever: process.env.SERVER_URL,
@@ -705,6 +707,7 @@ const Index = () => {
         setLanguagesLoad(languagesLoad.map((item: any) =>
           item.target === locale ? { ...item, autoTranslate: checked } : { ...item, autoTranslate: false }
         ));
+        shopify.toast.show(t("Auto translate updated successfully"));
       }
     }
   };
@@ -787,7 +790,7 @@ const Index = () => {
           </Flex>
           <Table
             virtual={isMobile}
-            scroll={isMobile ? { x: 700 } : {}}
+            scroll={isMobile ? { x: 900 } : {}}
             rowSelection={rowSelection}
             columns={columns}
             dataSource={dataSource}
@@ -817,6 +820,9 @@ const Index = () => {
               {t("Cancel")}
             </Button>
           }
+          style={{
+            top: "40%",
+          }}
         >
           <Text>
             {t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")}

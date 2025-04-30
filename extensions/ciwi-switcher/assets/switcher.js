@@ -703,21 +703,11 @@ class CiwiswitcherForm extends HTMLElement {
   }
 
   handleOutsideClick(event) {
-    if (!this.elements.ciwiContainer.contains(event.target)) {
-      // if (window.innerWidth <= 768) {
-      //   const mainBox = document.getElementById("main-box");
-      //   this.elements.ciwiContainer.classList.remove("expanded");
-      //   mainBox.style.display = "block";
-      // }
-      this.elements.selectorBox.style.display = "none";
+    if (this.elements.ciwiContainer && !this.elements.ciwiContainer.contains(event.target)) {
+      if (this.elements.selectorBox) {
+        this.elements.selectorBox.style.display = "none";
+      }
       this.rotateArrow("mainbox-arrow-icon", 0);
-    }
-
-    if (
-      this.elements.selector &&
-      !this.elements.selector.contains(event.target)
-    ) {
-      this.elements.selector.classList.remove("open");
     }
   }
 

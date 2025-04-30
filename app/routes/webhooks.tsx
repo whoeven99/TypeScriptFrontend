@@ -36,6 +36,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           await db.session.deleteMany({ where: { shop } });
           await Uninstall({ shop });
         }
+        UpdateUserPlan({ shop, plan: 2 });
         break;
       } catch (error) {
         console.error("Error APP_UNINSTALLED:", error);
@@ -131,17 +132,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             plan = 3;
             break;
           case "Basic":
-            credits = 2000000;
+            credits = 1500000;
             price = 7.99;
             plan = 4;
             break;
           case "Pro":
-            credits = 5000000;
+            credits = 3000000;
             price = 19.99;
             plan = 5;
             break;
           case "Premium":
-            credits = 10000000;
+            credits = 8000000;
             price = 39.99;
             plan = 6;
             break;
@@ -152,7 +153,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         if (payload?.app_subscription.status === "ACTIVE") {
           const addChars = await AddCharsByShopName({ shop, amount: credits });
-          console.log("addChars: ", addChars);
           if (addChars?.success) {
             AddSubscriptionQuotaRecord({ subscriptionId: payload?.app_subscription.admin_graphql_api_id });
             UpdateUserPlan({ shop, plan });

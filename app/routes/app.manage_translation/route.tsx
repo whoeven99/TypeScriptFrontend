@@ -6,7 +6,12 @@ import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import { Outlet, useFetcher, useLoaderData, useLocation } from "@remix-run/react";
+import {
+  Outlet,
+  useFetcher,
+  useLoaderData,
+  useLocation,
+} from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
 import { GetTranslationItemsInfo } from "~/api/serve";
@@ -34,34 +39,20 @@ interface TableDataType {
   navigation: string;
 }
 
-interface FetchType {
-  shopLanguagesLoad: [];
-  words: WordsType;
-}
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
     shop,
-    accessToken,
+    accessToken: accessToken as string,
   });
 
   const url = new URL(request.url);
-  const languageCode = url.searchParams.get('language');
+  const languageCode = url.searchParams.get("language");
+  console.log(`${shop} load manage`);
   return json({
     shopLanguages: shopLanguages,
-    languageCode: languageCode
+    languageCode: languageCode,
   });
 };
 
@@ -96,12 +87,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ data: data });
         } catch (error) {
           console.error("Error GetTranslationItemsInfo itemsCount:", error);
-          return json(
-            {
-              success: false,
-              message: "Error GetTranslationItemsInfo itemsCount",
-            }
-          );
+          return json({
+            success: false,
+            message: "Error GetTranslationItemsInfo itemsCount",
+          });
         }
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
@@ -109,7 +98,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   } catch (error) {
     console.error("Error action manage_translation:", error);
-    return json({ success: false, message: "Error action manage_translation" }, { status: 500 });
+    return json(
+      { success: false, message: "Error action manage_translation" },
+      { status: 500 },
+    );
   }
 };
 
@@ -126,7 +118,7 @@ const Index = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const { key } = location.state || {}; // 提取传递的状态
-  const isClient = typeof window !== 'undefined';
+  const isClient = typeof window !== "undefined";
 
   const items = useSelector((state: any) => state.languageItemsData);
 
@@ -271,11 +263,13 @@ const Index = () => {
       title: t("Email"),
       allTranslatedItems:
         items.find(
-          (item: any) => item?.language === current && item?.type === "EMAIL_TEMPLATE",
+          (item: any) =>
+            item?.language === current && item?.type === "EMAIL_TEMPLATE",
         )?.translatedNumber ?? undefined,
       allItems:
         items.find(
-          (item: any) => item?.language === current && item?.type === "EMAIL_TEMPLATE",
+          (item: any) =>
+            item?.language === current && item?.type === "EMAIL_TEMPLATE",
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "email",
@@ -402,7 +396,9 @@ const Index = () => {
       }
       setLoading(false);
     }
-    const locale = shopLanguages.find((language) => language.primary === true)?.locale;
+    const locale = shopLanguages.find(
+      (language) => language.primary === true,
+    )?.locale;
     dispatch(setLocale(locale || ""));
   }, []);
 
@@ -719,7 +715,11 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Manage Translation")} />
-      <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
+      <ScrollNotice
+        text={t(
+          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
+        )}
+      />
       {!loading && !menuData?.length && isClient ? (
         <div
           style={{

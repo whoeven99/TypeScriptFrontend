@@ -37,7 +37,6 @@ import { setTableData } from "~/store/modules/currencyDataTable";
 import SwitcherSettingCard from "./components/switcherSettingCard";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
-import { SessionService } from "~/utils/session.server";
 const { Title, Text } = Typography;
 
 export interface CurrencyDataType {
@@ -59,6 +58,7 @@ export interface CurrencyType {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
+  console.log(`${shop} load currency`);
   return json({
     shop,
     ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
