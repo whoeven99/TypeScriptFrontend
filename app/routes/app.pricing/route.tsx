@@ -426,11 +426,11 @@ const Index = () => {
               ) : (
                 <Skeleton
                   active
-                  paragraph={{ rows: 1, style: { margin: 1 } }}
+                  paragraph={{ rows: 1 }}
                   title={false}
                 />
               )}
-              {updateTime && <Text>
+              {updateTime && maxCredits && <Text>
                 {t("This bill was issued on {{date}}", { date: updateTime })}
               </Text>}
             </div>
