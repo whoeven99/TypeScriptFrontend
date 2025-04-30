@@ -431,7 +431,7 @@ const Index = () => {
                 />
               )}
               {updateTime && <Text>
-                {t("This bill was issued on 2025-05-30")}
+                {t("This bill was issued on {{date}}", { date: updateTime })}
               </Text>}
             </div>
             <Progress
