@@ -848,82 +848,6 @@ window.onload = async function () {
         }
       }
     }
-    if (data.ipOpen) {
-      const iptoken = document.querySelector('input[name="iptoken"]');
-      const iptokenValue = iptoken.value;
-      if (iptokenValue) iptoken.remove();
-      const storedLanguage = localStorage.getItem("selectedLanguage");
-      const storedCountry = localStorage.getItem("selectedCountry");
-      const languageInput = document.querySelector(
-        'input[name="language_code"]',
-      );
-      const language = languageInput.value;
-      const countryInput = document.querySelector('input[name="country_code"]');
-      const country = countryInput.value;
-      const availableLanguages = Array.from(
-        document.querySelectorAll("#language-switcher option"),
-      ).map((option) => option.value);
-      const availableCountries = Array.from(
-        document.querySelectorAll('ul[role="list"] a[data-value]'),
-      ).map((link) => link.getAttribute("data-value"));
-
-      if (storedLanguage) {
-        if (
-          storedLanguage !== languageInput.value &&
-          availableLanguages.includes(storedLanguage)
-        ) {
-          // 存储到 localStorage
-          languageInput.value = storedLanguage;
-        }
-      } else {
-        const browserLanguage = navigator.language;
-        // 获取匹配的语言或默认为英语
-        const detectedLanguage = browserLanguage || "en";
-        localStorage.setItem("selectedLanguage", detectedLanguage);
-        if (
-          languageInput.value !== detectedLanguage &&
-          availableLanguages.includes(detectedLanguage)
-        ) {
-          languageInput.value = detectedLanguage;
-        }
-      }
-
-      if (storedCountry) {
-        if (
-          countryInput.value !== storedCountry &&
-          availableCountries.includes(storedCountry)
-        ) {
-          countryInput.value = storedCountry;
-        }
-      } else {
-        const IpData = await fetchUserCountryInfo(iptokenValue);
-        if (
-          IpData?.country_code &&
-          availableCountries.includes(IpData.country_code)
-        ) {
-          if (countryInput.value !== IpData.country_code) {
-            countryInput.value = IpData.country_code;
-          }
-          localStorage.setItem("selectedCountry", countryInput.value);
-          console.log(
-            "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
-          );
-        }
-      }
-      const htmlElement = document.documentElement; // 获取 <html> 元素
-      const isInThemeEditor = htmlElement.classList.contains(
-        "shopify-design-mode",
-      );
-      if (
-        (countryInput.value !== country || languageInput.value !== language) &&
-        !isInThemeEditor
-      ) {
-        updateLocalization({
-          country: countryInput.value,
-          language: languageInput.value,
-        });
-      }
-    }
   }
 
   if (data.currencySelector) {
@@ -955,6 +879,81 @@ window.onload = async function () {
       if (mainBox) {
         mainBox.style.justifyContent = "center";
       }
+    }
+  }
+
+  if (data.ipOpen) {
+    const iptoken = document.querySelector('input[name="iptoken"]');
+    const iptokenValue = iptoken.value;
+    if (iptokenValue) iptoken.remove();
+    const storedLanguage = localStorage.getItem("selectedLanguage");
+    const storedCountry = localStorage.getItem("selectedCountry");
+    const languageInput = document.querySelector('input[name="language_code"]');
+    const language = languageInput.value;
+    const countryInput = document.querySelector('input[name="country_code"]');
+    const country = countryInput.value;
+    const availableLanguages = Array.from(
+      document.querySelectorAll(".option-item[data-type='language']"),
+    ).map((option) => option.dataset.value);
+    const availableCountries = Array.from(
+      document.querySelectorAll('ul[role="list"] a[data-value]'),
+    ).map((link) => link.getAttribute("data-value"));
+
+    if (storedLanguage) {
+      if (
+        storedLanguage !== languageInput.value &&
+        availableLanguages.includes(storedLanguage)
+      ) {
+        // 存储到 localStorage
+        languageInput.value = storedLanguage;
+      }
+    } else {
+      const browserLanguage = navigator.language;
+      // 获取匹配的语言或默认为英语
+      const detectedLanguage = browserLanguage || "en";
+      localStorage.setItem("selectedLanguage", detectedLanguage);
+      if (
+        languageInput.value !== detectedLanguage &&
+        availableLanguages.includes(detectedLanguage)
+      ) {
+        languageInput.value = detectedLanguage;
+      }
+    }
+
+    if (storedCountry) {
+      if (
+        countryInput.value !== storedCountry &&
+        availableCountries.includes(storedCountry)
+      ) {
+        countryInput.value = storedCountry;
+      }
+    } else {
+      const IpData = await fetchUserCountryInfo(iptokenValue);
+      if (
+        IpData?.country_code &&
+        availableCountries.includes(IpData.country_code)
+      ) {
+        if (countryInput.value !== IpData.country_code) {
+          countryInput.value = IpData.country_code;
+        }
+        localStorage.setItem("selectedCountry", countryInput.value);
+        console.log(
+          "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
+        );
+      }
+    }
+    const htmlElement = document.documentElement; // 获取 <html> 元素
+    const isInThemeEditor = htmlElement.classList.contains(
+      "shopify-design-mode",
+    );
+    if (
+      (countryInput.value !== country || languageInput.value !== language) &&
+      !isInThemeEditor
+    ) {
+      updateLocalization({
+        country: countryInput.value,
+        language: languageInput.value,
+      });
     }
   }
 
