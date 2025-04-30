@@ -336,6 +336,8 @@
     "Manual editing of translations possible": "Handmatige bewerking van vertalingen mogelijk",
     "Language/currency switcher (switch by IP)": "Taal/valutawisselaar (wisselen via IP)",
     "Current plan: ": "Huidig plan: ",
-    "plan": "plan"
+    "plan": "plan",
+    "Auto translate updated successfully": "Automatische vertaling bijgewerkt",
+    "This bill was issued on {{date}}": "Deze factuur is uitgegeven op {{date}}"
 }
   

@@ -119,6 +119,7 @@ const Index = () => {
   const [maxCredits, setMaxCredits] = useState(0);
   const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [updateTime, setUpdateTime] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [buyButtonLoading, setBuyButtonLoading] = useState(false);
   const isQuotaExceeded = useMemo(
@@ -147,7 +148,15 @@ const Index = () => {
 
   useEffect(() => {
     if (planfetcher.data) {
-      setSelectedPlan(planfetcher.data);
+      setSelectedPlan(planfetcher.data.userSubscriptionPlan);
+      if (planfetcher.data.currentPeriodEnd) {
+        const date = new Date(planfetcher.data.currentPeriodEnd).toLocaleDateString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).replace(/\//g, '-');
+        setUpdateTime(date);
+      }
     }
   }, [planfetcher.data]);
 
@@ -401,25 +410,30 @@ const Index = () => {
                 {t("Current plan: ")}{selectedPlan === 3 ? "Starter" : selectedPlan === 4 ? "Basic" : selectedPlan === 5 ? "Pro" : selectedPlan === 6 ? "Premium" : "Free"} {t("plan")}
               </Text>}
             </div>
-            {maxCredits ? (
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: t(
-                    "{{currentCredits}} has been used, {{maxCredits}} available.",
-                    {
-                      currentCredits: currentCredits.toLocaleString(),
-                      maxCredits: maxCredits.toLocaleString(),
-                    },
-                  ),
-                }}
-              />
-            ) : (
-              <Skeleton
-                active
-                paragraph={{ rows: 1, style: { margin: 1 } }}
-                title={false}
-              />
-            )}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              {maxCredits ? (
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: t(
+                      "{{currentCredits}} has been used, {{maxCredits}} available.",
+                      {
+                        currentCredits: currentCredits.toLocaleString(),
+                        maxCredits: maxCredits.toLocaleString(),
+                      },
+                    ),
+                  }}
+                />
+              ) : (
+                <Skeleton
+                  active
+                  paragraph={{ rows: 1, style: { margin: 1 } }}
+                  title={false}
+                />
+              )}
+              {updateTime && <Text>
+                {t("This bill was issued on 2025-05-30")}
+              </Text>}
+            </div>
             <Progress
               percent={Math.round((currentCredits / maxCredits) * 100)}
               size={["100%", 15]}

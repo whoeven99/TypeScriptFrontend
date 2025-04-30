@@ -336,6 +336,8 @@
     "Manual editing of translations possible": "Edición manual de traducciones posible",
     "Language/currency switcher (switch by IP)": "Selector de idioma y moneda (cambiar por IP)",
     "Current plan: ": "Plan actual: ",
-    "plan": "plan"
+    "plan": "plan",
+    "Auto translate updated successfully": "Traducción automática actualizada con éxito",
+    "This bill was issued on {{date}}": "Esta factura fue emitida el {{date}}"
 }
   
