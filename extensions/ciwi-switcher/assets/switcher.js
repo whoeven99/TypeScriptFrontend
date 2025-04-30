@@ -704,11 +704,11 @@ class CiwiswitcherForm extends HTMLElement {
 
   handleOutsideClick(event) {
     if (!this.elements.ciwiContainer.contains(event.target)) {
-      if (window.innerWidth <= 768) {
-        const mainBox = document.getElementById("main-box");
-        this.elements.ciwiContainer.classList.remove("expanded");
-        mainBox.style.display = "block";
-      }
+      // if (window.innerWidth <= 768) {
+      //   const mainBox = document.getElementById("main-box");
+      //   this.elements.ciwiContainer.classList.remove("expanded");
+      //   mainBox.style.display = "block";
+      // }
       this.elements.selectorBox.style.display = "none";
       this.rotateArrow("mainbox-arrow-icon", 0);
     }
@@ -736,12 +736,12 @@ class CiwiswitcherForm extends HTMLElement {
     const isVisible = box.style.display !== "none";
     box.style.display = isVisible ? "none" : "block";
 
-    // 移动端适配
-    if (window.innerWidth <= 768) {
-      const mainBox = document.getElementById("main-box");
-      mainBox.style.display = isVisible ? "block" : "none";
-      this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
-    }
+    // // 移动端适配
+    // if (window.innerWidth <= 768) {
+    //   const mainBox = document.getElementById("main-box");
+    //   mainBox.style.display = isVisible ? "block" : "none";
+    //   this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
+    // }
 
     // 旋转箭头
     this.rotateArrow("mainbox-arrow-icon", isVisible ? 0 : 180);
@@ -966,6 +966,7 @@ window.onload = async function () {
     confirmButton.style.color = data.buttonColor;
     selectorBox.style.backgroundColor = data.backgroundColor;
     switcher.style.color = data.fontColor;
+    mainBox.style.backgroundColor = data.backgroundColor;
     if (
       data.selectorPosition === "top_left" ||
       data.selectorPosition === "top_right"
@@ -1003,17 +1004,4 @@ window.onload = async function () {
     updateDisplayText(data.languageSelector, data.currencySelector);
     switcher.style.display = "block";
   }
-
-  function setMainBoxBg() {
-    if (window.innerWidth > 768) {
-      mainBox.style.backgroundColor = data.backgroundColor;
-    } else {
-      mainBox.style.backgroundColor = ""; // 或者设置为移动端的默认色
-    }
-  }
-
-  // 初始赋值
-  setMainBoxBg();
-  // 监听窗口变化
-  window.addEventListener("resize", setMainBoxBg);
 };
