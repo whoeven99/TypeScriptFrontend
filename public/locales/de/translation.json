@@ -337,6 +337,7 @@
   "Language/currency switcher (switch by IP)": "Sprach- und Währungswechsler (nach IP wechseln)",
   "Current plan: ": "Aktueller Plan: ",
   "plan": "Plan",
-  "Auto translate updated successfully": "Automatische Übersetzung erfolgreich aktualisiert"
+  "Auto translate updated successfully": "Automatische Übersetzung erfolgreich aktualisiert",
+  "This bill was issued on {{date}}": "Diese Rechnung wurde am {{date}} ausgestellt"
 }
     

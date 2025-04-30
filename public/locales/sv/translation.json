@@ -337,6 +337,8 @@
     "Manual editing of translations possible": "Manuell redigering av översättningar möjlig",
     "Language/currency switcher (switch by IP)": "Språk/valutaomvandlare (växla efter IP)",
     "Current plan: ": "Aktuellt plan: ",
-    "plan": "plan"
+    "plan": "plan",
+    "Auto translate updated successfully": "Automatisk översättning uppdaterad",
+    "This bill was issued on {{date}}": "Denna faktura utfärdades den {{date}}"
 }   
   

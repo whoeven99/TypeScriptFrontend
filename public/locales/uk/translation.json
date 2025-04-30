@@ -337,5 +337,7 @@
     "Manual editing of translations possible": "Возможно ручное редактирование переводов",
     "Language/currency switcher (switch by IP)": "Переключатель языка и валюты (переключение по IP)",
     "Current plan: ": "Текущий план: ",
-    "plan": "план"
+    "plan": "план",
+    "Auto translate updated successfully": "Автоматический перевод обновлен успешно",
+    "This bill was issued on {{date}}": "Этот счет выпущен {{date}}"
 }

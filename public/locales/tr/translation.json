@@ -337,5 +337,7 @@
     "Manual editing of translations possible": "Çevirileri elle düzenleyebilirsiniz",
     "Language/currency switcher (switch by IP)": "IP'ye göre dil ve para birimi değiştirici",
     "Current plan: ": "Mevcut plan: ",
-    "plan": "plan"
+    "plan": "plan",
+    "Auto translate updated successfully": "Otomatik çeviri başarıyla güncellendi",
+    "This bill was issued on {{date}}": "Bu fatura {{date} tarihinde düzenlendi"
 }

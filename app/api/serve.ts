@@ -434,15 +434,18 @@ export const AddDefaultLanguagePack = async ({ shop }: { shop: string }) => {
 //获取用户计划
 export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
   try {
-    const getUserSubscriptionPlanResponse = await axios({
+    const response = await axios({
       url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
       method: "GET",
     });
-    if (getUserSubscriptionPlanResponse.data?.success) {
-      const res = getUserSubscriptionPlanResponse.data?.response;
+    if (response.data?.success) {
+      const res = response.data?.response;
       return res;
     } else {
-      return "1";
+      return {
+        userSubscriptionPlan: 2,
+        currentPeriodEnd: null,
+      };
     }
   } catch (error) {
     console.error("Error GetUserSubscriptionPlan:", error);

@@ -335,6 +335,8 @@
     "Manual editing of translations possible": "수동 편집 가능한 번역",
     "Language/currency switcher (switch by IP)": "IP 전환 언어/통화 스위처",
     "Current plan: ": "현재 플랜: ",
-    "plan": "플랜"
+    "plan": "플랜",
+    "Auto translate updated successfully": "자동 번역 업데이트 성공",
+    "This bill was issued on {{date}}": "이 청구서는 {{date}에 발행되었습니다"
 } 
   

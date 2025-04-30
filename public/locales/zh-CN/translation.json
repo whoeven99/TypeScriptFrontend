@@ -337,5 +337,6 @@
   "Language/currency switcher (switch by IP)": "语言/货币切换器（按 IP 切换）",
   "Current plan: ": "当前计划：",
   "plan": "计划",
-  "Auto translate updated successfully": "自动翻译更新成功"
+  "Auto translate updated successfully": "自动翻译更新成功",
+  "This bill was issued on {{date}}": "此账单于 {{date}} 开具"
 }
