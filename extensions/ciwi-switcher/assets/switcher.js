@@ -705,11 +705,11 @@ class CiwiswitcherForm extends HTMLElement {
 
   handleOutsideClick(event) {
     if (!this.elements.ciwiContainer.contains(event.target)) {
-      if (window.innerWidth <= 768) {
-        const mainBox = document.getElementById("main-box");
-        this.elements.ciwiContainer.classList.remove("expanded");
-        mainBox.style.display = "block";
-      }
+      // if (window.innerWidth <= 768) {
+      //   const mainBox = document.getElementById("main-box");
+      //   this.elements.ciwiContainer.classList.remove("expanded");
+      //   mainBox.style.display = "block";
+      // }
       this.elements.selectorBox.style.display = "none";
       this.rotateArrow("mainbox-arrow-icon", 0);
     }
@@ -737,12 +737,12 @@ class CiwiswitcherForm extends HTMLElement {
     const isVisible = box.style.display !== "none";
     box.style.display = isVisible ? "none" : "block";
 
-    // 移动端适配
-    if (window.innerWidth <= 768) {
-      const mainBox = document.getElementById("main-box");
-      mainBox.style.display = isVisible ? "block" : "none";
-      this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
-    }
+    // // 移动端适配
+    // if (window.innerWidth <= 768) {
+    //   const mainBox = document.getElementById("main-box");
+    //   mainBox.style.display = isVisible ? "block" : "none";
+    //   this.elements.ciwiContainer.classList.toggle("expanded", !isVisible);
+    // }
 
     // 旋转箭头
     this.rotateArrow("mainbox-arrow-icon", isVisible ? 0 : 180);
@@ -849,82 +849,6 @@ window.onload = async function () {
         }
       }
     }
-    if (data.ipOpen) {
-      const iptoken = document.querySelector('input[name="iptoken"]');
-      const iptokenValue = iptoken.value;
-      if (iptokenValue) iptoken.remove();
-      const storedLanguage = localStorage.getItem("selectedLanguage");
-      const storedCountry = localStorage.getItem("selectedCountry");
-      const languageInput = document.querySelector(
-        'input[name="language_code"]',
-      );
-      const language = languageInput.value;
-      const countryInput = document.querySelector('input[name="country_code"]');
-      const country = countryInput.value;
-      const availableLanguages = Array.from(
-        document.querySelectorAll("#language-switcher option"),
-      ).map((option) => option.value);
-      const availableCountries = Array.from(
-        document.querySelectorAll('ul[role="list"] a[data-value]'),
-      ).map((link) => link.getAttribute("data-value"));
-
-      if (storedLanguage) {
-        if (
-          storedLanguage !== languageInput.value &&
-          availableLanguages.includes(storedLanguage)
-        ) {
-          // 存储到 localStorage
-          languageInput.value = storedLanguage;
-        }
-      } else {
-        const browserLanguage = navigator.language;
-        // 获取匹配的语言或默认为英语
-        const detectedLanguage = browserLanguage || "en";
-        localStorage.setItem("selectedLanguage", detectedLanguage);
-        if (
-          languageInput.value !== detectedLanguage &&
-          availableLanguages.includes(detectedLanguage)
-        ) {
-          languageInput.value = detectedLanguage;
-        }
-      }
-
-      if (storedCountry) {
-        if (
-          countryInput.value !== storedCountry &&
-          availableCountries.includes(storedCountry)
-        ) {
-          countryInput.value = storedCountry;
-        }
-      } else {
-        const IpData = await fetchUserCountryInfo(iptokenValue);
-        if (
-          IpData?.country_code &&
-          availableCountries.includes(IpData.country_code)
-        ) {
-          if (countryInput.value !== IpData.country_code) {
-            countryInput.value = IpData.country_code;
-          }
-          localStorage.setItem("selectedCountry", countryInput.value);
-          console.log(
-            "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
-          );
-        }
-      }
-      const htmlElement = document.documentElement; // 获取 <html> 元素
-      const isInThemeEditor = htmlElement.classList.contains(
-        "shopify-design-mode",
-      );
-      if (
-        (countryInput.value !== country || languageInput.value !== language) &&
-        !isInThemeEditor
-      ) {
-        updateLocalization({
-          country: countryInput.value,
-          language: languageInput.value,
-        });
-      }
-    }
   }
 
   if (data.currencySelector) {
@@ -959,6 +883,81 @@ window.onload = async function () {
     }
   }
 
+  if (data.ipOpen) {
+    const iptoken = document.querySelector('input[name="iptoken"]');
+    const iptokenValue = iptoken.value;
+    if (iptokenValue) iptoken.remove();
+    const storedLanguage = localStorage.getItem("selectedLanguage");
+    const storedCountry = localStorage.getItem("selectedCountry");
+    const languageInput = document.querySelector('input[name="language_code"]');
+    const language = languageInput.value;
+    const countryInput = document.querySelector('input[name="country_code"]');
+    const country = countryInput.value;
+    const availableLanguages = Array.from(
+      document.querySelectorAll(".option-item[data-type='language']"),
+    ).map((option) => option.dataset.value);
+    const availableCountries = Array.from(
+      document.querySelectorAll('ul[role="list"] a[data-value]'),
+    ).map((link) => link.getAttribute("data-value"));
+
+    if (storedLanguage) {
+      if (
+        storedLanguage !== languageInput.value &&
+        availableLanguages.includes(storedLanguage)
+      ) {
+        // 存储到 localStorage
+        languageInput.value = storedLanguage;
+      }
+    } else {
+      const browserLanguage = navigator.language;
+      // 获取匹配的语言或默认为英语
+      const detectedLanguage = browserLanguage || "en";
+      localStorage.setItem("selectedLanguage", detectedLanguage);
+      if (
+        languageInput.value !== detectedLanguage &&
+        availableLanguages.includes(detectedLanguage)
+      ) {
+        languageInput.value = detectedLanguage;
+      }
+    }
+
+    if (storedCountry) {
+      if (
+        countryInput.value !== storedCountry &&
+        availableCountries.includes(storedCountry)
+      ) {
+        countryInput.value = storedCountry;
+      }
+    } else {
+      const IpData = await fetchUserCountryInfo(iptokenValue);
+      if (
+        IpData?.country_code &&
+        availableCountries.includes(IpData.country_code)
+      ) {
+        if (countryInput.value !== IpData.country_code) {
+          countryInput.value = IpData.country_code;
+        }
+        localStorage.setItem("selectedCountry", countryInput.value);
+        console.log(
+          "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
+        );
+      }
+    }
+    const htmlElement = document.documentElement; // 获取 <html> 元素
+    const isInThemeEditor = htmlElement.classList.contains(
+      "shopify-design-mode",
+    );
+    if (
+      (countryInput.value !== country || languageInput.value !== language) &&
+      !isInThemeEditor
+    ) {
+      updateLocalization({
+        country: countryInput.value,
+        language: languageInput.value,
+      });
+    }
+  }
+
   if (switcher) {
     const selectorBox = document.getElementById("selector-box");
     const confirmButton = document.querySelector(
@@ -968,6 +967,7 @@ window.onload = async function () {
     confirmButton.style.color = data.buttonColor;
     selectorBox.style.backgroundColor = data.backgroundColor;
     switcher.style.color = data.fontColor;
+    mainBox.style.backgroundColor = data.backgroundColor;
     if (
       data.selectorPosition === "top_left" ||
       data.selectorPosition === "top_right"
@@ -1005,17 +1005,4 @@ window.onload = async function () {
     updateDisplayText(data.languageSelector, data.currencySelector);
     switcher.style.display = "block";
   }
-
-  function setMainBoxBg() {
-    if (window.innerWidth > 768) {
-      mainBox.style.backgroundColor = data.backgroundColor;
-    } else {
-      mainBox.style.backgroundColor = ""; // 或者设置为移动端的默认色
-    }
-  }
-
-  // 初始赋值
-  setMainBoxBg();
-  // 监听窗口变化
-  window.addEventListener("resize", setMainBoxBg);
 };
