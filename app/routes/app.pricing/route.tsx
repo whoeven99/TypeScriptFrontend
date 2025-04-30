@@ -335,7 +335,7 @@ const Index = () => {
       buttonType: "default",
       disabled: selectedPlan === 5,
       features: [
-        t("all in Standard Plan"),
+        t("all in Basic Plan"),
         t("{{credits}} credits/month", { credits: "3,000,000" }),
         t("Glossary ({{count}} entries)", { count: 50 }),
       ],
