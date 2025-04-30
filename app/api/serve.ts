@@ -72,7 +72,6 @@ export const UpdateAutoTranslateByData = async ({
   }
 };
 
-//修改用户计划
 export const WidgetConfigurations = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
@@ -89,7 +88,6 @@ export const WidgetConfigurations = async ({ shop }: { shop: string }) => {
   }
 };
 
-//修改用户计划
 export const SaveAndUpdateData = async ({
   shopName,
   languageSelector,
@@ -143,14 +141,13 @@ export const SaveAndUpdateData = async ({
   }
 };
 
-//修改用户计划
 export const AddSubscriptionQuotaRecord = async ({
   subscriptionId,
 }: {
   subscriptionId: string;
 }) => {
   try {
-    const response = await axios({
+    await axios({
       url: `${process.env.SERVER_URL}/subscriptionQuotaRecord/addSubscriptionQuotaRecord`,
       method: "PUT",
       data: {
@@ -437,15 +434,18 @@ export const AddDefaultLanguagePack = async ({ shop }: { shop: string }) => {
 //获取用户计划
 export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
   try {
-    const getUserSubscriptionPlanResponse = await axios({
+    const response = await axios({
       url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
       method: "GET",
     });
-    if (getUserSubscriptionPlanResponse.data?.success) {
-      const res = getUserSubscriptionPlanResponse.data?.response;
+    if (response.data?.success) {
+      const res = response.data?.response;
       return res;
     } else {
-      return "1";
+      return {
+        userSubscriptionPlan: 2,
+        currentPeriodEnd: null,
+      };
     }
   } catch (error) {
     console.error("Error GetUserSubscriptionPlan:", error);
@@ -510,34 +510,22 @@ export const InsertTargets = async ({
 }) => {
   console.log(`${shop} source: `, source);
   console.log(`${shop} targets: `, targets);
-
   // 创建异步任务
-  const insertTask = async () => {
-    try {
-      const response = await withRetry(async () => {
-        return axios({
-          url: `${process.env.SERVER_URL}/translate/insertTargets`,
-          method: "POST",
-          data: {
-            shopName: shop,
-            accessToken: accessToken,
-            source: source,
-            targetList: targets,
-          },
-          timeout: 10000, // 10秒超时
-        });
-      });
-
-      return response;
-    } catch (error) {
-      console.error("Error InsertTargets:", error);
-    }
-  };
-
-  // 不等待结果，直接返回
-  insertTask().catch((error) => {
-    console.error("InsertTargets final error:", error);
-  });
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/translate/insertTargets`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        accessToken: accessToken,
+        source: source,
+        targetList: targets,
+      },
+    });
+    console.log("InsertTargets: ", response?.data);
+  } catch (error) {
+    console.error("Error InsertTargets:", error);
+  }
 };
 
 //更新各项翻译状态
@@ -554,14 +542,6 @@ export const GetTranslationItemsInfo = async ({
   target: string;
   resourceType: string;
 }) => {
-  console.log(
-    "GetTranslationItemsInfo: ",
-    shop,
-    accessToken,
-    source,
-    target,
-    resourceType,
-  );
   let res: {
     language: string;
     type: string;
@@ -826,7 +806,6 @@ export const GetTranslate = async ({
   }
 };
 
-//编辑翻译
 // export const updateManageTranslation = async ({
 //   shop,
 //   accessToken,

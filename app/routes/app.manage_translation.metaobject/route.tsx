@@ -1,4 +1,4 @@
-import { Layout, Modal, Table, theme, Result, Button, message } from "antd";
+import { Layout, Modal, Table, theme, Result, Button, message, Space } from "antd";
 import { useEffect, useState } from "react";
 import {
   useActionData,
@@ -121,7 +121,7 @@ const Index = () => {
 
   const { searchTerm, metaobjects } = useLoaderData<typeof loader>();
   console.log("metaobjects", metaobjects);
-  
+
   const actionData = useActionData<typeof action>();
 
   const [isVisible, setIsVisible] = useState(() => {
@@ -356,19 +356,25 @@ const Index = () => {
             }}
           >
             <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-              <Table
-                columns={resourceColumns}
-                dataSource={resourceData}
-                pagination={false}
-              />
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <Pagination
-                  hasPrevious={hasPrevious}
-                  onPrevious={onPrevious}
-                  hasNext={hasNext}
-                  onNext={onNext}
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ display: "flex" }}
+              >
+                <Table
+                  columns={resourceColumns}
+                  dataSource={resourceData}
+                  pagination={false}
                 />
-              </div>
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Pagination
+                    hasPrevious={hasPrevious}
+                    onPrevious={onPrevious}
+                    hasNext={hasNext}
+                    onNext={onNext}
+                  />
+                </div>
+              </Space>
             </Content>
           </Layout>
         </Modal>
