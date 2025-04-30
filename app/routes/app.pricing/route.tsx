@@ -426,12 +426,12 @@ const Index = () => {
               ) : (
                 <Skeleton
                   active
-                  paragraph={{ rows: 1, style: { margin: 1 } }}
+                  paragraph={{ rows: 1 }}
                   title={false}
                 />
               )}
-              {updateTime && <Text>
-                {t("This bill was issued on 2025-05-30")}
+              {updateTime && maxCredits && <Text>
+                {t("This bill was issued on {{date}}", { date: updateTime })}
               </Text>}
             </div>
             <Progress
