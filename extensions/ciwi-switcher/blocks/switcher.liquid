@@ -18,7 +18,10 @@
           <div class="custom-selector" data-type="language">
             <div class="selector-header" data-type="language">
               <div class="selected-option" data-type="language">
-                <span class="selected-text" data-type="language">
+                <span
+                  class="selected-text"
+                  data-type="language"
+                >
                   {{- localization.language.endonym_name | capitalize -}}
                 </span>
               </div>
@@ -46,7 +49,12 @@
                         alt=""
                       >
                     {% endcomment %}
-                    <span class="option-text">{{ language.endonym_name | capitalize }}</span>
+                    <span
+                      class="option-text"
+                      style="max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                    >
+                      {{- language.endonym_name | capitalize -}}
+                    </span>
                   </div>
                 {% endfor %}
               </div>
@@ -94,7 +102,12 @@
           src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
           onerror="this.style.display='none'"
         >
-        <span id="display-text" class="main_box_text">{{ localization.language.endonym_name | capitalize }}</span>
+        <span
+          id="display-text"
+          class="main_box_text"
+        >
+          {{- localization.language.endonym_name | capitalize -}}
+        </span>
         <img
           id="mainbox-arrow-icon"
           class="mainarrow_icon"

@@ -338,6 +338,8 @@
     "Current plan: ": "Huidig plan: ",
     "plan": "plan",
     "Auto translate updated successfully": "Automatische vertaling bijgewerkt",
-    "This bill was issued on {{date}}": "Deze factuur is uitgegeven op {{date}}"
+    "This bill was issued on {{date}}": "Deze factuur is uitgegeven op {{date}}",
+    "Yes": "Ja",
+    "No": "Nee"
 }
   

@@ -339,5 +339,7 @@
     "Current plan: ": "Mevcut plan: ",
     "plan": "plan",
     "Auto translate updated successfully": "Otomatik çeviri başarıyla güncellendi",
-    "This bill was issued on {{date}}": "Bu fatura {{date} tarihinde düzenlendi"
+    "This bill was issued on {{date}}": "Bu fatura {{date} tarihinde düzenlendi",
+    "Yes": "Evet",
+    "No": "Hayır"
 }

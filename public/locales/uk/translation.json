@@ -339,5 +339,7 @@
     "Current plan: ": "Текущий план: ",
     "plan": "план",
     "Auto translate updated successfully": "Автоматический перевод обновлен успешно",
-    "This bill was issued on {{date}}": "Этот счет выпущен {{date}}"
+    "This bill was issued on {{date}}": "Этот счет выпущен {{date}}",
+    "Yes": "Да",
+    "No": "Нет"
 }

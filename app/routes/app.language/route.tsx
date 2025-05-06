@@ -7,13 +7,13 @@ import {
   Flex,
   Table,
   Switch,
-  Skeleton,
-  message,
   Modal,
+  Popconfirm,
+  Checkbox,
 } from "antd";
-import { lazy, Suspense, useEffect, useState, startTransition } from "react";
+import { useEffect, useState, startTransition } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { useFetcher, useLoaderData, useLocation, useNavigate, useSubmit } from "@remix-run/react";
+import { useFetcher, useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
 import "./styles.css";
 import { authenticate } from "~/shopify.server";
 import {
@@ -108,17 +108,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-    shop: shop,
-    accessToken: accessToken as string,
-  });
 
-  const shopPrimaryLanguage = shopLanguagesLoad.filter(
-    (language) => language.primary,
-  );
-  const shopLocalesIndex = shopLanguagesLoad.filter(
-    (language) => !language.primary,
-  ).map((item) => item.locale);
 
   console.log(`${shop} load language`);
 
@@ -126,9 +116,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     {
       sever: process.env.SERVER_URL,
       shop: shop,
-      shopLanguagesLoad,
-      shopPrimaryLanguage,
-      shopLocalesIndex,
+
     },
   );
 };
@@ -152,8 +140,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     switch (true) {
       case !!loading:
-        const shopLocalesIndex = loading.shopLocalesIndex;
-        const shopPrimaryLanguage = loading.shopPrimaryLanguage;
+        const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+          shop: shop,
+          accessToken: accessToken as string,
+        });
+
+        const shopPrimaryLanguage = shopLanguagesLoad.filter(
+          (language) => language.primary,
+        );
+        const shopLocalesIndex = shopLanguagesLoad.filter(
+          (language) => !language.primary,
+        ).map((item) => item.locale);
         const allMarket: MarketType[] = await queryAllMarket({
           shop,
           accessToken: accessToken as string,
@@ -165,6 +162,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({
           shop: shop,
           allMarket: allMarket,
+          shopLanguagesLoad: shopLanguagesLoad,
+          shopPrimaryLanguage: shopPrimaryLanguage,
           languagesLoad: languagesLoad,
           languageLocaleInfo: languageLocaleInfo,
         });
@@ -379,7 +378,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, shopLanguagesLoad, shopPrimaryLanguage, shopLocalesIndex, sever } = useLoaderData<typeof loader>();
+  const { shop, sever } = useLoaderData<typeof loader>();
+  const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>([]);
+  const [shopPrimaryLanguage, setShopPrimaryLanguage] = useState<ShopLocalesType[]>([]);
   const [allLanguages, setAllLanguages] = useState<AllLanguagesType[]>([]);
   const [allMarket, setAllMarket] = useState<MarketType[]>([]);
   const [languagesLoad, setLanguagesLoad] = useState<any>(null);
@@ -392,12 +393,13 @@ const Index = () => {
   const [previewModalVisible, setPreviewModalVisible] =
     useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [dontPromptAgain, setDontPromptAgain] = useState(false);
   const hasSelected = selectedRowKeys.length > 0;
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const loadingFetcher = useFetcher<FetchType>();
+  const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const addDataFetcher = useFetcher<any>();
@@ -409,16 +411,15 @@ const Index = () => {
 
   useEffect(() => {
     const formData = new FormData();
-    formData.append("loading", JSON.stringify({
-      shopPrimaryLanguage: shopPrimaryLanguage,
-      shopLocalesIndex: shopLocalesIndex,
-    }));
+    formData.append("loading", JSON.stringify(true));
     loadingFetcher.submit(formData, {
       method: "post",
       action: "/app/language",
     });
     setIsMobile(window.innerWidth < 768);
-    shopify.loading(true);
+    if (localStorage.getItem("dontPromptAgain")) {
+      setDontPromptAgain(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -426,7 +427,8 @@ const Index = () => {
       setAllMarket(loadingFetcher.data.allMarket);
       setLanguagesLoad(loadingFetcher.data.languagesLoad);
       setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
-      shopify.loading(false);
+      setShopLanguagesLoad(loadingFetcher.data.shopLanguagesLoad);
+      setShopPrimaryLanguage(loadingFetcher.data.shopPrimaryLanguage);
       setLoading(false);
     }
   }, [loadingFetcher.data]);
@@ -718,6 +720,9 @@ const Index = () => {
 
   //表格编辑
   const handleDelete = () => {
+    if (dontPromptAgain) {
+      localStorage.setItem("dontPromptAgain", "true");
+    }
     const targets = dataSource.filter((item: LanguagesDataType) =>
       selectedRowKeys.includes(item.key),
     );
@@ -733,6 +738,7 @@ const Index = () => {
     deleteFetcher.submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
     setDeleteLoading(true);
   };
+
 
   const rowSelection = {
     selectedRowKeys,
@@ -764,13 +770,42 @@ const Index = () => {
             style={{ width: "100%", marginBottom: "16px" }}
           >
             <Flex align="center" gap="middle">
-              <Button
-                onClick={handleDelete}
-                disabled={!hasSelected}
-                loading={deleteloading}
-              >
-                {t("Delete")}
-              </Button>
+              {
+                dontPromptAgain
+                  ?
+                  <Button
+                    disabled={!hasSelected}
+                    loading={deleteloading}
+                    onClick={() => handleDelete()}
+                  >
+
+                    {t("Delete")}
+                  </Button>
+                  :
+                  <Popconfirm
+                    title={t("Delete the language")}
+                    description={
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <Text>
+                          {t("Are you sure to delete this language? After deletion, the translation data will be deleted together")}
+                        </Text>
+                        <Checkbox onChange={(e) => setDontPromptAgain(e.target.checked)}>
+                          {t("Don’t prompt again next time")}
+                        </Checkbox>
+                      </div>
+                    }
+                    onConfirm={() => handleDelete()}
+                    okText={t("Yes")}
+                    cancelText={t("No")}
+                  >
+                    <Button
+                      disabled={!hasSelected}
+                      loading={deleteloading}
+                    >
+                      {t("Delete")}
+                    </Button>
+                  </Popconfirm>
+              }
               <Text style={{ color: "#007F61" }}>
                 {hasSelected
                   ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`

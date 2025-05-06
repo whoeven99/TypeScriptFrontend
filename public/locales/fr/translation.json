@@ -338,6 +338,8 @@
     "Current plan: ": "Plan actuel: ",
     "plan": "plan",
     "Auto translate updated successfully": "Traduction automatique mise à jour avec succès",
-    "This bill was issued on {{date}}": "Cette facture a été émise le {{date}}" 
+    "This bill was issued on {{date}}": "Cette facture a été émise le {{date}}",
+    "Yes": "Oui",
+    "No": "Non"
 }
   

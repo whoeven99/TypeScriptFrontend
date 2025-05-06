@@ -930,6 +930,11 @@ window.onload = async function () {
         console.log(
           "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
         );
+      } else {
+        localStorage.setItem("selectedCountry", false);
+        console.log(
+          "该商店不包含您目前所在市场(The store does not include the market you are currently in)",
+        );
       }
     }
     const htmlElement = document.documentElement; // 获取 <html> 元素

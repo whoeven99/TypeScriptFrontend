@@ -337,6 +337,8 @@
     "Current plan: ": "Piano corrente: ",
     "plan": "piano",
     "Auto translate updated successfully": "Traduzione automatica aggiornata con successo",
-    "This bill was issued on {{date}}": "Questa fattura è stata emessa il {{date}}"
+    "This bill was issued on {{date}}": "Questa fattura è stata emessa il {{date}}",
+    "Yes": "Si",
+    "No": "No"
 }
   

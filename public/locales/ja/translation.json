@@ -338,6 +338,8 @@
     "Current plan: ": "現在のプラン: ",
     "plan": "プラン",
     "Auto translate updated successfully": "自動翻訳更新成功",  
-    "This bill was issued on {{date}}": "この請求書は{{date}に発行されました"
+    "This bill was issued on {{date}}": "この請求書は{{date}に発行されました",
+    "Yes": "はい",
+    "No": "いいえ"
 }   
   
