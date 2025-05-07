@@ -3,11 +3,11 @@ import {
   Layout,
   Menu,
   MenuProps,
-  message,
-  Modal,
   Result,
   Table,
   theme,
+  Typography,
+  Select
 } from "antd";
 import { useEffect, useState } from "react";
 import {
@@ -19,7 +19,7 @@ import {
   useSearchParams,
   useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
-import { Pagination } from "@shopify/polaris";
+import { ButtonGroup, FullscreenBar, Pagination } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import {
   queryNextTransType,
@@ -32,10 +32,11 @@ import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
+import { Modal, TitleBar } from "@shopify/app-bridge-react";
 
 const { Sider, Content } = Layout;
 
-
+const { Text } = Typography
 
 interface ArticleType {
   handle: string;
@@ -68,61 +69,41 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  // 如果没有 language 参数，直接返回空数据
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
   try {
     const articles = await queryNextTransType({
       shop,
-      accessToken,
+      accessToken: accessToken as string,
       resourceType: "ARTICLE",
       endCursor: "",
       locale: searchTerm || "",
     });
 
-    return json({
-      searchTerm,
-      articles,
-    });
+    return json({ searchTerm });
   } catch (error) {
     console.error("Error load article:", error);
-    throw new Response("Error load article", { status: 500 });
   }
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
       formData.get("startCursor") as string,
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
+    console.log("endCursor: ", endCursor);
+
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
@@ -141,9 +122,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop,
           accessToken: accessToken as string,
           resourceType: "ARTICLE",
-          endCursor,
+          endCursor: (endCursor === "true") ? "" : endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
+        console.log("nextArticles: ", nextArticles);
+        
         return json({ nextArticles: nextArticles });
       case !!confirmData:
         const data = await updateManageTranslation({
@@ -165,47 +148,30 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  
+
   const [isVisible, setIsVisible] = useState(() => {
     return !!searchParams.get('language');
   });
-  
-  const { searchTerm, articles } =
-    useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+
+  const { searchTerm } = useLoaderData<typeof loader>();
+  // const actionData = useActionData<typeof action>();
   const [isLoading, setIsLoading] = useState(true);
-
-  const exMenuData = (articles: any) => {
-    const data = articles.nodes.map((article: any) => ({
-      key: article?.resourceId,
-      label: article?.translatableContent.find(
-        (item: any) => item.key === "title",
-      ).value,
-    }));
-    return data;
-  };
-
-  const items: MenuProps["items"] = exMenuData(articles);
-  const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
-  const [articlesData, setArticlesData] = useState(articles);
+  const [menuData, setMenuData] = useState<MenuProps["items"]>([]);
+  const [articlesData, setArticlesData] = useState<any>();
   const [articleData, setArticleData] = useState<ArticleType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [SeoData, setSeoData] = useState<TableDataType[]>([]);
-  const [selectArticleKey, setSelectArticleKey] = useState(
-    articles.nodes[0]?.resourceId,
-  );
+  const [selectArticleKey, setSelectArticleKey] = useState<any>();
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
+  const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
+  const [itemOptions, setItemOptions] = useState<{ label: string; value: string }[]>([]);
 
-  const [hasPrevious, setHasPrevious] = useState<boolean>(
-    articlesData.pageInfo.hasPreviousPage,
-  );
-  const [hasNext, setHasNext] = useState<boolean>(
-    articlesData.pageInfo.hasNextPage,
-  );
+  const [hasPrevious, setHasPrevious] = useState<boolean>(false);
+  const [hasNext, setHasNext] = useState<boolean>(false);
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -213,31 +179,43 @@ const Index = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const loadingFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
+  const [selectedLanguage, setSelectedLanguage] = useState();
+  const [selectedItem, setSelectedItem] = useState();
+
   useEffect(() => {
-    if (articles) {
+    loadingFetcher.submit({ endCursor: JSON.stringify(true) }, {
+      method: "post",
+      action: `/app/manage_translation/article?language=${searchTerm}`,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (loadingFetcher.data) {
+      console.log(loadingFetcher.data);
+      setMenuData(exMenuData(loadingFetcher.data));
+      setArticlesData(loadingFetcher.data);
+      setSelectArticleKey(loadingFetcher.data.nodes[0]?.resourceId);
+      setHasPrevious(loadingFetcher.data.pageInfo.hasPreviousPage);
+      setHasNext(loadingFetcher.data.pageInfo.hasNextPage);
       setIsLoading(false);
     }
-  }, [articles]);
+  }, [loadingFetcher.data]);
 
   useEffect(() => {
     setIsVisible(!!searchParams.get('language'));
   }, [location]);
 
   useEffect(() => {
-    const data = transBeforeData({
-      articles: articlesData,
-    });
-    setArticleData(data);
+    // const data = transBeforeData({
+    //   articles: articlesData,
+    // });
+    // setArticleData(data);
     setConfirmData([]);
     setTranslatedValues({});
   }, [selectArticleKey]);
-
-  useEffect(() => {
-    setHasPrevious(articlesData.pageInfo.hasPreviousPage);
-    setHasNext(articlesData.pageInfo.hasNextPage);
-  }, [articlesData]);
 
   useEffect(() => {
     setResourceData(
@@ -286,23 +264,23 @@ const Index = () => {
     );
   }, [articleData]);
 
-  useEffect(() => {
-    if (actionData && "nextArticles" in actionData) {
-      const nextArticles = exMenuData(actionData.nextArticles);
-      // 在这里处理 nextArticles
-      setMenuData(nextArticles);
-      setArticlesData(actionData.nextArticles);
-      setSelectArticleKey(actionData.nextArticles.nodes[0]?.resourceId);
-    } else if (actionData && "previousArticles" in actionData) {
-      const previousArticles = exMenuData(actionData.previousArticles);
-      // 在这里处理 previousArticles
-      setMenuData(previousArticles);
-      setArticlesData(actionData.previousArticles);
-      setSelectArticleKey(actionData.previousArticles.nodes[0]?.resourceId);
-    } else {
-      // 如果不存在 nextArticles，可以执行其他逻辑
-    }
-  }, [actionData]);
+  // useEffect(() => {
+  //   if (actionData && "nextArticles" in actionData) {
+  //     const nextArticles = exMenuData(actionData.nextArticles);
+  //     // 在这里处理 nextArticles
+  //     setMenuData(nextArticles);
+  //     setArticlesData(actionData.nextArticles);
+  //     setSelectArticleKey(actionData.nextArticles.nodes[0]?.resourceId);
+  //   } else if (actionData && "previousArticles" in actionData) {
+  //     const previousArticles = exMenuData(actionData.previousArticles);
+  //     // 在这里处理 previousArticles
+  //     setMenuData(previousArticles);
+  //     setArticlesData(actionData.previousArticles);
+  //     setSelectArticleKey(actionData.previousArticles.nodes[0]?.resourceId);
+  //   } else {
+  //     // 如果不存在 nextArticles，可以执行其他逻辑
+  //   }
+  // }, [actionData]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -404,6 +382,16 @@ const Index = () => {
     },
   ];
 
+  const exMenuData = (articles: any) => {
+    const data = articles.nodes.map((article: any) => ({
+      key: article?.resourceId,
+      label: article?.translatableContent.find(
+        (item: any) => item.key === "title",
+      ).value,
+    }));
+    return data;
+  };
+
   const handleInputChange = (key: string, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
@@ -465,7 +453,7 @@ const Index = () => {
         },
       },
     };
-    const article = articles.nodes.find(
+    const article = articles?.nodes.find(
       (article: any) => article?.resourceId === selectArticleKey,
     );
     data.key = article?.resourceId;
@@ -550,61 +538,75 @@ const Index = () => {
   };
 
   return (
-    <div>
-      {isLoading ? (
-        <div>Loading...</div>
-      ) : articles.nodes.length ? (
-        <Modal
-          open={isVisible}
-          onCancel={onCancel}
-          width={"100%"}
-          footer={[
-            <div
-              key={"footer_buttons"}
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                width: "100%",
-                marginTop: "-12px",
-                gap: "12px"        // 使用 gap 替代 marginRight
-              }}
-            >
-              <Button
-                key={"manage_cancel_button"}
-                onClick={onCancel}
-                style={{ marginRight: "10px" }}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                onClick={handleConfirm}
-                key={"manage_confirm_button"}
-                type="primary"
-                disabled={confirmLoading || !confirmData.length}
-                loading={confirmLoading}
-              >
-                {t("Save")}
-              </Button>
-            </div>,
-          ]}
+    <Modal
+      id="article-modal"
+      variant="max"
+      open={isVisible}
+      onHide={onCancel}
+    >
+      <FullscreenBar onAction={onCancel}>
+        <div
+          style={{
+            display: 'flex',
+            flexGrow: 1,
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingLeft: '1rem',
+            paddingRight: '1rem',
+          }}
         >
-          <Layout
-            style={{
-              padding: "24px 0",
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
-            }}
+          <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
+            <Text>
+              {t("Article")}
+            </Text>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
+            <Select
+              style={{ minWidth: 120 }}
+              options={languageOptions}
+              value={selectedLanguage}
+              onChange={setSelectedLanguage}
+              placeholder="选择语言"
+            />
+            <Select
+              style={{ minWidth: 120 }}
+              options={itemOptions}
+              value={selectedItem}
+              onChange={setSelectedItem}
+              placeholder="选择内容项"
+            />
+          </div>
+
+          <Button
+            type="primary"
+            onClick={handleConfirm}
+            disabled={confirmLoading || !confirmData.length}
+            loading={confirmLoading}
           >
+            {t("Save")}
+          </Button>
+        </div>
+      </FullscreenBar>
+      <Layout
+        style={{
+          padding: "24px 0",
+          background: colorBgContainer,
+          borderRadius: borderRadiusLG,
+        }}
+      >
+        {isLoading ? (
+          <div>Loading...</div>
+        ) : loadingFetcher.data.nodes.length ? (
+          <>
             <Sider style={{ background: colorBgContainer }} width={200}>
               <Menu
                 mode="inline"
-                defaultSelectedKeys={[articlesData.nodes[0]?.resourceId]}
+                defaultSelectedKeys={[loadingFetcher.data.nodes[0]?.resourceId]}
                 defaultOpenKeys={["sub1"]}
                 style={{ height: "100%" }}
                 items={menuData}
-                // onChange={onChange}
-                selectedKeys={[selectArticleKey]}
+                selectedKeys={[selectArticleKey || ""]}
                 onClick={onClick}
               />
               <div style={{ display: "flex", justifyContent: "center" }}>
@@ -628,16 +630,8 @@ const Index = () => {
                 pagination={false}
               />
             </Content>
-          </Layout>
-        </Modal>
-      ) : (
-        <Modal 
-          open={isVisible} 
-          footer={null} 
-          onCancel={onCancel}
-          destroyOnClose={true}
-          maskClosable={false}
-        >
+          </>
+        ) : (
           <Result
             title="The specified fields were not found in the store.
 "
@@ -647,9 +641,9 @@ const Index = () => {
               </Button>
             }
           />
-        </Modal>
-      )}
-    </div>
+        )}
+      </Layout>
+    </Modal>
   );
 };
 

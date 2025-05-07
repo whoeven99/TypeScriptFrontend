@@ -158,7 +158,7 @@ async function initializeCurrency(data, shop) {
       );
 
       if (transformedPrice) {
-        price.innerText = transformedPrice;
+        price.innerHTML = transformedPrice;
       }
     });
 
@@ -298,7 +298,7 @@ function transform(
 
   number = detectNumberFormat(moneyFormat, transformedPrice, rounding);
 
-  return `${symbol}${number} ${currencyCode}`;
+  return `${symbol}${number} <span class="currency-code">${currencyCode}</span>`;
 }
 
 function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
@@ -929,6 +929,11 @@ window.onload = async function () {
         localStorage.setItem("selectedCountry", countryInput.value);
         console.log(
           "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
+        );
+      } else {
+        localStorage.setItem("selectedCountry", false);
+        console.log(
+          "该商店不包含您目前所在市场(The store does not include the market you are currently in)",
         );
       }
     }

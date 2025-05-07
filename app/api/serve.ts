@@ -512,7 +512,7 @@ export const InsertTargets = async ({
   console.log(`${shop} targets: `, targets);
   // 创建异步任务
   try {
-    const response = await axios({
+    await axios({
       url: `${process.env.SERVER_URL}/translate/insertTargets`,
       method: "POST",
       data: {
@@ -522,7 +522,6 @@ export const InsertTargets = async ({
         targetList: targets,
       },
     });
-    console.log("InsertTargets: ", response?.data);
   } catch (error) {
     console.error("Error InsertTargets:", error);
   }

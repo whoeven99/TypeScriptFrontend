@@ -338,5 +338,7 @@
   "Current plan: ": "当前计划：",
   "plan": "计划",
   "Auto translate updated successfully": "自动翻译更新成功",
-  "This bill was issued on {{date}}": "此账单于 {{date}} 开具"
+  "This bill was issued on {{date}}": "此账单于 {{date}} 开具",
+  "Yes": "是",
+  "No": "否"
 }

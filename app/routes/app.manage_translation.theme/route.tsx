@@ -2,37 +2,34 @@ import {
   Button,
   Input,
   Layout,
-  message,
   Modal,
   Result,
-  Select,
   Space,
   Table,
   theme,
+  Typography,
 } from "antd";
 import { useEffect, useState } from "react";
 import {
-  useActionData,
   useFetcher,
   useLoaderData,
   useLocation,
   useNavigate,
   useSearchParams,
-  useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   queryNextTransType,
   queryPreviousTransType,
-  queryShopLanguages,
 } from "~/api/admin";
-import { ShopLocalesType } from "../app.language/route";
 import { SearchOutlined } from "@ant-design/icons";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
+
+const { Text } = Typography
 
 const { Header, Content } = Layout;
 
@@ -213,13 +210,16 @@ const Index = () => {
       title: t("Resource"),
       dataIndex: "resource",
       key: "resource",
-      width: "10%",
+      width: "20%",
+      render: (_: any, record: TableDataType) => {
+        return <Text style={{ display: "inline" }}>{record?.resource}</Text>;
+      },
     },
     {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return <ManageTableInput record={record} />;
       },
@@ -228,7 +228,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           record && (

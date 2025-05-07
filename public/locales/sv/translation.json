@@ -339,6 +339,8 @@
     "Current plan: ": "Aktuellt plan: ",
     "plan": "plan",
     "Auto translate updated successfully": "Automatisk översättning uppdaterad",
-    "This bill was issued on {{date}}": "Denna faktura utfärdades den {{date}}"
+    "This bill was issued on {{date}}": "Denna faktura utfärdades den {{date}}",
+    "Yes": "Ja",
+    "No": "Nej"
 }   
   
