@@ -249,11 +249,6 @@ a[href="https://translate.google.com"]
   background-color: #f5f5f5;
 }
 
-.currency-code {
-  color: #666;
-  font-size: 0.9em;
-}
-
 /* 滚动条样式 */
 .options-list::-webkit-scrollbar {
   width: 6px;
