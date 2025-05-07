@@ -27,6 +27,12 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   const navigate = useNavigate();
   const { t } = useTranslation();
 
+  const handleEdit = (record: DataType) => {
+    navigate(
+      `/app/manage_translation/${record.navigation}?language=${current}`,
+    );
+  };
+
   const columns = [
     {
       title: cardTitle,
@@ -59,13 +65,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       width: "40%",
       render: (_: any, record: DataType) => {
         return (
-          <Button
-            onClick={() => {
-              navigate(
-                `/app/manage_translation/${record.navigation}?language=${current}`,
-              );
-            }}
-          >
+          <Button onClick={() => handleEdit(record)}>
             {t("Edit")}
           </Button>
         );

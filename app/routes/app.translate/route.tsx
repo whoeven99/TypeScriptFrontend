@@ -62,18 +62,20 @@ const Index = () => {
   const [translateSettings1, setTranslateSettings1] = useState<string>("1");
   const [translateSettings2, setTranslateSettings2] = useState<string>("1");
   const [translateSettings3, setTranslateSettings3] = useState<string[]>([
-    "Products",
-    "Collection",
-    "Article",
-    "Blog titles",
-    "Pages",
-    "Filters",
-    "Metaobjects",
-    "Navigation",
-    "Shop",
-    "Theme",
-    "Delivery",
-    "Shipping",
+    "products",
+    "collection",
+    "article",
+    "blog_titles",
+    "pages",
+    "filters",
+    "metaobjects",
+    "metadata",
+    "notifications",
+    "navigation",
+    "shop",
+    "theme",
+    "delivery",
+    "shipping",
   ]);
   const [modal, setModal] = useState<string>("");
   const [translateSettings4, setTranslateSettings4] = useState<string>("1");
@@ -321,63 +323,59 @@ const Index = () => {
   const translateSettings3Options = [
     {
       label: t("Products"),
-      value: "Products",
-      disabled: true,
+      value: "products",
     },
     {
       label: t("Collections"),
-      value: "Collection",
-      disabled: true,
+      value: "collection",
     },
     {
       label: t("Articles"),
-      value: "Article",
-      disabled: true,
+      value: "article",
     },
     {
       label: t("Blog titles"),
-      value: "Blog titles",
-      disabled: true,
+      value: "blog_titles",
     },
     {
       label: t("Pages"),
-      value: "Pages",
-      disabled: true,
+      value: "pages",
     },
     {
       label: t("Filters"),
-      value: "Filters",
-      disabled: true,
+      value: "filters",
     },
     {
       label: t("Metaobjects"),
-      value: "Metaobjects",
-      disabled: true,
+      value: "metaobjects",
+    },
+    {
+      label: t("Store metadata"),
+      value: "metadata",
+    },
+    {
+      label: t("Email"),
+      value: "notifications",
     },
     {
       label: t("Navigation"),
-      value: "Navigation",
-      disabled: true,
+      value: "navigation",
     },
     {
       label: t("Shop"),
-      value: "Shop",
-      disabled: true,
+      value: "shop",
     },
     {
       label: t("Theme"),
-      value: "Theme",
-      disabled: true,
+      value: "theme",
     },
     {
       label: t("Delivery"),
-      value: "Delivery",
-      disabled: true,
+      value: "delivery",
     },
     {
       label: t("Shipping"),
-      value: "Shipping",
-      disabled: true,
+      value: "shipping",
     },
   ];
 

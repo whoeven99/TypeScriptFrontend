@@ -158,7 +158,7 @@ async function initializeCurrency(data, shop) {
       );
 
       if (transformedPrice) {
-        price.innerText = transformedPrice;
+        price.innerHTML = transformedPrice;
       }
     });
 
@@ -298,7 +298,7 @@ function transform(
 
   number = detectNumberFormat(moneyFormat, transformedPrice, rounding);
 
-  return `${symbol}${number} ${currencyCode}`;
+  return `${symbol}${number} <span class="currency-code">${currencyCode}</span>`;
 }
 
 function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
