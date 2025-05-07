@@ -52,6 +52,7 @@ import PrimaryLanguage from "./components/primaryLanguage";
 import AddLanguageModal from "./components/addLanguageModal";
 import PreviewModal from "~/components/previewModal";
 import ScrollNotice from "~/components/ScrollNotice";
+import DeleteConfirmModal from "./components/deleteConfirmModal";
 
 const { Title, Text } = Typography;
 
@@ -394,6 +395,7 @@ const Index = () => {
     useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [dontPromptAgain, setDontPromptAgain] = useState(false);
+  const [deleteConfirmModalVisible, setDeleteConfirmModalVisible] = useState(false);
   const hasSelected = selectedRowKeys.length > 0;
 
   const dispatch = useDispatch();
@@ -720,6 +722,7 @@ const Index = () => {
 
   //表格编辑
   const handleDelete = () => {
+    setDeleteConfirmModalVisible(false);
     if (dontPromptAgain) {
       localStorage.setItem("dontPromptAgain", "true");
     }
@@ -770,42 +773,20 @@ const Index = () => {
             style={{ width: "100%", marginBottom: "16px" }}
           >
             <Flex align="center" gap="middle">
-              {
-                dontPromptAgain
-                  ?
-                  <Button
-                    disabled={!hasSelected}
-                    loading={deleteloading}
-                    onClick={() => handleDelete()}
-                  >
+              <Button
+                disabled={!hasSelected}
+                loading={deleteloading}
+                onClick={() => {
+                  if (dontPromptAgain) {
+                    handleDelete();
+                  } else {
+                    setDeleteConfirmModalVisible(true);
+                  }
+                }}
+              >
 
-                    {t("Delete")}
-                  </Button>
-                  :
-                  <Popconfirm
-                    title={t("Delete the language")}
-                    description={
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <Text>
-                          {t("Are you sure to delete this language? After deletion, the translation data will be deleted together")}
-                        </Text>
-                        <Checkbox onChange={(e) => setDontPromptAgain(e.target.checked)}>
-                          {t("Don’t prompt again next time")}
-                        </Checkbox>
-                      </div>
-                    }
-                    onConfirm={() => handleDelete()}
-                    okText={t("Yes")}
-                    cancelText={t("No")}
-                  >
-                    <Button
-                      disabled={!hasSelected}
-                      loading={deleteloading}
-                    >
-                      {t("Delete")}
-                    </Button>
-                  </Popconfirm>
-              }
+                {t("Delete")}
+              </Button>
               <Text style={{ color: "#007F61" }}>
                 {hasSelected
                   ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
@@ -844,6 +825,14 @@ const Index = () => {
       <PreviewModal
         visible={previewModalVisible}
         setVisible={setPreviewModalVisible}
+      />
+      <DeleteConfirmModal
+        isVisible={deleteConfirmModalVisible}
+        setVisible={setDeleteConfirmModalVisible}
+        setDontPromptAgain={setDontPromptAgain}
+        langauges={selectedRowKeys.map((key) => dataSource.find((item: any) => item?.key === key))}
+        handleDelete={handleDelete}
+        text={t("Are you sure to delete this language? After deletion, the translation data will be deleted together")}
       />
       {showWarnModal && (
         <Modal

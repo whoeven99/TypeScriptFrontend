@@ -1347,6 +1347,67 @@ export const queryPreviousNestTransType = async ({
   }
 };
 
+// export const bulkOperationTransType = async ({
+//   shop,
+//   accessToken,
+//   resourceType,
+//   locale,
+// }: {
+//   shop: string;
+//   accessToken: string;
+//   resourceType: string;
+//   locale: string;
+// }) => {
+//   try {
+//     const query = `
+//     mutation {
+//       bulkOperationRunQuery(
+//         query: """
+//           {
+//             translatableResources(resourceType: ${resourceType}}) {
+//               nodes {
+//                 resourceId
+//                 translatableContent {
+//                   key
+//                   digest
+//                   locale
+//                   value
+//                 }
+//                 translations(locale: "${locale}") {
+//                   key
+//                   value
+//                   outdated
+//                 }
+//               }
+//             }
+//           """
+//         ) {
+//           bulkOperation {
+//             id
+//             status
+//           }
+//           userErrors {
+//             field
+//             message
+//           }
+//         }
+//       }
+//     }`;
+
+//     const response = await axios({
+//       url: `https://${shop}/admin/api/2024-10/graphql.json`,
+//       method: "POST",
+//       headers: {
+//         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+//         "Content-Type": "application/json",
+//       },
+//       data: JSON.stringify({ query }),
+//     });
+//   } catch (error) {
+//     console.error("Error fetching translation data:", error);
+//   }
+// };
+
 export const queryAllLanguages = async ({
   shop,
   accessToken,
@@ -1452,38 +1513,6 @@ export const queryOrders = async ({
     console.error("Error fetching orders:", error);
   }
 };
-
-// export const queryAllCustomers = async ({
-//   shop,
-//   accessToken,
-// }: {
-//   shop: string;
-//   accessToken: string;
-// }) => {
-//   try {
-//     const query = `{
-//       customersCount {
-//         count
-//          precision
-//        }
-//      }`;
-
-//     const response = await axios({
-//       url: `https://${shop}/admin/api/2024-10/graphql.json`,
-//       method: "POST",
-//       headers: {
-//         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
-//         "Content-Type": "application/json",
-//       },
-//       data: JSON.stringify({ query }),
-//     });
-//     const res = response.data.data;
-//     return res;
-//   } catch (error) {
-//     console.error("Error fetching all orders:", error);
-//
-//   }
-// };
 
 export const mutationShopLocaleEnable = async ({
   shop,

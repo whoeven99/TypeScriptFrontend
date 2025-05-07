@@ -341,5 +341,7 @@
   "Auto translate updated successfully": "Auto translate updated successfully",
   "This bill was issued on {{date}}": "This bill was issued on {{date}}",
   "Yes": "Yes",
-  "No": "No"
+  "No": "No",
+  "Delete {{item}}": "Delete {{item}}",
+  "Delete {{count}} languages": "Delete {{count}} languages"
 }
