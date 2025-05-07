@@ -102,6 +102,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("startCursor") as string,
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
+    console.log("endCursor: ", endCursor);
+
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
@@ -120,9 +122,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop,
           accessToken: accessToken as string,
           resourceType: "ARTICLE",
-          endCursor,
+          endCursor: (endCursor === "true") ? "" : endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
+        console.log("nextArticles: ", nextArticles);
+        
         return json({ nextArticles: nextArticles });
       case !!confirmData:
         const data = await updateManageTranslation({
@@ -182,7 +186,7 @@ const Index = () => {
   const [selectedItem, setSelectedItem] = useState();
 
   useEffect(() => {
-    loadingFetcher.submit({ endCursor: JSON.stringify("") }, {
+    loadingFetcher.submit({ endCursor: JSON.stringify(true) }, {
       method: "post",
       action: `/app/manage_translation/article?language=${searchTerm}`,
     });
@@ -191,7 +195,6 @@ const Index = () => {
   useEffect(() => {
     if (loadingFetcher.data) {
       console.log(loadingFetcher.data);
-      
       setMenuData(exMenuData(loadingFetcher.data));
       setArticlesData(loadingFetcher.data);
       setSelectArticleKey(loadingFetcher.data.nodes[0]?.resourceId);

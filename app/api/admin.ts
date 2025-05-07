@@ -1159,7 +1159,6 @@ export const queryNextTransType = async ({
       data: JSON.stringify({ query }),
     });
     const res = response.data.data.translatableResources;
-
     return res;
   } catch (error) {
     console.error("Error fetching translation data:", error);
