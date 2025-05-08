@@ -9,7 +9,7 @@ import {
   theme,
   Typography,
 } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   useActionData,
   useFetcher,
@@ -19,37 +19,42 @@ import {
   useSearchParams,
   useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
-import { FullscreenBar, Pagination, Select } from "@shopify/polaris";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
+import { ButtonGroup, FullscreenBar, Pagination, Select } from "@shopify/polaris";
+import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import {
   queryNextTransType,
   queryPreviousTransType,
+  queryShopLanguages,
 } from "~/api/admin";
+import { ShopLocalesType } from "../app.language/route";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
+import { Modal, TitleBar } from "@shopify/app-bridge-react";
 import { useSelector } from "react-redux";
-import { Modal } from "@shopify/app-bridge-react";
 
 const { Sider, Content } = Layout;
 
 const { Text } = Typography
-interface CollectionType {
+
+interface ArticleType {
   handle: string;
   key: string;
-  descriptionHtml: string | undefined;
   title: string;
+  body: string | undefined;
+  summary: string | undefined;
   seo: {
     description: string | undefined;
     title: string | undefined;
   };
   translations: {
-    handle: string;
+    handle: string | undefined;
     key: string;
-    descriptionHtml: string | undefined;
-    title: string;
+    title: string | undefined;
+    body: string | undefined;
+    summary: string | undefined;
     seo: {
       description: string | undefined;
       title: string | undefined;
@@ -65,7 +70,6 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  // 如果没有 language 参数，直接返回空数据 
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
@@ -73,21 +77,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
 
   try {
-    const collections = await queryNextTransType({
+    const articles = await queryNextTransType({
       shop,
       accessToken: accessToken as string,
-      resourceType: "COLLECTION",
+      resourceType: "ARTICLE",
       endCursor: "",
       locale: searchTerm || "",
     });
 
     return json({
       searchTerm,
-      collections,
+      articles,
     });
   } catch (error) {
-    console.error("Error load collection:", error);
-    throw new Response("Error load collection", { status: 500 });
+    console.error("Error load article:", error);
+    throw new Response("Error load article", { status: 500 });
   }
 };
 
@@ -109,25 +113,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     switch (true) {
       case !!startCursor:
-        const previousCollections = await queryPreviousTransType({
+        const previousArticles = await queryPreviousTransType({
           shop,
           accessToken: accessToken as string,
-          resourceType: "COLLECTION",
+          resourceType: "ARTICLE",
           startCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-        return json({ previousCollections: previousCollections });
+        return json({ previousArticles: previousArticles });
       case !!endCursor:
-        const nextCollections = await queryNextTransType({
+        const nextArticles = await queryNextTransType({
           shop,
           accessToken: accessToken as string,
-          resourceType: "COLLECTION",
+          resourceType: "ARTICLE",
           endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-        return json({ nextCollections: nextCollections });
+        return json({ nextArticles: nextArticles });
       case !!confirmData:
-        //
         const data = await updateManageTranslation({
           shop,
           accessToken: accessToken as string,
@@ -139,21 +142,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
-    console.error("Error action collection:", error);
-    throw new Response("Error action collection", { status: 500 });
+    console.error("Error action article:", error);
+    throw new Response("Error action article", { status: 500 });
   }
 };
 
 const Index = () => {
+  const { searchTerm, articles } =
+    useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { searchTerm, collections } =
-    useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  const { t } = useTranslation();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
-  const { t } = useTranslation();
 
   const navigate = useNavigate();
   const languageTableData = useSelector((state: any) => state.languageTableData.rows);
@@ -162,25 +164,25 @@ const Index = () => {
 
   const isManualChange = useRef(false);
 
+  const actionData = useActionData<typeof action>();
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
     return !!searchParams.get('language');
   });
-
   const [menuData, setMenuData] = useState<MenuProps["items"]>([]);
-  const [collectionsData, setCollectionsData] = useState<any>(collections);
-  const [collectionData, setCollectionData] = useState<CollectionType>();
+  const [articlesData, setArticlesData] = useState<any>(articles);
+  const [articleData, setArticleData] = useState<ArticleType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [SeoData, setSeoData] = useState<TableDataType[]>([]);
-  const [selectCollectionKey, setSelectCollectionKey] = useState(
-    collections.nodes[0]?.resourceId,
+  const [selectArticleKey, setSelectArticleKey] = useState(
+    articles.nodes[0]?.resourceId,
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
-  const itemOptions = [
+  const itemOptions: { label: string; value: string }[] = [
     { label: t("Products"), value: "product" },
     { label: t("Collection"), value: "collection" },
     { label: t("Theme"), value: "theme" },
@@ -198,17 +200,18 @@ const Index = () => {
   ]
   const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
-  const [selectedItem, setSelectedItem] = useState<string>("collection");
+  const [selectedItem, setSelectedItem] = useState<string>("article");
+
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    collectionsData.pageInfo.hasPreviousPage || false
+    articles?.pageInfo.hasPreviousPage || false
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    collectionsData.pageInfo.hasNextPage || false
+    articles?.pageInfo.hasNextPage || false
   );
 
   useEffect(() => {
-    if (collections) {
-      setMenuData(exMenuData(collections));
+    if (articles) {
+      setMenuData(exMenuData(articles));
       setIsLoading(false);
     }
   }, []);
@@ -224,32 +227,35 @@ const Index = () => {
     }
   }, [languageTableData])
 
-
   useEffect(() => {
-    if (collections && isManualChange.current) {
-      setCollectionsData(collections);
-      setMenuData(exMenuData(collections));
-      setSelectCollectionKey(collections.nodes[0]?.resourceId);
+    if (articles && isManualChange.current) {
+      setArticlesData(articles);
+      setMenuData(exMenuData(articles));
+      setSelectArticleKey(articles?.nodes[0]?.resourceId);
       setTimeout(() => {
         setIsLoading(false);
       }, 100);
       isManualChange.current = false; // 重置
     }
-  }, [collections]);
+  }, [articles]);
 
   useEffect(() => {
-    setHasPrevious(collectionsData.pageInfo.hasPreviousPage);
-    setHasNext(collectionsData.pageInfo.hasNextPage);
-  }, [collectionsData]);
+    setIsVisible(!!searchParams.get('language'));
+  }, [location]);
 
   useEffect(() => {
     const data = transBeforeData({
-      collections: collectionsData,
+      articles: articlesData,
     });
-    setCollectionData(data);
+    setArticleData(data);
     setConfirmData([]);
     setTranslatedValues({});
-  }, [selectCollectionKey, collectionsData]);
+  }, [selectArticleKey, articlesData]);
+
+  useEffect(() => {
+    setHasPrevious(articlesData.pageInfo.hasPreviousPage);
+    setHasNext(articlesData.pageInfo.hasNextPage);
+  }, [articlesData]);
 
   useEffect(() => {
     setResourceData(
@@ -257,14 +263,20 @@ const Index = () => {
         {
           key: "title",
           resource: "Title",
-          default_language: collectionData?.title,
-          translated: collectionData?.translations?.title,
+          default_language: articleData?.title,
+          translated: articleData?.translations?.title,
         },
         {
           key: "body_html",
           resource: "Description",
-          default_language: collectionData?.descriptionHtml,
-          translated: collectionData?.translations?.descriptionHtml,
+          default_language: articleData?.body,
+          translated: articleData?.translations?.body,
+        },
+        {
+          key: "summary",
+          resource: "Summary",
+          default_language: articleData?.summary,
+          translated: articleData?.translations?.summary,
         },
       ].filter((item) => item.default_language),
     );
@@ -273,48 +285,42 @@ const Index = () => {
         {
           key: "handle",
           resource: "URL handle",
-          default_language: collectionData?.handle,
-          translated: collectionData?.translations?.handle,
+          default_language: articleData?.handle,
+          translated: articleData?.translations?.handle,
         },
         {
           key: "meta_title",
           resource: "Meta title",
-          default_language: collectionData?.seo.title,
-          translated: collectionData?.translations?.seo.title,
+          default_language: articleData?.seo.title,
+          translated: articleData?.translations?.seo.title,
         },
         {
           key: "meta_description",
           resource: "Meta description",
-          default_language: collectionData?.seo.description,
-          translated: collectionData?.translations?.seo.description,
+          default_language: articleData?.seo.description,
+          translated: articleData?.translations?.seo.description,
         },
       ].filter((item) => item.default_language),
     );
-  }, [collectionData]);
+  }, [articleData]);
 
   useEffect(() => {
-    if (actionData && "nextCollections" in actionData) {
-      const nextCollections = exMenuData(actionData.nextCollections);
-      // 在这里处理 nextCollections
-      setMenuData(nextCollections);
-      setCollectionsData(actionData.nextCollections);
-      setSelectCollectionKey(actionData.nextCollections.nodes[0]?.resourceId);
-    } else if (actionData && "previousCollections" in actionData) {
-      const previousCollections = exMenuData(actionData.previousCollections);
-      // 在这里处理 previousCollections
-      setMenuData(previousCollections);
-      setCollectionsData(actionData.previousCollections);
-      setSelectCollectionKey(
-        actionData.previousCollections.nodes[0]?.resourceId,
-      );
+    if (actionData && "nextArticles" in actionData) {
+      const nextArticles = exMenuData(actionData.nextArticles);
+      // 在这里处理 nextArticles
+      setMenuData(nextArticles);
+      setArticlesData(actionData.nextArticles);
+      setSelectArticleKey(actionData.nextArticles.nodes[0]?.resourceId);
+    } else if (actionData && "previousArticles" in actionData) {
+      const previousArticles = exMenuData(actionData.previousArticles);
+      // 在这里处理 previousArticles
+      setMenuData(previousArticles);
+      setArticlesData(actionData.previousArticles);
+      setSelectArticleKey(actionData.previousArticles.nodes[0]?.resourceId);
     } else {
-      // 如果不存在 nextCollections，可以执行其他逻辑
+      // 如果不存在 nextArticles，可以执行其他逻辑
     }
   }, [actionData]);
-
-  useEffect(() => {
-    setIsVisible(!!searchParams.get('language'));
-  }, [location]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -323,20 +329,19 @@ const Index = () => {
       });
       if (!errorItem) {
         confirmFetcher.data.confirmData.forEach((item: any) => {
-          const index = collectionsData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
+          const index = articlesData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
           if (index !== -1) {
-            const collection = collectionsData.nodes[index].translations.find((option: any) => option.key === item.key);
-            if (collection) {
-              collection.value = item.value;
+            const article = articlesData.nodes[index].translations.find((option: any) => option.key === item.key);
+            if (article) {
+              article.value = item.value;
             } else {
-              collectionsData.nodes[index].translations.push({
+              articlesData.nodes[index].translations.push({
                 key: item.key,
                 value: item.value,
                 outdated: false,
               });
             }
           }
-
         })
         shopify.toast.show("Saved successfully");
       } else {
@@ -417,10 +422,10 @@ const Index = () => {
     },
   ];
 
-  const exMenuData = (collections: any) => {
-    const data = collections.nodes.map((collection: any) => ({
-      key: collection?.resourceId,
-      label: collection?.translatableContent.find(
+  const exMenuData = (articles: any) => {
+    const data = articles.nodes.map((article: any) => ({
+      key: article?.resourceId,
+      label: article?.translatableContent.find(
         (item: any) => item.key === "title",
       ).value,
     }));
@@ -446,114 +451,124 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: collectionsData.nodes.find(
-            (item: any) => item?.resourceId === selectCollectionKey,
+          resourceId: articlesData.nodes.find(
+            (item: any) => item?.resourceId === selectArticleKey,
           )?.resourceId,
-          locale: collectionsData.nodes
-            .find((item: any) => item?.resourceId === selectCollectionKey)
+          locale: articlesData.nodes
+            .find((item: any) => item?.resourceId === selectArticleKey)
             ?.translatableContent.find((item: any) => item.key === key)?.locale,
           key: key,
           value: value, // 初始为空字符串
-          translatableContentDigest: collectionsData.nodes
-            .find((item: any) => item?.resourceId === selectCollectionKey)
+          translatableContentDigest: articlesData.nodes
+            .find((item: any) => item?.resourceId === selectArticleKey)
             ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",
         };
+
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       }
     });
   };
 
-  const transBeforeData = ({ collections }: { collections: any }) => {
-    let data: CollectionType = {
+  const transBeforeData = ({ articles }: { articles: any }) => {
+    let data: ArticleType = {
       handle: "",
       key: "",
-      descriptionHtml: "",
+      title: "",
+      body: "",
+      summary: "",
       seo: {
         description: "",
         title: "",
       },
-      title: "",
       translations: {
         handle: "",
         key: "",
-        descriptionHtml: "",
+        title: "",
+        body: "",
+        summary: "",
         seo: {
           description: "",
           title: "",
         },
-        title: "",
       },
     };
-    const collection = collections.nodes.find(
-      (collection: any) => collection?.resourceId === selectCollectionKey,
+    const article = articles.nodes.find(
+      (article: any) => article?.resourceId === selectArticleKey,
     );
-    data.key = collection?.resourceId;
-    data.title = collection?.translatableContent.find(
-      (item: any) => item.key === "title",
-    )?.value;
-    data.descriptionHtml = collection?.translatableContent.find(
-      (item: any) => item.key === "body_html",
-    )?.value;
-    data.handle = collection?.translatableContent.find(
+    data.key = article?.resourceId;
+    data.handle = article?.translatableContent.find(
       (item: any) => item.key === "handle",
     )?.value;
-    data.seo.title = collection?.translatableContent.find(
+    data.title = article?.translatableContent.find(
+      (item: any) => item.key === "title",
+    )?.value;
+    data.body = article?.translatableContent.find(
+      (item: any) => item.key === "body_html",
+    )?.value;
+    data.summary = article?.translatableContent.find(
+      (item: any) => item.key === "summary_html",
+    )?.value;
+    data.seo.title = article?.translatableContent.find(
       (item: any) => item.key === "meta_title",
     )?.value;
-    data.seo.description = collection?.translatableContent.find(
+    data.seo.description = article?.translatableContent.find(
       (item: any) => item.key === "meta_description",
     )?.value;
-    data.translations.title = collection?.translations.find(
+    data.translations.key = article?.resourceId;
+    data.translations.title = article?.translations.find(
       (item: any) => item.key === "title",
     )?.value;
-    data.translations.descriptionHtml = collection?.translations.find(
-      (item: any) => item.key === "body_html",
-    )?.value;
-    data.translations.handle = collection?.translations.find(
+    data.translations.handle = article?.translations.find(
       (item: any) => item.key === "handle",
     )?.value;
-    data.translations.seo.title = collection?.translations.find(
+    data.translations.body = article?.translations.find(
+      (item: any) => item.key === "body_html",
+    )?.value;
+    data.translations.summary = article?.translations.find(
+      (item: any) => item.key === "summary_html",
+    )?.value;
+    data.translations.seo.title = article?.translations.find(
       (item: any) => item.key === "meta_title",
     )?.value;
-    data.translations.seo.description = collection?.translations.find(
+    data.translations.seo.description = article?.translations.find(
       (item: any) => item.key === "meta_description",
     )?.value;
     return data;
+  };
+
+  const onPrevious = () => {
+    const formData = new FormData();
+    const startCursor = articlesData.pageInfo.startCursor;
+    formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
+    submit(formData, {
+      method: "post",
+      action: `/app/manage_translation/article?language=${searchTerm}`,
+    }); // 提交表单请求
+  };
+
+  const onNext = () => {
+    const formData = new FormData();
+    const endCursor = articlesData.pageInfo.endCursor;
+    formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
+    submit(formData, {
+      method: "post",
+      action: `/app/manage_translation/article?language=${searchTerm}`,
+    }); // 提交表单请求
   };
 
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);
     isManualChange.current = true;
     setSelectedLanguage(language);
-    navigate(`/app/manage_translation/blog?language=${language}`);
-  }
+    navigate(`/app/manage_translation/article?language=${language}`);
+  };
 
   const handleItemChange = (item: string) => {
     setIsLoading(true);
     isManualChange.current = true;
     setSelectedItem(item);
     navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
-  }
-
-  const onPrevious = () => {
-    const formData = new FormData();
-    const startCursor = collectionsData.pageInfo.startCursor;
-    formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-    submit(formData, {
-      method: "post",
-      action: `/app/manage_translation/collection?language=${searchTerm}`,
-    }); // 提交表单请求
-  };
-
-  const onNext = () => {
-    const formData = new FormData();
-    const endCursor = collectionsData.pageInfo.endCursor;
-    formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-    submit(formData, {
-      method: "post",
-      action: `/app/manage_translation/collection?language=${searchTerm}`,
-    }); // 提交表单请求
   };
 
   const handleConfirm = () => {
@@ -562,7 +577,7 @@ const Index = () => {
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
       method: "post",
-      action: `/app/manage_translation/collection?language=${searchTerm}`,
+      action: `/app/manage_translation/article?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -593,7 +608,7 @@ const Index = () => {
         >
           <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
             <Text>
-              {t("Collection")}
+              {t("Article")}
             </Text>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
@@ -644,19 +659,17 @@ const Index = () => {
       >
         {isLoading ? (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
-        ) : collections.nodes.length ? (
+        ) : articles.nodes.length ? (
           <>
             <Sider style={{ background: colorBgContainer }} width={200}>
               <Menu
                 mode="inline"
-                defaultSelectedKeys={[collectionsData.nodes[0]?.resourceId]}
+                defaultSelectedKeys={[articlesData.nodes[0]?.resourceId]}
                 defaultOpenKeys={["sub1"]}
                 style={{ height: "100%" }}
                 items={menuData}
-                selectedKeys={[selectCollectionKey]}
-                onClick={(e: any) => {
-                  setSelectCollectionKey(e.key);
-                }}
+                selectedKeys={[selectArticleKey]}
+                onClick={(e) => setSelectArticleKey(e.key)}
               />
               <div style={{ display: "flex", justifyContent: "center" }}>
                 <Pagination

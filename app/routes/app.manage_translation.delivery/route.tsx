@@ -1,14 +1,14 @@
 import {
   Button,
   Layout,
-  message,
-  Modal,
   Result,
   Space,
+  Spin,
   Table,
   theme,
+  Typography,
 } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useActionData,
   useFetcher,
@@ -18,7 +18,7 @@ import {
   useSearchParams,
   useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
-import { Pagination } from "@shopify/polaris";
+import { FullscreenBar, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   queryNextTransType,
@@ -29,8 +29,12 @@ import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
+import { useSelector } from "react-redux";
+import { Modal } from "@shopify/app-bridge-react";
 
 const { Content } = Layout;
+
+const { Text } = Typography
 
 type TableDataType = {
   key: string;
@@ -41,28 +45,18 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-
   // 如果没有 language 参数，直接返回空数据
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
 
   try {
     const deliverys = await queryNextTransType({
       shop,
-      accessToken,
+      accessToken: accessToken as string,
       resourceType: "DELIVERY_METHOD_DEFINITION",
       endCursor: "",
       locale: searchTerm || "",
@@ -81,18 +75,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -106,7 +91,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!startCursor:
         const previousDeliverys = await queryPreviousTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "DELIVERY_METHOD_DEFINITION",
           startCursor,
           locale: searchTerm || "",
@@ -115,7 +100,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!endCursor:
         const nextDeliverys = await queryNextTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "DELIVERY_METHOD_DEFINITION",
           endCursor,
           locale: searchTerm || "",
@@ -124,7 +109,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           confirmData,
         });
         return json({ data: data });
@@ -141,15 +126,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  
-  const [isVisible, setIsVisible] = useState(() => {
-    return !!searchParams.get('language');
-  });
-
   const { searchTerm, deliverys } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
+  const { t } = useTranslation();
+
+  const navigate = useNavigate();
+  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+  const submit = useSubmit(); // 使用 useSubmit 钩子
+  const confirmFetcher = useFetcher<any>();
+
+  const isManualChange = useRef(false);
+
   const [isLoading, setIsLoading] = useState(true);
+  const [isVisible, setIsVisible] = useState(() => {
+    return !!searchParams.get('language');
+  });
 
   const [deliverysData, setDeliverysData] = useState(deliverys);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
@@ -158,26 +153,59 @@ const Index = () => {
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
+  const itemOptions = [
+    { label: t("Products"), value: "product" },
+    { label: t("Collection"), value: "collection" },
+    { label: t("Theme"), value: "theme" },
+    { label: t("Shop"), value: "shop" },
+    { label: t("Store metadata"), value: "metafield" },
+    { label: t("Articles"), value: "article" },
+    { label: t("Blog titles"), value: "blog" },
+    { label: t("Pages"), value: "page" },
+    { label: t("Filters"), value: "filter" },
+    { label: t("Metaobjects"), value: "metaobject" },
+    { label: t("Navigation"), value: "navigation" },
+    { label: t("Email"), value: "email" },
+    { label: t("Delivery"), value: "delivery" },
+    { label: t("Shipping"), value: "shipping" },
+  ]
+  const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
+  const [selectedItem, setSelectedItem] = useState<string>("delivery");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    deliverysData.pageInfo.hasPreviousPage,
+    deliverysData.pageInfo.hasPreviousPage || false
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    deliverysData.pageInfo.hasNextPage,
+    deliverysData.pageInfo.hasNextPage || false
   );
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
 
-  const navigate = useNavigate();
-  const { t } = useTranslation();
-  const submit = useSubmit(); // 使用 useSubmit 钩子
-  const confirmFetcher = useFetcher<any>();
+  useEffect(() => {
+    if (deliverys && isManualChange.current) {
+      setDeliverysData(deliverys);
+      isManualChange.current = false; // 重置
+    }
+  }, [deliverys]);
+
+  useEffect(() => {
+    if (languageTableData) {
+      setLanguageOptions(languageTableData
+        .filter((item: any) => !item.primary)
+        .map((item: any) => ({
+          label: item.language,
+          value: item.locale,
+        })));
+    }
+  }, [languageTableData])
+
 
   useEffect(() => {
     setHasPrevious(deliverysData.pageInfo.hasPreviousPage);
     setHasNext(deliverysData.pageInfo.hasNextPage);
     const data = generateMenuItemsArray(deliverysData);
     setResourceData(data);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 100);
   }, [deliverysData]);
 
   useEffect(() => {
@@ -190,12 +218,6 @@ const Index = () => {
       // 如果不存在 nexts，可以执行其他逻辑
     }
   }, [actionData]);
-
-  useEffect(() => {
-    if (deliverys) {
-      setIsLoading(false);
-    }
-  }, [deliverys]);
 
   useEffect(() => {
     setIsVisible(!!searchParams.get('language'));
@@ -303,6 +325,20 @@ const Index = () => {
     });
   };
 
+  const handleLanguageChange = (language: string) => {
+    setIsLoading(true);
+    isManualChange.current = true;
+    setSelectedLanguage(language);
+    navigate(`/app/manage_translation/delivery?language=${language}`);
+  }
+
+  const handleItemChange = (item: string) => {
+    setIsLoading(true);
+    isManualChange.current = true;
+    setSelectedItem(item);
+    navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+  }
+
   const onPrevious = () => {
     const formData = new FormData();
     const startCursor = deliverysData.pageInfo.startCursor;
@@ -336,84 +372,105 @@ const Index = () => {
 
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
-    navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
+    navigate(`/app/manage_translation?language=${searchTerm}`, {
+      state: { key: searchTerm },
+    }); // 跳转到 /app/manage_translation
   };
 
   return (
-    <div>
-      {isLoading ? (
-        <div>Loading...</div>
-      ) : deliverys.nodes.length ? (
-        <Modal
-          open={isVisible}
-          onCancel={onCancel}
-          width={"100%"}
-          footer={[
+    <Modal
+      id="manage-modal"
+      variant="max"
+      open={isVisible}
+      onHide={onCancel}
+    >
+      <FullscreenBar onAction={onCancel}>
+        <div
+          style={{
+            display: 'flex',
+            flexGrow: 1,
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingLeft: '1rem',
+            paddingRight: '1rem',
+          }}
+        >
+          <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
+            <Text>
+              {t("Delivery")}
+            </Text>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
             <div
-              key={"footer_buttons"}
               style={{
-                display: "flex",
-                justifyContent: "center",
-                width: "100%",
+                width: "150px",
               }}
             >
-              <Button
-                key={"manage_cancel_button"}
-                onClick={onCancel}
-                style={{ marginRight: "10px" }}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                onClick={handleConfirm}
-                key={"manage_confirm_button"}
-                type="primary"
-                disabled={confirmLoading || !confirmData.length}
-                loading={confirmLoading}
-              >
-                {t("Save")}
-              </Button>
-            </div>,
-          ]}
-        >
-          <Layout
-            style={{
-              padding: "24px 0",
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
-            }}
-          >
-            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-              <Space
-                direction="vertical"
-                size="middle"
-                style={{ display: "flex" }}
-              >
-                <Table
-                  columns={resourceColumns}
-                  dataSource={resourceData}
-                  pagination={false}
+              <Select
+                label={""}
+                options={languageOptions}
+                value={selectedLanguage}
+                onChange={(value) => handleLanguageChange(value)}
+              />
+            </div>
+            <div
+              style={{
+                width: "150px",
+              }}
+            >
+              <Select
+                label={""}
+                options={itemOptions}
+                value={selectedItem}
+                onChange={(value) => handleItemChange(value)}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'flex-end' }}>
+            <Button
+              type="primary"
+              onClick={handleConfirm}
+              disabled={confirmLoading || !confirmData.length}
+              loading={confirmLoading}
+            >
+              {t("Save")}
+            </Button>
+          </div>
+        </div>
+      </FullscreenBar>
+      <Layout
+        style={{
+          padding: "24px 0",
+          background: colorBgContainer,
+          borderRadius: borderRadiusLG,
+          height: "100%",
+        }}
+      >
+        {isLoading ? (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
+        ) : deliverys.nodes.length ? (
+          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Space
+              direction="vertical"
+              size="middle"
+              style={{ display: "flex" }}
+            >
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
+              />
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Pagination
+                  hasPrevious={hasPrevious}
+                  onPrevious={onPrevious}
+                  hasNext={hasNext}
+                  onNext={onNext}
                 />
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                  <Pagination
-                    hasPrevious={hasPrevious}
-                    onPrevious={onPrevious}
-                    hasNext={hasNext}
-                    onNext={onNext}
-                  />
-                </div>
-              </Space>
-            </Content>
-          </Layout>
-        </Modal>
-      ) : (
-        <Modal
-          open={isVisible}
-          footer={null}
-          onCancel={onCancel}
-          destroyOnClose={true}
-          maskClosable={false}
-        >
+              </div>
+            </Space>
+          </Content>
+        ) : (
           <Result
             title="The specified fields were not found in the store.
 "
@@ -423,9 +480,9 @@ const Index = () => {
               </Button>
             }
           />
-        </Modal>
-      )}
-    </div>
+        )}
+      </Layout>
+    </Modal>
   );
 };
 
