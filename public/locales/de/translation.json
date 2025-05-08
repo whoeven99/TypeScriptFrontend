@@ -340,6 +340,9 @@
   "Auto translate updated successfully": "Automatische Übersetzung erfolgreich aktualisiert",
   "This bill was issued on {{date}}": "Diese Rechnung wurde am {{date}} ausgestellt",
   "Yes": "Ja",
-  "No": "Nein"
+  "No": "Nein",
+  "Delete {{item}}": "Löschen {{item}}",
+  "Delete {{count}} languages": "Löschen {{count}} Sprachen",
+  "Are you sure to delete this language? After deletion, the translation data will be deleted together": "Sind Sie sicher, dass Sie diese Sprache löschen möchten? Nach dem Löschen werden die Übersetzungsdaten zusammen gelöscht"
 }
     

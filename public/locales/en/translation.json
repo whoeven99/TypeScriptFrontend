@@ -343,5 +343,6 @@
   "Yes": "Yes",
   "No": "No",
   "Delete {{item}}": "Delete {{item}}",
-  "Delete {{count}} languages": "Delete {{count}} languages"
+  "Delete {{count}} languages": "Delete {{count}} languages",
+  "Are you sure to delete this language? After deletion, the translation data will be deleted together": "Are you sure to delete this language? After deletion, the translation data will be deleted together"
 }

@@ -341,5 +341,8 @@
     "Auto translate updated successfully": "Otomatik çeviri başarıyla güncellendi",
     "This bill was issued on {{date}}": "Bu fatura {{date} tarihinde düzenlendi",
     "Yes": "Evet",
-    "No": "Hayır"
+    "No": "Hayır",
+    "Delete {{item}}": "Sil {{item}}",
+    "Delete {{count}} languages": "Sil {{count}} diller",
+    "Are you sure to delete this language? After deletion, the translation data will be deleted together": "Bu dil silinecek mi? Silme işlemi sonrası çeviri verileri de silinecektir"
 }

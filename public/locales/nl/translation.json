@@ -340,6 +340,9 @@
     "Auto translate updated successfully": "Automatische vertaling bijgewerkt",
     "This bill was issued on {{date}}": "Deze factuur is uitgegeven op {{date}}",
     "Yes": "Ja",
-    "No": "Nee"
+    "No": "Nee",
+    "Delete {{item}}": "Verwijder {{item}}",
+    "Delete {{count}} languages": "Verwijder {{count}} talen",
+    "Are you sure to delete this language? After deletion, the translation data will be deleted together": "Weet u zeker dat u deze taal wilt verwijderen? Na verwijdering worden de vertalinggegevens samen verwijderd"
 }
   

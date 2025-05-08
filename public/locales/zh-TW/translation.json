@@ -340,6 +340,9 @@
     "Auto translate updated successfully": "自動翻譯更新成功",
     "This bill was issued on {{date}}": "此賬單於 {{date}} 開具",
     "Yes": "是",
-    "No": "否"
+    "No": "否",
+    "Delete {{item}}": "刪除 {{item}}",
+    "Delete {{count}} languages": "刪除 {{count}} 語言",
+    "Are you sure to delete this language? After deletion, the translation data will be deleted together": "您確定要刪除此語言嗎？刪除後，翻譯數據將一起刪除"
 }
   

@@ -341,6 +341,9 @@
     "Auto translate updated successfully": "Automatisk översättning uppdaterad",
     "This bill was issued on {{date}}": "Denna faktura utfärdades den {{date}}",
     "Yes": "Ja",
-    "No": "Nej"
+    "No": "Nej",
+    "Delete {{item}}": "Radera {{item}}",
+    "Delete {{count}} languages": "Radera {{count}} språk",
+    "Are you sure to delete this language? After deletion, the translation data will be deleted together": "Är du säker på att du vill ta bort detta språk? Efter borttagning kommer översättningsdata att tas bort tillsammans"
 }   
   

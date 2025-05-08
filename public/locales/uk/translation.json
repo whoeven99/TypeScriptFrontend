@@ -341,5 +341,8 @@
     "Auto translate updated successfully": "Автоматический перевод обновлен успешно",
     "This bill was issued on {{date}}": "Этот счет выпущен {{date}}",
     "Yes": "Да",
-    "No": "Нет"
+    "No": "Нет",
+    "Delete {{item}}": "Видалити {{item}}",
+    "Delete {{count}} languages": "Видалити {{count}} мов",
+    "Are you sure to delete this language? After deletion, the translation data will be deleted together": "Ви впевнені, що хочете видалити цей мову? Після видалення дані перекладу також будуть видалені"
 }
