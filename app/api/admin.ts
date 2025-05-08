@@ -1863,7 +1863,7 @@ export const mutationAppSubscriptionCreate = async ({
               },
             },
           ],
-          replacementBehavior: "APPLY_ON_NEXT_BILLING_CYCLE",
+          replacementBehavior: "APPLY_IMMEDIATELY",
           trialDays: trialDays,
           test: test || false,
         },

@@ -793,6 +793,7 @@ export const GetTranslate = async ({
       },
     });
     console.log(`${shop} ${source}翻译${target}`);
+    console.log(`${shop} 翻译项: `, translateSettings3);
     const res = { ...response.data, target: target };
     console.log("GetTranslate: ", res);
     return res;
