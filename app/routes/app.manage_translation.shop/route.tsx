@@ -1,14 +1,14 @@
 import {
   Button,
   Layout,
-  message,
-  Modal,
   Result,
   Space,
+  Spin,
   Table,
   theme,
+  Typography,
 } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useActionData,
   useFetcher,
@@ -18,21 +18,22 @@ import {
   useSearchParams,
   useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
-import { Pagination } from "@shopify/polaris";
+import { FullscreenBar, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   queryNextTransType,
   queryPreviousTransType,
-  queryShopLanguages,
 } from "~/api/admin";
-import { ShopLocalesType } from "../app.language/route";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { SessionService } from "~/utils/session.server";
+import { useSelector } from "react-redux";
+import { Modal } from "@shopify/app-bridge-react";
 
 const { Content } = Layout;
+
+const { Text } = Typography;
 
 
 type TableDataType = {
@@ -44,24 +45,15 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
     const shops = await queryNextTransType({
       shop,
-      accessToken,
+      accessToken: accessToken as string,
       resourceType: "SHOP",
       endCursor: "",
       locale: searchTerm || "",
@@ -80,18 +72,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -105,7 +89,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!startCursor:
         const previousFilters = await queryPreviousTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "SHOP",
           startCursor,
           locale: searchTerm || "",
@@ -114,16 +98,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!endCursor:
         const nextFilters = await queryNextTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "SHOP",
           endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
         return json({ nextFilters: nextFilters });
-      case !!confirmData:
+      case !!confirmData:        
         const data = await updateManageTranslation({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           confirmData,
         });
         return json({ data: data });
@@ -140,41 +124,88 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-
-  const { searchTerm, shops } = useLoaderData<typeof loader>();
+  const { searchTerm, shops } =
+    useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
+  const { t } = useTranslation();
 
+  const navigate = useNavigate();
+  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+  const submit = useSubmit(); // 使用 useSubmit 钩子
+  const confirmFetcher = useFetcher<any>();
+
+  const isManualChange = useRef(true);
+
+  const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
     return !!searchParams.get('language');
   });
-  const [isLoading, setIsLoading] = useState(true);
+
   const [shopsData, setShopsData] = useState(shops);
+  console.log(shops);
+
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
+  const itemOptions = [
+    { label: t("Products"), value: "product" },
+    { label: t("Collection"), value: "collection" },
+    { label: t("Theme"), value: "theme" },
+    { label: t("Shop"), value: "shop" },
+    { label: t("Store metadata"), value: "metafield" },
+    { label: t("Articles"), value: "article" },
+    { label: t("Blog titles"), value: "blog" },
+    { label: t("Pages"), value: "page" },
+    { label: t("Filters"), value: "filter" },
+    { label: t("Metaobjects"), value: "metaobject" },
+    { label: t("Navigation"), value: "navigation" },
+    { label: t("Email"), value: "email" },
+    { label: t("Delivery"), value: "delivery" },
+    { label: t("Shipping"), value: "shipping" },
+  ]
+  const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
+  const [selectedItem, setSelectedItem] = useState<string>("shop");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    shopsData.pageInfo.hasPreviousPage,
+    shopsData.pageInfo.hasPreviousPage || false
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    shopsData.pageInfo.hasNextPage,
+    shopsData.pageInfo.hasNextPage || false
   );
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
 
-  const navigate = useNavigate();
-  const { t } = useTranslation();
-  const submit = useSubmit(); // 使用 useSubmit 钩子
-  const confirmFetcher = useFetcher<any>();
+  useEffect(() => {
+    if (shops && isManualChange.current) {
+      setShopsData(shops);
+      isManualChange.current = false; // 重置
+    }
+  }, [shops]);
+
+  useEffect(() => {
+    if (languageTableData) {
+      setLanguageOptions(languageTableData
+        .filter((item: any) => !item.primary)
+        .map((item: any) => ({
+          label: item.language,
+          value: item.locale,
+        })));
+    }
+  }, [languageTableData])
+
 
   useEffect(() => {
     setHasPrevious(shopsData.pageInfo.hasPreviousPage);
     setHasNext(shopsData.pageInfo.hasNextPage);
     const data = generateMenuItemsArray(shopsData);
+    console.log("data: ", data);
+
     setResourceData(data);
+    setIsLoading(false);
   }, [shopsData]);
 
   useEffect(() => {
@@ -187,12 +218,6 @@ const Index = () => {
       // 如果不存在 nexts，可以执行其他逻辑
     }
   }, [actionData]);
-
-  useEffect(() => {
-    if (shops) {
-      setIsLoading(false);
-    }
-  }, [shops]);
 
   useEffect(() => {
     setIsVisible(!!searchParams.get('language'));
@@ -294,11 +319,25 @@ const Index = () => {
           default_language: item?.translatableContent[0]?.value, // 默认语言为 item 的标题
           translated: item?.translations[0]?.value, // 翻译字段初始化为空字符串
         };
-        return currentItem.default_language !== "" ? [currentItem] : [];
+        return [currentItem];
       }
       return [];
     });
   };
+
+  const handleLanguageChange = (language: string) => {
+    setIsLoading(true);
+    isManualChange.current = true;
+    setSelectedLanguage(language);
+    navigate(`/app/manage_translation/shop?language=${language}`);
+  }
+
+  const handleItemChange = (item: string) => {
+    setIsLoading(true);
+    isManualChange.current = true;
+    setSelectedItem(item);
+    navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+  }
 
   const onPrevious = () => {
     const formData = new FormData();
@@ -333,84 +372,105 @@ const Index = () => {
 
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
-    navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
+    navigate(`/app/manage_translation?language=${searchTerm}`, {
+      state: { key: searchTerm },
+    }); // 跳转到 /app/manage_translation
   };
 
   return (
-    <div>
-      {isLoading ? (
-        <div>Loading...</div>
-      ) : resourceData.length ? (
-        <Modal
-          open={isVisible}
-          onCancel={onCancel}
-          width={"100%"}
-          footer={[
+    <Modal
+      id="manage-modal"
+      variant="max"
+      open={isVisible}
+      onHide={onCancel}
+    >
+      <FullscreenBar onAction={onCancel}>
+        <div
+          style={{
+            display: 'flex',
+            flexGrow: 1,
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingLeft: '1rem',
+            paddingRight: '1rem',
+          }}
+        >
+          <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
+            <Text>
+              {t("Shop")}
+            </Text>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
             <div
-              key={"footer_buttons"}
               style={{
-                display: "flex",
-                justifyContent: "center",
-                width: "100%",
+                width: "150px",
               }}
             >
-              <Button
-                key={"manage_cancel_button"}
-                onClick={onCancel}
-                style={{ marginRight: "10px" }}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                onClick={handleConfirm}
-                key={"manage_confirm_button"}
-                type="primary"
-                disabled={confirmLoading || !confirmData.length}
-                loading={confirmLoading}
-              >
-                {t("Save")}
-              </Button>
-            </div>,
-          ]}
-        >
-          <Layout
-            style={{
-              padding: "24px 0",
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
-            }}
-          >
-            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
-              <Space
-                direction="vertical"
-                size="middle"
-                style={{ display: "flex" }}
-              >
-                <Table
-                  columns={resourceColumns}
-                  dataSource={resourceData}
-                  pagination={false}
+              <Select
+                label={""}
+                options={languageOptions}
+                value={selectedLanguage}
+                onChange={(value) => handleLanguageChange(value)}
+              />
+            </div>
+            <div
+              style={{
+                width: "150px",
+              }}
+            >
+              <Select
+                label={""}
+                options={itemOptions}
+                value={selectedItem}
+                onChange={(value) => handleItemChange(value)}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'flex-end' }}>
+            <Button
+              type="primary"
+              onClick={handleConfirm}
+              disabled={confirmLoading || !confirmData.length}
+              loading={confirmLoading}
+            >
+              {t("Save")}
+            </Button>
+          </div>
+        </div>
+      </FullscreenBar>
+      <Layout
+        style={{
+          padding: "24px 0",
+          background: colorBgContainer,
+          borderRadius: borderRadiusLG,
+          height: "100%",
+        }}
+      >
+        {isLoading ? (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
+        ) : shops.nodes.length ? (
+          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Space
+              direction="vertical"
+              size="middle"
+              style={{ display: "flex" }}
+            >
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
+              />
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Pagination
+                  hasPrevious={hasPrevious}
+                  onPrevious={onPrevious}
+                  hasNext={hasNext}
+                  onNext={onNext}
                 />
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                  <Pagination
-                    hasPrevious={hasPrevious}
-                    onPrevious={onPrevious}
-                    hasNext={hasNext}
-                    onNext={onNext}
-                  />
-                </div>
-              </Space>
-            </Content>
-          </Layout>
-        </Modal>
-      ) : (
-        <Modal
-          open={isVisible}
-          footer={null}
-          onCancel={onCancel}
-          destroyOnClose={true}
-          maskClosable={false}
-        >
+              </div>
+            </Space>
+          </Content>
+        ) : (
           <Result
             title="The specified fields were not found in the store.
 "
@@ -420,9 +480,9 @@ const Index = () => {
               </Button>
             }
           />
-        </Modal>
-      )}
-    </div>
+        )}
+      </Layout>
+    </Modal>
   );
 };
 

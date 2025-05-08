@@ -3,13 +3,13 @@ import {
   Layout,
   Menu,
   MenuProps,
-  message,
-  Modal,
   Result,
+  Spin,
   Table,
   theme,
+  Typography,
 } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useActionData,
   useFetcher,
@@ -19,7 +19,7 @@ import {
   useSearchParams,
   useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
-import { Pagination } from "@shopify/polaris";
+import { FullscreenBar, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   queryNextNestTransType,
@@ -32,8 +32,12 @@ import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
+import { useSelector } from "react-redux";
+import { Modal } from "@shopify/app-bridge-react";
 
 const { Sider, Content } = Layout;
+
+const { Text } = Typography;
 
 interface ProductType {
   handle: string;
@@ -83,31 +87,22 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
     const products = await queryNextTransType({
       shop,
-      accessToken,
+      accessToken: accessToken as string,
       resourceType: "PRODUCT",
       endCursor: "",
       locale: searchTerm || "",
     });
     const product_options = await queryNextNestTransType({
       shop,
-      accessToken,
+      accessToken: accessToken as string,
       resourceType: "PRODUCT",
       nestResourceType: "PRODUCT_OPTION",
       endCursor: "",
@@ -115,7 +110,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
     const product_metafields = await queryNextNestTransType({
       shop,
-      accessToken,
+      accessToken: accessToken as string,
       resourceType: "PRODUCT",
       nestResourceType: "METAFIELD",
       endCursor: "",
@@ -137,18 +132,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -162,14 +149,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!startCursor:
         const previousProducts = await queryPreviousTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "PRODUCT",
           startCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
         const previousOptions = await queryPreviousNestTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "PRODUCT",
           nestResourceType: "PRODUCT_OPTION",
           startCursor,
@@ -177,7 +164,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         const previousMetafields = await queryPreviousNestTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "PRODUCT",
           nestResourceType: "METAFIELD",
           startCursor,
@@ -191,14 +178,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!endCursor:
         const nextProducts = await queryNextTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "PRODUCT",
           endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
         const nextOptions = await queryNextNestTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "PRODUCT",
           nestResourceType: "PRODUCT_OPTION",
           endCursor,
@@ -206,7 +193,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         const nextMetafields = await queryNextNestTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "PRODUCT",
           nestResourceType: "METAFIELD",
           endCursor,
@@ -236,7 +223,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         const data = await updateManageTranslation({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           confirmData,
         });
         return json({ data: data, confirmData: originalConfirmData });
@@ -253,31 +240,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-
-  const {
-    products,
-    product_options,
-    product_metafields,
-    searchTerm,
-  } = useLoaderData<typeof loader>();
+  const { searchTerm, products, product_options, product_metafields } =
+    useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
+  const { t } = useTranslation();
 
-  const exMenuData = (products: any) => {
-    const data = products.nodes.map((product: any) => ({
-      key: product?.resourceId,
-      label: product?.translatableContent.find(
-        (item: any) => item.key === "title",
-      ).value,
-    }));
-    return data;
-  };
+  const navigate = useNavigate();
+  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+  const submit = useSubmit(); // 使用 useSubmit 钩子
+  const confirmFetcher = useFetcher<any>();
 
-  const items: MenuProps["items"] = exMenuData(products);
+  const isManualChange = useRef(false);
+
+  const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
     return !!searchParams.get('language');
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
+
+  const [menuData, setMenuData] = useState<MenuProps["items"]>([]);
   const [productsData, setProductsData] = useState(products);
   const [productOptionsData, setProductOptionsData] = useState(product_options);
   const [productMetafieldsData, setProductMetafieldsData] =
@@ -296,20 +279,63 @@ const Index = () => {
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
+  const itemOptions = [
+    { label: t("Products"), value: "product" },
+    { label: t("Collection"), value: "collection" },
+    { label: t("Theme"), value: "theme" },
+    { label: t("Shop"), value: "shop" },
+    { label: t("Store metadata"), value: "metafield" },
+    { label: t("Articles"), value: "article" },
+    { label: t("Blog titles"), value: "blog" },
+    { label: t("Pages"), value: "page" },
+    { label: t("Filters"), value: "filter" },
+    { label: t("Metaobjects"), value: "metaobject" },
+    { label: t("Navigation"), value: "navigation" },
+    { label: t("Email"), value: "email" },
+    { label: t("Delivery"), value: "delivery" },
+    { label: t("Shipping"), value: "shipping" },
+  ]
+  const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
+  const [selectedItem, setSelectedItem] = useState<string>("product");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    productsData.pageInfo.hasPreviousPage,
+    productsData.pageInfo.hasPreviousPage || false
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    productsData.pageInfo.hasNextPage,
+    productsData.pageInfo.hasNextPage || false
   );
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
 
-  const navigate = useNavigate();
-  const { t } = useTranslation();
-  const submit = useSubmit(); // 使用 useSubmit 钩子
-  const confirmFetcher = useFetcher<any>();
+  useEffect(() => {
+    if (products) {
+      setMenuData(exMenuData(products));
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (languageTableData) {
+      setLanguageOptions(languageTableData
+        .filter((item: any) => !item.primary)
+        .map((item: any) => ({
+          label: item.language,
+          value: item.locale,
+        })));
+    }
+  }, [languageTableData])
+
+  useEffect(() => {
+    if (products && isManualChange.current) {
+      setProductsData(products);
+      setProductOptionsData(product_options);
+      setProductMetafieldsData(product_metafields);
+      setMenuData(exMenuData(products));
+      setSelectProductKey(products.nodes[0]?.resourceId);
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+      isManualChange.current = false; // 重置
+    }
+  }, [products]);
 
   useEffect(() => {
     setHasPrevious(productsData.pageInfo.hasPreviousPage);
@@ -325,7 +351,7 @@ const Index = () => {
     setProductData(data);
     setConfirmData([]);
     setTranslatedValues({});
-  }, [selectProductKey]);
+  }, [selectProductKey, productsData, productOptionsData, productMetafieldsData]);
 
   useEffect(() => {
     setResourceData(
@@ -430,12 +456,6 @@ const Index = () => {
       // 如果不存在 nextProducts，可以执行其他逻辑
     }
   }, [actionData]);
-
-  useEffect(() => {
-    if (products) {
-      setIsLoading(false);
-    }
-  }, [products]);
 
   useEffect(() => {
     setIsVisible(!!searchParams.get('language'));
@@ -692,6 +712,16 @@ const Index = () => {
   //   },
   // ];
 
+  const exMenuData = (products: any) => {
+    const data = products.nodes.map((product: any) => ({
+      key: product?.resourceId,
+      label: product?.translatableContent.find(
+        (item: any) => item.key === "title",
+      ).value,
+    }));
+    return data;
+  };
+
   const handleInputChange = (key: string, value: string, index?: number) => {
     setTranslatedValues((prev) => ({
       ...prev,
@@ -892,6 +922,20 @@ const Index = () => {
     return data;
   };
 
+  const handleLanguageChange = (language: string) => {
+    setIsLoading(true);
+    isManualChange.current = true;
+    setSelectedLanguage(language);
+    navigate(`/app/manage_translation/product?language=${language}`);
+  }
+
+  const handleItemChange = (item: string) => {
+    setIsLoading(true);
+    isManualChange.current = true;
+    setSelectedItem(item);
+    navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+  }
+
   const onPrevious = () => {
     const formData = new FormData();
     const startCursor = productsData.pageInfo.startCursor;
@@ -912,10 +956,6 @@ const Index = () => {
     }); // 提交表单请求
   };
 
-  const onClick = (e: any) => {
-    setSelectProductKey(e.key);
-  };
-
   const handleConfirm = () => {
     setConfirmLoading(true);
     const formData = new FormData();
@@ -927,63 +967,94 @@ const Index = () => {
   };
 
   const onCancel = () => {
-    navigate(`/app/manage_translation?language=${searchTerm}`);
     setIsVisible(false); // 关闭 Modal
+    navigate(`/app/manage_translation?language=${searchTerm}`, {
+      state: { key: searchTerm },
+    }); // 跳转到 /app/manage_translation
   };
 
   return (
-    <div>
-      {isLoading ? (
-        <div>Loading...</div>
-      ) : productsData.nodes.length ? (
-        <Modal
-          open={isVisible}
-          onCancel={onCancel}
-          width={"100%"}
-          footer={[
+    <Modal
+      id="manage-modal"
+      variant="max"
+      open={isVisible}
+      onHide={onCancel}
+    >
+      <FullscreenBar onAction={onCancel}>
+        <div
+          style={{
+            display: 'flex',
+            flexGrow: 1,
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingLeft: '1rem',
+            paddingRight: '1rem',
+          }}
+        >
+          <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
+            <Text>
+              {t("Product")}
+            </Text>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
             <div
-              key={"footer_buttons"}
               style={{
-                display: "flex",
-                justifyContent: "center",
-                width: "100%",
+                width: "150px",
               }}
             >
-              <Button
-                key={"manage_cancel_button"}
-                onClick={onCancel}
-                style={{ marginRight: "10px" }}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                onClick={handleConfirm}
-                key={"manage_confirm_button"}
-                type="primary"
-                disabled={confirmLoading || !confirmData.length}
-                loading={confirmLoading}
-              >
-                {t("Save")}
-              </Button>
-            </div>,
-          ]}
-        >
-          <Layout
-            style={{
-              padding: "24px 0",
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
-            }}
-          >
+              <Select
+                label={""}
+                options={languageOptions}
+                value={selectedLanguage}
+                onChange={(value) => handleLanguageChange(value)}
+              />
+            </div>
+            <div
+              style={{
+                width: "150px",
+              }}
+            >
+              <Select
+                label={""}
+                options={itemOptions}
+                value={selectedItem}
+                onChange={(value) => handleItemChange(value)}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'flex-end' }}>
+            <Button
+              type="primary"
+              onClick={handleConfirm}
+              disabled={confirmLoading || !confirmData.length}
+              loading={confirmLoading}
+            >
+              {t("Save")}
+            </Button>
+          </div>
+        </div>
+      </FullscreenBar>
+      <Layout
+        style={{
+          padding: "24px 0",
+          background: colorBgContainer,
+          borderRadius: borderRadiusLG,
+          height: "100%",
+        }}
+      >
+        {isLoading ? (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
+        ) : products.nodes.length ? (
+          <>
             <Sider style={{ background: colorBgContainer }} width={200}>
               <Menu
                 mode="inline"
-                defaultSelectedKeys={[productsData.nodes[0]?.resourceId]}
+                defaultSelectedKeys={[productsData?.nodes[0]?.resourceId]}
                 defaultOpenKeys={["sub1"]}
                 style={{ height: "100%" }}
                 items={menuData}
                 selectedKeys={[selectProductKey]}
-                onClick={onClick}
+                onClick={(e: any) => setSelectProductKey(e.key)}
               />
               <div style={{ display: "flex", justifyContent: "center" }}>
                 <Pagination
@@ -1021,16 +1092,8 @@ const Index = () => {
                   />
                 )}
             </Content>
-          </Layout>
-        </Modal>
-      ) : (
-        <Modal
-          open={isVisible}
-          footer={null}
-          onCancel={onCancel}
-          destroyOnClose={true}
-          maskClosable={false}
-        >
+          </>
+        ) : (
           <Result
             title="The specified fields were not found in the store.
 "
@@ -1040,9 +1103,9 @@ const Index = () => {
               </Button>
             }
           />
-        </Modal>
-      )}
-    </div>
+        )}
+      </Layout>
+    </Modal>
   );
 };
 
