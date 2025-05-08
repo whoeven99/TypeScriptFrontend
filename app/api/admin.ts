@@ -1123,6 +1123,7 @@ export const queryNextTransType = async ({
   endCursor: string;
   locale: string;
 }) => {
+  console.log("endCursor: ", endCursor ? `, after: "${endCursor}"` : "");
   try {
     const query = `{
       translatableResources(resourceType: ${resourceType}, first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
@@ -1158,6 +1159,7 @@ export const queryNextTransType = async ({
       },
       data: JSON.stringify({ query }),
     });
+    console.log("response: ", response.data.data);
     const res = response.data.data.translatableResources;
     return res;
   } catch (error) {
