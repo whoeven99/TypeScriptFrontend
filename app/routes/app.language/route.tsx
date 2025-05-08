@@ -72,14 +72,14 @@ export interface AllLanguagesType {
 export interface LanguagesDataType {
   key: number;
   language: string;
-  localeName: string;
+  localeName?: string;
   locale: string;
   primary: boolean;
-  status: number;
-  autoTranslate: boolean;
+  status?: number;
+  autoTranslate?: boolean;
   published: boolean;
-  publishLoading: boolean;
-  autoTranslateLoading: boolean;
+  publishLoading?: boolean;
+  autoTranslateLoading?: boolean;
 }
 
 export interface MarketType {

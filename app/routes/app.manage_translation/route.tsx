@@ -23,6 +23,7 @@ import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
 import { SessionService } from "~/utils/session.server";
 import { setLocale } from "~/store/modules/userConfig";
+import { setTableData } from "~/store/modules/languageTableData";
 
 const { Text, Title } = Typography;
 
@@ -41,6 +42,9 @@ interface TableDataType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
+
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
@@ -48,31 +52,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     accessToken: accessToken as string,
   });
 
-  const url = new URL(request.url);
-  const languageCode = url.searchParams.get("language");
+
   console.log(`${shop} load manage`);
   return json({
     shopLanguages: shopLanguages,
-    languageCode: languageCode,
+    searchTerm: searchTerm || "",
   });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
-    const loading = JSON.parse(formData.get("loading") as string);
     const itemsCount = JSON.parse(formData.get("itemsCount") as string);
     switch (true) {
       case !!itemsCount:
@@ -107,7 +99,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shopLanguages, languageCode } = useLoaderData<typeof loader>();
+  const { shopLanguages, searchTerm } = useLoaderData<typeof loader>();
   // const [words, setWords] = useState<WordsType>();
   // const [shopLanguages, setShopLanguages] = useState<ShopLocalesType[]>();
   const [selectOptions, setSelectOptions] = useState<ManageSelectDataType[]>([]);
@@ -273,22 +265,22 @@ const Index = () => {
       sync_status: false,
       navigation: "email",
     },
-    {
-      key: "policies",
-      title: t("Policies"),
-      allTranslatedItems:
-        items.find(
-          (item: any) =>
-            item?.language === current && item?.type === "SHOP_POLICY",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        items.find(
-          (item: any) =>
-            item?.language === current && item?.type === "SHOP_POLICY",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "policy",
-    },
+    // {
+    //   key: "policies",
+    //   title: t("Policies"),
+    //   allTranslatedItems:
+    //     items.find(
+    //       (item: any) =>
+    //         item?.language === current && item?.type === "SHOP_POLICY",
+    //     )?.translatedNumber ?? undefined,
+    //   allItems:
+    //     items.find(
+    //       (item: any) =>
+    //         item?.language === current && item?.type === "SHOP_POLICY",
+    //     )?.totalNumber ?? undefined,
+    //   sync_status: false,
+    //   navigation: "policy",
+    // },
     {
       key: "shop",
       title: t("Shop"),
@@ -388,11 +380,18 @@ const Index = () => {
           value: language.locale,
         }));
       setSelectOptions(newArray);
-      if (!languageCode) {
+      if (!searchTerm) {
         setCurrent(newArray[0]?.value);
       } else {
-        setCurrent(languageCode);
+        setCurrent(searchTerm);
       }
+      dispatch(setTableData(shopLanguages.map((language, index) => ({
+        key: index,
+        language: language.name,
+        locale: language.locale,
+        primary: language.primary,
+        published: language.published,
+      }))));
       setLoading(false);
     }
     const locale = shopLanguages.find(
