@@ -185,12 +185,8 @@ const Index = () => {
 
   useEffect(() => {
     if (themes && isManualChange.current) {
-      const start = performance.now();
       const data = generateMenuItemsArray(themes);
-      const end = performance.now();
-      console.log('generateMenuItemsArray 执行耗时:', (end - start).toFixed(2), 'ms');
       setResourceData(data);
-      console.log("themes: ", data);
       isManualChange.current = false;
     }
     setIsLoading(false);
