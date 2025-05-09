@@ -202,13 +202,13 @@ const Index = () => {
     }
   }, [payFetcher.data, payForPlanFetcher.data]);
 
-  const creditOptions: OptionType[] = [
+  const creditOptions: OptionType[] = useMemo(() => [
     {
       key: "option-1",
       name: "500K",
       Credits: 500000,
       price: {
-        currentPrice: 1.99,
+        currentPrice: selectedPlan === 6 ? 1.99 : (selectedPlan === 5 ? 2.99 : (selectedPlan === 4 ? 3.59 : 3.99)),
         comparedPrice: 3.99,
         currencyCode: "USD",
       },
@@ -218,7 +218,7 @@ const Index = () => {
       name: "1M",
       Credits: 1000000,
       price: {
-        currentPrice: 3.99,
+        currentPrice: selectedPlan === 6 ? 3.99 : (selectedPlan === 5 ? 5.99 : (selectedPlan === 4 ? 7.19 : 7.99)),
         comparedPrice: 7.99,
         currencyCode: "USD",
       },
@@ -228,7 +228,7 @@ const Index = () => {
       name: "2M",
       Credits: 2000000,
       price: {
-        currentPrice: 7.99,
+        currentPrice: selectedPlan === 6 ? 7.99 : (selectedPlan === 5 ? 11.99 : (selectedPlan === 4 ? 14.39 : 15.99)),
         comparedPrice: 15.99,
         currencyCode: "USD",
       },
@@ -238,7 +238,7 @@ const Index = () => {
       name: "3M",
       Credits: 3000000,
       price: {
-        currentPrice: 11.99,
+        currentPrice: selectedPlan === 6 ? 11.99 : (selectedPlan === 5 ? 17.99 : (selectedPlan === 4 ? 21.79 : 23.99)),
         comparedPrice: 23.99,
         currencyCode: "USD",
       },
@@ -248,7 +248,7 @@ const Index = () => {
       name: "5M",
       Credits: 5000000,
       price: {
-        currentPrice: 19.99,
+        currentPrice: selectedPlan === 6 ? 19.99 : (selectedPlan === 5 ? 29.99 : (selectedPlan === 4 ? 35.99 : 39.99)),
         comparedPrice: 39.99,
         currencyCode: "USD",
       },
@@ -258,7 +258,7 @@ const Index = () => {
       name: "10M",
       Credits: 10000000,
       price: {
-        currentPrice: 39.99,
+        currentPrice: selectedPlan === 6 ? 39.99 : (selectedPlan === 5 ? 59.99 : (selectedPlan === 4 ? 71.99 : 79.99)),
         comparedPrice: 79.99,
         currencyCode: "USD",
       },
@@ -268,7 +268,7 @@ const Index = () => {
       name: "20M",
       Credits: 20000000,
       price: {
-        currentPrice: 79.99,
+        currentPrice: selectedPlan === 6 ? 79.99 : (selectedPlan === 5 ? 119.99 : (selectedPlan === 4 ? 143.99 : 159.99)),
         comparedPrice: 159.99,
         currencyCode: "USD",
       },
@@ -278,12 +278,12 @@ const Index = () => {
       name: "30M",
       Credits: 30000000,
       price: {
-        currentPrice: 119.99,
+        currentPrice: selectedPlan === 6 ? 119.99 : (selectedPlan === 5 ? 179.99 : (selectedPlan === 4 ? 215.99 : 239.99)),
         comparedPrice: 239.99,
         currencyCode: "USD",
       },
     },
-  ];
+  ], [selectedPlan]);
 
   const plans = [
     {
@@ -295,10 +295,10 @@ const Index = () => {
       buttonType: "default",
       disabled: selectedPlan === 3,
       features: [
-        t("{{credits}} credits/month", { credits: "500,000" }),
-        t(
-          "Use private AI model interface translation (support Google Translate)",
-        ),
+        t("{{credits}} credits/month", { credits: "200,000" }),
+        t("starter_features1"),
+        t("starter_features2"),
+        t("starter_features3"),
       ],
     },
     {
@@ -312,18 +312,12 @@ const Index = () => {
       features: [
         t("{{credits}} credits/month", { credits: "1,500,000" }),
         t("Glossary ({{count}} entries)", { count: 10 }),
-        t("Automatic translation"),
-        t(
-          "Supports translation of metafields, liquid, HTML/URL, checkout, etc",
-        ),
-        t(
-          "Support translation SEO: meta information and image alt translation",
-        ),
-        t("Support translation of judge.me and other comment content"),
-        t("Unlimited language translation and currency addition"),
-        t("Manual editing of translations possible"),
-        t("Language/currency switcher (switch by IP)"),
-        t("Translation quality assurance: support free manual repair"),
+        t("basic_features1"),
+        t("basic_features2"),
+        t("basic_features3"),
+        t("basic_features4"),
+        t("basic_features5"),
+        t("basic_features6"),
       ],
     },
     {
@@ -338,6 +332,11 @@ const Index = () => {
         t("all in Basic Plan"),
         t("{{credits}} credits/month", { credits: "3,000,000" }),
         t("Glossary ({{count}} entries)", { count: 50 }),
+        t("pro_features1"),
+        t("pro_features2"),
+        t("pro_features3"),
+        t("pro_features4"),
+        t("pro_features5"),
       ],
     },
     {
@@ -352,8 +351,12 @@ const Index = () => {
         t("all in Pro Plan"),
         t("{{credits}} credits/month", { credits: "8,000,000" }),
         t("Glossary ({{count}} entries)", { count: 100 }),
-        t("Support translation of page builders such as pagefly"),
-        t("Manual review by translation experts"),
+        t("premium_features1"),
+        t("premium_features2"),
+        t("premium_features3"),
+        t("premium_features4"),
+        t("premium_features5"),
+        t("premium_features6"),
       ],
     },
   ];
@@ -450,7 +453,7 @@ const Index = () => {
             showIcon
           />
         )}
-        <Card style={{ textAlign: "center" }} loading={isLoading}>
+        <Card style={{ textAlign: "center" }} loading={isLoading || selectedPlan === null}>
           {/* 价格选项 */}
           <Space direction="vertical" size="small" style={{ width: "100%" }}>
             <div
@@ -465,7 +468,7 @@ const Index = () => {
                 {t("Buy Credits")}
               </Title>
               <Text style={{ color: "red", fontWeight: "bold" }}>
-                {t("Limited-time {{percent}}% off", { percent: 50 })}
+                {selectedPlan === 6 ? t("discountText.premium") : selectedPlan === 5 ? t("discountText.pro") : selectedPlan === 4 ? t("discountText.basic") : t("discountText.free")}
               </Text>
             </div>
             <Row gutter={[16, 16]}>
@@ -504,15 +507,28 @@ const Index = () => {
                     >
                       {option.Credits.toLocaleString()} {t("Credits")}
                     </Text>
-                    <Title
-                      level={3}
-                      style={{ margin: 0, color: "#007F61", fontWeight: 700 }}
-                    >
-                      ${option.price.currentPrice.toFixed(2)}
-                    </Title>
-                    <Text delete type="secondary" style={{ fontSize: "14px" }}>
-                      ${option.price.comparedPrice.toFixed(2)}
-                    </Text>
+                    {selectedPlan === 6 || selectedPlan === 5 || selectedPlan === 4 ? (
+                      <>
+                        <Title
+                          level={3}
+                          style={{ margin: 0, color: "#007F61", fontWeight: 700 }}
+                        >
+                          ${option.price.currentPrice.toFixed(2)}
+                        </Title>
+                        <Text delete type="secondary" style={{ fontSize: "14px" }}>
+                          ${option.price.comparedPrice.toFixed(2)}
+                        </Text>
+                      </>
+                    )
+                      :
+                      (
+                        <Title
+                          level={3}
+                          style={{ margin: 0, color: "#007F61", fontWeight: 700 }}
+                        >
+                          ${option.price.currentPrice.toFixed(2)}
+                        </Title>
+                      )}
                   </Card>
                 </Col>
               ))}

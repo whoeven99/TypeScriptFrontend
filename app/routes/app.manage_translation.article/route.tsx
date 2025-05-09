@@ -362,7 +362,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return <ManageTableInput record={record} />;
       },
@@ -651,16 +651,23 @@ const Index = () => {
       <Layout
         style={{
           padding: "24px 0",
+          height: 'calc(100vh - 64px)',
+          overflow: 'auto',
           background: colorBgContainer,
           borderRadius: borderRadiusLG,
-          height: "100%",
         }}
       >
         {isLoading ? (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
         ) : articles.nodes.length ? (
           <>
-            <Sider style={{ background: colorBgContainer }} width={200}>
+            <Sider
+              style={{
+                background: colorBgContainer,
+                height: 'calc(100vh - 124px)',
+                width: '200px',
+              }}
+            >
               <Menu
                 mode="inline"
                 defaultSelectedKeys={[articlesData.nodes[0]?.resourceId]}
@@ -679,7 +686,14 @@ const Index = () => {
                 />
               </div>
             </Sider>
-            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Content
+              style={{
+                padding: "0 24px",
+                height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+                overflow: 'auto',
+                minHeight: '70vh',
+              }}
+            >
               <Table
                 columns={resourceColumns}
                 dataSource={resourceData}
@@ -694,11 +708,10 @@ const Index = () => {
           </>
         ) : (
           <Result
-            title="The specified fields were not found in the store.
-"
+            title={t("The specified fields were not found in the store.")}
             extra={
               <Button type="primary" onClick={onCancel}>
-                OK
+                {t("Yes")}
               </Button>
             }
           />

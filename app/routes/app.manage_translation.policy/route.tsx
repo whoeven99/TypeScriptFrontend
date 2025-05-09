@@ -141,7 +141,7 @@ const Index = () => {
   ]
   const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
-  const [selectedItem, setSelectedItem] = useState<string>("policy"); 
+  const [selectedItem, setSelectedItem] = useState<string>("policy");
 
   useEffect(() => {
     if (languageTableData) {
@@ -388,16 +388,23 @@ const Index = () => {
       <Layout
         style={{
           padding: "24px 0",
+          height: 'calc(100vh - 64px)',
+          overflow: 'auto',
           background: colorBgContainer,
           borderRadius: borderRadiusLG,
-          height: "100%",
         }}
       >
         {isLoading ? (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
         ) : policies.nodes.length ? (
           <>
-            <Sider style={{ background: colorBgContainer }} width={200}>
+            <Sider
+              style={{
+                background: colorBgContainer,
+                height: 'calc(100vh - 124px)',
+                width: '200px',
+              }}
+            >
               <Menu
                 mode="inline"
                 defaultOpenKeys={["sub1"]}
@@ -410,7 +417,14 @@ const Index = () => {
                 }}
               />
             </Sider>
-            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Content
+              style={{
+                padding: "0 24px",
+                height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+                overflow: 'auto',
+                minHeight: '70vh',
+              }}
+            >
               <Table
                 columns={resourceColumns}
                 dataSource={resourceData}
