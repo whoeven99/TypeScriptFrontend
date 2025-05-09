@@ -360,5 +360,6 @@
         "free": "Ücretsiz planınıza yükseltin, %50 indirimden yararlanın"
     },
     "The specified fields were not found in the store.": "Belirtilen alanlar mağazada bulunamadı.",
-    "Don’t prompt again next time": "Bir daha sorma"
+    "Don’t prompt again next time": "Bir daha sorma",
+    "Localized content:": "Yerelleştirilmiş içerik:"
 }
