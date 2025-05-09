@@ -694,11 +694,10 @@ const Index = () => {
           </>
         ) : (
           <Result
-            title="The specified fields were not found in the store.
-"
+            title={t("The specified fields were not found in the store.")}
             extra={
               <Button type="primary" onClick={onCancel}>
-                OK
+                {t("Yes")}
               </Button>
             }
           />
