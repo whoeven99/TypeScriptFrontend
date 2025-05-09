@@ -336,7 +336,7 @@ const Index = () => {
         t("pro_features2"),
         t("pro_features3"),
         t("pro_features4"),
-        t("pro_features5"),        
+        t("pro_features5"),
       ],
     },
     {
@@ -507,15 +507,28 @@ const Index = () => {
                     >
                       {option.Credits.toLocaleString()} {t("Credits")}
                     </Text>
-                    <Title
-                      level={3}
-                      style={{ margin: 0, color: "#007F61", fontWeight: 700 }}
-                    >
-                      ${option.price.currentPrice.toFixed(2)}
-                    </Title>
-                    <Text delete type="secondary" style={{ fontSize: "14px" }}>
-                      ${option.price.comparedPrice.toFixed(2)}
-                    </Text>
+                    {selectedPlan === 6 || selectedPlan === 5 || selectedPlan === 4 ? (
+                      <>
+                        <Title
+                          level={3}
+                          style={{ margin: 0, color: "#007F61", fontWeight: 700 }}
+                        >
+                          ${option.price.currentPrice.toFixed(2)}
+                        </Title>
+                        <Text delete type="secondary" style={{ fontSize: "14px" }}>
+                          ${option.price.comparedPrice.toFixed(2)}
+                        </Text>
+                      </>
+                    )
+                      :
+                      (
+                        <Title
+                          level={3}
+                          style={{ margin: 0, color: "#007F61", fontWeight: 700 }}
+                        >
+                          ${option.price.currentPrice.toFixed(2)}
+                        </Title>
+                      )}
                   </Card>
                 </Col>
               ))}
