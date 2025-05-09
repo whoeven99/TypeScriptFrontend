@@ -104,7 +104,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           locale: searchTerm || "",
         }); // 处理逻辑
         return json({ nextFilters: nextFilters });
-      case !!confirmData:        
+      case !!confirmData:
         const data = await updateManageTranslation({
           shop,
           accessToken: accessToken as string,
@@ -441,15 +441,23 @@ const Index = () => {
       <Layout
         style={{
           padding: "24px 0",
+          height: 'calc(100vh - 64px)',
+          overflow: 'auto',
           background: colorBgContainer,
           borderRadius: borderRadiusLG,
-          height: "100%",
         }}
       >
         {isLoading ? (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
         ) : shops.nodes.length ? (
-          <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+          <Content
+            style={{
+              padding: "0 24px",
+              height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+              overflow: 'auto',
+              minHeight: '70vh',
+            }}
+          >
             <Space
               direction="vertical"
               size="middle"

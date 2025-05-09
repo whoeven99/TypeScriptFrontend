@@ -34,6 +34,7 @@ import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
 import { useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
+import ItemsScroll, { MenuItem } from "../app.manage_translation/components/itemsScroll";
 
 const { Sider, Content } = Layout;
 
@@ -260,7 +261,7 @@ const Index = () => {
     return !!searchParams.get('language');
   });
 
-  const [menuData, setMenuData] = useState<MenuProps["items"]>([]);
+  const [menuData, setMenuData] = useState<MenuItem[]>([]);
   const [productsData, setProductsData] = useState(products);
   const [productOptionsData, setProductOptionsData] = useState(product_options);
   const [productMetafieldsData, setProductMetafieldsData] =
@@ -431,10 +432,8 @@ const Index = () => {
 
   useEffect(() => {
     if (actionData && "nextProducts" in actionData) {
-      const items: MenuProps["items"] = exMenuData(actionData.nextProducts);
-
       // 在这里处理 nextProducts
-      setMenuData(items);
+      setMenuData(exMenuData(actionData.nextProducts));
       setProductsData(actionData.nextProducts);
       setProductOptionsData(actionData.nextOptions);
       setProductMetafieldsData(actionData.nextMetafields);
@@ -445,9 +444,7 @@ const Index = () => {
       "previousOptions" in actionData &&
       "previousMetafields" in actionData
     ) {
-      const items: MenuProps["items"] = exMenuData(actionData.previousProducts);
-
-      setMenuData(items);
+      setMenuData(exMenuData(actionData.previousProducts));
       setProductsData(actionData.previousProducts);
       setProductOptionsData(actionData.previousOptions);
       setProductMetafieldsData(actionData.previousMetafields);
@@ -980,7 +977,9 @@ const Index = () => {
       open={isVisible}
       onHide={onCancel}
     >
-      <FullscreenBar onAction={onCancel}>
+      <FullscreenBar
+        onAction={onCancel}
+      >
         <div
           style={{
             display: 'flex',
@@ -993,7 +992,7 @@ const Index = () => {
         >
           <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
             <Text>
-              {t("Product")}
+              {t("Products")}
             </Text>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
@@ -1037,16 +1036,28 @@ const Index = () => {
       <Layout
         style={{
           padding: "24px 0",
+          height: 'calc(100vh - 64px)',
+          overflow: 'auto',
           background: colorBgContainer,
           borderRadius: borderRadiusLG,
-          height: "100%",
         }}
       >
         {isLoading ? (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
         ) : products.nodes.length ? (
           <>
-            <Sider style={{ background: colorBgContainer }} width={200}>
+            <Sider
+              style={{
+                background: colorBgContainer,
+                height: 'calc(100vh - 124px)',
+                width: '200px',
+              }}
+            >
+              {/* <ItemsScroll
+                selectItem={selectProductKey}
+                menuData={menuData}
+                setSelectItem={setSelectProductKey}
+              /> */}
               <Menu
                 mode="inline"
                 defaultSelectedKeys={[productsData?.nodes[0]?.resourceId]}
@@ -1065,7 +1076,14 @@ const Index = () => {
                 />
               </div>
             </Sider>
-            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Content
+              style={{
+                padding: "0 24px",
+                height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+                overflow: 'auto',
+                minHeight: '70vh',
+              }}
+            >
               <Table
                 columns={resourceColumns}
                 dataSource={resourceData}
@@ -1095,11 +1113,10 @@ const Index = () => {
           </>
         ) : (
           <Result
-            title="The specified fields were not found in the store.
-"
+            title="The specified fields were not found in the store."
             extra={
               <Button type="primary" onClick={onCancel}>
-                OK
+                {t("OK")}
               </Button>
             }
           />

@@ -182,7 +182,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
                 return 56;
             case "PAYMENT_GATEWAY":
                 setItem("Metaobjects");
-                return 58;
+                return 58;  
             case "SELLING_PLAN":
                 setItem("Metaobjects");
                 return 60;
