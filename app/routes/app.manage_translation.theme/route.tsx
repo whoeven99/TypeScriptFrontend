@@ -451,7 +451,7 @@ const Index = () => {
                   <Table
                     columns={resourceColumns}
                     dataSource={resourceData}
-                    pagination={{ position: ["bottomCenter"] }}
+                    pagination={{ position: ["bottomCenter"], showSizeChanger: false }}
                   />
                 </Space>
               </Content>
