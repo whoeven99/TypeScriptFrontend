@@ -512,7 +512,7 @@ export const InsertTargets = async ({
   console.log(`${shop} targets: `, targets);
   // 创建异步任务
   try {
-    const response = await axios({
+    await axios({
       url: `${process.env.SERVER_URL}/translate/insertTargets`,
       method: "POST",
       data: {
@@ -522,7 +522,6 @@ export const InsertTargets = async ({
         targetList: targets,
       },
     });
-    console.log("InsertTargets: ", response?.data);
   } catch (error) {
     console.error("Error InsertTargets:", error);
   }
@@ -548,6 +547,13 @@ export const GetTranslationItemsInfo = async ({
     translatedNumber: number;
     totalNumber: number;
   }[] = [];
+  console.log({
+    shopName: shop,
+    accessToken: accessToken,
+    source: source,
+    target: target,
+    resourceType: resourceType,
+  });
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/shopify/getTranslationItemsInfo`,
@@ -794,6 +800,7 @@ export const GetTranslate = async ({
       },
     });
     console.log(`${shop} ${source}翻译${target}`);
+    console.log(`${shop} 翻译项: `, translateSettings3);
     const res = { ...response.data, target: target };
     console.log("GetTranslate: ", res);
     return res;

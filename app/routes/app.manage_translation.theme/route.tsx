@@ -2,37 +2,37 @@ import {
   Button,
   Input,
   Layout,
-  message,
-  Modal,
   Result,
-  Select,
   Space,
+  Spin,
   Table,
   theme,
+  Typography,
 } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  useActionData,
   useFetcher,
   useLoaderData,
   useLocation,
   useNavigate,
   useSearchParams,
-  useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   queryNextTransType,
   queryPreviousTransType,
-  queryShopLanguages,
 } from "~/api/admin";
-import { ShopLocalesType } from "../app.language/route";
 import { SearchOutlined } from "@ant-design/icons";
 import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
+import { useSelector } from "react-redux";
+import { Modal } from "@shopify/app-bridge-react";
+import { FullscreenBar, Select } from "@shopify/polaris";
+
+const { Text } = Typography
 
 const { Header, Content } = Layout;
 
@@ -49,24 +49,15 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
     const themes = await queryNextTransType({
       shop,
-      accessToken,
+      accessToken: accessToken as string,
       resourceType: "ONLINE_STORE_THEME",
       endCursor: "",
       locale: searchTerm || "",
@@ -84,18 +75,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -109,7 +92,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!startCursor:
         const previousThemes = await queryPreviousTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "METAFIELD",
           startCursor,
           locale: searchTerm || "",
@@ -118,7 +101,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!endCursor:
         const nextThemes = await queryNextTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "METAFIELD",
           endCursor,
           locale: searchTerm || "",
@@ -128,7 +111,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           confirmData,
         });
         return json({ data: data, confirmData });
@@ -145,42 +128,72 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-
   const { searchTerm, themes } =
     useLoaderData<typeof loader>();
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
+  const { t } = useTranslation();
 
-  const [searchInput, setSearchInput] = useState("");
+  const navigate = useNavigate();
+  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+  const confirmFetcher = useFetcher<any>();
+
+  const isManualChange = useRef(true);
+
+  const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
     return !!searchParams.get('language');
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [themesData, setThemesData] = useState<any>([]);
-  const [resourceData, setResourceData] = useState<TableDataType[]>([]);
+  const [resourceData, setResourceData] = useState<any>([]);
+  const [searchInput, setSearchInput] = useState("");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
-
-  const navigate = useNavigate();
-  const { t } = useTranslation();
-  const confirmFetcher = useFetcher<any>();
+  const itemOptions = [
+    { label: t("Products"), value: "product" },
+    { label: t("Collection"), value: "collection" },
+    { label: t("Theme"), value: "theme" },
+    { label: t("Shop"), value: "shop" },
+    { label: t("Store metadata"), value: "metafield" },
+    { label: t("Articles"), value: "article" },
+    { label: t("Blog titles"), value: "blog" },
+    { label: t("Pages"), value: "page" },
+    { label: t("Filters"), value: "filter" },
+    { label: t("Metaobjects"), value: "metaobject" },
+    { label: t("Navigation"), value: "navigation" },
+    { label: t("Email"), value: "email" },
+    { label: t("Delivery"), value: "delivery" },
+    { label: t("Shipping"), value: "shipping" },
+  ]
+  const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
+  const [selectedItem, setSelectedItem] = useState<string>("theme");
 
   useEffect(() => {
-    setThemesData(generateMenuItemsArray(themes));
-  }, []);
-
-  useEffect(() => {
-    setResourceData(themesData);
-  }, [themesData]);
-
-  useEffect(() => {
-    if (themes) {
-      setIsLoading(false);
+    if (languageTableData) {
+      setLanguageOptions(languageTableData
+        .filter((item: any) => !item.primary)
+        .map((item: any) => ({
+          label: item.language,
+          value: item.locale,
+        })));
     }
+  }, [languageTableData])
+
+  useEffect(() => {
+    if (themes && isManualChange.current) {
+      const start = performance.now();
+      const data = generateMenuItemsArray(themes);
+      const end = performance.now();
+      console.log('generateMenuItemsArray 执行耗时:', (end - start).toFixed(2), 'ms');
+      setResourceData(data);
+      console.log("themes: ", data);
+      isManualChange.current = false;
+    }
+    setIsLoading(false);
   }, [themes]);
 
   useEffect(() => {
@@ -194,9 +207,9 @@ const Index = () => {
       });
       if (!errorItem) {
         confirmFetcher.data.confirmData.forEach((item: any) => {
-          const index = themesData.findIndex((option: any) => option.key === item.key);
+          const index = resourceData.findIndex((option: any) => option.key === item.key);
           if (index !== -1) {
-            themesData[index].translated = item.value;
+            resourceData[index].translated = item.value;
           }
         })
         shopify.toast.show("Saved successfully");
@@ -213,13 +226,16 @@ const Index = () => {
       title: t("Resource"),
       dataIndex: "resource",
       key: "resource",
-      width: "10%",
+      width: "20%",
+      render: (_: any, record: TableDataType) => {
+        return <Text style={{ display: "inline" }}>{record?.resource}</Text>;
+      },
     },
     {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return <ManageTableInput record={record} />;
       },
@@ -228,7 +244,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           record && (
@@ -295,10 +311,24 @@ const Index = () => {
     );
   };
 
+  const handleLanguageChange = (language: string) => {
+    setIsLoading(true);
+    isManualChange.current = true;
+    setSelectedLanguage(language);
+    navigate(`/app/manage_translation/theme?language=${language}`);
+  }
+
+  const handleItemChange = (item: string) => {
+    setIsLoading(true);
+    isManualChange.current = true;
+    setSelectedItem(item);
+    navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+  }
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchInput(value);
-    const filteredData = themesData.filter((theme: any) =>
+    const filteredData = resourceData.filter((theme: any) =>
       theme.default_language.toLowerCase().includes(value.toLowerCase()),
     );
     setResourceData(filteredData);
@@ -316,67 +346,86 @@ const Index = () => {
 
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
-    navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
+    navigate(`/app/manage_translation?language=${searchTerm}`, {
+      state: { key: searchTerm },
+    }); // 跳转到 /app/manage_translation
   };
 
+
   return (
-    <div>
-      {isLoading ? (
-        <div>Loading...</div>
-      ) : themes.nodes.length ? (
-        <Modal
-          open={isVisible}
-          onCancel={onCancel}
-          width={"100%"}
-          footer={[
-            <div
-              key={"footer_buttons"}
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                width: "100%",
-              }}
-            >
-              <Button
-                key={"manage_cancel_button"}
-                onClick={onCancel}
-                style={{ marginRight: "10px" }}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                onClick={handleConfirm}
-                key={"manage_confirm_button"}
-                type="primary"
-                disabled={confirmLoading || !confirmData.length}
-                loading={confirmLoading}
-              >
-                {t("Save")}
-              </Button>
-            </div>,
-          ]}
+    <Modal
+      id="manage-modal"
+      variant="max"
+      open={isVisible}
+      onHide={onCancel}
+    >
+      <FullscreenBar onAction={onCancel}>
+        <div
+          style={{
+            display: 'flex',
+            flexGrow: 1,
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingLeft: '1rem',
+            paddingRight: '1rem',
+          }}
         >
-          <Layout
-            style={{
-              padding: "24px 0",
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
-            }}
-          >
-            <Header
+          <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
+            <Text>
+              {t("Delivery")}
+            </Text>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
+            <div
               style={{
-                background: colorBgContainer,
-                borderRadius: borderRadiusLG,
+                width: "150px",
               }}
             >
-              <Input
-                placeholder={t("Search...")}
-                prefix={<SearchOutlined />}
-                value={searchInput}
-                onChange={handleSearch}
-                style={{ marginBottom: 16 }}
+              <Select
+                label={""}
+                options={languageOptions}
+                value={selectedLanguage}
+                onChange={(value) => handleLanguageChange(value)}
               />
-            </Header>
+            </div>
+            <div
+              style={{
+                width: "150px",
+              }}
+            >
+              <Select
+                label={""}
+                options={itemOptions}
+                value={selectedItem}
+                onChange={(value) => handleItemChange(value)}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'flex-end' }}>
+            <Button
+              type="primary"
+              onClick={handleConfirm}
+              disabled={confirmLoading || !confirmData.length}
+              loading={confirmLoading}
+            >
+              {t("Save")}
+            </Button>
+          </div>
+        </div>
+      </FullscreenBar>
+      <Layout
+        style={{
+          padding: "24px 0",
+          height: 'calc(100vh - 64px)',
+          overflow: 'auto',
+          background: colorBgContainer,
+          borderRadius: borderRadiusLG,
+        }}
+      >
+        {isLoading ? (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
+        ) : themes.nodes.length ? (
+          <>
             <Layout
               style={{
                 padding: "24px 0",
@@ -384,42 +433,46 @@ const Index = () => {
                 borderRadius: borderRadiusLG,
               }}
             >
-              <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+              <Content
+                style={{
+                  padding: "0 24px",
+                  height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+                  overflow: 'auto',
+                  minHeight: '70vh',
+                }}
+              >
                 <Space
                   direction="vertical"
                   size="middle"
                   style={{ display: "flex" }}
                 >
+                  <Input
+                    placeholder={t("Search...")}
+                    prefix={<SearchOutlined />}
+                    value={searchInput}
+                    onChange={handleSearch}
+                  />
                   <Table
                     columns={resourceColumns}
                     dataSource={resourceData}
-                    pagination={{ position: ["bottomCenter"] }}
+                    pagination={{ position: ["bottomCenter"], showSizeChanger: false }}
                   />
                 </Space>
               </Content>
             </Layout>
-          </Layout>
-        </Modal>
-      ) : (
-        <Modal
-          open={isVisible}
-          footer={null}
-          onCancel={onCancel}
-          destroyOnClose={true}
-          maskClosable={false}
-        >
+          </>
+        ) : (
           <Result
-            title="The specified fields were not found in the store.
-"
+            title={t("The specified fields were not found in the store.")}
             extra={
               <Button type="primary" onClick={onCancel}>
-                OK
+                {t("Yes")}
               </Button>
             }
           />
-        </Modal>
-      )}
-    </div>
+        )}
+      </Layout>
+    </Modal>
   );
 };
 

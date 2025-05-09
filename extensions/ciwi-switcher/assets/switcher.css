@@ -27,6 +27,10 @@
   margin: 0;
   padding: 0;
   font-size: 14px; /* 明确设置字体大小 */
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mainarrow_icon {
@@ -179,6 +183,13 @@ a[href="https://translate.google.com"]
   cursor: pointer;
   margin-bottom: 10px;
   height: 40px;
+}
+
+.selected-text {
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .selected-option {

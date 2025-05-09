@@ -4,7 +4,38 @@
     align-items: center; /* 如果需要垂直居中 */
 }
 
+.manage-header-left {
+    display: flex;
+    align-items: center; /* 如果需要垂直居中 */
+}
+
 .manage-action {
     /* 右对齐 */
     margin-left: auto; /* 将元素推到右边 */
 }
+
+.items-scroll-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    transition: background 0.2s, color 0.2s;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+}
+
+.items-scroll-item.selected {
+    background-color: #e0f7e0;
+    color: #29845a;
+}
+
+.items-scroll-item:hover {
+    background-color: #e0f7e0;
+    color: #29845a;
+}
+
+
+

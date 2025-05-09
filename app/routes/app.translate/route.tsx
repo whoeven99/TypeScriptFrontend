@@ -1,5 +1,5 @@
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Page } from "@shopify/polaris";
+import { Icon, Page } from "@shopify/polaris";
 import { useEffect, useRef, useState } from "react";
 import {
   Badge,
@@ -28,6 +28,9 @@ import styles from "./styles.module.css";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
+import {
+  ArrowLeftIcon
+} from '@shopify/polaris-icons';
 
 const { Title, Text } = Typography;
 
@@ -62,18 +65,20 @@ const Index = () => {
   const [translateSettings1, setTranslateSettings1] = useState<string>("1");
   const [translateSettings2, setTranslateSettings2] = useState<string>("1");
   const [translateSettings3, setTranslateSettings3] = useState<string[]>([
-    "Products",
-    "Collection",
-    "Article",
-    "Blog titles",
-    "Pages",
-    "Filters",
-    "Metaobjects",
-    "Navigation",
-    "Shop",
-    "Theme",
-    "Delivery",
-    "Shipping",
+    "products",
+    "collection",
+    "article",
+    "blog_titles",
+    "pages",
+    "filters",
+    "metaobjects",
+    "metadata",
+    "notifications",
+    "navigation",
+    "shop",
+    "theme",
+    "delivery",
+    "shipping",
   ]);
   const [modal, setModal] = useState<string>("");
   const [translateSettings4, setTranslateSettings4] = useState<string>("1");
@@ -321,63 +326,59 @@ const Index = () => {
   const translateSettings3Options = [
     {
       label: t("Products"),
-      value: "Products",
-      disabled: true,
+      value: "products",
     },
     {
       label: t("Collections"),
-      value: "Collection",
-      disabled: true,
+      value: "collection",
     },
     {
       label: t("Articles"),
-      value: "Article",
-      disabled: true,
+      value: "article",
     },
     {
       label: t("Blog titles"),
-      value: "Blog titles",
-      disabled: true,
+      value: "blog_titles",
     },
     {
       label: t("Pages"),
-      value: "Pages",
-      disabled: true,
+      value: "pages",
     },
     {
       label: t("Filters"),
-      value: "Filters",
-      disabled: true,
+      value: "filters",
     },
     {
       label: t("Metaobjects"),
-      value: "Metaobjects",
-      disabled: true,
+      value: "metaobjects",
+    },
+    {
+      label: t("Store metadata"),
+      value: "metadata",
+    },
+    {
+      label: t("Email"),
+      value: "notifications",
     },
     {
       label: t("Navigation"),
-      value: "Navigation",
-      disabled: true,
+      value: "navigation",
     },
     {
       label: t("Shop"),
-      value: "Shop",
-      disabled: true,
+      value: "shop",
     },
     {
       label: t("Theme"),
-      value: "Theme",
-      disabled: true,
+      value: "theme",
     },
     {
       label: t("Delivery"),
-      value: "Delivery",
-      disabled: true,
+      value: "delivery",
     },
     {
       label: t("Shipping"),
-      value: "Shipping",
-      disabled: true,
+      value: "shipping",
     },
   ];
 
@@ -414,7 +415,7 @@ const Index = () => {
 
   return (
     <Page>
-      <TitleBar title={t("Translate Store")}>
+      {/* <TitleBar title={t("Translate Store")}>
         <button variant="breadcrumb" onClick={() => navigate("/app")}>
           {t("Dashboard")}
         </button>
@@ -422,43 +423,43 @@ const Index = () => {
         <button variant="primary" onClick={() => handleTranslate()}>
           {t("Translate")}
         </button>
-      </TitleBar>
+      </TitleBar> */}
       <ScrollNotice
         text={t(
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        {/* <div
-                    style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                    }}
-                >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <Button
-                            type="text"
-                            variant="breadcrumb"
-                            onClick={handleNavigate}
-                            style={{ padding: "4px" }}
-                        >
-                            <Icon
-                                source={ArrowLeftIcon}
-                                tone="base"
-                            />
-                        </Button>
-                        <Title level={1} style={{ margin: "0" }}>
-                            {t("Translate Store")}
-                        </Title>
-                    </div>
-                    {
-                        languageSetting?.primaryLanguageCode ?
-                            <Button type="primary" onClick={() => handleTranslate()} loading={fetcher.state === "submitting"} disabled={fetcher.state === "submitting"} style={{ visibility: languageData.length != 0 ? "visible" : "hidden" }}>{t("Translate")}</Button>
-                            :
-                            <Skeleton.Button active />
-                    }
-                </div> */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Button
+              type="text"
+              variant="breadcrumb"
+              onClick={handleNavigate}
+              style={{ padding: "4px" }}
+            >
+              <Icon
+                source={ArrowLeftIcon}
+                tone="base"
+              />
+            </Button>
+            <Title level={1} style={{ margin: "0" }}>
+              {t("Translate Store")}
+            </Title>
+          </div>
+          {
+            languageSetting?.primaryLanguageCode ?
+              <Button type="primary" onClick={() => handleTranslate()} loading={fetcher.state === "submitting"} disabled={fetcher.state === "submitting"} style={{ visibility: languageData.length != 0 ? "visible" : "hidden" }}>{t("Translate")}</Button>
+              :
+              <Skeleton.Button active />
+          }
+        </div>
         <Divider style={{ margin: "0" }} />
         <div style={{ paddingLeft: "8px" }}>
           <Text>{t("Your store's default language:")}</Text>
@@ -608,9 +609,9 @@ const Index = () => {
                           style={
                             translateSettings1 === option.value
                               ? {
-                                  borderColor: "#168c6d",
-                                  color: "#168c6d",
-                                }
+                                borderColor: "#168c6d",
+                                color: "#168c6d",
+                              }
                               : undefined
                           }
                         >

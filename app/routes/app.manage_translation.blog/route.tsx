@@ -3,13 +3,13 @@ import {
   Layout,
   Menu,
   MenuProps,
-  message,
-  Modal,
   Result,
+  Spin,
   Table,
   theme,
+  Typography
 } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useActionData,
   useFetcher,
@@ -19,7 +19,7 @@ import {
   useLocation,
   useSearchParams,
 } from "@remix-run/react"; // 引入 useNavigate, useLocation, useSearchParams
-import { Pagination } from "@shopify/polaris";
+import { FullscreenBar, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   queryNextTransType,
@@ -32,10 +32,11 @@ import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
+import { Modal } from "@shopify/app-bridge-react";
+import { useSelector } from "react-redux";
 
 const { Sider, Content } = Layout;
-
-
+const { Text } = Typography;
 
 interface BlogType {
   key: string;
@@ -56,27 +57,18 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  
+
   // 如果没有 language 参数，直接返回空数据
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
   try {
     const blogs = await queryNextTransType({
       shop,
-      accessToken,
+      accessToken: accessToken as string,
       resourceType: "BLOG",
       endCursor: "",
       locale: searchTerm || "",
@@ -155,27 +147,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  
+  const { t } = useTranslation();
+
+  const { searchTerm, blogs } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
+  const isManualChange = useRef(false);
+
+  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+  const navigate = useNavigate();
+  const submit = useSubmit(); // 使用 useSubmit 钩子
+  const confirmFetcher = useFetcher<any>();
+
+  const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
     return !!searchParams.get('language');
   });
-  
-  const [isLoading, setIsLoading] = useState(true);
-  
-  const { searchTerm, blogs } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
 
-  const exMenuData = (blogs: any) => {
-    const data = blogs.nodes.map((blog: any) => ({
-      key: blog?.resourceId,
-      label: blog?.translatableContent.find((item: any) => item.key === "title")
-        .value,
-    }));
-    return data;
-  };
-
-  const items: MenuProps["items"] = exMenuData(blogs);
-  const [menuData, setMenuData] = useState<MenuProps["items"]>(items);
+  const [menuData, setMenuData] = useState<MenuProps["items"]>([]);
   const [blogsData, setBlogsData] = useState(blogs);
   const [blogData, setBlogData] = useState<BlogType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
@@ -187,20 +178,62 @@ const Index = () => {
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
+  const itemOptions = [
+    { label: t("Products"), value: "product" },
+    { label: t("Collection"), value: "collection" },
+    { label: t("Theme"), value: "theme" },
+    { label: t("Shop"), value: "shop" },
+    { label: t("Store metadata"), value: "metafield" },
+    { label: t("Articles"), value: "article" },
+    { label: t("Blog titles"), value: "blog" },
+    { label: t("Pages"), value: "page" },
+    { label: t("Filters"), value: "filter" },
+    { label: t("Metaobjects"), value: "metaobject" },
+    { label: t("Navigation"), value: "navigation" },
+    { label: t("Email"), value: "email" },
+    { label: t("Delivery"), value: "delivery" },
+    { label: t("Shipping"), value: "shipping" },
+  ]
+  const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
+  const [selectedItem, setSelectedItem] = useState<string>("blog");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    blogsData.pageInfo.hasPreviousPage,
+    blogsData.pageInfo.hasPreviousPage || false
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    blogsData.pageInfo.hasNextPage,
+    blogsData.pageInfo.hasNextPage || false
   );
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
 
-  const navigate = useNavigate();
-  const { t } = useTranslation();
-  const submit = useSubmit(); // 使用 useSubmit 钩子
-  const confirmFetcher = useFetcher<any>();
+  useEffect(() => {
+    if (blogs) {
+      setMenuData(exMenuData(blogs));
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (languageTableData) {
+      setLanguageOptions(languageTableData
+        .filter((item: any) => !item.primary)
+        .map((item: any) => ({
+          label: item.language,
+          value: item.locale,
+        })));
+    }
+  }, [languageTableData])
+
+
+  useEffect(() => {
+    if (blogs && isManualChange.current) {
+      setBlogsData(blogs)
+      setMenuData(exMenuData(blogs));
+      setSelectBlogKey(blogs.nodes[0]?.resourceId);
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+      isManualChange.current = false; // 重置
+    }
+  }, [blogs])
 
   useEffect(() => {
     const data = transBeforeData({
@@ -209,7 +242,7 @@ const Index = () => {
     setBlogData(data);
     setConfirmData([]);
     setTranslatedValues({});
-  }, [selectBlogKey]);
+  }, [selectBlogKey, blogsData]);
 
   useEffect(() => {
     setHasPrevious(blogsData.pageInfo.hasPreviousPage);
@@ -264,7 +297,7 @@ const Index = () => {
           if (index !== -1) {
             const blog = blogsData.nodes[index].translations.find((option: any) => option.key === item.key);
             if (blog) {
-              blog.value = item.value;  
+              blog.value = item.value;
             } else {
               blogsData.nodes[index].translations.push({
                 key: item.key,
@@ -282,12 +315,6 @@ const Index = () => {
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
-
-  useEffect(() => {
-    if (blogs) {
-      setIsLoading(false);
-    }
-  }, [blogs]);
 
   useEffect(() => {
     setIsVisible(!!searchParams.get('language'));
@@ -398,10 +425,28 @@ const Index = () => {
     return data;
   };
 
-  const onCancel = () => {
-    setIsVisible(false); // 关闭 Modal
-    navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
+  const exMenuData = (blogs: any) => {
+    const data = blogs.nodes.map((blog: any) => ({
+      key: blog?.resourceId,
+      label: blog?.translatableContent.find((item: any) => item.key === "title")
+        .value,
+    }));
+    return data;
   };
+
+  const handleLanguageChange = (language: string) => {
+    setIsLoading(true);
+    isManualChange.current = true;
+    setSelectedLanguage(language);
+    navigate(`/app/manage_translation/blog?language=${language}`);
+  }
+
+  const handleItemChange = (item: string) => {
+    setIsLoading(true);
+    isManualChange.current = true;
+    setSelectedItem(item);
+    navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+  }
 
   const onPrevious = () => {
     const formData = new FormData();
@@ -433,66 +478,103 @@ const Index = () => {
     }); // 提交表单请求
   };
 
-  const onClick = (e: any) => {
-    setSelectBlogKey(e.key);
+  const onCancel = () => {
+    setIsVisible(false); // 关闭 Modal
+    navigate(`/app/manage_translation?language=${searchTerm}`, {
+      state: { key: searchTerm },
+    }); // 跳转到 /app/manage_translation
   };
 
   return (
-    <div>
-      {isLoading ? (
-        <div>Loading...</div>
-      ) : blogs.nodes.length ? (
-        <Modal
-          open={isVisible}
-          onCancel={onCancel}
-          width={"100%"}
-          destroyOnClose={true}
-          maskClosable={false}
-          footer={[
+    <Modal
+      id="manage-modal"
+      variant="max"
+      open={isVisible}
+      onHide={onCancel}
+    >
+      <FullscreenBar onAction={onCancel}>
+        <div
+          style={{
+            display: 'flex',
+            flexGrow: 1,
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingLeft: '1rem',
+            paddingRight: '1rem',
+          }}
+        >
+          <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
+            <Text>
+              {t("Blog")}
+            </Text>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
             <div
-              key={"footer_buttons"}
               style={{
-                display: "flex",
-                justifyContent: "center",
-                width: "100%",
+                width: "150px",
               }}
             >
-              <Button
-                key={"manage_cancel_button"}
-                onClick={onCancel}
-                style={{ marginRight: "10px" }}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                onClick={handleConfirm}
-                key={"manage_confirm_button"}
-                type="primary"
-                disabled={confirmLoading || !confirmData.length}
-                loading={confirmLoading}
-              >
-                {t("Save")}
-              </Button>
-            </div>,
-          ]}
-        >
-          <Layout
-            style={{
-              padding: "24px 0",
-              background: colorBgContainer,
-              borderRadius: borderRadiusLG,
-            }}
-          >
-            <Sider style={{ background: colorBgContainer }} width={200}>
+              <Select
+                label={""}
+                options={languageOptions}
+                value={selectedLanguage}
+                onChange={(value) => handleLanguageChange(value)}
+              />
+            </div>
+            <div
+              style={{
+                width: "150px",
+              }}
+            >
+              <Select
+                // style={{ minWidth: 120 }}
+                label={""}
+                options={itemOptions}
+                value={selectedItem}
+                onChange={(value) => handleItemChange(value)}
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'flex-end' }}>
+            <Button
+              type="primary"
+              onClick={handleConfirm}
+              disabled={confirmLoading || !confirmData.length}
+              loading={confirmLoading}
+            >
+              {t("Save")}
+            </Button>
+          </div>
+        </div>
+      </FullscreenBar>
+      <Layout
+        style={{
+          padding: "24px 0",
+          height: 'calc(100vh - 64px)',
+          overflow: 'auto',
+          background: colorBgContainer,
+          borderRadius: borderRadiusLG,
+        }}
+      >
+        {isLoading ? (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
+        ) : blogs.nodes.length ? (
+          <>
+            <Sider
+              style={{
+                background: colorBgContainer,
+                height: 'calc(100vh - 124px)',
+                width: '200px',
+              }}
+            >
               <Menu
                 mode="inline"
-                defaultSelectedKeys={[blogsData.nodes[0].key]}
+                defaultSelectedKeys={[blogsData.nodes[0]?.resourceId]}
                 defaultOpenKeys={["sub1"]}
                 style={{ height: "100%" }}
                 items={menuData}
-                // onChange={onChange}
                 selectedKeys={[selectBlogKey]}
-                onClick={onClick}
+                onClick={(e) => setSelectBlogKey(e.key)}
               />
               <div style={{ display: "flex", justifyContent: "center" }}>
                 <Pagination
@@ -503,34 +585,33 @@ const Index = () => {
                 />
               </div>
             </Sider>
-            <Content style={{ padding: "0 24px", minHeight: "70vh" }}>
+            <Content
+              style={{
+                padding: "0 24px",
+                height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+                overflow: 'auto',
+                minHeight: '70vh',
+              }}
+            >
               <Table
                 columns={resourceColumns}
                 dataSource={resourceData}
                 pagination={false}
               />
             </Content>
-          </Layout>
-        </Modal>
-      ) : (
-        <Modal 
-          open={isVisible} 
-          footer={null} 
-          onCancel={onCancel}
-          destroyOnClose={true}
-          maskClosable={false}
-        >
+          </>
+        ) : (
           <Result
-            title="The specified fields were not found in the store."
+            title={t("The specified fields were not found in the store.")}
             extra={
               <Button type="primary" onClick={onCancel}>
-                OK
+                {t("Yes")}
               </Button>
             }
           />
-        </Modal>
-      )}
-    </div>
+        )}
+      </Layout>
+    </Modal>
   );
 };
 

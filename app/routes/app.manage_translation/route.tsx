@@ -1,7 +1,7 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Menu, Space, Skeleton } from "antd";
-import { useEffect, useState } from "react";
+import { Space, Select, Typography, Button } from "antd";
+import { useEffect, useMemo, useState } from "react";
 import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
@@ -16,18 +16,19 @@ import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
 import { GetTranslationItemsInfo } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
-import { WordsType } from "../app._index/route";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { updateData } from "~/store/modules/languageItemsData";
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
-import { SessionService } from "~/utils/session.server";
 import { setLocale } from "~/store/modules/userConfig";
+import { setTableData } from "~/store/modules/languageTableData";
 
-interface ManageMenuDataType {
+const { Text, Title } = Typography;
+
+interface ManageSelectDataType {
   label: string;
-  key: string;
+  value: string;
 }
 
 interface TableDataType {
@@ -40,6 +41,9 @@ interface TableDataType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
+
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
@@ -47,31 +51,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     accessToken: accessToken as string,
   });
 
-  const url = new URL(request.url);
-  const languageCode = url.searchParams.get("language");
+
   console.log(`${shop} load manage`);
   return json({
     shopLanguages: shopLanguages,
-    languageCode: languageCode,
+    searchTerm: searchTerm || "",
   });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
-    const loading = JSON.parse(formData.get("loading") as string);
     const itemsCount = JSON.parse(formData.get("itemsCount") as string);
     switch (true) {
       case !!itemsCount:
@@ -106,10 +98,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shopLanguages, languageCode } = useLoaderData<typeof loader>();
+  const { shopLanguages, searchTerm } = useLoaderData<typeof loader>();
   // const [words, setWords] = useState<WordsType>();
   // const [shopLanguages, setShopLanguages] = useState<ShopLocalesType[]>();
-  const [menuData, setMenuData] = useState<ManageMenuDataType[]>([]);
+  const [selectOptions, setSelectOptions] = useState<ManageSelectDataType[]>([]);
   const [primaryLanguage, setPrimaryLanguage] = useState<string>();
   const [current, setCurrent] = useState<string>("");
   // const [disable, setDisable] = useState<boolean>(false);
@@ -117,9 +109,7 @@ const Index = () => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const location = useLocation();
-  const { key } = location.state || {}; // 提取传递的状态
-  const isClient = typeof window !== "undefined";
-
+  const { key } = useMemo(() => location.state || {}, [location.state]);
   const items = useSelector((state: any) => state.languageItemsData);
 
   // const fetcher = useFetcher<FetchType>();
@@ -274,22 +264,22 @@ const Index = () => {
       sync_status: false,
       navigation: "email",
     },
-    {
-      key: "policies",
-      title: t("Policies"),
-      allTranslatedItems:
-        items.find(
-          (item: any) =>
-            item?.language === current && item?.type === "SHOP_POLICY",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        items.find(
-          (item: any) =>
-            item?.language === current && item?.type === "SHOP_POLICY",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "policy",
-    },
+    // {
+    //   key: "policies",
+    //   title: t("Policies"),
+    //   allTranslatedItems:
+    //     items.find(
+    //       (item: any) =>
+    //         item?.language === current && item?.type === "SHOP_POLICY",
+    //     )?.translatedNumber ?? undefined,
+    //   allItems:
+    //     items.find(
+    //       (item: any) =>
+    //         item?.language === current && item?.type === "SHOP_POLICY",
+    //     )?.totalNumber ?? undefined,
+    //   sync_status: false,
+    //   navigation: "policy",
+    // },
     {
       key: "shop",
       title: t("Shop"),
@@ -386,14 +376,21 @@ const Index = () => {
         .filter((language) => !language.primary)
         .map((language) => ({
           label: language.name,
-          key: language.locale,
+          value: language.locale,
         }));
-      setMenuData(newArray);
-      if (!languageCode) {
-        setCurrent(newArray[0]?.key);
+      setSelectOptions(newArray);
+      if (!searchTerm) {
+        setCurrent(newArray[0]?.value);
       } else {
-        setCurrent(languageCode);
+        setCurrent(searchTerm);
       }
+      dispatch(setTableData(shopLanguages.map((language, index) => ({
+        key: index,
+        language: language.name,
+        locale: language.locale,
+        primary: language.primary,
+        published: language.published,
+      }))));
       setLoading(false);
     }
     const locale = shopLanguages.find(
@@ -500,11 +497,11 @@ const Index = () => {
   }, [shippingFetcher.data]);
 
   useEffect(() => {
-    const foundItem = menuData?.find((item) => item.key === key);
+    const foundItem = selectOptions?.find((item) => item.value === key);
     if (foundItem && primaryLanguage) {
       setCurrent(key);
     }
-  }, [key, menuData]);
+  }, [key, selectOptions]);
 
   useEffect(() => {
     dispatch(setSelectLanguageData(current));
@@ -708,10 +705,6 @@ const Index = () => {
     }
   }, [current]);
 
-  const onClick = (e: any) => {
-    setCurrent(e.key);
-  };
-
   return (
     <Page>
       <TitleBar title={t("Manage Translation")} />
@@ -720,7 +713,7 @@ const Index = () => {
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
-      {!loading && !menuData?.length && isClient ? (
+      {!loading && !selectOptions?.length ? (
         <div
           style={{
             display: "flex",
@@ -733,32 +726,30 @@ const Index = () => {
         </div>
       ) : (
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          {/* <AttentionCard
-              title={t("Translation credits have been exhausted.")}
-              content={t(
-                "The translation cannot be completed due to exhausted credits.",
-              )}
-              show={disable}
-            /> */}
-          {menuData?.length ? (
-            <div className="manage-header">
-              <Menu
-                onClick={onClick}
-                selectedKeys={[current]}
-                mode="horizontal"
-                items={menuData}
-                style={{
-                  backgroundColor: "transparent", // 背景透明
-                  borderBottom: "none", // 去掉底部边框
-                  color: "#000", // 文本颜色
-                  minWidth: "80%",
-                }}
+          <div
+            className="manage-header"
+          >
+            <div
+              className="manage-header-left"
+            >
+              <Title level={3} style={{ marginRight: "10px", marginBottom: "5px" }}>
+                {t("Localized content:")}
+              </Title>
+              <Select
+                options={selectOptions}
+                value={current}
+                onChange={(value) => setCurrent(value)}
+                style={{ minWidth: "200px" }}
               />
             </div>
-          ) : (
-            <Skeleton.Button active block />
-          )}
-
+            {/* <div
+              className="manage-header-right"
+            >
+              <Button>
+                {t("Sync")}
+              </Button>
+            </div> */}
+          </div>
           <div className="manage-content-wrap">
             <div className="manage-content-left">
               <Space
@@ -766,7 +757,6 @@ const Index = () => {
                 size="middle"
                 style={{ display: "flex" }}
               >
-                <div className="search-input"></div>
                 <ManageTranslationsCard
                   cardTitle={t("Products")}
                   dataSource={productsDataSource}
@@ -784,11 +774,11 @@ const Index = () => {
                 />
               </Space>
             </div>
-            <div className="manage-content-right"></div>
+            {/* <div className="manage-content-right"></div> */}
           </div>
-          <Outlet />
         </Space>
       )}
+      <Outlet />
     </Page>
   );
 };

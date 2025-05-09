@@ -13,7 +13,7 @@ import { updateTableData } from "~/store/modules/languageTableData";
 import { useTranslation } from "react-i18next";
 import { useFetcher } from "@remix-run/react";
 
-interface LanguageModalProps {
+interface AddLanguageModalProps {
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   allLanguages: AllLanguagesType[];
@@ -29,7 +29,7 @@ interface AddLanguageType {
   state: string;
 }
 
-const AddLanguageModal: React.FC<LanguageModalProps> = ({
+const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   isVisible,
   setIsModalOpen,
   allLanguages,
