@@ -360,5 +360,6 @@
         "free": "Оновіть до платного плану, щоб отримати знижку 50%"
     },
     "The specified fields were not found in the store.": "Вказані поля не знайдено в магазині.",
-    "Don't prompt again next time": "Більше не нагадувати наступного разу"
+    "Don't prompt again next time": "Більше не нагадувати наступного разу",
+    "Localized content:": "Локалізований контент:"
 }

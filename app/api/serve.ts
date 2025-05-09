@@ -547,6 +547,13 @@ export const GetTranslationItemsInfo = async ({
     translatedNumber: number;
     totalNumber: number;
   }[] = [];
+  console.log({
+    shopName: shop,
+    accessToken: accessToken,
+    source: source,
+    target: target,
+    resourceType: resourceType,
+  });
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/shopify/getTranslationItemsInfo`,

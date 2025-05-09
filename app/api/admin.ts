@@ -1131,6 +1131,7 @@ export const queryNextTransType = async ({
           translatableContent {
             key
             digest
+            locale
             value
           }
           translations(locale: "${locale}") {

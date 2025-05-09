@@ -360,5 +360,6 @@
         "free": "Подпишитесь на платный план, получите 50% скидку"
     },
     "The specified fields were not found in the store.": "Указанные поля не найдены в магазине.",
-    "Don’t prompt again next time": "Не показывать это сообщение снова"
+    "Don’t prompt again next time": "Не показывать это сообщение снова",
+    "Localized content:": "Локализованный контент:"
 }

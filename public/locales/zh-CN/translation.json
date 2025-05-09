@@ -359,5 +359,6 @@
     "free": "升级为付费计划，可享 5 折优惠"
   },
   "The specified fields were not found in the store.": "指定的字段未在商店中找到。",
-  "Don’t prompt again next time": "不再提示"
+  "Don’t prompt again next time": "不再提示",
+  "Localized content:": "本地化内容："
 }
