@@ -1,14 +1,22 @@
-import { Button, Modal, Typography } from "antd";
+import { Button, Modal, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
 interface TranslationWarnModalProps {
+  title: string;
+  content: string;
+  action?: () => void;
+  actionText?: string;
   show: boolean;
   setShow: (show: boolean) => void;
 }
 
 const TranslationWarnModal: React.FC<TranslationWarnModalProps> = ({
+  title,
+  content,
+  action,
+  actionText,
   show,
   setShow,
 }) => {
@@ -18,15 +26,25 @@ const TranslationWarnModal: React.FC<TranslationWarnModalProps> = ({
     <Modal
       open={show}
       onCancel={() => setShow(false)}
-      title={t("The 20 language limit has been reached")}
+      title={t(title)}
       footer={
-        <Button onClick={() => setShow(false)}>
-          {t("Cancel")}
-        </Button>
+        <Space>
+          <Button onClick={() => setShow(false)}>
+            {t("Cancel")}
+          </Button>
+          {action && actionText && (
+            <Button type="primary" onClick={action}>
+              {t(actionText)}
+            </Button>
+          )}
+        </Space>
       }
+      style={{
+        top: "40%",
+      }}
     >
       <Text>
-        {t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")}
+        {t(content)}
       </Text>
     </Modal>
   );

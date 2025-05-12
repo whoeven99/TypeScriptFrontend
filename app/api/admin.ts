@@ -1180,7 +1180,7 @@ export const queryPreviousTransType = async ({
 }) => {
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
+      translatableResources(resourceType: ${resourceType}, last: 20 ${startCursor ? `, before: "${startCursor}"` : ""}) {
         nodes {
           resourceId
           translatableContent {
@@ -1238,9 +1238,9 @@ export const queryNextNestTransType = async ({
 }) => {
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
+      translatableResources(resourceType: ${resourceType}, first: 20 ${endCursor ? `, after: "${endCursor}"` : ""}) {
         nodes {
-          nestedTranslatableResources(first: 15, resourceType: ${nestResourceType}) {
+          nestedTranslatableResources(first: 20, resourceType: ${nestResourceType}) {
             nodes {
               resourceId
               translatableContent {
@@ -1302,7 +1302,7 @@ export const queryPreviousNestTransType = async ({
 }) => {
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, last: 15 ${startCursor ? `, before: "${startCursor}"` : ""}) {
+      translatableResources(resourceType: ${resourceType}, last: 20 ${startCursor ? `, before: "${startCursor}"` : ""}) {
         nodes {
           nestedTranslatableResources(first: 15, resourceType: ${nestResourceType}) {
             nodes {

@@ -45,7 +45,6 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
-import { SessionService } from "~/utils/session.server";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -60,14 +59,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  const shopSession = {
-    shop: shop,
-    accessToken: accessToken as string,
-  };
-  sessionService.setShopSession(shopSession);
+
   try {
     const formData = await request.formData();
     // const initialization = JSON.parse(formData.get("initialization") as string);
@@ -238,10 +232,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (userData) {
       try {
-        // const plan = await GetUserSubscriptionPlan({ shop });
         const words = await GetUserWords({ shop });
         const data = {
-          // plan,
           chars: words?.chars || 0,
           totalChars: words?.totalChars || 0,
         };

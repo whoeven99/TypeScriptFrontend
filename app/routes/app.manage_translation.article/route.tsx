@@ -362,7 +362,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "40%",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         return <ManageTableInput record={record} />;
       },

@@ -53,6 +53,7 @@ import AddLanguageModal from "./components/addLanguageModal";
 import PreviewModal from "~/components/previewModal";
 import ScrollNotice from "~/components/ScrollNotice";
 import DeleteConfirmModal from "./components/deleteConfirmModal";
+import TranslationWarnModal from "~/components/translationWarnModal";
 
 const { Title, Text } = Typography;
 
@@ -835,23 +836,24 @@ const Index = () => {
         text={t("Are you sure to delete this language? After deletion, the translation data will be deleted together")}
       />
       {showWarnModal && (
-        <Modal
-          open={showWarnModal}
-          onCancel={() => setShowWarnModal(false)}
-          title={t("The 20 language limit has been reached")}
-          footer={
-            <Button onClick={() => setShowWarnModal(false)}>
-              {t("Cancel")}
-            </Button>
-          }
-          style={{
-            top: "40%",
-          }}
-        >
-          <Text>
-            {t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")}
-          </Text>
-        </Modal>
+        <TranslationWarnModal title={t("The 20 language limit has been reached")} content={t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")} show={showWarnModal} setShow={setShowWarnModal} />
+        // <Modal
+        //   open={showWarnModal}
+        //   onCancel={() => setShowWarnModal(false)}
+        //   title={t("The 20 language limit has been reached")}
+        //   footer={
+        //     <Button onClick={() => setShowWarnModal(false)}>
+        //       {t("Cancel")}
+        //     </Button>
+        //   }
+        //   style={{
+        //     top: "40%",
+        //   }}
+        // >
+        //   <Text>
+        //     {t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")}
+        //   </Text>
+        // </Modal>
       )}
     </Page>
   );
