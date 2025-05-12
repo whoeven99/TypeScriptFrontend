@@ -835,26 +835,12 @@ const Index = () => {
         handleDelete={handleDelete}
         text={t("Are you sure to delete this language? After deletion, the translation data will be deleted together")}
       />
-      {showWarnModal && (
-        <TranslationWarnModal title={t("The 20 language limit has been reached")} content={t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")} show={showWarnModal} setShow={setShowWarnModal} />
-        // <Modal
-        //   open={showWarnModal}
-        //   onCancel={() => setShowWarnModal(false)}
-        //   title={t("The 20 language limit has been reached")}
-        //   footer={
-        //     <Button onClick={() => setShowWarnModal(false)}>
-        //       {t("Cancel")}
-        //     </Button>
-        //   }
-        //   style={{
-        //     top: "40%",
-        //   }}
-        // >
-        //   <Text>
-        //     {t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")}
-        //   </Text>
-        // </Modal>
-      )}
+      <TranslationWarnModal
+        title={t("The 20 language limit has been reached")}
+        content={t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")}
+        show={showWarnModal}
+        setShow={setShowWarnModal}
+      />
     </Page>
   );
 };

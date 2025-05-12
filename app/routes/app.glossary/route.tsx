@@ -59,11 +59,7 @@ const planMapping = {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-
-  const planInfo = await GetUserSubscriptionPlan({ shop });
-  return json({ planInfo });
+  return null;
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -74,7 +70,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
-    const planInfo = JSON.parse(formData.get("planInfo") as string);
     const updateInfo = JSON.parse(formData.get("updateInfo") as string);
     const deleteInfo: number[] = JSON.parse(
       formData.get("deleteInfo") as string,
@@ -85,15 +80,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const data = await GetGlossaryByShopName({
             shop,
             accessToken: accessToken as string,
-          });
-          return json({ data: data });
-        } catch (error) {
-          console.error("Error glossary loading:", error);
-        }
-      case !!planInfo:
-        try {
-          const data = await GetUserSubscriptionPlan({
-            shop,
           });
           return json({ data: data });
         } catch (error) {
@@ -146,7 +132,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { planInfo } = useLoaderData<typeof loader>();
   const [title, setTitle] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
@@ -164,6 +149,7 @@ const Index = () => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { plan } = useSelector((state: any) => state.userConfig);
   const loadingFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
@@ -172,8 +158,6 @@ const Index = () => {
 
   useEffect(() => {
     loadingFetcher.submit({ loading: JSON.stringify(true) }, { method: "POST" });
-    dispatch(setUserConfig({ plan: planInfo?.userSubscriptionPlan || "" }));
-    dispatch(setUserConfig({ updateTime: planInfo?.updateTime || "" }));
     setIsMobile(window.innerWidth < 768);
     shopify.loading(true);
   }, []);
@@ -257,10 +241,7 @@ const Index = () => {
   };
 
   const handleIsModalOpen = (title: string, key: number) => {
-    if (title === "Create rule" && dataSource.length >= planMapping[planInfo?.userSubscriptionPlan as keyof typeof planMapping]) {
-      // shopify.toast.show(
-      //   t("You can add up to {{count}} translation rules", { count: planMapping[planInfo?.userSubscriptionPlan as keyof typeof planMapping] }),
-      // );
+    if (title === "Create rule" && dataSource.length >= planMapping[plan as keyof typeof planMapping]) {
       setShowWarnModal(true);
     } else {
       setTitle(t(title));
@@ -268,10 +249,6 @@ const Index = () => {
       setIsGlossaryModalOpen(true); // 打开Modal
     }
   };
-
-  const Action = () => {
-    navigate("/app/pricing");
-  }
 
   const columns = [
     {
@@ -442,7 +419,16 @@ const Index = () => {
         setIsModalOpen={setIsGlossaryModalOpen}
         shopLocales={shopLocales}
       />
-      <TranslationWarnModal title={t("The glossary limitations has been reached (Current restrictions: {{count}})", { count: planMapping[planInfo?.userSubscriptionPlan as keyof typeof planMapping] })} content={t("Please upgrade to a higher plan to remove the current glossary limitations")} action={Action} actionText={t("Upgrade")} show={showWarnModal} setShow={setShowWarnModal} />
+      <TranslationWarnModal
+        title={t("The glossary limitations has been reached (Current restrictions: {{count}})", { count: planMapping[plan as keyof typeof planMapping] })}
+        content={t("Please upgrade to a higher plan to remove the current glossary limitations")}
+        action={() => {
+          navigate("/app/pricing");
+        }}
+        actionText={t("Upgrade")}
+        show={showWarnModal}
+        setShow={setShowWarnModal}
+      />
     </Page>
   )
 }

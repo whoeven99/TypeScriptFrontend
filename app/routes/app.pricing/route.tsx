@@ -49,7 +49,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.error("Error loading action:", error);
           return null;
         }
-
       case !!planInfo:
         try {
           const data = await GetUserSubscriptionPlan({
@@ -97,7 +96,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             };
           }
         } catch (error) {
-          console.error("Error planInfo action:", error);
+          console.error("Error payForPlan action:", error);
         }
     }
     return null;

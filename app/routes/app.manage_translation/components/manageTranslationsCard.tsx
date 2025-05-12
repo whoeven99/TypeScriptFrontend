@@ -1,6 +1,7 @@
 import { useNavigate } from "@remix-run/react";
 import { Card, Space, Button, Typography, Table, Modal, Result } from "antd";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
 const { Title } = Typography;
 
@@ -8,6 +9,7 @@ interface SwitcherSettingCardProps {
   cardTitle: string;
   dataSource: any;
   current: string;
+  setShowWarnModal: (show: boolean) => void;
 }
 
 interface DataType {
@@ -23,14 +25,20 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   cardTitle,
   dataSource,
   current,
+  setShowWarnModal,
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { plan } = useSelector((state: any) => state.userConfig);
 
   const handleEdit = (record: DataType) => {
-    navigate(
-      `/app/manage_translation/${record.navigation}?language=${current}`,
-    );
+    if (typeof plan === "number" && plan > 3) {
+      navigate(
+        `/app/manage_translation/${record.navigation}?language=${current}`,
+      );
+    } else {
+      setShowWarnModal(true);
+    }
   };
 
   const columns = [
