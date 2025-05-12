@@ -354,12 +354,22 @@
     "Are you sure to delete this language? After deletion, the translation data will be deleted together": "この言語を削除しますか？削除後、翻訳データも削除されます",
     "discountText": {
         "premium": "現在はPremiumプランです。50%オフをお楽しみください",
-        "pro": "現在はProプランです。75%オフをお楽しみください",
-        "basic": "現在はBasicプランです。90%オフをお楽しみください",
+        "pro": "現在はProプランです。25%オフをお楽しみください",
+        "basic": "現在はBasicプランです。10%オフをお楽しみください",
         "free": "有料プランにアップグレードして、50%オフをお楽しみください"
     },
     "The specified fields were not found in the store.": "指定されたフィールドが見つかりませんでした。",
     "Don’t prompt again next time": "次回は表示しない",
-    "Localized content:": "ローカライズされたコンテンツ:"
+    "Localized content:": "ローカライズされたコンテンツ:",
+    "Product Options": "プロダクトオプション",
+    "Metafield": "メタフィールド",
+    "value": "値",
+    "name": "名前",
+    "ProductType": "プロダクトタイプ",
+    "Description": "説明",
+    "Title": "タイトル",
+    "Meta description": "メタディスクリプション",
+    "URL handle": "URLハンドラー",
+    "Meta title": "メタタイトル"
 }   
   

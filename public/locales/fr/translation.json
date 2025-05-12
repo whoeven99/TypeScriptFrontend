@@ -354,12 +354,22 @@
     "Are you sure to delete this language? After deletion, the translation data will be deleted together": "Êtes-vous sûr de vouloir supprimer cette langue ? Après la suppression, les données de traduction seront supprimées ensemble",
     "discountText": {
         "premium": "Le plan actuel est le plan Premium, profitez de 50% de réduction",
-        "pro": "Le plan actuel est le plan Pro, profitez de 75% de réduction",
-        "basic": "Le plan actuel est le plan Basic, profitez de 90% de réduction",
+        "pro": "Le plan actuel est le plan Pro, profitez de 25% de réduction",
+        "basic": "Le plan actuel est le plan Basic, profitez de 10% de réduction",
         "free": "Mettre à niveau vers le plan payant, profitez de 50% de réduction"
     },
     "The specified fields were not found in the store.": "Les champs spécifiés n'ont pas été trouvés dans la boutique.",
     "Don’t prompt again next time": "Ne pas afficher à nouveau",
-    "Localized content:": "Contenu localisé:"
+    "Localized content:": "Contenu localisé:",
+    "Product Options": "Options de produit",
+    "Metafield": "Metafield",
+    "value": "valeur",
+    "name": "nom",
+    "ProductType": "Type de produit",
+    "Description": "Description",
+    "Title": "Titre",
+    "Meta description": "Description meta",
+    "URL handle": "URL de manejador",
+    "Meta title": "Título meta"
 }
   

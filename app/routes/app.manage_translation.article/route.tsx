@@ -72,7 +72,6 @@ type TableDataType = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 

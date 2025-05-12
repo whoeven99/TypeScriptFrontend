@@ -1125,13 +1125,14 @@ export const queryNextTransType = async ({
 }) => {
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, first: 15 ${endCursor ? `, after: "${endCursor}"` : ""}) {
+      translatableResources(resourceType: ${resourceType}, first: 20 ${endCursor ? `, after: "${endCursor}"` : ""}) {
         nodes {
           resourceId
           translatableContent {
             key
             digest
             locale
+            type
             value
           }
           translations(locale: "${locale}") {
@@ -1160,7 +1161,7 @@ export const queryNextTransType = async ({
     const res = response.data.data.translatableResources;
     return res;
   } catch (error) {
-    console.error("Error fetching translation data:", error);
+    console.error(`Error fetching ${resourceType} translation data:`, error);
   }
 };
 
@@ -1186,12 +1187,12 @@ export const queryPreviousTransType = async ({
             key
             digest
             locale
+            type
             value
           }
           translations(locale: "${locale}") {
             key
             value
-            outdated
           }
         }
         pageInfo {
@@ -1216,7 +1217,7 @@ export const queryPreviousTransType = async ({
 
     return res;
   } catch (error) {
-    console.error("Error fetching translation data:", error);
+    console.error(`Error fetching ${resourceType} translation data:`, error);
   }
 };
 
@@ -1246,12 +1247,13 @@ export const queryNextNestTransType = async ({
                 key
                 digest
                 locale
+                type
                 value
               }
               translations(locale: "${locale}") {
                 key
                 value
-                outdated
+
               }
             }
           }
@@ -1279,7 +1281,7 @@ export const queryNextNestTransType = async ({
 
     return res;
   } catch (error) {
-    console.error("Error fetching translation data:", error);
+    console.error(`Error fetching ${resourceType} translation data:`, error);
   }
 };
 
@@ -1309,12 +1311,12 @@ export const queryPreviousNestTransType = async ({
                 key
                 digest
                 locale
+                type
                 value
               }
               translations(locale: "${locale}") {
                 key
                 value
-                outdated
               }
             }
           }
@@ -1341,7 +1343,7 @@ export const queryPreviousNestTransType = async ({
     const res = response.data.data.translatableResources;
     return res;
   } catch (error) {
-    console.error("Error fetching translation data:", error);
+    console.error(`Error fetching ${resourceType} translation data:`, error);
   }
 };
 

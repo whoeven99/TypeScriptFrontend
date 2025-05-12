@@ -353,13 +353,23 @@
     "Delete {{count}} languages": "Verwijder {{count}} talen",
     "Are you sure to delete this language? After deletion, the translation data will be deleted together": "Weet u zeker dat u deze taal wilt verwijderen? Na verwijdering worden de vertalinggegevens samen verwijderd",
     "discountText": {
-        "premium": "Huidig is Pro plan, geniet 75% korting",
-        "pro": "Huidig is Pro plan, geniet 75% korting",
-        "basic": "Huidig is Basic plan, geniet 90% korting",
+        "premium": "Huidig is Pro plan, geniet 25% korting",
+        "pro": "Huidig is Pro plan, geniet 25% korting",
+        "basic": "Huidig is Basic plan, geniet 10% korting",
         "free": "Upgrade naar betaald plan, geniet 50% korting"
     },
     "The specified fields were not found in the store.": "De opgegeven velden werden niet gevonden in de winkel.",
     "Don’t prompt again next time": "Deze waarschuwing niet meer tonen",
-    "Localized content:": "Lokalisierte Inhalte:"
+    "Localized content:": "Lokalisierte Inhalte:",
+    "Product Options": "Produktoptionen",
+    "Metafield": "Metafeld",
+    "value": "Wert",
+    "name": "Name",
+    "ProductType": "Produkttyp",
+    "Description": "Beschreibung",
+    "Title": "Titel",
+    "Meta description": "Meta-Beschreibung",
+    "URL handle": "URL-Handle",
+    "Meta title": "Meta-Titel"
 }
   
