@@ -353,12 +353,22 @@
     "Are you sure to delete this language? After deletion, the translation data will be deleted together": "이 언어를 삭제하시겠습니까? 삭제 후 번역 데이터도 함께 삭제됩니다",
     "discountText": {
         "premium": "현재는 프리미엄 플랜이며, 50% 할인을 즐기세요",
-        "pro": "현재는 프로 플랜이며, 75% 할인을 즐기세요",
-        "basic": "현재는 베이직 플랜이며, 90% 할인을 즐기세요",
+        "pro": "현재는 프로 플랜이며, 25% 할인을 즐기세요",
+        "basic": "현재는 베이직 플랜이며, 10% 할인을 즐기세요",
         "free": "유료 플랜으로 업그레이드하여 50% 할인을 즐기세요"
     },
     "The specified fields were not found in the store.": "지정된 필드가 스토어에 없습니다.",
     "Don’t prompt again next time": "다음에 다시 표시하지 않음",
-    "Localized content:": "로컬라이즈된 콘텐츠:"
+    "Localized content:": "로컬라이즈된 콘텐츠:",
+    "Product Options": "제품 옵션",
+    "Metafield": "메타필드",
+    "value": "값",
+    "name": "이름",
+    "ProductType": "제품 유형",
+    "Description": "설명",
+    "Title": "제목",
+    "Meta description": "메타 설명",
+    "URL handle": "URL 처리기",
+    "Meta title": "메타 제목"
 } 
   

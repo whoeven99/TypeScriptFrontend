@@ -53,6 +53,7 @@ import AddLanguageModal from "./components/addLanguageModal";
 import PreviewModal from "~/components/previewModal";
 import ScrollNotice from "~/components/ScrollNotice";
 import DeleteConfirmModal from "./components/deleteConfirmModal";
+import TranslationWarnModal from "~/components/translationWarnModal";
 
 const { Title, Text } = Typography;
 
@@ -115,7 +116,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return json(
     {
-      sever: process.env.SERVER_URL,
+      server: process.env.SERVER_URL,
       shop: shop,
 
     },
@@ -379,7 +380,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, sever } = useLoaderData<typeof loader>();
+  const { shop, server } = useLoaderData<typeof loader>();
   const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>([]);
   const [shopPrimaryLanguage, setShopPrimaryLanguage] = useState<ShopLocalesType[]>([]);
   const [allLanguages, setAllLanguages] = useState<AllLanguagesType[]>([]);
@@ -704,7 +705,7 @@ const Index = () => {
     dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
     const row = dataSource.find((item: any) => item.locale === locale);
     if (row) {
-      const data = await UpdateAutoTranslateByData({ shopName: shop, source: shopPrimaryLanguage[0]?.locale, target: row.locale, autoTranslate: checked, sever: sever || "" });
+      const data = await UpdateAutoTranslateByData({ shopName: shop, source: shopPrimaryLanguage[0]?.locale, target: row.locale, autoTranslate: checked, server: server || "" });
       if (data?.success) {
         dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
         dispatch(setAutoTranslateState({ locale, autoTranslate: checked }));
@@ -835,23 +836,24 @@ const Index = () => {
         text={t("Are you sure to delete this language? After deletion, the translation data will be deleted together")}
       />
       {showWarnModal && (
-        <Modal
-          open={showWarnModal}
-          onCancel={() => setShowWarnModal(false)}
-          title={t("The 20 language limit has been reached")}
-          footer={
-            <Button onClick={() => setShowWarnModal(false)}>
-              {t("Cancel")}
-            </Button>
-          }
-          style={{
-            top: "40%",
-          }}
-        >
-          <Text>
-            {t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")}
-          </Text>
-        </Modal>
+        <TranslationWarnModal title={t("The 20 language limit has been reached")} content={t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")} show={showWarnModal} setShow={setShowWarnModal} />
+        // <Modal
+        //   open={showWarnModal}
+        //   onCancel={() => setShowWarnModal(false)}
+        //   title={t("The 20 language limit has been reached")}
+        //   footer={
+        //     <Button onClick={() => setShowWarnModal(false)}>
+        //       {t("Cancel")}
+        //     </Button>
+        //   }
+        //   style={{
+        //     top: "40%",
+        //   }}
+        // >
+        //   <Text>
+        //     {t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")}
+        //   </Text>
+        // </Modal>
       )}
     </Page>
   );

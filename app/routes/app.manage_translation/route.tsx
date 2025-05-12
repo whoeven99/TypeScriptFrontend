@@ -21,7 +21,7 @@ import { updateData } from "~/store/modules/languageItemsData";
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
-import { setLocale } from "~/store/modules/userConfig";
+import { setUserConfig } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
 
 const { Text, Title } = Typography;
@@ -396,7 +396,7 @@ const Index = () => {
     const locale = shopLanguages.find(
       (language) => language.primary === true,
     )?.locale;
-    dispatch(setLocale(locale || ""));
+    dispatch(setUserConfig({ locale: locale || "" }));
   }, []);
 
   // useEffect(() => {

@@ -355,11 +355,21 @@
     "Are you sure to delete this language? After deletion, the translation data will be deleted together": "Ви впевнені, що хочете видалити цей мову? Після видалення дані перекладу також будуть видалені",
     "discountText": {
         "premium": "Поточний тарифний план — Premium, насолоджуйтесь знижкою 50%",
-        "pro": "Поточний тарифний план — Pro, насолоджуйтесь знижкою 75%",
-        "basic": "Поточний тарифний план — Basic, насолоджуйтесь знижкою 90%",
+        "pro": "Поточний тарифний план — Pro, насолоджуйтесь знижкою 25%",
+        "basic": "Поточний тарифний план — Basic, насолоджуйтесь знижкою 10%",
         "free": "Оновіть до платного плану, щоб отримати знижку 50%"
     },
     "The specified fields were not found in the store.": "Вказані поля не знайдено в магазині.",
     "Don't prompt again next time": "Більше не нагадувати наступного разу",
-    "Localized content:": "Локалізований контент:"
+    "Localized content:": "Локалізований контент:",
+    "Product Options": "Опції продукту",
+    "Metafield": "Метаполе",
+    "value": "значення",
+    "name": "назва",
+    "ProductType": "Тип продукту",
+    "Description": "Опис",
+    "Title": "Заголовок",
+    "Meta description": "Мета-опис",
+    "URL handle": "URL-обробник",
+    "Meta title": "Мета-заголовок"
 }

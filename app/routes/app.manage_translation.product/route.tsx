@@ -2,7 +2,6 @@ import {
   Button,
   Layout,
   Menu,
-  MenuProps,
   Result,
   Spin,
   Table,
@@ -27,45 +26,64 @@ import {
   queryPreviousNestTransType,
   queryPreviousTransType,
 } from "~/api/admin";
-import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { SessionService } from "~/utils/session.server";
 import { useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
-import ItemsScroll, { MenuItem } from "../app.manage_translation/components/itemsScroll";
+import { MenuItem } from "../app.manage_translation/components/itemsScroll";
 
 const { Sider, Content } = Layout;
 
 const { Text } = Typography;
 
 interface ProductType {
-  handle: string;
   key: string;
-  descriptionHtml: string | undefined;
-  seo: {
-    description: string | undefined;
-    title: string | undefined;
+  handle: {
+    value: string;
+    type: string;
   };
-  productType: string;
+  title: {
+    value: string;
+    type: string;
+  };
+  descriptionHtml: {
+    value: string;
+    type: string;
+  };
+  productType: {
+    value: string;
+    type: string;
+  };
+  seo: {
+    description: {
+      value: string;
+      type: string;
+    };
+    title: {
+      value: string;
+      type: string;
+    };
+  };
   options: [
     {
       key: string;
-      name: string | undefined;
-      // values: string[] | undefined;
+      name: string;
+      type: string;
+      translatableContent: string | undefined;
       translation: string | undefined;
     },
   ];
   metafields: [
     {
       key: string;
-      name: string | undefined;
-      // values: string[] | undefined;
+      name: string;
+      type: string;
+      translatableContent: string | undefined;
       translation: string | undefined;
     },
   ];
-  title: string;
   translations: {
     handle: string | undefined;
     key: string;
@@ -83,6 +101,8 @@ type TableDataType = {
   key: string;
   index: number;
   resource: string;
+  type: string | undefined;
+  loading: boolean;
   default_language: string | undefined;
   translated: string | undefined;
 } | null;
@@ -119,6 +139,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
 
     return json({
+      server: process.env.SERVER_URL,
+      shopName: shop,
       searchTerm,
       products,
       product_options,
@@ -241,7 +263,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { searchTerm, products, product_options, product_metafields } =
+  const { searchTerm, products, product_options, product_metafields, server, shopName } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const {
@@ -280,6 +302,7 @@ const Index = () => {
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
+  const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const itemOptions = [
     { label: t("Products"), value: "product" },
     { label: t("Collection"), value: "collection" },
@@ -360,22 +383,28 @@ const Index = () => {
         {
           key: "title",
           index: 3,
-          resource: "Title",
-          default_language: productData?.title,
+          resource: t("Title"),
+          type: productData?.title?.type,
+          loading: loadingItems.includes("title"),
+          default_language: productData?.title?.value,
           translated: productData?.translations?.title,
         },
         {
           key: "body_html",
           index: 3,
-          resource: "Description",
-          default_language: productData?.descriptionHtml,
+          resource: t("Description"),
+          type: productData?.descriptionHtml?.type,
+          loading: loadingItems.includes("body_html"),
+          default_language: productData?.descriptionHtml?.value,
           translated: productData?.translations?.descriptionHtml,
         },
         {
           key: "product_type",
           index: 3,
-          resource: "ProductType",
-          default_language: productData?.productType,
+          resource: t("ProductType"),
+          type: productData?.productType?.type,
+          loading: loadingItems.includes("product_type"),
+          default_language: productData?.productType?.value,
           translated: productData?.translations?.productType,
         },
       ].filter((item) => item.default_language),
@@ -385,22 +414,28 @@ const Index = () => {
         {
           key: "handle",
           index: 3,
-          resource: "URL handle",
-          default_language: productData?.handle,
+          resource: t("URL handle"),
+          type: productData?.handle?.type,
+          loading: loadingItems.includes("handle"),
+          default_language: productData?.handle?.value,
           translated: productData?.translations?.handle,
         },
         {
           key: "meta_title",
           index: 3,
-          resource: "Meta title",
-          default_language: productData?.seo.title,
+          resource: t("Meta title"),
+          type: productData?.seo.title?.type,
+          loading: loadingItems.includes("meta_title"),
+          default_language: productData?.seo.title?.value,
           translated: productData?.translations?.seo.title,
         },
         {
           key: "meta_description",
           index: 3,
-          resource: "Meta description",
-          default_language: productData?.seo.description,
+          resource: t("Meta description"),
+          type: productData?.seo.description?.type,
+          loading: loadingItems.includes("meta_description"),
+          default_language: productData?.seo.description?.value,
           translated: productData?.translations?.seo.description,
         },
       ].filter((item) => item.default_language),
@@ -412,8 +447,10 @@ const Index = () => {
       return {
         key: `name_${index}`,
         index: index,
-        resource: "Option name",
-        default_language: option?.name,
+        resource: t(option?.name),
+        type: option?.type,
+        loading: loadingItems.includes(`name_${index}`),
+        default_language: option?.translatableContent,
         translated: option.translation,
       };
     });
@@ -422,13 +459,15 @@ const Index = () => {
       return {
         key: `value_${index}`,
         index: index,
-        resource: "Product metafield",
-        default_language: metafield?.name,
+        resource: t(metafield?.name),
+        type: metafield?.type,
+        loading: loadingItems.includes(`value_${index}`),
+        default_language: metafield?.translatableContent,
         translated: metafield?.translation,
       };
     });
     if (metafieldsData) setMetafieldsData(metafieldsData);
-  }, [productData]);
+  }, [productData, loadingItems]);
 
   useEffect(() => {
     if (actionData && "nextProducts" in actionData) {
@@ -537,7 +576,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return <ManageTableInput record={record} />;
       },
@@ -546,7 +585,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -556,6 +595,23 @@ const Index = () => {
             handleInputChange={handleInputChange}
             isRtl={searchTerm === "ar"}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("PRODUCT", record?.key || "", record?.type || "", record?.default_language || "");
+            }}
+            loading={record?.loading}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -598,7 +654,7 @@ const Index = () => {
 
   const optionsColumns = [
     {
-      title: "Product Options",
+      title: t("Product Options"),
       dataIndex: "resource",
       key: "resource",
       width: "10%",
@@ -638,7 +694,7 @@ const Index = () => {
 
   const metafieldsColumns = [
     {
-      title: "Metafield",
+      title: t("Metafield"),
       dataIndex: "resource",
       key: "resource",
       width: "10%",
@@ -817,18 +873,39 @@ const Index = () => {
     metafields: any;
   }) => {
     let data: ProductType = {
-      handle: "",
       key: "",
-      descriptionHtml: "",
-      seo: {
-        description: "",
-        title: "",
+      title: {
+        value: "",
+        type: "",
       },
-      productType: "",
+      descriptionHtml: {
+        value: "",
+        type: "",
+      },
+      seo: {
+        description: {
+          value: "",
+          type: "",
+        },
+        title: {
+          value: "",
+          type: "",
+        },
+      },
+      handle: {
+        value: "",
+        type: "",
+      },
+      productType: {
+        value: "",
+        type: "",
+      },
       options: [
         {
           key: "",
           name: "",
+          type: "",
+          translatableContent: "",
           translation: "",
         },
       ],
@@ -836,10 +913,11 @@ const Index = () => {
         {
           key: "",
           name: "",
+          type: "",
+          translatableContent: "",
           translation: "",
         },
       ],
-      title: "",
       translations: {
         handle: "",
         key: "",
@@ -862,24 +940,54 @@ const Index = () => {
       (metafield: any) => metafield?.resourceId === selectProductKey,
     );
     data.key = product?.resourceId;
-    data.title = product?.translatableContent.find(
-      (item: any) => item.key === "title",
-    )?.value;
-    data.descriptionHtml = product?.translatableContent.find(
-      (item: any) => item.key === "body_html",
-    )?.value;
-    data.productType = product?.translatableContent.find(
-      (item: any) => item.key === "product_type",
-    )?.value;
-    data.handle = product?.translatableContent.find(
-      (item: any) => item.key === "handle",
-    )?.value;
-    data.seo.title = product?.translatableContent.find(
-      (item: any) => item.key === "meta_title",
-    )?.value;
-    data.seo.description = product?.translatableContent.find(
-      (item: any) => item.key === "meta_description",
-    )?.value;
+    data.title = {
+      value: product?.translatableContent.find(
+        (item: any) => item.key === "title",
+      )?.value,
+      type: product?.translatableContent.find(
+        (item: any) => item.key === "title",
+      )?.type,
+    };
+    data.descriptionHtml = {
+      value: product?.translatableContent.find(
+        (item: any) => item.key === "body_html",
+      )?.value,
+      type: product?.translatableContent.find(
+        (item: any) => item.key === "body_html",
+      )?.type,
+    };
+    data.productType = {
+      value: product?.translatableContent.find(
+        (item: any) => item.key === "product_type",
+      )?.value,
+      type: product?.translatableContent.find(
+        (item: any) => item.key === "product_type",
+      )?.type,
+    }
+    data.handle = {
+      value: product?.translatableContent.find(
+        (item: any) => item.key === "handle",
+      )?.value,
+      type: product?.translatableContent.find(
+        (item: any) => item.key === "handle",
+      )?.type,
+    };
+    data.seo.title = {
+      value: product?.translatableContent.find(
+        (item: any) => item.key === "meta_title",
+      )?.value,
+      type: product?.translatableContent.find(
+        (item: any) => item.key === "meta_title",
+      )?.type,
+    };
+    data.seo.description = {
+      value: product?.translatableContent.find(
+        (item: any) => item.key === "meta_description",
+      )?.value,
+      type: product?.translatableContent.find(
+        (item: any) => item.key === "meta_description",
+      )?.type,
+    };
     data.translations.key = product?.resourceId;
     data.translations.title = product?.translations.find(
       (item: any) => item.key === "title",
@@ -903,7 +1011,9 @@ const Index = () => {
       productOption?.nestedTranslatableResources.nodes.map((item: any) => {
         return {
           key: item?.resourceId,
-          name: item?.translatableContent[0]?.value,
+          name: item?.translatableContent[0]?.key,
+          type: item?.translatableContent[0]?.type,
+          translatableContent: item?.translatableContent[0]?.value,
           translation: item?.translations[0]?.value,
         };
       }) || [];
@@ -911,13 +1021,52 @@ const Index = () => {
       productMetafield?.nestedTranslatableResources.nodes.map((item: any) => {
         return {
           key: item?.resourceId,
-          name: item?.translatableContent[0]?.value,
+          name: item?.translatableContent[0]?.key,
+          type: item?.translatableContent[0]?.type,
+          translatableContent: item?.translatableContent[0]?.value,
           translation: item?.translations[0]?.value,
         };
       }) || [];
 
     return data;
   };
+
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+    if (!key || !type || !context) {
+      return;
+    }
+    setLoadingItems((prev) => [...prev, key]);
+    console.log({
+      shopName: shopName,
+      source: productsData.nodes
+        .find((item: any) => item?.resourceId === selectProductKey)
+        ?.translatableContent.find((item: any) => item.key === key)
+        ?.locale,
+      target: searchTerm || "",
+      resourceType: "PRODUCT",
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
+    
+    const data = await SingleTextTranslate({
+      shopName: shopName,
+      source: productsData.nodes
+        .find((item: any) => item?.resourceId === selectProductKey)
+        ?.translatableContent.find((item: any) => item.key === key)
+        ?.locale,
+      target: searchTerm || "",
+      resourceType: "PRODUCT",
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
+
+    console.log(data);
+    setLoadingItems((prev) => prev.filter((item) => item !== key));
+  }
 
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);

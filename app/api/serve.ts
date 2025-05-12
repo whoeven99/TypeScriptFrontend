@@ -20,6 +20,45 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const SingleTextTranslate = async ({
+  shopName,
+  source,
+  target,
+  resourceType,
+  context,
+  key,
+  type,
+  server
+}: {
+  shopName: string;
+  source: string;
+  target: string;
+  resourceType: string;
+  context: string;
+  key: string;
+  type: string;
+  server: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/translate/singleTextTranslate`,
+      method: "POST",
+      data: {
+        shopName: shopName,
+        source: source,
+        target: target,
+        resourceType: resourceType,
+        context: context,
+        key: key,
+        type: type,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error SingleTextTranslate:", error);
+  }
+};
+
 export const SendSubscribeSuccessEmail = async ({
   id,
   shopName,
@@ -47,17 +86,17 @@ export const UpdateAutoTranslateByData = async ({
   source,
   target,
   autoTranslate,
-  sever,
+  server,
 }: {
   shopName: string;
   source: string;
   target: string;
   autoTranslate: boolean;
-  sever: string;
+  server: string;
 }) => {
   try {
     const response = await axios({
-      url: `${sever}/translate/updateAutoTranslateByData `,
+      url: `${server}/translate/updateAutoTranslateByData `,
       method: "POST",
       data: {
         shopName: shopName,
