@@ -18,29 +18,21 @@ import { useEffect, useMemo, useState } from "react";
 import ScrollNotice from "~/components/ScrollNotice";
 import { ActionFunctionArgs } from "@remix-run/node";
 import { GetUserSubscriptionPlan, GetUserWords } from "~/api/serve";
-import { SessionService } from "~/utils/session.server";
 import { authenticate } from "~/shopify.server";
 import { useFetcher } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
 import { CheckOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import "./style.css";
 import { mutationAppSubscriptionCreate } from "~/api/admin";
+import { useDispatch, useSelector } from "react-redux";
+import { setUserConfig } from "~/store/modules/userConfig";
 
 const { Title, Text, Paragraph } = Typography;
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
   try {
     const formData = await request.formData();
     const words = JSON.parse(formData.get("words") as string);
@@ -57,7 +49,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.error("Error loading action:", error);
           return null;
         }
-
       case !!planInfo:
         try {
           const data = await GetUserSubscriptionPlan({
@@ -81,7 +72,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             );
             const res = await mutationAppSubscriptionCreate({
               shop,
-              accessToken,
+              accessToken: accessToken as string,
               name: payForPlan.title,
               price: {
                 amount: payForPlan.price,
@@ -105,7 +96,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             };
           }
         } catch (error) {
-          console.error("Error planInfo action:", error);
+          console.error("Error payForPlan action:", error);
         }
     }
     return null;
@@ -127,6 +118,8 @@ const Index = () => {
     [currentCredits, maxCredits],
   );
   const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const userConfig = useSelector((state: any) => state.userConfig);
   const wordsfetcher = useFetcher<any>();
   const planfetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
@@ -136,7 +129,9 @@ const Index = () => {
   useEffect(() => {
     setIsLoading(false);
     wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
-    planfetcher.submit({ planInfo: JSON.stringify(true) }, { method: "POST" });
+    if (!userConfig.plan || !userConfig.updateTime) {
+      planfetcher.submit({ planInfo: JSON.stringify(true) }, { method: "POST" });
+    }
   }, []);
 
   useEffect(() => {
@@ -149,6 +144,7 @@ const Index = () => {
   useEffect(() => {
     if (planfetcher.data) {
       setSelectedPlan(planfetcher.data.userSubscriptionPlan);
+      dispatch(setUserConfig({ plan: planfetcher.data.userSubscriptionPlan }));
       if (planfetcher.data.currentPeriodEnd) {
         const date = new Date(planfetcher.data.currentPeriodEnd).toLocaleDateString('zh-CN', {
           year: 'numeric',
@@ -156,6 +152,7 @@ const Index = () => {
           day: '2-digit'
         }).replace(/\//g, '-');
         setUpdateTime(date);
+        dispatch(setUserConfig({ updateTime: date }));
       }
     }
   }, [planfetcher.data]);

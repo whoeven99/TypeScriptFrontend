@@ -16,9 +16,11 @@ import ScrollNotice from "~/components/ScrollNotice";
 import styles from "./styles.module.css";
 import { useEffect, useState } from "react";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import { SaveAndUpdateData, WidgetConfigurations } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
+import { useSelector } from "react-redux";
+import TranslationWarnModal from "~/components/translationWarnModal";
 const { Text, Title } = Typography;
 
 interface EditData {
@@ -34,6 +36,58 @@ interface EditData {
   optionBorderColor: string;
   selectorPosition: string;
   positionData: string;
+}
+
+const initialLocalization = {
+  languages: [
+    {
+      iso_code: "zh",
+      name: "Chinese",
+      localeName: "简体中文",
+      flag: "/flags/CN.webp",
+      selected: true,
+    },
+    {
+      iso_code: "kr",
+      name: "Korean",
+      localeName: "한국어",
+      flag: "/flags/KR.webp",
+      selected: false,
+    },
+    {
+      iso_code: "fr",
+      name: "French",
+      localeName: "Français",
+      flag: "/flags/FR.webp",
+      selected: false,
+    },
+  ],
+  currencies: [
+    {
+      iso_code: "USD",
+      symbol: "$",
+      localeName: "USD",
+      selected: true,
+    },
+    {
+      iso_code: "EUR",
+      symbol: "€",
+      localeName: "EUR",
+      selected: false,
+    },
+    {
+      iso_code: "CNY",
+      symbol: "¥",
+      localeName: "CNY",
+      selected: false,
+    },
+  ],
+};
+
+const planMapping = {
+  1: "Free",
+  2: "Free",
+  3: "Starter",
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -107,51 +161,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 };
 
-const initialLocalization = {
-  languages: [
-    {
-      iso_code: "zh",
-      name: "Chinese",
-      localeName: "简体中文",
-      flag: "/flags/CN.webp",
-      selected: true,
-    },
-    {
-      iso_code: "kr",
-      name: "Korean",
-      localeName: "한국어",
-      flag: "/flags/KR.webp",
-      selected: false,
-    },
-    {
-      iso_code: "fr",
-      name: "French",
-      localeName: "Français",
-      flag: "/flags/FR.webp",
-      selected: false,
-    },
-  ],
-  currencies: [
-    {
-      iso_code: "USD",
-      symbol: "$",
-      localeName: "USD",
-      selected: true,
-    },
-    {
-      iso_code: "EUR",
-      symbol: "€",
-      localeName: "EUR",
-      selected: false,
-    },
-    {
-      iso_code: "CNY",
-      symbol: "¥",
-      localeName: "CNY",
-      selected: false,
-    },
-  ],
-};
+
 
 const Index = () => {
   // const [isSwitcherEnabled, setIsSwitcherEnabled] = useState(false);
@@ -188,8 +198,11 @@ const Index = () => {
   });
   const [isEdit, setIsEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showWarnModal, setShowWarnModal] = useState(false);
 
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { plan } = useSelector((state: any) => state.userConfig);
   const fetcher = useFetcher<any>();
   const editFetcher = useFetcher<any>();
 
@@ -251,9 +264,9 @@ const Index = () => {
       setMainBoxText(
         localization.languages.find((language) => language.selected)
           ?.localeName +
-          " / " +
-          localization.currencies.find((currency) => currency.selected)
-            ?.localeName,
+        " / " +
+        localization.currencies.find((currency) => currency.selected)
+          ?.localeName,
       );
     }
   }, [languageSelector, currencySelector, localization]);
@@ -282,9 +295,6 @@ const Index = () => {
           break;
         case "currencySelector":
           setCurrencySelector(value as boolean);
-          break;
-        case "ipOpen":
-          setIsGeoLocationEnabled(value as boolean);
           break;
         case "fontColor":
           setFontColor(value as string);
@@ -389,6 +399,19 @@ const Index = () => {
     }
   };
 
+  const handleIpOpenChange = (checked: boolean) => {
+    if (checked && plan > 3) {
+      setIsGeoLocationEnabled(checked);
+      setEditData((prev) => ({
+        ...prev,
+        ipOpen: checked,
+      }));
+    } else {
+      setIsGeoLocationEnabled(false);
+      setShowWarnModal(true);
+    }
+  };
+
   const handleSave = () => {
     editFetcher.submit(
       {
@@ -488,12 +511,6 @@ const Index = () => {
               size="middle"
               style={{ display: "flex" }}
             >
-              {/* <Card>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <Text>{isSwitcherEnabled ? t("Switcher has been enabled") : t("Switcher has been disabled")}</Text>
-                                    <Switch checked={isSwitcherEnabled} onChange={handleSwitcherEnabledChange} />
-                                </div>
-                            </Card> */}
               <Card loading={isLoading}>
                 <Title level={5}>{t("Selector type configuration:")}</Title>
                 <Select
@@ -672,7 +689,7 @@ const Index = () => {
                   <Text>Geolocation: </Text>
                   <Switch
                     checked={isGeoLocationEnabled}
-                    onChange={(checked) => handleEditData({ ipOpen: checked })}
+                    onChange={handleIpOpenChange}
                   />
                 </div>
               </Card>
@@ -733,20 +750,20 @@ const Index = () => {
                     position: "relative",
                     top:
                       selectorPosition === "top_left" ||
-                      selectorPosition === "top_right"
+                        selectorPosition === "top_right"
                         ? ((Number(positionData) * 82) / 100).toString() + "%"
                         : (
-                            ((100 - Number(positionData)) * 82) /
-                            100
-                          ).toString() + "%",
+                          ((100 - Number(positionData)) * 82) /
+                          100
+                        ).toString() + "%",
                     left:
                       selectorPosition === "top_left" ||
-                      selectorPosition === "bottom_left"
+                        selectorPosition === "bottom_left"
                         ? "0"
                         : "calc(100% - 200px)",
                     height: "auto",
                     display: "block",
-                    zIndex: "9999",
+                    zIndex: "1000",
                     color: fontColor,
                   }}
                 >
@@ -757,7 +774,7 @@ const Index = () => {
                       position: "absolute", // 改为绝对定位
                       top:
                         selectorPosition === "top_left" ||
-                        selectorPosition === "top_right"
+                          selectorPosition === "top_right"
                           ? "40px"
                           : languageSelector && currencySelector
                             ? "-170px"
@@ -1028,6 +1045,16 @@ const Index = () => {
             </Card>
           </div>
         </div>
+        <TranslationWarnModal
+          title={t("The Auto IP position has been limited due to your plan (Current plan: {{plan}})", { plan: planMapping[plan as keyof typeof planMapping] })}
+          content={t("Please upgrade to a higher plan to unlock the Auto IP position")}
+          action={() => {
+            navigate("/app/pricing");
+          }}
+          actionText={t("Upgrade")}
+          show={showWarnModal}
+          setShow={setShowWarnModal}
+        />
       </Space>
     </Page>
   );

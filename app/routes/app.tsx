@@ -45,14 +45,21 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
-import { SessionService } from "~/utils/session.server";
+import { useDispatch } from "react-redux";
+import { setUserConfig } from "~/store/modules/userConfig";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
+    const adminAuthResult = await authenticate.admin(request);
+    const { shop } = adminAuthResult.session;
+
+    const plan = await GetUserSubscriptionPlan({ shop });
+
     return json({
       apiKey: process.env.SHOPIFY_API_KEY || "",
+      plan,
     });
   } catch (error) {
     console.error("Error during authentication app:", error);
@@ -60,14 +67,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  const shopSession = {
-    shop: shop,
-    accessToken: accessToken as string,
-  };
-  sessionService.setShopSession(shopSession);
+
   try {
     const formData = await request.formData();
     // const initialization = JSON.parse(formData.get("initialization") as string);
@@ -145,6 +147,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.error("Error languageInit app:", error);
       }
     }
+
     if (languageData) {
       try {
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
@@ -238,10 +241,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (userData) {
       try {
-        // const plan = await GetUserSubscriptionPlan({ shop });
         const words = await GetUserWords({ shop });
         const data = {
-          // plan,
           chars: words?.chars || 0,
           totalChars: words?.totalChars || 0,
         };
@@ -332,15 +333,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey } = useLoaderData<typeof loader>();
+  const { apiKey, plan } = useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
 
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const loadingFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
 
   useEffect(() => {
     setIsClient(true);
+    dispatch(setUserConfig({ plan: plan?.userSubscriptionPlan || "" }));
+    dispatch(setUserConfig({ updateTime: plan?.updateTime || "" }));
     loadingFetcher.submit({ loading: JSON.stringify(true) }, {
       method: "post",
       action: "/app",

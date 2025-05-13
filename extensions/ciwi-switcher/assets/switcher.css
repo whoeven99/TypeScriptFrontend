@@ -64,6 +64,8 @@
   color: white; /* 字体颜色 */
   border: none; /* 去掉默认边框 */
   cursor: pointer; /* 鼠标指针样式 */
+  text-align: center;
+  line-height: normal;
   transition:
     background-color 0.3s,
     transform 0.2s ease; /* 增加过渡效果 */

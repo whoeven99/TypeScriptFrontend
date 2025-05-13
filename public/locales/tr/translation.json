@@ -355,11 +355,21 @@
     "Are you sure to delete this language? After deletion, the translation data will be deleted together": "Bu dil silinecek mi? Silme işlemi sonrası çeviri verileri de silinecektir",
     "discountText": {
         "premium": "Mevcut Premium planınız var, %50 indirimden yararlanın",
-        "pro": "Mevcut Pro planınız var, %75 indirimden yararlanın",
-        "basic": "Mevcut Basic planınız var, %90 indirimden yararlanın",
+        "pro": "Mevcut Pro planınız var, %25 indirimden yararlanın",
+        "basic": "Mevcut Basic planınız var, %10 indirimden yararlanın",
         "free": "Ücretsiz planınıza yükseltin, %50 indirimden yararlanın"
     },
     "The specified fields were not found in the store.": "Belirtilen alanlar mağazada bulunamadı.",
     "Don’t prompt again next time": "Bir daha sorma",
-    "Localized content:": "Yerelleştirilmiş içerik:"
+    "Localized content:": "Yerelleştirilmiş içerik:",
+    "Product Options": "Ürün Seçenekleri",
+    "Metafield": "Metafield",
+    "value": "değer",
+    "name": "ad",
+    "ProductType": "Ürün Tipi",
+    "Description": "Açıklama",
+    "Title": "Başlık",
+    "Meta description": "Meta açıklama",
+    "URL handle": "URL işleyici",
+    "Meta title": "Meta başlık"
 }

@@ -13,10 +13,11 @@ import {
   Table,
   Typography,
 } from "antd";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import {
   DeleteGlossaryInfo,
   GetGlossaryByShopName,
+  GetUserSubscriptionPlan,
   InsertGlossaryInfo,
   UpdateTargetTextById,
 } from "~/api/serve";
@@ -32,6 +33,9 @@ import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import { SessionService } from "~/utils/session.server";
+import { setUserConfig } from "~/store/modules/userConfig";
+import { handleContactSupport } from "../app._index/route";
+import TranslationWarnModal from "~/components/translationWarnModal";
 const { Title, Text } = Typography;
 
 export interface GLossaryDataType {
@@ -45,26 +49,24 @@ export interface GLossaryDataType {
   loading: boolean;
 }
 
+const planMapping = {
+  1: 0,
+  2: 0,
+  3: 0,
+  4: 10,
+  5: 50,
+  6: 100,
+};
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-  console.log(`${shop} load glossary`);
   return null;
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
@@ -77,7 +79,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         try {
           const data = await GetGlossaryByShopName({
             shop,
-            accessToken,
+            accessToken: accessToken as string,
           });
           return json({ data: data });
         } catch (error) {
@@ -139,12 +141,15 @@ const Index = () => {
   const [isGlossaryModalOpen, setIsGlossaryModalOpen] =
     useState<boolean>(false);
   const [glossaryModalId, setGlossaryModalId] = useState<number>(-1);
+  const [showWarnModal, setShowWarnModal] = useState<boolean>(false);
   const hasSelected = useMemo(() => {
     return selectedRowKeys.length > 0;
   }, [selectedRowKeys]);
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { plan } = useSelector((state: any) => state.userConfig);
   const loadingFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
@@ -152,12 +157,7 @@ const Index = () => {
   const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
 
   useEffect(() => {
-    const formData = new FormData();
-    formData.append("loading", JSON.stringify(true));
-    loadingFetcher.submit(formData, {
-      method: "post",
-      action: "/app/glossary",
-    });
+    loadingFetcher.submit({ loading: JSON.stringify(true) }, { method: "POST" });
     setIsMobile(window.innerWidth < 768);
     shopify.loading(true);
   }, []);
@@ -241,10 +241,8 @@ const Index = () => {
   };
 
   const handleIsModalOpen = (title: string, key: number) => {
-    if (title === "Create rule" && dataSource.length >= 10) {
-      shopify.toast.show(
-        t("You can add up to {{count}} translation rules", { count: 10 }),
-      );
+    if (title === "Create rule" && dataSource.length >= planMapping[plan as keyof typeof planMapping]) {
+      setShowWarnModal(true);
     } else {
       setTitle(t(title));
       setGlossaryModalId(key);
@@ -421,8 +419,18 @@ const Index = () => {
         setIsModalOpen={setIsGlossaryModalOpen}
         shopLocales={shopLocales}
       />
+      <TranslationWarnModal
+        title={t("The glossary limitations has been reached (Current restrictions: {{count}})", { count: planMapping[plan as keyof typeof planMapping] })}
+        content={t("Please upgrade to a higher plan to remove the current glossary limitations")}
+        action={() => {
+          navigate("/app/pricing");
+        }}
+        actionText={t("Upgrade")}
+        show={showWarnModal}
+        setShow={setShowWarnModal}
+      />
     </Page>
-  );
-};
+  )
+}
 
 export default Index;

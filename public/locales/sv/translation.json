@@ -355,12 +355,22 @@
     "Are you sure to delete this language? After deletion, the translation data will be deleted together": "Är du säker på att du vill ta bort detta språk? Efter borttagning kommer översättningsdata att tas bort tillsammans",
     "discountText": {
         "premium": "Aktuellt plan är Premium plan, njut av 50% rabatt",
-        "pro": "Aktuellt plan är Pro plan, njut av 75% rabatt",
-        "basic": "Aktuellt plan är Basic plan, njut av 90% rabatt",
+        "pro": "Aktuellt plan är Pro plan, njut av 25% rabatt",
+        "basic": "Aktuellt plan är Basic plan, njut av 10% rabatt",
         "free": "Uppgradera till betalplan, njut av 50% rabatt"
     },
     "The specified fields were not found in the store.": "De angivna fälten hittades inte i butiken.",
     "Don’t prompt again next time": "Fråga inte igen nästa gång",
-    "Localized content:": "Lokaliserat innehåll:"
+    "Localized content:": "Lokaliserat innehåll:",
+    "Product Options": "Produktalternativ",
+    "Metafield": "Metafält",
+    "value": "värde",
+    "name": "namn",
+    "ProductType": "Produkttyp",
+    "Description": "Beskrivning",
+    "Title": "Titel",
+    "Meta description": "Meta-beskrivning",
+    "URL handle": "URL-hanterare",
+    "Meta title": "Meta-titel"
 }   
   

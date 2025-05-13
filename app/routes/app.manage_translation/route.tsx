@@ -11,6 +11,7 @@ import {
   useFetcher,
   useLoaderData,
   useLocation,
+  useNavigate,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
@@ -21,8 +22,9 @@ import { updateData } from "~/store/modules/languageItemsData";
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
-import { setLocale } from "~/store/modules/userConfig";
+import { setUserConfig } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
+import TranslationWarnModal from "~/components/translationWarnModal";
 
 const { Text, Title } = Typography;
 
@@ -38,6 +40,12 @@ interface TableDataType {
   allItems: number;
   sync_status: boolean;
   navigation: string;
+}
+
+const planMapping = {
+  1: "Free",
+  2: "Free",
+  3: "Starter",
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -99,20 +107,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { shopLanguages, searchTerm } = useLoaderData<typeof loader>();
-  // const [words, setWords] = useState<WordsType>();
-  // const [shopLanguages, setShopLanguages] = useState<ShopLocalesType[]>();
   const [selectOptions, setSelectOptions] = useState<ManageSelectDataType[]>([]);
   const [primaryLanguage, setPrimaryLanguage] = useState<string>();
   const [current, setCurrent] = useState<string>("");
-  // const [disable, setDisable] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [showWarnModal, setShowWarnModal] = useState(false);
   const { key } = useMemo(() => location.state || {}, [location.state]);
   const items = useSelector((state: any) => state.languageItemsData);
+  const { plan } = useSelector((state: any) => state.userConfig);
 
-  // const fetcher = useFetcher<FetchType>();
   const productsFetcher = useFetcher<any>();
   const collectionsFetcher = useFetcher<any>();
   const articlesFetcher = useFetcher<any>();
@@ -396,7 +403,7 @@ const Index = () => {
     const locale = shopLanguages.find(
       (language) => language.primary === true,
     )?.locale;
-    dispatch(setLocale(locale || ""));
+    dispatch(setUserConfig({ locale: locale || "" }));
   }, []);
 
   // useEffect(() => {
@@ -761,16 +768,19 @@ const Index = () => {
                   cardTitle={t("Products")}
                   dataSource={productsDataSource}
                   current={current}
+                  setShowWarnModal={setShowWarnModal}
                 />
                 <ManageTranslationsCard
                   cardTitle={t("Online Store")}
                   dataSource={onlineStoreDataSource}
                   current={current}
+                  setShowWarnModal={setShowWarnModal}
                 />
                 <ManageTranslationsCard
                   cardTitle={t("Settings")}
                   dataSource={settingsDataSource}
                   current={current}
+                  setShowWarnModal={setShowWarnModal}
                 />
               </Space>
             </div>
@@ -779,6 +789,16 @@ const Index = () => {
         </Space>
       )}
       <Outlet />
+      <TranslationWarnModal
+        title={t("The Translation Editor has been limited due to your plan (Current plan: {{plan}})", { plan: planMapping[plan as keyof typeof planMapping] })}
+        content={t("Please upgrade to a higher plan to unlock the Translation Editor")}
+        action={() => {
+          navigate("/app/pricing");
+        }}
+        actionText={t("Upgrade")}
+        show={showWarnModal}
+        setShow={setShowWarnModal}
+      />
     </Page>
   );
 };

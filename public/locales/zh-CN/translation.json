@@ -354,11 +354,21 @@
   "Are you sure to delete this language? After deletion, the translation data will be deleted together": "您确定要删除此语言吗？删除后，翻译数据将一起删除",
   "discountText": {
     "premium": "当前为Premium 计划，享受 5 折优惠",
-    "pro": "当前为Pro 计划，享受 75折优惠",
-    "basic": "当前为Basic 计划，享受 9 折优惠",
+    "pro": "当前为Pro 计划，享受 25 折优惠",
+    "basic": "当前为Basic 计划，享受 10 折优惠",
     "free": "升级为付费计划，可享 5 折优惠"
   },
   "The specified fields were not found in the store.": "指定的字段未在商店中找到。",
   "Don’t prompt again next time": "不再提示",
-  "Localized content:": "本地化内容："
+  "Localized content:": "本地化内容：",
+  "Product Options": "产品选项",
+  "Metafield": "元字段",
+  "value": "值",
+  "name": "名称",
+  "ProductType": "产品类型",
+  "Description": "描述",
+  "Title": "标题",
+  "Meta description": "元描述",
+  "URL handle": "URL 处理程序",
+  "Meta title": "元标题"
 }
