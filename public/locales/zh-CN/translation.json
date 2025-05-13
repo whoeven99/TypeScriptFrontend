@@ -370,5 +370,10 @@
   "Title": "标题",
   "Meta description": "元描述",
   "URL handle": "URL 处理程序",
-  "Meta title": "元标题"
+  "Meta title": "元标题",
+  "The Translation Editor has been limited due to your plan (Current plan: {{plan}})": "由于您的计划，翻译编辑器已被限制（当前计划：{{plan}}）",
+  "Please upgrade to a higher plan to unlock the Translation Editor": "请升级到更高计划以解锁翻译编辑器",
+  "The Auto IP position has been limited due to your plan (Current plan: {{plan}})": "由于您的计划，自动IP位置已被限制（当前计划：{{plan}}）",
+  "Please upgrade to a higher plan to unlock the Auto IP position": "请升级到更高计划以解锁自动IP位置",
+  "Upgrade": "升级"
 }

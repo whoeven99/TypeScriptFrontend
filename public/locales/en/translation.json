@@ -371,5 +371,10 @@
   "Title": "Title",
   "Meta description": "Meta description",
   "URL handle": "URL handle",
-  "Meta title": "Meta title"
+  "Meta title": "Meta title",
+  "The Translation Editor has been limited due to your plan (Current plan: {{plan}})": "The Translation Editor has been limited due to your plan (Current plan: {{plan}})",
+  "Please upgrade to a higher plan to unlock the Translation Editor": "Please upgrade to a higher plan to unlock the Translation Editor",
+  "The Auto IP position has been limited due to your plan (Current plan: {{plan}})": "The Auto IP position has been limited due to your plan (Current plan: {{plan}})",
+  "Please upgrade to a higher plan to unlock the Auto IP position": "Please upgrade to a higher plan to unlock the Auto IP position",
+  "Upgrade": "Upgrade"
 }

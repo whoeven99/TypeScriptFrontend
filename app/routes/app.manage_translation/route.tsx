@@ -59,7 +59,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     accessToken: accessToken as string,
   });
 
-
   console.log(`${shop} load manage`);
   return json({
     shopLanguages: shopLanguages,
