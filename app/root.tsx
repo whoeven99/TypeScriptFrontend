@@ -148,12 +148,6 @@ export default function App() {
       })(window,document,'script','dataLayer','GTM-NVPT5XDV')`;
     document.head.appendChild(script);
 
-    // Google Analytics 初始化脚本
-    const gaScript = document.createElement('script');
-    gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-F1BN24YVJN';
-    gaScript.async = true;
-    document.head.appendChild(gaScript);
-
     const gaInitScript = document.createElement('script');
     gaInitScript.innerHTML = `
       window.dataLayer = window.dataLayer || [];
@@ -162,6 +156,16 @@ export default function App() {
       gtag('config', 'G-F1BN24YVJN');
     `;
     document.head.appendChild(gaInitScript);
+
+    const gtagScript = document.createElement('script');
+    gtagScript.innerHTML = `
+      gtag('event', 'conversion', {
+        'send_to': 'AW-11460630366/7Dj1CNvO4cYaEN6u7dgq',
+        'value': 1.0,
+        'currency': 'USD'
+      });
+    `;
+    document.head.appendChild(gtagScript);
   }, []);
 
   return (
