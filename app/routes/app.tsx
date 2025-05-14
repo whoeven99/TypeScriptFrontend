@@ -63,6 +63,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
   } catch (error) {
     console.error("Error during authentication app:", error);
+    return json({
+      apiKey: process.env.SHOPIFY_API_KEY || "",
+      plan: {
+        userSubscriptionPlan: 2,
+        updateTime: "",
+      },
+    });
   }
 };
 
@@ -72,7 +79,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const formData = await request.formData();
-    // const initialization = JSON.parse(formData.get("initialization") as string);
     const loading = JSON.parse(formData.get("loading") as string);
     const languageInit = JSON.parse(formData.get("languageInit") as string);
     const languageData = JSON.parse(formData.get("languageData") as string);
@@ -86,18 +92,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const rate = JSON.parse(formData.get("rate") as string);
     const credits = JSON.parse(formData.get("credits") as string);
     const recalculate = JSON.parse(formData.get("recalculate") as string);
-    // if (initialization) {
-    //   try {
-    //     const data: boolean = await AddUserFreeSubscription({ shop });
-    //     return json({ data });
-    //   } catch (error) {
-    //     console.error("Error userCharsInitialization:", error);
-    //     return json(
-    //       { error: "Error userCharsInitialization" },
-    //       { status: 500 },
-    //     );
-    //   }
-    // }
 
     if (loading) {
       try {

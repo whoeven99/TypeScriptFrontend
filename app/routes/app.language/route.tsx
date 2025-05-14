@@ -10,6 +10,7 @@ import {
   Modal,
   Popconfirm,
   Checkbox,
+  Skeleton,
 } from "antd";
 import { useEffect, useState, startTransition } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
@@ -539,9 +540,6 @@ const Index = () => {
       localeName: languageLocaleInfo[lang.locale]?.Local || "",
     }));
     dispatch(setTableData(data));
-    // if (location.state?.publishLanguageCode && !data.find((item: any) => item.locale === location.state?.publishLanguageCode)?.published) {
-    //   setSelectedRow(data.find((item: any) => item.locale === location.state?.publishLanguageCode) || dataSource.find((item: any) => item.locale === location.state?.publishLanguageCode));
-    // }
   }, [shopLanguagesLoad, languagesLoad]); // 依赖 shopLanguagesLoad 和 status
 
   useEffect(() => {
@@ -600,7 +598,6 @@ const Index = () => {
           checked={record.published}
           onChange={(checked) => handlePublishChange(record.locale, checked)}
           loading={record.publishLoading} // 使用每个项的 loading 状态
-        // onClick={() => handleConfirmPublishModal()}
         />
       ),
     },
@@ -614,7 +611,6 @@ const Index = () => {
           checked={record.autoTranslate}
           onChange={(checked) => handleAutoUpdateTranslationChange(record.locale, checked)}
           loading={record.autoTranslateLoading} // 使用每个项的 loading 状态
-        // onClick={() => handleConfirmPublishModal()}
         />
       ),
     },
@@ -626,7 +622,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button
-            onClick={() => handleTranslate(record.locale)}
+            onClick={() => navigate("/app/translate", { state: { from: "/app/language", selectedLanguageCode: record.locale } })}
             style={{ width: "100px" }}
             type="primary"
           >
@@ -697,17 +693,12 @@ const Index = () => {
       if (data?.success) {
         dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
         dispatch(setAutoTranslateState({ locale, autoTranslate: checked }));
-        setLanguagesLoad(languagesLoad.map((item: any) =>
-          item.target === locale ? { ...item, autoTranslate: checked } : { ...item, autoTranslate: false }
-        ));
         shopify.toast.show(t("Auto translate updated successfully"));
       }
     }
   };
 
-  const handleTranslate = async (locale: string) => {
-    navigate("/app/translate", { state: { from: "/app/language", selectedLanguageCode: locale } });
-  };
+
 
   //表格编辑
   const handleDelete = () => {
@@ -782,7 +773,13 @@ const Index = () => {
                   : null}
               </Text>
             </Flex>
-            <div>
+            {loading
+              ?
+              <Space>
+                <Skeleton.Button active />
+                <Skeleton.Button active />
+              </Space>
+              :
               <Space>
                 <Button type="default" onClick={PreviewClick}>
                   {t("Preview store")}
@@ -791,7 +788,7 @@ const Index = () => {
                   {t("Add Language")}
                 </Button>
               </Space>
-            </div>
+            }
           </Flex>
           <Table
             virtual={isMobile}
@@ -807,7 +804,6 @@ const Index = () => {
       <AddLanguageModal
         isVisible={isLanguageModalOpen}
         setIsModalOpen={setIsLanguageModalOpen}
-        allLanguages={allLanguages}
         languageLocaleInfo={languageLocaleInfo}
         primaryLanguage={shopPrimaryLanguage[0]}
       />

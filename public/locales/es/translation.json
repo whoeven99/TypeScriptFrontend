@@ -370,6 +370,16 @@
     "Title": "Título",
     "Meta description": "Descripción meta",
     "URL handle": "URL de manejador",
-    "Meta title": "Título meta"
+    "Meta title": "Título meta",
+    "The Translation Editor has been limited due to your plan (Current plan: {{plan}})": "El editor de traducción ha sido limitado debido a su plan (Plan actual: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Translation Editor": "Por favor, actualice a un plan más alto para desbloquear el editor de traducción",
+    "The Auto IP position has been limited due to your plan (Current plan: {{plan}})": "La posición IP automática ha sido limitada debido a su plan (Plan actual: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Auto IP position": "Por favor, actualice a un plan más alto para desbloquear la posición IP automática",
+    "Upgrade": "Actualizar",
+    "The glossary limitations has been reached (Current restrictions: {{count}})": "Las limitaciones del glosario han sido alcanzadas (Restricciones actuales: {{count}})",
+    "Please upgrade to a higher plan to remove the current glossary limitations": "Por favor, actualice a un plan más alto para eliminar las limitaciones actuales del glosario",
+    "Add failed": "Agregar fallado",
+    "Language not found": "Idioma no encontrado",
+    "You have reached your shopify plan limit(Max<=20)": "Has alcanzado el límite de tu plan de Shopify (Max<=20)"
 }
   

@@ -370,6 +370,16 @@
     "Title": "タイトル",
     "Meta description": "メタディスクリプション",
     "URL handle": "URLハンドラー",
-    "Meta title": "メタタイトル"
+    "Meta title": "メタタイトル",
+    "The Translation Editor has been limited due to your plan (Current plan: {{plan}})": "翻訳エディターがプランによって制限されています（現在のプラン: {{plan}}）",
+    "Please upgrade to a higher plan to unlock the Translation Editor": "より高いプランにアップグレードして翻訳エディターをロック解除してください",
+    "The Auto IP position has been limited due to your plan (Current plan: {{plan}})": "自動IP位置がプランによって制限されています（現在のプラン: {{plan}}）",
+    "Please upgrade to a higher plan to unlock the Auto IP position": "より高いプランにアップグレードして自動IP位置をロック解除してください",
+    "Upgrade": "アップグレード",
+    "The glossary limitations has been reached (Current restrictions: {{count}})": "用語集の制限が達成されました（現在の制限: {{count}}）",
+    "Please upgrade to a higher plan to remove the current glossary limitations": "より高いプランにアップグレードして現在の用語集の制限を削除してください",
+    "Add failed": "追加に失敗しました",
+    "Language not found": "言語が見つかりません",
+    "You have reached your shopify plan limit(Max<=20)": "Shopifyプランの制限に達しました（Max<=20）"
 }   
   

@@ -370,6 +370,16 @@
     "Title": "標題",
     "Meta description": "元描述",
     "URL handle": "URL 處理程序",
-    "Meta title": "元標題"
+    "Meta title": "元標題",
+    "The Translation Editor has been limited due to your plan (Current plan: {{plan}})": "由於您的計劃，翻譯編輯器已被限制（當前計劃：{{plan}}）",
+    "Please upgrade to a higher plan to unlock the Translation Editor": "請升級到更高計劃以解鎖翻譯編輯器",
+    "The Auto IP position has been limited due to your plan (Current plan: {{plan}})": "由於您的計劃，自動IP位置已被限制（當前計劃：{{plan}}）",
+    "Please upgrade to a higher plan to unlock the Auto IP position": "請升級到更高計劃以解鎖自動IP位置",
+    "Upgrade": "升級",
+    "The glossary limitations has been reached (Current restrictions: {{count}})": "術語表限制已達到（當前限制：{{count}}）",
+    "Please upgrade to a higher plan to remove the current glossary limitations": "請升級到更高計劃以移除當前術語表限制",
+    "Add failed": "新增失敗",
+    "Language not found": "語言未找到",
+    "You have reached your shopify plan limit(Max<=20)": "您已達到 Shopify 計劃限制（Max<=20）"
 }
-  
+
