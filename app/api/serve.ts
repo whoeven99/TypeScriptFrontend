@@ -28,7 +28,7 @@ export const SingleTextTranslate = async ({
   context,
   key,
   type,
-  server
+  server,
 }: {
   shopName: string;
   source: string;

@@ -370,6 +370,16 @@
     "Title": "Titel",
     "Meta description": "Meta-Beschreibung",
     "URL handle": "URL-Handle",
-    "Meta title": "Meta-Titel"
+    "Meta title": "Meta-Titel",
+    "The Translation Editor has been limited due to your plan (Current plan: {{plan}})": "De vertalingeditor is beperkt vanwege uw plan (Huidig plan: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Translation Editor": "Upgrade naar een hoger plan om de vertalingeditor te ontgrendelen",
+    "The Auto IP position has been limited due to your plan (Current plan: {{plan}})": "De automatische IP-positie is beperkt vanwege uw plan (Huidig plan: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Auto IP position": "Upgrade naar een hoger plan om de automatische IP-positie te ontgrendelen",
+    "Upgrade": "Upgrade",
+    "The glossary limitations has been reached (Current restrictions: {{count}})": "De glossargrondslag is bereikt (Huidige beperkingen: {{count}})",
+    "Please upgrade to a higher plan to remove the current glossary limitations": "Upgrade naar een hoger plan om de huidige glossargrondslag te verwijderen",
+    "Add failed": "Toevoegen mislukt",
+    "Language not found": "Taal niet gevonden",
+    "You have reached your shopify plan limit(Max<=20)": "U heeft uw Shopify-planlimiet bereikt (Max<=20)"
 }
   

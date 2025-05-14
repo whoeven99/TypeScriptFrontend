@@ -371,5 +371,15 @@
     "Title": "Заголовок",
     "Meta description": "Мета-описание",
     "URL handle": "URL-обработчик",
-    "Meta title": "Мета-заголовок"
+    "Meta title": "Мета-заголовок",
+    "The Translation Editor has been limited due to your plan (Current plan: {{plan}})": "Редактор перевода ограничен вашим планом (Текущий план: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Translation Editor": "Пожалуйста, обновите до более высокого плана, чтобы разблокировать редактор перевода",
+    "The Auto IP position has been limited due to your plan (Current plan: {{plan}})": "Положение автоматического IP ограничено вашим планом (Текущий план: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Auto IP position": "Пожалуйста, обновите до более высокого плана, чтобы разблокировать автоматическое положение IP",
+    "Upgrade": "Обновить",
+    "The glossary limitations has been reached (Current restrictions: {{count}})": "Ограничения глоссария достигнуты (Текущие ограничения: {{count}})",
+    "Please upgrade to a higher plan to remove the current glossary limitations": "Пожалуйста, обновите до более высокого плана, чтобы удалить текущие ограничения глоссария",
+    "Add failed": "Добавление не удалось",
+    "Language not found": "Язык не найден",
+    "You have reached your shopify plan limit(Max<=20)": "Вы достигли лимита вашего плана Shopify (Max<=20)"
 }

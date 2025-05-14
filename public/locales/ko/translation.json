@@ -369,6 +369,16 @@
     "Title": "제목",
     "Meta description": "메타 설명",
     "URL handle": "URL 처리기",
-    "Meta title": "메타 제목"
+    "Meta title": "메타 제목",
+    "The Translation Editor has been limited due to your plan (Current plan: {{plan}})": "번역 편집기가 플랜에 따라 제한되었습니다 (현재 플랜: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Translation Editor": "더 높은 플랜으로 업그레이드하여 번역 편집기를 잠금 해제하세요",
+    "The Auto IP position has been limited due to your plan (Current plan: {{plan}})": "자동 IP 위치가 플랜에 따라 제한되었습니다 (현재 플랜: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Auto IP position": "더 높은 플랜으로 업그레이드하여 자동 IP 위치를 잠금 해제하세요",
+    "Upgrade": "업그레이드",
+    "The glossary limitations has been reached (Current restrictions: {{count}})": "용어집 제한이 도달했습니다 (현재 제한: {{count}})",
+    "Please upgrade to a higher plan to remove the current glossary limitations": "더 높은 플랜으로 업그레이드하여 현재 용어집 제한을 제거하세요",
+    "Add failed": "추가 실패",
+    "Language not found": "언어를 찾을 수 없습니다",
+    "You have reached your shopify plan limit(Max<=20)": "Shopify 플랜 제한에 도달했습니다 (Max<=20)"
 } 
   

@@ -1,81 +1,270 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, Input, Table, Space, message, Button, InputRef } from "antd";
+import { Modal, Input, Table, Space, message, Button, InputRef, Collapse, Checkbox, Spin, Empty } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import SelectedTag from "../../../components/selectedTag";
 import {
-  AllLanguagesType,
   LanguagesDataType,
   ShopLocalesType,
 } from "~/routes/app.language/route";
-import { FetcherWithComponents } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateTableData } from "~/store/modules/languageTableData";
 import { useTranslation } from "react-i18next";
 import { useFetcher } from "@remix-run/react";
 
+const { Panel } = Collapse;
+
 interface AddLanguageModalProps {
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
-  allLanguages: AllLanguagesType[];
   languageLocaleInfo: any;
   primaryLanguage: ShopLocalesType | undefined;
 }
 
-interface AddLanguageType {
-  key: number;
-  isoCode: string;
-  src: string[] | null;
-  name: string;
-  state: string;
-}
+
+const regions = [
+  // 亚洲
+  {
+    name: "Asia",
+    countries: [
+      { isoCode: "ar", name: "Arabic", flag: "ar" },
+      { isoCode: "as", name: "Assamese", flag: "🇮🇳" },
+      { isoCode: "hy", name: "Armenian", flag: "🇦🇲" },
+      { isoCode: "az", name: "Azerbaijani", flag: "🇦🇿" },
+      { isoCode: "bn", name: "Bangla", flag: "🇧🇩" },
+      { isoCode: "my", name: "Burmese", flag: "🇲🇲" },
+      { isoCode: "zh-CN", name: "Chinese (Simplified)", flag: "🇨🇳" },
+      { isoCode: "zh-TW", name: "Chinese (Traditional)", flag: "🇹🇼" },
+      { isoCode: "dz", name: "Dzongkha", flag: "🇧🇹" },
+      { isoCode: "ka", name: "Georgian", flag: "🇬🇪" },
+      { isoCode: "gu", name: "Gujarati", flag: "🇮🇳" },
+      { isoCode: "he", name: "Hebrew", flag: "🇮🇱" },
+      { isoCode: "hi", name: "Hindi", flag: "🇮🇳" },
+      { isoCode: "id", name: "Indonesian", flag: "🇮🇩" },
+      { isoCode: "ja", name: "Japanese", flag: "🇯🇵" },
+      { isoCode: "jv", name: "Javanese", flag: "🇮🇩" },
+      { isoCode: "kn", name: "Kannada", flag: "🇮🇳" },
+      { isoCode: "ks", name: "Kashmiri", flag: "🇮🇳" },
+      { isoCode: "kk", name: "Kazakh", flag: "🇰🇿" },
+      { isoCode: "km", name: "Khmer", flag: "🇰🇭" },
+      { isoCode: "ko", name: "Korean", flag: "🇰🇷" },
+      { isoCode: "ku", name: "Kurdish", flag: "🇮🇶" },
+      { isoCode: "ky", name: "Kyrgyz", flag: "🇰🇬" },
+      { isoCode: "lo", name: "Lao", flag: "🇱🇦" },
+      { isoCode: "ml", name: "Malayalam", flag: "🇮🇳" },
+      { isoCode: "mr", name: "Marathi", flag: "🇮🇳" },
+      { isoCode: "mn", name: "Mongolian", flag: "🇲🇳" },
+      { isoCode: "ne", name: "Nepali", flag: "🇳🇵" },
+      { isoCode: "or", name: "Odia", flag: "🇮🇳" },
+      { isoCode: "ps", name: "Pashto", flag: "🇦🇫" },
+      { isoCode: "fa", name: "Persian", flag: "🇮🇷" },
+      { isoCode: "pa", name: "Punjabi", flag: "🇮🇳" },
+      { isoCode: "sa", name: "Sanskrit", flag: "🇮🇳" },
+      { isoCode: "sd", name: "Sindhi", flag: "🇵🇰" },
+      { isoCode: "si", name: "Sinhala", flag: "🇱🇰" },
+      { isoCode: "ta", name: "Tamil", flag: "🇮🇳" },
+      { isoCode: "te", name: "Telugu", flag: "🇮🇳" },
+      { isoCode: "th", name: "Thai", flag: "🇹🇭" },
+      { isoCode: "bo", name: "Tibetan", flag: "🇨🇳" },
+      { isoCode: "ur", name: "Urdu", flag: "🇵🇰" },
+      { isoCode: "ug", name: "Uyghur", flag: "🇨🇳" },
+      { isoCode: "uz", name: "Uzbek", flag: "🇺🇿" },
+      { isoCode: "vi", name: "Vietnamese", flag: "🇻🇳" },
+    ],
+  },
+
+  // 欧洲
+  {
+    name: "Europe",
+    countries: [
+      { isoCode: "sq", name: "Albanian", flag: "🇦🇱" },
+      { isoCode: "eu", name: "Basque", flag: "🇪🇸" },
+      { isoCode: "be", name: "Belarusian", flag: "🇧🇾" },
+      { isoCode: "bs", name: "Bosnian", flag: "🇧🇦" },
+      { isoCode: "br", name: "Breton", flag: "🇫🇷" },
+      { isoCode: "bg", name: "Bulgarian", flag: "🇧🇬" },
+      { isoCode: "ca", name: "Catalan", flag: "🇪🇸" },
+      { isoCode: "ce", name: "Chechen", flag: "🇷🇺" },
+      { isoCode: "kw", name: "Cornish", flag: "🏴" },
+      { isoCode: "hr", name: "Croatian", flag: "🇭🇷" },
+      { isoCode: "cs", name: "Czech", flag: "🇨🇿" },
+      { isoCode: "da", name: "Danish", flag: "🇩🇰" },
+      { isoCode: "nl", name: "Dutch", flag: "🇳🇱" },
+      { isoCode: "eo", name: "Esperanto", flag: "eo" },
+      { isoCode: "et", name: "Estonian", flag: "🇪🇪" },
+      { isoCode: "fo", name: "Faroese", flag: "🇫🇴" },
+      { isoCode: "gl", name: "Galician", flag: "🇪🇸" },
+      { isoCode: "de", name: "German", flag: "🇩🇪" },
+      { isoCode: "el", name: "Greek", flag: "🇬🇷" },
+      { isoCode: "fi", name: "Finnish", flag: "🇫🇮" },
+      { isoCode: "fr", name: "French", flag: "🇫🇷" },
+      { isoCode: "hu", name: "Hungarian", flag: "🇭🇺" },
+      { isoCode: "is", name: "Icelandic", flag: "🇮🇸" },
+      { isoCode: "ga", name: "Irish", flag: "🇮🇪" },
+      { isoCode: "it", name: "Italian", flag: "🇮🇹" },
+      { isoCode: "lv", name: "Latvian", flag: "🇱🇻" },
+      { isoCode: "lt", name: "Lithuanian", flag: "🇱🇹" },
+      { isoCode: "lb", name: "Luxembourgish", flag: "🇱🇺" },
+      { isoCode: "mk", name: "Macedonian", flag: "🇲🇰" },
+      { isoCode: "mt", name: "Maltese", flag: "🇲🇹" },
+      { isoCode: "gv", name: "Manx", flag: "🇮🇲" },
+      { isoCode: "se", name: "Northern Sami", flag: "🇳🇴" },
+      { isoCode: "no", name: "Norwegian", flag: "🇳🇴" },
+      { isoCode: "nb", name: "Norwegian (Bokmål)", flag: "🇳🇴" },
+      { isoCode: "nn", name: "Norwegian Nynorsk", flag: "🇳🇴" },
+      { isoCode: "pl", name: "Polish", flag: "🇵🇱" },
+      { isoCode: "pt-PT", name: "Portuguese (Portugal)", flag: "🇵🇹" },
+      { isoCode: "ro", name: "Romanian", flag: "🇷🇴" },
+      { isoCode: "rm", name: "Romansh", flag: "🇨🇭" },
+      { isoCode: "ru", name: "Russian", flag: "🇷🇺" },
+      { isoCode: "sc", name: "Sardinian", flag: "🇮🇹" },
+      { isoCode: "gd", name: "Scottish Gaelic", flag: "gd" },
+      { isoCode: "sr", name: "Serbian", flag: "🇷🇸" },
+      { isoCode: "sk", name: "Slovak", flag: "🇸🇰" },
+      { isoCode: "sl", name: "Slovenian", flag: "🇸🇮" },
+      { isoCode: "es", name: "Spanish", flag: "🇪🇸" },
+      { isoCode: "sv", name: "Swedish", flag: "🇸🇪" },
+      { isoCode: "tr", name: "Turkish", flag: "🇹🇷" },
+      { isoCode: "tk", name: "Turkmen", flag: "🇹🇲" },
+      { isoCode: "uk", name: "Ukrainian", flag: "🇺🇦" },
+      { isoCode: "cy", name: "Welsh", flag: "cy" },
+      { isoCode: "fy", name: "Western Frisian", flag: "🇳🇱" },
+      { isoCode: "yi", name: "Yiddish", flag: "🇩🇪" },
+    ],
+  },
+
+  // 非洲
+  {
+    name: "Africa",
+    countries: [
+      { isoCode: "af", name: "Afrikaans", flag: "🇿🇦" },
+      { isoCode: "ak", name: "Akan", flag: "🇬🇭" },
+      { isoCode: "am", name: "Amharic", flag: "🇪🇹" },
+      { isoCode: "bm", name: "Bambara", flag: "🇲🇱" },
+      { isoCode: "ee", name: "Ewe", flag: "🇬🇭" },
+      { isoCode: "ff", name: "Fulah", flag: "🌍" },
+      { isoCode: "lg", name: "Ganda", flag: "🇺🇬" },
+      { isoCode: "ha", name: "Hausa", flag: "🇳🇬" },
+      { isoCode: "ig", name: "Igbo", flag: "🇳🇬" },
+      { isoCode: "ki", name: "Kikuyu", flag: "🇰🇪" },
+      { isoCode: "rw", name: "Kinyarwanda", flag: "🇷🇼" },
+      { isoCode: "ln", name: "Lingala", flag: "🇨🇩" },
+      { isoCode: "lu", name: "Luba-Katanga", flag: "🇨🇩" },
+      { isoCode: "mg", name: "Malagasy", flag: "🇲🇬" },
+      { isoCode: "nd", name: "North Ndebele", flag: "🇿🇼" },
+      { isoCode: "om", name: "Oromo", flag: "🇪🇹" },
+      { isoCode: "rn", name: "Rundi", flag: "🇧🇮" },
+      { isoCode: "sg", name: "Sango", flag: "🇨🇫" },
+      { isoCode: "sn", name: "Shona", flag: "🇿🇼" },
+      { isoCode: "so", name: "Somali", flag: "🇸🇴" },
+      { isoCode: "su", name: "Sundanese", flag: "🇮🇩" },
+      { isoCode: "sw", name: "Swahili", flag: "🇹🇿" },
+      { isoCode: "tg", name: "Tajik", flag: "🇹🇯" },
+      { isoCode: "tt", name: "Tatar", flag: "tt" },
+      { isoCode: "ti", name: "Tigrinya", flag: "🇪🇷" },
+      { isoCode: "wo", name: "Wolof", flag: "🇸🇳" },
+      { isoCode: "xh", name: "Xhosa", flag: "🇿🇦" },
+      { isoCode: "yo", name: "Yoruba", flag: "🇳🇬" },
+      { isoCode: "zu", name: "Zulu", flag: "🇿🇦" },
+    ],
+  },
+
+  // 北美洲
+  {
+    name: "North America",
+    countries: [
+      { isoCode: "en", name: "English", flag: "🇺🇸" },
+      { isoCode: "fr", name: "French", flag: "🇨🇦" },
+      { isoCode: "kl", name: "Kalaallisut", flag: "🇬🇱" },
+      { isoCode: "es", name: "Spanish", flag: "🇲🇽" },
+    ],
+  },
+
+  // 南美洲
+  {
+    name: "South America",
+    countries: [
+      { isoCode: "pt-BR", name: "Portuguese (Brazil)", flag: "🇧🇷" },
+      { isoCode: "qu", name: "Quechua", flag: "🇵🇪" },
+      { isoCode: "es", name: "Spanish", flag: "🇦🇷" },
+    ],
+  },
+
+  // 大洋洲
+  {
+    name: "Oceania",
+    countries: [
+      { isoCode: "mi", name: "Māori", flag: "🇳🇿" },
+      { isoCode: "en", name: "English", flag: "🇦🇺" },
+      { isoCode: "to", name: "Tongan", flag: "🇹🇴" },
+    ],
+  },
+  //其他
+  {
+    name: "Others",
+    countries: [
+      { isoCode: "ckb", name: "Central Kurdish", flag: "🇮🇶" },
+      { isoCode: "fil", name: "Filipino", flag: "🇵🇭" },
+      { isoCode: "ia", name: "Interlingua", flag: "ia" },
+      { isoCode: "os", name: "Ossetic", flag: "🇷🇺" },
+      { isoCode: "ii", name: "Sichuan Yi", flag: "🇨🇳" },
+    ],
+  },
+];
 
 const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   isVisible,
   setIsModalOpen,
-  allLanguages,
   languageLocaleInfo,
   primaryLanguage,
 }) => {
-  const updatedLocales = allLanguages
-    .filter((lang) => lang.isoCode != primaryLanguage?.locale)
-    .map((item) => item.isoCode);
-  const addLanguages: AddLanguageType[] = useMemo(() => allLanguages
-    .filter((lang) => lang.isoCode != primaryLanguage?.locale)
-    .map((lang, i) => ({
-      key: lang.key,
-      isoCode: lang.isoCode,
-      src: languageLocaleInfo[updatedLocales[i]]
-        ? languageLocaleInfo[updatedLocales[i]]?.countries
-        : [],
-      name: `${lang.name}(${languageLocaleInfo[updatedLocales[i]]?.Local})`,
-      state: "", // 默认值为 false
-    })), [allLanguages, languageLocaleInfo, primaryLanguage]);
-  const [allSelectedKeys, setAllSelectedKeys] = useState<React.Key[]>([]); // 保存所有选中的key
+  const updatedLocales = useMemo(() => {
+    if (primaryLanguage && languageLocaleInfo) {
+      return regions.map(region => ({
+        ...region,
+        countries: region.countries.map(lang => ({
+          ...lang,
+          name: `${lang.name}(${languageLocaleInfo[lang.isoCode]?.Local})`,
+          flag: languageLocaleInfo[lang.isoCode]?.countries[0]
+        })).filter(lang => lang.isoCode !== primaryLanguage?.locale)
+      }));
+    }
+  }, [primaryLanguage, languageLocaleInfo]);
+
+  const [allSelectedKeys, setAllSelectedKeys] = useState<string[]>([]); // 保存所有选中的key
   const [searchInput, setSearchInput] = useState("");
   const [filteredLanguages, setFilteredLanguages] =
-    useState<AddLanguageType[]>(addLanguages);
-  const [allSelectedLanguage, setAllSelectedLanguage] = useState<
-    AllLanguagesType[]
-  >([]); // 保存选中的语言对象
+    useState<any>([]);
   const [confirmButtonDisable, setConfirmButtonDisable] =
     useState<boolean>(false);
+  const [checkedCountries, setCheckedCountries] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const selectedLanguage: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
+  const selectedLanguagesIscode = useMemo(() =>
+    selectedLanguage.map((lang) => lang.locale), [selectedLanguage]);
+
   const dispatch = useDispatch();
   const searchRef = useRef<InputRef>(null);
   const addFetcher = useFetcher<any>();
   const { t } = useTranslation();
 
-  const selectedLanguagesSet = new Set(
-    selectedLanguage.map((lang) => lang.locale),
-  );
+  useEffect(() => {
+    if (updatedLocales) {
+      setFilteredLanguages(updatedLocales);
+      setIsLoading(false)
+    }
+  }, [updatedLocales]);
 
   useEffect(() => {
-    if (addFetcher.data && addFetcher.data.data.length) {
-      const data = addFetcher.data.data.map((lang: any, i: any) => ({
+    setCheckedCountries(selectedLanguagesIscode);
+  }, [selectedLanguagesIscode]);
+
+  useEffect(() => {
+    if (addFetcher.data && addFetcher.data?.success) {
+      const data = addFetcher.data.shopLanguages.map((lang: any, i: any) => ({
         language: lang.name,
-        localeName: languageLocaleInfo[addFetcher.data.data[i].locale].Local,
+        localeName: languageLocaleInfo[addFetcher.data.shopLanguages[i].locale].Local,
         locale: lang.locale,
         primary: lang.primary,
         status: 0,
@@ -85,229 +274,125 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
       }));
       dispatch(updateTableData(data));
       shopify.toast.show(t("Add success"));
+      setAllSelectedKeys([])
+      setFilteredLanguages(updatedLocales)
+      setIsModalOpen(false);
+      setConfirmButtonDisable(false);
+    } else if (addFetcher.data && !addFetcher.data?.success) {
+      shopify.toast.show(t("Add failed"));
+      setConfirmButtonDisable(false);
     }
-    setIsModalOpen(false);
-    setConfirmButtonDisable(false);
   }, [addFetcher.data]);
-
-  useEffect(() => {
-    // 更新语言状态
-    const updatedLanguages = addLanguages.map((lang) => {
-      if (selectedLanguagesSet.has(lang.isoCode)) {
-        // 检查是否是默认语言
-        const isPrimary = selectedLanguage.some(
-          (sl) => sl.locale === lang.isoCode && sl.primary,
-        );
-        return { ...lang, state: isPrimary ? "Primary" : "Added" }; // 根据 primary 设置状态
-      }
-      return { ...lang, state: "" }; // 其他语言的默认状态
-    });
-
-    // 根据状态排序
-    const sortedFilteredLanguages = updatedLanguages.sort((a, b) => {
-      const aSelected = selectedLanguagesSet.has(a.isoCode) ? 1 : -1; // 将已选语言放前面
-      const bSelected = selectedLanguagesSet.has(b.isoCode) ? 1 : -1;
-      return aSelected - bSelected;
-    });
-
-    // 更新过滤后的语言状态
-    setFilteredLanguages(sortedFilteredLanguages);
-  }, [allLanguages, isVisible]);
-
-  useEffect(() => {
-    const addedCurrencies = allSelectedKeys
-      .map((key) => addLanguages.find((lang) => lang.key === key))
-      .filter(Boolean) as AllLanguagesType[];
-
-    setAllSelectedLanguage(addedCurrencies);
-  }, [allSelectedKeys]);
-
-  useEffect(() => {
-    if (addLanguages) {
-      handleSearch({ target: { value: searchRef.current?.input?.value } } as React.ChangeEvent<HTMLInputElement>);
-    }
-  }, [addLanguages]);
 
   // 搜索逻辑
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (value === undefined) {
-      return;
-    }
-
     setSearchInput(value);
 
-    if (value.trim() === "") {
-      // 当搜索框为空时，恢复初始排序
-      const updatedLanguages = addLanguages.map((lang) => {
-        const isPrimary = selectedLanguage.some(
-          (sl) => sl.locale === lang.isoCode && sl.primary,
-        );
-        const state = selectedLanguagesSet.has(lang.isoCode)
-          ? isPrimary
-            ? "Primary"
-            : "Added"
-          : ""; // 更新语言状态
-        return { ...lang, state };
-      });
-
-      const sortedFilteredLanguages = updatedLanguages.sort((a, b) => {
-        const aSelected = selectedLanguagesSet.has(a.isoCode) ? 1 : -1;
-        const bSelected = selectedLanguagesSet.has(b.isoCode) ? 1 : -1;
-        return aSelected - bSelected;
-      });
-
-      setFilteredLanguages(sortedFilteredLanguages);
+    if (!value.trim() || !updatedLocales) {
+      // 搜索框为空，恢复所有
+      setFilteredLanguages(updatedLocales);
       return;
     }
 
-    // 过滤逻辑
-    const filteredData = addLanguages
-      .map((lang) => {
-        const isPrimary = selectedLanguage.some(
-          (sl) => sl.locale === lang.isoCode && sl.primary,
+    // 搜索：遍历每个大洲，过滤出匹配的语言
+    const filtered = updatedLocales
+      .map(region => {
+        const matchedCountries = region.countries.filter(lang =>
+          lang.name.toLowerCase().includes(value.toLowerCase())
         );
-        const state = selectedLanguagesSet.has(lang.isoCode)
-          ? isPrimary
-            ? "Primary"
-            : "Added"
-          : ""; // 更新语言状态
-        return { ...lang, state };
+        return { ...region, countries: matchedCountries };
       })
-      .filter((lang) => lang.name.toLowerCase().includes(value.toLowerCase()));
+      .filter(region => region.countries.length > 0); // 只保留有匹配项的大洲
 
-    setFilteredLanguages(filteredData);
+    setFilteredLanguages(filtered);
   };
 
   // 增量更新 allSelectedLanguage
-  const handleRowSelectionChange = (
-    newSelectedRowKeys: React.Key[],
-    e: AddLanguageType[],
+  const checkDetection = (
+    newSelectedRowKeys: string[],
   ) => {
     // 计算已选中的语言数量
     const addedLanguagesCount =
-      newSelectedRowKeys.length + selectedLanguagesSet.size;
-
+      newSelectedRowKeys.length + checkedCountries.length;
     // 检查是否超过20
     if (addedLanguagesCount > 20) {
       // 弹出错误提示
       shopify.toast.show("Your have reach your shopify plan limit(Max<=20)");
-      return;
+      return true;
     }
-    const addKeys = [...new Set([...allSelectedKeys, ...newSelectedRowKeys])];
-    const removedKeys = filteredLanguages
-      .filter((lang) => !e.includes(lang))
-      .map((lang) => lang.key);
-    const updateKeys = addKeys.filter(
-      (item) => !removedKeys.includes(Number(item)),
-    );
+    return false;
+  };
 
-    setAllSelectedKeys(updateKeys);
+  // 判断某个大洲是否全选
+  const isRegionChecked = (region: any) =>
+    region.countries.every((c: any) => checkedCountries.includes(c.isoCode));
 
-    const addedLanguages = allSelectedKeys
-      .map((key) => addLanguages.find((lang) => lang.key === key))
-      .filter(Boolean) as AddLanguageType[];
+  // 判断某个大洲是否部分选中
+  const isRegionIndeterminate = (region: any) =>
+    region.countries.some((c: any) => checkedCountries.includes(c.isoCode)) &&
+    !isRegionChecked(region);
 
-    setAllSelectedLanguage(addedLanguages);
+  // 切换大洲
+  const handleRegionChange = (region: any, checked: boolean) => {
+    const countryNames = region.countries.map((c: any) => c.isoCode);
+    if (checked) {
+      if (checkDetection(countryNames)) {
+        return;
+      }
+      setAllSelectedKeys([...allSelectedKeys, ...countryNames]);
+      setCheckedCountries(Array.from(new Set([...checkedCountries, ...countryNames])));
+    } else {
+      setAllSelectedKeys(allSelectedKeys.filter((isoCode) => !countryNames.includes(isoCode)));
+      setCheckedCountries(checkedCountries.filter((isoCode) => !countryNames.includes(isoCode) || selectedLanguagesIscode.includes(isoCode)));
+    }
+  };
+
+  // 切换国家
+  const handleCountryChange = (country: any, checked: boolean) => {
+    if (checked) {
+      if (checkDetection([country.isoCode])) {
+        return;
+      }
+      setAllSelectedKeys([...allSelectedKeys, country.isoCode]);
+      setCheckedCountries([...checkedCountries, country.isoCode]);
+    } else {
+      setAllSelectedKeys(allSelectedKeys.filter((isoCode) => isoCode !== country.isoCode));
+      setCheckedCountries(checkedCountries.filter((isoCode) => isoCode !== country.isoCode));
+    }
   };
 
   // 确认选择 -> 触发 action
   const handleConfirm = () => {
-    const selectedLanguages = allSelectedLanguage.map((lang) => lang.isoCode);
     const formData = new FormData();
     formData.append(
       "addLanguages",
       JSON.stringify({
-        selectedLanguages: selectedLanguages,
+        selectedLanguages: allSelectedKeys,
         primaryLanguage: primaryLanguage,
       }),
     ); // 将选中的语言作为字符串发送
     addFetcher.submit(formData, {
-      method: "post",
+      method: "POST",
       action: "/app/language",
     }); // 提交表单请求
-    setAllSelectedKeys([]); // 清除已选中的语言
     setSearchInput(""); // 清除搜索框内容
-    setAllSelectedLanguage([]); // 清除已选中的语言对象
     setConfirmButtonDisable(true);
   };
 
   const handleCloseModal = () => {
-    setAllSelectedKeys([]); // 清除已选中的语言
     setSearchInput(""); // 清除搜索框内容
-    setFilteredLanguages(addLanguages); // 重置为初始语言列表
-    setAllSelectedLanguage([]); // 清除已选中的语言对象
+    setAllSelectedKeys([])
+    setCheckedCountries(selectedLanguagesIscode);
+    setFilteredLanguages(updatedLocales);
     setIsModalOpen(false); // 关闭Modal
   };
 
   // 移除已选中的语言
-  const handleRemoveLanguage = (key: React.Key) => {
-    setAllSelectedKeys((prevKeys) =>
-      prevKeys.filter((selectedKey) => selectedKey !== key),
-    );
-    setAllSelectedLanguage((prevLanguages) =>
-      prevLanguages.filter((lang) => lang.key !== key),
-    );
+  const handleRemoveLanguage = (key: string) => {
+    setAllSelectedKeys(allSelectedKeys.filter((isoCode) => isoCode !== key));
+    setCheckedCountries(checkedCountries.filter((isoCode) => isoCode !== key));
   };
-
-  // 表格的行选择配置
-  const rowSelection = {
-    selectedRowKeys: allSelectedKeys.filter((key) =>
-      filteredLanguages.some((lang) => lang.key === key),
-    ), // Filter selected keys based on current filtered languages
-    onChange: handleRowSelectionChange,
-    getCheckboxProps: (record: any) => ({
-      disabled: selectedLanguagesSet.has(record.isoCode), // Disable checkbox if the language is already selected
-    }),
-  };
-
-  const columns = [
-    {
-      title: t("Language"),
-      dataIndex: "name",
-      key: "name",
-      width: "35%",
-    },
-    {
-      title: t("Relevant region(s)"),
-      dataIndex: "src",
-      key: "src",
-      width: "45%",
-      render: (_: any, record: any) => {
-        return (
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              justifyContent: "left",
-              alignItems: "left",
-              gap: "10px",
-            }}
-          >
-            {record.src?.map((url: string, index: number) => (
-              <img
-                key={index} // 为每个 img 标签添加唯一的 key 属性
-                src={url}
-                alt={`${record.name} flag`}
-                style={{
-                  width: "30px",
-                  height: "auto",
-                  border: "1px solid #888",
-                  borderRadius: "2px",
-                }}
-              />
-            ))}
-          </div>
-        );
-      },
-    },
-    {
-      title: t("Status"),
-      dataIndex: "state",
-      key: "state",
-      width: "20%",
-    },
-  ];
 
   return (
     <Modal
@@ -323,7 +408,6 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
             justifyContent: "center",
             alignItems: "center",
             width: "100%",
-            marginTop: "-12px",
             gap: "12px"        // 使用 gap 替代 marginRight
           }}
         >
@@ -338,13 +422,14 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
             onClick={handleConfirm}
             key={"manage_confirm_button"}
             type="primary"
-            disabled={confirmButtonDisable || allSelectedLanguage.length === 0}
+            disabled={confirmButtonDisable || allSelectedKeys.length === 0}
             loading={confirmButtonDisable}
           >
             {t("Add")}
           </Button>
         </div>,
       ]}
+      styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }} // 这里设置最大高度和滚动
     >
       <Input
         ref={searchRef}
@@ -357,7 +442,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
 
       <Space wrap style={{ marginBottom: 16 }}>
         {allSelectedKeys.map((key) => {
-          const language = allLanguages.find((lang) => lang.key === key)?.name;
+          const language = languageLocaleInfo[key]?.Name || key;
           return (
             <SelectedTag
               key={key}
@@ -368,19 +453,70 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
         })}
       </Space>
 
-      <Table
-        rowSelection={rowSelection}
-        dataSource={filteredLanguages}
-        columns={columns}
-        rowKey="key"
-        loading={confirmButtonDisable || allLanguages.length === 0}
-        pagination={{
-          pageSize: 10, // 每页默认显示 10 条
-          position: ["bottomCenter"], // 将分页组件居中
-          showSizeChanger: false, // 关闭每页项目数量选择
-        }}
-      />
-    </Modal>
+      {isLoading ?
+        < div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100%"
+          }}
+        >
+          <Spin />
+        </div>
+        :
+        (filteredLanguages.length ?
+          <Collapse>
+            {filteredLanguages.map((state: any) => (
+              <Panel
+                header={
+                  <>
+                    <Checkbox
+                      checked={isRegionChecked(state)}
+                      indeterminate={isRegionIndeterminate(state)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // 阻止事件冒泡，防止触发面板展开/收起
+                        handleRegionChange(state, !isRegionChecked(state))
+                      }}
+                    // onChange={(e) => handleRegionChange(state, e.target.checked)}
+                    // disabled={selectedLanguagesIscode.includes(state?.isoCode)}
+                    />
+                    <span style={{ marginLeft: 8 }}>{state.name}</span>
+                  </>
+                }
+                key={state.name}
+              >
+                {state?.countries.map((country: any, index: number) => (
+                  <div key={country?.name} style={{ display: "flex", alignItems: "center", marginBottom: 12, marginLeft: 24 }}>
+                    <Checkbox
+                      checked={checkedCountries.includes(country?.isoCode)}
+                      onChange={(e) => handleCountryChange(country, e.target.checked)}
+                      style={{ marginRight: 8 }}
+                      disabled={selectedLanguagesIscode.includes(country?.isoCode)}
+                    />
+                    <img
+                      key={index} // 为每个 img 标签添加唯一的 key 属性
+                      src={country?.flag}
+                      alt={`${country?.name} flag`}
+                      style={{
+                        width: "30px",
+                        height: "auto",
+                        border: "1px solid #888",
+                        borderRadius: "2px",
+                        marginRight: 4
+                      }}
+                    />
+                    <span>{country?.name}</span>
+                  </div>
+                ))}
+              </Panel>
+            ))}
+          </Collapse>
+          :
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("Language not found")} />
+        )
+      }
+    </Modal >
   );
 };
 

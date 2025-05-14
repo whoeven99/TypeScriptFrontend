@@ -371,5 +371,15 @@
     "Title": "Başlık",
     "Meta description": "Meta açıklama",
     "URL handle": "URL işleyici",
-    "Meta title": "Meta başlık"
+    "Meta title": "Meta başlık",
+    "The Translation Editor has been limited due to your plan (Current plan: {{plan}})": "Çeviri düzenleyicisi planınıza göre sınırlıdır (Mevcut plan: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Translation Editor": "Lütfen daha yüksek bir plana yükseltin çeviri düzenleyicisini kilitlemek için",
+    "The Auto IP position has been limited due to your plan (Current plan: {{plan}})": "Otomatik IP konumu planınıza göre sınırlıdır (Mevcut plan: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Auto IP position": "Lütfen daha yüksek bir plana yükseltin otomatik IP konumunu kilitlemek için",
+    "Upgrade": "Yükselt",
+    "The glossary limitations has been reached (Current restrictions: {{count}})": "Sözlük sınırlarına ulaşıldı (Mevcut sınırlar: {{count}})",
+    "Please upgrade to a higher plan to remove the current glossary limitations": "Lütfen daha yüksek bir plana yükseltin sözlük sınırlarını kaldırmak için",
+    "Add failed": "Ekleme başarısız",
+    "Language not found": "Dil bulunamadı",
+    "You have reached your shopify plan limit(Max<=20)": "Shopify planınızın sınırına ulaştınız (Max<=20)"
 }
