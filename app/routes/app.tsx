@@ -364,17 +364,21 @@ export default function App() {
           },
         }}
       >
-        {isClient && <NavMenu>
+        <NavMenu>
           <Link to="/app" rel="home">
             Home
           </Link>
-          <Link to="/app/language">{t("Language")}</Link>
-          <Link to="/app/manage_translation">{t("Manage Translation")}</Link>
-          <Link to="/app/currency">{t("Currency")}</Link>
-          <Link to="/app/switcher">{t("Switcher")}</Link>
-          <Link to="/app/glossary">{t("Glossary")}</Link>
-          <Link to="/app/pricing">{t("Pricing")}</Link>
-        </NavMenu>}
+          {isClient &&
+            <>
+              <Link to="/app/language">{t("Language")}</Link>
+              <Link to="/app/manage_translation">{t("Manage Translation")}</Link>
+              <Link to="/app/currency">{t("Currency")}</Link>
+              <Link to="/app/switcher">{t("Switcher")}</Link>
+              <Link to="/app/glossary">{t("Glossary")}</Link>
+              <Link to="/app/pricing">{t("Pricing")}</Link>
+            </>
+          }
+        </NavMenu>
         <Outlet />
       </ConfigProvider>
     </AppProvider >

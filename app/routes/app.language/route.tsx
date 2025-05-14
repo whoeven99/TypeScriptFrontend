@@ -95,22 +95,9 @@ export interface MarketType {
   };
 }
 
-interface FetchType {
-  allCountryCode: string[];
-  allLanguages: AllLanguagesType[];
-  allMarket: MarketType[];
-  languageLocaleInfo: any;
-  languagesLoad: any;
-  shop: string;
-  shopLanguagesLoad: ShopLocalesType[];
-  words: WordsType;
-}
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-
-
 
   console.log(`${shop} load language`);
 
@@ -118,7 +105,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     {
       server: process.env.SERVER_URL,
       shop: shop,
-
     },
   );
 };
@@ -195,12 +181,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
 
       case !!addLanguages:
-        const data = await mutationShopLocaleEnable({
-          shop,
-          accessToken: accessToken as string,
-          addLanguages,
-        }); // 处理逻辑
-        return json({ data: data });
+        try {
+          const data = await mutationShopLocaleEnable({
+            shop,
+            accessToken: accessToken as string,
+            addLanguages,
+          }); // 处理逻辑
+          console.log(data);
+          return data;
+        } catch (error) {
+          console.error("Error addLanguages language:", error);
+        }
 
       case !!translation:
         try {
@@ -458,10 +449,8 @@ const Index = () => {
         },
         [],
       );
-
       // 从 data 中过滤掉成功删除的数据
       const newData = dataSource.filter((item) => !deleteData.includes(item.locale));
-
       // 更新表格数据
       dispatch(setTableData(newData));
       // 清空已选中项
@@ -474,7 +463,6 @@ const Index = () => {
 
   useEffect(() => {
     if (statusFetcher.data?.data) {
-      console.log("statusFetcher.data?.data: ", statusFetcher.data?.data);
       const items = statusFetcher.data?.data.map((item: any) => {
         if (item?.status === 2) {
           return item;
@@ -554,7 +542,7 @@ const Index = () => {
     // if (location.state?.publishLanguageCode && !data.find((item: any) => item.locale === location.state?.publishLanguageCode)?.published) {
     //   setSelectedRow(data.find((item: any) => item.locale === location.state?.publishLanguageCode) || dataSource.find((item: any) => item.locale === location.state?.publishLanguageCode));
     // }
-  }, [shopLanguagesLoad, languagesLoad, languageLocaleInfo]); // 依赖 shopLanguagesLoad 和 status
+  }, [shopLanguagesLoad, languagesLoad]); // 依赖 shopLanguagesLoad 和 status
 
   useEffect(() => {
     if (dataSource && dataSource.find((item: any) => item.status === 2)) {

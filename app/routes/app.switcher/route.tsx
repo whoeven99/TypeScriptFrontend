@@ -400,7 +400,7 @@ const Index = () => {
   };
 
   const handleIpOpenChange = (checked: boolean) => {
-    if (checked && plan > 3) {
+    if (plan > 3) {
       setIsGeoLocationEnabled(checked);
       setEditData((prev) => ({
         ...prev,

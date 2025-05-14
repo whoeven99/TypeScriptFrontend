@@ -7,7 +7,6 @@ import {
   LanguagesDataType,
   ShopLocalesType,
 } from "~/routes/app.language/route";
-import { FetcherWithComponents } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateTableData } from "~/store/modules/languageTableData";
 import { useTranslation } from "react-i18next";
@@ -29,6 +28,8 @@ interface AddLanguageType {
   state: string;
 }
 
+
+
 const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   isVisible,
   setIsModalOpen,
@@ -36,6 +37,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   languageLocaleInfo,
   primaryLanguage,
 }) => {
+  console.log(allLanguages);
   const updatedLocales = allLanguages
     .filter((lang) => lang.isoCode != primaryLanguage?.locale)
     .map((item) => item.isoCode);
@@ -62,20 +64,19 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   const selectedLanguage: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
+  const selectedLanguagesSet = useMemo(() => new Set(
+    selectedLanguage.map((lang) => lang.locale),
+  ), [selectedLanguage]);
   const dispatch = useDispatch();
   const searchRef = useRef<InputRef>(null);
   const addFetcher = useFetcher<any>();
   const { t } = useTranslation();
 
-  const selectedLanguagesSet = new Set(
-    selectedLanguage.map((lang) => lang.locale),
-  );
-
   useEffect(() => {
-    if (addFetcher.data && addFetcher.data.data.length) {
-      const data = addFetcher.data.data.map((lang: any, i: any) => ({
+    if (addFetcher.data && addFetcher.data?.success) {
+      const data = addFetcher.data.shopLanguages.map((lang: any, i: any) => ({
         language: lang.name,
-        localeName: languageLocaleInfo[addFetcher.data.data[i].locale].Local,
+        localeName: languageLocaleInfo[addFetcher.data.shopLanguages[i].locale].Local,
         locale: lang.locale,
         primary: lang.primary,
         status: 0,
@@ -85,6 +86,8 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
       }));
       dispatch(updateTableData(data));
       shopify.toast.show(t("Add success"));
+    } else if (addFetcher.data && !addFetcher.data?.success) {
+      shopify.toast.show(t("Add failed"));
     }
     setIsModalOpen(false);
     setConfirmButtonDisable(false);
@@ -92,6 +95,8 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
 
   useEffect(() => {
     // 更新语言状态
+    console.log(selectedLanguagesSet);
+
     const updatedLanguages = addLanguages.map((lang) => {
       if (selectedLanguagesSet.has(lang.isoCode)) {
         // 检查是否是默认语言

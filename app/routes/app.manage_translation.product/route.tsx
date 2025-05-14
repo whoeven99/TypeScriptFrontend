@@ -1043,7 +1043,7 @@ const Index = () => {
         ?.translatableContent.find((item: any) => item.key === key)
         ?.locale,
       target: searchTerm || "",
-      resourceType: "PRODUCT",
+      resourceType: resourceType,
       context: context,
       key: key,
       type: type,
