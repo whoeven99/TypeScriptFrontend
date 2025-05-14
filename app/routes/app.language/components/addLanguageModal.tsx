@@ -354,7 +354,6 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
       if (checkDetection([country.isoCode])) {
         return;
       }
-      console.log(country.isoCode);
       setAllSelectedKeys([...allSelectedKeys, country.isoCode]);
       setCheckedCountries([...checkedCountries, country.isoCode]);
     } else {
@@ -384,6 +383,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   const handleCloseModal = () => {
     setSearchInput(""); // 清除搜索框内容
     setAllSelectedKeys([])
+    setCheckedCountries(selectedLanguagesIscode);
     setFilteredLanguages(updatedLocales);
     setIsModalOpen(false); // 关闭Modal
   };
