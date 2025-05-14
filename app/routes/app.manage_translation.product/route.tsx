@@ -499,66 +499,70 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item: any) => {
-        item.success === false;
-      });
-      if (!errorItem) {
-        shopify.toast.show("Saved successfully");
-        confirmFetcher.data.confirmData.forEach((item: any) => {
-          if (item.resourceId.split("/")[3] === "Product") {
-            const index = productsData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
-            if (index !== -1) {
-              const product = productsData.nodes[index].translations.find((option: any) => option.key === item.key);
-              if (product) {
-                product.value = item.value;
-              } else {
-                productsData.nodes[index].translations.push({
-                  key: item.key,
-                  value: item.value,
-                  outdated: false,
-                });
-              }
-            }
-          } else if (item.resourceId.split("/")[3] === "ProductOption") {
-            const index = productOptionsData.nodes.findIndex((productOption: any) =>
-              productOption.nestedTranslatableResources.nodes.some(
-                (option: any) => option.resourceId === item.resourceId
-              )
-            );
-            if (index !== -1) {
-              const productOption = productOptionsData.nodes[index].nestedTranslatableResources.nodes.find((option: any) => option.resourceId === item.resourceId);
-              if (productOption.translations.length > 0) {
-                productOption.translations[0].value = item.value;
-              } else {
-                productOption.translations.push({
-                  key: item.key,
-                  value: item.value,
-                  outdated: false,
-                });
-              }
-            }
-          } else if (item.resourceId.split("/")[3] === "Metafield") {
-            const index = productMetafieldsData.nodes.findIndex((productMetafield: any) =>
-              productMetafield.nestedTranslatableResources.nodes.some(
-                (option: any) => option.resourceId === item.resourceId
-              )
-            );
-            if (index !== -1) {
-              const productMetafield = productMetafieldsData.nodes[index].nestedTranslatableResources.nodes.find((option: any) => option.resourceId === item.resourceId);
-              if (productMetafield.translations.length > 0) {
-                productMetafield.translations[0].value = item.value;
-              } else {
-                productMetafield.translations.push({
-                  key: item.key,
-                  value: item.value,
-                  outdated: false,
-                });
-              }
+      const successfulItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === true
+      );
+      const errorItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === false
+      );
+
+      successfulItem.forEach((item: any) => {
+        if (item.data.resourceId.split("/")[3] === "Product") {
+          const index = productsData.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+          if (index !== -1) {
+            const product = productsData.nodes[index].translations.find((option: any) => option.key === item.data.key);
+            if (product) {
+              product.value = item.data.value;
+            } else {
+              productsData.nodes[index].translations.push({
+                key: item.data.key,
+                value: item.data.value,
+                outdated: false,
+              });
             }
           }
-        })
+        } else if (item.data.resourceId.split("/")[3] === "ProductOption") {
+          const index = productOptionsData.nodes.findIndex((productOption: any) =>
+            productOption.nestedTranslatableResources.nodes.some(
+              (option: any) => option.resourceId === item.data.resourceId
+            )
+          );
+          if (index !== -1) {
+            const productOption = productOptionsData.nodes[index].nestedTranslatableResources.nodes.find((option: any) => option.resourceId === item.data.resourceId);
+            if (productOption.translations.length > 0) {
+              productOption.translations[0].value = item.data.value;
+            } else {
+              productOption.translations.push({
+                key: item.data.key,
+                value: item.data.value,
+                outdated: false,
+              });
+            }
+          }
+        } else if (item.data.resourceId.split("/")[3] === "Metafield") {
+          const index = productMetafieldsData.nodes.findIndex((productMetafield: any) =>
+            productMetafield.nestedTranslatableResources.nodes.some(
+              (option: any) => option.resourceId === item.data.resourceId
+            )
+          );
+          if (index !== -1) {
+            const productMetafield = productMetafieldsData.nodes[index].nestedTranslatableResources.nodes.find((option: any) => option.resourceId === item.data.resourceId);
+            if (productMetafield.translations.length > 0) {
+              productMetafield.translations[0].value = item.data.value;
+            } else {
+              productMetafield.translations.push({
+                key: item.data.key,
+                value: item.data.value,
+                outdated: false,
+              });
+            }
+          }
+        }
+      })
+      if (errorItem.length == 0) {
+        shopify.toast.show(t("Saved successfully"));
       } else {
-        shopify.toast.show(errorItem?.errorMsg);
+        shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
     }
@@ -1049,7 +1053,7 @@ const Index = () => {
       type: type,
       server: server || "",
     });
-    
+
     const data = await SingleTextTranslate({
       shopName: shopName,
       source: productsData.nodes

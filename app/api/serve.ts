@@ -1037,6 +1037,7 @@ export const updateManageTranslation = async ({
     // 如果没有实际文本内容则删除
     return textContent === "";
   });
+
   if (itemsToDelete.length > 0) {
     console.log("itemsToDelete: ", itemsToDelete);
   }
@@ -1098,7 +1099,6 @@ export const updateManageTranslation = async ({
 
         // 等待所有请求完成
         const results = await Promise.allSettled(promises);
-
         // 处理结果
         results.forEach((result, index) => {
           if (result.status === "fulfilled" && result.value) {
@@ -1115,24 +1115,6 @@ export const updateManageTranslation = async ({
           }
         });
       } else {
-        // 定义处理单个翻译项的函数
-        // 添加重试机制
-        console.log(
-          "itemsToUpdateArray: ",
-          itemsToUpdate.map((item) => {
-            return {
-              shopName: shop,
-              accessToken: accessToken,
-              locale: item.locale,
-              key: item.key,
-              value: item.value,
-              translatableContentDigest: item.translatableContentDigest,
-              resourceId: item.resourceId,
-              target: item.target,
-            };
-          }),
-        );
-
         const response = await axios({
           url: `${process.env.SERVER_URL}/shopify/updateItems`,
           method: "POST",
