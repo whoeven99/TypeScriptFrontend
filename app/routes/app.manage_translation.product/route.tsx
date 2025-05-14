@@ -779,7 +779,7 @@ const Index = () => {
     return data;
   };
 
-  const handleInputChange = (key: string, value: string, index?: number) => {
+  const handleInputChange = (key: string, value: string, index?: number) => {    
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
@@ -1035,12 +1035,12 @@ const Index = () => {
     return data;
   };
 
-  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string, index?: number) => {
     if (!key || !type || !context) {
       return;
     }
     setLoadingItems((prev) => [...prev, key]);
-    console.log({
+    const data = await SingleTextTranslate({
       shopName: shopName,
       source: productsData.nodes
         .find((item: any) => item?.resourceId === selectProductKey)
@@ -1053,21 +1053,11 @@ const Index = () => {
       type: type,
       server: server || "",
     });
-
-    const data = await SingleTextTranslate({
-      shopName: shopName,
-      source: productsData.nodes
-        .find((item: any) => item?.resourceId === selectProductKey)
-        ?.translatableContent.find((item: any) => item.key === key)
-        ?.locale,
-      target: searchTerm || "",
-      resourceType: "PRODUCT",
-      context: context,
-      key: key,
-      type: type,
-      server: server || "",
-    });
-
+    if (data?.success) {
+      handleInputChange(key, data.response, index)
+    }else{
+      shopify.toast.show(data.errorMsg)
+    }
     console.log(data);
     setLoadingItems((prev) => prev.filter((item) => item !== key));
   }
