@@ -371,6 +371,16 @@
     "Title": "Titel",
     "Meta description": "Meta-beskrivning",
     "URL handle": "URL-hanterare",
-    "Meta title": "Meta-titel"
+    "Meta title": "Meta-titel",
+    "The Translation Editor has been limited due to your plan (Current plan: {{plan}})": "Översättningsredigeraren har begränsats på grund av ditt plan (Aktuellt plan: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Translation Editor": "Uppgradera till ett högre plan för att låsa översättningsredigeraren",
+    "The Auto IP position has been limited due to your plan (Current plan: {{plan}})": "Otomatisk IP-position har begränsats på grund av ditt plan (Aktuellt plan: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Auto IP position": "Uppgradera till ett högre plan för att låsa automatisk IP-position",
+    "Upgrade": "Uppgradera",
+    "The glossary limitations has been reached (Current restrictions: {{count}})": "Glossargränsen har uppnåtts (Mevcut begränsningar: {{count}})",
+    "Please upgrade to a higher plan to remove the current glossary limitations": "Uppgradera till ett högre plan för att ta bort de aktuella glossargränserna",
+    "Add failed": "Lägg till misslyckades",
+    "Language not found": "Språk hittades inte",
+    "You have reached your shopify plan limit(Max<=20)": "Du har nått din Shopify-plangräns (Max<=20)"
 }   
   

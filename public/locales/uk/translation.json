@@ -371,5 +371,15 @@
     "Title": "Заголовок",
     "Meta description": "Мета-опис",
     "URL handle": "URL-обробник",
-    "Meta title": "Мета-заголовок"
+    "Meta title": "Мета-заголовок",
+    "The Translation Editor has been limited due to your plan (Current plan: {{plan}})": "Перекладський редактор обмежений через ваш план (Поточний план: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Translation Editor": "Будь ласка, підвищіть свій план, щоб розблокувати перекладський редактор",
+    "The Auto IP position has been limited due to your plan (Current plan: {{plan}})": "Позиція автоматичного IP обмежена через ваш план (Поточний план: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Auto IP position": "Будь ласка, підвищіть свій план, щоб розблокувати позицію автоматичного IP",
+    "Upgrade": "Підвищити",
+    "The glossary limitations has been reached (Current restrictions: {{count}})": "Обмеження глосарію досягнуто (Поточний обмеження: {{count}})",
+    "Please upgrade to a higher plan to remove the current glossary limitations": "Будь ласка, підвищіть свій план, щоб видалити поточні обмеження глосарію",
+    "Add failed": "Додавання не вдалося",
+    "Language not found": "Мова не знайдена",
+    "You have reached your shopify plan limit(Max<=20)": "Ви досягли ліміту вашого Shopify-плану (Max<=20)"
 }

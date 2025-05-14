@@ -1,5 +1,5 @@
 import { useNavigate } from "@remix-run/react";
-import { Card, Space, Button, Typography, Table, Modal, Result } from "antd";
+import { Card, Space, Button, Typography, Table, Modal, Result, Skeleton } from "antd";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -73,9 +73,12 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       width: "40%",
       render: (_: any, record: DataType) => {
         return (
-          <Button onClick={() => handleEdit(record)}>
-            {t("Edit")}
-          </Button>
+          typeof plan === "number" ?
+            <Button onClick={() => handleEdit(record)}>
+              {t("Edit")}
+            </Button>
+            :
+            <Skeleton.Button active />
         );
       },
     },

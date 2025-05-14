@@ -66,15 +66,8 @@ const languageTableDataSlice = createSlice({
       const row = state.rows.find(
         (item) => item.locale === action.payload.locale,
       );
-      if (row) {
+      if (row && typeof action.payload.autoTranslate !== "undefined") {
         row.autoTranslate = action.payload.autoTranslate;
-        if (action.payload.autoTranslate) {
-          state.rows.forEach((item) => {
-            if (item.locale !== action.payload.locale) {
-              item.autoTranslate = false;
-            }
-          });
-        }
       }
     },
     setAutoTranslateLoadingState: (
