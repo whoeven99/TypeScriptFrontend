@@ -63,7 +63,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         [record?.key]: record?.translated, // 更新对应的 key
       }));
     }
-  }, [record, setTranslatedValues]);
+  }, [record]);
 
   if (
     handleInputChange &&
