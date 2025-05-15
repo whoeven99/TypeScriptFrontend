@@ -16,9 +16,9 @@ include_config_on_deploy = true
 scopes = "read_content,read_legal_policies,read_markets,read_metaobjects,read_online_store_navigation,read_themes,read_translations,unauthenticated_read_metaobjects,write_locales,write_markets,write_metaobjects,write_products,write_translations"
 [auth]
 redirect_urls = [
-  "https://82cd0f43191c.ngrok.app/auth/callback",
-  "https://82cd0f43191c.ngrok.app/auth/shopify/callback",
-  "https://82cd0f43191c.ngrok.app/api/auth/callback"
+  "https://01e1b0cc3292.ngrok.app/auth/callback",
+  "https://01e1b0cc3292.ngrok.app/auth/shopify/callback",
+  "https://01e1b0cc3292.ngrok.app/api/auth/callback"
 ]
 
 [webhooks]
