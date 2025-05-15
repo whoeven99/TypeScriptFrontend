@@ -12,22 +12,33 @@ import {
   Skeleton,
   Popover,
   Badge,
+  Modal,
+  Form,
+  Select,
+  Checkbox,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import ScrollNotice from "~/components/ScrollNotice";
-import { ActionFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { GetUserSubscriptionPlan, GetUserWords } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import { useFetcher } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
 import { CheckOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import "./style.css";
-import { mutationAppSubscriptionCreate } from "~/api/admin";
+import { mutationAppSubscriptionCreate, queryShopLanguages } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
 
 const { Title, Text, Paragraph } = Typography;
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+  console.log(`${shop} load pricing`);
+  return null;
+};
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -38,6 +49,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const words = JSON.parse(formData.get("words") as string);
     const planInfo = JSON.parse(formData.get("planInfo") as string);
     const payForPlan = JSON.parse(formData.get("payForPlan") as string);
+    const languages = JSON.parse(formData.get("languages") as string);
     switch (true) {
       case !!words:
         try {
@@ -98,6 +110,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         } catch (error) {
           console.error("Error payForPlan action:", error);
         }
+      case !!languages:
+        try {
+          const data = await queryShopLanguages({
+            shop,
+            accessToken: accessToken as string,
+          });
+          console.log(data);
+          return data;
+        } catch (error) {
+          console.error("Error languages action:", error);
+        }
     }
     return null;
   } catch (error) {
@@ -113,14 +136,16 @@ const Index = () => {
   const [updateTime, setUpdateTime] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [buyButtonLoading, setBuyButtonLoading] = useState(false);
+  // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
   const isQuotaExceeded = useMemo(
     () => currentCredits >= maxCredits && maxCredits > 0,
-    [currentCredits, maxCredits],
+    [currentCredits, maxCredits]
   );
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const userConfig = useSelector((state: any) => state.userConfig);
   const wordsfetcher = useFetcher<any>();
+  const languageFetcher = useFetcher<any>();
   const planfetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
@@ -129,10 +154,19 @@ const Index = () => {
   useEffect(() => {
     setIsLoading(false);
     wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
+    // languageFetcher.submit({ language: JSON.stringify(true) }, { method: "POST" });
     if (!userConfig.plan || !userConfig.updateTime) {
       planfetcher.submit({ planInfo: JSON.stringify(true) }, { method: "POST" });
     }
   }, []);
+
+  // useEffect(() => {
+  //   if (languageFetcher.data) {
+  //     console.log(languageFetcher.data);
+
+  //     // setLanguageOptions(languageFetcher.data.languages);
+  //   }
+  // }, [languageFetcher.data]);
 
   useEffect(() => {
     if (wordsfetcher.data) {
@@ -292,7 +326,6 @@ const Index = () => {
       buttonType: "default",
       disabled: selectedPlan === 3,
       features: [
-        t("{{credits}} credits/month", { credits: "200,000" }),
         t("starter_features1"),
         t("starter_features2"),
         t("starter_features3"),
@@ -357,6 +390,96 @@ const Index = () => {
       ],
     },
   ];
+
+  // const modelOptions = [
+  //   {
+  //     label: "OpenAI/GPT-4",
+  //     value: "1",
+  //   },
+  //   {
+  //     label: "Google/Gemini-1.5",
+  //     value: "2",
+  //   },
+  //   {
+  //     label: "DeepL/DeepL-translator",
+  //     value: "3",
+  //   },
+  //   {
+  //     label: "Qwen/Qwen-Max",
+  //     value: "4",
+  //   },
+  //   {
+  //     label: "DeepSeek-ai/DeepSeek-V3",
+  //     value: "5",
+  //   },
+  //   {
+  //     label: "Meta/Llama-3",
+  //     value: "6",
+  //   },
+  //   {
+  //     label: "Google/Google translate",
+  //     value: "7",
+  //   },
+  // ];
+
+  // const translateItemOptions = [
+  //   {
+  //     label: t("Products"),
+  //     value: "products",
+  //   },
+  //   {
+  //     label: t("Collections"),
+  //     value: "collection",
+  //   },
+  //   {
+  //     label: t("Articles"),
+  //     value: "article",
+  //   },
+  //   {
+  //     label: t("Blog titles"),
+  //     value: "blog_titles",
+  //   },
+  //   {
+  //     label: t("Pages"),
+  //     value: "pages",
+  //   },
+  //   {
+  //     label: t("Filters"),
+  //     value: "filters",
+  //   },
+  //   {
+  //     label: t("Metaobjects"),
+  //     value: "metaobjects",
+  //   },
+  //   {
+  //     label: t("Store metadata"),
+  //     value: "metadata",
+  //   },
+  //   {
+  //     label: t("Email"),
+  //     value: "notifications",
+  //   },
+  //   {
+  //     label: t("Navigation"),
+  //     value: "navigation",
+  //   },
+  //   {
+  //     label: t("Shop"),
+  //     value: "shop",
+  //   },
+  //   {
+  //     label: t("Theme"),
+  //     value: "theme",
+  //   },
+  //   {
+  //     label: t("Delivery"),
+  //     value: "delivery",
+  //   },
+  //   {
+  //     label: t("Shipping"),
+  //     value: "shipping",
+  //   },
+  // ];
 
   const handlePay = () => {
     setBuyButtonLoading(true);
@@ -537,6 +660,13 @@ const Index = () => {
                 ? selectedOption.price.currentPrice.toFixed(2)
                 : "0.00"}
             </Text>
+            {/* <Space>
+              <Button
+                size="large"
+                onClick={() => setCreditsCalculatorOpen(true)}
+              >
+                {t("Credits Calculator")}
+              </Button> */}
             <Button
               type="primary"
               size="large"
@@ -546,6 +676,7 @@ const Index = () => {
             >
               {t("Buy now")}
             </Button>
+            {/* </Space> */}
           </Space>
         </Card>
         <div style={{ maxWidth: "1500px", margin: "0 auto" }}>
@@ -655,6 +786,32 @@ const Index = () => {
           </Row>
         </div>
       </Space>
+      {/* <Modal open={creditsCalculatorOpen} onCancel={() => setCreditsCalculatorOpen(false)}>
+        <Title level={4}>{t("Credits Calculator")}</Title>
+        <Form>
+          <Form.Item label={t("Target Language")} name="targetLanguage">
+            <Select>
+              {modelOptions.map((option) => (
+                <Select.Option key={option.value} value={option.value}>{option.label}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item label={t("Translate Model")} name="model">
+            <Select>
+              {modelOptions.map((option) => (
+                <Select.Option key={option.value} value={option.value}>{option.label}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item label={t("Translate Items")} name="translateItem">
+            <Checkbox.Group>
+              {translateItemOptions.map((option) => (
+                <Checkbox key={option.value} value={option.value}>{option.label}</Checkbox>
+              ))}
+            </Checkbox.Group>
+          </Form.Item>
+        </Form>
+      </Modal> */}
     </Page>
   );
 };

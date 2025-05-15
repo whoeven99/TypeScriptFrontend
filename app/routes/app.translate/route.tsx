@@ -80,8 +80,8 @@ const Index = () => {
     "delivery",
     "shipping",
   ]);
-  const [modal, setModal] = useState<string>("");
   const [translateSettings4, setTranslateSettings4] = useState<string>("1");
+  const [model, setModel] = useState<string>("");
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [customApikeyData, setCustomApikeyData] = useState<boolean>(false);
@@ -148,7 +148,7 @@ const Index = () => {
         const modalSettingOption = translateSettings1Options.find(
           (option) => option.value === fetcher.data.data.translateSettings1,
         );
-        setModal(modalSettingOption?.label || "OpenAI/GPT-4");
+        setModel(modalSettingOption?.label || "OpenAI/GPT-4");
       }
     }
   }, [fetcher.data]);
@@ -170,60 +170,7 @@ const Index = () => {
     }
   }, [dispatch, languageData]);
 
-  const handleTranslate = async () => {
-    if (!languageSetting?.primaryLanguageCode) {
-      shopify.toast.show(t("Please set the primary language first."));
-      return;
-    }
-    if (!selectedLanguageCode) {
-      if (languageCardRef.current) {
-        languageCardRef.current.style.border = "1px solid red";
-      }
-      setLanguageCardWarnText("Please select a language to translate first.");
-      return;
-    }
-    const selectedItem = dataSource.find(
-      (item: LanguagesDataType) => item.locale === selectedLanguageCode,
-    );
-    const selectedTranslatingItem = dataSource.find(
-      (item: LanguagesDataType) => item.status === 2,
-    );
-    if (selectedItem && !selectedTranslatingItem) {
-      const formData = new FormData();
-      formData.append(
-        "translation",
-        JSON.stringify({
-          primaryLanguage: languageSetting?.primaryLanguageCode,
-          selectedLanguage: selectedItem,
-          translateSettings1: translateSettings1,
-          translateSettings2: translateSettings2,
-          translateSettings3: translateSettings3,
-        }),
-      ); // 将选中的语言作为字符串发送
-      fetcher.submit(formData, {
-        method: "post",
-        action: "/app/language",
-      });
-      setSource(languageSetting?.primaryLanguageCode);
-      setTarget(selectedLanguageCode);
-    } else {
-      shopify.toast.show(
-        t(
-          "The translation task is in progress. Please try translating again later.",
-        ),
-      );
-    }
-  };
 
-  const onChange = (e: RadioChangeEvent) => {
-    if (languageCardRef.current) {
-      languageCardRef.current.style.border = "1px solid #f0f0f0";
-    }
-    if (languageCardWarnText) {
-      setLanguageCardWarnText("");
-    }
-    setSelectedLanguageCode(e.target.value);
-  };
 
   const translateSettings1Options = [
     {
@@ -397,6 +344,16 @@ const Index = () => {
     },
   ];
 
+  const onChange = (e: RadioChangeEvent) => {
+    if (languageCardRef.current) {
+      languageCardRef.current.style.border = "1px solid #f0f0f0";
+    }
+    if (languageCardWarnText) {
+      setLanguageCardWarnText("");
+    }
+    setSelectedLanguageCode(e.target.value);
+  };
+
   const handleNavigate = () => {
     try {
       // 尝试获取浏览历史长度
@@ -412,6 +369,60 @@ const Index = () => {
       navigate("/app");
     }
   };
+
+  const handleTranslate = async () => {
+    if (!languageSetting?.primaryLanguageCode) {
+      shopify.toast.show(t("Please set the primary language first."));
+      return;
+    }
+    if (!selectedLanguageCode) {
+      if (languageCardRef.current) {
+        languageCardRef.current.style.border = "1px solid red";
+      }
+      setLanguageCardWarnText("Please select a language to translate first.");
+      return;
+    }
+    const selectedItem = dataSource.find(
+      (item: LanguagesDataType) => item.locale === selectedLanguageCode,
+    );
+    const selectedTranslatingItem = dataSource.find(
+      (item: LanguagesDataType) => item.status === 2,
+    );
+    if (selectedItem && !selectedTranslatingItem) {
+      const formData = new FormData();
+      formData.append(
+        "translation",
+        JSON.stringify({
+          primaryLanguage: languageSetting?.primaryLanguageCode,
+          selectedLanguage: selectedItem,
+          translateSettings1: translateSettings1,
+          translateSettings2: translateSettings2,
+          translateSettings3: translateSettings3,
+        }),
+      ); // 将选中的语言作为字符串发送
+      fetcher.submit(formData, {
+        method: "post",
+        action: "/app/language",
+      });
+      setSource(languageSetting?.primaryLanguageCode);
+      setTarget(selectedLanguageCode);
+    } else {
+      shopify.toast.show(
+        t(
+          "The translation task is in progress. Please try translating again later.",
+        ),
+      );
+    }
+  };
+
+  const handleTranslateSettings3Change = (value: string[]) => {
+    if (!value.length) {
+      shopify.toast.show("Select at least one translation item")
+      return;
+    } else {
+      setTranslateSettings3(value)
+    }
+  }
 
   return (
     <Page>
@@ -705,20 +716,6 @@ const Index = () => {
                     {t("translateSettings3.title")}
                   </Title>
                   <Checkbox.Group
-                    defaultValue={[
-                      "1",
-                      "2",
-                      "3",
-                      "4",
-                      "5",
-                      "6",
-                      "7",
-                      "8",
-                      "9",
-                      "10",
-                      "11",
-                      "12",
-                    ]}
                     value={translateSettings3}
                     options={translateSettings3Options}
                     style={{
@@ -727,7 +724,7 @@ const Index = () => {
                         "repeat(auto-fill, minmax(200px, 1fr))",
                       width: "100%",
                     }}
-                    onChange={(e) => setTranslateSettings3(e)}
+                    onChange={(e) => handleTranslateSettings3Change(e)}
                   ></Checkbox.Group>
                 </Space>
               </Space>
@@ -743,7 +740,8 @@ const Index = () => {
           setVisible={setShowPaymentModal}
           source={source}
           target={target}
-          modal={modal}
+          modal={model}
+          translateSettings3={translateSettings3 || []}
         />
       )}
     </Page>

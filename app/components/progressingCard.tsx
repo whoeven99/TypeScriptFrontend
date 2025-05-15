@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { PhoneOutlined } from "@ant-design/icons";
 import { handleContactSupport } from "~/routes/app._index/route";
-import PaymentModal from "./paymentModal";
 
 const { Text, Title } = Typography;
 
@@ -26,8 +25,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
     const [progress, setProgress] = useState<number>(0);
     const [status, setStatus] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(true);
-    const [paymentModalVisible, setPaymentModalVisible] =
-        useState<boolean>(false);
     const { t } = useTranslation();
     const navigate = useNavigate();
     const fetcher = useFetcher<any>();
@@ -182,7 +179,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
                 return 56;
             case "PAYMENT_GATEWAY":
                 setItem("Metaobjects");
-                return 58;  
+                return 58;
             case "SELLING_PLAN":
                 setItem("Metaobjects");
                 return 60;
@@ -412,13 +409,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
                                                 {t("progressing.publish")}
                                             </Button>
                                         )}
-                                        {/* {status === 2 &&
-                                            <>
-                                                <Text>
-                                                    {t("progressing.remaining")}
-                                                </Text>
-                                            </>
-                                        } */}
                                         {status === 3 && (
                                             <div
                                                 style={{
@@ -431,7 +421,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
                                                 <Button
                                                     block
                                                     type="primary"
-                                                    onClick={() => setPaymentModalVisible(true)}
+                                                    onClick={() => navigate("/app/pricing")}
                                                 >
                                                     {t("progressing.buyCredits")}
                                                 </Button>
@@ -511,15 +501,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
                     </Space>
                 )}
             </Card>
-            {status === 3 && (
-                <PaymentModal
-                    visible={paymentModalVisible}
-                    setVisible={setPaymentModalVisible}
-                    source={source}
-                    target={target}
-                    modal="OpenAI/GPT-4"
-                />
-            )}
         </>
     );
 };

@@ -1,10 +1,11 @@
 import { Button, Card, Col, Divider, Modal, Row, Space, Typography } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PaymentOptionSelect from "./paymentOptionSelect";
-import "./styles.css";
 import { useFetcher } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { handleContactSupport } from "~/routes/app._index/route";
+import "./styles.css";
+import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
 
@@ -14,6 +15,7 @@ interface PaymentModalProps {
   source: string;
   target: string;
   modal: string;
+  translateSettings3: string[];
 }
 
 export interface OptionType {
@@ -27,7 +29,7 @@ export interface OptionType {
   };
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source, target, modal }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source, target, modal, translateSettings3 }) => {
   const [selectedOption, setSelectedOption] = useState<OptionType>();
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [credits, setCredits] = useState<number>(0);
@@ -38,6 +40,91 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
   const recalculateFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
+
+  const { plan } = useSelector((state: any) => state.userConfig)
+
+  const options: OptionType[] = useMemo(() => [
+    {
+      key: "option-1",
+      name: "500K",
+      Credits: 500000,
+      price: {
+        currentPrice: plan === 6 ? 1.99 : (plan === 5 ? 2.99 : (plan === 4 ? 3.59 : 3.99)),
+        comparedPrice: 3.99,
+        currencyCode: "USD",
+      },
+    },
+    {
+      key: "option-2",
+      name: "1M",
+      Credits: 1000000,
+      price: {
+        currentPrice: plan === 6 ? 3.99 : (plan === 5 ? 5.99 : (plan === 4 ? 7.19 : 7.99)),
+        comparedPrice: 7.99,
+        currencyCode: "USD",
+      },
+    },
+    {
+      key: "option-3",
+      name: "2M",
+      Credits: 2000000,
+      price: {
+        currentPrice: plan === 6 ? 7.99 : (plan === 5 ? 11.99 : (plan === 4 ? 14.39 : 15.99)),
+        comparedPrice: 15.99,
+        currencyCode: "USD",
+      },
+    },
+    {
+      key: "option-4",
+      name: "3M",
+      Credits: 3000000,
+      price: {
+        currentPrice: plan === 6 ? 11.99 : (plan === 5 ? 17.99 : (plan === 4 ? 21.79 : 23.99)),
+        comparedPrice: 23.99,
+        currencyCode: "USD",
+      },
+    },
+    {
+      key: "option-5",
+      name: "5M",
+      Credits: 5000000,
+      price: {
+        currentPrice: plan === 6 ? 19.99 : (plan === 5 ? 29.99 : (plan === 4 ? 35.99 : 39.99)),
+        comparedPrice: 39.99,
+        currencyCode: "USD",
+      },
+    },
+    {
+      key: "option-6",
+      name: "10M",
+      Credits: 10000000,
+      price: {
+        currentPrice: plan === 6 ? 39.99 : (plan === 5 ? 59.99 : (plan === 4 ? 71.99 : 79.99)),
+        comparedPrice: 79.99,
+        currencyCode: "USD",
+      },
+    },
+    {
+      key: "option-7",
+      name: "20M",
+      Credits: 20000000,
+      price: {
+        currentPrice: plan === 6 ? 79.99 : (plan === 5 ? 119.99 : (plan === 4 ? 143.99 : 159.99)),
+        comparedPrice: 159.99,
+        currencyCode: "USD",
+      },
+    },
+    {
+      key: "option-8",
+      name: "30M",
+      Credits: 30000000,
+      price: {
+        currentPrice: plan === 6 ? 119.99 : (plan === 5 ? 179.99 : (plan === 4 ? 215.99 : 239.99)),
+        comparedPrice: 239.99,
+        currencyCode: "USD",
+      },
+    },
+  ], [plan]);
 
   useEffect(() => {
     if (credits && !selectedOption) {
@@ -69,18 +156,20 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
       if (fetcher.data.data.success) {
         const { id, translationId, shopName, ...rest } = fetcher.data.data.response;
         let credits = 0;
-        Object.entries(rest).forEach(([key, value]) => {
-          if (value !== null) {
-            credits += value as number;
-          } else {
-            recalculateFetcher.submit({
-              recalculate: JSON.stringify(true),
-            }, {
-              method: "post",
-              action: "/app",
-            });
-          }
-        });
+        Object.entries(rest).filter((([key, value]) => translateSettings3.includes(key as string)))
+          .forEach(([key, value]) => {
+            if (value !== null) {
+              credits += value as number;
+            } else {
+              recalculateFetcher.submit({
+                recalculate: JSON.stringify(true),
+              }, {
+                method: "post",
+                action: "/app",
+              });
+            }
+          });
+        console.log(Object.entries(rest).filter((([key, value]) => translateSettings3.includes(key as string))));
         setCredits(credits);
       } else {
         recalculateFetcher.submit({
@@ -98,14 +187,16 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
       if (recalculateFetcher.data.data.success) {
         const { id, translationId, shopName, ...rest } = recalculateFetcher.data.data.response;
         let credits = 0;
-        Object.entries(rest).forEach(([key, value]) => {
-          if (value !== null) {
-            credits += value as number;
-          } else {
-            setCredits(-1);
-            return;
-          }
-        });
+        Object.entries(rest).filter((([key, value]) => translateSettings3.includes(value as string)))
+          .forEach(([key, value]) => {
+            if (value !== null) {
+              credits += value as number;
+            } else {
+              setCredits(-1);
+              return;
+            }
+          });
+        console.log(Object.entries(rest).filter((([key, value]) => translateSettings3.includes(value as string))));
         setCredits(credits);
       } else {
         setCredits(-1);
@@ -147,89 +238,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
     }
   }, [payFetcher.data]);
 
-  const options: OptionType[] = [
-    {
-      key: "option-1",
-      name: "500K",
-      Credits: 500000,
-      price: {
-        currentPrice: 1.99,
-        comparedPrice: 100.0,
-        currencyCode: "USD",
-      },
-    },
-    {
-      key: "option-2",
-      name: "1M",
-      Credits: 1000000,
-      price: {
-        currentPrice: 3.99,
-        comparedPrice: 20.0,
-        currencyCode: "USD",
-      },
-    },
-    {
-      key: "option-3",
-      name: "2M",
-      Credits: 2000000,
-      price: {
-        currentPrice: 7.99,
-        comparedPrice: 100.0,
-        currencyCode: "USD",
-      },
-    },
-    {
-      key: "option-4",
-      name: "3M",
-      Credits: 3000000,
-      price: {
-        currentPrice: 11.99,
-        comparedPrice: 200.0,
-        currencyCode: "USD",
-      },
-    },
-    {
-      key: "option-5",
-      name: "5M",
-      Credits: 5000000,
-      price: {
-        currentPrice: 19.99,
-        comparedPrice: 200.0,
-        currencyCode: "USD",
-      },
-    },
-    {
-      key: "option-6",
-      name: "10M",
-      Credits: 10000000,
-      price: {
-        currentPrice: 39.99,
-        comparedPrice: 800.0,
-        currencyCode: "USD",
-      },
-    },
-    {
-      key: "option-7",
-      name: "20M",
-      Credits: 20000000,
-      price: {
-        currentPrice: 79.99,
-        comparedPrice: 1000.0,
-        currencyCode: "USD",
-      },
-    },
-    {
-      key: "option-8",
-      name: "30M",
-      Credits: 30000000,
-      price: {
-        currentPrice: 119.99,
-        comparedPrice: 2000.0,
-        currencyCode: "USD",
-      },
-    },
-  ];
-
   const onClick = () => {
     setBuyButtonLoading(true);
     const payInfo = {
@@ -250,10 +258,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
   const onCancel = () => {
     setVisible(false);
     // if (recommendOption) setSelectedOption(recommendOption);
-  };
-
-  const handleChange = (value: OptionType) => {
-    setSelectedOption(value);
   };
 
   return (
@@ -389,7 +393,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
                 <PaymentOptionSelect
                   option={option}
                   selectedOption={selectedOption}
-                  onChange={handleChange}
+                  onChange={(e) => setSelectedOption(e)}
                 />
               </div>
             ))}

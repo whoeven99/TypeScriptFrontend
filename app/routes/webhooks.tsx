@@ -127,7 +127,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         let plan = 0;
         switch (payload?.app_subscription.name) {
           case "Starter":
-            credits = 500000;
+            credits = 0;
             price = 1.99;
             plan = 3;
             break;

@@ -96,6 +96,15 @@ export interface MarketType {
   };
 }
 
+const autoTranslationMapping = {
+  1: 0,
+  2: 0,
+  3: 0,
+  4: 1,
+  5: 8,
+  6: 20
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
@@ -383,12 +392,14 @@ const Index = () => {
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
   const [deleteloading, setDeleteLoading] = useState(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [showWarnModal, setShowWarnModal] = useState(false);
   const [previewModalVisible, setPreviewModalVisible] =
     useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [dontPromptAgain, setDontPromptAgain] = useState(false);
   const [deleteConfirmModalVisible, setDeleteConfirmModalVisible] = useState(false);
+  const [warnModalTitle, setWarnModalTitle] = useState<string>("")
+  const [warnModalContent, setWarnModalContent] = useState<string>("")
+  const [showWarnModal, setShowWarnModal] = useState(false);
   const hasSelected = selectedRowKeys.length > 0;
 
   const dispatch = useDispatch();
@@ -400,6 +411,7 @@ const Index = () => {
   const addDataFetcher = useFetcher<any>();
   const publishFetcher = useFetcher<any>();
 
+  const { plan } = useSelector((state: any) => state.userConfig)
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
@@ -555,7 +567,7 @@ const Index = () => {
         );
         const timeoutId = setTimeout(() => {
           statusFetcher.submit(formData, {
-            method: "post",
+            method: "POST",
             action: "/app",
           });
         }, 2000); // 2秒延时
@@ -686,15 +698,20 @@ const Index = () => {
   };
 
   const handleAutoUpdateTranslationChange = async (locale: string, checked: boolean) => {
-    dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
-    const row = dataSource.find((item: any) => item.locale === locale);
-    if (row) {
-      const data = await UpdateAutoTranslateByData({ shopName: shop, source: shopPrimaryLanguage[0]?.locale, target: row.locale, autoTranslate: checked, server: server || "" });
-      if (data?.success) {
-        dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
-        dispatch(setAutoTranslateState({ locale, autoTranslate: checked }));
-        shopify.toast.show(t("Auto translate updated successfully"));
+    const items = dataSource.filter((item => item.autoTranslate)).length
+    if (items < autoTranslationMapping[plan as keyof typeof autoTranslationMapping]) {
+      dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
+      const row = dataSource.find((item: any) => item.locale === locale);
+      if (row) {
+        const data = await UpdateAutoTranslateByData({ shopName: shop, source: shopPrimaryLanguage[0]?.locale, target: row.locale, autoTranslate: checked, server: server || "" });
+        if (data?.success) {
+          dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
+          dispatch(setAutoTranslateState({ locale, autoTranslate: checked }));
+          shopify.toast.show(t("Auto translate updated successfully"));
+        }
       }
+    } else {
+      shopify.toast.show(t(`The ${autoTranslationMapping[plan as keyof typeof autoTranslationMapping]} autoTranslation limit has been reached`));
     }
   };
 
