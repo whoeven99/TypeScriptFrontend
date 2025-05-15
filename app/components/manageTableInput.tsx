@@ -51,19 +51,21 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   isRtl,
   index,
 }) => {
+  console.log(translatedValues);
+  
   const defaultValue = useMemo(() => {
     return record?.default_language || "";
   }, [record?.default_language]);
   const locale = useSelector((state: any) => state.userConfig.locale);
 
-  useEffect(() => {
-    if (setTranslatedValues) {
-      setTranslatedValues((prev) => ({
-        ...prev,
-        [record?.key]: record?.translated, // 更新对应的 key
-      }));
-    }
-  }, [record]);
+  // useEffect(() => {
+  //   if (setTranslatedValues) {
+  //     setTranslatedValues((prev) => ({
+  //       ...prev,
+  //       [record?.key]: record?.translated, // 更新对应的 key
+  //     }));
+  //   }
+  // }, [record]);
 
   if (
     handleInputChange &&

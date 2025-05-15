@@ -374,7 +374,6 @@ const Index = () => {
     });
     setProductData(data);
     setConfirmData([]);
-    setTranslatedValues({});
   }, [selectProductKey, productsData, productOptionsData, productMetafieldsData]);
 
   useEffect(() => {
@@ -779,7 +778,7 @@ const Index = () => {
     return data;
   };
 
-  const handleInputChange = (key: string, value: string, index?: number) => {    
+  const handleInputChange = (key: string, value: string, index?: number) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
@@ -1055,7 +1054,7 @@ const Index = () => {
     });
     if (data?.success) {
       handleInputChange(key, data.response, index)
-    }else{
+    } else {
       shopify.toast.show(data.errorMsg)
     }
     console.log(data);
