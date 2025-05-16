@@ -102,7 +102,6 @@ type TableDataType = {
   index: number;
   resource: string;
   type: string | undefined;
-  loading: boolean;
   default_language: string | undefined;
   translated: string | undefined;
 } | null;
@@ -368,11 +367,6 @@ const Index = () => {
   }, [products]);
 
   useEffect(() => {
-    setHasPrevious(productsData.pageInfo.hasPreviousPage);
-    setHasNext(productsData.pageInfo.hasNextPage);
-  }, [productsData]);
-
-  useEffect(() => {
     const data = transBeforeData({
       products: productsData,
       options: productOptionsData,
@@ -382,6 +376,8 @@ const Index = () => {
     setLoadingItems([]);
     setConfirmData([]);
     setTranslatedValues({});
+    setHasPrevious(productsData.pageInfo.hasPreviousPage);
+    setHasNext(productsData.pageInfo.hasNextPage);
   }, [selectProductKey, productsData, productOptionsData, productMetafieldsData]);
 
   useEffect(() => {
@@ -392,7 +388,6 @@ const Index = () => {
           index: 3,
           resource: t("Title"),
           type: productData?.title?.type,
-          loading: loadingItems.includes("title"),
           default_language: productData?.title?.value,
           translated: productData?.translations?.title,
         },
@@ -401,7 +396,6 @@ const Index = () => {
           index: 3,
           resource: t("Description"),
           type: productData?.descriptionHtml?.type,
-          loading: loadingItems.includes("body_html"),
           default_language: productData?.descriptionHtml?.value,
           translated: productData?.translations?.descriptionHtml,
         },
@@ -410,7 +404,6 @@ const Index = () => {
           index: 3,
           resource: t("ProductType"),
           type: productData?.productType?.type,
-          loading: loadingItems.includes("product_type"),
           default_language: productData?.productType?.value,
           translated: productData?.translations?.productType,
         },
@@ -423,7 +416,6 @@ const Index = () => {
           index: 3,
           resource: t("URL handle"),
           type: productData?.handle?.type,
-          loading: loadingItems.includes("handle"),
           default_language: productData?.handle?.value,
           translated: productData?.translations?.handle,
         },
@@ -432,7 +424,6 @@ const Index = () => {
           index: 3,
           resource: t("Meta title"),
           type: productData?.seo.title?.type,
-          loading: loadingItems.includes("meta_title"),
           default_language: productData?.seo.title?.value,
           translated: productData?.translations?.seo.title,
         },
@@ -441,7 +432,6 @@ const Index = () => {
           index: 3,
           resource: t("Meta description"),
           type: productData?.seo.description?.type,
-          loading: loadingItems.includes("meta_description"),
           default_language: productData?.seo.description?.value,
           translated: productData?.translations?.seo.description,
         },
@@ -456,7 +446,6 @@ const Index = () => {
         index: index,
         resource: t(option?.name),
         type: option?.type,
-        loading: loadingItems.includes(`name_${index}`),
         default_language: option?.translatableContent,
         translated: option.translation,
       };
@@ -468,13 +457,12 @@ const Index = () => {
         index: index,
         resource: t(metafield?.name),
         type: metafield?.type,
-        loading: loadingItems.includes(`value_${index}`),
         default_language: metafield?.translatableContent,
         translated: metafield?.translation,
       };
     });
     if (metafieldsData) setMetafieldsData(metafieldsData);
-  }, [productData, loadingItems]);
+  }, [productData]);
 
   useEffect(() => {
     if (actionData && "nextProducts" in actionData) {
@@ -524,7 +512,6 @@ const Index = () => {
               productsData.nodes[index].translations.push({
                 key: item.data.key,
                 value: item.data.value,
-                outdated: false,
               });
             }
           }
@@ -542,7 +529,6 @@ const Index = () => {
               productOption.translations.push({
                 key: item.data.key,
                 value: item.data.value,
-                outdated: false,
               });
             }
           }
@@ -560,7 +546,6 @@ const Index = () => {
               productMetafield.translations.push({
                 key: item.data.key,
                 value: item.data.value,
-                outdated: false,
               });
             }
           }
@@ -619,7 +604,7 @@ const Index = () => {
             onClick={() => {
               handleTranslate("PRODUCT", record?.key || "", record?.type || "", record?.default_language || "");
             }}
-            loading={record?.loading}
+            loading={loadingItems.includes(record?.key || "")}
           >
             {t("Translate")}
           </Button>
@@ -671,7 +656,7 @@ const Index = () => {
             onClick={() => {
               handleTranslate("PRODUCT", record?.key || "", record?.type || "", record?.default_language || "");
             }}
-            loading={record?.loading}
+            loading={loadingItems.includes(record?.key || "")}
           >
             {t("Translate")}
           </Button>
@@ -728,7 +713,7 @@ const Index = () => {
             onClick={() => {
               handleTranslate("PRODUCT_OPTION", record?.key || "", record?.type || "", record?.default_language || "", Number(1 + "" + record?.index));
             }}
-            loading={record?.loading}
+            loading={loadingItems.includes(record?.key || "")}
           >
             {t("Translate")}
           </Button>
@@ -785,7 +770,7 @@ const Index = () => {
             onClick={() => {
               handleTranslate("METAFIELD", record?.key || "", record?.type || "", record?.default_language || "", Number(2 + "" + record?.index));
             }}
-            loading={record?.loading}
+            loading={loadingItems.includes(record?.key || "")}
           >
             {t("Translate")}
           </Button>
@@ -1119,10 +1104,6 @@ const Index = () => {
     }
     setLoadingItems((prev) => prev.filter((item) => item !== key));
   }
-
-  useEffect(() => {
-    console.log(loadingItems);
-  }, [loadingItems]);
 
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);
