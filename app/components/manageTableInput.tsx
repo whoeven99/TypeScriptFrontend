@@ -57,13 +57,21 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   const locale = useSelector((state: any) => state.userConfig.locale);
 
   useEffect(() => {
-    if (setTranslatedValues) {
-      setTranslatedValues((prev) => ({
-        ...prev,
-        [record?.key]: record?.translated, // 更新对应的 key
-      }));
+    if (setTranslatedValues && record?.key && record?.translated) {
+      setTranslatedValues((prev) => {
+        // 检查值是否发生变化
+        if (prev[record.key] === record.translated) {
+          return prev; // 如果值相同，直接返回原状态，不触发重渲染
+        }
+
+        // 值不同时才更新
+        return {
+          ...prev,
+          [record.key]: record.translated,
+        };
+      });
     }
-  }, [record]);
+  }, [record?.translated]);
 
   if (
     handleInputChange &&

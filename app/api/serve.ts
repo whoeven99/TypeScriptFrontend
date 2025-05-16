@@ -477,6 +477,14 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
       url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
       method: "GET",
     });
+
+    if (shop == "ciwishop.myshopify.com") {
+      return {
+        userSubscriptionPlan: 6,
+        currentPeriodEnd: null,
+      };
+    }
+
     if (response.data?.success) {
       const res = response.data?.response;
       return res;

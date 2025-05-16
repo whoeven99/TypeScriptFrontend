@@ -277,6 +277,7 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   const isManualChange = useRef(false);
+  const loadingItemsRef = useRef<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
@@ -299,10 +300,10 @@ const Index = () => {
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
-  const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const itemOptions = [
     { label: t("Products"), value: "product" },
     { label: t("Collection"), value: "collection" },
@@ -335,6 +336,11 @@ const Index = () => {
       setIsLoading(false);
     }
   }, []);
+
+  // 更新 loadingItemsRef 的值
+  useEffect(() => {
+    loadingItemsRef.current = loadingItems;
+  }, [loadingItems]);
 
   useEffect(() => {
     if (languageTableData) {
@@ -373,6 +379,7 @@ const Index = () => {
       metafields: productMetafieldsData,
     });
     setProductData(data);
+    setLoadingItems([]);
     setConfirmData([]);
     setTranslatedValues({});
   }, [selectProductKey, productsData, productOptionsData, productMetafieldsData]);
@@ -632,7 +639,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return <ManageTableInput record={record} />;
       },
@@ -641,7 +648,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -651,6 +658,23 @@ const Index = () => {
             handleInputChange={handleInputChange}
             isRtl={searchTerm === "ar"}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("PRODUCT", record?.key || "", record?.type || "", record?.default_language || "");
+            }}
+            loading={record?.loading}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -667,7 +691,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         if (record) {
           return <ManageTableInput record={record} />;
@@ -680,7 +704,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -691,6 +715,23 @@ const Index = () => {
             index={1}
             isRtl={searchTerm === "ar"}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("PRODUCT_OPTION", record?.key || "", record?.type || "", record?.default_language || "", Number(1 + "" + record?.index));
+            }}
+            loading={record?.loading}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -707,7 +748,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         if (record) {
           return <ManageTableInput record={record} />;
@@ -720,7 +761,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -731,6 +772,23 @@ const Index = () => {
             index={2}
             isRtl={searchTerm === "ar"}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("METAFIELD", record?.key || "", record?.type || "", record?.default_language || "", Number(2 + "" + record?.index));
+            }}
+            loading={record?.loading}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -779,14 +837,13 @@ const Index = () => {
     return data;
   };
 
-  const handleInputChange = (key: string, value: string, index?: number) => {    
+  const handleInputChange = (key: string, value: string, index?: number) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.key === key);
-
+      const existingItemIndex = prevData.findIndex((item) => item.key === key);    
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
         const updatedConfirmData = [...prevData];
@@ -1054,13 +1111,18 @@ const Index = () => {
       server: server || "",
     });
     if (data?.success) {
-      handleInputChange(key, data.response, index)
-    }else{
+      if (loadingItemsRef.current.includes(key)) {
+        handleInputChange(key, data.response, index)
+      }
+    } else {
       shopify.toast.show(data.errorMsg)
     }
-    console.log(data);
     setLoadingItems((prev) => prev.filter((item) => item !== key));
   }
+
+  useEffect(() => {
+    console.log(loadingItems);
+  }, [loadingItems]);
 
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);
