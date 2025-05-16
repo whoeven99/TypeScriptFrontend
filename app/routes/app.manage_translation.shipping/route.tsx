@@ -9,10 +9,9 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType } from "~/api/admin";
-import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { SessionService } from "~/utils/session.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
@@ -28,6 +27,7 @@ type TableDataType = {
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
+  type: string | undefined;
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -47,6 +47,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
 
     return json({
+      server: process.env.SERVER_URL,
+      shopName: shop,
       searchTerm,
       shippings,
     });
@@ -84,7 +86,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { searchTerm, shippings } =
+  const { searchTerm, shippings, server, shopName } =
     useLoaderData<typeof loader>();
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -94,6 +96,7 @@ const Index = () => {
   const navigate = useNavigate();
   const languageTableData = useSelector((state: any) => state.languageTableData.rows);
   const confirmFetcher = useFetcher<any>();
+  const loadingItemsRef = useRef<string[]>([]);
 
   const isManualChange = useRef(true);
 
@@ -105,6 +108,7 @@ const Index = () => {
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -128,6 +132,9 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
   const [selectedItem, setSelectedItem] = useState<string>("shipping");
 
+  useEffect(() => {
+    loadingItemsRef.current = loadingItems;
+  }, [loadingItems]);
 
   useEffect(() => {
     if (shippings && isManualChange.current) {
@@ -137,6 +144,7 @@ const Index = () => {
         resource: "Label",
         default_language: node?.translatableContent[0].value,
         translated: node?.translations[0]?.value,
+        type: node?.translatableContent[0]?.type,
       }));
       setResourceData(Data);
       isManualChange.current = false;
@@ -163,13 +171,13 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item: any) => {
-        item.success === false;
-      });
-      if (!errorItem) {
-        shopify.toast.show("Saved successfully");
+      const errorItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === false
+      );
+      if (errorItem.length == 0) {
+        shopify.toast.show(t("Saved successfully"));
       } else {
-        shopify.toast.show(errorItem?.errorMsg);
+        shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
     }
@@ -187,7 +195,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -200,7 +208,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           record && (
@@ -212,6 +220,23 @@ const Index = () => {
               isRtl={searchTerm === "ar"}
             />
           )
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("PACKING_SLIP_TEMPLATE", record?.key || "", record?.type || "", record?.default_language || "", record?.index || 0);
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -249,6 +274,34 @@ const Index = () => {
       }
     });
   };
+
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string, index: number) => {
+    if (!key || !type || !context) {
+      return;
+    }
+    setLoadingItems((prev) => [...prev, key]);
+    const data = await SingleTextTranslate({
+      shopName: shopName,
+      source: shippings.nodes
+        .find((item: any) => item?.resourceId === key)
+        ?.translatableContent.find((item: any) => item.key === key)
+        ?.locale,
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
+    if (data?.success) {
+      if (loadingItemsRef.current.includes(key)) {
+        handleInputChange(key, data.response, index)
+      }
+    } else {
+      shopify.toast.show(data.errorMsg)
+    }
+    setLoadingItems((prev) => prev.filter((item) => item !== key));
+  }
 
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);

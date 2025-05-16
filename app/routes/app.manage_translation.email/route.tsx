@@ -25,7 +25,7 @@ import {
     queryNextTransType,
     queryPreviousTransType,
 } from "~/api/admin";
-import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -38,10 +38,19 @@ const { Sider, Content } = Layout;
 const { Text } = Typography;
 
 interface EmailType {
-    handle: string;
     key: string;
-    title: string;
-    body: string | undefined;
+    handle: {
+        value: string;
+        type: string;
+    };
+    title: {
+        value: string;
+        type: string;
+    };
+    body: {
+        value: string;
+        type: string;
+    };
     translations: {
         handle: string | undefined;
         key: string;
@@ -55,6 +64,7 @@ type TableDataType = {
     resource: string;
     default_language: string | undefined;
     translated: string | undefined;
+    type: string | undefined;
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -75,6 +85,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         });
 
         return json({
+            server: process.env.SERVER_URL,
+            shopName: shop,
             searchTerm,
             emails,
         });
@@ -139,7 +151,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
     const [searchParams] = useSearchParams();
     const location = useLocation();
-    const { searchTerm, emails } =
+    const { searchTerm, emails, server, shopName } =
         useLoaderData<typeof loader>();
     const actionData = useActionData<typeof action>();
     const {
@@ -152,7 +164,8 @@ const Index = () => {
     const submit = useSubmit(); // 使用 useSubmit 钩子
     const confirmFetcher = useFetcher<any>();
 
-    const isManualChange = useRef(false);
+    const isManualChange = useRef(true);
+    const loadingItemsRef = useRef<string[]>([]);
 
     const [isLoading, setIsLoading] = useState(true);
     const [isVisible, setIsVisible] = useState(() => {
@@ -168,6 +181,7 @@ const Index = () => {
     );
     const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
     const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+    const [loadingItems, setLoadingItems] = useState<string[]>([]);
     const [translatedValues, setTranslatedValues] = useState<{
         [key: string]: string;
     }>({});
@@ -205,6 +219,10 @@ const Index = () => {
     }, []);
 
     useEffect(() => {
+        loadingItemsRef.current = loadingItems;
+    }, [loadingItems]);
+
+    useEffect(() => {
         if (languageTableData) {
             setLanguageOptions(languageTableData
                 .filter((item: any) => !item.primary)
@@ -234,12 +252,10 @@ const Index = () => {
         setEmailData(data);
         setConfirmData([]);
         setTranslatedValues({});
-    }, [selectEmailKey, emailsData]);
-
-    useEffect(() => {
         setHasPrevious(emailsData.pageInfo.hasPreviousPage);
         setHasNext(emailsData.pageInfo.hasNextPage);
-    }, [emailsData]);
+        setLoadingItems([]);
+    }, [selectEmailKey, emailsData]);
 
     useEffect(() => {
         setResourceData(
@@ -247,14 +263,16 @@ const Index = () => {
                 {
                     key: "title",
                     resource: "Title",
-                    default_language: emailData?.title,
+                    default_language: emailData?.title?.value,
                     translated: emailData?.translations?.title,
+                    type: emailData?.title?.type,
                 },
                 {
                     key: "body_html",
                     resource: "Description",
-                    default_language: emailData?.body,
+                    default_language: emailData?.body?.value,
                     translated: emailData?.translations?.body,
+                    type: emailData?.body?.type,
                 },
             ].filter((item) => item.default_language),
         );
@@ -284,28 +302,31 @@ const Index = () => {
 
     useEffect(() => {
         if (confirmFetcher.data && confirmFetcher.data.data) {
-            const errorItem = confirmFetcher.data.data.find((item: any) => {
-                item.success === false;
-            });
-            if (!errorItem) {
-                confirmFetcher.data.confirmData.forEach((item: any) => {
-                    const index = emailsData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
-                    if (index !== -1) {
-                        const email = emailsData.nodes[index].translations.find((option: any) => option.key === item.key);
-                        if (email) {
-                            email.value = item.value;
-                        } else {
-                            emailsData.nodes[index].translations.push({
-                                key: item.key,
-                                value: item.value,
-                                outdated: false,
-                            });
-                        }
+            const successfulItem = confirmFetcher.data.data.filter((item: any) =>
+                item.success === true
+            );
+            const errorItem = confirmFetcher.data.data.filter((item: any) =>
+                item.success === false
+            );
+
+            successfulItem.forEach((item: any) => {
+                const index = emailsData.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+                if (index !== -1) {
+                    const email = emailsData.nodes[index].translations.find((option: any) => option.key === item.data.key);
+                    if (email) {
+                        email.value = item.data.value;
+                    } else {
+                        emailsData.nodes[index].translations.push({
+                            key: item.data.key,
+                            value: item.data.value,
+                        });
                     }
-                })
-                shopify.toast.show("Saved successfully");
+                }
+            })
+            if (errorItem.length == 0) {
+                shopify.toast.show(t("Saved successfully"));
             } else {
-                shopify.toast.show(errorItem?.errorMsg);
+                shopify.toast.show(t("Some items saved failed"));
             }
             setConfirmData([]);
         }
@@ -323,7 +344,7 @@ const Index = () => {
             title: t("Default Language"),
             dataIndex: "default_language",
             key: "default_language",
-            width: "45%",
+            width: "40%",
             render: (_: any, record: TableDataType) => {
                 return <ManageTableInput record={record} />;
             },
@@ -332,7 +353,7 @@ const Index = () => {
             title: t("Translated"),
             dataIndex: "translated",
             key: "translated",
-            width: "45%",
+            width: "40%",
             render: (_: any, record: TableDataType) => {
                 return (
                     <ManageTableInput
@@ -342,6 +363,23 @@ const Index = () => {
                         handleInputChange={handleInputChange}
                         isRtl={searchTerm === "ar"}
                     />
+                );
+            },
+        },
+        {
+            title: t("Translate"),
+            width: "10%",
+            render: (_: any, record: TableDataType) => {
+                return (
+                    <Button
+                        type="primary"
+                        onClick={() => {
+                            handleTranslate("EMAIL_TEMPLATE", record?.key || "", record?.type || "", record?.default_language || "");
+                        }}
+                        loading={loadingItems.includes(record?.key || "")}
+                    >
+                        {t("Translate")}
+                    </Button>
                 );
             },
         },
@@ -389,7 +427,7 @@ const Index = () => {
                         ?.translatableContent.find((item: any) => item.key === key)?.digest,
                     target: searchTerm || "",
                 };
-
+                                
                 return [...prevData, newItem]; // 将新数据添加到 confirmData 中
             }
         });
@@ -397,11 +435,19 @@ const Index = () => {
 
     const transBeforeData = ({ emails }: { emails: any }) => {
         let data: EmailType = {
-            handle: "",
             key: "",
-            title: "",
-            body: "",
-
+            handle: {
+                value: "",
+                type: "",
+            },
+            title: {
+                value: "",
+                type: "",
+            },
+            body: {
+                value: "",
+                type: "",
+            },
             translations: {
                 handle: "",
                 key: "",
@@ -414,15 +460,30 @@ const Index = () => {
             (email: any) => email?.resourceId === selectEmailKey,
         );
         data.key = email?.resourceId;
-        data.handle = email?.translatableContent.find(
-            (item: any) => item.key === "handle",
-        )?.value;
-        data.title = email?.translatableContent.find(
-            (item: any) => item.key === "title",
-        )?.value;
-        data.body = email?.translatableContent.find(
-            (item: any) => item.key === "body_html",
-        )?.value;
+        data.handle = {
+            value: email?.translatableContent.find(
+                (item: any) => item.key === "handle",
+            )?.value,
+            type: email?.translatableContent.find(
+                (item: any) => item.key === "handle",
+            )?.type,
+        };
+        data.title = {
+            value: email?.translatableContent.find(
+                (item: any) => item.key === "title",
+            )?.value,
+            type: email?.translatableContent.find(
+                (item: any) => item.key === "title",
+            )?.type,
+        };
+        data.body = {
+            value: email?.translatableContent.find(
+                (item: any) => item.key === "body_html",
+            )?.value,
+            type: email?.translatableContent.find(
+                (item: any) => item.key === "body_html",
+            )?.type,
+        };
 
         data.translations.key = email?.resourceId;
         data.translations.title = email?.translations.find(
@@ -437,6 +498,34 @@ const Index = () => {
 
         return data;
     };
+
+    const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+        if (!key || !type || !context) {
+            return;
+        }
+        setLoadingItems((prev) => [...prev, key]);
+        const data = await SingleTextTranslate({
+            shopName: shopName,
+            source: emailsData.nodes
+                .find((item: any) => item?.resourceId === selectEmailKey)
+                ?.translatableContent.find((item: any) => item.key === key)
+                ?.locale,
+            target: searchTerm || "",
+            resourceType: resourceType,
+            context: context,
+            key: key,
+            type: type,
+            server: server || "",
+        });
+        if (data?.success) {
+            if (loadingItemsRef.current.includes(key)) {
+                handleInputChange(key, data.response)
+            }
+        } else {
+            shopify.toast.show(data.errorMsg)
+        }
+        setLoadingItems((prev) => prev.filter((item) => item !== key));
+    }
 
     const handleLanguageChange = (language: string) => {
         setIsLoading(true);

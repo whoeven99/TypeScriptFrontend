@@ -25,11 +25,10 @@ import {
   queryNextTransType,
   queryPreviousTransType,
 } from "~/api/admin";
-import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/serve";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { SessionService } from "~/utils/session.server";
 import { useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
 
@@ -39,12 +38,27 @@ const { Text } = Typography;
 
 interface PageType {
   key: string;
-  body: string | undefined;
-  title: string | undefined;
-  handle: string;
+  title: {
+    value: string;
+    type: string;
+  };
+  body: {
+    value: string;
+    type: string;
+  };
+  handle: {
+    value: string;
+    type: string;
+  };
   seo: {
-    description: string | undefined;
-    title: string | undefined;
+    title: {
+      value: string;
+      type: string;
+    };
+    description: {
+      value: string;
+      type: string;
+    };
   };
   translations: {
     key: string;
@@ -63,6 +77,7 @@ type TableDataType = {
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
+  type: string | undefined;
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -82,6 +97,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       locale: searchTerm || "",
     });
     return json({
+      server: process.env.SERVER_URL,
+      shopName: shop,
       searchTerm,
       pages,
     });
@@ -146,7 +163,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { searchTerm, pages } =
+  const { searchTerm, pages, server, shopName } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const {
@@ -159,7 +176,8 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const confirmFetcher = useFetcher<any>();
 
-  const isManualChange = useRef(false);
+  const isManualChange = useRef(true);
+  const loadingItemsRef = useRef<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
@@ -176,6 +194,7 @@ const Index = () => {
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -232,14 +251,11 @@ const Index = () => {
       setTimeout(() => {
         setIsLoading(false);
       }, 100);
+      setHasPrevious(pagesData.pageInfo.hasPreviousPage);
+      setHasNext(pagesData.pageInfo.hasNextPage);
       isManualChange.current = false; // 重置
     }
   }, [pages]);
-
-  useEffect(() => {
-    setHasPrevious(pagesData.pageInfo.hasPreviousPage);
-    setHasNext(pagesData.pageInfo.hasNextPage);
-  }, [pagesData]);
 
   useEffect(() => {
     const data = transBeforeData({
@@ -248,6 +264,7 @@ const Index = () => {
     setPageData(data);
     setConfirmData([]);
     setTranslatedValues({});
+    setLoadingItems([]);
   }, [selectPageKey, pagesData]);
 
   useEffect(() => {
@@ -256,14 +273,16 @@ const Index = () => {
         {
           key: "title",
           resource: "Title",
-          default_language: pageData?.title,
+          default_language: pageData?.title.value,
           translated: pageData?.translations?.title,
+          type: pageData?.title.type,
         },
         {
           key: "body",
           resource: "Description",
-          default_language: pageData?.body,
+          default_language: pageData?.body.value,
           translated: pageData?.translations?.body,
+          type: pageData?.body.type,
         },
       ].filter((item) => item.default_language),
     );
@@ -272,20 +291,23 @@ const Index = () => {
         {
           key: "handle",
           resource: "URL handle",
-          default_language: pageData?.handle,
+          default_language: pageData?.handle.value,
           translated: pageData?.translations?.handle,
+          type: pageData?.handle.type,
         },
         {
           key: "meta_title",
           resource: "Meta title",
-          default_language: pageData?.seo.title,
+          default_language: pageData?.seo.title.value,
           translated: pageData?.translations?.seo.title,
+          type: pageData?.seo.title.type,
         },
         {
           key: "meta_description",
           resource: "Meta description",
-          default_language: pageData?.seo.description,
+          default_language: pageData?.seo.description.value,
           translated: pageData?.translations?.seo.description,
+          type: pageData?.seo.description.type,
         },
       ].filter((item) => item.default_language),
     );
@@ -315,29 +337,31 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item: any) => {
-        item.success === false;
-      });
-      if (!errorItem) {
-        confirmFetcher.data.confirmData.forEach((item: any) => {
-          const index = pagesData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
-          if (index !== -1) {
-            const page = pagesData.nodes[index].translations.find((option: any) => option.key === item.key);
-            if (page) {
-              page.value = item.value;
-            } else {
-              pagesData.nodes[index].translations.push({
-                key: item.key,
-                value: item.value,
-                outdated: false,
-              });
-            }
-          }
+      const successfulItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === true
+      );
+      const errorItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === false
+      );
 
-        })
-        shopify.toast.show("Saved successfully");
+      successfulItem.forEach((item: any) => {
+        const index = pagesData.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+        if (index !== -1) {
+          const page = pagesData.nodes[index].translations.find((option: any) => option.key === item.data.key);
+          if (page) {
+            page.value = item.data.value;
+          } else {
+            pagesData.nodes[index].translations.push({
+              key: item.data.key,
+              value: item.data.value,
+            });
+          }
+        }
+      })
+      if (errorItem.length == 0) {
+        shopify.toast.show(t("Saved successfully"));
       } else {
-        shopify.toast.show(errorItem?.errorMsg);
+        shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
     }
@@ -355,7 +379,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return <ManageTableInput record={record} />;
       },
@@ -364,7 +388,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -374,6 +398,23 @@ const Index = () => {
             handleInputChange={handleInputChange}
             isRtl={searchTerm === "ar"}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("PAGE", record?.key || "", record?.type || "", record?.default_language || "");
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -390,7 +431,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return <ManageTableInput record={record} />;
       },
@@ -399,7 +440,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -409,6 +450,23 @@ const Index = () => {
             handleInputChange={handleInputChange}
             isRtl={searchTerm === "ar"}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("PAGE", record?.key || "", record?.type || "", record?.default_language || "");
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -464,12 +522,27 @@ const Index = () => {
   const transBeforeData = ({ pages }: { pages: any }) => {
     let data: PageType = {
       key: "",
-      title: "",
-      body: "",
-      handle: "",
+      title: {
+        value: "",
+        type: "",
+      },
+      body: {
+        value: "",
+        type: "",
+      },
+      handle: {
+        value: "",
+        type: "",
+      },
       seo: {
-        description: "",
-        title: "",
+        description: {
+          value: "",
+          type: "",
+        },
+        title: {
+          value: "",
+          type: "",
+        },
       },
       translations: {
         key: "",
@@ -486,21 +559,46 @@ const Index = () => {
       (page: any) => page?.resourceId === selectPageKey,
     );
     data.key = page?.resourceId;
-    data.title = page?.translatableContent.find(
-      (item: any) => item.key === "title",
-    )?.value;
-    data.body = page?.translatableContent.find(
-      (item: any) => item.key === "body_html",
-    )?.value;
-    data.handle = page?.translatableContent.find(
-      (item: any) => item.key === "handle",
-    )?.value;
-    data.seo.title = page?.translatableContent.find(
-      (item: any) => item.key === "meta_title",
-    )?.value;
-    data.seo.description = page?.translatableContent.find(
-      (item: any) => item.key === "meta_description",
-    )?.value;
+    data.title = {
+      value: page?.translatableContent.find(
+        (item: any) => item.key === "title",
+      )?.value,
+      type: page?.translatableContent.find(
+        (item: any) => item.key === "title",
+      )?.type,
+    }
+    data.body = {
+      value: page?.translatableContent.find(
+        (item: any) => item.key === "body_html",
+      )?.value,
+      type: page?.translatableContent.find(
+        (item: any) => item.key === "body_html",
+      )?.type,
+    }
+    data.handle = {
+      value: page?.translatableContent.find(
+        (item: any) => item.key === "handle",
+      )?.value,
+      type: page?.translatableContent.find(
+        (item: any) => item.key === "handle",
+      )?.type,
+    }
+    data.seo.title = {
+      value: page?.translatableContent.find(
+        (item: any) => item.key === "meta_title",
+      )?.value,
+      type: page?.translatableContent.find(
+        (item: any) => item.key === "meta_title",
+      )?.type,
+    }
+    data.seo.description = {
+      value: page?.translatableContent.find(
+        (item: any) => item.key === "meta_description",
+      )?.value,
+      type: page?.translatableContent.find(
+        (item: any) => item.key === "meta_description",
+      )?.type,
+    }
     data.translations.key = page?.resourceId;
     data.translations.title = page?.translations.find(
       (item: any) => item.key === "title",
@@ -519,6 +617,34 @@ const Index = () => {
     )?.value;
     return data;
   };
+
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+    if (!key || !type || !context) {
+      return;
+    }
+    setLoadingItems((prev) => [...prev, key]);
+    const data = await SingleTextTranslate({
+      shopName: shopName,
+      source: pagesData.nodes
+        .find((item: any) => item?.resourceId === selectPageKey)
+        ?.translatableContent.find((item: any) => item.key === key)
+        ?.locale,
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
+    if (data?.success) {
+      if (loadingItemsRef.current.includes(key)) {
+        handleInputChange(key, data.response)
+      }
+    } else {
+      shopify.toast.show(data.errorMsg)
+    }
+    setLoadingItems((prev) => prev.filter((item) => item !== key));
+  }
 
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);

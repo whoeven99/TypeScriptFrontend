@@ -42,12 +42,6 @@ interface TableDataType {
   navigation: string;
 }
 
-const planMapping = {
-  1: "Free",
-  2: "Free",
-  3: "Starter",
-}
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
@@ -788,7 +782,7 @@ const Index = () => {
         </Space>
       )}
       <Outlet />
-      <TranslationWarnModal
+      {/* <TranslationWarnModal
         title={t("The Translation Editor has been limited due to your plan (Current plan: {{plan}})", { plan: planMapping[plan as keyof typeof planMapping] })}
         content={t("Please upgrade to a higher plan to unlock the Translation Editor")}
         action={() => {
@@ -797,7 +791,7 @@ const Index = () => {
         actionText={t("Upgrade")}
         show={showWarnModal}
         setShow={setShowWarnModal}
-      />
+      /> */}
     </Page>
   );
 };

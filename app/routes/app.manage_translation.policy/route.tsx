@@ -19,7 +19,7 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType } from "~/api/admin";
-import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import ManageTableInput from "~/components/manageTableInput";
@@ -32,10 +32,11 @@ const { Sider, Content } = Layout;
 const { Text } = Typography;
 
 type TableDataType = {
-  key: string | number | undefined;
+  key: string;
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
+  type: string | undefined;
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -55,6 +56,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       locale: searchTerm || "",
     });
     return json({
+      server: process.env.SERVER_URL,
+      shopName: shop,
       searchTerm,
       policies,
     });
@@ -94,13 +97,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { searchTerm, policies } =
+  const { searchTerm, policies, server, shopName } =
     useLoaderData<typeof loader>();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
   const { t } = useTranslation();
-  const isManualChange = useRef(false);
+  const isManualChange = useRef(true);
+  const loadingItemsRef = useRef<string[]>([]);
 
   const navigate = useNavigate();
   const languageTableData = useSelector((state: any) => state.languageTableData.rows);
@@ -122,6 +126,7 @@ const Index = () => {
   const [selectPolicyKey, setSelectPolicyKey] = useState(policies.nodes[0]?.resourceId);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{ [key: string]: string }>({});
   const itemOptions = [
     { label: t("Products"), value: "product" },
@@ -173,6 +178,7 @@ const Index = () => {
     setTimeout(() => {
       setIsLoading(false);
     }, 100);
+    setLoadingItems([]);
   }, [selectPolicyKey, policies]);
 
   useEffect(() => {
@@ -182,6 +188,7 @@ const Index = () => {
         resource: "Content",
         default_language: policyData?.translatableContent[0]?.value,
         translated: policyData?.translations[0]?.value,
+        type: policyData?.translatableContent[0]?.type,
       },
     ]);
   }, [policyData]);
@@ -192,28 +199,31 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item: any) => {
-        item.success === false;
-      });
-      if (!errorItem) {
-        confirmFetcher.data.confirmData.forEach((item: any) => {
-          const index = policies.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
-          if (index !== -1) {
-            const policy = policies.nodes[index].translations.find((option: any) => option.key === item.key);
-            if (policy) {
-              policy.value = item.value;
-            } else {
-              policies.nodes[index].translations.push({
-                key: item.key,
-                value: item.value,
-                outdated: false,
-              });
-            }
-          }
-        })
-        shopify.toast.show("Saved successfully");
+      const successfulItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === true
+      );
+      const errorItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === false
+      );
+
+      // successfulItem.forEach((item: any) => {
+      //   const index = policies.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+      //   if (index !== -1) {
+      //     const policy = policies.nodes[index].translations.find((option: any) => option.key === item.data.key);
+      //     if (policy) {
+      //       policy.value = item.data.value;
+      //     } else {
+      //       policies.nodes[index].translations.push({
+      //         key: item.data.key,
+      //         value: item.data.value,
+      //       });
+      //     }
+      //   }
+      // })
+      if (errorItem.length == 0) {
+        shopify.toast.show(t("Saved successfully"));
       } else {
-        shopify.toast.show(errorItem?.errorMsg);
+        shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
     }
@@ -232,7 +242,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput record={record} />
@@ -243,7 +253,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           record && (
@@ -255,6 +265,23 @@ const Index = () => {
               isRtl={searchTerm === "ar"}
             />
           )
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("SHOP_POLICY", record?.key || "", record?.type || "", record?.default_language || "");
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -294,6 +321,34 @@ const Index = () => {
       }
     });
   };
+
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+    if (!key || !type || !context) {
+      return;
+    }
+    setLoadingItems((prev) => [...prev, key]);
+    const data = await SingleTextTranslate({
+      shopName: shopName,
+      source: policies.nodes
+        .find((item: any) => item?.resourceId === selectPolicyKey)
+        ?.translatableContent.find((item: any) => item.key === key)
+        ?.locale,
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
+    if (data?.success) {
+      if (loadingItemsRef.current.includes(key)) {
+        handleInputChange(key, data.response)
+      }
+    } else {
+      shopify.toast.show(data.errorMsg)
+    }
+    setLoadingItems((prev) => prev.filter((item) => item !== key));
+  }
 
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);

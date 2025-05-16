@@ -179,7 +179,7 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const confirmFetcher = useFetcher<any>();
 
-  const isManualChange = useRef(false);
+  const isManualChange = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
   const actionData = useActionData<typeof action>();

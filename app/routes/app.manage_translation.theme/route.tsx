@@ -23,7 +23,7 @@ import {
   queryPreviousTransType,
 } from "~/api/admin";
 import { SearchOutlined } from "@ant-design/icons";
-import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/serve";
 import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { useTranslation } from "react-i18next";
@@ -34,18 +34,14 @@ import { FullscreenBar, Select } from "@shopify/polaris";
 
 const { Text } = Typography
 
-const { Header, Content } = Layout;
-
-interface SelectType {
-  label: string;
-  value: string;
-}
+const { Content } = Layout;
 
 type TableDataType = {
   key: string;
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
+  type: string | undefined;
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -63,6 +59,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       locale: searchTerm || "",
     });
     return json({
+      server: process.env.SERVER_URL,
+      shopName: shop,
       searchTerm,
       themes,
     });
@@ -109,6 +107,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         return json({ nextThemes: nextThemes });
       case !!confirmData:
+        console.log("confirmData: ", confirmData);
+
         const data = await updateManageTranslation({
           shop,
           accessToken: accessToken as string,
@@ -128,7 +128,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { searchTerm, themes } =
+  const { searchTerm, themes, server, shopName } =
     useLoaderData<typeof loader>();
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -140,15 +140,18 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   const isManualChange = useRef(true);
+  const loadingItemsRef = useRef<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
     return !!searchParams.get('language');
   });
   const [resourceData, setResourceData] = useState<any>([]);
+  const [filteredResourceData, setFilteredResourceData] = useState<any>([]);
   const [searchInput, setSearchInput] = useState("");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -173,6 +176,14 @@ const Index = () => {
   const [selectedItem, setSelectedItem] = useState<string>("theme");
 
   useEffect(() => {
+    loadingItemsRef.current = loadingItems;
+  }, [loadingItems]);
+
+  useEffect(() => {
+    console.log("confirmData: ", confirmData);
+  }, [confirmData])
+
+  useEffect(() => {
     if (languageTableData) {
       setLanguageOptions(languageTableData
         .filter((item: any) => !item.primary)
@@ -185,11 +196,15 @@ const Index = () => {
 
   useEffect(() => {
     if (themes && isManualChange.current) {
+      console.log("themes: ", themes);
+
       const start = performance.now();
       const data = generateMenuItemsArray(themes);
+
       const end = performance.now();
       console.log('generateMenuItemsArray 执行耗时:', (end - start).toFixed(2), 'ms');
       setResourceData(data);
+      setFilteredResourceData(data);
       console.log("themes: ", data);
       isManualChange.current = false;
     }
@@ -259,6 +274,23 @@ const Index = () => {
         );
       },
     },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("ONLINE_STORE_THEME", record?.key || "", record?.type || "", record?.default_language || "");
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
+        );
+      },
+    },
   ];
 
   const handleInputChange = (key: string, value: string) => {
@@ -282,7 +314,7 @@ const Index = () => {
         const newItem = {
           resourceId: themes.nodes[0]?.resourceId,
           locale: themes.nodes[0]?.translatableContent[0]?.locale,
-          key: key,
+          key: themes.nodes[0]?.translatableContent[0]?.key,
           value: value, // 初始为空字符串
           translatableContentDigest:
             themes.nodes[0]?.translatableContent.find((item: any) => item.key === key)?.digest || themes.nodes[0]?.translatableContent[0]?.digest || "",
@@ -305,11 +337,40 @@ const Index = () => {
             items.nodes[0]?.translations.find(
               (translation: any) => translation.key === item.key,
             )?.value || "", // 翻译字段初始化为空字符串
+          type: item.type,
         };
         return [currentItem];
       },
     );
   };
+
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+    if (!key || !type || !context) {
+      return;
+    }
+    setLoadingItems((prev) => [...prev, key]);
+    const data = await SingleTextTranslate({
+      shopName: shopName,
+      source: themes.nodes
+        .find((item: any) => item?.resourceId === key)
+        ?.translatableContent.find((item: any) => item.key === key)
+        ?.locale,
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
+    if (data?.success) {
+      if (loadingItemsRef.current.includes(key)) {
+        handleInputChange(key, data.response)
+      }
+    } else {
+      shopify.toast.show(data.errorMsg)
+    }
+    setLoadingItems((prev) => prev.filter((item) => item !== key));
+  }
 
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);
@@ -331,7 +392,7 @@ const Index = () => {
     const filteredData = resourceData.filter((theme: any) =>
       theme.default_language.toLowerCase().includes(value.toLowerCase()),
     );
-    setResourceData(filteredData);
+    setFilteredResourceData(filteredData);
   };
 
   const handleConfirm = () => {
@@ -454,7 +515,7 @@ const Index = () => {
                   />
                   <Table
                     columns={resourceColumns}
-                    dataSource={resourceData}
+                    dataSource={filteredResourceData}
                     pagination={{ position: ["bottomCenter"], showSizeChanger: false }}
                   />
                 </Space>

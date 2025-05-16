@@ -154,7 +154,7 @@ const Index = () => {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
-  const isManualChange = useRef(false);
+  const isManualChange = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
   const languageTableData = useSelector((state: any) => state.languageTableData.rows);
