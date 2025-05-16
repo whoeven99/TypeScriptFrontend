@@ -374,6 +374,7 @@ const Index = () => {
     });
     setProductData(data);
     setConfirmData([]);
+    setTranslatedValues({});
   }, [selectProductKey, productsData, productOptionsData, productMetafieldsData]);
 
   useEffect(() => {
@@ -1038,7 +1039,21 @@ const Index = () => {
     if (!key || !type || !context) {
       return;
     }
+    console.log(context);
     setLoadingItems((prev) => [...prev, key]);
+    console.log({
+      shopName: shopName,
+      source: productsData.nodes
+        .find((item: any) => item?.resourceId === selectProductKey)
+        ?.translatableContent.find((item: any) => item.key === key)
+        ?.locale,
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
     const data = await SingleTextTranslate({
       shopName: shopName,
       source: productsData.nodes
@@ -1057,7 +1072,6 @@ const Index = () => {
     } else {
       shopify.toast.show(data.errorMsg)
     }
-    console.log(data);
     setLoadingItems((prev) => prev.filter((item) => item !== key));
   }
 

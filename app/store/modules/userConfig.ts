@@ -17,14 +17,17 @@ const userConfigSlice = createSlice({
   name: "userConfig",
   initialState,
   reducers: {
-    setUserConfig: (state, action: PayloadAction<{[key: string]: string}>) => {
+    setUserConfig: (
+      state,
+      action: PayloadAction<{ [key: string]: string }>,
+    ) => {
       if (action.payload.locale !== undefined) {
         state.locale = action.payload.locale;
       }
-      if (action.payload.plan !== undefined) {
+      if (action.payload.plan !== undefined && !state.plan) {
         state.plan = action.payload.plan;
       }
-      if (action.payload.updateTime !== undefined) {
+      if (action.payload.updateTime !== undefined && !state.updateTime) {
         state.updateTime = action.payload.updateTime;
       }
     },
