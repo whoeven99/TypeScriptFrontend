@@ -97,11 +97,11 @@ export interface MarketType {
 }
 
 const autoTranslationMapping = {
-  1: 0,
-  2: 0,
-  3: 0,
-  4: 1,
-  5: 8,
+  1: 20,
+  2: 20,
+  3: 20,
+  4: 20,
+  5: 20,
   6: 20
 }
 
@@ -699,7 +699,7 @@ const Index = () => {
 
   const handleAutoUpdateTranslationChange = async (locale: string, checked: boolean) => {
     const items = dataSource.filter((item => item.autoTranslate)).length
-    if (items < autoTranslationMapping[plan as keyof typeof autoTranslationMapping]) {
+    if (items <= autoTranslationMapping[plan as keyof typeof autoTranslationMapping]) {
       dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
       const row = dataSource.find((item: any) => item.locale === locale);
       if (row) {
