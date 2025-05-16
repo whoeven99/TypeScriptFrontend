@@ -1,9 +1,9 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "4b05c1caefa9e0761a0538b64159b627"
-name = "Ciwi.ai:FAT(Local)"
-handle = "ciwi_local"
-application_url = "https://01e1b0cc3292.ngrok.app"
+client_id = "dec512b68e658e4f21588e3d4de0e748"
+name = "Ciwi.ai:FAT(Test)"
+handle = "ciwi_test"
+application_url = "https://typescriptfrontend.onrender.com"
 embedded = true
 
 [access_scopes]
@@ -12,9 +12,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_metaobjects,read_on
 
 [auth]
 redirect_urls = [
-  "https://01e1b0cc3292.ngrok.app/auth/callback",
-  "https://01e1b0cc3292.ngrok.app/auth/shopify/callback",
-  "https://01e1b0cc3292.ngrok.app/api/auth/callback"
+  "https://typescriptfrontend.onrender.com/auth/callback",
+  "https://typescriptfrontend.onrender.com/auth/shopify/callback",
+  "https://typescriptfrontend.onrender.com/api/auth/callback"
 ]
 
 [webhooks]
