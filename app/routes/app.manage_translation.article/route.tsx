@@ -807,13 +807,21 @@ const Index = () => {
                 background: colorBgContainer,
                 height: 'calc(100vh - 124px)',
                 width: '200px',
+                minHeight: '70vh',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'auto',
               }}
             >
               <Menu
                 mode="inline"
                 defaultSelectedKeys={[articlesData.nodes[0]?.resourceId]}
                 defaultOpenKeys={["sub1"]}
-                style={{ height: "100%" }}
+                style={{
+                  flex: 1,
+                  overflowY: "auto",
+                  minHeight: 0,
+                }}
                 items={menuData}
                 selectedKeys={[selectArticleKey]}
                 onClick={(e) => setSelectArticleKey(e.key)}

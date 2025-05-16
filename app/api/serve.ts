@@ -829,7 +829,7 @@ export const GetTranslate = async ({
   source: string;
   target: string;
   translateSettings1: string;
-  translateSettings2: string;
+  translateSettings2: string[];
   translateSettings3: string[];
 }) => {
   try {
@@ -842,7 +842,7 @@ export const GetTranslate = async ({
         source: source,
         target: target,
         translateSettings1: "google",
-        translateSettings2: translateSettings2,
+        translateSettings2: translateSettings2.toString(),
         translateSettings3: translateSettings3,
       },
     });
