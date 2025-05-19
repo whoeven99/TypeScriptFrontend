@@ -380,6 +380,8 @@
     "Please upgrade to a higher plan to remove the current glossary limitations": "より高いプランにアップグレードして現在の用語集の制限を削除してください",
     "Add failed": "追加に失敗しました",
     "Language not found": "言語が見つかりません",
-    "You have reached your shopify plan limit(Max<=20)": "Shopifyプランの制限に達しました（Max<=20）"
+    "You have reached your shopify plan limit(Max<=20)": "Shopifyプランの制限に達しました（Max<=20）",
+    "Select at least one language pack": "少なくとも1つの言語パックを選択してください",
+    "Select at least one translation item": "少なくとも1つの翻訳項目を選択してください"
 }   
   

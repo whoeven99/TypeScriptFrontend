@@ -381,5 +381,7 @@
     "Please upgrade to a higher plan to remove the current glossary limitations": "Lütfen daha yüksek bir plana yükseltin sözlük sınırlarını kaldırmak için",
     "Add failed": "Ekleme başarısız",
     "Language not found": "Dil bulunamadı",
-    "You have reached your shopify plan limit(Max<=20)": "Shopify planınızın sınırına ulaştınız (Max<=20)"
+    "You have reached your shopify plan limit(Max<=20)": "Shopify planınızın sınırına ulaştınız (Max<=20)",
+    "Select at least one language pack": "En az bir dil paketini seçin",
+    "Select at least one translation item": "En az bir çeviri öğesini seçin"
 }
