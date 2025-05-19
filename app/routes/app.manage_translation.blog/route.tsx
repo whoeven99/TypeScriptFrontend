@@ -27,11 +27,10 @@ import {
   queryShopLanguages,
 } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { SessionService } from "~/utils/session.server";
 import { Modal } from "@shopify/app-bridge-react";
 import { useSelector } from "react-redux";
 
@@ -40,8 +39,14 @@ const { Text } = Typography;
 
 interface BlogType {
   key: string;
-  handle: string;
-  title: string;
+  handle: {
+    value: string;
+    type: string;
+  };
+  title: {
+    value: string;
+    type: string;
+  };
   translations: {
     key: string;
     handle: string | undefined;
@@ -54,6 +59,7 @@ type TableDataType = {
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
+  type: string | undefined;
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -75,6 +81,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
 
     return json({
+      server: process.env.SERVER_URL,
+      shopName: shop,
       searchTerm,
       blogs,
     });
@@ -87,18 +95,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop, accessToken } = adminAuthResult.session;
+
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
@@ -112,7 +112,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!startCursor:
         const previousBlogs = await queryPreviousTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "BLOG",
           startCursor,
           locale: searchTerm || "",
@@ -121,7 +121,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!endCursor:
         const nextBlogs = await queryNextTransType({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           resourceType: "BLOG",
           endCursor,
           locale: searchTerm || "",
@@ -130,7 +130,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
-          accessToken,
+          accessToken: accessToken as string,
           confirmData,
         });
         return json({ data: data, confirmData: confirmData });
@@ -149,12 +149,13 @@ const Index = () => {
   const location = useLocation();
   const { t } = useTranslation();
 
-  const { searchTerm, blogs } = useLoaderData<typeof loader>();
+  const { searchTerm, blogs, server, shopName } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
-  const isManualChange = useRef(false);
+  const isManualChange = useRef(true);
+  const loadingItemsRef = useRef<string[]>([]);
 
   const languageTableData = useSelector((state: any) => state.languageTableData.rows);
   const navigate = useNavigate();
@@ -175,6 +176,7 @@ const Index = () => {
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -212,6 +214,10 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    loadingItemsRef.current = loadingItems;
+  }, [loadingItems]);
+
+  useEffect(() => {
     if (languageTableData) {
       setLanguageOptions(languageTableData
         .filter((item: any) => !item.primary)
@@ -221,7 +227,6 @@ const Index = () => {
         })));
     }
   }, [languageTableData])
-
 
   useEffect(() => {
     if (blogs && isManualChange.current) {
@@ -242,12 +247,9 @@ const Index = () => {
     setBlogData(data);
     setConfirmData([]);
     setTranslatedValues({});
-  }, [selectBlogKey, blogsData]);
-
-  useEffect(() => {
     setHasPrevious(blogsData.pageInfo.hasPreviousPage);
     setHasNext(blogsData.pageInfo.hasNextPage);
-  }, [blogsData]);
+  }, [selectBlogKey, blogsData]);
 
   useEffect(() => {
     setResourceData(
@@ -255,14 +257,16 @@ const Index = () => {
         {
           key: "title",
           resource: "Title",
-          default_language: blogData?.title,
+          default_language: blogData?.title?.value,
           translated: blogData?.translations?.title,
+          type: blogData?.title?.type,
         },
         {
           key: "handle",
           resource: "Handle",
-          default_language: blogData?.handle,
+          default_language: blogData?.handle?.value,
           translated: blogData?.translations?.handle,
+          type: blogData?.handle?.type,
         },
       ].filter((item) => item.default_language),
     );
@@ -288,30 +292,34 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item: any) => {
-        item.success === false;
-      });
-      if (!errorItem) {
-        confirmFetcher.data.confirmData.forEach((item: any) => {
-          const index = blogsData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
-          if (index !== -1) {
-            const blog = blogsData.nodes[index].translations.find((option: any) => option.key === item.key);
-            if (blog) {
-              blog.value = item.value;
-            } else {
-              blogsData.nodes[index].translations.push({
-                key: item.key,
-                value: item.value,
-                outdated: false,
-              });
-            }
+      const successfulItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === true
+      );
+      const errorItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === false
+      );
+
+      successfulItem.forEach((item: any) => {
+        const index = blogsData.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+        if (index !== -1) {
+          const blog = blogsData.nodes[index].translations.find((option: any) => option.key === item.data.key);
+          if (blog) {
+            blog.value = item.data.value;
+          } else {
+            blogsData.nodes[index].translations.push({
+              key: item.data.key,
+              value: item.data.value,
+            });
           }
-        })
-        shopify.toast.show("Saved successfully");
+        }
+      })
+      if (errorItem.length == 0) {
+        shopify.toast.show(t("Saved successfully"));
       } else {
-        shopify.toast.show(errorItem?.errorMsg);
+        shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
+
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
@@ -350,6 +358,23 @@ const Index = () => {
             handleInputChange={handleInputChange}
             isRtl={searchTerm === "ar"}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("BLOG", record?.key || "", record?.type || "", record?.default_language || "");
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -395,9 +420,15 @@ const Index = () => {
 
   const transBeforeData = ({ blogs }: { blogs: any }) => {
     let data: BlogType = {
-      handle: "",
       key: "",
-      title: "",
+      handle: {
+        value: "",
+        type: "",
+      },
+      title: {
+        value: "",
+        type: "",
+      },
       translations: {
         handle: "",
         key: "",
@@ -408,12 +439,22 @@ const Index = () => {
       (blog: any) => blog?.resourceId === selectBlogKey,
     );
     data.key = blog?.resourceId;
-    data.title = blog?.translatableContent.find(
-      (item: any) => item.key === "title",
-    )?.value;
-    data.handle = blog?.translatableContent.find(
-      (item: any) => item.key === "handle",
-    )?.value;
+    data.title = {
+      value: blog?.translatableContent.find(
+        (item: any) => item.key === "title",
+      )?.value,
+      type: blog?.translatableContent.find(
+        (item: any) => item.key === "title",
+      )?.type,
+    };
+    data.handle = {
+      value: blog?.translatableContent.find(
+        (item: any) => item.key === "handle",
+      )?.value,
+      type: blog?.translatableContent.find(
+        (item: any) => item.key === "handle",
+      )?.type,
+    };
     data.translations.key = blog?.resourceId;
     data.translations.title = blog?.translations.find(
       (item: any) => item.key === "title",
@@ -433,6 +474,34 @@ const Index = () => {
     }));
     return data;
   };
+
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+    if (!key || !type || !context) {
+      return;
+    }
+    setLoadingItems((prev) => [...prev, key]);
+    const data = await SingleTextTranslate({
+      shopName: shopName,
+      source: blogsData.nodes
+        .find((item: any) => item?.resourceId === selectBlogKey)
+        ?.translatableContent.find((item: any) => item.key === key)
+        ?.locale,
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
+    if (data?.success) {
+      if (loadingItemsRef.current.includes(key)) {
+        handleInputChange(key, data.response)
+      }
+    } else {
+      shopify.toast.show(data.errorMsg)
+    }
+    setLoadingItems((prev) => prev.filter((item) => item !== key));
+  }
 
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);
@@ -565,13 +634,21 @@ const Index = () => {
                 background: colorBgContainer,
                 height: 'calc(100vh - 124px)',
                 width: '200px',
+                minHeight: '70vh',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'auto',
               }}
             >
               <Menu
                 mode="inline"
                 defaultSelectedKeys={[blogsData.nodes[0]?.resourceId]}
                 defaultOpenKeys={["sub1"]}
-                style={{ height: "100%" }}
+                style={{
+                  flex: 1,
+                  overflowY: "auto",
+                  minHeight: 0,
+                }}
                 items={menuData}
                 selectedKeys={[selectBlogKey]}
                 onClick={(e) => setSelectBlogKey(e.key)}

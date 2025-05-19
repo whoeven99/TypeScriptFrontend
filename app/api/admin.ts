@@ -99,12 +99,7 @@ export const queryShop = async ({
         currencyFormats {
           moneyFormat
           moneyWithCurrencyFormat
-        }
-        shopPolicies {
-          body
-          id
-          title
-        }       
+        }      
       }
     }`;
 
@@ -118,6 +113,9 @@ export const queryShop = async ({
       data: JSON.stringify({ query }),
     });
     const res = response.data.data.shop;
+    console.log("queryShop main currencyCode: ", res?.currencyCode);
+    console.log("queryShop currencyCodes: ", res?.currencySettings?.nodes);
+    console.log("queryShop currencyFormats: ", res?.currencyFormats);
     return res;
   } catch (error) {
     console.error("Error fetching shop:", error);

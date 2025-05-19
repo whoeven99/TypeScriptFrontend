@@ -91,7 +91,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
                 });
 
                 // 设置下一次轮询
-                timeoutId = setTimeout(pollStatus, 5000);
+                timeoutId = setTimeout(pollStatus, 10000);
             };
 
             // 开始首次轮询

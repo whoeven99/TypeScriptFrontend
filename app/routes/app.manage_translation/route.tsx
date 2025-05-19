@@ -15,7 +15,7 @@ import {
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
-import { GetTranslationItemsInfo } from "~/api/serve";
+import { GetTranslationItemsInfo } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { updateData } from "~/store/modules/languageItemsData";
@@ -40,12 +40,6 @@ interface TableDataType {
   allItems: number;
   sync_status: boolean;
   navigation: string;
-}
-
-const planMapping = {
-  1: "Free",
-  2: "Free",
-  3: "Starter",
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -117,7 +111,6 @@ const Index = () => {
   const [showWarnModal, setShowWarnModal] = useState(false);
   const { key } = useMemo(() => location.state || {}, [location.state]);
   const items = useSelector((state: any) => state.languageItemsData);
-  const { plan } = useSelector((state: any) => state.userConfig);
 
   const productsFetcher = useFetcher<any>();
   const collectionsFetcher = useFetcher<any>();

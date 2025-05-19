@@ -63,7 +63,7 @@ const Index = () => {
   const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
   const [selectedLanguageCode, setSelectedLanguageCode] = useState<string>("");
   const [translateSettings1, setTranslateSettings1] = useState<string>("1");
-  const [translateSettings2, setTranslateSettings2] = useState<string>("1");
+  const [translateSettings2, setTranslateSettings2] = useState<string[]>(["1"]);
   const [translateSettings3, setTranslateSettings3] = useState<string[]>([
     "products",
     "collection",
@@ -415,6 +415,15 @@ const Index = () => {
     }
   };
 
+  const handleTranslateSettings2Change = (value: string[]) => {
+    if (!value.length) {
+      shopify.toast.show("Select at least one language pack")
+      return;
+    } else {
+      setTranslateSettings2(value)
+    }
+  }
+
   const handleTranslateSettings3Change = (value: string[]) => {
     if (!value.length) {
       shopify.toast.show("Select at least one translation item")
@@ -426,15 +435,6 @@ const Index = () => {
 
   return (
     <Page>
-      {/* <TitleBar title={t("Translate Store")}>
-        <button variant="breadcrumb" onClick={() => navigate("/app")}>
-          {t("Dashboard")}
-        </button>
-        <button variant="breadcrumb">{t("Translate Store")}</button>
-        <button variant="primary" onClick={() => handleTranslate()}>
-          {t("Translate")}
-        </button>
-      </TitleBar> */}
       <ScrollNotice
         text={t(
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
@@ -694,7 +694,7 @@ const Index = () => {
                   <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
                     {t("translateSettings2.title")}
                   </Title>
-                  <Select
+                  {/* <Select
                     defaultValue={"1"}
                     // value={translateSettings2}
                     options={translateSettings2Options}
@@ -705,7 +705,18 @@ const Index = () => {
                     // buttonStyle="solid"
                     // onChange={(e) => setTranslateSettings2(e.target.value)}
                     onSelect={(value) => setTranslateSettings2(value)}
-                  ></Select>
+                  ></Select> */}
+                  <Checkbox.Group
+                    value={translateSettings2}
+                    options={translateSettings2Options}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(200px, 1fr))",
+                      width: "100%",
+                    }}
+                    onChange={(e) => handleTranslateSettings2Change(e)}
+                  ></Checkbox.Group>
                 </Space>
                 <Space
                   direction="vertical"

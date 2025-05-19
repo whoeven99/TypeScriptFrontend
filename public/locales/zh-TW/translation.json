@@ -380,6 +380,8 @@
     "Please upgrade to a higher plan to remove the current glossary limitations": "請升級到更高計劃以移除當前術語表限制",
     "Add failed": "新增失敗",
     "Language not found": "語言未找到",
-    "You have reached your shopify plan limit(Max<=20)": "您已達到 Shopify 計劃限制（Max<=20）"
+    "You have reached your shopify plan limit(Max<=20)": "您已達到 Shopify 計劃限制（Max<=20）",
+    "Select at least one language pack": "選擇至少一個語言包",
+    "Select at least one translation item": "選擇至少一個翻譯項目"
 }
 

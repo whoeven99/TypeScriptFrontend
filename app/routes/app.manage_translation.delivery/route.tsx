@@ -24,11 +24,10 @@ import {
   queryNextTransType,
   queryPreviousTransType,
 } from "~/api/admin";
-import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { SessionService } from "~/utils/session.server";
 import { useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
 
@@ -42,16 +41,15 @@ type TableDataType = {
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
+  type: string | undefined;
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   // 如果没有 language 参数，直接返回空数据
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-
 
   try {
     const deliverys = await queryNextTransType({
@@ -63,6 +61,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
 
     return json({
+      server: process.env.SERVER_URL,
+      shopName: shop,
       searchTerm,
       deliverys,
     });
@@ -126,7 +126,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { searchTerm, deliverys } =
+  const { searchTerm, deliverys, server, shopName } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const {
@@ -139,7 +139,8 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const confirmFetcher = useFetcher<any>();
 
-  const isManualChange = useRef(false);
+  const isManualChange = useRef(true);
+  const loadingItemsRef = useRef<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
@@ -150,6 +151,7 @@ const Index = () => {
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -178,6 +180,10 @@ const Index = () => {
   const [hasNext, setHasNext] = useState<boolean>(
     deliverysData.pageInfo.hasNextPage || false
   );
+
+  useEffect(() => {
+    loadingItemsRef.current = loadingItems;
+  }, [loadingItems]);
 
   useEffect(() => {
     if (deliverys && isManualChange.current) {
@@ -225,13 +231,13 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item: any) => {
-        item.success === false;
-      });
-      if (!errorItem) {
-        shopify.toast.show("Saved successfully");
+      const errorItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === false
+      );
+      if (errorItem.length == 0) {
+        shopify.toast.show(t("Saved successfully"));
       } else {
-        shopify.toast.show(errorItem?.errorMsg);
+        shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
     }
@@ -249,7 +255,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return <ManageTableInput record={record} />;
       },
@@ -258,7 +264,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -268,6 +274,23 @@ const Index = () => {
             handleInputChange={handleInputChange}
             isRtl={searchTerm === "ar"}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("DELIVERY_METHOD_DEFINITION", record?.key || "", record?.type || "", record?.default_language || "", record?.index || 0);
+            }}
+          loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -309,6 +332,8 @@ const Index = () => {
   };
 
   const generateMenuItemsArray = (items: any) => {
+    console.log(items);
+    
     return items.nodes.flatMap((item: any, index: number) => {
       if (item?.translatableContent.length !== 0) {
         // 创建当前项的对象
@@ -318,12 +343,41 @@ const Index = () => {
           resource: "name", // 资源字段固定为 "Menu Items"
           default_language: item?.translatableContent[0]?.value, // 默认语言为 item 的标题
           translated: item?.translations[0]?.value, // 翻译字段初始化为空字符串
+          type: item?.translatableContent[0]?.type, // 翻译字段初始化为空字符串
         };
         return currentItem.default_language !== "" ? [currentItem] : [];
       }
       return [];
     });
   };
+
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string, index: number) => {
+    if (!key || !type || !context) {
+      return;
+    }
+    setLoadingItems((prev) => [...prev, key]);
+    const data = await SingleTextTranslate({
+      shopName: shopName,
+      source: deliverysData.nodes
+        .find((item: any) => item?.resourceId === key)
+        ?.translatableContent.find((item: any) => item.key === key)
+        ?.locale,
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
+    if (data?.success) {
+      if (loadingItemsRef.current.includes(key)) {
+        handleInputChange(key, data.response, index)
+      }
+    } else {
+      shopify.toast.show(data.errorMsg)
+    }
+    setLoadingItems((prev) => prev.filter((item) => item !== key));
+  }
 
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);

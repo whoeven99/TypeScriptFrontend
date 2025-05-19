@@ -20,7 +20,7 @@ import {
   GetUserSubscriptionPlan,
   InsertGlossaryInfo,
   UpdateTargetTextById,
-} from "~/api/serve";
+} from "~/api/JavaServer";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setGLossaryStatusLoadingState,
@@ -241,6 +241,9 @@ const Index = () => {
   };
 
   const handleIsModalOpen = (title: string, key: number) => {
+    if (!plan) {
+      return;
+    }
     if (title === "Create rule" && dataSource.length >= planMapping[plan as keyof typeof planMapping]) {
       setShowWarnModal(true);
     } else {

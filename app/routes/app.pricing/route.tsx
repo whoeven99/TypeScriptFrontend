@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import ScrollNotice from "~/components/ScrollNotice";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { GetUserSubscriptionPlan, GetUserWords } from "~/api/serve";
+import { GetUserSubscriptionPlan, GetUserWords } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useFetcher } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
@@ -145,7 +145,6 @@ const Index = () => {
   const dispatch = useDispatch();
   const userConfig = useSelector((state: any) => state.userConfig);
   const wordsfetcher = useFetcher<any>();
-  const languageFetcher = useFetcher<any>();
   const planfetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
@@ -154,19 +153,10 @@ const Index = () => {
   useEffect(() => {
     setIsLoading(false);
     wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
-    // languageFetcher.submit({ language: JSON.stringify(true) }, { method: "POST" });
     if (!userConfig.plan || !userConfig.updateTime) {
       planfetcher.submit({ planInfo: JSON.stringify(true) }, { method: "POST" });
     }
   }, []);
-
-  // useEffect(() => {
-  //   if (languageFetcher.data) {
-  //     console.log(languageFetcher.data);
-
-  //     // setLanguageOptions(languageFetcher.data.languages);
-  //   }
-  // }, [languageFetcher.data]);
 
   useEffect(() => {
     if (wordsfetcher.data) {

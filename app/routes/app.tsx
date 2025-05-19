@@ -20,7 +20,6 @@ import {
   GetLanguageLocaleInfo,
   GetLanguageList,
   GetTotalWords,
-  GetTranslate,
   GetUserWords,
   GetLanguageStatus,
   AddUserFreeSubscription,
@@ -35,7 +34,7 @@ import {
   GetUserInitTokenByShopName,
   GetTranslateDOByShopNameAndSource,
   GetUserData,
-} from "~/api/serve";
+} from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
 import {
   mutationAppPurchaseOneTimeCreate,
@@ -45,32 +44,15 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  try {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop } = adminAuthResult.session;
-
-    const plan = await GetUserSubscriptionPlan({ shop });
-
-    return json({
-      apiKey: process.env.SHOPIFY_API_KEY || "",
-      plan,
-    });
-  } catch (error) {
-    console.error("Error during authentication app:", error);
-    return json({
-      apiKey: process.env.SHOPIFY_API_KEY || "",
-      plan: {
-        userSubscriptionPlan: 2,
-        updateTime: "",
-      },
-    });
-  }
+export const loader = async () => {
+  return json({
+    apiKey: process.env.SHOPIFY_API_KEY || "",
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -82,6 +64,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const loading = JSON.parse(formData.get("loading") as string);
     const languageInit = JSON.parse(formData.get("languageInit") as string);
     const languageData = JSON.parse(formData.get("languageData") as string);
+    const plan = JSON.parse(formData.get("plan") as string);
     const customApikeyData = JSON.parse(formData.get("customApikeyData") as string);
     const nearTransaltedData = JSON.parse(formData.get("nearTransaltedData") as string);
     const userData = JSON.parse(formData.get("userData") as string);
@@ -188,48 +171,73 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
+    if (plan) {
+      try {
+        const planData = await GetUserSubscriptionPlan({ shop });
+        return json({ plan: planData });
+      } catch (error) {
+        console.error("Error plan app:", error);
+        return json({
+          plan: {
+            userSubscriptionPlan: 2,
+            updateTime: "",
+          },
+        });
+      }
+    }
+
     if (customApikeyData) {
-      const customApikeyData = await GetUserData({
-        shop,
-      });
-      return json({ customApikeyData: customApikeyData?.response?.googleKey });
+      try {
+        const customApikeyData = await GetUserData({
+          shop,
+        });
+        return json({ customApikeyData: customApikeyData?.response?.googleKey });
+      } catch (error) {
+        console.error("Error customApikeyData app:", error);
+        return json({ error: "Error customApikeyData app" }, { status: 500 });
+      }
     }
 
     if (nearTransaltedData) {
-      const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
-        shop,
-        accessToken: accessToken as string,
-      });
-      const shopPrimaryLanguage = shopLanguagesIndex.filter(
-        (language) => language.primary,
-      );
-      const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
-        (language) => !language.primary,
-      );
-      const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
-        (item) => item.locale,
-      );
+      try {
+        const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
+          shop,
+          accessToken: accessToken as string,
+        });
+        const shopPrimaryLanguage = shopLanguagesIndex.filter(
+          (language) => language.primary,
+        );
+        const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
+          (language) => !language.primary,
+        );
+        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
+          (item) => item.locale,
+        );
 
-      const data = await GetTranslateDOByShopNameAndSource({ shop, source: shopPrimaryLanguage[0].locale });
+        const data = await GetTranslateDOByShopNameAndSource({ shop, source: shopPrimaryLanguage[0].locale });
 
-      if (shopLocalesIndex.includes(data.response?.target) && (data.response?.status !== 1 || !shopLanguagesWithoutPrimaryIndex.find((item) => item.locale === data.response?.target)?.published)) {
-        return {
-          translatingLanguage: {
-            source: data.response?.source || shopPrimaryLanguage[0].locale,
-            target: data.response?.target || "",
-            status: data.response?.status || 0,
-            resourceType: data.response?.resourceType || "",
+        if (shopLocalesIndex.includes(data.response?.target) && (data.response?.status !== 1 || !shopLanguagesWithoutPrimaryIndex.find((item) => item.locale === data.response?.target)?.published)) {
+          return {
+            translatingLanguage: {
+              source: data.response?.source || shopPrimaryLanguage[0].locale,
+              target: data.response?.target || "",
+              status: data.response?.status || 0,
+              resourceType: data.response?.resourceType || "",
+            }
           }
+        } else {
+          return {
+            translatingLanguage: {
+              source: data.response?.source || shopPrimaryLanguage[0].locale,
+              target: "",
+              status: 0,
+              resourceType: "",
+            }
+          };
         }
-      } else {
-        return {
-          translatingLanguage: {
-            source: data.response?.source || shopPrimaryLanguage[0].locale,
-            target: "",
-            status: 0,
-            resourceType: "",
-          }
-        };
+      } catch (error) {
+        console.error("Error nearTransaltedData app:", error);
+        return json({ error: "Error nearTransaltedData app" }, { status: 500 });
       }
     }
 
@@ -263,41 +271,61 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     if (languageCode) {
-      const totalWords = await GetTotalWords({ shop, accessToken: accessToken as string, target: languageCode });
-      return json({ totalWords });
+      try {
+        const totalWords = await GetTotalWords({ shop, accessToken: accessToken as string, target: languageCode });
+        return json({ totalWords });
+      } catch (error) {
+        console.error("Error languageCode app:", error);
+        return json({ error: "Error languageCode app" }, { status: 500 });
+      }
     }
 
     if (payInfo) {
-      const returnUrl = new URL(
-        `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
-      );
-      const payData = await mutationAppPurchaseOneTimeCreate({
-        shop,
-        accessToken: accessToken as string,
-        name: payInfo.name,
-        price: payInfo.price,
-        returnUrl,
-        test: process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test",
-      });
-      return json({ data: payData });
+      try {
+        const returnUrl = new URL(
+          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
+        );
+        const payData = await mutationAppPurchaseOneTimeCreate({
+          shop,
+          accessToken: accessToken as string,
+          name: payInfo.name,
+          price: payInfo.price,
+          returnUrl,
+          test: process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test",
+        });
+        return json({ data: payData });
+      } catch (error) {
+        console.error("Error payInfo app:", error);
+        return json({ error: "Error payInfo app" }, { status: 500 });
+      }
     }
 
     if (orderInfo) {
-      const orderData = await InsertOrUpdateOrder({
-        shop,
-        id: orderInfo.id,
-        amount: orderInfo.amount,
-        name: orderInfo.name,
-        createdAt: orderInfo.createdAt,
-        status: orderInfo.status,
-        confirmationUrl: orderInfo.confirmationUrl,
-      });
-      return json({ data: orderData });
+      try {
+        const orderData = await InsertOrUpdateOrder({
+          shop,
+          id: orderInfo.id,
+          amount: orderInfo.amount,
+          name: orderInfo.name,
+          createdAt: orderInfo.createdAt,
+          status: orderInfo.status,
+          confirmationUrl: orderInfo.confirmationUrl,
+        });
+        return json({ data: orderData });
+      } catch (error) {
+        console.error("Error orderInfo app:", error);
+        return json({ error: "Error orderInfo app" }, { status: 500 });
+      }
     }
 
     if (credits) {
-      const data = await getCredits({ shop, accessToken: accessToken!, target: credits.target, source: credits.source });
-      return json({ data });
+      try {
+        const data = await getCredits({ shop, accessToken: accessToken!, target: credits.target, source: credits.source });
+        return json({ data });
+      } catch (error) {
+        console.error("Error credits app:", error);
+        return json({ error: "Error credits app" }, { status: 500 });
+      }
     }
 
     if (recalculate) {
@@ -327,18 +355,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, plan } = useLoaderData<typeof loader>();
+  const { apiKey } = useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const { plan, updateTime } = useSelector((state: any) => state.userConfig);
+  const planFetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
 
   useEffect(() => {
-    setIsClient(true);
-    dispatch(setUserConfig({ plan: plan?.userSubscriptionPlan || "" }));
-    dispatch(setUserConfig({ updateTime: plan?.updateTime || "" }));
     loadingFetcher.submit({ loading: JSON.stringify(true) }, {
       method: "post",
       action: "/app",
@@ -347,7 +374,19 @@ export default function App() {
       method: "post",
       action: "/app",
     });
+    planFetcher.submit({ plan: JSON.stringify(true) }, {
+      method: "post",
+      action: "/app",
+    });
+    setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (planFetcher.data && (!plan || !updateTime)) {
+      dispatch(setUserConfig({ plan: planFetcher.data?.plan?.userSubscriptionPlan || "" }));
+      dispatch(setUserConfig({ updateTime: planFetcher.data?.plan?.updateTime || "" }));
+    }
+  }, [planFetcher.data]);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

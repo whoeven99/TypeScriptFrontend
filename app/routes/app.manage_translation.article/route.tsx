@@ -20,19 +20,16 @@ import {
   useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
 import { ButtonGroup, FullscreenBar, Pagination, Select } from "@shopify/polaris";
-import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect } from "@remix-run/node";
+import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   queryNextTransType,
   queryPreviousTransType,
-  queryShopLanguages,
 } from "~/api/admin";
-import { ShopLocalesType } from "../app.language/route";
-import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { SessionService } from "~/utils/session.server";
-import { Modal, TitleBar } from "@shopify/app-bridge-react";
+import { Modal } from "@shopify/app-bridge-react";
 import { useSelector } from "react-redux";
 
 const { Sider, Content } = Layout;
@@ -40,14 +37,32 @@ const { Sider, Content } = Layout;
 const { Text } = Typography
 
 interface ArticleType {
-  handle: string;
   key: string;
-  title: string;
-  body: string | undefined;
-  summary: string | undefined;
+  handle: {
+    value: string;
+    type: string;
+  };
+  title: {
+    value: string;
+    type: string;
+  };
+  body: {
+    value: string;
+    type: string;
+  };
+  summary: {
+    value: string;
+    type: string;
+  };
   seo: {
-    description: string | undefined;
-    title: string | undefined;
+    description: {
+      value: string | undefined;
+      type: string;
+    };
+    title: {
+      value: string | undefined;
+      type: string;
+    };
   };
   translations: {
     handle: string | undefined;
@@ -65,6 +80,7 @@ interface ArticleType {
 type TableDataType = {
   key: string;
   resource: string;
+  type: string | undefined;
   default_language: string | undefined;
   translated: string | undefined;
 } | null;
@@ -85,6 +101,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
 
     return json({
+      server: process.env.SERVER_URL,
+      shopName: shop,
       searchTerm,
       articles,
     });
@@ -147,7 +165,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { searchTerm, articles } =
+  const { searchTerm, articles, server, shopName } =
     useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -161,7 +179,8 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const confirmFetcher = useFetcher<any>();
 
-  const isManualChange = useRef(false);
+  const isManualChange = useRef(true);
+  const loadingItemsRef = useRef<string[]>([]);
 
   const actionData = useActionData<typeof action>();
   const [isLoading, setIsLoading] = useState(true);
@@ -178,6 +197,7 @@ const Index = () => {
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -216,6 +236,10 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    loadingItemsRef.current = loadingItems;
+  }, [loadingItems]);
+
+  useEffect(() => {
     if (languageTableData) {
       setLanguageOptions(languageTableData
         .filter((item: any) => !item.primary)
@@ -247,14 +271,12 @@ const Index = () => {
       articles: articlesData,
     });
     setArticleData(data);
+    setLoadingItems([]);
     setConfirmData([]);
     setTranslatedValues({});
-  }, [selectArticleKey, articlesData]);
-
-  useEffect(() => {
     setHasPrevious(articlesData.pageInfo.hasPreviousPage);
     setHasNext(articlesData.pageInfo.hasNextPage);
-  }, [articlesData]);
+  }, [selectArticleKey, articlesData]);
 
   useEffect(() => {
     setResourceData(
@@ -262,20 +284,23 @@ const Index = () => {
         {
           key: "title",
           resource: "Title",
-          default_language: articleData?.title,
+          default_language: articleData?.title.value,
           translated: articleData?.translations?.title,
+          type: articleData?.title.type,
         },
         {
           key: "body_html",
           resource: "Description",
-          default_language: articleData?.body,
+          default_language: articleData?.body.value,
           translated: articleData?.translations?.body,
+          type: articleData?.body.type,
         },
         {
           key: "summary",
           resource: "Summary",
-          default_language: articleData?.summary,
+          default_language: articleData?.summary.value,
           translated: articleData?.translations?.summary,
+          type: articleData?.summary.type,
         },
       ].filter((item) => item.default_language),
     );
@@ -284,20 +309,23 @@ const Index = () => {
         {
           key: "handle",
           resource: "URL handle",
-          default_language: articleData?.handle,
+          default_language: articleData?.handle.value,
           translated: articleData?.translations?.handle,
+          type: articleData?.handle.type,
         },
         {
           key: "meta_title",
           resource: "Meta title",
-          default_language: articleData?.seo.title,
+          default_language: articleData?.seo.title.value,
           translated: articleData?.translations?.seo.title,
+          type: articleData?.seo.title.type,
         },
         {
           key: "meta_description",
           resource: "Meta description",
-          default_language: articleData?.seo.description,
+          default_language: articleData?.seo.description.value,
           translated: articleData?.translations?.seo.description,
+          type: articleData?.seo.description.type,
         },
       ].filter((item) => item.default_language),
     );
@@ -323,28 +351,31 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item: any) => {
-        item.success === false;
-      });
-      if (!errorItem) {
-        confirmFetcher.data.confirmData.forEach((item: any) => {
-          const index = articlesData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
-          if (index !== -1) {
-            const article = articlesData.nodes[index].translations.find((option: any) => option.key === item.key);
-            if (article) {
-              article.value = item.value;
-            } else {
-              articlesData.nodes[index].translations.push({
-                key: item.key,
-                value: item.value,
-                outdated: false,
-              });
-            }
+      const successfulItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === true
+      );
+      const errorItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === false
+      );
+
+      successfulItem.forEach((item: any) => {
+        const index = articlesData.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+        if (index !== -1) {
+          const article = articlesData.nodes[index].translations.find((option: any) => option.key === item.data.key);
+          if (article) {
+            article.value = item.data.value;
+          } else {
+            articlesData.nodes[index].translations.push({
+              key: item.data.key,
+              value: item.data.value,
+            });
           }
-        })
-        shopify.toast.show("Saved successfully");
+        }
+      })
+      if (errorItem.length == 0) {
+        shopify.toast.show(t("Saved successfully"));
       } else {
-        shopify.toast.show(errorItem?.errorMsg);
+        shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
     }
@@ -362,7 +393,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return <ManageTableInput record={record} />;
       },
@@ -371,7 +402,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -381,6 +412,23 @@ const Index = () => {
             handleInputChange={handleInputChange}
             isRtl={searchTerm === "ar"}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("ARTICLE", record?.key || "", record?.type || "", record?.default_language || "");
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -397,7 +445,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return <ManageTableInput record={record} />;
       },
@@ -406,7 +454,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -416,6 +464,23 @@ const Index = () => {
             handleInputChange={handleInputChange}
             isRtl={searchTerm === "ar"}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("ARTICLE", record?.key || "", record?.type || "", record?.default_language || "");
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -471,14 +536,32 @@ const Index = () => {
 
   const transBeforeData = ({ articles }: { articles: any }) => {
     let data: ArticleType = {
-      handle: "",
       key: "",
-      title: "",
-      body: "",
-      summary: "",
+      handle: {
+        value: "",
+        type: "",
+      },
+      title: {
+        value: "",
+        type: "",
+      },
+      body: {
+        value: "",
+        type: "",
+      },
+      summary: {
+        value: "",
+        type: "",
+      },
       seo: {
-        description: "",
-        title: "",
+        description: {
+          value: "",
+          type: "",
+        },
+        title: {
+          value: "",
+          type: "",
+        },
       },
       translations: {
         handle: "",
@@ -496,24 +579,54 @@ const Index = () => {
       (article: any) => article?.resourceId === selectArticleKey,
     );
     data.key = article?.resourceId;
-    data.handle = article?.translatableContent.find(
-      (item: any) => item.key === "handle",
-    )?.value;
-    data.title = article?.translatableContent.find(
-      (item: any) => item.key === "title",
-    )?.value;
-    data.body = article?.translatableContent.find(
-      (item: any) => item.key === "body_html",
-    )?.value;
-    data.summary = article?.translatableContent.find(
-      (item: any) => item.key === "summary_html",
-    )?.value;
-    data.seo.title = article?.translatableContent.find(
-      (item: any) => item.key === "meta_title",
-    )?.value;
-    data.seo.description = article?.translatableContent.find(
-      (item: any) => item.key === "meta_description",
-    )?.value;
+    data.handle = {
+      value: article?.translatableContent.find(
+        (item: any) => item.key === "handle",
+      )?.value,
+      type: article?.translatableContent.find(
+        (item: any) => item.key === "handle",
+      )?.type,
+    };
+    data.title = {
+      value: article?.translatableContent.find(
+        (item: any) => item.key === "title",
+      )?.value,
+      type: article?.translatableContent.find(
+        (item: any) => item.key === "title",
+      )?.type,
+    };
+    data.body = {
+      value: article?.translatableContent.find(
+        (item: any) => item.key === "body_html",
+      )?.value,
+      type: article?.translatableContent.find(
+        (item: any) => item.key === "body_html",
+      )?.type,
+    };
+    data.summary = {
+      value: article?.translatableContent.find(
+        (item: any) => item.key === "summary_html",
+      )?.value,
+      type: article?.translatableContent.find(
+        (item: any) => item.key === "summary_html",
+      )?.type,
+    };
+    data.seo.title = {
+      value: article?.translatableContent.find(
+        (item: any) => item.key === "meta_title",
+      )?.value,
+      type: article?.translatableContent.find(
+        (item: any) => item.key === "meta_title",
+      )?.type,
+    };
+    data.seo.description = {
+      value: article?.translatableContent.find(
+        (item: any) => item.key === "meta_description",
+      )?.value,
+      type: article?.translatableContent.find(
+        (item: any) => item.key === "meta_description",
+      )?.type,
+    };
     data.translations.key = article?.resourceId;
     data.translations.title = article?.translations.find(
       (item: any) => item.key === "title",
@@ -535,6 +648,34 @@ const Index = () => {
     )?.value;
     return data;
   };
+
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+    if (!key || !type || !context) {
+      return;
+    }
+    setLoadingItems((prev) => [...prev, key]);
+    const data = await SingleTextTranslate({
+      shopName: shopName,
+      source: articlesData.nodes
+        .find((item: any) => item?.resourceId === selectArticleKey)
+        ?.translatableContent.find((item: any) => item.key === key)
+        ?.locale,
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
+    if (data?.success) {
+      if (loadingItemsRef.current.includes(key)) {
+        handleInputChange(key, data.response)
+      }
+    } else {
+      shopify.toast.show(data.errorMsg)
+    }
+    setLoadingItems((prev) => prev.filter((item) => item !== key));
+  }
 
   const onPrevious = () => {
     const formData = new FormData();
@@ -666,13 +807,21 @@ const Index = () => {
                 background: colorBgContainer,
                 height: 'calc(100vh - 124px)',
                 width: '200px',
+                minHeight: '70vh',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'auto',
               }}
             >
               <Menu
                 mode="inline"
                 defaultSelectedKeys={[articlesData.nodes[0]?.resourceId]}
                 defaultOpenKeys={["sub1"]}
-                style={{ height: "100%" }}
+                style={{
+                  flex: 1,
+                  overflowY: "auto",
+                  minHeight: 0,
+                }}
                 items={menuData}
                 selectedKeys={[selectArticleKey]}
                 onClick={(e) => setSelectArticleKey(e.key)}

@@ -27,7 +27,7 @@ import {
   queryPreviousNestTransType,
   queryPreviousTransType,
 } from "~/api/admin";
-import { ConfirmDataType, updateManageTranslation } from "~/api/serve";
+import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -41,18 +41,36 @@ const { Sider, Content } = Layout;
 const { Text } = Typography;
 
 interface ProductType {
-  handle: string;
   key: string;
-  descriptionHtml: string | undefined;
-  seo: {
-    description: string | undefined;
-    title: string | undefined;
+  handle: {
+    type: string;
+    value: string;
   };
-  productType: string;
+  descriptionHtml: {
+    type: string;
+    value: string;
+  };
+  seo: {
+    description: {
+      type: string;
+      value: string;
+    };
+    title: {
+      type: string;
+      value: string;
+    };
+  };
+  productType: {
+    type: string;
+    value: string;
+  };
   options: [
     {
       key: string;
-      name: string | undefined;
+      name: {
+        type: string;
+        value: string;
+      };
       // values: string[] | undefined;
       translation: string | undefined;
     },
@@ -60,12 +78,18 @@ interface ProductType {
   metafields: [
     {
       key: string;
-      name: string | undefined;
+      name: {
+        type: string;
+        value: string;
+      };
       // values: string[] | undefined;
       translation: string | undefined;
     },
   ];
-  title: string;
+  title: {
+    type: string;
+    value: string;
+  };
   translations: {
     handle: string | undefined;
     key: string;
@@ -83,6 +107,7 @@ type TableDataType = {
   key: string;
   index: number;
   resource: string;
+  type: string | undefined;
   default_language: string | undefined;
   translated: string | undefined;
 } | null;
@@ -254,7 +279,8 @@ const Index = () => {
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const confirmFetcher = useFetcher<any>();
 
-  const isManualChange = useRef(false);
+  const isManualChange = useRef(true);
+  const loadingItemsRef = useRef<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
@@ -277,6 +303,7 @@ const Index = () => {
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -313,6 +340,11 @@ const Index = () => {
     }
   }, []);
 
+  // 更新 loadingItemsRef 的值
+  useEffect(() => {
+    loadingItemsRef.current = loadingItems;
+  }, [loadingItems]);
+
   useEffect(() => {
     if (languageTableData) {
       setLanguageOptions(languageTableData
@@ -339,19 +371,17 @@ const Index = () => {
   }, [products]);
 
   useEffect(() => {
-    setHasPrevious(productsData.pageInfo.hasPreviousPage);
-    setHasNext(productsData.pageInfo.hasNextPage);
-  }, [productsData]);
-
-  useEffect(() => {
     const data = transBeforeData({
       products: productsData,
       options: productOptionsData,
       metafields: productMetafieldsData,
     });
     setProductData(data);
+    setLoadingItems([]);
     setConfirmData([]);
     setTranslatedValues({});
+    setHasPrevious(productsData.pageInfo.hasPreviousPage);
+    setHasNext(productsData.pageInfo.hasNextPage);
   }, [selectProductKey, productsData, productOptionsData, productMetafieldsData]);
 
   useEffect(() => {
@@ -360,22 +390,25 @@ const Index = () => {
         {
           key: "title",
           index: 3,
-          resource: "Title",
-          default_language: productData?.title,
+          resource: t("Title"),
+          type: productData?.title?.type,
+          default_language: productData?.title?.value,
           translated: productData?.translations?.title,
         },
         {
           key: "body_html",
           index: 3,
-          resource: "Description",
-          default_language: productData?.descriptionHtml,
+          resource: t("Description"),
+          type: productData?.descriptionHtml?.type,
+          default_language: productData?.descriptionHtml?.value,
           translated: productData?.translations?.descriptionHtml,
         },
         {
           key: "product_type",
           index: 3,
-          resource: "ProductType",
-          default_language: productData?.productType,
+          resource: t("ProductType"),
+          type: productData?.productType?.type,
+          default_language: productData?.productType?.value,
           translated: productData?.translations?.productType,
         },
       ].filter((item) => item.default_language),
@@ -385,22 +418,25 @@ const Index = () => {
         {
           key: "handle",
           index: 3,
-          resource: "URL handle",
-          default_language: productData?.handle,
+          resource: t("URL handle"),
+          type: productData?.handle?.type,
+          default_language: productData?.handle?.value,
           translated: productData?.translations?.handle,
         },
         {
           key: "meta_title",
           index: 3,
-          resource: "Meta title",
-          default_language: productData?.seo.title,
+          resource: t("Meta title"),
+          type: productData?.seo.title?.type,
+          default_language: productData?.seo.title?.value,
           translated: productData?.translations?.seo.title,
         },
         {
           key: "meta_description",
           index: 3,
-          resource: "Meta description",
-          default_language: productData?.seo.description,
+          resource: t("Meta description"),
+          type: productData?.seo.description?.type,
+          default_language: productData?.seo.description?.value,
           translated: productData?.translations?.seo.description,
         },
       ].filter((item) => item.default_language),
@@ -412,8 +448,9 @@ const Index = () => {
       return {
         key: `name_${index}`,
         index: index,
-        resource: "Option name",
-        default_language: option?.name,
+        resource: t(option?.name?.value),
+        type: option?.name?.type,
+        default_language: option?.name?.value,
         translated: option.translation,
       };
     });
@@ -422,8 +459,9 @@ const Index = () => {
       return {
         key: `value_${index}`,
         index: index,
-        resource: "Product metafield",
-        default_language: metafield?.name,
+        resource: t(metafield?.name?.value),
+        type: metafield?.name?.type,
+        default_language: metafield?.name?.value,
         translated: metafield?.translation,
       };
     });
@@ -460,64 +498,65 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item: any) => {
-        item.success === false;
-      });
-      if (!errorItem) {
-        shopify.toast.show("Saved successfully");
-        confirmFetcher.data.confirmData.forEach((item: any) => {
-          if (item.resourceId.split("/")[3] === "Product") {
-            const index = productsData.nodes.findIndex((option: any) => option.resourceId === item.resourceId);
-            if (index !== -1) {
-              const product = productsData.nodes[index].translations.find((option: any) => option.key === item.key);
-              if (product) {
-                product.value = item.value;
-              } else {
-                productsData.nodes[index].translations.push({
-                  key: item.key,
-                  value: item.value,
-                  outdated: false,
-                });
-              }
-            }
-          } else if (item.resourceId.split("/")[3] === "ProductOption") {
-            const index = productOptionsData.nodes.findIndex((productOption: any) =>
-              productOption.nestedTranslatableResources.nodes.some(
-                (option: any) => option.resourceId === item.resourceId
-              )
-            );
-            if (index !== -1) {
-              const productOption = productOptionsData.nodes[index].nestedTranslatableResources.nodes.find((option: any) => option.resourceId === item.resourceId);
-              if (productOption.translations.length > 0) {
-                productOption.translations[0].value = item.value;
-              } else {
-                productOption.translations.push({
-                  key: item.key,
-                  value: item.value,
-                  outdated: false,
-                });
-              }
-            }
-          } else if (item.resourceId.split("/")[3] === "Metafield") {
-            const index = productMetafieldsData.nodes.findIndex((productMetafield: any) =>
-              productMetafield.nestedTranslatableResources.nodes.some(
-                (option: any) => option.resourceId === item.resourceId
-              )
-            );
-            if (index !== -1) {
-              const productMetafield = productMetafieldsData.nodes[index].nestedTranslatableResources.nodes.find((option: any) => option.resourceId === item.resourceId);
-              if (productMetafield.translations.length > 0) {
-                productMetafield.translations[0].value = item.value;
-              } else {
-                productMetafield.translations.push({
-                  key: item.key,
-                  value: item.value,
-                  outdated: false,
-                });
-              }
+      const successfulItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === true
+      );
+      const errorItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === false
+      );
+
+      successfulItem.forEach((item: any) => {
+        if (item.data.resourceId.split("/")[3] === "Product") {
+          const index = productsData.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+          if (index !== -1) {
+            const product = productsData.nodes[index].translations.find((option: any) => option.key === item.data.key);
+            if (product) {
+              product.value = item.data.value;
+            } else {
+              productsData.nodes[index].translations.push({
+                key: item.data.key,
+                value: item.data.value,
+              });
             }
           }
-        })
+        } else if (item.data.resourceId.split("/")[3] === "ProductOption") {
+          const index = productOptionsData.nodes.findIndex((productOption: any) =>
+            productOption.nestedTranslatableResources.nodes.some(
+              (option: any) => option.resourceId === item.data.resourceId
+            )
+          );
+          if (index !== -1) {
+            const productOption = productOptionsData.nodes[index].nestedTranslatableResources.nodes.find((option: any) => option.resourceId === item.data.resourceId);
+            if (productOption.translations.length > 0) {
+              productOption.translations[0].value = item.data.value;
+            } else {
+              productOption.translations.push({
+                key: item.data.key,
+                value: item.data.value,
+              });
+            }
+          }
+        } else if (item.data.resourceId.split("/")[3] === "Metafield") {
+          const index = productMetafieldsData.nodes.findIndex((productMetafield: any) =>
+            productMetafield.nestedTranslatableResources.nodes.some(
+              (option: any) => option.resourceId === item.data.resourceId
+            )
+          );
+          if (index !== -1) {
+            const productMetafield = productMetafieldsData.nodes[index].nestedTranslatableResources.nodes.find((option: any) => option.resourceId === item.data.resourceId);
+            if (productMetafield.translations.length > 0) {
+              productMetafield.translations[0].value = item.data.value;
+            } else {
+              productMetafield.translations.push({
+                key: item.data.key,
+                value: item.data.value,
+              });
+            }
+          }
+        }
+      })
+      if (errorItem.length == 0) {
+        shopify.toast.show(t("Saved successfully"));
       } else {
         shopify.toast.show(errorItem?.errorMsg);
       }
@@ -559,6 +598,23 @@ const Index = () => {
         );
       },
     },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("PRODUCT", record?.key || "", record?.type || "", record?.default_language || "");
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
+        );
+      },
+    },
   ];
 
   const SEOColumns = [
@@ -572,7 +628,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return <ManageTableInput record={record} />;
       },
@@ -581,7 +637,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -591,6 +647,23 @@ const Index = () => {
             handleInputChange={handleInputChange}
             isRtl={searchTerm === "ar"}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("PRODUCT", record?.key || "", record?.type || "", record?.default_language || "");
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -607,7 +680,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         if (record) {
           return <ManageTableInput record={record} />;
@@ -620,7 +693,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -631,6 +704,23 @@ const Index = () => {
             index={1}
             isRtl={searchTerm === "ar"}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("PRODUCT_OPTION", record?.key || "", record?.type || "", record?.default_language || "", Number(1 + "" + record?.index));
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -647,7 +737,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         if (record) {
           return <ManageTableInput record={record} />;
@@ -660,7 +750,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -671,6 +761,23 @@ const Index = () => {
             index={2}
             isRtl={searchTerm === "ar"}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("METAFIELD", record?.key || "", record?.type || "", record?.default_language || "", Number(2 + "" + record?.index));
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
@@ -726,7 +833,6 @@ const Index = () => {
     }));
     setConfirmData((prevData) => {
       const existingItemIndex = prevData.findIndex((item) => item.key === key);
-
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
         const updatedConfirmData = [...prevData];
@@ -817,11 +923,17 @@ const Index = () => {
     metafields: any;
   }) => {
     let data: ProductType = {
-      handle: "",
+      handle: {
+        type: "",
+        value: "",
+      } ,
       key: "",
-      descriptionHtml: "",
+      descriptionHtml: {
+        type: "",
+        value: "",
+      },
       seo: {
-        description: "",
+        description: "" ,
         title: "",
       },
       productType: "",
@@ -918,6 +1030,34 @@ const Index = () => {
 
     return data;
   };
+
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string, index?: number) => {
+    if (!key || !type || !context) {
+      return;
+    }
+    setLoadingItems((prev) => [...prev, key]);
+    const data = await SingleTextTranslate({
+      shopName: shopName,
+      source: productsData.nodes
+        .find((item: any) => item?.resourceId === selectProductKey)
+        ?.translatableContent.find((item: any) => item.key === key)
+        ?.locale,
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
+    if (data?.success) {
+      if (loadingItemsRef.current.includes(key)) {
+        handleInputChange(key, data.response, index)
+      }
+    } else {
+      shopify.toast.show(data.errorMsg)
+    }
+    setLoadingItems((prev) => prev.filter((item) => item !== key));
+  }
 
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);
@@ -1051,6 +1191,10 @@ const Index = () => {
                 background: colorBgContainer,
                 height: 'calc(100vh - 124px)',
                 width: '200px',
+                minHeight: '70vh',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'auto',
               }}
             >
               {/* <ItemsScroll
@@ -1062,7 +1206,11 @@ const Index = () => {
                 mode="inline"
                 defaultSelectedKeys={[productsData?.nodes[0]?.resourceId]}
                 defaultOpenKeys={["sub1"]}
-                style={{ height: "100%" }}
+                style={{
+                  flex: 1,
+                  overflowY: "auto",
+                  minHeight: 0,
+                }}
                 items={menuData}
                 selectedKeys={[selectProductKey]}
                 onClick={(e: any) => setSelectProductKey(e.key)}

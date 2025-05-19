@@ -45,7 +45,7 @@ import {
   GetUserData,
   GetUserWords,
   UpdateAutoTranslateByData,
-} from "~/api/serve";
+} from "~/api/JavaServer";
 import TranslatedIcon from "~/components/translateIcon";
 import { WordsType } from "../app._index/route";
 import { useTranslation } from "react-i18next";
@@ -107,7 +107,7 @@ const autoTranslationMapping = {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const { shop } = adminAuthResult.session;
 
   console.log(`${shop} load language`);
 
@@ -698,6 +698,9 @@ const Index = () => {
   };
 
   const handleAutoUpdateTranslationChange = async (locale: string, checked: boolean) => {
+    if (!plan) {
+      return;
+    }
     const items = dataSource.filter((item => item.autoTranslate)).length
     if (items <= autoTranslationMapping[plan as keyof typeof autoTranslationMapping]) {
       dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
