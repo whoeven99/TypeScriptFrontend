@@ -97,17 +97,17 @@ export interface MarketType {
 }
 
 const autoTranslationMapping = {
-  1: 0,
-  2: 0,
-  3: 0,
-  4: 1,
-  5: 8,
+  1: 20,
+  2: 20,
+  3: 20,
+  4: 20,
+  5: 20,
   6: 20
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const { shop } = adminAuthResult.session;
 
   console.log(`${shop} load language`);
 
@@ -698,6 +698,9 @@ const Index = () => {
   };
 
   const handleAutoUpdateTranslationChange = async (locale: string, checked: boolean) => {
+    if (!plan) {
+      return;
+    }
     const items = dataSource.filter((item => item.autoTranslate)).length
     if (items < autoTranslationMapping[plan as keyof typeof autoTranslationMapping]) {
       dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
