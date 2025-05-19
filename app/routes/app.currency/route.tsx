@@ -262,15 +262,10 @@ const Index = () => {
   const [isAddCurrencyModalOpen, setIsAddCurrencyModalOpen] = useState(false);
   const [addCurrencies, setAddCurrencies] = useState<CurrencyType[]>([]);
   const [isCurrencyEditModalOpen, setIsCurrencyEditModalOpen] = useState(false);
-  const [moneyFormatHtml, setMoneyFormatHtml] = useState<string | null>("");
-  const [moneyWithCurrencyFormatHtml, setMoneyWithCurrencyFormatHtml] =
-    useState<string | null>("");
-  const moneyFormatHtmlRef = useRef<string | null>(null);
-  const moneyWithCurrencyFormatHtmlRef = useRef<string | null>(null);
   const [currencyFormatConfigCardOpen, setCurrencyFormatConfigCardOpen] =
-    useState<boolean>(false);
+    useState<boolean>(true);
   const [switcherEnableCardOpen, setSwitcherEnableCardOpen] =
-    useState<boolean>(false);
+    useState<boolean>(true);
   const [withMoneyValue, setWithMoneyValue] = useState<string>("");
   const [withoutMoneyValue, setWithoutMoneyValue] = useState<string>("");
   const [selectedRow, setSelectedRow] = useState<
@@ -315,22 +310,61 @@ const Index = () => {
   useEffect(() => {
     if (initFetcher.data) {
       const parser = new DOMParser();
-      setMoneyFormatHtml(
-        parser.parseFromString(initFetcher.data.moneyFormat, "text/html")
-          .documentElement.textContent,
-      );
-      moneyFormatHtmlRef.current = parser.parseFromString(initFetcher.data.moneyFormat, "text/html")
+      const moneyFormatHtmlData = parser.parseFromString(initFetcher.data.moneyFormat, "text/html")
         .documentElement.textContent;
-      setMoneyWithCurrencyFormatHtml(
-        parser.parseFromString(
-          initFetcher.data.moneyWithCurrencyFormat,
-          "text/html",
-        ).documentElement.textContent,
-      );
-      moneyWithCurrencyFormatHtmlRef.current = parser.parseFromString(
+      const moneyWithCurrencyFormatHtmlData = parser.parseFromString(
         initFetcher.data.moneyWithCurrencyFormat,
         "text/html",
       ).documentElement.textContent;
+      if (moneyFormatHtmlData && moneyWithCurrencyFormatHtmlData) {
+        const parser = new DOMParser();
+        const moneyWithMoneyDoc = parser.parseFromString(
+          moneyWithCurrencyFormatHtmlData,
+          "text/html",
+        );
+        const moneyWithoutMoneyDoc = parser.parseFromString(
+          moneyFormatHtmlData,
+          "text/html",
+        );
+
+        const moneyWithMoneyElement =
+          moneyWithMoneyDoc.querySelector(".ciwi-money");
+        const moneyWithoutMoneyElement =
+          moneyWithoutMoneyDoc.querySelector(".ciwi-money");
+
+        console.log(moneyWithMoneyElement, moneyWithoutMoneyElement);
+
+        if (moneyWithMoneyElement && moneyWithoutMoneyElement) {
+          setCurrencyFormatConfigCardOpen(false);
+        } else {
+          setCurrencyFormatConfigCardOpen(true);
+        }
+
+        const spansWithMoney = moneyWithMoneyDoc.querySelectorAll("span");
+
+        if (spansWithMoney.length) {
+          spansWithMoney.forEach((span) => {
+            if (span.textContent && span.textContent.trim()) {
+              setWithMoneyValue(span.textContent.trim());
+            }
+          });
+        } else {
+          setWithMoneyValue(moneyWithCurrencyFormatHtmlData);
+        }
+
+        const spansWithoutMoney = moneyWithoutMoneyDoc.querySelectorAll("span");
+
+        if (spansWithoutMoney.length) {
+          spansWithoutMoney.forEach((span) => {
+            if (span.textContent && span.textContent.trim()) {
+              setWithoutMoneyValue(span.textContent.trim());
+            }
+          });
+        } else {
+          setWithoutMoneyValue(moneyFormatHtmlData);
+        }
+      }
+
       setDefaultCurrencyCode(initFetcher.data.defaultCurrencyCode);
       setCurrencyData(initFetcher.data.currencyLocaleData);
       setAddCurrencies(initFetcher.data.currencyLocaleData.filter((item: any) => item.currencyCode !== initFetcher.data.defaultCurrencyCode));
@@ -388,55 +422,7 @@ const Index = () => {
           }
         }
       }
-      if (moneyWithCurrencyFormatHtmlRef.current && moneyFormatHtmlRef.current) {
-        const parser = new DOMParser();
-        const moneyWithMoneyDoc = parser.parseFromString(
-          moneyWithCurrencyFormatHtmlRef.current,
-          "text/html",
-        );
-        const moneyWithoutMoneyDoc = parser.parseFromString(
-          moneyFormatHtmlRef.current,
-          "text/html",
-        );
 
-        const moneyWithMoneyElement =
-          moneyWithMoneyDoc.querySelector(".ciwi-money");
-        const moneyWithoutMoneyElement =
-          moneyWithoutMoneyDoc.querySelector(".ciwi-money");
-
-        console.log(moneyWithMoneyElement, moneyWithoutMoneyElement);
-
-
-        if (moneyWithMoneyElement && moneyWithoutMoneyElement) {
-          setCurrencyFormatConfigCardOpen(false);
-        } else {
-          setCurrencyFormatConfigCardOpen(true);
-        }
-
-        const spansWithMoney = moneyWithMoneyDoc.querySelectorAll("span");
-
-        if (spansWithMoney.length) {
-          spansWithMoney.forEach((span) => {
-            if (span.textContent && span.textContent.trim()) {
-              setWithMoneyValue(span.textContent.trim());
-            }
-          });
-        } else {
-          setWithMoneyValue(moneyWithCurrencyFormatHtmlRef.current);
-        }
-
-        const spansWithoutMoney = moneyWithoutMoneyDoc.querySelectorAll("span");
-
-        if (spansWithoutMoney.length) {
-          spansWithoutMoney.forEach((span) => {
-            if (span.textContent && span.textContent.trim()) {
-              setWithoutMoneyValue(span.textContent.trim());
-            }
-          });
-        } else {
-          setWithoutMoneyValue(moneyFormatHtmlRef.current);
-        }
-      }
       setCardLoading(false);
       // const switcherData =
       //   themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
