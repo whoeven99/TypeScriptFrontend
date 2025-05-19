@@ -29,7 +29,7 @@ import {
   InitCurrency,
   UpdateCurrency,
   UpdateDefaultCurrency,
-} from "~/api/serve";
+} from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import AddCurrencyModal from "./components/addCurrencyModal";
 import CurrencyEditModal from "./components/currencyEditModal";
@@ -100,12 +100,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               .filter((item1: any) => item1.enabled)
               .filter((item2: any) => item2.currencyCode !== shopLoad.currencyCode)
               .map((item3: any) => ({
-                currencyName: currencyLocaleData.find((item4: any) => item4.currencyCode === item3.currencyCode).currencyName,
+                currencyName: currencyLocaleData.find((item4: any) => item4.currencyCode === item3.currencyCode)?.currencyName || "",
                 currencyCode: item3.currencyCode,
                 primaryStatus: 0,
               }));
             currencyData.push({
-              currencyName: currencyLocaleData.find((item: any) => item.currencyCode === shopLoad.currencyCode).currencyName,
+              currencyName: currencyLocaleData.find((item: any) => item.currencyCode === shopLoad.currencyCode)?.currencyName || "",
               currencyCode: shopLoad.currencyCode,
               primaryStatus: 1,
             });

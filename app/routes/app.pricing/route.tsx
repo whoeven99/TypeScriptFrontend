@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import ScrollNotice from "~/components/ScrollNotice";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { GetUserSubscriptionPlan, GetUserWords } from "~/api/serve";
+import { GetUserSubscriptionPlan, GetUserWords } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useFetcher } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";

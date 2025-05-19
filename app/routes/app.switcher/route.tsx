@@ -17,7 +17,7 @@ import styles from "./styles.module.css";
 import { useEffect, useState } from "react";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useNavigate } from "@remix-run/react";
-import { SaveAndUpdateData, WidgetConfigurations } from "~/api/serve";
+import { SaveAndUpdateData, WidgetConfigurations } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useSelector } from "react-redux";
 import TranslationWarnModal from "~/components/translationWarnModal";
@@ -400,7 +400,7 @@ const Index = () => {
   };
 
   const handleIpOpenChange = (checked: boolean) => {
-    if (plan > 3) {
+    if (plan > 3 || !checked) {
       setIsGeoLocationEnabled(checked);
       setEditData((prev) => ({
         ...prev,

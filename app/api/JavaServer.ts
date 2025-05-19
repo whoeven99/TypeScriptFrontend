@@ -1314,11 +1314,11 @@ export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
     if (res) {
       const data = res.map((item: any) => ({
         key: item.id, // 将 id 转换为 key
-        currency: item.currencyName, // 将 currencyName 作为 currency
-        rounding: item.rounding,
-        exchangeRate: item.exchangeRate,
-        currencyCode: item.currencyCode,
-        primaryStatus: item.primaryStatus,
+        currency: item?.currencyName, // 将 currencyName 作为 currency
+        rounding: item?.rounding,
+        exchangeRate: item?.exchangeRate,
+        currencyCode: item?.currencyCode,
+        primaryStatus: item?.primaryStatus,
       }));
       return data;
     } else {
