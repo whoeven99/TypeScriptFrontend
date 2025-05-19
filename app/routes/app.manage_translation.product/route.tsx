@@ -2,7 +2,6 @@ import {
   Button,
   Layout,
   Menu,
-  MenuProps,
   Result,
   Spin,
   Table,
@@ -31,10 +30,9 @@ import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { SessionService } from "~/utils/session.server";
 import { useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
-import ItemsScroll, { MenuItem } from "../app.manage_translation/components/itemsScroll";
+import { MenuItem } from "../app.manage_translation/components/itemsScroll";
 
 const { Sider, Content } = Layout;
 
@@ -43,53 +41,49 @@ const { Text } = Typography;
 interface ProductType {
   key: string;
   handle: {
-    type: string;
     value: string;
+    type: string;
+  };
+  title: {
+    value: string;
+    type: string;
   };
   descriptionHtml: {
-    type: string;
     value: string;
+    type: string;
+  };
+  productType: {
+    value: string;
+    type: string;
   };
   seo: {
     description: {
-      type: string;
       value: string;
+      type: string;
     };
     title: {
-      type: string;
       value: string;
+      type: string;
     };
-  };
-  productType: {
-    type: string;
-    value: string;
   };
   options: [
     {
       key: string;
-      name: {
-        type: string;
-        value: string;
-      };
-      // values: string[] | undefined;
+      name: string;
+      type: string;
+      translatableContent: string | undefined;
       translation: string | undefined;
     },
   ];
   metafields: [
     {
       key: string;
-      name: {
-        type: string;
-        value: string;
-      };
-      // values: string[] | undefined;
+      name: string;
+      type: string;
+      translatableContent: string | undefined;
       translation: string | undefined;
     },
   ];
-  title: {
-    type: string;
-    value: string;
-  };
   translations: {
     handle: string | undefined;
     key: string;
@@ -144,6 +138,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
 
     return json({
+      server: process.env.SERVER_URL,
+      shopName: shop,
       searchTerm,
       products,
       product_options,
@@ -266,7 +262,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { searchTerm, products, product_options, product_metafields } =
+  const { searchTerm, products, product_options, product_metafields, server, shopName } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const {
@@ -448,9 +444,9 @@ const Index = () => {
       return {
         key: `name_${index}`,
         index: index,
-        resource: t(option?.name?.value),
-        type: option?.name?.type,
-        default_language: option?.name?.value,
+        resource: t(option?.name),
+        type: option?.type,
+        default_language: option?.translatableContent,
         translated: option.translation,
       };
     });
@@ -459,9 +455,9 @@ const Index = () => {
       return {
         key: `value_${index}`,
         index: index,
-        resource: t(metafield?.name?.value),
-        type: metafield?.name?.type,
-        default_language: metafield?.name?.value,
+        resource: t(metafield?.name),
+        type: metafield?.type,
+        default_language: metafield?.translatableContent,
         translated: metafield?.translation,
       };
     });
@@ -558,7 +554,7 @@ const Index = () => {
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
       } else {
-        shopify.toast.show(errorItem?.errorMsg);
+        shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
     }
@@ -576,7 +572,7 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return <ManageTableInput record={record} />;
       },
@@ -585,7 +581,7 @@ const Index = () => {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -671,7 +667,7 @@ const Index = () => {
 
   const optionsColumns = [
     {
-      title: "Product Options",
+      title: t("Product Options"),
       dataIndex: "resource",
       key: "resource",
       width: "10%",
@@ -728,7 +724,7 @@ const Index = () => {
 
   const metafieldsColumns = [
     {
-      title: "Metafield",
+      title: t("Metafield"),
       dataIndex: "resource",
       key: "resource",
       width: "10%",
@@ -923,24 +919,39 @@ const Index = () => {
     metafields: any;
   }) => {
     let data: ProductType = {
-      handle: {
-        type: "",
-        value: "",
-      } ,
       key: "",
-      descriptionHtml: {
-        type: "",
+      title: {
         value: "",
+        type: "",
+      },
+      descriptionHtml: {
+        value: "",
+        type: "",
       },
       seo: {
-        description: "" ,
-        title: "",
+        description: {
+          value: "",
+          type: "",
+        },
+        title: {
+          value: "",
+          type: "",
+        },
       },
-      productType: "",
+      handle: {
+        value: "",
+        type: "",
+      },
+      productType: {
+        value: "",
+        type: "",
+      },
       options: [
         {
           key: "",
           name: "",
+          type: "",
+          translatableContent: "",
           translation: "",
         },
       ],
@@ -948,10 +959,11 @@ const Index = () => {
         {
           key: "",
           name: "",
+          type: "",
+          translatableContent: "",
           translation: "",
         },
       ],
-      title: "",
       translations: {
         handle: "",
         key: "",
@@ -974,24 +986,54 @@ const Index = () => {
       (metafield: any) => metafield?.resourceId === selectProductKey,
     );
     data.key = product?.resourceId;
-    data.title = product?.translatableContent.find(
-      (item: any) => item.key === "title",
-    )?.value;
-    data.descriptionHtml = product?.translatableContent.find(
-      (item: any) => item.key === "body_html",
-    )?.value;
-    data.productType = product?.translatableContent.find(
-      (item: any) => item.key === "product_type",
-    )?.value;
-    data.handle = product?.translatableContent.find(
-      (item: any) => item.key === "handle",
-    )?.value;
-    data.seo.title = product?.translatableContent.find(
-      (item: any) => item.key === "meta_title",
-    )?.value;
-    data.seo.description = product?.translatableContent.find(
-      (item: any) => item.key === "meta_description",
-    )?.value;
+    data.title = {
+      value: product?.translatableContent.find(
+        (item: any) => item.key === "title",
+      )?.value,
+      type: product?.translatableContent.find(
+        (item: any) => item.key === "title",
+      )?.type,
+    };
+    data.descriptionHtml = {
+      value: product?.translatableContent.find(
+        (item: any) => item.key === "body_html",
+      )?.value,
+      type: product?.translatableContent.find(
+        (item: any) => item.key === "body_html",
+      )?.type,
+    };
+    data.productType = {
+      value: product?.translatableContent.find(
+        (item: any) => item.key === "product_type",
+      )?.value,
+      type: product?.translatableContent.find(
+        (item: any) => item.key === "product_type",
+      )?.type,
+    }
+    data.handle = {
+      value: product?.translatableContent.find(
+        (item: any) => item.key === "handle",
+      )?.value,
+      type: product?.translatableContent.find(
+        (item: any) => item.key === "handle",
+      )?.type,
+    };
+    data.seo.title = {
+      value: product?.translatableContent.find(
+        (item: any) => item.key === "meta_title",
+      )?.value,
+      type: product?.translatableContent.find(
+        (item: any) => item.key === "meta_title",
+      )?.type,
+    };
+    data.seo.description = {
+      value: product?.translatableContent.find(
+        (item: any) => item.key === "meta_description",
+      )?.value,
+      type: product?.translatableContent.find(
+        (item: any) => item.key === "meta_description",
+      )?.type,
+    };
     data.translations.key = product?.resourceId;
     data.translations.title = product?.translations.find(
       (item: any) => item.key === "title",
@@ -1015,7 +1057,9 @@ const Index = () => {
       productOption?.nestedTranslatableResources.nodes.map((item: any) => {
         return {
           key: item?.resourceId,
-          name: item?.translatableContent[0]?.value,
+          name: item?.translatableContent[0]?.key,
+          type: item?.translatableContent[0]?.type,
+          translatableContent: item?.translatableContent[0]?.value,
           translation: item?.translations[0]?.value,
         };
       }) || [];
@@ -1023,7 +1067,9 @@ const Index = () => {
       productMetafield?.nestedTranslatableResources.nodes.map((item: any) => {
         return {
           key: item?.resourceId,
-          name: item?.translatableContent[0]?.value,
+          name: item?.translatableContent[0]?.key,
+          type: item?.translatableContent[0]?.type,
+          translatableContent: item?.translatableContent[0]?.value,
           translation: item?.translations[0]?.value,
         };
       }) || [];
