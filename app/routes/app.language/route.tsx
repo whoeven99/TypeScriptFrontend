@@ -45,7 +45,7 @@ import {
   GetUserData,
   GetUserWords,
   UpdateAutoTranslateByData,
-} from "~/api/serve";
+} from "~/api/JavaServer";
 import TranslatedIcon from "~/components/translateIcon";
 import { WordsType } from "../app._index/route";
 import { useTranslation } from "react-i18next";

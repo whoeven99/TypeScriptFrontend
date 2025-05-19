@@ -20,7 +20,7 @@ import {
   GetUserSubscriptionPlan,
   InsertGlossaryInfo,
   UpdateTargetTextById,
-} from "~/api/serve";
+} from "~/api/JavaServer";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setGLossaryStatusLoadingState,

@@ -25,7 +25,7 @@ import {
     queryNextTransType,
     queryPreviousTransType,
 } from "~/api/admin";
-import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/serve";
+import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -427,7 +427,7 @@ const Index = () => {
                         ?.translatableContent.find((item: any) => item.key === key)?.digest,
                     target: searchTerm || "",
                 };
-                                
+
                 return [...prevData, newItem]; // 将新数据添加到 confirmData 中
             }
         });
@@ -657,13 +657,21 @@ const Index = () => {
                                 background: colorBgContainer,
                                 height: 'calc(100vh - 124px)',
                                 width: '200px',
+                                minHeight: '70vh',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                overflow: 'auto',
                             }}
                         >
                             <Menu
                                 mode="inline"
                                 defaultSelectedKeys={[emailsData.nodes[0]?.resourceId]}
                                 defaultOpenKeys={["sub1"]}
-                                style={{ height: "100%" }}
+                                style={{
+                                    flex: 1,
+                                    overflowY: "auto",
+                                    minHeight: 0,
+                                }}
                                 items={menuData}
                                 selectedKeys={[selectEmailKey]}
                                 onClick={(e: any) => {

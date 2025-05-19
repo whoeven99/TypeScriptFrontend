@@ -20,7 +20,6 @@ import {
   GetLanguageLocaleInfo,
   GetLanguageList,
   GetTotalWords,
-  GetTranslate,
   GetUserWords,
   GetLanguageStatus,
   AddUserFreeSubscription,
@@ -35,7 +34,7 @@ import {
   GetUserInitTokenByShopName,
   GetTranslateDOByShopNameAndSource,
   GetUserData,
-} from "~/api/serve";
+} from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
 import {
   mutationAppPurchaseOneTimeCreate,

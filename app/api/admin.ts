@@ -118,6 +118,7 @@ export const queryShop = async ({
       data: JSON.stringify({ query }),
     });
     const res = response.data.data.shop;
+    console.log("queryShop: ", res);
     return res;
   } catch (error) {
     console.error("Error fetching shop:", error);

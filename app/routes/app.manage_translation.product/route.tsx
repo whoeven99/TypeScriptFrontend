@@ -26,7 +26,7 @@ import {
   queryPreviousNestTransType,
   queryPreviousTransType,
 } from "~/api/admin";
-import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/serve";
+import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -828,7 +828,7 @@ const Index = () => {
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.key === key);    
+      const existingItemIndex = prevData.findIndex((item) => item.key === key);
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
         const updatedConfirmData = [...prevData];
@@ -1237,6 +1237,10 @@ const Index = () => {
                 background: colorBgContainer,
                 height: 'calc(100vh - 124px)',
                 width: '200px',
+                minHeight: '70vh',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'auto',
               }}
             >
               {/* <ItemsScroll
@@ -1248,7 +1252,11 @@ const Index = () => {
                 mode="inline"
                 defaultSelectedKeys={[productsData?.nodes[0]?.resourceId]}
                 defaultOpenKeys={["sub1"]}
-                style={{ height: "100%" }}
+                style={{
+                  flex: 1,
+                  overflowY: "auto",
+                  minHeight: 0,
+                }}
                 items={menuData}
                 selectedKeys={[selectProductKey]}
                 onClick={(e: any) => setSelectProductKey(e.key)}

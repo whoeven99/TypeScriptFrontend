@@ -14,7 +14,7 @@ import {
   Uninstall,
   UpdateStatus,
   UpdateUserPlan,
-} from "~/api/serve";
+} from "~/api/JavaServer";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop, session, admin, payload } =

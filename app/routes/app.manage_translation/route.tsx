@@ -15,7 +15,7 @@ import {
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
-import { GetTranslationItemsInfo } from "~/api/serve";
+import { GetTranslationItemsInfo } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { updateData } from "~/store/modules/languageItemsData";

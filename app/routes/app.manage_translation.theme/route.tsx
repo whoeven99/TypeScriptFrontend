@@ -23,7 +23,7 @@ import {
   queryPreviousTransType,
 } from "~/api/admin";
 import { SearchOutlined } from "@ant-design/icons";
-import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/serve";
+import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { useTranslation } from "react-i18next";

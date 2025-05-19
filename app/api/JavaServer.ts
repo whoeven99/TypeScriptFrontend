@@ -829,7 +829,7 @@ export const GetTranslate = async ({
   source: string;
   target: string;
   translateSettings1: string;
-  translateSettings2: string;
+  translateSettings2: string[];
   translateSettings3: string[];
 }) => {
   try {
@@ -842,7 +842,7 @@ export const GetTranslate = async ({
         source: source,
         target: target,
         translateSettings1: "google",
-        translateSettings2: translateSettings2,
+        translateSettings2: translateSettings2.toString(),
         translateSettings3: translateSettings3,
       },
     });
@@ -1314,11 +1314,11 @@ export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
     if (res) {
       const data = res.map((item: any) => ({
         key: item.id, // 将 id 转换为 key
-        currency: item.currencyName, // 将 currencyName 作为 currency
-        rounding: item.rounding,
-        exchangeRate: item.exchangeRate,
-        currencyCode: item.currencyCode,
-        primaryStatus: item.primaryStatus,
+        currency: item?.currencyName, // 将 currencyName 作为 currency
+        rounding: item?.rounding,
+        exchangeRate: item?.exchangeRate,
+        currencyCode: item?.currencyCode,
+        primaryStatus: item?.primaryStatus,
       }));
       return data;
     } else {
