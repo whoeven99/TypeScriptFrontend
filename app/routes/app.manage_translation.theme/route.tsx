@@ -180,10 +180,6 @@ const Index = () => {
   }, [loadingItems]);
 
   useEffect(() => {
-    console.log("confirmData: ", confirmData);
-  }, [confirmData])
-
-  useEffect(() => {
     if (languageTableData) {
       setLanguageOptions(languageTableData
         .filter((item: any) => !item.primary)
@@ -196,8 +192,6 @@ const Index = () => {
 
   useEffect(() => {
     if (themes && isManualChange.current) {
-      console.log("themes: ", themes);
-
       const start = performance.now();
       const data = generateMenuItemsArray(themes);
 
@@ -205,7 +199,6 @@ const Index = () => {
       console.log('generateMenuItemsArray 执行耗时:', (end - start).toFixed(2), 'ms');
       setResourceData(data);
       setFilteredResourceData(data);
-      console.log("themes: ", data);
       isManualChange.current = false;
     }
     setIsLoading(false);
@@ -300,7 +293,6 @@ const Index = () => {
     }));
     setConfirmData((prevData) => {
       const existingItemIndex = prevData.findIndex((item) => item.key === key);
-
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
         const updatedConfirmData = [...prevData];
@@ -314,7 +306,7 @@ const Index = () => {
         const newItem = {
           resourceId: themes.nodes[0]?.resourceId,
           locale: themes.nodes[0]?.translatableContent[0]?.locale,
-          key: themes.nodes[0]?.translatableContent[0]?.key,
+          key: key,
           value: value, // 初始为空字符串
           translatableContentDigest:
             themes.nodes[0]?.translatableContent.find((item: any) => item.key === key)?.digest || themes.nodes[0]?.translatableContent[0]?.digest || "",
@@ -331,7 +323,7 @@ const Index = () => {
         // 创建当前项的对象
         const currentItem = {
           key: `${item.key}`, // 使用 key 生成唯一的 key
-          resource: item.key, // 资源字段固定为 "Menu Items"
+          resource: item.key,
           default_language: item.value, // 默认语言为 item 的标题
           translated:
             items.nodes[0]?.translations.find(

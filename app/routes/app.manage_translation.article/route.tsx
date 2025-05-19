@@ -497,6 +497,9 @@ const Index = () => {
   };
 
   const handleInputChange = (key: string, value: string) => {
+    console.log("key: ", key);
+    console.log("value: ", value);
+    console.log("prev: ", translatedValues);
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
