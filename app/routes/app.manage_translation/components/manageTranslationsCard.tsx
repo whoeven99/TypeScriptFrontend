@@ -32,13 +32,9 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   const { plan } = useSelector((state: any) => state.userConfig);
 
   const handleEdit = (record: DataType) => {
-    // if (typeof plan === "number" && plan > 3) {
-      navigate(
-        `/app/manage_translation/${record.navigation}?language=${current}`,
-      );
-    // } else {
-    //   setShowWarnModal(true);
-    // }
+    navigate(
+      `/app/manage_translation/${record.navigation}?language=${current}`,
+    );
   };
 
   const columns = [

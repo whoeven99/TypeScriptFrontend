@@ -241,6 +241,9 @@ const Index = () => {
   };
 
   const handleIsModalOpen = (title: string, key: number) => {
+    if (!plan) {
+      return;
+    }
     if (title === "Create rule" && dataSource.length >= planMapping[plan as keyof typeof planMapping]) {
       setShowWarnModal(true);
     } else {
