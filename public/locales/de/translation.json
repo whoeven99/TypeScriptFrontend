@@ -380,6 +380,8 @@
   "Please upgrade to a higher plan to remove the current glossary limitations": "Bitte aktualisieren Sie auf einen höheren Plan, um die aktuellen Glossarbeschränkungen zu entfernen",
   "Add failed": "Hinzufügen fehlgeschlagen",
   "Language not found": "Sprache nicht gefunden",
-  "You have reached your shopify plan limit(Max<=20)": "Sie haben Ihren Shopify-Planlimit erreicht (Max<=20)"
+  "You have reached your shopify plan limit(Max<=20)": "Sie haben Ihren Shopify-Planlimit erreicht (Max<=20)",
+  "Select at least one language pack": "Bitte wählen Sie mindestens ein Sprachpaket",
+  "Select at least one translation item": "Bitte wählen Sie mindestens einen Übersetzungseintrag"
 }
     

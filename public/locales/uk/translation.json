@@ -381,5 +381,7 @@
     "Please upgrade to a higher plan to remove the current glossary limitations": "Будь ласка, підвищіть свій план, щоб видалити поточні обмеження глосарію",
     "Add failed": "Додавання не вдалося",
     "Language not found": "Мова не знайдена",
-    "You have reached your shopify plan limit(Max<=20)": "Ви досягли ліміту вашого Shopify-плану (Max<=20)"
+    "You have reached your shopify plan limit(Max<=20)": "Ви досягли ліміту вашого Shopify-плану (Max<=20)",
+    "Select at least one language pack": "Виберіть принаймні один пакет мов",
+    "Select at least one translation item": "Виберіть принаймні один елемент перекладу"
 }

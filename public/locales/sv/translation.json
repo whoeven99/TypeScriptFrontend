@@ -381,6 +381,8 @@
     "Please upgrade to a higher plan to remove the current glossary limitations": "Uppgradera till ett högre plan för att ta bort de aktuella glossargränserna",
     "Add failed": "Lägg till misslyckades",
     "Language not found": "Språk hittades inte",
-    "You have reached your shopify plan limit(Max<=20)": "Du har nått din Shopify-plangräns (Max<=20)"
+    "You have reached your shopify plan limit(Max<=20)": "Du har nått din Shopify-plangräns (Max<=20)",
+    "Select at least one language pack": "Välj minst ett språkpaket",
+    "Select at least one translation item": "Välj minst ett översättningsobjekt"
 }   
   
