@@ -7,84 +7,38 @@ import { useTranslation } from "react-i18next";
 const { Title, Text, Paragraph } = Typography;
 
 interface SwitcherSettingCardProps {
+  step1Visible: boolean | undefined;
+  step2Visible: boolean | undefined;
+  setStep1Visible: (visible: boolean) => void;
+  setStep2Visible: (visible: boolean) => void;
   loading: boolean;
-  isEnable: boolean;
   shop: string;
   ciwiSwitcherId: string;
   settingUrl: string;
-  moneyWithCurrencyFormatHtml: string | null; //HTML with currency:
-  moneyFormatHtml: string | null; //HTML without currency:
+  withMoneyValue: string;
+  withoutMoneyValue: string;
   defaultCurrencyCode: string;
 }
 
 const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
+  step1Visible,
+  step2Visible,
+  setStep1Visible,
+  setStep2Visible,
   loading,
-  isEnable,
   shop,
   ciwiSwitcherId,
   settingUrl,
-  moneyWithCurrencyFormatHtml,
-  moneyFormatHtml,
-  defaultCurrencyCode,
+  withMoneyValue,
+  withoutMoneyValue,
 }) => {
+  console.log(step1Visible);
+  
   const blockUrl = `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/switcher`;
   const supportUrl =
     "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/";
-  const [isVisible, setIsVisible] = useState<boolean | undefined>(undefined);
-  const [withMoneyValue, setWithMoneyValue] = useState<string>("");
-  const [withoutMoneyValue, setWithoutMoneyValue] = useState<string>("");
-  const [step1Visible, setStep1Visible] = useState<boolean>(true);
-  const [step2Visible, setStep2Visible] = useState<boolean>(true);
+
   const { t } = useTranslation();
-
-  useEffect(() => {
-    if (moneyWithCurrencyFormatHtml && moneyFormatHtml) {
-      const parser = new DOMParser();
-      const moneyWithMoneyDoc = parser.parseFromString(
-        moneyWithCurrencyFormatHtml,
-        "text/html",
-      );
-      const moneyWithoutMoneyDoc = parser.parseFromString(
-        moneyFormatHtml,
-        "text/html",
-      );
-
-      const moneyWithMoneyElement =
-        moneyWithMoneyDoc.querySelector(".ciwi-money");
-      const moneyWithoutMoneyElement =
-        moneyWithoutMoneyDoc.querySelector(".ciwi-money");
-
-      if (moneyWithMoneyElement && moneyWithoutMoneyElement) {
-        setIsVisible(false);
-      } else {
-        setIsVisible(true);
-      }
-
-      const spansWithMoney = moneyWithMoneyDoc.querySelectorAll("span");
-
-      if (spansWithMoney.length) {
-        spansWithMoney.forEach((span) => {
-          if (span.textContent && span.textContent.trim()) {
-            setWithMoneyValue(span.textContent.trim());
-          }
-        });
-      } else {
-        setWithMoneyValue(moneyWithCurrencyFormatHtml);
-      }
-
-      const spansWithoutMoney = moneyWithoutMoneyDoc.querySelectorAll("span");
-
-      if (spansWithoutMoney.length) {
-        spansWithoutMoney.forEach((span) => {
-          if (span.textContent && span.textContent.trim()) {
-            setWithoutMoneyValue(span.textContent.trim());
-          }
-        });
-      } else {
-        setWithoutMoneyValue(moneyFormatHtml);
-      }
-    }
-  }, [moneyWithCurrencyFormatHtml, moneyFormatHtml]);
 
   return (
     <ConfigProvider
@@ -116,31 +70,17 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                 style={{ display: "flex" }}
               >
                 <div className="card-header">
-                  {isVisible ? (
-                    <Text
-                      strong
-                      style={{
-                        backgroundColor: "rgb(254,211,209)",
-                        color: "rgb(142, 31, 11)",
-                        padding: "2px 10px",
-                        borderRadius: "20px",
-                      }}
-                    >
-                      {t("Uncompleted")}
-                    </Text>
-                  ) : (
-                    <Text
-                      strong
-                      style={{
-                        backgroundColor: "rgb(224,247,224)",
-                        color: "rgb(76,175,80)",
-                        padding: "2px 10px",
-                        borderRadius: "20px",
-                      }}
-                    >
-                      {t("Completed")}
-                    </Text>
-                  )}
+                  <Text
+                    strong
+                    style={{
+                      backgroundColor: "rgb(254,211,209)",
+                      color: "rgb(142, 31, 11)",
+                      padding: "2px 10px",
+                      borderRadius: "20px",
+                    }}
+                  >
+                    {t("Uncompleted")}
+                  </Text>
                   <Link url={settingUrl} target="_blank">
                     <Button type="primary" className="currency-action">
                       {t("Setup")}
@@ -169,26 +109,24 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                 <div>
                   <strong>HTML with currency:</strong>
                   {withMoneyValue ? (
-                    isVisible ? (
-                      <Paragraph
-                        copyable={{
-                          text: `<span class="ciwi-money">${withoutMoneyValue} ${defaultCurrencyCode}</span>`,
-                        }}
-                      >
-                        &lt;span class="ciwi-money"&gt;{withoutMoneyValue}{" "}
-                        {defaultCurrencyCode}
-                        &lt;/span&gt;
-                      </Paragraph>
-                    ) : (
-                      <Paragraph
-                        copyable={{
-                          text: `<span class="ciwi-money">${withMoneyValue}</span>`,
-                        }}
-                      >
-                        &lt;span class="ciwi-money"&gt;{withMoneyValue}
-                        &lt;/span&gt;
-                      </Paragraph>
-                    )
+                    // <Paragraph
+                    //   copyable={{
+                    //     text: `<span class="ciwi-money">${withoutMoneyValue} ${defaultCurrencyCode}</span>`,
+                    //   }}
+                    // >
+                    //   &lt;span class="ciwi-money"&gt;{withoutMoneyValue}{" "}
+                    //   {defaultCurrencyCode}
+                    //   &lt;/span&gt;
+                    // </Paragraph>
+                    <Paragraph
+                      copyable={{
+                        text: `<span class="ciwi-money">${withMoneyValue}</span>`,
+                      }}
+                    >
+                      &lt;span class="ciwi-money"&gt;{withMoneyValue}
+                      &lt;/span&gt;
+                    </Paragraph>
+
                   ) : (
                     <Skeleton active paragraph={{ rows: 0 }} />
                   )}
@@ -230,31 +168,17 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
                 style={{ display: "flex" }}
               >
                 <div className="card-header">
-                  {isEnable ? (
-                    <Text
-                      strong
-                      style={{
-                        backgroundColor: "rgb(224,247,224)",
-                        color: "rgb(76,175,80)",
-                        padding: "2px 10px",
-                        borderRadius: "20px",
-                      }}
-                    >
-                      {t("Completed")}
-                    </Text>
-                  ) : (
-                    <Text
-                      strong
-                      style={{
-                        backgroundColor: "rgb(254,211,209)",
-                        color: "rgb(142, 31, 11)",
-                        padding: "2px 10px",
-                        borderRadius: "20px",
-                      }}
-                    >
-                      {t("Uncompleted")}
-                    </Text>
-                  )}
+                  <Text
+                    strong
+                    style={{
+                      backgroundColor: "rgb(254,211,209)",
+                      color: "rgb(142, 31, 11)",
+                      padding: "2px 10px",
+                      borderRadius: "20px",
+                    }}
+                  >
+                    {t("Uncompleted")}
+                  </Text>
                 </div>
                 <Text>
                   {t("Please")}

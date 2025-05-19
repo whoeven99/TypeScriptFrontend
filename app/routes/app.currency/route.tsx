@@ -13,7 +13,7 @@ import {
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { json } from "@remix-run/node";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./styles.css";
 import { ColumnsType } from "antd/es/table";
 import { TableRowSelection } from "antd/es/table/interface";
@@ -262,11 +262,12 @@ const Index = () => {
   const [isAddCurrencyModalOpen, setIsAddCurrencyModalOpen] = useState(false);
   const [addCurrencies, setAddCurrencies] = useState<CurrencyType[]>([]);
   const [isCurrencyEditModalOpen, setIsCurrencyEditModalOpen] = useState(false);
-  const [moneyFormatHtml, setMoneyFormatHtml] = useState<string | null>("");
-  const [moneyWithCurrencyFormatHtml, setMoneyWithCurrencyFormatHtml] =
-    useState<string | null>("");
+  const [currencyFormatConfigCardOpen, setCurrencyFormatConfigCardOpen] =
+    useState<boolean>(true);
   const [switcherEnableCardOpen, setSwitcherEnableCardOpen] =
-    useState<boolean>(false);
+    useState<boolean>(true);
+  const [withMoneyValue, setWithMoneyValue] = useState<string>("");
+  const [withoutMoneyValue, setWithoutMoneyValue] = useState<string>("");
   const [selectedRow, setSelectedRow] = useState<
     CurrencyDataType | undefined
   >();
@@ -309,16 +310,61 @@ const Index = () => {
   useEffect(() => {
     if (initFetcher.data) {
       const parser = new DOMParser();
-      setMoneyFormatHtml(
-        parser.parseFromString(initFetcher.data.moneyFormat, "text/html")
-          .documentElement.textContent,
-      );
-      setMoneyWithCurrencyFormatHtml(
-        parser.parseFromString(
-          initFetcher.data.moneyWithCurrencyFormat,
+      const moneyFormatHtmlData = parser.parseFromString(initFetcher.data.moneyFormat, "text/html")
+        .documentElement.textContent;
+      const moneyWithCurrencyFormatHtmlData = parser.parseFromString(
+        initFetcher.data.moneyWithCurrencyFormat,
+        "text/html",
+      ).documentElement.textContent;
+      if (moneyFormatHtmlData && moneyWithCurrencyFormatHtmlData) {
+        const parser = new DOMParser();
+        const moneyWithMoneyDoc = parser.parseFromString(
+          moneyWithCurrencyFormatHtmlData,
           "text/html",
-        ).documentElement.textContent,
-      );
+        );
+        const moneyWithoutMoneyDoc = parser.parseFromString(
+          moneyFormatHtmlData,
+          "text/html",
+        );
+
+        const moneyWithMoneyElement =
+          moneyWithMoneyDoc.querySelector(".ciwi-money");
+        const moneyWithoutMoneyElement =
+          moneyWithoutMoneyDoc.querySelector(".ciwi-money");
+
+        console.log(moneyWithMoneyElement, moneyWithoutMoneyElement);
+
+        if (moneyWithMoneyElement && moneyWithoutMoneyElement) {
+          setCurrencyFormatConfigCardOpen(false);
+        } else {
+          setCurrencyFormatConfigCardOpen(true);
+        }
+
+        const spansWithMoney = moneyWithMoneyDoc.querySelectorAll("span");
+
+        if (spansWithMoney.length) {
+          spansWithMoney.forEach((span) => {
+            if (span.textContent && span.textContent.trim()) {
+              setWithMoneyValue(span.textContent.trim());
+            }
+          });
+        } else {
+          setWithMoneyValue(moneyWithCurrencyFormatHtmlData);
+        }
+
+        const spansWithoutMoney = moneyWithoutMoneyDoc.querySelectorAll("span");
+
+        if (spansWithoutMoney.length) {
+          spansWithoutMoney.forEach((span) => {
+            if (span.textContent && span.textContent.trim()) {
+              setWithoutMoneyValue(span.textContent.trim());
+            }
+          });
+        } else {
+          setWithoutMoneyValue(moneyFormatHtmlData);
+        }
+      }
+
       setDefaultCurrencyCode(initFetcher.data.defaultCurrencyCode);
       setCurrencyData(initFetcher.data.currencyLocaleData);
       setAddCurrencies(initFetcher.data.currencyLocaleData.filter((item: any) => item.currencyCode !== initFetcher.data.defaultCurrencyCode));
@@ -368,10 +414,15 @@ const Index = () => {
         const switcherJson: any = Object.values(blocks).find(
           (block: any) => block.type === ciwiSwitcherBlocksId,
         );
-        if (!switcherJson || switcherJson.disabled) {
-          setSwitcherEnableCardOpen(true);
+        if (switcherJson) {
+          if (!switcherJson.disabled) {
+            setSwitcherEnableCardOpen(false);
+          } else {
+            setSwitcherEnableCardOpen(true);
+          }
         }
       }
+
       setCardLoading(false);
       // const switcherData =
       //   themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
@@ -584,14 +635,17 @@ const Index = () => {
       <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <SwitcherSettingCard
+          step1Visible={currencyFormatConfigCardOpen}
+          step2Visible={switcherEnableCardOpen}
+          setStep1Visible={setCurrencyFormatConfigCardOpen}
+          setStep2Visible={setSwitcherEnableCardOpen}
           loading={cardLoading}
           settingUrl={settingUrl}
-          moneyFormatHtml={moneyFormatHtml}
-          moneyWithCurrencyFormatHtml={moneyWithCurrencyFormatHtml}
           shop={shop}
           ciwiSwitcherId={ciwiSwitcherId}
-          isEnable={switcherEnableCardOpen}
           defaultCurrencyCode={defaultCurrencyCode}
+          withMoneyValue={withMoneyValue}
+          withoutMoneyValue={withoutMoneyValue}
         />
         <div className="currency-header">
           <Title style={{ fontSize: "1.25rem", display: "inline" }}>
