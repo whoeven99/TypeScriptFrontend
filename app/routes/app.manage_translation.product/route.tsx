@@ -423,6 +423,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             item.key.split("_")[0] !== "meta" &&
             item.key.split("_")[0] !== "body"
           ) {
+            console.log(item);
+
             // 将 key 修改为下划线前的部分
             item.key = item.key.split("_")[0]; // 取下划线前的部分
           }
@@ -477,7 +479,7 @@ const Index = () => {
   const [SeoData, setSeoData] = useState<TableDataType[]>([]);
   const [optionsData, setOptionsData] = useState<TableDataType[]>([]);
   const [metafieldsData, setMetafieldsData] = useState<TableDataType[]>([]);
-  const [variantsData, setVariantsData] = useState<TableDataType[]>([]);
+  const [variantsData, setVariantsData] = useState<any>([]);
   const [selectProductKey, setSelectProductKey] = useState(
     products.data.translatableResources.nodes[0]?.resourceId,
   );
@@ -640,7 +642,7 @@ const Index = () => {
         return null;
       }
       return {
-        key: `name_${index}`,
+        key: option.key,
         index: index,
         resource: t(option?.name),
         type: option?.type,
@@ -651,7 +653,7 @@ const Index = () => {
     if (optionsData) setOptionsData(optionsData);
     const metafieldsData = productData?.metafields.map((metafield, index) => {
       return {
-        key: `value_${index}`,
+        key: metafield.key,
         index: index,
         resource: t(metafield?.name),
         type: metafield?.type,
@@ -765,10 +767,12 @@ const Index = () => {
                 variant?.translatableContent[0]?.value !== "Default Title"
               )
               .map((variant: any, index: number) => ({
-                key: `name_${index}`,
+                key: variant?.resourceId,
                 index: index,
-                resource: variant?.translatableContent[0]?.key,
+                resource: t(variant?.translatableContent[0]?.key),
                 type: variant?.translatableContent[0]?.type,
+                locale: variant?.translatableContent[0]?.locale,
+                digest: variant?.translatableContent[0]?.digest,
                 default_language: variant?.translatableContent[0]?.value,
                 translated: variant?.translations[0]?.value,
               }));
@@ -1014,8 +1018,6 @@ const Index = () => {
       width: "40%",
       render: (_: any, record: TableDataType) => {
         if (record) {
-          console.log("record: ", record);
-
           return <ManageTableInput record={record} />;
         } else {
           return null;
@@ -1084,25 +1086,14 @@ const Index = () => {
         return updatedConfirmData;
       } else {
         if (index && index.toString()[0] === "3") {
-          const count: number = Number(index.toString().slice(1));
           const newItem = {
-            resourceId: variantFetcher.data.variantsData.data.translatableResourcesByIds.nodes.find(
-              (item: any) => item?.resourceId === selectProductKey,
-            )?.options.nodes[count]?.resourceId,
-            locale: variantFetcher.data.variantsData.data.translatableResourcesByIds.nodes
-              .find((item: any) => item?.resourceId === selectProductKey)
-              ?.options.nodes[
-              count
-            ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
-              ?.locale,
-            key: key,
+            resourceId: key,
+            locale: variantsData[0]?.locale,
+            key: "name",
             value: value, // 初始为空字符串
-            translatableContentDigest: variantFetcher.data.variantsData.data.translatableResourcesByIds.nodes
-              .find((item: any) => item?.resourceId === selectProductKey)
-              ?.options.nodes[
-              count
-            ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
-              ?.digest,
+            translatableContentDigest: variantsData?.find(
+              (item: any) => item?.key === key,
+            )?.digest,
             target: searchTerm || "",
           };
           return [...prevData, newItem]; // 将新数据添加到 confirmData 中
@@ -1118,7 +1109,7 @@ const Index = () => {
               count
             ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
               ?.locale,
-            key: key,
+            key: "value",
             value: value, // 初始为空字符串
             translatableContentDigest: productsData.data.translatableResources.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
@@ -1141,7 +1132,7 @@ const Index = () => {
               count
             ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
               ?.locale,
-            key: key,
+            key: "name",
             value: value, // 初始为空字符串
             translatableContentDigest: productsData.data.translatableResources.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
