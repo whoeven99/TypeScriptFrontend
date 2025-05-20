@@ -197,7 +197,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             accessToken: accessToken as string,
             addLanguages,
           }); // 处理逻辑
-          console.log(data);
+          console.log("addLanguages: ", data);
           return data;
         } catch (error) {
           console.error("Error addLanguages language:", error);

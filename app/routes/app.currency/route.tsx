@@ -331,9 +331,7 @@ const Index = () => {
           moneyWithMoneyDoc.querySelector(".ciwi-money");
         const moneyWithoutMoneyElement =
           moneyWithoutMoneyDoc.querySelector(".ciwi-money");
-
-        console.log(moneyWithMoneyElement, moneyWithoutMoneyElement);
-
+          
         if (moneyWithMoneyElement && moneyWithoutMoneyElement) {
           setCurrencyFormatConfigCardOpen(false);
         } else {

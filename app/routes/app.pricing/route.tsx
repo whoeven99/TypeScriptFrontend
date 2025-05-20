@@ -116,7 +116,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             shop,
             accessToken: accessToken as string,
           });
-          console.log(data);
           return data;
         } catch (error) {
           console.error("Error languages action:", error);

@@ -149,8 +149,6 @@ const Index = () => {
   });
 
   const [shopsData, setShopsData] = useState(shops);
-  console.log(shops);
-
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
