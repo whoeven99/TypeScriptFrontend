@@ -193,31 +193,27 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
-
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
-
   try {
     const formData = await request.formData();
-    const startCursor: string = JSON.parse(
+    const startCursor: any = JSON.parse(
       formData.get("startCursor") as string,
     );
-    const endCursor: string = JSON.parse(formData.get("endCursor") as string);
-    const variants: string[] = JSON.parse(formData.get("variants") as string);
+    const endCursor: any = JSON.parse(formData.get("endCursor") as string);
+    const variants: any = JSON.parse(formData.get("variants") as string);
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
     switch (true) {
-      case !!startCursor:
+      case !!startCursor:        
         try {
           const response = await admin.graphql(
             `#graphql
             query {     
-              translatableResources(resourceType: PRODUCT, last: 20, before: "${startCursor}") {
+              translatableResources(resourceType: PRODUCT, last: 20, before: "${startCursor?.cursor}") {
                 nodes {
                   resourceId
                   translatableContent {
@@ -227,7 +223,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                     type
                     value
                   }
-                  translations(locale: "${searchTerm || " "}") {
+                  translations(locale: "${startCursor?.searchTerm || " "}") {
                     value
                     key
                   }
@@ -241,7 +237,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                         type
                         value
                       }
-                      translations(locale: "${searchTerm || " "}") {
+                      translations(locale: "${startCursor?.searchTerm || " "}") {
                         key
                         value
                       }
@@ -257,7 +253,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                         type
                         value
                       }
-                      translations(locale: "${searchTerm || " "}") {
+                      translations(locale: "${startCursor?.searchTerm || " "}") {
                         key
                         value
                       }
@@ -297,7 +293,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const response = await admin.graphql(
             `#graphql
             query {     
-              translatableResources(resourceType: PRODUCT, first: 20, after: "${endCursor}") {
+              translatableResources(resourceType: PRODUCT, first: 20, after: "${endCursor?.cursor}") {
                 nodes {
                   resourceId
                   translatableContent {
@@ -307,7 +303,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                     type
                     value
                   }
-                  translations(locale: "${searchTerm || " "}") {
+                  translations(locale: "${endCursor?.searchTerm || " "}") {
                     value
                     key
                   }
@@ -321,7 +317,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                         type
                         value
                       }
-                      translations(locale: "${searchTerm || " "}") {
+                      translations(locale: "${endCursor?.searchTerm || " "}") {
                         key
                         value
                       }
@@ -337,7 +333,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                         type
                         value
                       }
-                      translations(locale: "${searchTerm || " "}") {
+                      translations(locale: "${endCursor?.searchTerm || " "}") {
                         key
                         value
                       }
@@ -374,7 +370,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       case !!variants:
         try {
-          const promise = variants.map(
+          const promise = variants.data.map(
             async (variant: string) => {
               const response = await admin.graphql(
                 `#graphql
@@ -389,7 +385,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                         type
                         value
                       }
-                      translations(locale: "${searchTerm || " "}") {
+                      translations(locale: "${variants?.searchTerm || " "}") {
                         key
                         value
                       }
@@ -401,13 +397,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             },
           );
           const variantsData = await Promise.allSettled(promise);
-          variantsData.forEach((result) => {
-            if (result.status === "fulfilled") {
-              console.log("Request successful:", result.value);
-            } else {
-              console.error("Request failed:", result.reason);
-            }
-          });
           return json({ variantsData: variantsData });
         } catch (error) {
           console.error("Error action product:", error);
@@ -423,8 +412,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             item.key.split("_")[0] !== "meta" &&
             item.key.split("_")[0] !== "body"
           ) {
-            console.log(item);
-
             // 将 key 修改为下划线前的部分
             item.key = item.key.split("_")[0]; // 取下划线前的部分
           }
@@ -523,10 +510,6 @@ const Index = () => {
     }
   }, []);
 
-  useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
-
   // 更新 loadingItemsRef 的值
   useEffect(() => {
     loadingItemsRef.current = loadingItems;
@@ -571,7 +554,12 @@ const Index = () => {
       item.optionValues.map((opt: any) => opt.id)
     );
     if (variants) {
-      variantFetcher.submit({ variants: JSON.stringify(variants) }, {
+      variantFetcher.submit({
+        variants: JSON.stringify({
+          data: variants,
+          searchTerm: searchTerm,
+        })
+      }, {
         method: "post",
         action: "/app/manage_translation/product",
       });
@@ -757,7 +745,6 @@ const Index = () => {
 
   useEffect(() => {
     if (variantFetcher.data && variantFetcher.data.variantsData) {
-      console.log(variantFetcher.data.variantsData);
       variantFetcher.data.variantsData.forEach((result: any) => {
         if (result.status === "fulfilled") {
           setVariantsData((prev: any) => {
@@ -1006,7 +993,7 @@ const Index = () => {
 
   const variantsColumns = [
     {
-      title: t("Variants"),
+      title: t("OptionValue"),
       dataIndex: "resource",
       key: "resource",
       width: "10%",
@@ -1365,20 +1352,24 @@ const Index = () => {
   }
 
   const onPrevious = () => {
-    const formData = new FormData();
-    const startCursor = productsData.data.translatableResources.pageInfo.startCursor;
-    formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-    submit(formData, {
+    submit({
+      startCursor: JSON.stringify({
+        cursor: productsData.data.translatableResources.pageInfo.startCursor,
+        searchTerm: searchTerm,
+      }),
+    }, {
       method: "post",
       action: `/app/manage_translation/product?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
   const onNext = () => {
-    const formData = new FormData();
-    const endCursor = productsData.data.translatableResources.pageInfo.endCursor;
-    formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-    submit(formData, {
+    submit({
+      endCursor: JSON.stringify({
+        cursor: productsData.data.translatableResources.pageInfo.endCursor,
+        searchTerm: searchTerm,
+      }),
+    }, {
       method: "post",
       action: `/app/manage_translation/product?language=${searchTerm}`,
     }); // 提交表单请求
