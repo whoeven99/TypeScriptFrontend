@@ -970,6 +970,9 @@ export const updateManageTranslation = async ({
 
         // 等待所有请求完成
         const results = await Promise.allSettled(promises);
+
+        console.log("results: ", results);
+        
         // 处理结果
         results.forEach((result, index) => {
           if (result.status === "fulfilled" && result.value) {

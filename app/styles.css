@@ -3,11 +3,21 @@
 } */
 
 @media (min-width: 48em) {
-    .Polaris-Page__Content {
-        padding-top: 0px !important;
-    }
+  .Polaris-Page__Content {
+    padding-top: 0px !important;
+  }
 }
 
 body {
-    margin: 0;
+  margin: 0;
+}
+
+.ant-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+}
+.ant-checkbox + span {
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
