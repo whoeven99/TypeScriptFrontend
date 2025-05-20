@@ -385,5 +385,6 @@
     "Select at least one language pack": "Выберите хотя бы один языковой пакет",
     "Select at least one translation item": "Выберите хотя бы один элемент перевода",
     "Translated successfully": "Перевод успешно выполнен",
-    "Some items saved failed": "Некоторые элементы не были сохранены"
+    "Some items saved failed": "Некоторые элементы не были сохранены",
+    "OptionValue": "Значение опции"
 }

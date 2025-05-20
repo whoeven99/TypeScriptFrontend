@@ -384,5 +384,6 @@
   "Select at least one language pack": "选择至少一个语言包",
   "Select at least one translation item": "选择至少一个翻译项",
   "Translated successfully": "翻译成功",
-  "Some items saved failed": "一些项目保存失败"
+  "Some items saved failed": "一些项目保存失败",
+  "OptionValue": "选项值"
 }

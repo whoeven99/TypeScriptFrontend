@@ -385,6 +385,7 @@
     "Select at least one language pack": "Välj minst ett språkpaket",
     "Select at least one translation item": "Välj minst ett översättningsobjekt",
     "Translated successfully": "Översatt",
-    "Some items saved failed": "Några objekt sparades inte"
+    "Some items saved failed": "Några objekt sparades inte",
+    "OptionValue": "Värde för alternativ"
 }   
   

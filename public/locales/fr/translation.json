@@ -384,6 +384,7 @@
     "Select at least one language pack": "Sélectionnez au moins un paquet de langues",
     "Select at least one translation item": "Sélectionnez au moins un élément de traduction",
     "Translated successfully": "Traduction réussie",
-    "Some items saved failed": "Certains éléments n'ont pas été enregistrés"
+    "Some items saved failed": "Certains éléments n'ont pas été enregistrés",
+    "OptionValue": "Valeur d'option"
 }
   
