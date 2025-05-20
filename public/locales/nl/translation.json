@@ -382,6 +382,8 @@
     "Language not found": "Taal niet gevonden",
     "You have reached your shopify plan limit(Max<=20)": "U heeft uw Shopify-planlimiet bereikt (Max<=20)",
     "Select at least one language pack": "Selecteer ten minste één taalpakket",
-    "Select at least one translation item": "Selecteer ten minste één vertalingselement"
+    "Select at least one translation item": "Selecteer ten minste één vertalingselement",
+    "Translated successfully": "Vertaling succesvol",
+    "Some items saved failed": "Sommige items niet opgeslagen"
 }
   

@@ -20,12 +20,6 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { FullscreenBar, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  queryNextNestTransType,
-  queryNextTransType,
-  queryPreviousNestTransType,
-  queryPreviousTransType,
-} from "~/api/admin";
 import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
@@ -108,42 +102,89 @@ type TableDataType = {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const { shop } = adminAuthResult.session;
+  const { admin } = adminAuthResult;
 
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
   try {
-    const products = await queryNextTransType({
-      shop,
-      accessToken: accessToken as string,
-      resourceType: "PRODUCT",
-      endCursor: "",
-      locale: searchTerm || "",
-    });
-    const product_options = await queryNextNestTransType({
-      shop,
-      accessToken: accessToken as string,
-      resourceType: "PRODUCT",
-      nestResourceType: "PRODUCT_OPTION",
-      endCursor: "",
-      locale: searchTerm || "",
-    });
-    const product_metafields = await queryNextNestTransType({
-      shop,
-      accessToken: accessToken as string,
-      resourceType: "PRODUCT",
-      nestResourceType: "METAFIELD",
-      endCursor: "",
-      locale: searchTerm || "",
-    });
+    const response = await admin.graphql(
+      `#graphql
+        query {     
+          translatableResources(resourceType: PRODUCT, first: 20) {
+            nodes {
+              resourceId
+              translatableContent {
+                digest
+                key
+                locale
+                type
+                value
+              }
+              translations(locale: "${searchTerm || " "}") {
+                value
+                key
+              }
+              options: nestedTranslatableResources(first: 10, resourceType: PRODUCT_OPTION) {
+                nodes {
+                  resourceId
+                  translatableContent {
+                    digest
+                    key
+                    locale
+                    type
+                    value
+                  }
+                  translations(locale: "${searchTerm || " "}") {
+                    key
+                    value
+                  }
+                }
+              }
+              metafields: nestedTranslatableResources(first: 10, resourceType: METAFIELD) {
+                nodes {
+                  resourceId
+                  translatableContent {
+                    digest
+                    key
+                    locale
+                    type
+                    value
+                  }
+                  translations(locale: "${searchTerm || " "}") {
+                    key
+                    value
+                  }
+                }
+              }
+            }
+            pageInfo {
+              endCursor
+              hasNextPage
+              hasPreviousPage
+              startCursor
+            }
+          }
+          products(first: 20) {
+            nodes {
+              id
+              options(first: 10) {
+                optionValues {
+                  id
+                }
+              }
+            }
+          }
+      }`,
+    );
+
+    const products = await response.json();
 
     return json({
       server: process.env.SERVER_URL,
       shopName: shop,
       searchTerm,
       products,
-      product_options,
-      product_metafields,
     });
   } catch (error) {
     console.error("Error load product:", error);
@@ -157,6 +198,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  const { admin } = adminAuthResult;
+
 
   try {
     const formData = await request.formData();
@@ -164,68 +207,211 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("startCursor") as string,
     );
     const endCursor: string = JSON.parse(formData.get("endCursor") as string);
+    const variants: string[] = JSON.parse(formData.get("variants") as string);
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
     switch (true) {
       case !!startCursor:
-        const previousProducts = await queryPreviousTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "PRODUCT",
-          startCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
-        const previousOptions = await queryPreviousNestTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "PRODUCT",
-          nestResourceType: "PRODUCT_OPTION",
-          startCursor,
-          locale: searchTerm || "",
-        });
-        const previousMetafields = await queryPreviousNestTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "PRODUCT",
-          nestResourceType: "METAFIELD",
-          startCursor,
-          locale: searchTerm || "",
-        });
-        return json({
-          previousProducts: previousProducts,
-          previousOptions: previousOptions,
-          previousMetafields: previousMetafields,
-        });
+        try {
+          const response = await admin.graphql(
+            `#graphql
+            query {     
+              translatableResources(resourceType: PRODUCT, last: 20, before: "${startCursor}") {
+                nodes {
+                  resourceId
+                  translatableContent {
+                    digest
+                    key
+                    locale
+                    type
+                    value
+                  }
+                  translations(locale: "${searchTerm || " "}") {
+                    value
+                    key
+                  }
+                  options: nestedTranslatableResources(first: 10, resourceType: PRODUCT_OPTION) {
+                    nodes {
+                      resourceId
+                      translatableContent {
+                        digest
+                        key
+                        locale
+                        type
+                        value
+                      }
+                      translations(locale: "${searchTerm || " "}") {
+                        key
+                        value
+                      }
+                    }
+                  }
+                  metafields: nestedTranslatableResources(first: 10, resourceType: METAFIELD) {
+                    nodes {
+                      resourceId
+                      translatableContent {
+                        digest
+                        key
+                        locale
+                        type
+                        value
+                      }
+                      translations(locale: "${searchTerm || " "}") {
+                        key
+                        value
+                      }
+                    }
+                  }
+                }
+                pageInfo {
+                  endCursor
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                }
+              }
+              products(first: 20) {
+                nodes {
+                  id
+                  options(first: 10) {
+                    optionValues {
+                      id
+                    }
+                  }
+                }
+              }
+          }`,
+          );
+
+          const previousProducts = await response.json();
+
+          return json({
+            previousProducts: previousProducts,
+          });
+        } catch (error) {
+          console.error("Error action product:", error);
+        }
       case !!endCursor:
-        const nextProducts = await queryNextTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "PRODUCT",
-          endCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
-        const nextOptions = await queryNextNestTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "PRODUCT",
-          nestResourceType: "PRODUCT_OPTION",
-          endCursor,
-          locale: searchTerm || "",
-        });
-        const nextMetafields = await queryNextNestTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "PRODUCT",
-          nestResourceType: "METAFIELD",
-          endCursor,
-          locale: searchTerm || "",
-        });
-        return json({
-          nextProducts: nextProducts,
-          nextOptions: nextOptions,
-          nextMetafields: nextMetafields,
-        });
+        try {
+          const response = await admin.graphql(
+            `#graphql
+            query {     
+              translatableResources(resourceType: PRODUCT, first: 20, after: "${endCursor}") {
+                nodes {
+                  resourceId
+                  translatableContent {
+                    digest
+                    key
+                    locale
+                    type
+                    value
+                  }
+                  translations(locale: "${searchTerm || " "}") {
+                    value
+                    key
+                  }
+                  options: nestedTranslatableResources(first: 10, resourceType: PRODUCT_OPTION) {
+                    nodes {
+                      resourceId
+                      translatableContent {
+                        digest
+                        key
+                        locale
+                        type
+                        value
+                      }
+                      translations(locale: "${searchTerm || " "}") {
+                        key
+                        value
+                      }
+                    }
+                  }
+                  metafields: nestedTranslatableResources(first: 10, resourceType: METAFIELD) {
+                    nodes {
+                      resourceId
+                      translatableContent {
+                        digest
+                        key
+                        locale
+                        type
+                        value
+                      }
+                      translations(locale: "${searchTerm || " "}") {
+                        key
+                        value
+                      }
+                    }
+                  }
+                }
+                pageInfo {
+                  endCursor
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                }
+              }
+              products(first: 20) {
+                nodes {
+                  id
+                  options(first: 10) {
+                    optionValues {
+                      id
+                    }
+                  }
+                }
+              }
+          }`,
+          );
+
+          const nextProducts = await response.json();
+
+          return json({
+            nextProducts: nextProducts,
+          });
+        } catch (error) {
+          console.error("Error action product:", error);
+        }
+      case !!variants:
+        try {
+          const promise = variants.map(
+            async (variant: string) => {
+              const response = await admin.graphql(
+                `#graphql
+                query {
+                  translatableResourcesByIds(resourceIds: "${variant}", first: 1) {
+                    nodes {
+                      resourceId
+                      translatableContent {
+                        digest
+                        key
+                        locale
+                        type
+                        value
+                      }
+                      translations(locale: "${searchTerm || " "}") {
+                        key
+                        value
+                      }
+                    }
+                  }
+                }`
+              );
+              return await response.json();
+            },
+          );
+          const variantsData = await Promise.allSettled(promise);
+          variantsData.forEach((result) => {
+            if (result.status === "fulfilled") {
+              console.log("Request successful:", result.value);
+            } else {
+              console.error("Request failed:", result.reason);
+            }
+          });
+          return json({ variantsData: variantsData });
+        } catch (error) {
+          console.error("Error action product:", error);
+        }
       case !!confirmData:
         const originalConfirmData = confirmData;
         confirmData.map((item) => {
@@ -262,7 +448,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { searchTerm, products, product_options, product_metafields, server, shopName } =
+  const { searchTerm, products, server, shopName } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const {
@@ -274,6 +460,7 @@ const Index = () => {
   const languageTableData = useSelector((state: any) => state.languageTableData.rows);
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const confirmFetcher = useFetcher<any>();
+  const variantFetcher = useFetcher<any>();
 
   const isManualChange = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
@@ -285,20 +472,18 @@ const Index = () => {
 
   const [menuData, setMenuData] = useState<MenuItem[]>([]);
   const [productsData, setProductsData] = useState(products);
-  const [productOptionsData, setProductOptionsData] = useState(product_options);
-  const [productMetafieldsData, setProductMetafieldsData] =
-    useState(product_metafields);
   const [productData, setProductData] = useState<ProductType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [SeoData, setSeoData] = useState<TableDataType[]>([]);
   const [optionsData, setOptionsData] = useState<TableDataType[]>([]);
   const [metafieldsData, setMetafieldsData] = useState<TableDataType[]>([]);
-  // const [variantsData, setVariantsData] = useState<TableDataType[]>([]);
+  const [variantsData, setVariantsData] = useState<TableDataType[]>([]);
   const [selectProductKey, setSelectProductKey] = useState(
-    products.nodes[0]?.resourceId,
+    products.data.translatableResources.nodes[0]?.resourceId,
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
+  const [variantsLoading, setVariantsLoading] = useState<boolean>(false);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
@@ -323,10 +508,10 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
   const [selectedItem, setSelectedItem] = useState<string>("product");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    productsData.pageInfo.hasPreviousPage || false
+    products.data.translatableResources.pageInfo.hasPreviousPage || false
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    productsData.pageInfo.hasNextPage || false
+    products.data.translatableResources.pageInfo.hasNextPage || false
   );
 
   useEffect(() => {
@@ -335,6 +520,10 @@ const Index = () => {
       setIsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    console.log(confirmData);
+  }, [confirmData]);
 
   // 更新 loadingItemsRef 的值
   useEffect(() => {
@@ -355,10 +544,8 @@ const Index = () => {
   useEffect(() => {
     if (products && isManualChange.current) {
       setProductsData(products);
-      setProductOptionsData(product_options);
-      setProductMetafieldsData(product_metafields);
       setMenuData(exMenuData(products));
-      setSelectProductKey(products.nodes[0]?.resourceId);
+      setSelectProductKey(products.data.translatableResources.nodes[0]?.resourceId);
       setTimeout(() => {
         setIsLoading(false);
       }, 100);
@@ -367,18 +554,29 @@ const Index = () => {
   }, [products]);
 
   useEffect(() => {
+    setVariantsLoading(true);
+    setVariantsData([]);
     const data = transBeforeData({
       products: productsData,
-      options: productOptionsData,
-      metafields: productMetafieldsData,
     });
     setProductData(data);
     setLoadingItems([]);
     setConfirmData([]);
     setTranslatedValues({});
-    setHasPrevious(productsData.pageInfo.hasPreviousPage);
-    setHasNext(productsData.pageInfo.hasNextPage);
-  }, [selectProductKey, productsData, productOptionsData, productMetafieldsData]);
+    setHasPrevious(productsData.data.translatableResources.pageInfo.hasPreviousPage);
+    setHasNext(productsData.data.translatableResources.pageInfo.hasNextPage);
+    const variants = productsData.data.products.nodes.find((item: any) => item.id === selectProductKey)?.options.flatMap((item: any) =>
+      item.optionValues.map((opt: any) => opt.id)
+    );
+    if (variants) {
+      variantFetcher.submit({ variants: JSON.stringify(variants) }, {
+        method: "post",
+        action: "/app/manage_translation/product",
+      });
+    } else {
+      setVariantsLoading(false);
+    }
+  }, [selectProductKey, productsData]);
 
   useEffect(() => {
     setResourceData(
@@ -469,20 +667,14 @@ const Index = () => {
       // 在这里处理 nextProducts
       setMenuData(exMenuData(actionData.nextProducts));
       setProductsData(actionData.nextProducts);
-      setProductOptionsData(actionData.nextOptions);
-      setProductMetafieldsData(actionData.nextMetafields);
-      setSelectProductKey(actionData.nextProducts.nodes[0]?.resourceId);
+      setSelectProductKey(actionData.nextProducts.data.translatableResources.nodes[0]?.resourceId);
     } else if (
       actionData &&
-      "previousProducts" in actionData &&
-      "previousOptions" in actionData &&
-      "previousMetafields" in actionData
+      "previousProducts" in actionData
     ) {
       setMenuData(exMenuData(actionData.previousProducts));
       setProductsData(actionData.previousProducts);
-      setProductOptionsData(actionData.previousOptions);
-      setProductMetafieldsData(actionData.previousMetafields);
-      setSelectProductKey(actionData.previousProducts.nodes[0]?.resourceId);
+      setSelectProductKey(actionData.previousProducts.data.translatableResources.nodes[0]?.resourceId);
     } else {
       // 如果不存在 nextProducts，可以执行其他逻辑
     }
@@ -503,26 +695,26 @@ const Index = () => {
 
       successfulItem.forEach((item: any) => {
         if (item.data.resourceId.split("/")[3] === "Product") {
-          const index = productsData.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+          const index = productsData.data.translatableResources.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
           if (index !== -1) {
-            const product = productsData.nodes[index].translations.find((option: any) => option.key === item.data.key);
+            const product = productsData.data.translatableResources.nodes[index].translations.find((option: any) => option.key === item.data.key);
             if (product) {
               product.value = item.data.value;
             } else {
-              productsData.nodes[index].translations.push({
+              productsData.data.translatableResources.nodes[index].translations.push({
                 key: item.data.key,
                 value: item.data.value,
               });
             }
           }
         } else if (item.data.resourceId.split("/")[3] === "ProductOption") {
-          const index = productOptionsData.nodes.findIndex((productOption: any) =>
-            productOption.nestedTranslatableResources.nodes.some(
+          const index = productsData.data.translatableResources.nodes.findIndex((productOption: any) =>
+            productOption.options.nodes.some(
               (option: any) => option.resourceId === item.data.resourceId
             )
           );
           if (index !== -1) {
-            const productOption = productOptionsData.nodes[index].nestedTranslatableResources.nodes.find((option: any) => option.resourceId === item.data.resourceId);
+            const productOption = productsData.data.translatableResources.nodes[index].options.nodes.find((option: any) => option.resourceId === item.data.resourceId);
             if (productOption.translations.length > 0) {
               productOption.translations[0].value = item.data.value;
             } else {
@@ -533,13 +725,13 @@ const Index = () => {
             }
           }
         } else if (item.data.resourceId.split("/")[3] === "Metafield") {
-          const index = productMetafieldsData.nodes.findIndex((productMetafield: any) =>
-            productMetafield.nestedTranslatableResources.nodes.some(
+          const index = productsData.data.translatableResources.nodes.findIndex((productMetafield: any) =>
+            productMetafield.metafields.nodes.some(
               (option: any) => option.resourceId === item.data.resourceId
             )
           );
           if (index !== -1) {
-            const productMetafield = productMetafieldsData.nodes[index].nestedTranslatableResources.nodes.find((option: any) => option.resourceId === item.data.resourceId);
+            const productMetafield = productsData.data.translatableResources.nodes[index].metafields.nodes.find((option: any) => option.resourceId === item.data.resourceId);
             if (productMetafield.translations.length > 0) {
               productMetafield.translations[0].value = item.data.value;
             } else {
@@ -560,6 +752,35 @@ const Index = () => {
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
+
+  useEffect(() => {
+    if (variantFetcher.data && variantFetcher.data.variantsData) {
+      console.log(variantFetcher.data.variantsData);
+      variantFetcher.data.variantsData.forEach((result: any) => {
+        if (result.status === "fulfilled") {
+          setVariantsData((prev: any) => {
+            const newData = result.value.data.translatableResourcesByIds.nodes
+              .filter((variant: any) =>
+                variant?.translatableContent[0]?.value &&
+                variant?.translatableContent[0]?.value !== "Default Title"
+              )
+              .map((variant: any, index: number) => ({
+                key: `name_${index}`,
+                index: index,
+                resource: variant?.translatableContent[0]?.key,
+                type: variant?.translatableContent[0]?.type,
+                default_language: variant?.translatableContent[0]?.value,
+                translated: variant?.translations[0]?.value,
+              }));
+            return [...prev, ...newData];
+          });
+        } else {
+          console.error("Request failed:", result.reason);
+        }
+      });
+      setVariantsLoading(false);
+    }
+  }, [variantFetcher.data]);
 
   const resourceColumns = [
     {
@@ -779,41 +1000,65 @@ const Index = () => {
     },
   ];
 
-  // const variantsColumns = [
-  //   {
-  //     title: "Variants",
-  //     dataIndex: "resource",
-  //     key: "resource",
-  //     width: 150,
-  //   },
-  //   {
-  //     title: t("Default Language"),
-  //     dataIndex: "default_language",
-  //     key: "default_language",
-  //     render: (_: any, record: TableDataType) => {
-  //       if (record) {
-  //         return <Input disabled value={record.default_language} />;
-  //       } else {
-  //         return null;
-  //       }
-  //     },
-  //   },
-  //   {
-  //     title: "Translated",
-  //     dataIndex: "translated",
-  //     key: "translated",
-  //     render: (_: any, record: TableDataType) => {
-  //       if (record) {
-  //         return <Input disabled value={record.translated} />;
-  //       } else {
-  //         return null;
-  //       }
-  //     },
-  //   },
-  // ];
+  const variantsColumns = [
+    {
+      title: t("Variants"),
+      dataIndex: "resource",
+      key: "resource",
+      width: "10%",
+    },
+    {
+      title: t("Default Language"),
+      dataIndex: "default_language",
+      key: "default_language",
+      width: "40%",
+      render: (_: any, record: TableDataType) => {
+        if (record) {
+          console.log("record: ", record);
+
+          return <ManageTableInput record={record} />;
+        } else {
+          return null;
+        }
+      },
+    },
+    {
+      title: "Translated",
+      dataIndex: "translated",
+      key: "translated",
+      width: "40%",
+      render: (_: any, record: TableDataType) => {
+        return <ManageTableInput
+          record={record}
+          translatedValues={translatedValues}
+          setTranslatedValues={setTranslatedValues}
+          handleInputChange={handleInputChange}
+          index={3}
+          isRtl={searchTerm === "ar"}
+        />;
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            type="primary"
+            onClick={() => {
+              handleTranslate("PRODUCT_OPTION_VALUE", record?.key || "", record?.type || "", record?.default_language || "", Number(3 + "" + record?.index));
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
+        );
+      },
+    },
+  ];
 
   const exMenuData = (products: any) => {
-    const data = products.nodes.map((product: any) => ({
+    const data = products.data.translatableResources.nodes.map((product: any) => ({
       key: product?.resourceId,
       label: product?.translatableContent.find(
         (item: any) => item.key === "title",
@@ -838,24 +1083,46 @@ const Index = () => {
         };
         return updatedConfirmData;
       } else {
-        // 如果 key 不存在，新增一条数据
-        if (index && index.toString()[0] === "2") {
+        if (index && index.toString()[0] === "3") {
           const count: number = Number(index.toString().slice(1));
           const newItem = {
-            resourceId: productMetafieldsData.nodes.find(
+            resourceId: variantFetcher.data.variantsData.data.translatableResourcesByIds.nodes.find(
               (item: any) => item?.resourceId === selectProductKey,
-            )?.nestedTranslatableResources.nodes[count]?.resourceId,
-            locale: productMetafieldsData.nodes
+            )?.options.nodes[count]?.resourceId,
+            locale: variantFetcher.data.variantsData.data.translatableResourcesByIds.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
-              ?.nestedTranslatableResources.nodes[
+              ?.options.nodes[
               count
             ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
               ?.locale,
             key: key,
             value: value, // 初始为空字符串
-            translatableContentDigest: productMetafieldsData.nodes
+            translatableContentDigest: variantFetcher.data.variantsData.data.translatableResourcesByIds.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
-              ?.nestedTranslatableResources.nodes[
+              ?.options.nodes[
+              count
+            ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
+              ?.digest,
+            target: searchTerm || "",
+          };
+          return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+        } else if (index && index.toString()[0] === "2") {
+          const count: number = Number(index.toString().slice(1));
+          const newItem = {
+            resourceId: productsData.data.translatableResources.nodes.find(
+              (item: any) => item?.resourceId === selectProductKey,
+            )?.metafields.nodes[count]?.resourceId,
+            locale: productsData.data.translatableResources.nodes
+              .find((item: any) => item?.resourceId === selectProductKey)
+              ?.metafields.nodes[
+              count
+            ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
+              ?.locale,
+            key: key,
+            value: value, // 初始为空字符串
+            translatableContentDigest: productsData.data.translatableResources.nodes
+              .find((item: any) => item?.resourceId === selectProductKey)
+              ?.metafields.nodes[
               count
             ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
               ?.digest,
@@ -865,20 +1132,20 @@ const Index = () => {
         } else if (index && index.toString()[0] === "1") {
           const count: number = Number(index.toString().slice(1));
           const newItem = {
-            resourceId: productOptionsData.nodes.find(
+            resourceId: productsData.data.translatableResources.nodes.find(
               (item: any) => item?.resourceId === selectProductKey,
-            )?.nestedTranslatableResources.nodes[count]?.resourceId,
-            locale: productOptionsData.nodes
+            )?.options.nodes[count]?.resourceId,
+            locale: productsData.data.translatableResources.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
-              ?.nestedTranslatableResources.nodes[
+              ?.options.nodes[
               count
             ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
               ?.locale,
             key: key,
             value: value, // 初始为空字符串
-            translatableContentDigest: productOptionsData.nodes
+            translatableContentDigest: productsData.data.translatableResources.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
-              ?.nestedTranslatableResources.nodes[
+              ?.options.nodes[
               count
             ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
               ?.digest,
@@ -887,16 +1154,16 @@ const Index = () => {
           return [...prevData, newItem]; // 将新数据添加到 confirmData 中
         } else {
           const newItem = {
-            resourceId: productsData.nodes.find(
+            resourceId: productsData.data.translatableResources.nodes.find(
               (item: any) => item?.resourceId === selectProductKey,
             )?.resourceId,
-            locale: productsData.nodes
+            locale: productsData.data.translatableResources.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
               ?.translatableContent.find((item: any) => item.key === key)
               ?.locale,
             key: key,
             value: value, // 初始为空字符串
-            translatableContentDigest: productsData.nodes
+            translatableContentDigest: productsData.data.translatableResources.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
               ?.translatableContent.find((item: any) => item.key === key)
               ?.digest,
@@ -911,12 +1178,8 @@ const Index = () => {
 
   const transBeforeData = ({
     products,
-    options,
-    metafields,
   }: {
     products: any;
-    options: any;
-    metafields: any;
   }) => {
     let data: ProductType = {
       key: "",
@@ -976,15 +1239,11 @@ const Index = () => {
         title: "",
       },
     };
-    const product = products.nodes.find(
+    const product = products.data.translatableResources.nodes.find(
       (product: any) => product?.resourceId === selectProductKey,
     );
-    const productOption = options.nodes.find(
-      (option: any) => option?.resourceId === selectProductKey,
-    );
-    const productMetafield = metafields.nodes.find(
-      (metafield: any) => metafield?.resourceId === selectProductKey,
-    );
+    const productOption = product.options
+    const productMetafield = product.metafields
     data.key = product?.resourceId;
     data.title = {
       value: product?.translatableContent.find(
@@ -1054,7 +1313,7 @@ const Index = () => {
       (item: any) => item.key === "meta_description",
     )?.value;
     data.options =
-      productOption?.nestedTranslatableResources.nodes.map((item: any) => {
+      productOption?.nodes.map((item: any) => {
         return {
           key: item?.resourceId,
           name: item?.translatableContent[0]?.key,
@@ -1064,7 +1323,7 @@ const Index = () => {
         };
       }) || [];
     data.metafields =
-      productMetafield?.nestedTranslatableResources.nodes.map((item: any) => {
+      productMetafield?.nodes.map((item: any) => {
         return {
           key: item?.resourceId,
           name: item?.translatableContent[0]?.key,
@@ -1084,7 +1343,7 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: shopName,
-      source: productsData.nodes
+      source: productsData.data.translatableResources.nodes
         .find((item: any) => item?.resourceId === selectProductKey)
         ?.translatableContent.find((item: any) => item.key === key)
         ?.locale,
@@ -1121,7 +1380,7 @@ const Index = () => {
 
   const onPrevious = () => {
     const formData = new FormData();
-    const startCursor = productsData.pageInfo.startCursor;
+    const startCursor = productsData.data.translatableResources.pageInfo.startCursor;
     formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
@@ -1131,7 +1390,7 @@ const Index = () => {
 
   const onNext = () => {
     const formData = new FormData();
-    const endCursor = productsData.pageInfo.endCursor;
+    const endCursor = productsData.data.translatableResources.pageInfo.endCursor;
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
@@ -1230,7 +1489,7 @@ const Index = () => {
       >
         {isLoading ? (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
-        ) : products.nodes.length ? (
+        ) : productsData.data.translatableResources.nodes.length ? (
           <>
             <Sider
               style={{
@@ -1250,7 +1509,7 @@ const Index = () => {
               /> */}
               <Menu
                 mode="inline"
-                defaultSelectedKeys={[productsData?.nodes[0]?.resourceId]}
+                defaultSelectedKeys={[productsData.data.translatableResources.nodes[0]?.resourceId]}
                 defaultOpenKeys={["sub1"]}
                 style={{
                   flex: 1,
@@ -1288,7 +1547,7 @@ const Index = () => {
                 dataSource={SeoData}
                 pagination={false}
               />
-              {Array.isArray(optionsData) && optionsData[0] !== null && (
+              {Array.isArray(optionsData) && optionsData[0] !== undefined && (
                 <Table
                   columns={optionsColumns}
                   dataSource={optionsData}
@@ -1303,6 +1562,14 @@ const Index = () => {
                     pagination={false}
                   />
                 )}
+              {Array.isArray(variantsData) && variantsData[0] !== undefined && (
+                <Table
+                  loading={variantFetcher.state === "submitting" || variantsLoading}
+                  columns={variantsColumns}
+                  dataSource={variantsData}
+                  pagination={false}
+                />
+              )}
             </Content>
           </>
         ) : (

@@ -474,6 +474,7 @@ const Index = () => {
         <Divider style={{ margin: "0" }} />
         <div style={{ paddingLeft: "8px" }}>
           <Text>{t("Your store's default language:")}</Text>
+          {" "}
           {languageSetting && (
             <Text strong>
               {languageSetting.primaryLanguage ? (
@@ -716,7 +717,7 @@ const Index = () => {
                       width: "100%",
                     }}
                     onChange={(e) => handleTranslateSettings2Change(e)}
-                  ></Checkbox.Group>
+                  />
                 </Space>
                 <Space
                   direction="vertical"

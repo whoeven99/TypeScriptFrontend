@@ -381,6 +381,8 @@
     "Language not found": "언어를 찾을 수 없습니다",
     "You have reached your shopify plan limit(Max<=20)": "Shopify 플랜 제한에 도달했습니다 (Max<=20)",
     "Select at least one language pack": "최소 하나의 언어 팩을 선택하세요",
-    "Select at least one translation item": "최소 하나의 번역 항목을 선택하세요"
+    "Select at least one translation item": "최소 하나의 번역 항목을 선택하세요",
+    "Translated successfully": "번역이 성공적으로 완료되었습니다",
+    "Some items saved failed": "일부 항목이 저장에 실패했습니다"
 } 
   
