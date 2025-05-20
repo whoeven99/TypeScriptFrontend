@@ -585,7 +585,7 @@ const Index = () => {
       [
         {
           key: "title",
-          index: 3,
+          index: 4,
           resource: t("Title"),
           type: productData?.title?.type,
           default_language: productData?.title?.value,
@@ -593,7 +593,7 @@ const Index = () => {
         },
         {
           key: "body_html",
-          index: 3,
+          index: 4,
           resource: t("Description"),
           type: productData?.descriptionHtml?.type,
           default_language: productData?.descriptionHtml?.value,
@@ -601,7 +601,7 @@ const Index = () => {
         },
         {
           key: "product_type",
-          index: 3,
+          index: 4,
           resource: t("ProductType"),
           type: productData?.productType?.type,
           default_language: productData?.productType?.value,
@@ -613,7 +613,7 @@ const Index = () => {
       [
         {
           key: "handle",
-          index: 3,
+          index: 4,
           resource: t("URL handle"),
           type: productData?.handle?.type,
           default_language: productData?.handle?.value,
@@ -621,7 +621,7 @@ const Index = () => {
         },
         {
           key: "meta_title",
-          index: 3,
+          index: 4,
           resource: t("Meta title"),
           type: productData?.seo.title?.type,
           default_language: productData?.seo.title?.value,
@@ -629,7 +629,7 @@ const Index = () => {
         },
         {
           key: "meta_description",
-          index: 3,
+          index: 4,
           resource: t("Meta description"),
           type: productData?.seo.description?.type,
           default_language: productData?.seo.description?.value,
@@ -1075,7 +1075,7 @@ const Index = () => {
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+      const existingItemIndex = prevData.findIndex((item) => item.resourceId === key || item.key === key);
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
         const updatedConfirmData = [...prevData];
@@ -1107,15 +1107,13 @@ const Index = () => {
               .find((item: any) => item?.resourceId === selectProductKey)
               ?.metafields.nodes[
               count
-            ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
+            ]?.translatableContent[0]
               ?.locale,
             key: "value",
             value: value, // 初始为空字符串
             translatableContentDigest: productsData.data.translatableResources.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
-              ?.metafields.nodes[
-              count
-            ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
+              ?.metafields.nodes.find((item: any) => item.resourceId === key)?.translatableContent[0]
               ?.digest,
             target: searchTerm || "",
           };
@@ -1130,15 +1128,12 @@ const Index = () => {
               .find((item: any) => item?.resourceId === selectProductKey)
               ?.options.nodes[
               count
-            ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
-              ?.locale,
+            ]?.translatableContent[0]?.locale,
             key: "name",
             value: value, // 初始为空字符串
             translatableContentDigest: productsData.data.translatableResources.nodes
               .find((item: any) => item?.resourceId === selectProductKey)
-              ?.options.nodes[
-              count
-            ]?.translatableContent.find((item: any) => item.key === key.split("_")[0])
+              ?.options.nodes.find((item: any) => item.resourceId === key)?.translatableContent[0]
               ?.digest,
             target: searchTerm || "",
           };
