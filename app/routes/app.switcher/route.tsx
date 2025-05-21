@@ -329,6 +329,12 @@ const Index = () => {
 
   const handleOptionChange = (value: string) => {
     switch (value) {
+      case "sidebar widget":
+        handleEditData({
+          languageSelector: false,
+          currencySelector: false,
+        });
+        break;
       case "language_and_currency":
         handleEditData({
           languageSelector: true,
@@ -456,6 +462,10 @@ const Index = () => {
       label: t("Language and Currency Switcher"),
       value: "language_and_currency",
     },
+    {
+      label: t("Sidebar Widget"),
+      value: "sidebar widget",
+    },
   ];
 
   const switcherPositionOptions = [
@@ -524,7 +534,9 @@ const Index = () => {
                       ? "language_and_currency"
                       : languageSelector
                         ? "language"
-                        : "currency"
+                        : !languageSelector && !currencySelector
+                          ? "sidebar widget"
+                          : "currency"
                   }
                   onChange={handleOptionChange}
                 />
@@ -779,7 +791,7 @@ const Index = () => {
                         selectorPosition === "top_left" ||
                           selectorPosition === "top_right"
                           ? "40px"
-                          : languageSelector && currencySelector
+                          : languageSelector === currencySelector
                             ? "-170px"
                             : "-120px", // 位于顶部
                       left: "50%", // 水平居中
@@ -802,7 +814,7 @@ const Index = () => {
                     >
                       <div
                         style={{
-                          display: `${languageSelector ? "block" : "none"}`,
+                          display: `${languageSelector || (!languageSelector && !currencySelector) ? "block" : "none"}`,
                           marginBottom: "10px",
                         }}
                       >
@@ -901,7 +913,7 @@ const Index = () => {
                       </div>
                       <div
                         style={{
-                          display: `${currencySelector ? "block" : "none"}`,
+                          display: `${currencySelector || (!languageSelector && !currencySelector) ? "block" : "none"}`,
                           marginBottom: "10px",
                         }}
                       >

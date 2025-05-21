@@ -549,6 +549,8 @@ class CiwiswitcherForm extends HTMLElement {
       countryInput: this.querySelector('input[name="country_code"]'),
       confirmButton: this.querySelector("#switcher-confirm"),
       mainBox: this.querySelector("#main-box"),
+      translateFloatBtn: this.querySelector("#translate-float-btn"),
+      translateFloatBtnText: this.querySelector("#translate-float-btn-text"),
       languageSelector: this.querySelector(
         ".custom-selector[data-type='language']",
       ),
@@ -591,6 +593,11 @@ class CiwiswitcherForm extends HTMLElement {
     );
 
     this.elements.mainBox?.addEventListener(
+      "click",
+      this.toggleSelector.bind(this),
+    );
+
+    this.elements.translateFloatBtnText?.addEventListener(
       "click",
       this.toggleSelector.bind(this),
     );
@@ -703,9 +710,16 @@ class CiwiswitcherForm extends HTMLElement {
   }
 
   handleOutsideClick(event) {
-    if (this.elements.ciwiContainer && !this.elements.ciwiContainer.contains(event.target)) {
+    if (
+      this.elements.ciwiContainer &&
+      !this.elements.ciwiContainer.contains(event.target)
+    ) {
       if (this.elements.selectorBox) {
         this.elements.selectorBox.style.display = "none";
+        console.log(this.elements.translateFloatBtn.style.justifyContent);
+        if (this.elements.translateFloatBtn.style.justifyContent) {
+          this.elements.translateFloatBtn.style.display = "flex";
+        }
       }
       this.rotateArrow("mainbox-arrow-icon", 0);
     }
@@ -725,7 +739,9 @@ class CiwiswitcherForm extends HTMLElement {
     const box = document.getElementById("selector-box");
     const isVisible = box.style.display !== "none";
     box.style.display = isVisible ? "none" : "block";
-
+    this.elements.translateFloatBtn.style.display = isVisible
+      ? "block"
+      : "none";
     // // 移动端适配
     // if (window.innerWidth <= 768) {
     //   const mainBox = document.getElementById("main-box");
@@ -773,25 +789,14 @@ window.onload = async function () {
   const switcher = document.getElementById("ciwi-container");
   const shop = document.getElementById("queryCiwiId");
   const mainBox = document.getElementById("main-box");
+  const translateFloatBtn = document.getElementById("translate-float-btn");
   shop.remove();
-  // const data = await fetchSwitcherConfig(shop.value);
+  const data = await fetchSwitcherConfig(shop.value);
 
-  const data = {
-    shopName: shop,
-    includedFlag: true,
-    languageSelector: false,
-    currencySelector: false,
-    ipOpen: false,
-    fontColor: "#000000",
-    backgroundColor: "#ffffff",
-    buttonColor: "#ffffff",
-    buttonBackgroundColor: "#000000",
-    optionBorderColor: "#ccc",
-    selectorPosition: "bottom_left",
-    positionData: 10,
-  };
-
-  if (data.languageSelector) {
+  if (
+    data.languageSelector ||
+    (!data.languageSelector && !data.currencySelector)
+  ) {
     const languageSelector = document.getElementById(
       "language-switcher-container",
     );
@@ -808,6 +813,7 @@ window.onload = async function () {
     languageSelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
 
     const mainLanguageFlag = document.getElementById("main-language-flag");
+    const translateFloatBtnIcon = document.getElementById("translate-float-btn-icon");
 
     if (data.includedFlag) {
       //获取所有语言代码
@@ -851,11 +857,18 @@ window.onload = async function () {
           mainLanguageFlag.src = countryCode;
           mainLanguageFlag.hidden = false;
         }
+        if (translateFloatBtnIcon) {
+          translateFloatBtnIcon.src = countryCode;
+          translateFloatBtnIcon.hidden = false;
+        }
       }
     }
   }
 
-  if (data.currencySelector) {
+  if (
+    data.currencySelector ||
+    (!data.languageSelector && !data.currencySelector)
+  ) {
     const currencySelector = document.getElementById(
       "currency-switcher-container",
     );
@@ -972,11 +985,15 @@ window.onload = async function () {
     const confirmButton = document.querySelector(
       ".ciwi_switcher_confirm_button",
     );
+    const translateFloatBtn = document.getElementById("translate-float-btn");
+    const translateFloatBtnText = document.getElementById(
+      "translate-float-btn-text",
+    );
+    const translateFloatBtnIcon = document.getElementById("translate-float-btn-icon");
     confirmButton.style.backgroundColor = data.buttonBackgroundColor;
     confirmButton.style.color = data.buttonColor;
     selectorBox.style.backgroundColor = data.backgroundColor;
     switcher.style.color = data.fontColor;
-    mainBox.style.backgroundColor = data.backgroundColor;
     if (
       data.selectorPosition === "top_left" ||
       data.selectorPosition === "top_right"
@@ -995,25 +1012,49 @@ window.onload = async function () {
     if (data.selectorPosition === "top_left") {
       switcher.style.top = data?.positionData.toString() + "%" || "10%";
       switcher.style.bottom = "auto";
+      translateFloatBtnText.style.borderRadius = "8px 8px 0px 0px";
+      translateFloatBtn.style.justifyContent = "flex-end";
+      translateFloatBtnIcon.style.bottom = "20px";
+      translateFloatBtnIcon.style.left = "10px";
+      selectorBox.style.left = "0";
     }
     if (data.selectorPosition === "bottom_left") {
       switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
       switcher.style.right = "auto";
       switcher.style.top = "auto";
+      translateFloatBtnText.style.borderRadius = "8px 8px 0px 0px";
+      translateFloatBtn.style.justifyContent = "flex-end";
+      translateFloatBtnIcon.style.bottom = "20px";
+      translateFloatBtnIcon.style.left = "10px";
+      selectorBox.style.left = "0";
     }
     if (data.selectorPosition === "top_right") {
       switcher.style.top = data?.positionData.toString() + "%" || "10%";
       switcher.style.right = "0";
       switcher.style.bottom = "auto";
+      translateFloatBtnText.style.borderRadius = "0px 0px 8px 8px";
+      translateFloatBtn.style.justifyContent = "flex-start";
+      translateFloatBtnIcon.style.bottom = "20px";
+      translateFloatBtnIcon.style.left = "55px";
+      selectorBox.style.right = "0";
     }
     if (data.selectorPosition === "bottom_right") {
       switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
       switcher.style.right = "0";
       switcher.style.top = "auto";
+      translateFloatBtnText.style.borderRadius = "0px 0px 8px 8px";
+      translateFloatBtn.style.justifyContent = "flex-start";
+      translateFloatBtnIcon.style.bottom = "20px";
+      translateFloatBtnIcon.style.left = "55px";
+      selectorBox.style.right = "0";
     }
-    updateDisplayText(data.languageSelector, data.currencySelector);
     if (data.languageSelector || data.currencySelector) {
-      mainBox.style.display = "block";
+      mainBox.style.backgroundColor = data.backgroundColor;
+      updateDisplayText(data.languageSelector, data.currencySelector);
+      mainBox.style.display = "flex";
+    } else {
+      translateFloatBtnText.style.backgroundColor = data.backgroundColor;
+      translateFloatBtnText.style.display = "block";
     }
   }
 };

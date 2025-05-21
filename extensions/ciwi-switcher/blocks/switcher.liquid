@@ -8,7 +8,7 @@
     >
       <div
         id="selector-box"
-        style="position: absolute; width: 100%; background: #fff; padding: 15px; border-radius: 5px; display: none"
+        style="position: absolute; width: 200px; background: #fff; padding: 15px; border-radius: 5px; display: none"
       >
         <div
           id="language-switcher-container"
@@ -91,7 +91,7 @@
       <div
         id="main-box"
         class="ciwi_main_box"
-        style="display: none"
+        style="display: none;"
       >
         <img
           id="main-language-flag"
@@ -101,10 +101,12 @@
           height="20px"
           src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
           onerror="this.style.display='none'"
+          style="margin-right: 8px;"
         >
         <span
           id="display-text"
           class="main_box_text"
+          style="margin-right: 8px;"
         >
           {{- localization.language.endonym_name | capitalize -}}
         </span>
@@ -113,8 +115,9 @@
           class="mainarrow_icon"
           src="{{ 'arrow.svg' | asset_url }}"
           alt="Arrow Icon"
-          width="25%"
-          height="25%"
+          width="20"
+          height="20"
+          style="display: inline-block; vertical-align: middle;"
         >
         <img
           class="mobile_trans_img"
@@ -122,9 +125,62 @@
           alt="Button Image"
           width="50px"
           height="50px"
+          style="margin-left: 8px;"
         >
       </div>
-
+      <div
+        id="translate-float-btn"
+        style="
+          display: none;
+          width: 30px;
+          pointer-events: auto;
+          position: absolute;
+          height: 140px;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          z-index: 1;
+          transition:
+          opacity 0.3s,
+          transform 0.3s;
+          cursor: pointer;
+        "
+      >
+        <div
+          id="translate-float-btn-text"
+          style="
+            display: none;
+            padding: 0px 20px 0px 20px;
+            font-size: 14px;
+            line-height: 30px;
+            height: 30px;
+            font-weight: 700;
+            overflow: hidden;
+            transform: rotate(90deg);
+            transform-origin: right top;
+            position: absolute;
+            white-space: nowrap;
+            max-width: 400px;
+            user-select: none;
+          "
+        >
+          <span>Translate</span>
+        </div>
+        <img
+          id="translate-float-btn-icon"
+          class="country-flag main_box_flag"
+          alt=""
+          width="28"
+          height="20"
+          src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+          onerror="this.style.display='none'"
+          style="
+            border-radius: 3px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            position: relative;
+          "
+        >
+      </div>
     </div>
     <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
     <input id="queryMoneyFormat" type="hidden" value="{{ shop.money_format | strip_html }}">
