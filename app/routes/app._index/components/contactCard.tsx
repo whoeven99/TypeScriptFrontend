@@ -1,15 +1,16 @@
 import React, { Suspense } from 'react';
-import { Card, Button, Typography, Skeleton, Space } from 'antd';
+import { Card, Button, Typography, Skeleton, Space, Popover } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { PhoneOutlined } from '@ant-design/icons';
+import { PhoneOutlined, WechatOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
 interface ContactCardProps {
+    isChinese: boolean;
     onClick: () => void;
 }
 
-const ContactCard: React.FC<ContactCardProps> = ({ onClick }) => {
+const ContactCard: React.FC<ContactCardProps> = ({ isChinese, onClick }) => {
     const { t } = useTranslation();
 
     return (
@@ -42,12 +43,16 @@ const ContactCard: React.FC<ContactCardProps> = ({ onClick }) => {
                         {t("contact.description")}
                     </Text>
                     <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                        <Button
-                            icon={<PhoneOutlined />}
-                            onClick={onClick}
-                        >
-                            {t("contact.contactButton")}
-                        </Button>
+                        <Popover content={
+                            <img src="/images/wechat.webp" alt="Wechat"  width={200} height={270}/>
+                        } trigger="click">
+                            <Button
+                                icon={isChinese ? <WechatOutlined /> : <PhoneOutlined />}
+                                onClick={!isChinese ? onClick : () => {}}
+                            >
+                                {t("contact.contactButton")}
+                            </Button>
+                        </Popover>
                     </div>
                 </Space>
             </Card>

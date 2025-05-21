@@ -3,6 +3,7 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { Button, Card, Col, Row, Skeleton, Space, Spin, Table, Typography } from "antd";
 import {
   Link,
+  useLoaderData,
   useNavigate,
 } from "@remix-run/react";
 import { Suspense, useEffect, useState } from "react";
@@ -22,10 +23,22 @@ export interface WordsType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  return null;
+  const language =
+    request.headers.get("Accept-Language")?.split(",")[0] || "en";
+  const languageCode = language.split("-")[0];
+  if( languageCode === "zh" || languageCode === "zh-CN" ) {
+    return {
+      isChinese: true,
+    }
+  }else{
+    return {
+      isChinese: false,
+    }
+  }
 }
 
 const Index = () => {
+  const { isChinese } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
@@ -348,7 +361,7 @@ const Index = () => {
           </Card>
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
-              <ContactCard onClick={handleContactSupport} />
+              <ContactCard isChinese={isChinese} onClick={handleContactSupport} />
             </Col>
             <Col xs={24} sm={24} md={12}>
               <UserGuideCard />
