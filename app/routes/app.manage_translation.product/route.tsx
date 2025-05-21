@@ -208,7 +208,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("confirmData") as string,
     );
     switch (true) {
-      case !!startCursor:        
+      case !!startCursor:
         try {
           const response = await admin.graphql(
             `#graphql
@@ -286,7 +286,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             previousProducts: previousProducts,
           });
         } catch (error) {
-          console.error("Error action product:", error);
+          console.error("Error action startCursor product:", error);
         }
       case !!endCursor:
         try {
@@ -366,7 +366,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             nextProducts: nextProducts,
           });
         } catch (error) {
-          console.error("Error action product:", error);
+          console.error("Error action endCursor product:", error);
         }
       case !!variants:
         try {
@@ -399,7 +399,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const variantsData = await Promise.allSettled(promise);
           return json({ variantsData: variantsData });
         } catch (error) {
-          console.error("Error action product:", error);
+          console.error("Error action variants product:", error);
         }
       case !!confirmData:
         const originalConfirmData = confirmData;
@@ -429,8 +429,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
-    console.error("Error action product:", error);
-    throw new Response("Error action product", { status: 500 });
+    console.error("Error action confirmData product:", error);
   }
 };
 
@@ -553,7 +552,7 @@ const Index = () => {
     const variants = productsData.data.products.nodes.find((item: any) => item.id === selectProductKey)?.options.flatMap((item: any) =>
       item.optionValues.map((opt: any) => opt.id)
     );
-    if (variants) {
+    if (variants && Array.isArray(variants)) {
       variantFetcher.submit({
         variants: JSON.stringify({
           data: variants,
@@ -923,7 +922,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("PRODUCT_OPTION", record?.key || "", record?.type || "", record?.default_language || "", Number(1 + "" + record?.index));
+              handleTranslate("PRODUCT_OPTION", "name", record?.type || "", record?.default_language || "", Number(1 + "" + record?.index));
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -980,7 +979,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("METAFIELD", record?.key || "", record?.type || "", record?.default_language || "", Number(2 + "" + record?.index));
+              handleTranslate("METAFIELD", "value", record?.type || "", record?.default_language || "", Number(2 + "" + record?.index));
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1035,7 +1034,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("PRODUCT_OPTION_VALUE", record?.key || "", record?.type || "", record?.default_language || "", Number(3 + "" + record?.index));
+              handleTranslate("PRODUCT_OPTION_VALUE", "name", record?.type || "", record?.default_language || "", Number(3 + "" + record?.index));
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1314,6 +1313,20 @@ const Index = () => {
       return;
     }
     setLoadingItems((prev) => [...prev, key]);
+    console.log({
+      shopName: shopName,
+      source: productsData.data.translatableResources.nodes
+        .find((item: any) => item?.resourceId === selectProductKey)
+        ?.translatableContent.find((item: any) => item.key === key)
+        ?.locale,
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
+
     const data = await SingleTextTranslate({
       shopName: shopName,
       source: productsData.data.translatableResources.nodes

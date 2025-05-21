@@ -160,10 +160,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const languageSetting = {
           primaryLanguage: shopPrimaryLanguage[0].name,
           primaryLanguageCode: shopPrimaryLanguage[0].locale,
-          shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
-          shopLanguageCodesWithoutPrimary: shopLocalesIndex,
+          // shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
+          // shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
 
+        console.log("languageData: ", {
+          data,
+          languageSetting,
+        });
+        
         return json({ data, languageSetting, shop });
       } catch (error) {
         console.error("Error languageData app:", error);

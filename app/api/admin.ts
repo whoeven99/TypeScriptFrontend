@@ -67,7 +67,6 @@ export const queryShopLanguages = async ({
       data: JSON.stringify({ query }),
     });
     const res = response.data.data.shopLocales;
-
     return res;
   } catch (error) {
     console.error("Error fetching shoplocales:", error);
