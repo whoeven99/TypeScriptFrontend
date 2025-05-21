@@ -774,7 +774,22 @@ window.onload = async function () {
   const shop = document.getElementById("queryCiwiId");
   const mainBox = document.getElementById("main-box");
   shop.remove();
-  const data = await fetchSwitcherConfig(shop.value);
+  // const data = await fetchSwitcherConfig(shop.value);
+
+  const data = {
+    shopName: shop,
+    includedFlag: true,
+    languageSelector: false,
+    currencySelector: false,
+    ipOpen: false,
+    fontColor: "#000000",
+    backgroundColor: "#ffffff",
+    buttonColor: "#ffffff",
+    buttonBackgroundColor: "#000000",
+    optionBorderColor: "#ccc",
+    selectorPosition: "bottom_left",
+    positionData: 10,
+  };
 
   if (data.languageSelector) {
     const languageSelector = document.getElementById(
@@ -997,6 +1012,8 @@ window.onload = async function () {
       switcher.style.top = "auto";
     }
     updateDisplayText(data.languageSelector, data.currencySelector);
-    switcher.style.display = "block";
+    if (data.languageSelector || data.currencySelector) {
+      mainBox.style.display = "block";
+    }
   }
 };
