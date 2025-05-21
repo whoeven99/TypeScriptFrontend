@@ -386,5 +386,6 @@
     "Select at least one translation item": "Выберите хотя бы один элемент перевода",
     "Translated successfully": "Перевод успешно выполнен",
     "Some items saved failed": "Некоторые элементы не были сохранены",
-    "OptionValue": "Значение опции"
+    "OptionValue": "Значение опции",
+    "Sidebar Widget": "Виджет боковой панели"
 }
