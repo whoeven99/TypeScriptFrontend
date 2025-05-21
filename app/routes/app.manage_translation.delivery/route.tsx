@@ -331,9 +331,7 @@ const Index = () => {
     });
   };
 
-  const generateMenuItemsArray = (items: any) => {
-    console.log(items);
-    
+  const generateMenuItemsArray = (items: any) => {    
     return items.nodes.flatMap((item: any, index: number) => {
       if (item?.translatableContent.length !== 0) {
         // 创建当前项的对象

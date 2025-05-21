@@ -383,6 +383,9 @@
     "Language not found": "Språk hittades inte",
     "You have reached your shopify plan limit(Max<=20)": "Du har nått din Shopify-plangräns (Max<=20)",
     "Select at least one language pack": "Välj minst ett språkpaket",
-    "Select at least one translation item": "Välj minst ett översättningsobjekt"
+    "Select at least one translation item": "Välj minst ett översättningsobjekt",
+    "Translated successfully": "Översatt",
+    "Some items saved failed": "Några objekt sparades inte",
+    "OptionValue": "Värde för alternativ"
 }   
   

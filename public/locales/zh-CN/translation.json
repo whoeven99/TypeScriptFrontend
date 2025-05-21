@@ -382,5 +382,8 @@
   "Language not found": "语言未找到",
   "You have reached your shopify plan limit(Max<=20)": "您已达到 Shopify 计划限制（Max<=20）",
   "Select at least one language pack": "选择至少一个语言包",
-  "Select at least one translation item": "选择至少一个翻译项"
+  "Select at least one translation item": "选择至少一个翻译项",
+  "Translated successfully": "翻译成功",
+  "Some items saved failed": "一些项目保存失败",
+  "OptionValue": "选项值"
 }

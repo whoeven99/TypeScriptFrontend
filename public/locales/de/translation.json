@@ -3,7 +3,7 @@
   "Dashboard": "Dashboard",
   "Faster, higher-quality localization translation tool": "Schnelleres, qualitativ hochwertigeres Lokalisierungsübersetzungstool",
   "available languages": "verfügbare Sprachen",
-  "Your store's default language:": "Die Standardsprache Ihres Shops:",
+  "Your store's default language: ": "Die Standardsprache Ihres Shops: ",
   "No primary language set": "Keine Primärsprache festgelegt",
   "Learn more in": "Erfahren Sie mehr in",
   "Ciwi Help Center": "Ciwi Hilfezentrum",
@@ -382,6 +382,9 @@
   "Language not found": "Sprache nicht gefunden",
   "You have reached your shopify plan limit(Max<=20)": "Sie haben Ihren Shopify-Planlimit erreicht (Max<=20)",
   "Select at least one language pack": "Bitte wählen Sie mindestens ein Sprachpaket",
-  "Select at least one translation item": "Bitte wählen Sie mindestens einen Übersetzungseintrag"
+  "Select at least one translation item": "Bitte wählen Sie mindestens einen Übersetzungseintrag",
+  "Translated successfully": "Übersetzt erfolgreich",
+  "Some items saved failed": "Einige Elemente wurden nicht gespeichert",
+  "OptionValue": "Optionenwert"
 }
     

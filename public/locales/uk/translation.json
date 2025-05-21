@@ -383,5 +383,8 @@
     "Language not found": "Мова не знайдена",
     "You have reached your shopify plan limit(Max<=20)": "Ви досягли ліміту вашого Shopify-плану (Max<=20)",
     "Select at least one language pack": "Виберіть принаймні один пакет мов",
-    "Select at least one translation item": "Виберіть принаймні один елемент перекладу"
+    "Select at least one translation item": "Виберіть принаймні один елемент перекладу",
+    "Translated successfully": "Переклад успішно виконано",
+    "Some items saved failed": "Деякі елементи не були збережені",
+    "OptionValue": "Значення опції"
 }

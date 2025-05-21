@@ -382,7 +382,9 @@
   "Add failed": "Add failed",
   "Language not found": "Language not found",
   "You have reached your shopify plan limit(Max<=20)": "You have reached your shopify plan limit(Max<=20)",
-  "Some items saved failed": "Some items saved failed",
   "Select at least one language pack": "Select at least one language pack",
-  "Select at least one translation item": "Select at least one translation item"
+  "Select at least one translation item": "Select at least one translation item",
+  "Translated successfully": "Translated successfully",
+  "Some items saved failed": "Some items saved failed",
+  "OptionValue": "OptionValue"
 }

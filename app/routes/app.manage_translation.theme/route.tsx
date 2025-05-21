@@ -107,8 +107,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         return json({ nextThemes: nextThemes });
       case !!confirmData:
-        console.log("confirmData: ", confirmData);
-
         const data = await updateManageTranslation({
           shop,
           accessToken: accessToken as string,

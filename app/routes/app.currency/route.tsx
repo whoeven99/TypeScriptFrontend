@@ -112,8 +112,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             const promises = currencyData.map((currency: any) =>
               AddCurrency({
                 shop,
-                currencyName: currency.currencyName,
-                currencyCode: currency.currencyCode,
+                currencyName: currency?.currencyName,
+                currencyCode: currency?.currencyCode,
                 primaryStatus: currency?.primaryStatus || 0,
               }),
             );
@@ -331,9 +331,6 @@ const Index = () => {
           moneyWithMoneyDoc.querySelector(".ciwi-money");
         const moneyWithoutMoneyElement =
           moneyWithoutMoneyDoc.querySelector(".ciwi-money");
-
-        console.log(moneyWithMoneyElement, moneyWithoutMoneyElement);
-
         if (moneyWithMoneyElement && moneyWithoutMoneyElement) {
           setCurrencyFormatConfigCardOpen(false);
         } else {

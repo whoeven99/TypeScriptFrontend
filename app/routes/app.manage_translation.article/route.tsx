@@ -673,6 +673,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response)
+        shopify.toast.show(t("Translated successfully"))
       }
     } else {
       shopify.toast.show(data.errorMsg)

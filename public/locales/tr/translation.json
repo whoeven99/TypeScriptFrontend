@@ -383,5 +383,8 @@
     "Language not found": "Dil bulunamadı",
     "You have reached your shopify plan limit(Max<=20)": "Shopify planınızın sınırına ulaştınız (Max<=20)",
     "Select at least one language pack": "En az bir dil paketini seçin",
-    "Select at least one translation item": "En az bir çeviri öğesini seçin"
+    "Select at least one translation item": "En az bir çeviri öğesini seçin",
+    "Translated successfully": "Çeviri başarıyla tamamlandı",
+    "Some items saved failed": "Bazı öğeler kaydedilmedi",
+    "OptionValue": "Seçenek değeri"
 }

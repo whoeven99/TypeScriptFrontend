@@ -169,7 +169,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
               });
             }
           });
-        console.log(Object.entries(rest).filter((([key, value]) => translateSettings3.includes(key as string))));
         setCredits(credits);
       } else {
         recalculateFetcher.submit({
@@ -196,7 +195,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
               return;
             }
           });
-        console.log(Object.entries(rest).filter((([key, value]) => translateSettings3.includes(value as string))));
         setCredits(credits);
       } else {
         setCredits(-1);

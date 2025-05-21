@@ -1,4 +1,3 @@
-import { TitleBar } from "@shopify/app-bridge-react";
 import { Icon, Page } from "@shopify/polaris";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -11,7 +10,6 @@ import {
   Radio,
   RadioChangeEvent,
   Row,
-  Select,
   Skeleton,
   Space,
   Typography,
@@ -47,8 +45,6 @@ interface LanguageDataType {
 interface LanguageSettingType {
   primaryLanguage: string;
   primaryLanguageCode: string;
-  shopLanguagesWithoutPrimary: ShopLocalesType[];
-  shopLanguageCodesWithoutPrimary: string[];
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -121,8 +117,8 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingLanguageFetcher.data) {
-      setLanguageData(loadingLanguageFetcher.data.data);
-      setLanguageSetting(loadingLanguageFetcher.data.languageSetting);
+      setLanguageData(loadingLanguageFetcher.data?.data);
+      setLanguageSetting(loadingLanguageFetcher.data?.languageSetting);
       setLoadingLanguage(false);
     }
   }, [loadingLanguageFetcher.data]);
@@ -169,8 +165,6 @@ const Index = () => {
       dispatch(setTableData(data)); // 只在组件首次渲染时触发
     }
   }, [dispatch, languageData]);
-
-
 
   const translateSettings1Options = [
     {
@@ -474,10 +468,11 @@ const Index = () => {
         <Divider style={{ margin: "0" }} />
         <div style={{ paddingLeft: "8px" }}>
           <Text>{t("Your store's default language:")}</Text>
+          {" "}
           {languageSetting && (
             <Text strong>
-              {languageSetting.primaryLanguage ? (
-                languageSetting.primaryLanguage
+              {languageSetting?.primaryLanguage ? (
+                languageSetting?.primaryLanguage
               ) : (
                 <Skeleton active paragraph={{ rows: 0 }} />
               )}
@@ -509,7 +504,7 @@ const Index = () => {
                     style={{
                       display: "grid",
                       gridTemplateColumns:
-                        "repeat(auto-fill, minmax(400px, 1fr))",
+                        "repeat(auto-fill, minmax(250px, 1fr))",
                       gap: "16px",
                       width: "100%",
                     }}
@@ -611,7 +606,17 @@ const Index = () => {
                   </div>
                   <Row key={translateSettings1} gutter={[16, 16]}>
                     {translateSettings1Options.map((option) => (
-                      <Col key={option.value} span={6}>
+                      <Col
+                        key={option.value}
+                        xs={24}
+                        sm={24}
+                        md={12}
+                        lg={6}
+                        style={{
+                          display: "flex",
+                          width: "100%",
+                        }}
+                      >
                         <Button
                           key={option.value}
                           value={option.value}
@@ -644,7 +649,16 @@ const Index = () => {
                       </Col>
                     ))}
                     {customApikeyData && (
-                      <Col key="custom key" span={6}>
+                      <Col
+                        key="custom key"
+                        xs={24}
+                        sm={24}
+                        md={12}
+                        lg={6}
+                        style={{
+                          display: "flex",
+                          width: "100%",
+                        }}>
                         <Badge.Ribbon
                           text={t("Private")}
                           color="red"
@@ -716,7 +730,7 @@ const Index = () => {
                       width: "100%",
                     }}
                     onChange={(e) => handleTranslateSettings2Change(e)}
-                  ></Checkbox.Group>
+                  />
                 </Space>
                 <Space
                   direction="vertical"
