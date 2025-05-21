@@ -49,7 +49,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const words = JSON.parse(formData.get("words") as string);
     const planInfo = JSON.parse(formData.get("planInfo") as string);
     const payForPlan = JSON.parse(formData.get("payForPlan") as string);
-    const languages = JSON.parse(formData.get("languages") as string);
     switch (true) {
       case !!words:
         try {
@@ -109,17 +108,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }
         } catch (error) {
           console.error("Error payForPlan action:", error);
-        }
-      case !!languages:
-        try {
-          const data = await queryShopLanguages({
-            shop,
-            accessToken: accessToken as string,
-          });
-          console.log(data);
-          return data;
-        } catch (error) {
-          console.error("Error languages action:", error);
         }
     }
     return null;

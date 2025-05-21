@@ -1332,48 +1332,6 @@ export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
   }
 };
 
-//获取货币本地化数据
-export const GetCurrencyLocaleInfo = async () => {
-  try {
-    const data = {
-      AFN: {
-        currencyName: "Afghan Afghani",
-        currencyCode: "AFN",
-        symbol: "؋",
-        locale:
-          "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/AF.png",
-      },
-      USD: {
-        currencyName: "United States Dollar",
-        currencyCode: "USD",
-        symbol: "$",
-        locale:
-          "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/US.png",
-      },
-      EUR: {
-        currencyName: "Euro",
-        currencyCode: "EUR",
-        symbol: "€",
-        locale:
-          "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag/EU.png",
-      },
-      // 你可以继续添加其他货币数据
-    };
-
-    // 模拟返回的数据
-    return data;
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/currency/getCurrencyByShopName`,
-      method: "GET",
-    });
-
-    const res = response.data.response;
-    return res;
-  } catch (error) {
-    console.error("Error GetCurrencyLocaleInfo:", error);
-  }
-};
-
 //获取自动汇率
 export const GetCacheData = async ({
   shop,
@@ -1396,7 +1354,7 @@ export const GetCacheData = async ({
     console.log("GetCacheData: ", res);
     return {
       currencyCode: currencyCode,
-      rate: res.exchangeRate,
+      rate: res?.exchangeRate || 0,
     };
   } catch (error) {
     console.error("Error GetCacheData:", error);

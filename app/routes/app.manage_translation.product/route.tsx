@@ -552,7 +552,7 @@ const Index = () => {
     const variants = productsData.data.products.nodes.find((item: any) => item.id === selectProductKey)?.options.flatMap((item: any) =>
       item.optionValues.map((opt: any) => opt.id)
     );
-    if (variants) {
+    if (variants && Array.isArray(variants)) {
       variantFetcher.submit({
         variants: JSON.stringify({
           data: variants,
