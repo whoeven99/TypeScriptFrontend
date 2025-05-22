@@ -387,5 +387,6 @@
     "Translated successfully": "Çeviri başarıyla tamamlandı",
     "Some items saved failed": "Bazı öğeler kaydedilmedi",
     "OptionValue": "Seçenek değeri",
-    "Sidebar Widget": "Sidofält"
+    "Sidebar Widget": "Sidofält",
+    "Please manually start a translation task first. You can then use the automatic translation function.": "Lütfen önce bir çeviri görevini elle başlatın, ardından otomatik çeviri işlevini kullanabilirsiniz."
 }

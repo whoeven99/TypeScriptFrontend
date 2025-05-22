@@ -100,6 +100,37 @@ type TableDataType = {
   translated: string | undefined;
 } | null;
 
+const modelOptions = [
+  {
+    label: "OpenAI/GPT-4",
+    value: "1",
+  },
+  {
+    label: "Google/Gemini-1.5",
+    value: "2",
+  },
+  {
+    label: "DeepL/DeepL-translator",
+    value: "3",
+  },
+  {
+    label: "Qwen/Qwen-Max",
+    value: "4",
+  },
+  {
+    label: "DeepSeek-ai/DeepSeek-V3",
+    value: "5",
+  },
+  {
+    label: "Meta/Llama-3",
+    value: "6",
+  },
+  {
+    label: "Google/Google translate",
+    value: "7",
+  },
+]
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
@@ -492,9 +523,77 @@ const Index = () => {
     { label: t("Delivery"), value: "delivery" },
     { label: t("Shipping"), value: "shipping" },
   ]
+  const languagePackOptions = [
+    {
+      label: t("General"),
+      value: "1",
+    },
+    {
+      label: t("Fashion & Apparel"),
+      value: "2",
+    },
+    {
+      label: t("Electronics & Technology"),
+      value: "3",
+    },
+    {
+      label: t("Home Goods & Daily Essentials"),
+      value: "4",
+    },
+    {
+      label: t("Pet Supplies"),
+      value: "5",
+    },
+    {
+      label: t("Beauty & Personal Care"),
+      value: "6",
+    },
+    {
+      label: t("Furniture & Gardening"),
+      value: "7",
+    },
+    {
+      label: t("Hardware & Tools"),
+      value: "8",
+    },
+    {
+      label: t("Baby & Toddler Products"),
+      value: "9",
+    },
+    {
+      label: t("Toys & Games"),
+      value: "10",
+    },
+    {
+      label: t("Luggage & Accessories"),
+      value: "11",
+    },
+    {
+      label: t("Health & Nutrition"),
+      value: "12",
+    },
+    {
+      label: t("Outdoor & Sports"),
+      value: "13",
+    },
+    {
+      label: t("Crafts & Small Goods"),
+      value: "14",
+    },
+    {
+      label: t("Home Appliances"),
+      value: "15",
+    },
+    {
+      label: t("Automotive Parts"),
+      value: "16",
+    },
+  ];
   const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
   const [selectedItem, setSelectedItem] = useState<string>("product");
+  const [selectedModel, setSelectedModel] = useState<string>(localStorage.getItem("translateModel") || "1");
+  const [selectedLanguagePack, setSelectedLanguagePack] = useState<string>(localStorage.getItem("translateLanguagePack") || "en");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
     products.data.translatableResources.pageInfo.hasPreviousPage || false
   );
@@ -503,6 +602,8 @@ const Index = () => {
   );
 
   useEffect(() => {
+    setSelectedModel(localStorage.getItem("translateModel") || "1");
+    setSelectedLanguagePack(localStorage.getItem("translateLanguagePack") || "1");
     if (products) {
       setMenuData(exMenuData(products));
       setIsLoading(false);
@@ -1364,6 +1465,16 @@ const Index = () => {
     navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
   }
 
+  const handleModelChange = (model: string) => {
+    setSelectedModel(model);
+    localStorage.setItem("translateModel", model);
+  }
+
+  const handleLanguagePackChange = (languagePack: string) => {
+    setSelectedLanguagePack(languagePack);
+    localStorage.setItem("translateLanguagePack", languagePack);
+  }
+
   const onPrevious = () => {
     submit({
       startCursor: JSON.stringify({
@@ -1453,6 +1564,30 @@ const Index = () => {
                 options={itemOptions}
                 value={selectedItem}
                 onChange={(value) => handleItemChange(value)}
+              />
+            </div>
+            <div
+              style={{
+                width: "150px",
+              }}
+            >
+              <Select
+                label={""}
+                options={modelOptions}
+                value={selectedModel}
+                onChange={(value) => handleModelChange(value)}
+              />
+            </div>
+            <div
+              style={{
+                width: "150px",
+              }}
+            >
+              <Select
+                label={""}
+                options={languagePackOptions}
+                value={selectedLanguagePack}
+                onChange={(value) => handleLanguagePackChange(value)}
               />
             </div>
           </div>

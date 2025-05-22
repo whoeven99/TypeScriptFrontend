@@ -386,5 +386,6 @@
   "Translated successfully": "翻译成功",
   "Some items saved failed": "一些项目保存失败",
   "OptionValue": "选项值",
-  "Sidebar Widget": "侧边栏小部件"
+  "Sidebar Widget": "侧边栏小部件",
+  "Please manually start a translation task first. You can then use the automatic translation function.": "请先手动开始一个翻译任务，然后可以使用自动翻译功能。"
 }

@@ -791,21 +791,8 @@ window.onload = async function () {
   const mainBox = document.getElementById("main-box");
   const translateFloatBtn = document.getElementById("translate-float-btn");
   shop.remove();
-  // const data = await fetchSwitcherConfig(shop.value);
-  const data = {
-    shopName: shop,
-    includedFlag: true,
-    languageSelector: true,
-    currencySelector: true,
-    ipOpen: false,
-    fontColor: "#000000",
-    backgroundColor: "#ffffff",
-    buttonColor: "#ffffff",
-    buttonBackgroundColor: "#000000",
-    optionBorderColor: "#ccc",
-    selectorPosition: "bottom_left",
-    positionData: 10,
-  };
+  const data = await fetchSwitcherConfig(shop.value);
+
   if (
     data.languageSelector ||
     (!data.languageSelector && !data.currencySelector)
