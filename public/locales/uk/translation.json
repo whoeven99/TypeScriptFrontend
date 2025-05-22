@@ -388,5 +388,6 @@
     "Some items saved failed": "Деякі елементи не були збережені",
     "OptionValue": "Значення опції",
     "Sidebar Widget": "Сайдбар-виджет",
-    "Please manually start a translation task first. You can then use the automatic translation function.": "Будь ласка, спочатку відкрийте завдання перекладу вручну, а потім використовуйте функцію автоматичного перекладу."
+    "Please manually start a translation task first. You can then use the automatic translation function.": "Будь ласка, спочатку відкрийте завдання перекладу вручну, а потім використовуйте функцію автоматичного перекладу.",
+    "Translation task is about to start": "Завдання перекладу починається"
 }

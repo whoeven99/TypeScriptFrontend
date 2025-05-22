@@ -387,6 +387,7 @@
     "Some items saved failed": "一部の項目が保存に失敗しました",
     "OptionValue": "オプション値",
     "Sidebar Widget": "サイドバーのウィジェット",
-    "Please manually start a translation task first. You can then use the automatic translation function.": "まず、手動で翻訳タスクを開始してください。その後、自動翻訳機能を使用できます。"
+    "Please manually start a translation task first. You can then use the automatic translation function.": "まず、手動で翻訳タスクを開始してください。その後、自動翻訳機能を使用できます。",
+    "Translation task is about to start": "翻訳タスクが開始されます"
 }   
   

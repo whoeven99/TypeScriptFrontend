@@ -688,6 +688,7 @@ export const GetUserWords = async ({ shop }: { shop: string }) => {
       url: `${process.env.SERVER_URL}/shopify/getUserLimitChars?shopName=${shop}`,
       method: "GET",
     });
+    console.log("GetUserWords: ", response.data);
     const res = response.data.response;
     return res;
   } catch (error) {
@@ -976,6 +977,7 @@ export const updateManageTranslation = async ({
         // 处理结果
         results.forEach((result, index) => {
           if (result.status === "fulfilled" && result.value) {
+            console.log("result.value: ", result.value);
             res.push(result.value);
           } else if (result.status === "rejected") {
             res.push({

@@ -1566,7 +1566,7 @@ const Index = () => {
                 onChange={(value) => handleItemChange(value)}
               />
             </div>
-            <div
+            {/* <div
               style={{
                 width: "150px",
               }}
@@ -1589,7 +1589,7 @@ const Index = () => {
                 value={selectedLanguagePack}
                 onChange={(value) => handleLanguagePackChange(value)}
               />
-            </div>
+            </div> */}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'flex-end' }}>
             <Button
