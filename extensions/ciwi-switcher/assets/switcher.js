@@ -791,8 +791,21 @@ window.onload = async function () {
   const mainBox = document.getElementById("main-box");
   const translateFloatBtn = document.getElementById("translate-float-btn");
   shop.remove();
-  const data = await fetchSwitcherConfig(shop.value);
-
+  // const data = await fetchSwitcherConfig(shop.value);
+  const data = {
+    shopName: shop,
+    includedFlag: true,
+    languageSelector: true,
+    currencySelector: true,
+    ipOpen: false,
+    fontColor: "#000000",
+    backgroundColor: "#ffffff",
+    buttonColor: "#ffffff",
+    buttonBackgroundColor: "#000000",
+    optionBorderColor: "#ccc",
+    selectorPosition: "bottom_left",
+    positionData: 10,
+  };
   if (
     data.languageSelector ||
     (!data.languageSelector && !data.currencySelector)
@@ -813,7 +826,9 @@ window.onload = async function () {
     languageSelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
 
     const mainLanguageFlag = document.getElementById("main-language-flag");
-    const translateFloatBtnIcon = document.getElementById("translate-float-btn-icon");
+    const translateFloatBtnIcon = document.getElementById(
+      "translate-float-btn-icon",
+    );
 
     if (data.includedFlag) {
       //获取所有语言代码
@@ -853,11 +868,14 @@ window.onload = async function () {
         if (countryCode) {
           selectedOption.insertBefore(optionFlagImg, selectedOption.firstChild);
         }
-        if (mainLanguageFlag) {
+        if (mainLanguageFlag && (data.languageSelector || data.currencySelector)) {
           mainLanguageFlag.src = countryCode;
           mainLanguageFlag.hidden = false;
         }
-        if (translateFloatBtnIcon) {
+        if (
+          translateFloatBtnIcon &&
+          (!data.languageSelector && !data.currencySelector)
+        ) {
           translateFloatBtnIcon.src = countryCode;
           translateFloatBtnIcon.hidden = false;
         }
@@ -989,7 +1007,9 @@ window.onload = async function () {
     const translateFloatBtnText = document.getElementById(
       "translate-float-btn-text",
     );
-    const translateFloatBtnIcon = document.getElementById("translate-float-btn-icon");
+    const translateFloatBtnIcon = document.getElementById(
+      "translate-float-btn-icon",
+    );
     confirmButton.style.backgroundColor = data.buttonBackgroundColor;
     confirmButton.style.color = data.buttonColor;
     selectorBox.style.backgroundColor = data.backgroundColor;
@@ -1053,6 +1073,7 @@ window.onload = async function () {
       updateDisplayText(data.languageSelector, data.currencySelector);
       mainBox.style.display = "flex";
     } else {
+      switcher.style.width = "100px";
       translateFloatBtnText.style.backgroundColor = data.backgroundColor;
       translateFloatBtnText.style.display = "block";
     }
