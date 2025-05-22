@@ -11,13 +11,3 @@
 body {
   margin: 0;
 }
-
-.ant-checkbox-wrapper {
-  display: flex;
-  align-items: center;
-}
-.ant-checkbox + span {
-  display: flex;
-  align-items: center;
-  height: 100%;
-}

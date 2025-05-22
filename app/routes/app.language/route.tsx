@@ -397,6 +397,8 @@ const Index = () => {
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [dontPromptAgain, setDontPromptAgain] = useState(false);
   const [deleteConfirmModalVisible, setDeleteConfirmModalVisible] = useState(false);
+  const [noFirstTranslation, setNoFirstTranslation] = useState(false);
+  const [noFirstTranslationLocale, setNoFirstTranslationLocale] = useState<string>("");
   const [warnModalTitle, setWarnModalTitle] = useState<string>("")
   const [warnModalContent, setWarnModalContent] = useState<string>("")
   const [showWarnModal, setShowWarnModal] = useState(false);
@@ -621,7 +623,7 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Switch
           checked={record.autoTranslate}
-          onChange={(checked) => handleAutoUpdateTranslationChange(record.locale, checked)}
+          onChange={(checked) => handleAutoUpdateTranslationChange(record.locale, checked, record.status)}
           loading={record.autoTranslateLoading} // 使用每个项的 loading 状态
         />
       ),
@@ -697,8 +699,13 @@ const Index = () => {
     }
   };
 
-  const handleAutoUpdateTranslationChange = async (locale: string, checked: boolean) => {
+  const handleAutoUpdateTranslationChange = async (locale: string, checked: boolean, status: number) => {
     if (!plan) {
+      return;
+    }
+    if (status === 0) {
+      setNoFirstTranslationLocale(locale);
+      setNoFirstTranslation(true);
       return;
     }
     const items = dataSource.filter((item => item.autoTranslate)).length
@@ -717,8 +724,6 @@ const Index = () => {
       shopify.toast.show(t(`The ${autoTranslationMapping[plan as keyof typeof autoTranslationMapping]} autoTranslation limit has been reached`));
     }
   };
-
-
 
   //表格编辑
   const handleDelete = () => {
@@ -845,6 +850,30 @@ const Index = () => {
         show={showWarnModal}
         setShow={setShowWarnModal}
       />
+      <Modal
+        open={noFirstTranslation}
+        onCancel={() => setNoFirstTranslation(false)}
+        // title={t("The 20 language limit has been reached")}
+        footer={
+          <Space>
+            <Button onClick={() => setNoFirstTranslation(false)}>
+              {t("Cancel")}
+            </Button>
+            <Button type="primary" onClick={() => navigate("/app/translate", { state: { from: "/app/language", selectedLanguageCode: noFirstTranslationLocale } })}>
+              {t("Translate")}
+            </Button>
+          </Space>
+        }
+        style={{
+          top: "40%",
+          zIndex: 1001,
+        }}
+        width={700}
+      >
+        <Text>
+          {t("Please manually start a translation task first. You can then use the automatic translation function.")}
+        </Text>
+      </Modal>
     </Page>
   );
 };

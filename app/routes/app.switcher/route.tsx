@@ -557,7 +557,7 @@ const Index = () => {
                   >
                     <Text>{t("Included flag:")}</Text>
                     <Switch
-                      disabled={!languageSelector}
+                      disabled={!languageSelector && currencySelector}
                       checked={isIncludedFlag}
                       onChange={(checked) =>
                         handleEditData({ includedFlag: checked })

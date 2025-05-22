@@ -504,7 +504,7 @@ const Index = () => {
                     style={{
                       display: "grid",
                       gridTemplateColumns:
-                        "repeat(auto-fill, minmax(250px, 1fr))",
+                        "repeat(auto-fill, minmax(300px, 1fr))",
                       gap: "16px",
                       width: "100%",
                     }}
@@ -725,9 +725,9 @@ const Index = () => {
                     options={translateSettings2Options}
                     style={{
                       display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(200px, 1fr))",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
                       width: "100%",
+                      alignItems: "center", // 关键：让每个格子内容垂直居中
                     }}
                     onChange={(e) => handleTranslateSettings2Change(e)}
                   />

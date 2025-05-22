@@ -387,5 +387,6 @@
     "Translated successfully": "Перевод успешно выполнен",
     "Some items saved failed": "Некоторые элементы не были сохранены",
     "OptionValue": "Значение опции",
-    "Sidebar Widget": "Виджет боковой панели"
+    "Sidebar Widget": "Виджет боковой панели",
+    "Please manually start a translation task first. You can then use the automatic translation function.": "Пожалуйста, сначала вручную запустите задачу перевода, а затем используйте функцию автоматического перевода."
 }
