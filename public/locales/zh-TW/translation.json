@@ -387,6 +387,7 @@
     "Some items saved failed": "一些項目保存失敗",
     "OptionValue": "選項值",
     "Sidebar Widget": "側邊欄小部件",
-    "Please manually start a translation task first. You can then use the automatic translation function.": "請先手動開始一個翻譯任務，然後可以使用自動翻譯功能。"
+    "Please manually start a translation task first. You can then use the automatic translation function.": "請先手動開始一個翻譯任務，然後可以使用自動翻譯功能。",
+    "Translation task is about to start": "翻譯任務即將開始"
 }
 

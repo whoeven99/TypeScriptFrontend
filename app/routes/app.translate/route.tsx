@@ -15,7 +15,7 @@ import {
   Typography,
 } from "antd";
 import { useTranslation } from "react-i18next";
-import { Link, useFetcher, useLocation, useNavigate } from "@remix-run/react";
+import { Link, useFetcher, useLoaderData, useLocation, useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { LanguagesDataType, ShopLocalesType } from "../app.language/route";
 import { setTableData } from "~/store/modules/languageTableData";
@@ -29,6 +29,8 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import {
   ArrowLeftIcon
 } from '@shopify/polaris-icons';
+import { GetUserWords } from "~/api/JavaServer";
+import axios from "axios";
 
 const { Title, Text } = Typography;
 
@@ -51,10 +53,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   console.log(`${shop} load translate`);
-  return null;
+  return {
+    shop,
+    server: process.env.SERVER_URL
+  };
 };
 
 const Index = () => {
+  const { shop, server } = useLoaderData<typeof loader>();
   const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
   const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
   const [selectedLanguageCode, setSelectedLanguageCode] = useState<string>("");
@@ -81,6 +87,7 @@ const Index = () => {
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [customApikeyData, setCustomApikeyData] = useState<boolean>(false);
+  const [needPay, setNeedPay] = useState<boolean>(false);
   const [source, setSource] = useState("");
   const [target, setTarget] = useState("");
   const [languageCardWarnText, setLanguageCardWarnText] = useState<string>("");
@@ -138,13 +145,6 @@ const Index = () => {
         shopify.toast.show(
           t("The query of the remaining credits failed. Please try again."),
         );
-      } else {
-        // message.warning(t(`${fetcher.data?.message}`))
-        setShowPaymentModal(true);
-        const modalSettingOption = translateSettings1Options.find(
-          (option) => option.value === fetcher.data.data.translateSettings1,
-        );
-        setModel(modalSettingOption?.label || "OpenAI/GPT-4");
       }
     }
   }, [fetcher.data]);
@@ -364,7 +364,7 @@ const Index = () => {
     }
   };
 
-  const handleTranslate = async () => {
+  const checkIfNeedPay = async () => {
     if (!languageSetting?.primaryLanguageCode) {
       shopify.toast.show(t("Please set the primary language first."));
       return;
@@ -383,23 +383,23 @@ const Index = () => {
       (item: LanguagesDataType) => item.status === 2,
     );
     if (selectedItem && !selectedTranslatingItem) {
-      const formData = new FormData();
-      formData.append(
-        "translation",
-        JSON.stringify({
-          primaryLanguage: languageSetting?.primaryLanguageCode,
-          selectedLanguage: selectedItem,
-          translateSettings1: translateSettings1,
-          translateSettings2: translateSettings2,
-          translateSettings3: translateSettings3,
-        }),
-      ); // 将选中的语言作为字符串发送
-      fetcher.submit(formData, {
-        method: "post",
-        action: "/app/language",
-      });
       setSource(languageSetting?.primaryLanguageCode);
       setTarget(selectedLanguageCode);
+      const response = await axios({
+        url: `${server}/shopify/getUserLimitChars?shopName=${shop}`,
+        method: "GET",
+      });
+      const words = response.data.response;
+      if (words?.totalChars <= words?.chars) {
+        setNeedPay(true);
+      } else {
+        setNeedPay(false);
+      }
+      setShowPaymentModal(true);
+      const modalSettingOption = translateSettings1Options.find(
+        (option) => option.value === translateSettings1,
+      );
+      setModel(modalSettingOption?.label || "OpenAI/GPT-4");
     } else {
       shopify.toast.show(
         t(
@@ -407,6 +407,24 @@ const Index = () => {
         ),
       );
     }
+  }
+
+  const handleTranslate = async () => {
+    const formData = new FormData();
+    formData.append(
+      "translation",
+      JSON.stringify({
+        primaryLanguage: languageSetting?.primaryLanguageCode,
+        selectedLanguage: selectedLanguageCode,
+        translateSettings1: translateSettings1,
+        translateSettings2: translateSettings2,
+        translateSettings3: translateSettings3,
+      }),
+    ); // 将选中的语言作为字符串发送
+    fetcher.submit(formData, {
+      method: "post",
+      action: "/app/language",
+    });
   };
 
   const handleTranslateSettings2Change = (value: string[]) => {
@@ -460,7 +478,7 @@ const Index = () => {
           </div>
           {
             languageSetting?.primaryLanguageCode ?
-              <Button type="primary" onClick={() => handleTranslate()} loading={fetcher.state === "submitting"} disabled={fetcher.state === "submitting"} style={{ visibility: languageData.length != 0 ? "visible" : "hidden" }}>{t("Translate")}</Button>
+              <Button type="primary" onClick={() => checkIfNeedPay()} style={{ visibility: languageData.length != 0 ? "visible" : "hidden" }}>{t("Translate")}</Button>
               :
               <Skeleton.Button active />
           }
@@ -767,6 +785,8 @@ const Index = () => {
           target={target}
           modal={model}
           translateSettings3={translateSettings3 || []}
+          handleTranslate={handleTranslate}
+          needPay={needPay}
         />
       )}
     </Page>

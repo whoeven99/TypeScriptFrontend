@@ -4,18 +4,20 @@ import PaymentOptionSelect from "./paymentOptionSelect";
 import { useFetcher } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { handleContactSupport } from "~/routes/app._index/route";
-import "./styles.css";
 import { useSelector } from "react-redux";
+import "./styles.css";
 
 const { Title, Text } = Typography;
 
 interface PaymentModalProps {
   visible: boolean;
-  setVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  setVisible: (visible: boolean) => void;
   source: string;
   target: string;
   modal: string;
   translateSettings3: string[];
+  needPay: boolean;
+  handleTranslate: () => void;
 }
 
 export interface OptionType {
@@ -29,10 +31,10 @@ export interface OptionType {
   };
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source, target, modal, translateSettings3 }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source, target, modal, translateSettings3, needPay, handleTranslate }) => {
   const [selectedOption, setSelectedOption] = useState<OptionType>();
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
-  const [credits, setCredits] = useState<number>(0);
+  const [credits, setCredits] = useState<number | undefined>(undefined);
   const [multiple1, setMultiple1] = useState<number>(2);
   const [multiple2, setMultiple2] = useState<number>(1);
   const { t } = useTranslation();
@@ -169,7 +171,16 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
               });
             }
           });
-        setCredits(credits);
+        if (credits === 0) {
+          recalculateFetcher.submit({
+            recalculate: JSON.stringify(true),
+          }, {
+            method: "post",
+            action: "/app",
+          });
+        } else {
+          setCredits(credits);
+        }
       } else {
         recalculateFetcher.submit({
           recalculate: JSON.stringify(true),
@@ -186,7 +197,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
       if (recalculateFetcher.data.data.success) {
         const { id, translationId, shopName, ...rest } = recalculateFetcher.data.data.response;
         let credits = 0;
-        Object.entries(rest).filter((([key, value]) => translateSettings3.includes(value as string)))
+        Object.entries(rest).filter((([key, value]) => translateSettings3.includes(key as string)))
           .forEach(([key, value]) => {
             if (value !== null) {
               credits += value as number;
@@ -194,7 +205,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
               setCredits(-1);
               return;
             }
-          });
+          })
         setCredits(credits);
       } else {
         setCredits(-1);
@@ -261,7 +272,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
   return (
     <Modal
       open={visible}
-      // title={t("Extend your quota usage")}
       onCancel={onCancel}
       width={1000}
       footer={[
@@ -284,45 +294,49 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
               {t("Contact support")}
             </Button>
           </div>
-          <Button
-            key="buy-now"
-            type="primary"
-            onClick={onClick}
-            disabled={buyButtonLoading}
-            loading={buyButtonLoading}
-            style={{
-              height: 'auto',
-              paddingTop: '4px',
-              paddingBottom: '4px'
-            }}
-          >
-            <div key="button-content" style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center'
-            }}>
-              <Text key="price" strong style={{ color: 'inherit' }}>
-                ${selectedOption?.price.currentPrice ?? 0}
-              </Text>
-              <Text key="buy-text" style={{ color: 'inherit' }}>
-                {t("Buy now")}
-              </Text>
-            </div>
-          </Button>
+          {needPay ?
+            <Button
+              key="buy-now"
+              type="primary"
+              onClick={onClick}
+              disabled={buyButtonLoading}
+              loading={buyButtonLoading}
+              style={{
+                height: 'auto',
+                paddingTop: '4px',
+                paddingBottom: '4px'
+              }}
+            >
+              <div key="button-content" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center'
+              }}>
+                <Text key="price" strong style={{ color: 'inherit' }}>
+                  ${selectedOption?.price.currentPrice ?? 0}
+                </Text>
+                <Text key="buy-text" style={{ color: 'inherit' }}>
+                  {t("Buy now")}
+                </Text>
+              </div>
+            </Button>
+            :
+            <Button
+              type="primary"
+              loading={buyButtonLoading}
+              disabled={buyButtonLoading}
+              onClick={() => {
+                setBuyButtonLoading(true);
+                handleTranslate();
+              }}>
+              {t("Translate")}
+            </Button>
+          }
         </div>
+
       ]}
     >
-      {/* <div style={{ display: "flex" }}>
-        <Text style={{ marginRight: "5px" }}>
-          Detected number of Credits required to translate store:
-        </Text>
-        {totalCharacters ? (
-          <Text>about {(totalCharacters / 10000).toFixed(0) + "w"}</Text>
-        ) : (
-          <Text>calculating</Text>
-        )}
-      </div> */}
-      <Title level={4} style={{ textAlign: "center", marginTop: "20px" }}>{t("Your translation task exceeds the free limit and you need to purchase additional credits")}</Title>
+      <Title level={4} style={{ textAlign: "center", marginTop: "20px" }}>{needPay ? t("Your translation task exceeds the free limit and you need to purchase additional credits") : t("Translation task is about to start")}</Title>
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <Title level={5}>{t("Translation tasks")}</Title>
@@ -332,9 +346,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div>
             <Text strong>{t("Estimated number of words to translate: ")}</Text>
-            {credits > 0 ? <Text strong>{credits.toLocaleString()} {t("words")}</Text> : (credits < 0 ? <Text strong>{t("Calculation failed")}</Text> : <Text strong>{t("Calculating...")}</Text>)}
+            {credits === undefined ? <Text strong>{t("Calculating...")}</Text> : credits >= 0 ? <Text strong>{credits.toLocaleString()} {t("words")}</Text> : <Text strong>{t("Calculation failed")}</Text>}
           </div>
-          {credits > 0 ? <Text strong>+{credits.toLocaleString()}</Text> : (credits < 0 ? <Text strong>{t("Calculation failed")}</Text> : <Text strong>{t("Calculating...")}</Text>)}
+          {credits === undefined ? <Text strong>{t("Calculating...")}</Text> : credits >= 0 ? <Text strong>+{credits.toLocaleString()}</Text> : <Text strong>{t("Calculation failed")}</Text>}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div>
@@ -355,54 +369,51 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
           <div>
             <Text strong>{t("Total: ")}</Text>
           </div>
-          <Text strong>{Number((credits * multiple1 * multiple2).toFixed(0)).toLocaleString() || 0}</Text>
+          <Text strong> {credits === undefined ? <Text strong>{t("Calculating...")}</Text> : credits >= 0 ? <Text strong>+{Number((credits * multiple1 * multiple2).toFixed(0)).toLocaleString()}</Text> : <Text strong>{t("Calculation failed")}</Text>}</Text>
         </div>
       </Card>
-      <Divider />
-      {/* <div style={{
-        display: "flex",
-        alignItems: 'flex-end',  // 底部对齐
-        gap: '3px',
-        marginBottom: "10px"
-      }}> */}
-      <Title level={5}>{t("Buy credits")}</Title>
-      {/* <Text type="secondary">1{t("word")} = 1{t("credit")}</Text> */}
-      {/* </div> */}
-      <div className="options_wrapper">
-        <Space direction="vertical">
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',  // 允许自动换行
-              gap: '16px',
-              width: '100%'
-            }}
-          >
-            {options.map((option: any) => (
+      {needPay
+        &&
+        <>
+          <Divider />
+          <Title level={5}>{t("Buy credits")}</Title>
+          <div className="options_wrapper">
+            <Space direction="vertical">
               <div
-                key={option.name}
                 style={{
-                  flex: '0 1 auto',  // 允许缩小但不放大
-                  // minWidth: '200px',  // 设置最小宽度
                   display: 'flex',
-                  justifyContent: 'center'
+                  flexWrap: 'wrap',  // 允许自动换行
+                  gap: '16px',
+                  width: '100%'
                 }}
               >
-                <PaymentOptionSelect
-                  option={option}
-                  selectedOption={selectedOption}
-                  onChange={(e) => setSelectedOption(e)}
-                />
+                {options.map((option: any) => (
+                  <div
+                    key={option.name}
+                    style={{
+                      flex: '0 1 auto',  // 允许缩小但不放大
+                      // minWidth: '200px',  // 设置最小宽度
+                      display: 'flex',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <PaymentOptionSelect
+                      option={option}
+                      selectedOption={selectedOption}
+                      onChange={(e) => setSelectedOption(e)}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
+            </Space>
           </div>
-        </Space>
-      </div>
-      <Divider />
-      <div className="total_payment">
-        <Text style={{ marginRight: "5px" }}>{t("Total Payment:")}</Text>
-        <Text strong>${selectedOption?.price.currentPrice ? selectedOption?.price.currentPrice : 0}</Text>
-      </div>
+          <Divider />
+          <div className="total_payment">
+            <Text style={{ marginRight: "5px" }}>{t("Total Payment:")}</Text>
+            <Text strong>${selectedOption?.price.currentPrice ? selectedOption?.price.currentPrice : 0}</Text>
+          </div>
+        </>
+      }
     </Modal>
   );
 };

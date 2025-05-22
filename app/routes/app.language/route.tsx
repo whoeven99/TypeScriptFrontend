@@ -25,7 +25,6 @@ import {
   PublishInfoType,
   queryAllLanguages,
   queryAllMarket,
-  queryProductsCount,
   queryShopLanguages,
   UnpublishInfoType,
 } from "~/api/admin";
@@ -205,108 +204,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       case !!translation:
         try {
-          // 如果是机器翻译(translateSettings1 === "8")，直接调用翻译接口          
-          if (translation.translateSettings1 === "8") {
-            const words = await GetUserData({ shop });
-            if (!words || !words.success) {
-              return json({
-                success: false,
-                message: "words get error",
-                data: {
-                  shop,
-                  accessToken: accessToken as string,
-                  source: translation.primaryLanguage,
-                  target: translation.selectedLanguage.locale,
-                  translateSettings1: translation.translateSettings1,
-                  translateSettings2: translation.translateSettings2,
-                  translateSettings3: translation.translateSettings3,
-                }
-              }, { status: 200 });
-            }
-
-            if (typeof words.response?.usedAmount === "number" && words.response.usedAmount >= words.response.amount) {
-              return json({
-                success: false,
-                message: "words limit reached",
-                data: {
-                  shop,
-                  accessToken: accessToken as string,
-                  source: translation.primaryLanguage,
-                  target: translation.selectedLanguage.locale,
-                  translateSettings1: translation.translateSettings1,
-                  translateSettings2: translation.translateSettings2,
-                  translateSettings3: translation.translateSettings3,
-                }
-              }, { status: 200 });
-            }
-
-            const data = await GetTranslate({
-              shop,
-              accessToken: accessToken as string,
-              source: translation.primaryLanguage,
-              target: translation.selectedLanguage.locale,
-              translateSettings1: translation.translateSettings1,
-              translateSettings2: translation.translateSettings2,
-              translateSettings3: translation.translateSettings3
-            });
-            return data;
-          }
-
-          // 非机器翻译模式才需要检查字符数限制
-          const words = await GetUserWords({ shop });
-
-          if (!words) {
-            return json({
-              success: false,
-              message: "words get error",
-              data: {
-                source: translation.primaryLanguage,
-                target: translation.selectedLanguage.locale,
-                translateSettings1: translation.translateSettings1,
-                translateSettings2: translation.translateSettings2,
-                translateSettings3: translation.translateSettings3,
-              }
-            }, { status: 200 });
-          }
-
-          if (typeof words?.totalChars === "number" && words?.totalChars === 200000) {
-            const productsCount = await queryProductsCount({ shop, accessToken: accessToken as string })
-            if (productsCount >= 5000) {
-              return json({
-                success: false,
-                message: "products count limit reached 5000",
-                data: {
-                  source: translation.primaryLanguage,
-                  target: translation.selectedLanguage.locale,
-                  translateSettings1: translation.translateSettings1,
-                  translateSettings2: translation.translateSettings2,
-                  translateSettings3: translation.translateSettings3,
-                }
-              }, { status: 200 });
-            }
-          }
-
-          // 检查字符数是否超限
-          if (words.chars >= words.totalChars) {
-            return json({
-              success: false,
-              message: "user words limit",
-              data: {
-                source: translation.primaryLanguage,
-                target: translation.selectedLanguage.locale,
-                translateSettings1: translation.translateSettings1,
-                translateSettings2: translation.translateSettings2,
-                translateSettings3: translation.translateSettings3,
-              }
-            }, { status: 200 });
-          }
-
           // 字符数未超限，调用翻译接口
           const data = await GetTranslate({
             shop,
             accessToken: accessToken as string,
             source: translation.primaryLanguage,
-            target: translation.selectedLanguage.locale,
+            target: translation.selectedLanguage,
             translateSettings1: translation.translateSettings1,
             translateSettings2: translation.translateSettings2,
             translateSettings3: translation.translateSettings3
