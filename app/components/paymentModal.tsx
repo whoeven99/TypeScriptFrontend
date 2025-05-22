@@ -348,7 +348,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
             <Text strong>{t("Estimated number of words to translate: ")}</Text>
             {credits === undefined ? <Text strong>{t("Calculating...")}</Text> : credits >= 0 ? <Text strong>{credits.toLocaleString()} {t("words")}</Text> : <Text strong>{t("Calculation failed")}</Text>}
           </div>
-          {credits === undefined ? <Text strong>{t("Calculating...")}</Text> : credits >= 0 ? <Text strong>+{credits.toLocaleString()}</Text> : <Text strong>{t("Calculation failed")}</Text>}
+          {credits === undefined ? <Text strong>{t("Calculating...")}</Text> : credits >= 0 ? <Text strong>{credits.toLocaleString()}</Text> : <Text strong>{t("Calculation failed")}</Text>}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div>
@@ -369,7 +369,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
           <div>
             <Text strong>{t("Total: ")}</Text>
           </div>
-          <Text strong> {credits === undefined ? <Text strong>{t("Calculating...")}</Text> : credits >= 0 ? <Text strong>+{Number((credits * multiple1 * multiple2).toFixed(0)).toLocaleString()}</Text> : <Text strong>{t("Calculation failed")}</Text>}</Text>
+          <Text strong> {credits === undefined ? <Text strong>{t("Calculating...")}</Text> : credits >= 0 ? <Text strong>{Number((credits * multiple1 * multiple2).toFixed(0)).toLocaleString()}</Text> : <Text strong>{t("Calculation failed")}</Text>}</Text>
         </div>
       </Card>
       {needPay
