@@ -325,6 +325,7 @@ export const GetTranslateDOByShopNameAndSource = async ({
         source: source,
       },
     });
+    console.log("GetTranslateDOByShopNameAndSource: ", response.data);
     return response.data;
   } catch (error) {
     console.error("Error GetTranslateDOByShopNameAndSource:", error);
