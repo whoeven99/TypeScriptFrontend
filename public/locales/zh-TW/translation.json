@@ -388,6 +388,8 @@
     "OptionValue": "選項值",
     "Sidebar Widget": "側邊欄小部件",
     "Please manually start a translation task first. You can then use the automatic translation function.": "請先手動開始一個翻譯任務，然後可以使用自動翻譯功能。",
-    "Translation task is about to start": "翻譯任務即將開始"
+    "Translation task is about to start": "翻譯任務即將開始",
+    "Language {{ locale }} published successfully": "語言 {{ locale }} 發布成功",
+    "Language {{ locale }} unPublished successfully": "語言 {{ locale }} 取消發布成功"
 }
 

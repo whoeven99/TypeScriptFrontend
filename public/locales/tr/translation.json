@@ -389,5 +389,7 @@
     "OptionValue": "Seçenek değeri",
     "Sidebar Widget": "Sidofält",
     "Please manually start a translation task first. You can then use the automatic translation function.": "Lütfen önce bir çeviri görevini elle başlatın, ardından otomatik çeviri işlevini kullanabilirsiniz.",
-    "Translation task is about to start": "Çeviri göreviniz başlıyor"
+    "Translation task is about to start": "Çeviri göreviniz başlıyor",
+    "Language {{ locale }} published successfully": "Dil {{ locale }} başarıyla yayınlandı",
+    "Language {{ locale }} unPublished successfully": "Dil {{ locale }} başarıyla yayından kaldırıldı"
 }

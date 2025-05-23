@@ -403,7 +403,6 @@ const Index = () => {
     }); // 跳转到 /app/manage_translation
   };
 
-
   return (
     <Modal
       id="manage-modal"

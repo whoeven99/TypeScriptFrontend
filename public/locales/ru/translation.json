@@ -389,5 +389,7 @@
     "OptionValue": "Значение опции",
     "Sidebar Widget": "Виджет боковой панели",
     "Please manually start a translation task first. You can then use the automatic translation function.": "Пожалуйста, сначала вручную запустите задачу перевода, а затем используйте функцию автоматического перевода.",
-    "Translation task is about to start": "Задача перевода скоро начнется"
+    "Translation task is about to start": "Задача перевода скоро начнется",
+    "Language {{ locale }} published successfully": "Язык {{ locale }} успешно опубликован",
+    "Language {{ locale }} unPublished successfully": "Язык {{ locale }} успешно отменен"
 }

@@ -388,6 +388,8 @@
     "OptionValue": "Optiewaarde",
     "Sidebar Widget": "Sidebar Widget",
     "Please manually start a translation task first. You can then use the automatic translation function.": "Voer eerst een vertalingstask handmatig uit. U kunt vervolgens de automatische vertaling gebruiken.",
-    "Translation task is about to start": "De vertalingstask is op het punt om te starten"
+    "Translation task is about to start": "De vertalingstask is op het punt om te starten",
+    "Language {{ locale }} published successfully": "Taal {{ locale }} succesvol gepubliceerd",
+    "Language {{ locale }} unPublished successfully": "Taal {{ locale }} succesvol gepubliceerd"
 }
   
