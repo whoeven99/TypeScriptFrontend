@@ -390,7 +390,7 @@
     "Sidebar Widget": "Sidofält",
     "Please manually start a translation task first. You can then use the automatic translation function.": "Vänligen starta en översättningsuppgift först. Då kan du använda automatisk översättning.",
     "Translation task is about to start": "Översättningsuppgiften påbörjas",
-    "Language {{ locale }} published successfully": "Språk {{ locale }} publicerad",
-    "Language {{ locale }} unPublished successfully": "Språk {{ locale }} avpublicerad"
+    "{{ locale }} is published": "{{ locale }} publicerad",
+    "{{ locale }} is unPublished": "{{ locale }} avpublicerad"
 }   
   

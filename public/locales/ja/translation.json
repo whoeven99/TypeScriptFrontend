@@ -389,7 +389,7 @@
     "Sidebar Widget": "サイドバーのウィジェット",
     "Please manually start a translation task first. You can then use the automatic translation function.": "まず、手動で翻訳タスクを開始してください。その後、自動翻訳機能を使用できます。",
     "Translation task is about to start": "翻訳タスクが開始されます",
-    "Language {{ locale }} published successfully": "言語 {{ locale }} が正常に公開されました",
-    "Language {{ locale }} unPublished successfully": "言語 {{ locale }} が正常に非公開されました"
+    "{{ locale }} is published": "{{ locale }} が公開されました",
+    "{{ locale }} is unPublished": "{{ locale }} が非公開されました"
 }   
   

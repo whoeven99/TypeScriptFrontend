@@ -390,6 +390,6 @@
     "Sidebar Widget": "Сайдбар-виджет",
     "Please manually start a translation task first. You can then use the automatic translation function.": "Будь ласка, спочатку відкрийте завдання перекладу вручну, а потім використовуйте функцію автоматичного перекладу.",
     "Translation task is about to start": "Завдання перекладу починається",
-    "Language {{ locale }} published successfully": "Мова {{ locale }} успішно опублікована",
-    "Language {{ locale }} unPublished successfully": "Мова {{ locale }} успішно скасована"
+    "{{ locale }} is published": "{{ locale }} опублікована",
+    "{{ locale }} is unPublished": "{{ locale }} скасована"
 }
