@@ -389,7 +389,7 @@
     "Sidebar Widget": "Widget de barre latérale",
     "Please manually start a translation task first. You can then use the automatic translation function.": "Veuillez d'abord lancer une tâche de traduction manuelle. Vous pouvez ensuite utiliser la fonction de traduction automatique.",
     "Translation task is about to start": "La tâche de traduction est sur le point de commencer",
-    "Language {{ locale }} published successfully": "Langue {{ locale }} publiée avec succès",
-    "Language {{ locale }} unPublished successfully": "Langue {{ locale }} dépubliée avec succès"
+    "{{ locale }} is published": "{{ locale }} publiée",
+    "{{ locale }} is unPublished": "{{ locale }} dépubliée"
 }
   

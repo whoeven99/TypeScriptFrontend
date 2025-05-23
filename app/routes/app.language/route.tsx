@@ -424,12 +424,12 @@ const Index = () => {
         const response = publishFetcher.data.data;
         dispatch(setPublishLoadingState({ locale: response.locale, loading: false }));
         dispatch(setPublishState({ locale: response.locale, published: response.published }));
-        shopify.toast.show(t("Language {{ locale }} published successfully", { locale: response.name }));
+        shopify.toast.show(t("{{ locale }} is published", { locale: response.name }));
       } else {
         const response = publishFetcher.data.data;
         dispatch(setPublishLoadingState({ locale: response.locale, loading: false }));
         dispatch(setPublishState({ locale: response.locale, published: response.published }));
-        shopify.toast.show(t("Language {{ locale }} unPublished successfully", { locale: response.name }));
+        shopify.toast.show(t("{{ locale }} is unPublished", { locale: response.name }));
       }
     }
   }, [publishFetcher.data]);
