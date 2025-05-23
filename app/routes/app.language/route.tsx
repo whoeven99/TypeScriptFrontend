@@ -222,12 +222,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       case !!publishInfo:
         try {
-          await mutationShopLocalePublish({
+          const response =  await mutationShopLocalePublish({
             shop,
             accessToken: accessToken as string,
             publishInfo: publishInfo,
           });
-          return null;
+          return {
+            data: response,
+          };
         } catch (error) {
           console.error("Error publishInfo language:", error);
           return json({ error: "Error publishInfo language" }, { status: 500 });
@@ -235,12 +237,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       case !!unPublishInfo:
         try {
-          await mutationShopLocaleUnpublish({
+          const response = await mutationShopLocaleUnpublish({
             shop,
             accessToken: accessToken as string,
             publishInfos: [unPublishInfo],
           });
-          return null;
+          return {
+            data: response,
+          };
         } catch (error) {
           console.error("Error unPublishInfo language:", error);
           return json({ error: "Error unPublishInfo language" }, { status: 500 });
@@ -413,6 +417,22 @@ const Index = () => {
       }
     }
   }, [statusFetcher.data]);
+
+  useEffect(() => {
+    if (publishFetcher.data) {
+      if (publishFetcher.data?.data?.published) {
+        const response = publishFetcher.data.data;
+        dispatch(setPublishLoadingState({ locale: response.locale, loading: false }));
+        dispatch(setPublishState({ locale: response.locale, published: response.published }));
+        shopify.toast.show(t("Language {{ locale }} published successfully", { locale: response.name }));
+      } else {
+        const response = publishFetcher.data.data;
+        dispatch(setPublishLoadingState({ locale: response.locale, loading: false }));
+        dispatch(setPublishState({ locale: response.locale, published: response.published }));
+        shopify.toast.show(t("Language {{ locale }} unPublished successfully", { locale: response.name }));
+      }
+    }
+  }, [publishFetcher.data]);
 
   // useEffect(() => {
   //   if (words && words.chars > words.totalChars) setDisable(true);
@@ -589,7 +609,7 @@ const Index = () => {
         action: "/app/language",
       });
     } else if (!checked && row) {
-      dispatch(setPublishState({ locale, published: checked }));
+      dispatch(setPublishLoadingState({ locale, loading: true }));
       publishFetcher.submit({
         unPublishInfo: JSON.stringify({
           locale: row.locale,
@@ -612,7 +632,7 @@ const Index = () => {
       return;
     }
     const items = dataSource.filter((item => item.autoTranslate)).length
-    if (items < autoTranslationMapping[plan as keyof typeof autoTranslationMapping]) {
+    if (items <= autoTranslationMapping[plan as keyof typeof autoTranslationMapping]) {
       dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
       const row = dataSource.find((item: any) => item.locale === locale);
       if (row) {

@@ -1694,8 +1694,8 @@ export const mutationShopLocalePublish = async ({
       },
       data: JSON.stringify({ query: confirmMutation }),
     });
-    // const res = response.data.data.shopLocaleUpdate.shopLocale;
-    // return res;
+    const res = response.data.data.shopLocaleUpdate.shopLocale;
+    return res;
   } catch (error) {
     console.error("Error publish shopLanguage:", error);
   }
@@ -1741,6 +1741,8 @@ export const mutationShopLocaleUnpublish = async ({
         },
         data: JSON.stringify({ query: confirmMutation }),
       });
+      const res = response.data.data.shopLocaleUpdate.shopLocale;
+      return res;
     }
   } catch (error) {
     console.error("Error publish shopLanguage:", error);

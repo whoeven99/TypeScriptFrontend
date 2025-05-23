@@ -387,6 +387,8 @@
     "OptionValue": "옵션 값",
     "Sidebar Widget": "사이드바 위젯",
     "Please manually start a translation task first. You can then use the automatic translation function.": "먼저 수동으로 번역 작업을 시작하세요. 그런 다음 자동 번역 기능을 사용할 수 있습니다.",
-    "Translation task is about to start": "번역 작업이 시작됩니다"
+    "Translation task is about to start": "번역 작업이 시작됩니다",
+    "Language {{ locale }} published successfully": "언어 {{ locale }} 성공적으로 게시됨",
+    "Language {{ locale }} unPublished successfully": "언어 {{ locale }} 성공적으로 게시 취소됨"
 } 
   

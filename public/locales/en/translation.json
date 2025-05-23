@@ -389,5 +389,7 @@
   "OptionValue": "OptionValue",
   "Sidebar Widget": "Sidebar Widget",
   "Please manually start a translation task first. You can then use the automatic translation function.": "Please manually start a translation task first. You can then use the automatic translation function.",
-  "Translation task is about to start": "Translation task is about to start"
+  "Translation task is about to start": "Translation task is about to start",
+  "Language {{ locale }} published successfully": "Language {{ locale }} published successfully",
+  "Language {{ locale }} unPublished successfully": "Language {{ locale }} unPublished successfully"
 }

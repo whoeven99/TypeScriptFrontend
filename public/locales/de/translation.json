@@ -388,6 +388,8 @@
   "OptionValue": "Optionenwert",
   "Sidebar Widget": "Seitenleisten-Widget",
   "Please manually start a translation task first. You can then use the automatic translation function.": "Bitte führen Sie zuerst eine manuelle Übersetzungstask aus. Anschließend können Sie die automatische Übersetzung verwenden.",
-  "Translation task is about to start": "Übersetzungsaufgabe startet"
+  "Translation task is about to start": "Übersetzungsaufgabe startet",
+  "Language {{ locale }} published successfully": "Sprache {{ locale }} erfolgreich veröffentlicht",
+  "Language {{ locale }} unPublished successfully": "Sprache {{ locale }} erfolgreich entfernt"
 }
     
