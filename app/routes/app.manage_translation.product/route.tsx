@@ -592,8 +592,8 @@ const Index = () => {
   const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
   const [selectedItem, setSelectedItem] = useState<string>("product");
-  const [selectedModel, setSelectedModel] = useState<string>(localStorage.getItem("translateModel") || "1");
-  const [selectedLanguagePack, setSelectedLanguagePack] = useState<string>(localStorage.getItem("translateLanguagePack") || "en");
+  // const [selectedModel, setSelectedModel] = useState<string>("1");
+  // const [selectedLanguagePack, setSelectedLanguagePack] = useState<string>("en");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
     products.data.translatableResources.pageInfo.hasPreviousPage || false
   );
@@ -602,8 +602,8 @@ const Index = () => {
   );
 
   useEffect(() => {
-    setSelectedModel(localStorage.getItem("translateModel") || "1");
-    setSelectedLanguagePack(localStorage.getItem("translateLanguagePack") || "1");
+    // setSelectedModel(localStorage.getItem("translateModel") || "1");
+    // setSelectedLanguagePack(localStorage.getItem("translateLanguagePack") || "1");
     if (products) {
       setMenuData(exMenuData(products));
       setIsLoading(false);
@@ -644,6 +644,7 @@ const Index = () => {
     const data = transBeforeData({
       products: productsData,
     });
+    console.log(data);
     setProductData(data);
     setLoadingItems([]);
     setConfirmData([]);
@@ -894,7 +895,7 @@ const Index = () => {
       dataIndex: "translated",
       key: "translated",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: TableDataType) => {        
         return (
           <ManageTableInput
             record={record}
@@ -1023,7 +1024,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("PRODUCT_OPTION", "name", record?.type || "", record?.default_language || "", Number(1 + "" + record?.index));
+              handleTranslate("PRODUCT_OPTION", record?.key || "", record?.type || "", record?.default_language || "", Number(1 + "" + record?.index));
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1080,7 +1081,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("METAFIELD", "value", record?.type || "", record?.default_language || "", Number(2 + "" + record?.index));
+              handleTranslate("METAFIELD", record?.key || "", record?.type || "", record?.default_language || "", Number(2 + "" + record?.index));
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1135,7 +1136,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("PRODUCT_OPTION_VALUE", "name", record?.type || "", record?.default_language || "", Number(3 + "" + record?.index));
+              handleTranslate("PRODUCT_OPTION_VALUE", record?.key || "", record?.type || "", record?.default_language || "", Number(3 + "" + record?.index));
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1156,7 +1157,7 @@ const Index = () => {
     return data;
   };
 
-  const handleInputChange = (key: string, value: string, index?: number) => {
+  const handleInputChange = (key: string, value: string, index?: number) => {    
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
@@ -1466,15 +1467,15 @@ const Index = () => {
     navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
   }
 
-  const handleModelChange = (model: string) => {
-    setSelectedModel(model);
-    localStorage.setItem("translateModel", model);
-  }
+  // const handleModelChange = (model: string) => {
+  //   setSelectedModel(model);
+  //   localStorage.setItem("translateModel", model);
+  // }
 
-  const handleLanguagePackChange = (languagePack: string) => {
-    setSelectedLanguagePack(languagePack);
-    localStorage.setItem("translateLanguagePack", languagePack);
-  }
+  // const handleLanguagePackChange = (languagePack: string) => {
+  //   setSelectedLanguagePack(languagePack);
+  //   localStorage.setItem("translateLanguagePack", languagePack);
+  // }
 
   const onPrevious = () => {
     submit({

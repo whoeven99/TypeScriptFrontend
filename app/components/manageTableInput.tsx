@@ -54,7 +54,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     return record?.default_language || "";
   }, [record?.default_language]);
   const locale = useSelector((state: any) => state.userConfig.locale);
-
+  
   useEffect(() => {
     if (setTranslatedValues && record?.key) {
       setTranslatedValues((prev) => {
@@ -70,7 +70,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         };
       });
     }
-  }, [record?.translated]);
+  }, [record]);
 
   if (
     handleInputChange &&
