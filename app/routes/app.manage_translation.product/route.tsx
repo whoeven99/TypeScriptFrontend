@@ -894,7 +894,7 @@ const Index = () => {
       dataIndex: "translated",
       key: "translated",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: TableDataType) => {        
         return (
           <ManageTableInput
             record={record}
@@ -1156,7 +1156,7 @@ const Index = () => {
     return data;
   };
 
-  const handleInputChange = (key: string, value: string, index?: number) => {
+  const handleInputChange = (key: string, value: string, index?: number) => {    
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
