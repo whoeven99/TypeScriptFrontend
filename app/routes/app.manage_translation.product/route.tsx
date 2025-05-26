@@ -592,8 +592,8 @@ const Index = () => {
   const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
   const [selectedItem, setSelectedItem] = useState<string>("product");
-  const [selectedModel, setSelectedModel] = useState<string>(localStorage.getItem("translateModel") || "1");
-  const [selectedLanguagePack, setSelectedLanguagePack] = useState<string>(localStorage.getItem("translateLanguagePack") || "en");
+  // const [selectedModel, setSelectedModel] = useState<string>("1");
+  // const [selectedLanguagePack, setSelectedLanguagePack] = useState<string>("en");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
     products.data.translatableResources.pageInfo.hasPreviousPage || false
   );
@@ -602,8 +602,8 @@ const Index = () => {
   );
 
   useEffect(() => {
-    setSelectedModel(localStorage.getItem("translateModel") || "1");
-    setSelectedLanguagePack(localStorage.getItem("translateLanguagePack") || "1");
+    // setSelectedModel(localStorage.getItem("translateModel") || "1");
+    // setSelectedLanguagePack(localStorage.getItem("translateLanguagePack") || "1");
     if (products) {
       setMenuData(exMenuData(products));
       setIsLoading(false);
@@ -1466,15 +1466,15 @@ const Index = () => {
     navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
   }
 
-  const handleModelChange = (model: string) => {
-    setSelectedModel(model);
-    localStorage.setItem("translateModel", model);
-  }
+  // const handleModelChange = (model: string) => {
+  //   setSelectedModel(model);
+  //   localStorage.setItem("translateModel", model);
+  // }
 
-  const handleLanguagePackChange = (languagePack: string) => {
-    setSelectedLanguagePack(languagePack);
-    localStorage.setItem("translateLanguagePack", languagePack);
-  }
+  // const handleLanguagePackChange = (languagePack: string) => {
+  //   setSelectedLanguagePack(languagePack);
+  //   localStorage.setItem("translateLanguagePack", languagePack);
+  // }
 
   const onPrevious = () => {
     submit({
