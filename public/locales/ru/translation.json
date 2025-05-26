@@ -272,7 +272,7 @@
     "Use private api to translate": "Использовать частный API для перевода",
     "Email": "Email",
     "Your translation quota": "Ваш кредит перевода",
-    "{{currentCredits}} has been used, {{maxCredits}} available.": "<strong>{{currentCredits}}</strong> использовано, <strong>{{maxCredits}}</strong> доступно",
+    "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> использовано, всего кредитов: <strong>{{maxCredits}}</strong>.",
     "Permanent quotas · Never expire · Top up anytime.": "Постоянные квоты · Никогда не истекают · Пополнять в любое время.",
     "The quota has been used up": "Квота исчерпана",
     "Buy extra credits now to continue using": "Купить дополнительные кредиты для продолжения использования",

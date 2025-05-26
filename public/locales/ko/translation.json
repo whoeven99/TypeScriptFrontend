@@ -270,7 +270,7 @@
     "Use private api to translate": "비공개 API를 사용하여 번역",
     "Email": "이메일",
     "Your translation quota": "번역 크레딧",
-    "{{currentCredits}} has been used, {{maxCredits}} available.": "<strong>{{currentCredits}}</strong> 사용됨, <strong>{{maxCredits}}</strong> 사용 가능",
+    "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> 사용됨, 총 크레딧: <strong>{{maxCredits}}</strong>",
     "Permanent quotas · Never expire · Top up anytime.": "영구 할당량 · 제한 없음 · 언제든지 충전",
     "The quota has been used up": "할당량이 소진되었습니다",
     "Buy extra credits now to continue using": "추가 크레딧을 구매하여 계속 사용",

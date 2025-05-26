@@ -516,7 +516,7 @@ const Index = () => {
                 <div
                   dangerouslySetInnerHTML={{
                     __html: t(
-                      "{{currentCredits}} has been used, {{maxCredits}} available.",
+                      "{{currentCredits}} has been used, total credits: {{maxCredits}}.",
                       {
                         currentCredits: currentCredits.toLocaleString(),
                         maxCredits: maxCredits.toLocaleString(),

@@ -272,7 +272,7 @@
     "Use private api to translate": "Özel API kullanarak çevir",
     "Email": "Email",
     "Your translation quota": "Çeviri kredisi",
-    "{{currentCredits}} has been used, {{maxCredits}} available.": "<strong>{{currentCredits}}</strong> kullanıldı, <strong>{{maxCredits}}</strong> kullanılabilir",
+    "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> kullanıldı, toplam kredi: <strong>{{maxCredits}}</strong>.",
     "Permanent quotas · Never expire · Top up anytime.": "Sürekli kotalar · Asla süre bitmez · Her zaman yükle",
     "The quota has been used up": "Kota tüketildi",
     "Buy extra credits now to continue using": "Daha fazla kredi satın alarak devam et",

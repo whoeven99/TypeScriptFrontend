@@ -381,7 +381,8 @@ const Index = () => {
     const value = e.target.value;
     setSearchInput(value);
     const filteredData = resourceData.filter((theme: any) =>
-      theme.default_language.toLowerCase().includes(value.toLowerCase()),
+      typeof theme.default_language === 'string' &&
+      theme.default_language.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredResourceData(filteredData);
   };
