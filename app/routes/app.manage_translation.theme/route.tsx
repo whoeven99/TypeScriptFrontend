@@ -380,8 +380,10 @@ const Index = () => {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchInput(value);
+    console.log("value: ", "大苏打实打实打算".toLowerCase());
     const filteredData = resourceData.filter((theme: any) =>
-      theme.default_language.toLowerCase().includes(value.toLowerCase()),
+      typeof theme.default_language === 'string' &&
+      theme.default_language.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredResourceData(filteredData);
   };

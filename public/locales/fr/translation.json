@@ -270,7 +270,7 @@
     "Use private api to translate": "Utiliser l'API privée pour traduire",
     "Email": "Email",
     "Your translation quota": "Votre quota de traduction",
-    "{{currentCredits}} has been used, {{maxCredits}} available.": "<strong>{{currentCredits}}</strong> a été utilisé, <strong>{{maxCredits}}</strong> disponible.",
+    "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> a été utilisé, total de crédits: <strong>{{maxCredits}}</strong>.",
     "Permanent quotas · Never expire · Top up anytime.": "Quotas permanentes · Ne jamais expirer · Recharger à tout moment.",
     "The quota has been used up": "Le quota a été utilisé",
     "Buy extra credits now to continue using": "Acheter des crédits supplémentaires pour continuer à utiliser",

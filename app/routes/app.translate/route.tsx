@@ -17,7 +17,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Link, useFetcher, useLoaderData, useLocation, useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import { LanguagesDataType, ShopLocalesType } from "../app.language/route";
+import { LanguagesDataType } from "../app.language/route";
 import { setTableData } from "~/store/modules/languageTableData";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import PaymentModal from "~/components/paymentModal";
@@ -29,7 +29,6 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import {
   ArrowLeftIcon
 } from '@shopify/polaris-icons';
-import { GetUserWords } from "~/api/JavaServer";
 import axios from "axios";
 
 const { Title, Text } = Typography;

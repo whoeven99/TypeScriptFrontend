@@ -271,7 +271,7 @@
     "Use private api to translate": "Använd privat API för översättning",
     "Email": "Email",
     "Your translation quota": "Din översättningskvot",
-    "{{currentCredits}} has been used, {{maxCredits}} available.": "<strong>{{currentCredits}}</strong> har använts, <strong>{{maxCredits}}</strong> tillgänglig",
+    "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> har använts, total krediter: <strong>{{maxCredits}}</strong>.",
     "Permanent quotas · Never expire · Top up anytime.": "Permanent kvoter · Inte upphöra · Laddas upp när som helst.",
     "The quota has been used up": "Kvoten har använts",
     "Buy extra credits now to continue using": "Köp extra krediter för att fortsätta använda",
