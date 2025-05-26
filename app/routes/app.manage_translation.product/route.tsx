@@ -644,6 +644,7 @@ const Index = () => {
     const data = transBeforeData({
       products: productsData,
     });
+    console.log(data);
     setProductData(data);
     setLoadingItems([]);
     setConfirmData([]);
@@ -1023,7 +1024,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("PRODUCT_OPTION", "name", record?.type || "", record?.default_language || "", Number(1 + "" + record?.index));
+              handleTranslate("PRODUCT_OPTION", record?.key || "", record?.type || "", record?.default_language || "", Number(1 + "" + record?.index));
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1080,7 +1081,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("METAFIELD", "value", record?.type || "", record?.default_language || "", Number(2 + "" + record?.index));
+              handleTranslate("METAFIELD", record?.key || "", record?.type || "", record?.default_language || "", Number(2 + "" + record?.index));
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1135,7 +1136,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("PRODUCT_OPTION_VALUE", "name", record?.type || "", record?.default_language || "", Number(3 + "" + record?.index));
+              handleTranslate("PRODUCT_OPTION_VALUE", record?.key || "", record?.type || "", record?.default_language || "", Number(3 + "" + record?.index));
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
