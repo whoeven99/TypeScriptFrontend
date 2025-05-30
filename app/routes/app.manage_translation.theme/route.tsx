@@ -27,7 +27,6 @@ import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~
 import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { useTranslation } from "react-i18next";
-import { SessionService } from "~/utils/session.server";
 import { useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
 import { FullscreenBar, Select } from "@shopify/polaris";

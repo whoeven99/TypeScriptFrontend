@@ -389,6 +389,7 @@
     "Please manually start a translation task first. You can then use the automatic translation function.": "먼저 수동으로 번역 작업을 시작하세요. 그런 다음 자동 번역 기능을 사용할 수 있습니다.",
     "Translation task is about to start": "번역 작업이 시작됩니다",
     "{{ locale }} is published": "{{ locale }} 게시됨",
-    "{{ locale }} is unPublished": "{{ locale }} 게시 취소됨"
+    "{{ locale }} is unPublished": "{{ locale }} 게시 취소됨",
+    "Handle needs to be used with 'Products item' or other items.": "Handle는 'Products item' 또는 다른 항목과 함께 사용해야 합니다."
 } 
   

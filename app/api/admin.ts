@@ -1437,44 +1437,44 @@ export const queryAllLanguages = async ({
   }
 };
 
-export const queryAllMarket = async ({
-  shop,
-  accessToken,
-}: {
-  shop: string;
-  accessToken: string;
-}) => {
-  try {
-    const query = `{
-      markets(first: 250) {
-        nodes {
-          name
-          primary
-          webPresences(first: 250) {
-            nodes {
-              id
-            }
-          }
-        }
-      }
-    }`;
+// export const queryAllMarket = async ({
+//   shop,
+//   accessToken,
+// }: {
+//   shop: string;
+//   accessToken: string;
+// }) => {
+//   try {
+//     const query = `{
+//       markets(first: 250) {
+//         nodes {
+//           name
+//           primary
+//           webPresences(first: 250) {
+//             nodes {
+//               id
+//             }
+//           }
+//         }
+//       }
+//     }`;
 
-    const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
-      method: "POST",
-      headers: {
-        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
-        "Content-Type": "application/json",
-      },
-      data: JSON.stringify({ query }),
-    });
-    const res = response.data.data.markets.nodes;
+//     const response = await axios({
+//       url: `https://${shop}/admin/api/2024-10/graphql.json`,
+//       method: "POST",
+//       headers: {
+//         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+//         "Content-Type": "application/json",
+//       },
+//       data: JSON.stringify({ query }),
+//     });
+//     const res = response.data.data.markets.nodes;
 
-    return res;
-  } catch (error) {
-    console.error("Error fetching all markets:", error);
-  }
-};
+//     return res;
+//   } catch (error) {
+//     console.error("Error fetching all markets:", error);
+//   }
+// };
 
 //查询订单状态
 export const queryOrders = async ({
@@ -1671,7 +1671,6 @@ export const mutationShopLocalePublish = async ({
             locale: "${publishInfo.locale}"
             shopLocale: {
               published: ${publishInfo.shopLocale.published},
-              marketWebPresenceIds: "${publishInfo.shopLocale.marketWebPresenceIds}"
             }
           ){
             shopLocale {

@@ -391,5 +391,6 @@
   "Please manually start a translation task first. You can then use the automatic translation function.": "Please manually start a translation task first. You can then use the automatic translation function.",
   "Translation task is about to start": "Translation task is about to start",
   "{{ locale }} is published": "{{ locale }} is published",
-  "{{ locale }} is unPublished": "{{ locale }} is unPublished"
+  "{{ locale }} is unPublished": "{{ locale }} is unPublished",
+  "Handle needs to be used with 'Products item' or other items.": "Handle needs to be used with 'Products item' or other items."
 }

@@ -391,5 +391,6 @@
     "Please manually start a translation task first. You can then use the automatic translation function.": "Lütfen önce bir çeviri görevini elle başlatın, ardından otomatik çeviri işlevini kullanabilirsiniz.",
     "Translation task is about to start": "Çeviri göreviniz başlıyor",
     "{{ locale }} is published": "{{ locale }} yayınlandı",
-    "{{ locale }} is unPublished": "{{ locale }} yayından kaldırıldı"
+    "{{ locale }} is unPublished": "{{ locale }} yayından kaldırıldı",
+    "Handle needs to be used with 'Products item' or other items.": "Handle, 'Products item' veya diğer öğelerle birlikte kullanılmalıdır."
 }

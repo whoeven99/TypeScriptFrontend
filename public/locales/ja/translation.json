@@ -390,6 +390,7 @@
     "Please manually start a translation task first. You can then use the automatic translation function.": "まず、手動で翻訳タスクを開始してください。その後、自動翻訳機能を使用できます。",
     "Translation task is about to start": "翻訳タスクが開始されます",
     "{{ locale }} is published": "{{ locale }} が公開されました",
-    "{{ locale }} is unPublished": "{{ locale }} が非公開されました"
+    "{{ locale }} is unPublished": "{{ locale }} が非公開されました",
+    "Handle needs to be used with 'Products item' or other items.": "Handleは'Products item'または他のアイテムと一緒に使用する必要があります。"
 }   
   

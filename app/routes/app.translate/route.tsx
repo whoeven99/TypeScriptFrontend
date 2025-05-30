@@ -320,6 +320,10 @@ const Index = () => {
       label: t("Shipping"),
       value: "shipping",
     },
+    {
+      label: "handle",
+      value: "handle",
+    }
   ];
 
   const translateSettings4Options = [
@@ -373,6 +377,10 @@ const Index = () => {
         languageCardRef.current.style.border = "1px solid red";
       }
       setLanguageCardWarnText("Please select a language to translate first.");
+      return;
+    }
+    if (translateSettings3.every(item => item === "handle")) {
+      shopify.toast.show(t("Handle needs to be used with 'Products item' or other items."));
       return;
     }
     const selectedItem = dataSource.find(
