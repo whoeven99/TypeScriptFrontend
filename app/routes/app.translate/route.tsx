@@ -320,6 +320,10 @@ const Index = () => {
       label: t("Shipping"),
       value: "shipping",
     },
+    {
+      label: "handle",
+      value: "handle",
+    }
   ];
 
   const translateSettings4Options = [
