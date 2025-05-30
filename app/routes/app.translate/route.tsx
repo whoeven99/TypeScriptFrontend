@@ -379,6 +379,10 @@ const Index = () => {
       setLanguageCardWarnText("Please select a language to translate first.");
       return;
     }
+    if (translateSettings3.every(item => item === "handle")) {
+      shopify.toast.show(t("Handle needs to be used with 'Products item' or other items."));
+      return;
+    }
     const selectedItem = dataSource.find(
       (item: LanguagesDataType) => item.locale === selectedLanguageCode,
     );

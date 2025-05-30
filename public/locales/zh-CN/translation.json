@@ -390,5 +390,6 @@
   "Please manually start a translation task first. You can then use the automatic translation function.": "请先手动开始一个翻译任务，然后可以使用自动翻译功能。",
   "Translation task is about to start": "翻译任务即将开始",
   "{{ locale }} is published": "{{ locale }} 已发布",
-  "{{ locale }} is unPublished": "{{ locale }} 已取消发布"
+  "{{ locale }} is unPublished": "{{ locale }} 已取消发布",
+  "Handle needs to be used with 'Products item' or other items.": "Handle 需要与 '产品' 或其他项目一起使用。"
 }

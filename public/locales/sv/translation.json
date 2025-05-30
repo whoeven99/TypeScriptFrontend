@@ -391,6 +391,7 @@
     "Please manually start a translation task first. You can then use the automatic translation function.": "Vänligen starta en översättningsuppgift först. Då kan du använda automatisk översättning.",
     "Translation task is about to start": "Översättningsuppgiften påbörjas",
     "{{ locale }} is published": "{{ locale }} publicerad",
-    "{{ locale }} is unPublished": "{{ locale }} avpublicerad"
+    "{{ locale }} is unPublished": "{{ locale }} avpublicerad",
+    "Handle needs to be used with 'Products item' or other items.": "Handle måste användas med 'Produktobjekt' eller andra objekt."
 }   
   
