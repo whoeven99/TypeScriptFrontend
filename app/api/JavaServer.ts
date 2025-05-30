@@ -835,6 +835,7 @@ export const GetTranslate = async ({
   translateSettings3: string[];
 }) => {
   try {
+    console.log("translateSettings3: ", translateSettings3);
     const response = await axios({
       url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`,
       method: "PUT",
