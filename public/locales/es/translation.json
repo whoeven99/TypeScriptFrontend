@@ -390,6 +390,7 @@
     "Please manually start a translation task first. You can then use the automatic translation function.": "Por favor, primero inicie una tarea de traducción manual. Luego puede usar la función de traducción automática.",
     "Translation task is about to start": "La tarea de traducción está a punto de comenzar",
     "{{ locale }} is published": "{{ locale }} está publicado",
-    "{{ locale }} is unPublished": "{{ locale }} está cancelado"
+    "{{ locale }} is unPublished": "{{ locale }} está cancelado",
+    "Handle needs to be used with 'Products item' or other items.": "Handle necesita ser usado con 'Elemento de producto' o otros elementos."
 }
   

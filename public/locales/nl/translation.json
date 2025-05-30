@@ -390,6 +390,7 @@
     "Please manually start a translation task first. You can then use the automatic translation function.": "Voer eerst een vertalingstask handmatig uit. U kunt vervolgens de automatische vertaling gebruiken.",
     "Translation task is about to start": "De vertalingstask is op het punt om te starten",
     "{{ locale }} is published": "{{ locale }} is gepubliceerd",
-    "{{ locale }} is unPublished": "{{ locale }} is gepubliceerd"
+    "{{ locale }} is unPublished": "{{ locale }} is gepubliceerd",
+    "Handle needs to be used with 'Products item' or other items.": "Handle moet worden gebruikt met 'Productitem' of andere items."
 }
   

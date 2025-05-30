@@ -24,7 +24,6 @@ import {
   mutationShopLocaleUnpublish,
   PublishInfoType,
   queryAllLanguages,
-  queryAllMarket,
   queryShopLanguages,
   UnpublishInfoType,
 } from "~/api/admin";
@@ -148,17 +147,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocalesIndex = shopLanguagesLoad.filter(
           (language) => !language.primary,
         ).map((item) => item.locale);
-        const allMarket: MarketType[] = await queryAllMarket({
-          shop,
-          accessToken: accessToken as string,
-        });
         const languageLocaleInfo = await GetLanguageLocaleInfo({
           locale: shopLocalesIndex,
         });
         const languagesLoad = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
         return json({
           shop: shop,
-          allMarket: allMarket,
           shopLanguagesLoad: shopLanguagesLoad,
           shopPrimaryLanguage: shopPrimaryLanguage,
           languagesLoad: languagesLoad,
@@ -292,7 +286,7 @@ const Index = () => {
   const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>([]);
   const [shopPrimaryLanguage, setShopPrimaryLanguage] = useState<ShopLocalesType[]>([]);
   const [allLanguages, setAllLanguages] = useState<AllLanguagesType[]>([]);
-  const [allMarket, setAllMarket] = useState<MarketType[]>([]);
+  // const [allMarket, setAllMarket] = useState<MarketType[]>([]);
   const [languagesLoad, setLanguagesLoad] = useState<any>(null);
   const [languageLocaleInfo, setLanguageLocaleInfo] = useState<any>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
@@ -340,7 +334,7 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data) {
-      setAllMarket(loadingFetcher.data.allMarket);
+      // setAllMarket(loadingFetcher.data.allMarket);
       setLanguagesLoad(loadingFetcher.data.languagesLoad);
       setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
       setShopLanguagesLoad(loadingFetcher.data.shopLanguagesLoad);
@@ -602,7 +596,7 @@ const Index = () => {
       publishFetcher.submit({
         publishInfo: JSON.stringify({
           locale: row.locale,
-          shopLocale: { published: true, marketWebPresenceIds: allMarket.find((item: any) => item.primary === true)?.webPresences.nodes[0].id },
+          shopLocale: { published: true },
         })
       }, {
         method: "POST",
