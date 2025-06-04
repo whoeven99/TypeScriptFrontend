@@ -351,6 +351,7 @@ export const GetUserInitTokenByShopName = async ({
   }
 };
 
+//获取用户翻译字数
 export const getCredits = async ({
   shop,
   accessToken,

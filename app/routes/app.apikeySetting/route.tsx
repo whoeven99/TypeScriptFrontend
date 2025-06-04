@@ -59,7 +59,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const data = await GetUserData({
             shop,
           });
-          console.log("GetUserData: ", data);
           return json({ data: data });
         } catch (error) {
           console.error("Error apiKeySetting loading:", error);
