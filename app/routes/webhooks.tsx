@@ -32,8 +32,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (topic) {
     case "APP_UNINSTALLED":
       try {
-        await Uninstall({ shop });
-        await UpdateUserPlan({ shop, plan: 2 });
+        Uninstall({ shop });
+        UpdateUserPlan({ shop, plan: 2 });
         if (session) {
           await db.session.deleteMany({ where: { shop } });
         }
