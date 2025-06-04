@@ -34,8 +34,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         if (session) {
           await db.session.deleteMany({ where: { shop } });
-          await Uninstall({ shop });
         }
+        await Uninstall({ shop });
         UpdateUserPlan({ shop, plan: 2 });
         break;
       } catch (error) {

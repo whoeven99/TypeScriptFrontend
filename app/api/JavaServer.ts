@@ -836,7 +836,15 @@ export const GetTranslate = async ({
   translateSettings3: string[];
 }) => {
   try {
-    console.log("translateSettings3: ", translateSettings3);
+    console.log("GetTranslateData: ", {
+      shopName: shop,
+      accessToken: accessToken,
+      source: source,
+      target: target,
+      translateSettings1: "google",
+      translateSettings2: translateSettings2.toString(),
+      translateSettings3: translateSettings3,
+    });
     const response = await axios({
       url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`,
       method: "PUT",
@@ -976,7 +984,7 @@ export const updateManageTranslation = async ({
         const results = await Promise.allSettled(promises);
 
         console.log("results: ", results);
-        
+
         // 处理结果
         results.forEach((result, index) => {
           if (result.status === "fulfilled" && result.value) {
@@ -1084,10 +1092,12 @@ export const updateManageTranslation = async ({
                   variables: item,
                 },
               });
-              
+
               return {
-                success: response.data.data.translationsRemove.userErrors.length === 0,
-                errorMsg: response.data.data.translationsRemove.userErrors[0]?.message,
+                success:
+                  response.data.data.translationsRemove.userErrors.length === 0,
+                errorMsg:
+                  response.data.data.translationsRemove.userErrors[0]?.message,
                 data: {
                   resourceId: item.resourceId,
                   key: item.translationKeys[0],
