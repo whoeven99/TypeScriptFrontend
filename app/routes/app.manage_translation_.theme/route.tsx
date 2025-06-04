@@ -133,11 +133,12 @@ const Index = () => {
   const { t } = useTranslation();
 
   const navigate = useNavigate();
-  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+  // const languageTableData = useSelector((state: any) => state.languageTableData.rows);
   const confirmFetcher = useFetcher<any>();
 
   const isManualChange = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
+  const languageFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
@@ -176,16 +177,23 @@ const Index = () => {
     loadingItemsRef.current = loadingItems;
   }, [loadingItems]);
 
+  // useEffect(() => {
+  //   if (languageTableData) {
+  //     setLanguageOptions(languageTableData
+  //       .filter((item: any) => !item.primary)
+  //       .map((item: any) => ({
+  //         label: item.language,
+  //         value: item.locale,
+  //       })));
+  //   }
+  // }, [languageTableData])
+
   useEffect(() => {
-    if (languageTableData) {
-      setLanguageOptions(languageTableData
-        .filter((item: any) => !item.primary)
-        .map((item: any) => ({
-          label: item.language,
-          value: item.locale,
-        })));
-    }
-  }, [languageTableData])
+    languageFetcher.submit(null, {
+      method: "post",
+      action: `/app/manage_translation/theme?language=${searchTerm}`,
+    });
+  }, [searchTerm]);
 
   useEffect(() => {
     if (themes && isManualChange.current) {

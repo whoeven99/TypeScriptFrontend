@@ -9,7 +9,11 @@ import {
   theme,
   Typography,
 } from "antd";
-import { useEffect, useState, useRef } from "react";
+import {
+  useEffect,
+  useState,
+  useRef
+} from "react";
 import {
   useActionData,
   useFetcher,
@@ -19,7 +23,7 @@ import {
   useSearchParams,
   useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
-import { ButtonGroup, FullscreenBar, Pagination, Select } from "@shopify/polaris";
+import { FullscreenBar, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   queryNextTransType,
@@ -734,7 +738,7 @@ const Index = () => {
 
   return (
     <Modal
-      id="manage-modal"
+      id="article-modal"
       variant="max"
       open={isVisible}
       onHide={onCancel}
@@ -803,7 +807,9 @@ const Index = () => {
         }}
       >
         {isLoading ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+            <Spin />
+          </div>
         ) : articles.nodes.length ? (
           <>
             <Sider
