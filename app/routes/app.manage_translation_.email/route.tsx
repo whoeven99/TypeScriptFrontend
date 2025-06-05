@@ -30,8 +30,11 @@ import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
+import { setTableData } from "~/store/modules/languageTableData";
+import { setUserConfig } from "~/store/modules/userConfig";
+import { ShopLocalesType } from "../app.language/route";
 
 const { Sider, Content } = Layout;
 
@@ -160,8 +163,10 @@ const Index = () => {
     const { t } = useTranslation();
 
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const languageTableData = useSelector((state: any) => state.languageTableData.rows);
     const submit = useSubmit(); // 使用 useSubmit 钩子
+    const languageFetcher = useFetcher<any>();
     const confirmFetcher = useFetcher<any>();
 
     const isManualChange = useRef(true);
@@ -212,6 +217,14 @@ const Index = () => {
     );
 
     useEffect(() => {
+        if (languageTableData.length === 0) {
+            languageFetcher.submit({
+                language: JSON.stringify(true),
+            }, {
+                method: "post",
+                action: "/app/manage_translation",
+            });
+        }
         if (emails) {
             setMenuData(exMenuData(emails));
             setIsLoading(false);
@@ -332,6 +345,25 @@ const Index = () => {
         }
         setConfirmLoading(false);
     }, [confirmFetcher.data]);
+
+    useEffect(() => {
+        if (languageFetcher.data) {
+            if (languageFetcher.data.data) {
+                const shopLanguages = languageFetcher.data.data;
+                dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
+                    key: index,
+                    language: language.name,
+                    locale: language.locale,
+                    primary: language.primary,
+                    published: language.published,
+                }))));
+                const locale = shopLanguages.find(
+                    (language: ShopLocalesType) => language.primary === true,
+                )?.locale;
+                dispatch(setUserConfig({ locale: locale || "" }));
+            }
+        }
+    }, [languageFetcher.data]);
 
     const resourceColumns = [
         {

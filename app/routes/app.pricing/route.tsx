@@ -13,9 +13,6 @@ import {
   Popover,
   Badge,
   Modal,
-  Form,
-  Select,
-  Checkbox,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
@@ -23,11 +20,11 @@ import ScrollNotice from "~/components/ScrollNotice";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { GetUserSubscriptionPlan, GetUserWords } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
-import { useFetcher } from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
 import { CheckOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import "./style.css";
-import { mutationAppSubscriptionCreate, queryShopLanguages } from "~/api/admin";
+import { mutationAppSubscriptionCreate } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
 
@@ -37,7 +34,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   console.log(`${shop} load pricing`);
-  return null;
+  return {
+    shop,
+    server: process.env.SERVER_URL,
+  };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -117,6 +117,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
+  const { shop, server } = useLoaderData<typeof loader>();
   const [currentCredits, setCurrentCredits] = useState(0);
   const [maxCredits, setMaxCredits] = useState(0);
   const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
@@ -124,6 +125,7 @@ const Index = () => {
   const [updateTime, setUpdateTime] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [buyButtonLoading, setBuyButtonLoading] = useState(false);
+  const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
   const isQuotaExceeded = useMemo(
     () => currentCredits >= maxCredits && maxCredits > 0,
@@ -326,6 +328,7 @@ const Index = () => {
         t("basic_features4"),
         t("basic_features5"),
         t("basic_features6"),
+        t("basic_features7"),
       ],
     },
     {
@@ -345,6 +348,7 @@ const Index = () => {
         t("pro_features3"),
         t("pro_features4"),
         t("pro_features5"),
+        t("pro_features6"),
       ],
     },
     {
@@ -365,6 +369,7 @@ const Index = () => {
         t("premium_features4"),
         t("premium_features5"),
         t("premium_features6"),
+        t("premium_features7"),
       ],
     },
   ];
@@ -482,6 +487,10 @@ const Index = () => {
       { payForPlan: JSON.stringify(plan) },
       { method: "POST" },
     );
+  };
+
+  const handleFreeTrial = () => {
+    setFreeTrialModalOpen(false);
   };
 
   return (
@@ -726,7 +735,6 @@ const Index = () => {
                           ? "primary"
                           : "default"
                       }
-                      size="middle"
                       block
                       disabled={plan.disabled}
                       style={{ marginBottom: "20px" }}
@@ -735,6 +743,19 @@ const Index = () => {
                     >
                       {plan.buttonText}
                     </Button>
+
+                    {/* {
+                      plan.title === "Premium" && (
+                        <Button
+                          type="primary"
+                          block
+                          style={{ marginBottom: "20px" }}
+                          onClick={() => setFreeTrialModalOpen(true)}
+                        >
+                          {t("Free trial")}
+                        </Button>
+                      )
+                    } */}
 
                     <div style={{ flex: 1 }}>
                       {plan.features.map((feature, idx) => (
@@ -764,6 +785,25 @@ const Index = () => {
           </Row>
         </div>
       </Space>
+      {/* <Modal
+        title={t("Try Premium Plan")}
+        open={freeTrialModalOpen}
+        style={{ top: "40%" }}
+        footer={
+          <Space>
+            <Button onClick={() => setFreeTrialModalOpen(false)}>
+              {t("Cancel")}
+            </Button>
+            <Button type="primary" onClick={handleFreeTrial}>
+              {t("Confirm")}
+            </Button>
+          </Space>
+        }
+      >
+        <Text>
+          {t("Click to Confirm and try all the features of Premium Plan for free for 5 days except credit discount, which will be automatically locked after 5 days")}
+        </Text>
+      </Modal> */}
       {/* <Modal open={creditsCalculatorOpen} onCancel={() => setCreditsCalculatorOpen(false)}>
         <Title level={4}>{t("Credits Calculator")}</Title>
         <Form>

@@ -27,9 +27,12 @@ import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~
 import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
 import { FullscreenBar, Select } from "@shopify/polaris";
+import { setTableData } from "~/store/modules/languageTableData";
+import { setUserConfig } from "~/store/modules/userConfig";
+import { ShopLocalesType } from "../app.language/route";
 
 const { Text } = Typography
 
@@ -133,12 +136,13 @@ const Index = () => {
   const { t } = useTranslation();
 
   const navigate = useNavigate();
-  // const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+  const dispatch = useDispatch();
+  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+  const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const isManualChange = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
-  const languageFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
@@ -174,26 +178,30 @@ const Index = () => {
   const [selectedItem, setSelectedItem] = useState<string>("theme");
 
   useEffect(() => {
+    if (languageTableData.length === 0) {
+      languageFetcher.submit({
+        language: JSON.stringify(true),
+      }, {
+        method: "post",
+        action: "/app/manage_translation",
+      });
+    }
+  }, []);
+
+  useEffect(() => {
     loadingItemsRef.current = loadingItems;
   }, [loadingItems]);
 
-  // useEffect(() => {
-  //   if (languageTableData) {
-  //     setLanguageOptions(languageTableData
-  //       .filter((item: any) => !item.primary)
-  //       .map((item: any) => ({
-  //         label: item.language,
-  //         value: item.locale,
-  //       })));
-  //   }
-  // }, [languageTableData])
-
   useEffect(() => {
-    languageFetcher.submit(null, {
-      method: "post",
-      action: `/app/manage_translation/theme?language=${searchTerm}`,
-    });
-  }, [searchTerm]);
+    if (languageTableData) {
+      setLanguageOptions(languageTableData
+        .filter((item: any) => !item.primary)
+        .map((item: any) => ({
+          label: item.language,
+          value: item.locale,
+        })));
+    }
+  }, [languageTableData])
 
   useEffect(() => {
     if (themes && isManualChange.current) {
@@ -233,6 +241,25 @@ const Index = () => {
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
+
+  useEffect(() => {
+    if (languageFetcher.data) {
+      if (languageFetcher.data.data) {
+        const shopLanguages = languageFetcher.data.data;
+        dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
+          key: index,
+          language: language.name,
+          locale: language.locale,
+          primary: language.primary,
+          published: language.published,
+        }))));
+        const locale = shopLanguages.find(
+          (language: ShopLocalesType) => language.primary === true,
+        )?.locale;
+        dispatch(setUserConfig({ locale: locale || "" }));
+      }
+    }
+  }, [languageFetcher.data]);
 
   const resourceColumns = [
     {
