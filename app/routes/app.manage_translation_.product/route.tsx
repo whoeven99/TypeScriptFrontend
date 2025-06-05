@@ -24,9 +24,12 @@ import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
 import { MenuItem } from "../app.manage_translation/components/itemsScroll";
+import { setTableData } from "~/store/modules/languageTableData";
+import { setUserConfig } from "~/store/modules/userConfig";
+import { ShopLocalesType } from "../app.language/route";
 
 const { Sider, Content } = Layout;
 
@@ -476,8 +479,10 @@ const Index = () => {
   const { t } = useTranslation();
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const languageTableData = useSelector((state: any) => state.languageTableData.rows);
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
   const variantFetcher = useFetcher<any>();
 
@@ -604,6 +609,14 @@ const Index = () => {
   useEffect(() => {
     // setSelectedModel(localStorage.getItem("translateModel") || "1");
     // setSelectedLanguagePack(localStorage.getItem("translateLanguagePack") || "1");
+    if (languageTableData.length === 0) {
+      languageFetcher.submit({
+        language: JSON.stringify(true),
+      }, {
+        method: "post",
+        action: "/app/manage_translation",
+      });
+    }
     if (products) {
       setMenuData(exMenuData(products));
       setIsLoading(false);
@@ -844,6 +857,25 @@ const Index = () => {
   }, [confirmFetcher.data]);
 
   useEffect(() => {
+    if (languageFetcher.data) {
+      if (languageFetcher.data.data) {
+        const shopLanguages = languageFetcher.data.data;
+        dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
+          key: index,
+          language: language.name,
+          locale: language.locale,
+          primary: language.primary,
+          published: language.published,
+        }))));
+        const locale = shopLanguages.find(
+          (language: ShopLocalesType) => language.primary === true,
+        )?.locale;
+        dispatch(setUserConfig({ locale: locale || "" }));
+      }
+    }
+  }, [languageFetcher.data]);
+
+  useEffect(() => {
     if (variantFetcher.data && variantFetcher.data.variantsData) {
       variantFetcher.data.variantsData.forEach((result: any) => {
         if (result.status === "fulfilled") {
@@ -894,7 +926,7 @@ const Index = () => {
       dataIndex: "translated",
       key: "translated",
       width: "40%",
-      render: (_: any, record: TableDataType) => {        
+      render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
             record={record}
@@ -1156,7 +1188,7 @@ const Index = () => {
     return data;
   };
 
-  const handleInputChange = (key: string, value: string, index?: number) => {    
+  const handleInputChange = (key: string, value: string, index?: number) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key

@@ -232,6 +232,10 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    loadingItemsRef.current = loadingItems;
+  }, [loadingItems]);
+
+  useEffect(() => {
     if (languageTableData) {
       setLanguageOptions(languageTableData
         .filter((item: any) => !item.primary)
