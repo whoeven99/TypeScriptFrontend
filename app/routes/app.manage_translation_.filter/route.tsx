@@ -1,6 +1,5 @@
 import {
   Button,
-  Input,
   Layout,
   Result,
   Space,
@@ -11,32 +10,38 @@ import {
 } from "antd";
 import { useEffect, useRef, useState } from "react";
 import {
+  useActionData,
   useFetcher,
   useLoaderData,
   useLocation,
   useNavigate,
   useSearchParams,
+  useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
+import { FullscreenBar, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   queryNextTransType,
   queryPreviousTransType,
+  queryShopLanguages,
 } from "~/api/admin";
-import { SearchOutlined } from "@ant-design/icons";
 import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
-import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
+import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
-import { FullscreenBar, Select } from "@shopify/polaris";
-
-const { Text } = Typography
+import { setTableData } from "~/store/modules/languageTableData";
+import { setUserConfig } from "~/store/modules/userConfig";
+import { ShopLocalesType } from "../app.language/route";
 
 const { Content } = Layout;
 
+const { Text } = Typography;
+
 type TableDataType = {
   key: string;
+  index: number;
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
@@ -44,28 +49,33 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  // 如果没有 language 参数，直接返回空数据
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
+
+
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
+
   try {
-    const themes = await queryNextTransType({
+    const filters = await queryNextTransType({
       shop,
       accessToken: accessToken as string,
-      resourceType: "ONLINE_STORE_THEME",
+      resourceType: "FILTER",
       endCursor: "",
       locale: searchTerm || "",
     });
+
     return json({
       server: process.env.SERVER_URL,
       shopName: shop,
       searchTerm,
-      themes,
+      filters,
     });
   } catch (error) {
-    console.error("Error load theme:", error);
-    throw new Response("Error load theme", { status: 500 });
+    console.error("Error load filter:", error);
+    throw new Response("Error load filter", { status: 500 });
   }
 };
 
@@ -87,53 +97,56 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     switch (true) {
       case !!startCursor:
-        const previousThemes = await queryPreviousTransType({
+        const previousFilters = await queryPreviousTransType({
           shop,
           accessToken: accessToken as string,
-          resourceType: "METAFIELD",
+          resourceType: "FILTER",
           startCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-        return json({ previousThemes: previousThemes });
+        return json({ previousFilters: previousFilters });
       case !!endCursor:
-        const nextThemes = await queryNextTransType({
+        const nextFilters = await queryNextTransType({
           shop,
           accessToken: accessToken as string,
-          resourceType: "METAFIELD",
+          resourceType: "FILTER",
           endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-
-        return json({ nextThemes: nextThemes });
+        return json({ nextFilters: nextFilters });
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
           accessToken: accessToken as string,
           confirmData,
         });
-        return json({ data: data, confirmData });
+        return json({ data: data });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
-    console.error("Error action theme:", error);
-    throw new Response("Error action theme", { status: 500 });
+    console.error("Error action filter:", error);
+    throw new Response("Error action filter", { status: 500 });
   }
 };
 
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { searchTerm, themes, server, shopName } =
+  const { searchTerm, filters, server, shopName } =
     useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
   const { t } = useTranslation();
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+  const submit = useSubmit(); // 使用 useSubmit 钩子
+  const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const isManualChange = useRef(true);
@@ -143,9 +156,10 @@ const Index = () => {
   const [isVisible, setIsVisible] = useState(() => {
     return !!searchParams.get('language');
   });
-  const [resourceData, setResourceData] = useState<any>([]);
-  const [filteredResourceData, setFilteredResourceData] = useState<any>([]);
-  const [searchInput, setSearchInput] = useState("");
+
+
+  const [filtersData, setFiltersData] = useState(filters);
+  const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
@@ -170,11 +184,35 @@ const Index = () => {
   ]
   const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
-  const [selectedItem, setSelectedItem] = useState<string>("theme");
+  const [selectedItem, setSelectedItem] = useState<string>("filter");
+  const [hasPrevious, setHasPrevious] = useState<boolean>(
+    filtersData.pageInfo.hasPreviousPage || false
+  );
+  const [hasNext, setHasNext] = useState<boolean>(
+    filtersData.pageInfo.hasNextPage || false
+  );
+
+  useEffect(() => {
+    if (languageTableData.length === 0) {
+      languageFetcher.submit({
+        language: JSON.stringify(true),
+      }, {
+        method: "post",
+        action: "/app/manage_translation",
+      });
+    }
+  }, []);
 
   useEffect(() => {
     loadingItemsRef.current = loadingItems;
   }, [loadingItems]);
+
+  useEffect(() => {
+    if (filters && isManualChange.current) {
+      setFiltersData(filters);
+      isManualChange.current = false; // 重置
+    }
+  }, [filters]);
 
   useEffect(() => {
     if (languageTableData) {
@@ -187,19 +225,27 @@ const Index = () => {
     }
   }, [languageTableData])
 
-  useEffect(() => {
-    if (themes && isManualChange.current) {
-      const start = performance.now();
-      const data = generateMenuItemsArray(themes);
 
-      const end = performance.now();
-      console.log('generateMenuItemsArray 执行耗时:', (end - start).toFixed(2), 'ms');
-      setResourceData(data);
-      setFilteredResourceData(data);
-      isManualChange.current = false;
+  useEffect(() => {
+    setHasPrevious(filtersData.pageInfo.hasPreviousPage);
+    setHasNext(filtersData.pageInfo.hasNextPage);
+    const data = generateMenuItemsArray(filtersData);
+    setResourceData(data);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 100);
+  }, [filtersData]);
+
+  useEffect(() => {
+    if (actionData && "nextFilters" in actionData) {
+      // 在这里处理 nexts
+      setFiltersData(actionData.nextFilters);
+    } else if (actionData && "previousFilters" in actionData) {
+      setFiltersData(actionData.previousFilters);
+    } else {
+      // 如果不存在 nexts，可以执行其他逻辑
     }
-    setIsLoading(false);
-  }, [themes]);
+  }, [actionData]);
 
   useEffect(() => {
     setIsVisible(!!searchParams.get('language'));
@@ -207,34 +253,44 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.find((item: any) => {
-        item.success === false;
-      });
-      if (!errorItem) {
-        confirmFetcher.data.confirmData.forEach((item: any) => {
-          const index = resourceData.findIndex((option: any) => option.key === item.key);
-          if (index !== -1) {
-            resourceData[index].translated = item.value;
-          }
-        })
-        shopify.toast.show("Saved successfully");
+      const errorItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === false
+      );
+      if (errorItem.length == 0) {
+        shopify.toast.show(t("Saved successfully"));
       } else {
-        shopify.toast.show(errorItem?.errorMsg);
+        shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
 
+  useEffect(() => {
+    if (languageFetcher.data) {
+      if (languageFetcher.data.data) {
+        const shopLanguages = languageFetcher.data.data;
+        dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
+          key: index,
+          language: language.name,
+          locale: language.locale,
+          primary: language.primary,
+          published: language.published,
+        }))));
+        const locale = shopLanguages.find(
+          (language: ShopLocalesType) => language.primary === true,
+        )?.locale;
+        dispatch(setUserConfig({ locale: locale || "" }));
+      }
+    }
+  }, [languageFetcher.data]);
+
   const resourceColumns = [
     {
       title: t("Resource"),
       dataIndex: "resource",
       key: "resource",
-      width: "20%",
-      render: (_: any, record: TableDataType) => {
-        return <Text style={{ display: "inline" }}>{record?.resource}</Text>;
-      },
+      width: "10%",
     },
     {
       title: t("Default Language"),
@@ -252,15 +308,13 @@ const Index = () => {
       width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
-          record && (
-            <ManageTableInput
-              record={record}
-              translatedValues={translatedValues}
-              setTranslatedValues={setTranslatedValues}
-              handleInputChange={handleInputChange}
-              isRtl={searchTerm === "ar"}
-            />
-          )
+          <ManageTableInput
+            record={record}
+            translatedValues={translatedValues}
+            setTranslatedValues={setTranslatedValues}
+            handleInputChange={handleInputChange}
+            isRtl={searchTerm === "ar"}
+          />
         );
       },
     },
@@ -272,7 +326,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("ONLINE_STORE_THEME", record?.key || "", record?.type || "", record?.default_language || "");
+              handleTranslate("FILTER", record?.key || "", record?.type || "", record?.default_language || "", record?.index || 0);
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -283,13 +337,16 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string, value: string) => {
+  const handleInputChange = (key: string, value: string, index: number) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+      const existingItemIndex = prevData.findIndex(
+        (item) => item?.resourceId === key,
+      );
+
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
         const updatedConfirmData = [...prevData];
@@ -301,46 +358,43 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: themes.nodes[0]?.resourceId,
-          locale: themes.nodes[0]?.translatableContent[0]?.locale,
-          key: key,
+          resourceId: filtersData.nodes[index]?.resourceId,
+          locale: filtersData.nodes[index]?.translatableContent[0]?.locale,
+          key: "label",
           value: value, // 初始为空字符串
           translatableContentDigest:
-            themes.nodes[0]?.translatableContent.find((item: any) => item.key === key)?.digest || themes.nodes[0]?.translatableContent[0]?.digest || "",
+            filtersData.nodes[index]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
+
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       }
     });
   };
 
   const generateMenuItemsArray = (items: any) => {
-    return items.nodes[0]?.translatableContent.flatMap(
-      (item: any, index: number) => {
-        // 创建当前项的对象
-        const currentItem = {
-          key: `${item.key}`, // 使用 key 生成唯一的 key
-          resource: item.key,
-          default_language: item.value, // 默认语言为 item 的标题
-          translated:
-            items.nodes[0]?.translations.find(
-              (translation: any) => translation.key === item.key,
-            )?.value || "", // 翻译字段初始化为空字符串
-          type: item.type,
-        };
-        return [currentItem];
-      },
-    );
+    return items.nodes.flatMap((item: any, index: number) => {
+      // 创建当前项的对象
+      const currentItem = {
+        key: `${item?.resourceId}`, // 使用 key 生成唯一的 key
+        index: index,
+        resource: "label", // 资源字段固定为 "Menu Items"
+        default_language: item?.translatableContent[0]?.value, // 默认语言为 item 的标题
+        translated: item?.translations[0]?.value, // 翻译字段初始化为空字符串
+        type: item?.translatableContent[0]?.type,
+      };
+      return [currentItem];
+    });
   };
 
-  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string, index: number) => {
     if (!key || !type || !context) {
       return;
     }
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: shopName,
-      source: themes.nodes
+      source: filtersData.nodes
         .find((item: any) => item?.resourceId === key)
         ?.translatableContent.find((item: any) => item.key === key)
         ?.locale,
@@ -353,7 +407,7 @@ const Index = () => {
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response)
+        handleInputChange(key, data.response, index)
         shopify.toast.show(t("Translated successfully"))
       }
     } else {
@@ -366,7 +420,7 @@ const Index = () => {
     setIsLoading(true);
     isManualChange.current = true;
     setSelectedLanguage(language);
-    navigate(`/app/manage_translation/theme?language=${language}`);
+    navigate(`/app/manage_translation/filter?language=${language}`);
   }
 
   const handleItemChange = (item: string) => {
@@ -376,14 +430,25 @@ const Index = () => {
     navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
   }
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchInput(value);
-    const filteredData = resourceData.filter((theme: any) =>
-      typeof theme.default_language === 'string' &&
-      theme.default_language.toLowerCase().includes(value.toLowerCase())
-    );
-    setFilteredResourceData(filteredData);
+  const onPrevious = () => {
+    const formData = new FormData();
+    const startCursor = filtersData.pageInfo.startCursor;
+    formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
+    submit(formData, {
+      method: "post",
+      action: `/app/manage_translation/filter?language=${searchTerm}`,
+    }); // 提交表单请求
+  };
+
+  const onNext = () => {
+    const formData = new FormData();
+    const endCursor = filtersData.pageInfo.endCursor;
+
+    formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
+    submit(formData, {
+      method: "post",
+      action: `/app/manage_translation/filter?language=${searchTerm}`,
+    }); // 提交表单请求
   };
 
   const handleConfirm = () => {
@@ -392,7 +457,7 @@ const Index = () => {
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
       method: "post",
-      action: `/app/manage_translation/theme?language=${searchTerm}`,
+      action: `/app/manage_translation/filter?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -423,7 +488,7 @@ const Index = () => {
         >
           <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
             <Text>
-              {t("Theme")}
+              {t("Filters")}
             </Text>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
@@ -475,43 +540,35 @@ const Index = () => {
       >
         {isLoading ? (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
-        ) : themes.nodes.length ? (
-          <>
-            <Layout
-              style={{
-                padding: "24px 0",
-                background: colorBgContainer,
-                borderRadius: borderRadiusLG,
-              }}
+        ) : filters.nodes.length ? (
+          <Content
+            style={{
+              padding: "0 24px",
+              height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+              overflow: 'auto',
+              minHeight: '70vh',
+            }}
+          >
+            <Space
+              direction="vertical"
+              size="middle"
+              style={{ display: "flex" }}
             >
-              <Content
-                style={{
-                  padding: "0 24px",
-                  height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
-                  overflow: 'auto',
-                  minHeight: '70vh',
-                }}
-              >
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{ display: "flex" }}
-                >
-                  <Input
-                    placeholder={t("Search...")}
-                    prefix={<SearchOutlined />}
-                    value={searchInput}
-                    onChange={handleSearch}
-                  />
-                  <Table
-                    columns={resourceColumns}
-                    dataSource={filteredResourceData}
-                    pagination={{ position: ["bottomCenter"], showSizeChanger: false }}
-                  />
-                </Space>
-              </Content>
-            </Layout>
-          </>
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
+              />
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <Pagination
+                  hasPrevious={hasPrevious}
+                  onPrevious={onPrevious}
+                  hasNext={hasNext}
+                  onNext={onNext}
+                />
+              </div>
+            </Space>
+          </Content>
         ) : (
           <Result
             title={t("The specified fields were not found in the store.")}

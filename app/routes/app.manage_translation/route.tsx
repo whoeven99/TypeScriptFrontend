@@ -47,15 +47,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
 
   const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-  const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-    shop,
-    accessToken: accessToken as string,
-  });
+  const { shop } = adminAuthResult.session;
 
   console.log(`${shop} load manage`);
   return json({
-    shopLanguages: shopLanguages,
     searchTerm: searchTerm || "",
   });
 };
@@ -65,8 +60,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
+    const language = JSON.parse(formData.get("language") as string);
     const itemsCount = JSON.parse(formData.get("itemsCount") as string);
     switch (true) {
+      case !!language:
+        try {
+          const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
+            shop,
+            accessToken: accessToken as string,
+          });
+          return json({ data: shopLanguages });
+        } catch (error) {
+          console.error("Error GetTranslationItemsInfo itemsCount:", error);
+        }
       case !!itemsCount:
         try {
           const data = await GetTranslationItemsInfo({
@@ -99,7 +105,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shopLanguages, searchTerm } = useLoaderData<typeof loader>();
+  const { searchTerm } = useLoaderData<typeof loader>();
   const [selectOptions, setSelectOptions] = useState<ManageSelectDataType[]>([]);
   const [primaryLanguage, setPrimaryLanguage] = useState<string>();
   const [current, setCurrent] = useState<string>("");
@@ -107,11 +113,11 @@ const Index = () => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const location = useLocation();
-  const navigate = useNavigate();
   const [showWarnModal, setShowWarnModal] = useState(false);
   const { key } = useMemo(() => location.state || {}, [location.state]);
-  const items = useSelector((state: any) => state.languageItemsData);
+  const languageItemsData = useSelector((state: any) => state.languageItemsData);
 
+  const languageFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
   const collectionsFetcher = useFetcher<any>();
   const articlesFetcher = useFetcher<any>();
@@ -133,11 +139,11 @@ const Index = () => {
       key: "products",
       title: t("Products"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "PRODUCT",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "PRODUCT",
         )?.totalNumber ?? undefined,
       sync_status: true,
@@ -147,12 +153,12 @@ const Index = () => {
       key: "collections",
       title: t("Collections"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current && item?.type === "COLLECTION",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current && item?.type === "COLLECTION",
         )?.totalNumber ?? undefined,
@@ -165,11 +171,11 @@ const Index = () => {
       key: "articles",
       title: t("Articles"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "ARTICLE",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "ARTICLE",
         )?.totalNumber ?? undefined,
       sync_status: false,
@@ -179,11 +185,11 @@ const Index = () => {
       key: "blog_titles",
       title: t("Blog titles"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "BLOG",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "BLOG",
         )?.totalNumber ?? undefined,
       sync_status: false,
@@ -193,11 +199,11 @@ const Index = () => {
       key: "pages",
       title: t("Pages"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "PAGE",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "PAGE",
         )?.totalNumber ?? undefined,
       sync_status: false,
@@ -207,11 +213,11 @@ const Index = () => {
       key: "filters",
       title: t("Filters"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "FILTER",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "FILTER",
         )?.totalNumber ?? undefined,
       sync_status: false,
@@ -221,12 +227,12 @@ const Index = () => {
       key: "metaobjects",
       title: t("Metaobjects"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current && item?.type === "METAOBJECT",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current && item?.type === "METAOBJECT",
         )?.totalNumber ?? undefined,
@@ -237,11 +243,11 @@ const Index = () => {
       key: "navigation",
       title: t("Navigation"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "LINK",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "LINK",
         )?.totalNumber ?? undefined,
       sync_status: false,
@@ -251,12 +257,12 @@ const Index = () => {
       key: "email",
       title: t("Email"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current && item?.type === "EMAIL_TEMPLATE",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current && item?.type === "EMAIL_TEMPLATE",
         )?.totalNumber ?? undefined,
@@ -267,12 +273,12 @@ const Index = () => {
     //   key: "policies",
     //   title: t("Policies"),
     //   allTranslatedItems:
-    //     items.find(
+    //     languageItemsData.find(
     //       (item: any) =>
     //         item?.language === current && item?.type === "SHOP_POLICY",
     //     )?.translatedNumber ?? undefined,
     //   allItems:
-    //     items.find(
+    //     languageItemsData.find(
     //       (item: any) =>
     //         item?.language === current && item?.type === "SHOP_POLICY",
     //     )?.totalNumber ?? undefined,
@@ -283,11 +289,11 @@ const Index = () => {
       key: "shop",
       title: t("Shop"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "SHOP",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) => item?.language === current && item?.type === "SHOP",
         )?.totalNumber ?? undefined,
       sync_status: false,
@@ -297,12 +303,12 @@ const Index = () => {
       key: "store_metadata",
       title: t("Store metadata"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current && item?.type === "METAFIELD",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current && item?.type === "METAFIELD",
         )?.totalNumber ?? undefined,
@@ -313,12 +319,12 @@ const Index = () => {
       key: "theme",
       title: t("Theme"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current && item?.type === "ONLINE_STORE_THEME",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current && item?.type === "ONLINE_STORE_THEME",
         )?.totalNumber ?? undefined,
@@ -331,13 +337,13 @@ const Index = () => {
       key: "delivery",
       title: t("Delivery"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current &&
             item?.type === "DELIVERY_METHOD_DEFINITION",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current &&
             item?.type === "DELIVERY_METHOD_DEFINITION",
@@ -349,13 +355,13 @@ const Index = () => {
       key: "shipping",
       title: t("Shipping"),
       allTranslatedItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current &&
             item?.type === "PACKING_SLIP_TEMPLATE",
         )?.translatedNumber ?? undefined,
       allItems:
-        items.find(
+        languageItemsData.find(
           (item: any) =>
             item?.language === current &&
             item?.type === "PACKING_SLIP_TEMPLATE",
@@ -366,44 +372,49 @@ const Index = () => {
   ];
 
   useEffect(() => {
-    if (shopLanguages && shopLanguages?.length) {
-      const primaryLanguage = shopLanguages.filter(
-        (language) => language.primary,
-      );
-      setPrimaryLanguage(primaryLanguage[0].locale);
-      const newArray = shopLanguages
-        .filter((language) => !language.primary)
-        .map((language) => ({
-          label: language.name,
-          value: language.locale,
-        }));
-      setSelectOptions(newArray);
-      if (!searchTerm) {
-        setCurrent(newArray[0]?.value);
-      } else {
-        setCurrent(searchTerm);
-      }
-      dispatch(setTableData(shopLanguages.map((language, index) => ({
-        key: index,
-        language: language.name,
-        locale: language.locale,
-        primary: language.primary,
-        published: language.published,
-      }))));
-      setLoading(false);
-    }
-    const locale = shopLanguages.find(
-      (language) => language.primary === true,
-    )?.locale;
-    dispatch(setUserConfig({ locale: locale || "" }));
+    languageFetcher.submit({
+      language: JSON.stringify(true),
+    }, {
+      method: "post",
+      action: "/app/manage_translation",
+    });
   }, []);
 
-  // useEffect(() => {
-  //   if (fetcher.data) {
-  //     setShopLanguages(fetcher.data.shopLanguagesLoad);
-  //     setWords(fetcher.data.words);
-  //   }
-  // }, [fetcher.data]);
+  useEffect(() => {
+    if (languageFetcher.data) {
+      if (languageFetcher.data.data) {
+        const shopLanguages = languageFetcher.data.data;
+        const primaryLanguage = shopLanguages.filter(
+          (language: ShopLocalesType) => language.primary,
+        );
+        setPrimaryLanguage(primaryLanguage[0].locale);
+        const newArray = shopLanguages
+          .filter((language: ShopLocalesType) => !language.primary)
+          .map((language: ShopLocalesType) => ({
+            label: language.name,
+            value: language.locale,
+          }));
+        setSelectOptions(newArray);
+        if (!searchTerm) {
+          setCurrent(newArray[0]?.value);
+        } else {
+          setCurrent(searchTerm);
+        }
+        dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
+          key: index,
+          language: language.name,
+          locale: language.locale,
+          primary: language.primary,
+          published: language.published,
+        }))));
+        setLoading(false);
+        const locale = shopLanguages.find(
+          (language: ShopLocalesType) => language.primary === true,
+        )?.locale;
+        dispatch(setUserConfig({ locale: locale || "" }));
+      }
+    }
+  }, [languageFetcher.data]);
 
   useEffect(() => {
     if (productsFetcher.data) {
@@ -504,7 +515,7 @@ const Index = () => {
 
   useEffect(() => {
     dispatch(setSelectLanguageData(current));
-    const findItem = items.find((item: any) => item?.language === current);
+    const findItem = languageItemsData.find((item: any) => item?.language === current);
     if (!findItem && primaryLanguage) {
       const productsFormData = new FormData();
       productsFormData.append(
@@ -780,7 +791,6 @@ const Index = () => {
           </div>
         </Space>
       )}
-      <Outlet />
       {/* <TranslationWarnModal
         title={t("The Translation Editor has been limited due to your plan (Current plan: {{plan}})", { plan: planMapping[plan as keyof typeof planMapping] })}
         content={t("Please upgrade to a higher plan to unlock the Translation Editor")}

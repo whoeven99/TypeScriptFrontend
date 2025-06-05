@@ -36,18 +36,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const sessionService = await SessionService.init(request);
-  let shopSession = sessionService.getShopSession();
-  if (!shopSession) {
-    const adminAuthResult = await authenticate.admin(request);
-    const { shop, accessToken } = adminAuthResult.session;
-    shopSession = {
-      shop: shop,
-      accessToken: accessToken as string,
-    };
-    sessionService.setShopSession(shopSession);
-  }
-  const { shop, accessToken } = shopSession;
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
@@ -59,7 +50,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const data = await GetUserData({
             shop,
           });
-          console.log("GetUserData: ", data);
           return json({ data: data });
         } catch (error) {
           console.error("Error apiKeySetting loading:", error);

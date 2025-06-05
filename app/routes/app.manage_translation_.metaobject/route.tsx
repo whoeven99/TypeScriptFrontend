@@ -1,14 +1,4 @@
-import {
-  Button,
-  Layout,
-  Menu,
-  MenuProps,
-  Result,
-  Spin,
-  Table,
-  theme,
-  Typography,
-} from "antd";
+import { Layout, Table, theme, Result, Button, Space, Typography, Spin } from "antd";
 import { useEffect, useRef, useState } from "react";
 import {
   useActionData,
@@ -29,51 +19,20 @@ import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { SessionService } from "~/utils/session.server";
+import { useDispatch, useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
+import { setTableData } from "~/store/modules/languageTableData";
+import { setUserConfig } from "~/store/modules/userConfig";
+import { ShopLocalesType } from "../app.language/route";
 
-const { Sider, Content } = Layout;
+const { Content } = Layout;
 
 const { Text } = Typography;
 
-interface PageType {
-  key: string;
-  title: {
-    value: string;
-    type: string;
-  };
-  body: {
-    value: string;
-    type: string;
-  };
-  handle: {
-    value: string;
-    type: string;
-  };
-  seo: {
-    title: {
-      value: string;
-      type: string;
-    };
-    description: {
-      value: string;
-      type: string;
-    };
-  };
-  translations: {
-    key: string;
-    body: string | undefined;
-    title: string | undefined;
-    handle: string | undefined;
-    seo: {
-      description: string | undefined;
-      title: string | undefined;
-    };
-  };
-}
-
 type TableDataType = {
   key: string;
+  index: number;
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
@@ -81,30 +40,29 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  // 如果没有 language 参数，直接返回空数据
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
   try {
-    const pages = await queryNextTransType({
+    const metaobjects = await queryNextTransType({
       shop,
       accessToken: accessToken as string,
-      resourceType: "PAGE",
+      resourceType: "METAOBJECT",
       endCursor: "",
       locale: searchTerm || "",
     });
+
     return json({
       server: process.env.SERVER_URL,
       shopName: shop,
       searchTerm,
-      pages,
+      metaobjects,
     });
   } catch (error) {
-    console.error("Error load page:", error);
-    throw new Response("Error load page", { status: 500 });
+    console.error("Error load metaobject:", error);
+    throw new Response("Error load metaobject", { status: 500 });
   }
 };
 
@@ -126,44 +84,44 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     switch (true) {
       case !!startCursor:
-        const previousPages = await queryPreviousTransType({
+        const previousMetaobjects = await queryPreviousTransType({
           shop,
           accessToken: accessToken as string,
-          resourceType: "PAGE",
+          resourceType: "METAOBJECT",
           startCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-        return json({ previousPages: previousPages });
+        return json({ previousMetaobjects: previousMetaobjects });
       case !!endCursor:
-        const nextPages = await queryNextTransType({
+        const nextMetaobjects = await queryNextTransType({
           shop,
           accessToken: accessToken as string,
-          resourceType: "PAGE",
+          resourceType: "METAOBJECT",
           endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-        return json({ nextPages: nextPages });
+        return json({ nextMetaobjects: nextMetaobjects });
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
           accessToken: accessToken as string,
           confirmData,
         });
-        return json({ data: data, confirmData: confirmData });
+        return json({ data: data });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
-    console.error("Error action page:", error);
-    throw new Response("Error action page", { status: 500 });
+    console.error("Error action metaobject:", error);
+    throw new Response("Error action metaobject", { status: 500 });
   }
 };
 
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { searchTerm, pages, server, shopName } =
+  const { searchTerm, metaobjects, server, shopName } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const {
@@ -172,8 +130,10 @@ const Index = () => {
   const { t } = useTranslation();
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const languageTableData = useSelector((state: any) => state.languageTableData.rows);
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const isManualChange = useRef(true);
@@ -184,14 +144,8 @@ const Index = () => {
     return !!searchParams.get('language');
   });
 
-  const [menuData, setMenuData] = useState<MenuProps["items"]>([]);
-  const [pagesData, setPagesData] = useState(pages);
-  const [pageData, setPageData] = useState<PageType>();
+  const [metaobjectsData, setMetaobjectsData] = useState(metaobjects);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [SeoData, setSeoData] = useState<TableDataType[]>([]);
-  const [selectPageKey, setSelectPageKey] = useState(
-    pages.nodes[0]?.resourceId,
-  );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
@@ -216,20 +170,35 @@ const Index = () => {
   ]
   const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
-  const [selectedItem, setSelectedItem] = useState<string>("page");
+  const [selectedItem, setSelectedItem] = useState<string>("metaobject");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    pagesData?.pageInfo.hasPreviousPage || false
+    metaobjectsData.pageInfo.hasPreviousPage || false
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    pagesData?.pageInfo.hasNextPage || false
+    metaobjectsData.pageInfo.hasNextPage || false
   );
 
   useEffect(() => {
-    if (pages) {
-      setMenuData(exMenuData(pages));
-      setIsLoading(false);
+    if (languageTableData.length === 0) {
+      languageFetcher.submit({
+        language: JSON.stringify(true),
+      }, {
+        method: "post",
+        action: "/app/manage_translation",
+      });
     }
   }, []);
+
+  useEffect(() => {
+    loadingItemsRef.current = loadingItems;
+  }, [loadingItems]);
+
+  useEffect(() => {
+    if (metaobjects && isManualChange.current) {
+      setMetaobjectsData(metaobjects);
+      isManualChange.current = false; // 重置
+    }
+  }, [metaobjects]);
 
   useEffect(() => {
     if (languageTableData) {
@@ -242,92 +211,23 @@ const Index = () => {
     }
   }, [languageTableData])
 
+  useEffect(() => {
+    setHasPrevious(metaobjectsData.pageInfo.hasPreviousPage);
+    setHasNext(metaobjectsData.pageInfo.hasNextPage);
+    const data = generateMenuItemsArray(metaobjectsData);
+    setResourceData(data);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 100);
+  }, [metaobjectsData]);
 
   useEffect(() => {
-    if (pages && isManualChange.current) {
-      setPagesData(pages);
-      setMenuData(exMenuData(pages));
-      setSelectPageKey(pages.nodes[0]?.resourceId);
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 100);
-      setHasPrevious(pagesData.pageInfo.hasPreviousPage);
-      setHasNext(pagesData.pageInfo.hasNextPage);
-      isManualChange.current = false; // 重置
-    }
-  }, [pages]);
-
-  useEffect(() => {
-    const data = transBeforeData({
-      pages: pagesData,
-    });
-    setPageData(data);
-    setConfirmData([]);
-    setTranslatedValues({});
-    setLoadingItems([]);
-  }, [selectPageKey, pagesData]);
-
-  useEffect(() => {
-    setResourceData(
-      [
-        {
-          key: "title",
-          resource: "Title",
-          default_language: pageData?.title.value,
-          translated: pageData?.translations?.title,
-          type: pageData?.title.type,
-        },
-        {
-          key: "body",
-          resource: "Description",
-          default_language: pageData?.body.value,
-          translated: pageData?.translations?.body,
-          type: pageData?.body.type,
-        },
-      ].filter((item) => item.default_language),
-    );
-    setSeoData(
-      [
-        {
-          key: "handle",
-          resource: "URL handle",
-          default_language: pageData?.handle.value,
-          translated: pageData?.translations?.handle,
-          type: pageData?.handle.type,
-        },
-        {
-          key: "meta_title",
-          resource: "Meta title",
-          default_language: pageData?.seo.title.value,
-          translated: pageData?.translations?.seo.title,
-          type: pageData?.seo.title.type,
-        },
-        {
-          key: "meta_description",
-          resource: "Meta description",
-          default_language: pageData?.seo.description.value,
-          translated: pageData?.translations?.seo.description,
-          type: pageData?.seo.description.type,
-        },
-      ].filter((item) => item.default_language),
-    );
-  }, [pageData]);
-
-  useEffect(() => {
-    if (actionData && "nextPages" in actionData) {
-      const nextPages = exMenuData(actionData.nextPages);
-      // 在这里处理 nextPages
-      setMenuData(nextPages);
-      setPagesData(actionData.nextPages);
-      setSelectPageKey(actionData.nextPages.nodes[0]?.resourceId);
-    } else if (actionData && "previousPages" in actionData) {
-      const previousPages = exMenuData(actionData.previousPages);
-      // 在这里处理 previousPages
-      setMenuData(previousPages);
-      setPagesData(actionData.previousPages);
-      setSelectPageKey(actionData.previousPages.nodes[0]?.resourceId);
+    if (actionData && "nextMetaobjects" in actionData) {
+      setMetaobjectsData(actionData.nextMetaobjects);
+    } else if (actionData && "previousMetaobjects" in actionData) {
+      setMetaobjectsData(actionData.previousMetaobjects);
     } else {
-      // 如果不存在 nextPages，可以执行其他逻辑
+      // 如果不存在 nextProducts，可以执行其他逻辑
     }
   }, [actionData]);
 
@@ -337,27 +237,9 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const successfulItem = confirmFetcher.data.data.filter((item: any) =>
-        item.success === true
-      );
       const errorItem = confirmFetcher.data.data.filter((item: any) =>
         item.success === false
       );
-
-      successfulItem.forEach((item: any) => {
-        const index = pagesData.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
-        if (index !== -1) {
-          const page = pagesData.nodes[index].translations.find((option: any) => option.key === item.data.key);
-          if (page) {
-            page.value = item.data.value;
-          } else {
-            pagesData.nodes[index].translations.push({
-              key: item.data.key,
-              value: item.data.value,
-            });
-          }
-        }
-      })
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
       } else {
@@ -367,6 +249,25 @@ const Index = () => {
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
+
+  useEffect(() => {
+    if (languageFetcher.data) {
+      if (languageFetcher.data.data) {
+        const shopLanguages = languageFetcher.data.data;
+        dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
+          key: index,
+          language: language.name,
+          locale: language.locale,
+          primary: language.primary,
+          published: language.published,
+        }))));
+        const locale = shopLanguages.find(
+          (language: ShopLocalesType) => language.primary === true,
+        )?.locale;
+        dispatch(setUserConfig({ locale: locale || "" }));
+      }
+    }
+  }, [languageFetcher.data]);
 
   const resourceColumns = [
     {
@@ -409,7 +310,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("PAGE", record?.key || "", record?.type || "", record?.default_language || "");
+              handleTranslate("METAOBJECT", record?.key || "", record?.type || "", record?.default_language || "", record?.index || 0);
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -420,74 +321,15 @@ const Index = () => {
     },
   ];
 
-  const SEOColumns = [
-    {
-      title: "SEO",
-      dataIndex: "resource",
-      key: "resource",
-      width: "10%",
-    },
-    {
-      title: t("Default Language"),
-      dataIndex: "default_language",
-      key: "default_language",
-      width: "40%",
-      render: (_: any, record: TableDataType) => {
-        return <ManageTableInput record={record} />;
-      },
-    },
-    {
-      title: t("Translated"),
-      dataIndex: "translated",
-      key: "translated",
-      width: "40%",
-      render: (_: any, record: TableDataType) => {
-        return (
-          <ManageTableInput
-            record={record}
-            translatedValues={translatedValues}
-            setTranslatedValues={setTranslatedValues}
-            handleInputChange={handleInputChange}
-            isRtl={searchTerm === "ar"}
-          />
-        );
-      },
-    },
-    {
-      title: t("Translate"),
-      width: "10%",
-      render: (_: any, record: TableDataType) => {
-        return (
-          <Button
-            type="primary"
-            onClick={() => {
-              handleTranslate("PAGE", record?.key || "", record?.type || "", record?.default_language || "");
-            }}
-            loading={loadingItems.includes(record?.key || "")}
-          >
-            {t("Translate")}
-          </Button>
-        );
-      },
-    },
-  ];
-
-  const exMenuData = (pages: any) => {
-    const data = pages.nodes.map((page: any) => ({
-      key: page?.resourceId,
-      label: page?.translatableContent.find((item: any) => item.key === "title")
-        .value,
-    }));
-    return data;
-  };
-
-  const handleInputChange = (key: string, value: string) => {
+  const handleInputChange = (key: string, value: string, index: number) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+      const existingItemIndex = prevData.findIndex(
+        (item) => item?.resourceId === key,
+      );
 
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
@@ -500,17 +342,12 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: pagesData.nodes.find(
-            (item: any) => item?.resourceId === selectPageKey,
-          )?.resourceId,
-          locale: pagesData.nodes
-            .find((item: any) => item?.resourceId === selectPageKey)
-            ?.translatableContent.find((item: any) => item.key === key)?.locale,
-          key: key,
+          resourceId: metaobjectsData.nodes[index]?.resourceId,
+          locale: metaobjectsData.nodes[index]?.translatableContent[0]?.locale,
+          key: "label",
           value: value, // 初始为空字符串
-          translatableContentDigest: pagesData.nodes
-            .find((item: any) => item?.resourceId === selectPageKey)
-            ?.translatableContent.find((item: any) => item.key === key)?.digest,
+          translatableContentDigest:
+            metaobjectsData.nodes[index]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
 
@@ -519,114 +356,30 @@ const Index = () => {
     });
   };
 
-  const transBeforeData = ({ pages }: { pages: any }) => {
-    let data: PageType = {
-      key: "",
-      title: {
-        value: "",
-        type: "",
-      },
-      body: {
-        value: "",
-        type: "",
-      },
-      handle: {
-        value: "",
-        type: "",
-      },
-      seo: {
-        description: {
-          value: "",
-          type: "",
-        },
-        title: {
-          value: "",
-          type: "",
-        },
-      },
-      translations: {
-        key: "",
-        title: "",
-        body: "",
-        handle: "",
-        seo: {
-          description: "",
-          title: "",
-        },
-      },
-    };
-    const page = pages.nodes.find(
-      (page: any) => page?.resourceId === selectPageKey,
-    );
-    data.key = page?.resourceId;
-    data.title = {
-      value: page?.translatableContent.find(
-        (item: any) => item.key === "title",
-      )?.value,
-      type: page?.translatableContent.find(
-        (item: any) => item.key === "title",
-      )?.type,
-    }
-    data.body = {
-      value: page?.translatableContent.find(
-        (item: any) => item.key === "body_html",
-      )?.value,
-      type: page?.translatableContent.find(
-        (item: any) => item.key === "body_html",
-      )?.type,
-    }
-    data.handle = {
-      value: page?.translatableContent.find(
-        (item: any) => item.key === "handle",
-      )?.value,
-      type: page?.translatableContent.find(
-        (item: any) => item.key === "handle",
-      )?.type,
-    }
-    data.seo.title = {
-      value: page?.translatableContent.find(
-        (item: any) => item.key === "meta_title",
-      )?.value,
-      type: page?.translatableContent.find(
-        (item: any) => item.key === "meta_title",
-      )?.type,
-    }
-    data.seo.description = {
-      value: page?.translatableContent.find(
-        (item: any) => item.key === "meta_description",
-      )?.value,
-      type: page?.translatableContent.find(
-        (item: any) => item.key === "meta_description",
-      )?.type,
-    }
-    data.translations.key = page?.resourceId;
-    data.translations.title = page?.translations.find(
-      (item: any) => item.key === "title",
-    )?.value;
-    data.translations.body = page?.translations.find(
-      (item: any) => item.key === "body_html",
-    )?.value;
-    data.translations.handle = page?.translations.find(
-      (item: any) => item.key === "handle",
-    )?.value;
-    data.translations.seo.title = page?.translations.find(
-      (item: any) => item.key === "meta_title",
-    )?.value;
-    data.translations.seo.description = page?.translations.find(
-      (item: any) => item.key === "meta_description",
-    )?.value;
-    return data;
+  const generateMenuItemsArray = (items: any) => {
+    return items.nodes.flatMap((item: any, index: number) => {
+      // 创建当前项的对象
+      const currentItem = {
+        key: `${item?.resourceId}`, // 使用 key 生成唯一的 key
+        index: index,
+        resource: "label", // 资源字段固定为 "Menu Items"
+        default_language: item?.translatableContent[0]?.value, // 默认语言为 item 的标题
+        translated: item?.translations[0]?.value, // 翻译字段初始化为空字符串
+        type: item?.translatableContent[0]?.type,
+      };
+      return [currentItem];
+    });
   };
 
-  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string, index: number) => {
     if (!key || !type || !context) {
       return;
     }
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: shopName,
-      source: pagesData.nodes
-        .find((item: any) => item?.resourceId === selectPageKey)
+      source: metaobjectsData.nodes
+        .find((item: any) => item?.resourceId === key)
         ?.translatableContent.find((item: any) => item.key === key)
         ?.locale,
       target: searchTerm || "",
@@ -638,7 +391,7 @@ const Index = () => {
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response)
+        handleInputChange(key, data.response, index)
         shopify.toast.show(t("Translated successfully"))
       }
     } else {
@@ -647,11 +400,12 @@ const Index = () => {
     setLoadingItems((prev) => prev.filter((item) => item !== key));
   }
 
+
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);
     isManualChange.current = true;
     setSelectedLanguage(language);
-    navigate(`/app/manage_translation/page?language=${language}`);
+    navigate(`/app/manage_translation/metaobject?language=${language}`);
   }
 
   const handleItemChange = (item: string) => {
@@ -663,21 +417,21 @@ const Index = () => {
 
   const onPrevious = () => {
     const formData = new FormData();
-    const startCursor = pagesData.pageInfo.startCursor;
+    const startCursor = metaobjectsData.pageInfo.startCursor;
     formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: `/app/manage_translation/page?language=${searchTerm}`,
+      action: `/app/manage_translation/metaobject?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
   const onNext = () => {
     const formData = new FormData();
-    const endCursor = pagesData.pageInfo.endCursor;
+    const endCursor = metaobjectsData.pageInfo.endCursor;
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: `/app/manage_translation/page?language=${searchTerm}`,
+      action: `/app/manage_translation/metaobject?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -687,7 +441,7 @@ const Index = () => {
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
       method: "post",
-      action: `/app/manage_translation/page?language=${searchTerm}`,
+      action: `/app/manage_translation/metaobject?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -718,7 +472,7 @@ const Index = () => {
         >
           <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
             <Text>
-              {t("Page")}
+              {t("Metaobjects")}
             </Text>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
@@ -770,33 +524,24 @@ const Index = () => {
       >
         {isLoading ? (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
-        ) : pages.nodes.length ? (
-          <>
-            <Sider
-              style={{
-                background: colorBgContainer,
-                height: 'calc(100vh - 124px)',
-                width: '200px',
-                minHeight: '70vh',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'auto',
-              }}
+        ) : metaobjects.nodes.length ? (
+          <Content
+            style={{
+              padding: "0 24px",
+              height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+              overflow: 'auto',
+              minHeight: '70vh',
+            }}
+          >
+            <Space
+              direction="vertical"
+              size="middle"
+              style={{ display: "flex" }}
             >
-              <Menu
-                mode="inline"
-                defaultSelectedKeys={[pagesData.nodes[0]?.resourceId]}
-                defaultOpenKeys={["sub1"]}
-                style={{
-                  flex: 1,
-                  overflowY: "auto",
-                  minHeight: 0,
-                }}
-                items={menuData}
-                selectedKeys={[selectPageKey]}
-                onClick={(e: any) => {
-                  setSelectPageKey(e.key);
-                }}
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
               />
               <div style={{ display: "flex", justifyContent: "center" }}>
                 <Pagination
@@ -806,27 +551,8 @@ const Index = () => {
                   onNext={onNext}
                 />
               </div>
-            </Sider>
-            <Content
-              style={{
-                padding: "0 24px",
-                height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
-                overflow: 'auto',
-                minHeight: '70vh',
-              }}
-            >
-              <Table
-                columns={resourceColumns}
-                dataSource={resourceData}
-                pagination={false}
-              />
-              <Table
-                columns={SEOColumns}
-                dataSource={SeoData}
-                pagination={false}
-              />
-            </Content>
-          </>
+            </Space>
+          </Content>
         ) : (
           <Result
             title={t("The specified fields were not found in the store.")}

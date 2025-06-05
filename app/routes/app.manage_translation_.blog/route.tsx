@@ -1,35 +1,63 @@
-import { Layout, Table, theme, Result, Button, Space, Typography, Spin } from "antd";
+import {
+  Button,
+  Layout,
+  Menu,
+  MenuProps,
+  Result,
+  Spin,
+  Table,
+  theme,
+  Typography
+} from "antd";
 import { useEffect, useRef, useState } from "react";
 import {
   useActionData,
   useFetcher,
   useLoaderData,
-  useLocation,
   useNavigate,
-  useSearchParams,
   useSubmit,
-} from "@remix-run/react"; // 引入 useNavigate
+  useLocation,
+  useSearchParams,
+} from "@remix-run/react"; // 引入 useNavigate, useLocation, useSearchParams
 import { FullscreenBar, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   queryNextTransType,
   queryPreviousTransType,
+  queryShopLanguages,
 } from "~/api/admin";
+import { ShopLocalesType } from "../app.language/route";
 import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { SessionService } from "~/utils/session.server";
-import { useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
+import { useDispatch, useSelector } from "react-redux";
+import { setUserConfig } from "~/store/modules/userConfig";
+import { setTableData } from "~/store/modules/languageTableData";
 
-const { Content } = Layout;
-
+const { Sider, Content } = Layout;
 const { Text } = Typography;
+
+interface BlogType {
+  key: string;
+  handle: {
+    value: string;
+    type: string;
+  };
+  title: {
+    value: string;
+    type: string;
+  };
+  translations: {
+    key: string;
+    handle: string | undefined;
+    title: string | undefined;
+  };
+}
 
 type TableDataType = {
   key: string;
-  index: number;
   resource: string;
   default_language: string | undefined;
   translated: string | undefined;
@@ -37,16 +65,19 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+
+  // 如果没有 language 参数，直接返回空数据
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
+
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
   try {
-    const metaobjects = await queryNextTransType({
+    const blogs = await queryNextTransType({
       shop,
       accessToken: accessToken as string,
-      resourceType: "METAOBJECT",
+      resourceType: "BLOG",
       endCursor: "",
       locale: searchTerm || "",
     });
@@ -55,11 +86,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       server: process.env.SERVER_URL,
       shopName: shop,
       searchTerm,
-      metaobjects,
+      blogs,
     });
   } catch (error) {
-    console.error("Error load metaobject:", error);
-    throw new Response("Error load metaobject", { status: 500 });
+    console.error("Error load blog:", error);
+    throw new Response("Error load blog", { status: 500 });
   }
 };
 
@@ -81,66 +112,72 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     switch (true) {
       case !!startCursor:
-        const previousMetaobjects = await queryPreviousTransType({
+        const previousBlogs = await queryPreviousTransType({
           shop,
           accessToken: accessToken as string,
-          resourceType: "METAOBJECT",
+          resourceType: "BLOG",
           startCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-        return json({ previousMetaobjects: previousMetaobjects });
+        return json({ previousBlogs: previousBlogs });
       case !!endCursor:
-        const nextMetaobjects = await queryNextTransType({
+        const nextBlogs = await queryNextTransType({
           shop,
           accessToken: accessToken as string,
-          resourceType: "METAOBJECT",
+          resourceType: "BLOG",
           endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-        return json({ nextMetaobjects: nextMetaobjects });
+        return json({ nextBlogs: nextBlogs });
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
           accessToken: accessToken as string,
           confirmData,
         });
-        return json({ data: data });
+        return json({ data: data, confirmData: confirmData });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
-    console.error("Error action metaobject:", error);
-    throw new Response("Error action metaobject", { status: 500 });
+    console.error("Error action blog:", error);
+    throw new Response("Error action blog", { status: 500 });
   }
 };
 
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { searchTerm, metaobjects, server, shopName } =
-    useLoaderData<typeof loader>();
+  const { t } = useTranslation();
+
+  const { searchTerm, blogs, server, shopName } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
-  const { t } = useTranslation();
-
-  const navigate = useNavigate();
-  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
-  const submit = useSubmit(); // 使用 useSubmit 钩子
-  const confirmFetcher = useFetcher<any>();
-
   const isManualChange = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
+
+  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const submit = useSubmit(); // 使用 useSubmit 钩子
+  const languageFetcher = useFetcher<any>();
+  const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
     return !!searchParams.get('language');
   });
 
-  const [metaobjectsData, setMetaobjectsData] = useState(metaobjects);
+  const [menuData, setMenuData] = useState<MenuProps["items"]>([]);
+  const [blogsData, setBlogsData] = useState(blogs);
+  const [blogData, setBlogData] = useState<BlogType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
+  const [selectBlogKey, setSelectBlogKey] = useState(
+    blogs.nodes[0]?.resourceId,
+  );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
@@ -165,24 +202,32 @@ const Index = () => {
   ]
   const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
-  const [selectedItem, setSelectedItem] = useState<string>("metaobject");
+  const [selectedItem, setSelectedItem] = useState<string>("blog");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    metaobjectsData.pageInfo.hasPreviousPage || false
+    blogsData.pageInfo.hasPreviousPage || false
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    metaobjectsData.pageInfo.hasNextPage || false
+    blogsData.pageInfo.hasNextPage || false
   );
+
+  useEffect(() => {
+    if (languageTableData.length === 0) {
+      languageFetcher.submit({
+        language: JSON.stringify(true),
+      }, {
+        method: "post",
+        action: "/app/manage_translation",
+      });
+    }
+    if (blogs) {
+      setMenuData(exMenuData(blogs));
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     loadingItemsRef.current = loadingItems;
   }, [loadingItems]);
-
-  useEffect(() => {
-    if (metaobjects && isManualChange.current) {
-      setMetaobjectsData(metaobjects);
-      isManualChange.current = false; // 重置
-    }
-  }, [metaobjects]);
 
   useEffect(() => {
     if (languageTableData) {
@@ -196,43 +241,123 @@ const Index = () => {
   }, [languageTableData])
 
   useEffect(() => {
-    setHasPrevious(metaobjectsData.pageInfo.hasPreviousPage);
-    setHasNext(metaobjectsData.pageInfo.hasNextPage);
-    const data = generateMenuItemsArray(metaobjectsData);
-    setResourceData(data);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
-  }, [metaobjectsData]);
+    if (blogs && isManualChange.current) {
+      setBlogsData(blogs)
+      setMenuData(exMenuData(blogs));
+      setSelectBlogKey(blogs.nodes[0]?.resourceId);
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+      isManualChange.current = false; // 重置
+    }
+  }, [blogs])
 
   useEffect(() => {
-    if (actionData && "nextMetaobjects" in actionData) {
-      setMetaobjectsData(actionData.nextMetaobjects);
-    } else if (actionData && "previousMetaobjects" in actionData) {
-      setMetaobjectsData(actionData.previousMetaobjects);
+    const data = transBeforeData({
+      blogs: blogsData,
+    });
+    setBlogData(data);
+    setConfirmData([]);
+    setTranslatedValues({});
+    setHasPrevious(blogsData.pageInfo.hasPreviousPage);
+    setHasNext(blogsData.pageInfo.hasNextPage);
+  }, [selectBlogKey, blogsData]);
+
+  useEffect(() => {
+    setResourceData(
+      [
+        {
+          key: "title",
+          resource: "Title",
+          default_language: blogData?.title?.value,
+          translated: blogData?.translations?.title,
+          type: blogData?.title?.type,
+        },
+        {
+          key: "handle",
+          resource: "Handle",
+          default_language: blogData?.handle?.value,
+          translated: blogData?.translations?.handle,
+          type: blogData?.handle?.type,
+        },
+      ].filter((item) => item.default_language),
+    );
+  }, [blogData]);
+
+  useEffect(() => {
+    if (actionData && "nextBlogs" in actionData) {
+      const nextBlogs = exMenuData(actionData.nextBlogs);
+      // 在这里处理 nextBlogs
+      setMenuData(nextBlogs);
+      setBlogsData(actionData.nextBlogs);
+      setSelectBlogKey(actionData.nextBlogs.nodes[0]?.resourceId);
+    } else if (actionData && "previousBlogs" in actionData) {
+      const previousBlogs = exMenuData(actionData.previousBlogs);
+      // 在这里处理 previousBlogs
+      setMenuData(previousBlogs);
+      setBlogsData(actionData.previousBlogs);
+      setSelectBlogKey(actionData.previousBlogs.nodes[0]?.resourceId);
     } else {
-      // 如果不存在 nextProducts，可以执行其他逻辑
+      // 如果不存在 nextBlogs，可以执行其他逻辑
     }
   }, [actionData]);
 
   useEffect(() => {
-    setIsVisible(!!searchParams.get('language'));
-  }, [location]);
-
-  useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
+      const successfulItem = confirmFetcher.data.data.filter((item: any) =>
+        item.success === true
+      );
       const errorItem = confirmFetcher.data.data.filter((item: any) =>
         item.success === false
       );
+
+      successfulItem.forEach((item: any) => {
+        const index = blogsData.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+        if (index !== -1) {
+          const blog = blogsData.nodes[index].translations.find((option: any) => option.key === item.data.key);
+          if (blog) {
+            blog.value = item.data.value;
+          } else {
+            blogsData.nodes[index].translations.push({
+              key: item.data.key,
+              value: item.data.value,
+            });
+          }
+        }
+      })
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
       } else {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
+
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
+
+  useEffect(() => {
+    if (languageFetcher.data) {
+      if (languageFetcher.data.data) {
+        const shopLanguages = languageFetcher.data.data;
+        dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
+          key: index,
+          language: language.name,
+          locale: language.locale,
+          primary: language.primary,
+          published: language.published,
+        }))));
+        const locale = shopLanguages.find(
+          (language: ShopLocalesType) => language.primary === true,
+        )?.locale;
+        dispatch(setUserConfig({ locale: locale || "" }));
+      }
+    }
+  }, [languageFetcher.data]);
+
+  useEffect(() => {
+    setIsVisible(!!searchParams.get('language'));
+  }, [location]);
 
   const resourceColumns = [
     {
@@ -245,16 +370,16 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "40%",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
-        return <ManageTableInput record={record} />;
+        return <ManageTableInput record={record} isRtl={searchTerm === "ar"} />;
       },
     },
     {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "40%",
+      width: "45%",
       render: (_: any, record: TableDataType) => {
         return (
           <ManageTableInput
@@ -275,7 +400,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("METAOBJECT", record?.key || "", record?.type || "", record?.default_language || "", record?.index || 0);
+              handleTranslate("BLOG", record?.key || "", record?.type || "", record?.default_language || "");
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -286,15 +411,13 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string, value: string, index: number) => {
+  const handleInputChange = (key: string, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex(
-        (item) => item?.resourceId === key,
-      );
+      const existingItemIndex = prevData.findIndex((item) => item.key === key);
 
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
@@ -307,12 +430,17 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: metaobjectsData.nodes[index]?.resourceId,
-          locale: metaobjectsData.nodes[index]?.translatableContent[0]?.locale,
-          key: "label",
+          resourceId: blogsData.nodes.find(
+            (item: any) => item?.resourceId === selectBlogKey,
+          )?.resourceId,
+          locale: blogsData.nodes
+            .find((item: any) => item?.resourceId === selectBlogKey)
+            ?.translatableContent.find((item: any) => item.key === key)?.locale,
+          key: key,
           value: value, // 初始为空字符串
-          translatableContentDigest:
-            metaobjectsData.nodes[index]?.translatableContent[0]?.digest,
+          translatableContentDigest: blogsData.nodes
+            .find((item: any) => item?.resourceId === selectBlogKey)
+            ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",
         };
 
@@ -321,30 +449,72 @@ const Index = () => {
     });
   };
 
-  const generateMenuItemsArray = (items: any) => {
-    return items.nodes.flatMap((item: any, index: number) => {
-      // 创建当前项的对象
-      const currentItem = {
-        key: `${item?.resourceId}`, // 使用 key 生成唯一的 key
-        index: index,
-        resource: "label", // 资源字段固定为 "Menu Items"
-        default_language: item?.translatableContent[0]?.value, // 默认语言为 item 的标题
-        translated: item?.translations[0]?.value, // 翻译字段初始化为空字符串
-        type: item?.translatableContent[0]?.type,
-      };
-      return [currentItem];
-    });
+  const transBeforeData = ({ blogs }: { blogs: any }) => {
+    let data: BlogType = {
+      key: "",
+      handle: {
+        value: "",
+        type: "",
+      },
+      title: {
+        value: "",
+        type: "",
+      },
+      translations: {
+        handle: "",
+        key: "",
+        title: "",
+      },
+    };
+    const blog = blogs.nodes.find(
+      (blog: any) => blog?.resourceId === selectBlogKey,
+    );
+    data.key = blog?.resourceId;
+    data.title = {
+      value: blog?.translatableContent.find(
+        (item: any) => item.key === "title",
+      )?.value,
+      type: blog?.translatableContent.find(
+        (item: any) => item.key === "title",
+      )?.type,
+    };
+    data.handle = {
+      value: blog?.translatableContent.find(
+        (item: any) => item.key === "handle",
+      )?.value,
+      type: blog?.translatableContent.find(
+        (item: any) => item.key === "handle",
+      )?.type,
+    };
+    data.translations.key = blog?.resourceId;
+    data.translations.title = blog?.translations.find(
+      (item: any) => item.key === "title",
+    )?.value;
+    data.translations.handle = blog?.translations.find(
+      (item: any) => item.key === "handle",
+    )?.value;
+
+    return data;
   };
 
-  const handleTranslate = async (resourceType: string, key: string, type: string, context: string, index: number) => {
+  const exMenuData = (blogs: any) => {
+    const data = blogs.nodes.map((blog: any) => ({
+      key: blog?.resourceId,
+      label: blog?.translatableContent.find((item: any) => item.key === "title")
+        .value,
+    }));
+    return data;
+  };
+
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
     if (!key || !type || !context) {
       return;
     }
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: shopName,
-      source: metaobjectsData.nodes
-        .find((item: any) => item?.resourceId === key)
+      source: blogsData.nodes
+        .find((item: any) => item?.resourceId === selectBlogKey)
         ?.translatableContent.find((item: any) => item.key === key)
         ?.locale,
       target: searchTerm || "",
@@ -356,7 +526,7 @@ const Index = () => {
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response, index)
+        handleInputChange(key, data.response)
         shopify.toast.show(t("Translated successfully"))
       }
     } else {
@@ -365,12 +535,11 @@ const Index = () => {
     setLoadingItems((prev) => prev.filter((item) => item !== key));
   }
 
-
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);
     isManualChange.current = true;
     setSelectedLanguage(language);
-    navigate(`/app/manage_translation/metaobject?language=${language}`);
+    navigate(`/app/manage_translation/blog?language=${language}`);
   }
 
   const handleItemChange = (item: string) => {
@@ -382,21 +551,21 @@ const Index = () => {
 
   const onPrevious = () => {
     const formData = new FormData();
-    const startCursor = metaobjectsData.pageInfo.startCursor;
+    const startCursor = blogsData.pageInfo.startCursor;
     formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: `/app/manage_translation/metaobject?language=${searchTerm}`,
+      action: `/app/manage_translation/blog?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
   const onNext = () => {
     const formData = new FormData();
-    const endCursor = metaobjectsData.pageInfo.endCursor;
+    const endCursor = blogsData.pageInfo.endCursor;
     formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
     submit(formData, {
       method: "post",
-      action: `/app/manage_translation/metaobject?language=${searchTerm}`,
+      action: `/app/manage_translation/blog?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -406,7 +575,7 @@ const Index = () => {
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
       method: "post",
-      action: `/app/manage_translation/metaobject?language=${searchTerm}`,
+      action: `/app/manage_translation/blog?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
@@ -437,7 +606,7 @@ const Index = () => {
         >
           <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
             <Text>
-              {t("Metaobjects")}
+              {t("Blog")}
             </Text>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
@@ -459,6 +628,7 @@ const Index = () => {
               }}
             >
               <Select
+                // style={{ minWidth: 120 }}
                 label={""}
                 options={itemOptions}
                 value={selectedItem}
@@ -489,24 +659,31 @@ const Index = () => {
       >
         {isLoading ? (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
-        ) : metaobjects.nodes.length ? (
-          <Content
-            style={{
-              padding: "0 24px",
-              height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
-              overflow: 'auto',
-              minHeight: '70vh',
-            }}
-          >
-            <Space
-              direction="vertical"
-              size="middle"
-              style={{ display: "flex" }}
+        ) : blogs.nodes.length ? (
+          <>
+            <Sider
+              style={{
+                background: colorBgContainer,
+                height: 'calc(100vh - 124px)',
+                width: '200px',
+                minHeight: '70vh',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'auto',
+              }}
             >
-              <Table
-                columns={resourceColumns}
-                dataSource={resourceData}
-                pagination={false}
+              <Menu
+                mode="inline"
+                defaultSelectedKeys={[blogsData.nodes[0]?.resourceId]}
+                defaultOpenKeys={["sub1"]}
+                style={{
+                  flex: 1,
+                  overflowY: "auto",
+                  minHeight: 0,
+                }}
+                items={menuData}
+                selectedKeys={[selectBlogKey]}
+                onClick={(e) => setSelectBlogKey(e.key)}
               />
               <div style={{ display: "flex", justifyContent: "center" }}>
                 <Pagination
@@ -516,8 +693,22 @@ const Index = () => {
                   onNext={onNext}
                 />
               </div>
-            </Space>
-          </Content>
+            </Sider>
+            <Content
+              style={{
+                padding: "0 24px",
+                height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+                overflow: 'auto',
+                minHeight: '70vh',
+              }}
+            >
+              <Table
+                columns={resourceColumns}
+                dataSource={resourceData}
+                pagination={false}
+              />
+            </Content>
+          </>
         ) : (
           <Result
             title={t("The specified fields were not found in the store.")}

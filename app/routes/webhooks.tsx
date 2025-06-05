@@ -32,11 +32,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (topic) {
     case "APP_UNINSTALLED":
       try {
+        Uninstall({ shop });
+        UpdateUserPlan({ shop, plan: 2 });
         if (session) {
           await db.session.deleteMany({ where: { shop } });
         }
-        await Uninstall({ shop });
-        UpdateUserPlan({ shop, plan: 2 });
         break;
       } catch (error) {
         console.error("Error APP_UNINSTALLED:", error);

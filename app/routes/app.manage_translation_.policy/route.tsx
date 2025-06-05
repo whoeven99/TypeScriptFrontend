@@ -7,52 +7,32 @@ import {
   Spin,
   Table,
   theme,
-  Typography
+  Typography,
 } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  useActionData,
   useFetcher,
   useLoaderData,
-  useNavigate,
-  useSubmit,
   useLocation,
+  useNavigate,
   useSearchParams,
-} from "@remix-run/react"; // 引入 useNavigate, useLocation, useSearchParams
-import { FullscreenBar, Pagination, Select } from "@shopify/polaris";
+} from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  queryNextTransType,
-  queryPreviousTransType,
-  queryShopLanguages,
-} from "~/api/admin";
-import { ShopLocalesType } from "../app.language/route";
+import { queryNextTransType } from "~/api/admin";
 import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
-import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
+import ManageTableInput from "~/components/manageTableInput";
+import { useDispatch, useSelector } from "react-redux";
 import { Modal } from "@shopify/app-bridge-react";
-import { useSelector } from "react-redux";
+import { FullscreenBar, Select } from "@shopify/polaris";
+import { setTableData } from "~/store/modules/languageTableData";
+import { setUserConfig } from "~/store/modules/userConfig";
+import { ShopLocalesType } from "../app.language/route";
 
 const { Sider, Content } = Layout;
-const { Text } = Typography;
 
-interface BlogType {
-  key: string;
-  handle: {
-    value: string;
-    type: string;
-  };
-  title: {
-    value: string;
-    type: string;
-  };
-  translations: {
-    key: string;
-    handle: string | undefined;
-    title: string | undefined;
-  };
-}
+const { Text } = Typography;
 
 type TableDataType = {
   key: string;
@@ -63,7 +43,6 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-
   // 如果没有 language 参数，直接返回空数据
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
@@ -72,94 +51,69 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
 
   try {
-    const blogs = await queryNextTransType({
+    const policies = await queryNextTransType({
       shop,
       accessToken: accessToken as string,
-      resourceType: "BLOG",
+      resourceType: "SHOP_POLICY",
       endCursor: "",
       locale: searchTerm || "",
     });
-
     return json({
       server: process.env.SERVER_URL,
       shopName: shop,
       searchTerm,
-      blogs,
+      policies,
     });
   } catch (error) {
-    console.error("Error load blog:", error);
-    throw new Response("Error load blog", { status: 500 });
+    console.error("Error load policy:", error);
+    throw new Response("Error load policy", { status: 500 });
   }
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
-
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
   try {
     const formData = await request.formData();
-    const startCursor: string = JSON.parse(
-      formData.get("startCursor") as string,
-    );
-    const endCursor: string = JSON.parse(formData.get("endCursor") as string);
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
     switch (true) {
-      case !!startCursor:
-        const previousBlogs = await queryPreviousTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "BLOG",
-          startCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
-        return json({ previousBlogs: previousBlogs });
-      case !!endCursor:
-        const nextBlogs = await queryNextTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "BLOG",
-          endCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
-        return json({ nextBlogs: nextBlogs });
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
           accessToken: accessToken as string,
           confirmData,
         });
-        return json({ data: data, confirmData: confirmData });
+        return json({ data: data, confirmData });
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
-    console.error("Error action blog:", error);
-    throw new Response("Error action blog", { status: 500 });
+    console.error("Error action policy:", error);
+    throw new Response("Error action policy", { status: 500 });
   }
 };
 
 const Index = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const { t } = useTranslation();
-
-  const { searchTerm, blogs, server, shopName } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  const { searchTerm, policies, server, shopName } =
+    useLoaderData<typeof loader>();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+  const { t } = useTranslation();
   const isManualChange = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
-  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
   const navigate = useNavigate();
-  const submit = useSubmit(); // 使用 useSubmit 钩子
+  const dispatch = useDispatch();
+  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+
+  const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -167,19 +121,19 @@ const Index = () => {
     return !!searchParams.get('language');
   });
 
-  const [menuData, setMenuData] = useState<MenuProps["items"]>([]);
-  const [blogsData, setBlogsData] = useState(blogs);
-  const [blogData, setBlogData] = useState<BlogType>();
+  const menuData: MenuProps["items"] = useMemo(() => policies.nodes.map((policy: any) => ({
+    key: policy.resourceId,
+    label: policy.translatableContent.find((item: any) => item.key === "body")
+      .value,
+  })), [policies]);
+
+  const [policyData, setPolicyData] = useState<any>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [selectBlogKey, setSelectBlogKey] = useState(
-    blogs.nodes[0]?.resourceId,
-  );
+  const [selectPolicyKey, setSelectPolicyKey] = useState(policies.nodes[0]?.resourceId);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
-  const [translatedValues, setTranslatedValues] = useState<{
-    [key: string]: string;
-  }>({});
+  const [translatedValues, setTranslatedValues] = useState<{ [key: string]: string }>({});
   const itemOptions = [
     { label: t("Products"), value: "product" },
     { label: t("Collection"), value: "collection" },
@@ -198,24 +152,18 @@ const Index = () => {
   ]
   const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
-  const [selectedItem, setSelectedItem] = useState<string>("blog");
-  const [hasPrevious, setHasPrevious] = useState<boolean>(
-    blogsData.pageInfo.hasPreviousPage || false
-  );
-  const [hasNext, setHasNext] = useState<boolean>(
-    blogsData.pageInfo.hasNextPage || false
-  );
+  const [selectedItem, setSelectedItem] = useState<string>("policy");
 
   useEffect(() => {
-    if (blogs) {
-      setMenuData(exMenuData(blogs));
-      setIsLoading(false);
+    if (languageTableData.length === 0) {
+      languageFetcher.submit({
+        language: JSON.stringify(true),
+      }, {
+        method: "post",
+        action: "/app/manage_translation",
+      });
     }
   }, []);
-
-  useEffect(() => {
-    loadingItemsRef.current = loadingItems;
-  }, [loadingItems]);
 
   useEffect(() => {
     if (languageTableData) {
@@ -229,66 +177,41 @@ const Index = () => {
   }, [languageTableData])
 
   useEffect(() => {
-    if (blogs && isManualChange.current) {
-      setBlogsData(blogs)
-      setMenuData(exMenuData(blogs));
-      setSelectBlogKey(blogs.nodes[0]?.resourceId);
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 100);
-      isManualChange.current = false; // 重置
+    if (policies && isManualChange.current) {
+      setSelectPolicyKey(policies?.nodes[0]?.resourceId);
+      isManualChange.current = false;
+      setIsLoading(false);
     }
-  }, [blogs])
+  }, [policies]);
 
   useEffect(() => {
-    const data = transBeforeData({
-      blogs: blogsData,
-    });
-    setBlogData(data);
-    setConfirmData([]);
-    setTranslatedValues({});
-    setHasPrevious(blogsData.pageInfo.hasPreviousPage);
-    setHasNext(blogsData.pageInfo.hasNextPage);
-  }, [selectBlogKey, blogsData]);
-
-  useEffect(() => {
-    setResourceData(
-      [
-        {
-          key: "title",
-          resource: "Title",
-          default_language: blogData?.title?.value,
-          translated: blogData?.translations?.title,
-          type: blogData?.title?.type,
-        },
-        {
-          key: "handle",
-          resource: "Handle",
-          default_language: blogData?.handle?.value,
-          translated: blogData?.translations?.handle,
-          type: blogData?.handle?.type,
-        },
-      ].filter((item) => item.default_language),
+    const data: any = policies.nodes.find(
+      (policy: any) => policy.resourceId === selectPolicyKey,
     );
-  }, [blogData]);
+    setConfirmData([]);
+    setPolicyData(data);
+    setTranslatedValues({});
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 100);
+    setLoadingItems([]);
+  }, [selectPolicyKey, policies]);
 
   useEffect(() => {
-    if (actionData && "nextBlogs" in actionData) {
-      const nextBlogs = exMenuData(actionData.nextBlogs);
-      // 在这里处理 nextBlogs
-      setMenuData(nextBlogs);
-      setBlogsData(actionData.nextBlogs);
-      setSelectBlogKey(actionData.nextBlogs.nodes[0]?.resourceId);
-    } else if (actionData && "previousBlogs" in actionData) {
-      const previousBlogs = exMenuData(actionData.previousBlogs);
-      // 在这里处理 previousBlogs
-      setMenuData(previousBlogs);
-      setBlogsData(actionData.previousBlogs);
-      setSelectBlogKey(actionData.previousBlogs.nodes[0]?.resourceId);
-    } else {
-      // 如果不存在 nextBlogs，可以执行其他逻辑
-    }
-  }, [actionData]);
+    setResourceData([
+      {
+        key: "body",
+        resource: "Content",
+        default_language: policyData?.translatableContent[0]?.value,
+        translated: policyData?.translations[0]?.value,
+        type: policyData?.translatableContent[0]?.type,
+      },
+    ]);
+  }, [policyData]);
+
+  useEffect(() => {
+    setIsVisible(!!searchParams.get('language'));
+  }, [location]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -299,34 +222,49 @@ const Index = () => {
         item.success === false
       );
 
-      successfulItem.forEach((item: any) => {
-        const index = blogsData.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
-        if (index !== -1) {
-          const blog = blogsData.nodes[index].translations.find((option: any) => option.key === item.data.key);
-          if (blog) {
-            blog.value = item.data.value;
-          } else {
-            blogsData.nodes[index].translations.push({
-              key: item.data.key,
-              value: item.data.value,
-            });
-          }
-        }
-      })
+      // successfulItem.forEach((item: any) => {
+      //   const index = policies.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+      //   if (index !== -1) {
+      //     const policy = policies.nodes[index].translations.find((option: any) => option.key === item.data.key);
+      //     if (policy) {
+      //       policy.value = item.data.value;
+      //     } else {
+      //       policies.nodes[index].translations.push({
+      //         key: item.data.key,
+      //         value: item.data.value,
+      //       });
+      //     }
+      //   }
+      // })
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
       } else {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
-
     }
     setConfirmLoading(false);
   }, [confirmFetcher.data]);
 
   useEffect(() => {
-    setIsVisible(!!searchParams.get('language'));
-  }, [location]);
+    if (languageFetcher.data) {
+      if (languageFetcher.data.data) {
+        const shopLanguages = languageFetcher.data.data;
+        dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
+          key: index,
+          language: language.name,
+          locale: language.locale,
+          primary: language.primary,
+          published: language.published,
+        }))));
+        const locale = shopLanguages.find(
+          (language: ShopLocalesType) => language.primary === true,
+        )?.locale;
+        dispatch(setUserConfig({ locale: locale || "" }));
+      }
+    }
+  }, [languageFetcher.data]);
+
 
   const resourceColumns = [
     {
@@ -339,25 +277,29 @@ const Index = () => {
       title: t("Default Language"),
       dataIndex: "default_language",
       key: "default_language",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
-        return <ManageTableInput record={record} isRtl={searchTerm === "ar"} />;
+        return (
+          <ManageTableInput record={record} />
+        );
       },
     },
     {
       title: t("Translated"),
       dataIndex: "translated",
       key: "translated",
-      width: "45%",
+      width: "40%",
       render: (_: any, record: TableDataType) => {
         return (
-          <ManageTableInput
-            record={record}
-            translatedValues={translatedValues}
-            setTranslatedValues={setTranslatedValues}
-            handleInputChange={handleInputChange}
-            isRtl={searchTerm === "ar"}
-          />
+          record && (
+            <ManageTableInput
+              record={record}
+              translatedValues={translatedValues}
+              setTranslatedValues={setTranslatedValues}
+              handleInputChange={handleInputChange}
+              isRtl={searchTerm === "ar"}
+            />
+          )
         );
       },
     },
@@ -369,7 +311,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("BLOG", record?.key || "", record?.type || "", record?.default_language || "");
+              handleTranslate("SHOP_POLICY", record?.key || "", record?.type || "", record?.default_language || "");
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -399,80 +341,20 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: blogsData.nodes.find(
-            (item: any) => item?.resourceId === selectBlogKey,
-          )?.resourceId,
-          locale: blogsData.nodes
-            .find((item: any) => item?.resourceId === selectBlogKey)
-            ?.translatableContent.find((item: any) => item.key === key)?.locale,
+          resourceId: policyData.resourceId,
+          locale: policyData.translatableContent.find(
+            (item: any) => item.key === key,
+          )?.locale,
           key: key,
           value: value, // 初始为空字符串
-          translatableContentDigest: blogsData.nodes
-            .find((item: any) => item?.resourceId === selectBlogKey)
-            ?.translatableContent.find((item: any) => item.key === key)?.digest,
+          translatableContentDigest: policyData.translatableContent.find(
+            (item: any) => item.key === key,
+          )?.digest,
           target: searchTerm || "",
         };
-
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       }
     });
-  };
-
-  const transBeforeData = ({ blogs }: { blogs: any }) => {
-    let data: BlogType = {
-      key: "",
-      handle: {
-        value: "",
-        type: "",
-      },
-      title: {
-        value: "",
-        type: "",
-      },
-      translations: {
-        handle: "",
-        key: "",
-        title: "",
-      },
-    };
-    const blog = blogs.nodes.find(
-      (blog: any) => blog?.resourceId === selectBlogKey,
-    );
-    data.key = blog?.resourceId;
-    data.title = {
-      value: blog?.translatableContent.find(
-        (item: any) => item.key === "title",
-      )?.value,
-      type: blog?.translatableContent.find(
-        (item: any) => item.key === "title",
-      )?.type,
-    };
-    data.handle = {
-      value: blog?.translatableContent.find(
-        (item: any) => item.key === "handle",
-      )?.value,
-      type: blog?.translatableContent.find(
-        (item: any) => item.key === "handle",
-      )?.type,
-    };
-    data.translations.key = blog?.resourceId;
-    data.translations.title = blog?.translations.find(
-      (item: any) => item.key === "title",
-    )?.value;
-    data.translations.handle = blog?.translations.find(
-      (item: any) => item.key === "handle",
-    )?.value;
-
-    return data;
-  };
-
-  const exMenuData = (blogs: any) => {
-    const data = blogs.nodes.map((blog: any) => ({
-      key: blog?.resourceId,
-      label: blog?.translatableContent.find((item: any) => item.key === "title")
-        .value,
-    }));
-    return data;
   };
 
   const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
@@ -482,8 +364,8 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: shopName,
-      source: blogsData.nodes
-        .find((item: any) => item?.resourceId === selectBlogKey)
+      source: policies.nodes
+        .find((item: any) => item?.resourceId === selectPolicyKey)
         ?.translatableContent.find((item: any) => item.key === key)
         ?.locale,
       target: searchTerm || "",
@@ -508,7 +390,7 @@ const Index = () => {
     setIsLoading(true);
     isManualChange.current = true;
     setSelectedLanguage(language);
-    navigate(`/app/manage_translation/blog?language=${language}`);
+    navigate(`/app/manage_translation/policy?language=${language}`);
   }
 
   const handleItemChange = (item: string) => {
@@ -518,41 +400,19 @@ const Index = () => {
     navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
   }
 
-  const onPrevious = () => {
-    const formData = new FormData();
-    const startCursor = blogsData.pageInfo.startCursor;
-    formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-    submit(formData, {
-      method: "post",
-      action: `/app/manage_translation/blog?language=${searchTerm}`,
-    }); // 提交表单请求
-  };
-
-  const onNext = () => {
-    const formData = new FormData();
-    const endCursor = blogsData.pageInfo.endCursor;
-    formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-    submit(formData, {
-      method: "post",
-      action: `/app/manage_translation/blog?language=${searchTerm}`,
-    }); // 提交表单请求
-  };
-
   const handleConfirm = () => {
     setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
       method: "post",
-      action: `/app/manage_translation/blog?language=${searchTerm}`,
+      action: `/app/manage_translation/policy?language=${searchTerm}`,
     }); // 提交表单请求
   };
 
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
-    navigate(`/app/manage_translation?language=${searchTerm}`, {
-      state: { key: searchTerm },
-    }); // 跳转到 /app/manage_translation
+    navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
   };
 
   return (
@@ -575,7 +435,7 @@ const Index = () => {
         >
           <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
             <Text>
-              {t("Blog")}
+              {t("Policy")}
             </Text>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
@@ -597,7 +457,6 @@ const Index = () => {
               }}
             >
               <Select
-                // style={{ minWidth: 120 }}
                 label={""}
                 options={itemOptions}
                 value={selectedItem}
@@ -628,40 +487,26 @@ const Index = () => {
       >
         {isLoading ? (
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
-        ) : blogs.nodes.length ? (
+        ) : policies.nodes.length ? (
           <>
             <Sider
               style={{
                 background: colorBgContainer,
                 height: 'calc(100vh - 124px)',
                 width: '200px',
-                minHeight: '70vh',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'auto',
               }}
             >
               <Menu
                 mode="inline"
-                defaultSelectedKeys={[blogsData.nodes[0]?.resourceId]}
                 defaultOpenKeys={["sub1"]}
-                style={{
-                  flex: 1,
-                  overflowY: "auto",
-                  minHeight: 0,
-                }}
+                style={{ height: "100%" }}
                 items={menuData}
-                selectedKeys={[selectBlogKey]}
-                onClick={(e) => setSelectBlogKey(e.key)}
+                // onChange={onChange}
+                selectedKeys={[selectPolicyKey]}
+                onClick={(e: any) => {
+                  setSelectPolicyKey(e.key);
+                }}
               />
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <Pagination
-                  hasPrevious={hasPrevious}
-                  onPrevious={onPrevious}
-                  hasNext={hasNext}
-                  onNext={onNext}
-                />
-              </div>
             </Sider>
             <Content
               style={{
