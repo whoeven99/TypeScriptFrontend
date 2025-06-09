@@ -395,5 +395,8 @@
   "Translation task is about to start": "Translation task is about to start",
   "{{ locale }} is published": "{{ locale }} is published",
   "{{ locale }} is unPublished": "{{ locale }} is unPublished",
-  "Handle needs to be used with 'Products item' or other items.": "Handle needs to be used with 'Products item' or other items."
+  "Handle needs to be used with 'Products item' or other items.": "Handle needs to be used with 'Products item' or other items.",
+  "Confirm": "Confirm",
+  "Click to Confirm and try all the features of Premium Plan for free for 5 days except credit discount, which will be automatically locked after 5 days": "Click to Confirm and try all the features of Premium Plan for free for 5 days except credit discount, which will be automatically locked after 5 days",
+  "Try Premium Plan": "Try Premium Plan"
 }
