@@ -154,9 +154,9 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       isValid = false;
     }
 
-    if (title === "Create rule" && dataSource.length >= 10) {
-      isOversizeError = false;
-    }
+    // if (title === "Create rule" && dataSource.length >= 10) {
+    //   isOversizeError = false;
+    // }
 
     const source = sourceText + rangeCode;
     dataSource.map((item: any) => {
@@ -210,7 +210,9 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       });
       setConfirmButtonDisable(true);
     } else if (!isOversizeError) {
-      shopify.toast.show(t("You can add up to {{count}} translation rules", { count: 10 }));
+      shopify.toast.show(
+        t("You can add up to {{count}} translation rules", { count: 10 }),
+      );
       return;
     } else if (!isSameRuleError) {
       shopify.toast.show(t("You cannot add two conflicting rules."));
@@ -248,11 +250,14 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       open={isVisible}
       onCancel={handleCloseModal}
       footer={[
-        <div key={"footer_buttons"} style={{
-          display: "flex",
-          justifyContent: "center",
-          width: "100%",
-        }}>
+        <div
+          key={"footer_buttons"}
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+          }}
+        >
           <Button
             key={"manage_cancel_button"}
             onClick={handleCloseModal}
@@ -294,7 +299,12 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             />
             {sourceTextError && (
               <Text type="danger" style={{ marginTop: 2 }}>
-                <ExclamationCircleOutlined style={{ display: sourceTextError ? "inline-block" : "none", marginRight: "4px" }} />
+                <ExclamationCircleOutlined
+                  style={{
+                    display: sourceTextError ? "inline-block" : "none",
+                    marginRight: "4px",
+                  }}
+                />
                 {sourceTextErrorMsg}
               </Text>
             )}
@@ -311,7 +321,12 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
             />
             {targetTextError && (
               <Text type="danger" style={{ marginTop: 2 }}>
-                <ExclamationCircleOutlined style={{ display: targetTextError ? "inline-block" : "none", marginRight: "4px" }} />
+                <ExclamationCircleOutlined
+                  style={{
+                    display: targetTextError ? "inline-block" : "none",
+                    marginRight: "4px",
+                  }}
+                />
                 {targetTextErrorMsg}
               </Text>
             )}
@@ -330,17 +345,23 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           />
           {rangeCodeError && (
             <Text type="danger" style={{ marginTop: 2 }}>
-              <ExclamationCircleOutlined style={{ display: rangeCodeError ? "inline-block" : "none", marginRight: "4px" }} />
+              <ExclamationCircleOutlined
+                style={{
+                  display: rangeCodeError ? "inline-block" : "none",
+                  marginRight: "4px",
+                }}
+              />
               {rangeCodeErrorMsg}
             </Text>
           )}
         </div>
         <Text strong>{t("Match by")}</Text>
-        <Checkbox checked={checked} onChange={
-          (e) => {
+        <Checkbox
+          checked={checked}
+          onChange={(e) => {
             setChecked(e.target.checked);
-          }
-        }>
+          }}
+        >
           {t("Case-sensitive")}
         </Checkbox>
       </Space>
