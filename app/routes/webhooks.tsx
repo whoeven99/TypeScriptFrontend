@@ -6,8 +6,8 @@ import {
   AddSubscriptionQuotaRecord,
   CleanData,
   DeleteData,
+  GetUserSubscriptionPlan,
   InsertOrUpdateOrder,
-  InsertTargets,
   RequestData,
   SendPurchaseSuccessEmail,
   SendSubscribeSuccessEmail,
@@ -45,43 +45,44 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     case "APP_PURCHASES_ONE_TIME_UPDATE":
       try {
         if (payload) {
+          new Response(null, { status: 200 });
           let credits = 0;
           let price = 0;
+          const plan = await GetUserSubscriptionPlan({ shop });
           switch (payload?.app_purchase_one_time.name) {
             case "500K Credits":
               credits = 500000;
-              price = 1.99;
+              price = plan.userSubscriptionPlan === 6 ? 1.99 : (plan.userSubscriptionPlan === 5 ? 2.99 : (plan.userSubscriptionPlan === 4 ? 3.59 : 3.99));
               break;
             case "1M Credits":
               credits = 1000000;
-              price = 3.99;
+              price = plan.userSubscriptionPlan === 6 ? 3.99 : (plan.userSubscriptionPlan === 5 ? 5.99 : (plan.userSubscriptionPlan === 4 ? 7.19 : 7.99));
               break;
             case "2M Credits":
               credits = 2000000;
-              price = 7.99;
+              price = plan.userSubscriptionPlan === 6 ? 7.99 : (plan.userSubscriptionPlan === 5 ? 11.99 : (plan.userSubscriptionPlan === 4 ? 14.39 : 15.99));
               break;
             case "3M Credits":
               credits = 3000000;
-              price = 11.99;
+              price = plan.userSubscriptionPlan === 6 ? 11.99 : (plan.userSubscriptionPlan === 5 ? 19.99 : (plan.userSubscriptionPlan === 4 ? 21.99 : 23.99));
               break;
             case "5M Credits":
               credits = 5000000;
-              price = 19.99;
+              price = plan.userSubscriptionPlan === 6 ? 19.99 : (plan.userSubscriptionPlan === 5 ? 29.99 : (plan.userSubscriptionPlan === 4 ? 35.99 : 39.99));
               break;
             case "10M Credits":
               credits = 10000000;
-              price = 39.99;
+              price = plan.userSubscriptionPlan === 6 ? 39.99 : (plan.userSubscriptionPlan === 5 ? 59.99 : (plan.userSubscriptionPlan === 4 ? 71.99 : 79.99));
               break;
             case "20M Credits":
               credits = 20000000;
-              price = 79.99;
+              price = plan.userSubscriptionPlan === 6 ? 79.99 : (plan.userSubscriptionPlan === 5 ? 119.99 : (plan.userSubscriptionPlan === 4 ? 143.99 : 159.99));
               break;
             case "30M Credits":
               credits = 30000000;
-              price = 119.99;
+              price = plan.userSubscriptionPlan === 6 ? 119.99 : (plan.userSubscriptionPlan === 5 ? 179.99 : (plan.userSubscriptionPlan === 4 ? 219.99 : 239.99));
               break;
           }
-          new Response(null, { status: 200 });
           InsertOrUpdateOrder({
             id: payload?.app_purchase_one_time.admin_graphql_api_id,
             status: payload?.app_purchase_one_time.status,
