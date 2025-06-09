@@ -56,6 +56,7 @@ const planMapping = {
   4: 10,
   5: 50,
   6: 100,
+  7: 100,
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {

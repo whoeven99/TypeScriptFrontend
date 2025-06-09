@@ -20,6 +20,22 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const StartFreePlan = async ({ shopName }: { shopName: string }) => {
+  try {
+    const response = await axios.post(`${process.env.SERVER_URL}/userTrials/startFreePlan?shopName=${shopName}`);
+    console.log("StartFreePlan: ", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error StartFreePlan:", error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMsg: 'Error StartFreePlan',
+      response: null,
+    };
+  }
+};
+
 export const SingleTextTranslate = async ({
   shopName,
   source,

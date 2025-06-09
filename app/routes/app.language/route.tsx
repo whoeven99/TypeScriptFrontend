@@ -100,7 +100,8 @@ const autoTranslationMapping = {
   3: 20,
   4: 20,
   5: 20,
-  6: 20
+  6: 20,
+  7: 20
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {

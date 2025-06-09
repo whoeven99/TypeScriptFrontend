@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import ScrollNotice from "~/components/ScrollNotice";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { GetUserSubscriptionPlan, GetUserWords } from "~/api/JavaServer";
+import { GetUserSubscriptionPlan, GetUserWords, StartFreePlan } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
@@ -27,6 +27,7 @@ import "./style.css";
 import { mutationAppSubscriptionCreate } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
+import axios from "axios";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -49,6 +50,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const words = JSON.parse(formData.get("words") as string);
     const planInfo = JSON.parse(formData.get("planInfo") as string);
     const payForPlan = JSON.parse(formData.get("payForPlan") as string);
+    const freeTrial = JSON.parse(formData.get("freeTrial") as string);
     switch (true) {
       case !!words:
         try {
@@ -109,6 +111,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         } catch (error) {
           console.error("Error payForPlan action:", error);
         }
+      case !!freeTrial:
+        try {
+          const data = await StartFreePlan({ shopName: shop });
+          console.log("freeTrial: ", data);
+          return data;
+        } catch (error) {
+          console.error("Error freeTrial action:", error);
+          return {
+            success: false,
+            errorCode: 0,
+            errorMsg: 'Error freeTrial',
+            response: null,
+          };
+        }
     }
     return null;
   } catch (error) {
@@ -126,7 +142,9 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [buyButtonLoading, setBuyButtonLoading] = useState(false);
   const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
+  const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
+  const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
   const isQuotaExceeded = useMemo(
     () => currentCredits >= maxCredits && maxCredits > 0,
     [currentCredits, maxCredits]
@@ -139,13 +157,27 @@ const Index = () => {
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
+  const freeTrialFetcher = useFetcher<any>();
 
   useEffect(() => {
-    setIsLoading(false);
     wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
     if (!userConfig.plan || !userConfig.updateTime) {
       planfetcher.submit({ planInfo: JSON.stringify(true) }, { method: "POST" });
+    } else {
+      setSelectedPlan(userConfig.plan);
+      setUpdateTime(userConfig.updateTime);
     }
+    setIsLoading(false);
+    const getPlan = async () => {
+      try {
+        const response = await axios.post(`${server}/userTrials/isOpenFreePlan?shopName=${shop}`);
+        console.log(response.data);
+        setHasOpenFreePlan(response.data.response || false);
+      } catch (error) {
+        console.error("Error getPlan:", error);
+      }
+    }
+    getPlan();
   }, []);
 
   useEffect(() => {
@@ -212,6 +244,32 @@ const Index = () => {
       }
     }
   }, [payFetcher.data, payForPlanFetcher.data]);
+
+  useEffect(() => {
+    if (freeTrialFetcher.data) {
+      if (freeTrialFetcher.data.success) {
+        setFreeTrialModalOpen(false);
+        setFreeTrialButtonLoading(false);
+        setSelectedPlan(7);
+        dispatch(setUserConfig({
+          plan: "7", updateTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          }).replace(/\//g, '-')
+        }));
+        setUpdateTime(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).replace(/\//g, '-'));
+        setHasOpenFreePlan(true);
+        shopify.toast.show("Free trial started successfully");
+      } else {
+        setFreeTrialButtonLoading(false);
+      }
+    }
+  }, [freeTrialFetcher.data]);
 
   const creditOptions: OptionType[] = useMemo(() => [
     {
@@ -489,8 +547,9 @@ const Index = () => {
     );
   };
 
-  const handleFreeTrial = () => {
-    setFreeTrialModalOpen(false);
+  const handleFreeTrial = async () => {
+    setFreeTrialButtonLoading(true);
+    freeTrialFetcher.submit({ freeTrial: JSON.stringify(true) }, { method: "POST" });
   };
 
   return (
@@ -517,7 +576,7 @@ const Index = () => {
                 </Popover>
               </div>
               {selectedPlan && <Text>
-                {t("Current plan: ")}{selectedPlan === 3 ? "Starter" : selectedPlan === 4 ? "Basic" : selectedPlan === 5 ? "Pro" : selectedPlan === 6 ? "Premium" : "Free"} {t("plan")}
+                {t("Current plan: ")}{selectedPlan === 3 ? "Starter" : selectedPlan === 4 ? "Basic" : selectedPlan === 5 ? "Pro" : selectedPlan === 6 ? "Premium" : selectedPlan === 7 ? "Free Trial" : "Free"} {t("plan")}
               </Text>}
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -744,8 +803,8 @@ const Index = () => {
                       {plan.buttonText}
                     </Button>
 
-                    {/* {
-                      plan.title === "Premium" && (
+                    {
+                      plan.title === "Premium" && !hasOpenFreePlan && (
                         <Button
                           type="primary"
                           block
@@ -755,7 +814,7 @@ const Index = () => {
                           {t("Free trial")}
                         </Button>
                       )
-                    } */}
+                    }
 
                     <div style={{ flex: 1 }}>
                       {plan.features.map((feature, idx) => (
@@ -785,7 +844,7 @@ const Index = () => {
           </Row>
         </div>
       </Space>
-      {/* <Modal
+      <Modal
         title={t("Try Premium Plan")}
         open={freeTrialModalOpen}
         style={{ top: "40%" }}
@@ -794,7 +853,7 @@ const Index = () => {
             <Button onClick={() => setFreeTrialModalOpen(false)}>
               {t("Cancel")}
             </Button>
-            <Button type="primary" onClick={handleFreeTrial}>
+            <Button type="primary" loading={freeTrialButtonLoading} onClick={handleFreeTrial}>
               {t("Confirm")}
             </Button>
           </Space>
@@ -803,7 +862,7 @@ const Index = () => {
         <Text>
           {t("Click to Confirm and try all the features of Premium Plan for free for 5 days except credit discount, which will be automatically locked after 5 days")}
         </Text>
-      </Modal> */}
+      </Modal>
       {/* <Modal open={creditsCalculatorOpen} onCancel={() => setCreditsCalculatorOpen(false)}>
         <Title level={4}>{t("Credits Calculator")}</Title>
         <Form>
