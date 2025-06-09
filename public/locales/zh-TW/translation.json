@@ -394,6 +394,9 @@
     "Translation task is about to start": "翻譯任務即將開始",
     "{{ locale }} is published": "{{ locale }} 已發布",
     "{{ locale }} is unPublished": "{{ locale }} 已取消發布",
-    "Handle needs to be used with 'Products item' or other items.": "Handle 需要與 '產品' 或其他項目一起使用。"
+    "Handle needs to be used with 'Products item' or other items.": "Handle 需要與 '產品' 或其他項目一起使用。",
+    "Confirm": "確認",
+    "Click to Confirm and try all the features of Premium Plan for free for 5 days except credit discount, which will be automatically locked after 5 days": "點擊確認並免費試用5天Premium計劃，除了積分折扣，5天后將自動鎖定。",
+    "Try Premium Plan": "試用Premium計劃"
 }
 

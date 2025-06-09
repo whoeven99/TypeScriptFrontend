@@ -395,5 +395,8 @@
     "Translation task is about to start": "Завдання перекладу починається",
     "{{ locale }} is published": "{{ locale }} опублікована",
     "{{ locale }} is unPublished": "{{ locale }} скасована",
-    "Handle needs to be used with 'Products item' or other items.": "Handle повинен бути використаний з 'Products item' або іншими елементами."
+    "Handle needs to be used with 'Products item' or other items.": "Handle повинен бути використаний з 'Products item' або іншими елементами.",
+    "Confirm": "Підтвердити",
+    "Click to Confirm and try all the features of Premium Plan for free for 5 days except credit discount, which will be automatically locked after 5 days": "Натисніть на Підтвердити і спробуйте всі функції Плану Преміум безкоштовно протягом 5 днів, за винятком знижки на кредити, яка буде автоматично заблокована після 5 днів",
+    "Try Premium Plan": "Спробувати план Преміум"
 }
