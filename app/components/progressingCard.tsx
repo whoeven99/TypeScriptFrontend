@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Card, message, Progress, Skeleton, Space, Typography } from "antd";
+import { Button, Card, Progress, Skeleton, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { PhoneOutlined } from "@ant-design/icons";
@@ -238,9 +238,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
             {
                 translation: JSON.stringify({
                     primaryLanguage: source,
-                    selectedLanguage: {
-                        locale: target,
-                    },
+                    selectedLanguage: target,
                     translateSettings1: "1",
                     translateSettings2: "1",
                     translateSettings3: [
