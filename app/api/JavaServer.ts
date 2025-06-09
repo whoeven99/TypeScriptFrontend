@@ -480,15 +480,14 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
       method: "GET",
     });
 
-    if (shop == "ciwishop.myshopify.com") {
-      return {
-        userSubscriptionPlan: 6,
-        currentPeriodEnd: null,
-      };
-    }
-
     if (response.data?.success) {
       const res = response.data?.response;
+      if (shop == "ciwishop.myshopify.com" && res.userSubscriptionPlan < 3) {
+        return {
+          userSubscriptionPlan: 6,
+          currentPeriodEnd: null,
+        };
+      }
       return res;
     } else {
       return {
