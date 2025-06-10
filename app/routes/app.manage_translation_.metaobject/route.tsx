@@ -73,6 +73,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
+  console.log(`${shop} load manage_translation_metaobject`);
+
   try {
     const formData = await request.formData();
     const startCursor: string = JSON.parse(
