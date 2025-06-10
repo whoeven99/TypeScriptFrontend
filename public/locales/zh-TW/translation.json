@@ -331,6 +331,8 @@
     "basic_features5": "可手動編輯翻譯內容",
     "basic_features6": "語言/貨幣切換器（依IP切換）",
     "basic_features7": "翻譯品質保證：支援人工免費修正",
+    "basic_features8": "IP 位置限制：10,000 IP/30 天",
+    "basic_features9": "超出限制：1 積分/IP",
     "all in Basic Plan": "所有功能皆包含於Basic方案",
     "pro_features1": "購買額外字符（25% 折扣）",
     "pro_features2": "支援多語言翻譯",
@@ -338,6 +340,8 @@
     "pro_features4": "支援翻譯SEO：meta資訊與圖片alt翻譯",
     "pro_features5": "支援翻譯judge.me及其他第三方應用",
     "pro_features6": "翻譯品質保證：支援人工免費修正",
+    "pro_features7": "IP 位置限制：25,000 IP/30 天",
+    "pro_features8": "超出限制：1 積分/IP",
     "all in Pro Plan": "所有功能皆包含於Pro方案",
     "premium_features1": "購買額外字符（50% 折扣）",
     "premium_features2": "自動更新和翻譯",
@@ -346,6 +350,8 @@
     "premium_features5": "翻譯品質保證：支援人工免費修正",
     "premium_features6": "翻譯專家人工審查",
     "premium_features7": "1對1人工支援",
+    "premium_features8": "IP 位置限制：50,000 IP/30 天",
+    "premium_features9": "超出限制：1 積分/IP",
     "Current plan: ": "當前計劃：",
     "plan": "計劃",
     "Auto translate updated successfully": "自動翻譯更新成功",
@@ -394,6 +400,12 @@
     "Translation task is about to start": "翻譯任務即將開始",
     "{{ locale }} is published": "{{ locale }} 已發布",
     "{{ locale }} is unPublished": "{{ locale }} 已取消發布",
-    "Handle needs to be used with 'Products item' or other items.": "Handle 需要與 '產品' 或其他項目一起使用。"
+    "Handle needs to be used with 'Products item' or other items.": "Handle 需要與 '產品' 或其他項目一起使用。",
+    "Confirm": "確認",
+    "Try Premium Plan": "試用Premium計劃",
+    "Free trial": "免費試用",
+    "Congratulations! You’ve received a 5-day free trial with full access to all features": "恭喜！您已獲得5天免費試用，可訪問所有功能",
+    "Free trial failed": "免費試用失敗",
+    "Free trial started successfully": "免費試用已成功啟動"
 }
 

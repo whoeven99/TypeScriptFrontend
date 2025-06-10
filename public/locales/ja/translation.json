@@ -331,6 +331,8 @@
     "basic_features5": "翻訳内容の手動編集",
     "basic_features6": "IPによる言語/通貨スイッチャー",
     "basic_features7": "翻訳品質保証：無料の手動修正をサポート",
+    "basic_features8": "IP位置情報切り替え制限：10,000 IP/30日",
+    "basic_features9": "制限超過：1 IPあたり1クレジット",
     "all in Basic Plan": "Basicプランのすべて",
     "pro_features1": "追加の文字を購入する（25%オフ）",
     "pro_features2": "複数の言語翻訳をサポート",
@@ -338,6 +340,8 @@
     "pro_features4": "SEO翻訳：meta情報と画像alt翻訳をサポート",
     "pro_features5": "translation judge.me と他のサードパーティアプリをサポート",
     "pro_features6": "翻訳品質保証：無料の手動修正をサポート",
+    "pro_features7": "IP位置情報切り替え制限：25,000 IP/30日",
+    "pro_features8": "制限超過：1 IPあたり1クレジット",
     "all in Pro Plan": "Proプランのすべて",
     "premium_features1": "追加の文字を購入する（50%オフ）",
     "premium_features2": "翻訳品質保証：無料の手動修正をサポート",
@@ -346,6 +350,8 @@
     "premium_features5": "翻訳品質保証：無料の手動修正をサポート",
     "premium_features6": "翻訳専門家の手動チェック",
     "premium_features7": "1v1サポート",
+    "premium_features8": "IP位置情報切り替え制限：50,000 IP/30日",
+    "premium_features9": "制限超過：1 IPあたり1クレジット",
     "Current plan: ": "現在のプラン: ",
     "plan": "プラン",
     "Auto translate updated successfully": "自動翻訳更新成功",  
@@ -394,6 +400,12 @@
     "Translation task is about to start": "翻訳タスクが開始されます",
     "{{ locale }} is published": "{{ locale }} が公開されました",
     "{{ locale }} is unPublished": "{{ locale }} が非公開されました",
-    "Handle needs to be used with 'Products item' or other items.": "Handleは'Products item'または他のアイテムと一緒に使用する必要があります。"
+    "Handle needs to be used with 'Products item' or other items.": "Handleは'Products item'または他のアイテムと一緒に使用する必要があります。",
+    "Confirm": "確認",
+    "Try Premium Plan": "Premiumプランを試す",
+    "Free trial": "無料試用",
+    "Congratulations! You’ve received a 5-day free trial with full access to all features": "おめでとうございます！5日間無料ですべての機能にアクセスできるようになりました。",
+    "Free trial failed": "無料試用に失敗しました",
+    "Free trial started successfully": "無料試用が正常に開始されました"
 }   
   

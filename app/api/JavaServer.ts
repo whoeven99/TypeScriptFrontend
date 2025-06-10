@@ -20,6 +20,22 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const StartFreePlan = async ({ shopName }: { shopName: string }) => {
+  try {
+    const response = await axios.post(`${process.env.SERVER_URL}/userTrials/startFreePlan?shopName=${shopName}`);
+    console.log("StartFreePlan: ", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error StartFreePlan:", error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMsg: 'Error StartFreePlan',
+      response: null,
+    };
+  }
+};
+
 export const SingleTextTranslate = async ({
   shopName,
   source,
@@ -480,15 +496,17 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
       method: "GET",
     });
 
-    if (shop == "ciwishop.myshopify.com") {
-      return {
-        userSubscriptionPlan: 6,
-        currentPeriodEnd: null,
-      };
-    }
+    console.log("GetUserSubscriptionPlan: ", response.data);
+    
 
     if (response.data?.success) {
       const res = response.data?.response;
+      if (shop == "ciwishop.myshopify.com" && res.userSubscriptionPlan < 3) {
+        return {
+          userSubscriptionPlan: 6,
+          currentPeriodEnd: null,
+        };
+      }
       return res;
     } else {
       return {
@@ -1505,6 +1523,7 @@ export const GetGlossaryByShopName = async ({
         rangeCode: item.rangeCode,
         type: item.caseSensitive,
         loading: false,
+        createdDate: item.createdDate,
       };
       if (
         shopLanguagesWithoutPrimaryIndex.find((language: ShopLocalesType) => {
@@ -1524,8 +1543,16 @@ export const GetGlossaryByShopName = async ({
       }
       return data;
     });
+
+    // 按创建时间降序排序
+    const sortedRes = res.sort((a: { createdDate: string }, b: { createdDate: string }) => {
+      return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime();
+    });
+    
+    console.log("GetGlossaryByShopName: ", sortedRes);
+    
     return {
-      glossaryTableData: res,
+      glossaryTableData: sortedRes,
       shopLocales: shopLanguagesWithoutPrimaryIndex,
     };
   } catch (error) {
@@ -1556,6 +1583,9 @@ export const UpdateTargetTextById = async ({
     });
 
     const res = response.data;
+
+    console.log("UpdateTargetTextById: ", res);
+    
     return res;
   } catch (error) {
     console.error("Error UpdateTargetTextById:", error);
