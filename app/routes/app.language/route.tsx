@@ -8,13 +8,11 @@ import {
   Table,
   Switch,
   Modal,
-  Popconfirm,
-  Checkbox,
   Skeleton,
 } from "antd";
 import { useEffect, useState, startTransition } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { useFetcher, useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import "./styles.css";
 import { authenticate } from "~/shopify.server";
 import {
@@ -40,12 +38,9 @@ import {
   GetLanguageList,
   GetLanguageLocaleInfo,
   GetTranslate,
-  GetUserData,
-  GetUserWords,
   UpdateAutoTranslateByData,
 } from "~/api/JavaServer";
 import TranslatedIcon from "~/components/translateIcon";
-import { WordsType } from "../app._index/route";
 import { useTranslation } from "react-i18next";
 import PrimaryLanguage from "./components/primaryLanguage";
 import AddLanguageModal from "./components/addLanguageModal";
@@ -80,18 +75,6 @@ export interface LanguagesDataType {
   published: boolean;
   publishLoading?: boolean;
   autoTranslateLoading?: boolean;
-}
-
-export interface MarketType {
-  name: string;
-  primary: boolean;
-  webPresences: {
-    nodes: [
-      {
-        id: string;
-      },
-    ];
-  };
 }
 
 const autoTranslationMapping = {
@@ -137,28 +120,33 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     switch (true) {
       case !!loading:
-        const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
-          shop: shop,
-          accessToken: accessToken as string,
-        });
+        try {
+          const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+            shop: shop,
+            accessToken: accessToken as string,
+          });
 
-        const shopPrimaryLanguage = shopLanguagesLoad.filter(
-          (language) => language.primary,
-        );
-        const shopLocalesIndex = shopLanguagesLoad.filter(
-          (language) => !language.primary,
-        ).map((item) => item.locale);
-        const languageLocaleInfo = await GetLanguageLocaleInfo({
-          locale: shopLocalesIndex,
-        });
-        const languagesLoad = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
-        return json({
-          shop: shop,
-          shopLanguagesLoad: shopLanguagesLoad,
-          shopPrimaryLanguage: shopPrimaryLanguage,
-          languagesLoad: languagesLoad,
-          languageLocaleInfo: languageLocaleInfo,
-        });
+          const shopPrimaryLanguage = shopLanguagesLoad.filter(
+            (language) => language.primary,
+          );
+          const shopLocalesIndex = shopLanguagesLoad.filter(
+            (language) => !language.primary,
+          ).map((item) => item.locale);
+          const languageLocaleInfo = await GetLanguageLocaleInfo({
+            locale: shopLocalesIndex,
+          });
+          const languagesLoad = await GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale });
+          return json({
+            shop: shop,
+            shopLanguagesLoad: shopLanguagesLoad,
+            shopPrimaryLanguage: shopPrimaryLanguage,
+            languagesLoad: languagesLoad,
+            languageLocaleInfo: languageLocaleInfo,
+          });
+        } catch (error) {
+          console.error("Error loading language:", error);
+          return json({ error: "Error loading language" }, { status: 500 });
+        }
 
       case !!addData:
         try {
@@ -217,7 +205,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       case !!publishInfo:
         try {
-          const response =  await mutationShopLocalePublish({
+          const response = await mutationShopLocalePublish({
             shop,
             accessToken: accessToken as string,
             publishInfo: publishInfo,
@@ -287,7 +275,6 @@ const Index = () => {
   const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>([]);
   const [shopPrimaryLanguage, setShopPrimaryLanguage] = useState<ShopLocalesType[]>([]);
   const [allLanguages, setAllLanguages] = useState<AllLanguagesType[]>([]);
-  // const [allMarket, setAllMarket] = useState<MarketType[]>([]);
   const [languagesLoad, setLanguagesLoad] = useState<any>(null);
   const [languageLocaleInfo, setLanguageLocaleInfo] = useState<any>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
@@ -335,7 +322,6 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data) {
-      // setAllMarket(loadingFetcher.data.allMarket);
       setLanguagesLoad(loadingFetcher.data.languagesLoad);
       setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
       setShopLanguagesLoad(loadingFetcher.data.shopLanguagesLoad);
@@ -428,10 +414,6 @@ const Index = () => {
       }
     }
   }, [publishFetcher.data]);
-
-  // useEffect(() => {
-  //   if (words && words.chars > words.totalChars) setDisable(true);
-  // }, [words]);
 
   useEffect(() => {
     if (!shopLanguagesLoad || !languagesLoad || !languageLocaleInfo) return; // 确保数据加载完成后再执行
@@ -665,7 +647,6 @@ const Index = () => {
     setDeleteLoading(true);
   };
 
-
   const rowSelection = {
     selectedRowKeys,
     onChange: (e: any) => {
@@ -707,7 +688,6 @@ const Index = () => {
                   }
                 }}
               >
-
                 {t("Delete")}
               </Button>
               <Text style={{ color: "#007F61" }}>

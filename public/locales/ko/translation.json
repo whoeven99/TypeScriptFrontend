@@ -393,6 +393,9 @@
     "Translation task is about to start": "번역 작업이 시작됩니다",
     "{{ locale }} is published": "{{ locale }} 게시됨",
     "{{ locale }} is unPublished": "{{ locale }} 게시 취소됨",
-    "Handle needs to be used with 'Products item' or other items.": "Handle는 'Products item' 또는 다른 항목과 함께 사용해야 합니다."
+    "Handle needs to be used with 'Products item' or other items.": "Handle는 'Products item' 또는 다른 항목과 함께 사용해야 합니다.",
+    "Confirm": "확인",
+    "Click to Confirm and try all the features of Premium Plan for free for 5 days except credit discount, which will be automatically locked after 5 days": "5일 동안 무료로 Premium 플랜의 모든 기능을 테스트해 보세요. 크레딧 할인은 5일 후에 자동으로 잠금 해제됩니다.",
+    "Try Premium Plan": "Premium 플랜 테스트"
 } 
   

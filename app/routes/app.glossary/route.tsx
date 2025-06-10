@@ -13,11 +13,10 @@ import {
   Table,
   Typography,
 } from "antd";
-import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import {
   DeleteGlossaryInfo,
   GetGlossaryByShopName,
-  GetUserSubscriptionPlan,
   InsertGlossaryInfo,
   UpdateTargetTextById,
 } from "~/api/JavaServer";
@@ -32,9 +31,6 @@ import { WarningOutlined } from "@ant-design/icons";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
-import { SessionService } from "~/utils/session.server";
-import { setUserConfig } from "~/store/modules/userConfig";
-import { handleContactSupport } from "../app._index/route";
 import TranslationWarnModal from "~/components/translationWarnModal";
 const { Title, Text } = Typography;
 
@@ -49,7 +45,7 @@ export interface GLossaryDataType {
   loading: boolean;
 }
 
-const planMapping = {
+export const planMapping = {
   1: 0,
   2: 0,
   3: 0,
@@ -60,11 +56,15 @@ const planMapping = {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+
+  console.log(`${shop} load glossary`);
+
   return null;
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
@@ -239,7 +239,7 @@ const Index = () => {
       action: "/app/glossary",
     });
     dispatch(setGLossaryStatusLoadingState({ key, loading: true }));
-  };
+  };  
 
   const handleIsModalOpen = (title: string, key: number) => {
     if (!plan) {

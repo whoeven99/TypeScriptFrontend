@@ -394,6 +394,9 @@
     "Translation task is about to start": "La tâche de traduction est sur le point de commencer",
     "{{ locale }} is published": "{{ locale }} publiée",
     "{{ locale }} is unPublished": "{{ locale }} dépubliée",
-    "Handle needs to be used with 'Products item' or other items.": "Handle doit être utilisé avec 'Produit' ou d'autres éléments."
+    "Handle needs to be used with 'Products item' or other items.": "Handle doit être utilisé avec 'Produit' ou d'autres éléments.",
+    "Confirm": "Confirmer",
+    "Click to Confirm and try all the features of Premium Plan for free for 5 days except credit discount, which will be automatically locked after 5 days": "Cliquez sur Confirmer et essayer toutes les fonctionnalités du plan Premium gratuitement pendant 5 jours sauf le rabais de crédits, qui sera automatiquement verrouillé après 5 jours",
+    "Try Premium Plan": "Essayer le plan Premium"
 }
   
