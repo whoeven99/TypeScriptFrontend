@@ -263,9 +263,9 @@ const Index = () => {
   const [addCurrencies, setAddCurrencies] = useState<CurrencyType[]>([]);
   const [isCurrencyEditModalOpen, setIsCurrencyEditModalOpen] = useState(false);
   const [currencyFormatConfigCardOpen, setCurrencyFormatConfigCardOpen] =
-    useState<boolean>(true);
+    useState<boolean>(false);
   const [switcherEnableCardOpen, setSwitcherEnableCardOpen] =
-    useState<boolean>(true);
+    useState<boolean>(false);
   const [withMoneyValue, setWithMoneyValue] = useState<string>("");
   const [withoutMoneyValue, setWithoutMoneyValue] = useState<string>("");
   const [selectedRow, setSelectedRow] = useState<
@@ -291,6 +291,14 @@ const Index = () => {
   const deleteFetcher = useFetcher<any>();
 
   useEffect(() => {
+    const currencyFormatConfigCardOpen = localStorage.getItem("currencyFormatConfigCardOpen");
+    if (currencyFormatConfigCardOpen) {
+      setCurrencyFormatConfigCardOpen(currencyFormatConfigCardOpen === "true");
+    }
+    const switcherEnableCardOpen = localStorage.getItem("switcherEnableCardOpen");
+    if (switcherEnableCardOpen) {
+      setSwitcherEnableCardOpen(switcherEnableCardOpen === "true");
+    }
     const initFormData = new FormData();
     initFormData.append("init", JSON.stringify(true));
     initFetcher.submit(initFormData, {
@@ -333,8 +341,10 @@ const Index = () => {
           moneyWithoutMoneyDoc.querySelector(".ciwi-money");
         if (moneyWithMoneyElement && moneyWithoutMoneyElement) {
           setCurrencyFormatConfigCardOpen(false);
+          localStorage.setItem("currencyFormatConfigCardOpen", "false");
         } else {
           setCurrencyFormatConfigCardOpen(true);
+          localStorage.setItem("currencyFormatConfigCardOpen", "true");
         }
 
         const spansWithMoney = moneyWithMoneyDoc.querySelectorAll("span");
@@ -414,8 +424,10 @@ const Index = () => {
         if (switcherJson) {
           if (!switcherJson.disabled) {
             setSwitcherEnableCardOpen(false);
+            localStorage.setItem("switcherEnableCardOpen", "false");
           } else {
             setSwitcherEnableCardOpen(true);
+            localStorage.setItem("switcherEnableCardOpen", "true");
           }
         }
       }
