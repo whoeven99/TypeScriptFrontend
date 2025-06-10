@@ -43,6 +43,7 @@ export interface GLossaryDataType {
   type: number;
   status: number;
   loading: boolean;
+  createdDate: string;
 }
 
 export const planMapping = {

@@ -388,7 +388,6 @@ export default function App() {
 
   useEffect(() => {
     if (planFetcher.data && (!plan || !updateTime)) {
-      console.log(planFetcher.data);
       dispatch(setUserConfig({ plan: planFetcher.data?.plan?.userSubscriptionPlan || "" }));
       dispatch(setUserConfig({ updateTime: planFetcher.data?.plan?.updateTime || "" }));
     }

@@ -25,7 +25,8 @@ const glossaryTableDataSlice = createSlice({
         // 如果已存在，更新该行的数据
         state.rows[index] = action.payload;
       } else {
-        state.rows.push(action.payload);
+        // 如果不存在，将新数据添加到数组头部
+        state.rows.unshift(action.payload);
       }
     },
     deleteGLossaryTableData: (state, action: PayloadAction<number[]>) => {

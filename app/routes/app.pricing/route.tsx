@@ -141,8 +141,8 @@ const Index = () => {
   const [updateTime, setUpdateTime] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [buyButtonLoading, setBuyButtonLoading] = useState(false);
-  const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
-  const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
+  // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
+  // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
   const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
   const isQuotaExceeded = useMemo(
@@ -171,7 +171,6 @@ const Index = () => {
     const getPlan = async () => {
       try {
         const response = await axios.post(`${server}/userTrials/isOpenFreePlan?shopName=${shop}`);
-        console.log(response.data);
         setHasOpenFreePlan(response.data.response || false);
       } catch (error) {
         console.error("Error getPlan:", error);
@@ -248,8 +247,8 @@ const Index = () => {
   useEffect(() => {
     if (freeTrialFetcher.data) {
       if (freeTrialFetcher.data.success) {
-        setFreeTrialModalOpen(false);
-        setFreeTrialButtonLoading(false);
+        // setFreeTrialModalOpen(false);
+        // setFreeTrialButtonLoading(false);
         setSelectedPlan(7);
         dispatch(setUserConfig({
           plan: "7", updateTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('zh-CN', {
@@ -266,7 +265,8 @@ const Index = () => {
         setHasOpenFreePlan(true);
         shopify.toast.show("Free trial started successfully");
       } else {
-        setFreeTrialButtonLoading(false);
+        shopify.toast.show("Free trial failed");
+        // setFreeTrialButtonLoading(false);
       }
     }
   }, [freeTrialFetcher.data]);
@@ -387,6 +387,8 @@ const Index = () => {
         t("basic_features5"),
         t("basic_features6"),
         t("basic_features7"),
+        t("basic_features8"),
+        t("basic_features9"),
       ],
     },
     {
@@ -407,6 +409,8 @@ const Index = () => {
         t("pro_features4"),
         t("pro_features5"),
         t("pro_features6"),
+        t("pro_features7"),
+        t("pro_features8"),
       ],
     },
     {
@@ -428,6 +432,8 @@ const Index = () => {
         t("premium_features5"),
         t("premium_features6"),
         t("premium_features7"),
+        t("premium_features8"),
+        t("premium_features9"),
       ],
     },
   ];
@@ -548,7 +554,7 @@ const Index = () => {
   };
 
   const handleFreeTrial = async () => {
-    setFreeTrialButtonLoading(true);
+    // setFreeTrialButtonLoading(true);
     freeTrialFetcher.submit({ freeTrial: JSON.stringify(true) }, { method: "POST" });
   };
 
@@ -575,9 +581,16 @@ const Index = () => {
                   <QuestionCircleOutlined />
                 </Popover>
               </div>
-              {selectedPlan && <Text>
-                {t("Current plan: ")}{selectedPlan === 3 ? "Starter" : selectedPlan === 4 ? "Basic" : selectedPlan === 5 ? "Pro" : selectedPlan === 6 ? "Premium" : selectedPlan === 7 ? "Free Trial" : "Free"} {t("plan")}
-              </Text>}
+              {selectedPlan &&
+                <div>
+                  <Text>
+                    {t("Current plan: ")}
+                  </Text>
+                  <Text style={{ color: "#007F61", fontWeight: "bold" }}>
+                    {selectedPlan === 3 ? "Starter" : selectedPlan === 4 ? "Basic" : selectedPlan === 5 ? "Pro" : selectedPlan === 6 ? "Premium" : selectedPlan === 7 ? "Free Trial" : "Free"} {t("plan")}
+                  </Text>
+                </div>
+              }
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               {maxCredits ? (
@@ -619,6 +632,25 @@ const Index = () => {
             showIcon
           />
         )}
+        {!hasOpenFreePlan && <Card styles={{ body: { padding: "12px" } }}>
+          <Space
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Text>{t("Congratulations! You’ve received a 5-day free trial with full access to all features")}</Text>
+            <Button
+              disabled={buyButtonLoading}
+              type="primary"
+              onClick={handleFreeTrial}
+              loading={freeTrialFetcher.state === "submitting"}
+            >
+              {t("Free trial")}
+            </Button>
+          </Space>
+        </Card>}
         <Card style={{ textAlign: "center" }} loading={isLoading || selectedPlan === null}>
           {/* 价格选项 */}
           <Space direction="vertical" size="small" style={{ width: "100%" }}>
@@ -630,7 +662,7 @@ const Index = () => {
                 marginBottom: 10,
               }}
             >
-              <Title level={3} style={{ marginBottom: 0, marginRight: 10 }}>
+              <Title level={4} style={{ marginBottom: 0, marginRight: 10 }}>
                 {t("Buy Credits")}
               </Title>
               <Text style={{ color: "red", fontWeight: "bold" }}>
@@ -803,7 +835,7 @@ const Index = () => {
                       {plan.buttonText}
                     </Button>
 
-                    {
+                    {/* {
                       plan.title === "Premium" && !hasOpenFreePlan && (
                         <Button
                           type="primary"
@@ -815,7 +847,7 @@ const Index = () => {
                           {t("Free trial")}
                         </Button>
                       )
-                    }
+                    } */}
 
                     <div style={{ flex: 1 }}>
                       {plan.features.map((feature, idx) => (
@@ -845,7 +877,7 @@ const Index = () => {
           </Row>
         </div>
       </Space>
-      <Modal
+      {/* <Modal
         title={t("Try Premium Plan")}
         open={freeTrialModalOpen}
         style={{ top: "40%" }}
@@ -863,7 +895,7 @@ const Index = () => {
         <Text>
           {t("Click to Confirm and try all the features of Premium Plan for free for 5 days except credit discount, which will be automatically locked after 5 days")}
         </Text>
-      </Modal>
+      </Modal> */}
       {/* <Modal open={creditsCalculatorOpen} onCancel={() => setCreditsCalculatorOpen(false)}>
         <Title level={4}>{t("Credits Calculator")}</Title>
         <Form>

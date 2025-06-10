@@ -1523,6 +1523,7 @@ export const GetGlossaryByShopName = async ({
         rangeCode: item.rangeCode,
         type: item.caseSensitive,
         loading: false,
+        createdDate: item.createdDate,
       };
       if (
         shopLanguagesWithoutPrimaryIndex.find((language: ShopLocalesType) => {
@@ -1542,8 +1543,16 @@ export const GetGlossaryByShopName = async ({
       }
       return data;
     });
+
+    // 按创建时间降序排序
+    const sortedRes = res.sort((a: { createdDate: string }, b: { createdDate: string }) => {
+      return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime();
+    });
+    
+    console.log("GetGlossaryByShopName: ", sortedRes);
+    
     return {
-      glossaryTableData: res,
+      glossaryTableData: sortedRes,
       shopLocales: shopLanguagesWithoutPrimaryIndex,
     };
   } catch (error) {
@@ -1574,6 +1583,9 @@ export const UpdateTargetTextById = async ({
     });
 
     const res = response.data;
+
+    console.log("UpdateTargetTextById: ", res);
+    
     return res;
   } catch (error) {
     console.error("Error UpdateTargetTextById:", error);
