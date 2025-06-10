@@ -243,19 +243,19 @@ const Index = () => {
       action: "/app/glossary",
     });
     dispatch(setGLossaryStatusLoadingState({ key, loading: true }));
-  };  
+  };
 
   const handleIsModalOpen = (title: string, key: number) => {
     if (!plan) {
       return;
     }
-    // if (title === "Create rule" && dataSource.length >= planMapping[plan as keyof typeof planMapping]) {
-    // setShowWarnModal(true);
-    // } else {
-    setTitle(t(title));
-    setGlossaryModalId(key);
-    setIsGlossaryModalOpen(true); // 打开Modal
-    // }
+    if (title === "Create rule" && dataSource.length >= planMapping[plan as keyof typeof planMapping]) {
+      setShowWarnModal(true);
+    } else {
+      setTitle(t(title));
+      setGlossaryModalId(key);
+      setIsGlossaryModalOpen(true); // 打开Modal
+    }
   };
 
   const columns = [
