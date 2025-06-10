@@ -496,6 +496,9 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
       method: "GET",
     });
 
+    console.log("GetUserSubscriptionPlan: ", response.data);
+    
+
     if (response.data?.success) {
       const res = response.data?.response;
       if (shop == "ciwishop.myshopify.com" && res.userSubscriptionPlan < 3) {

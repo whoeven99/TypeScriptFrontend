@@ -15,7 +15,7 @@ import {
 import { FetcherWithComponents, useFetcher } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { ShopLocalesType } from "~/routes/app.language/route";
-import { GLossaryDataType } from "../route";
+import { GLossaryDataType, planMapping } from "../route";
 import { updateGLossaryTableData } from "~/store/modules/glossaryTableData";
 import { useTranslation } from "react-i18next";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
@@ -69,6 +69,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   const { t } = useTranslation();
   const updateFetcher = useFetcher<any>();
   const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
+  const { plan } = useSelector((state: any) => state.userConfig);
 
   useEffect(() => {
     if (updateFetcher.data) {
@@ -154,7 +155,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       isValid = false;
     }
 
-    if (title === "Create rule" && dataSource.length >= 10) {
+    if (title === "Create rule" && dataSource.length >= planMapping[plan as keyof typeof planMapping]) {
       isOversizeError = false;
     }
 
