@@ -69,6 +69,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
+  console.log(`${shop} load manage_translation_navigation`);
+
   try {
     const navigations = await queryNextTransType({
       shop,

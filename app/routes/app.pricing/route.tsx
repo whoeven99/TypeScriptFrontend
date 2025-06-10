@@ -810,6 +810,7 @@ const Index = () => {
                           block
                           style={{ marginBottom: "20px" }}
                           onClick={() => setFreeTrialModalOpen(true)}
+                          disabled={buyButtonLoading}
                         >
                           {t("Free trial")}
                         </Button>

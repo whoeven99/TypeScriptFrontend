@@ -53,6 +53,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  console.log(`${shop} load manage_translation_delivery`);
 
   try {
     const deliverys = await queryNextTransType({

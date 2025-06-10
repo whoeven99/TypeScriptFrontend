@@ -54,6 +54,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
+
+  console.log(`${shop} load manage_translation_shop`);
   try {
     const shops = await queryNextTransType({
       shop,
