@@ -159,7 +159,10 @@ const Index = () => {
   const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
 
   useEffect(() => {
-    loadingFetcher.submit({ loading: JSON.stringify(true) }, { method: "POST" });
+    loadingFetcher.submit(
+      { loading: JSON.stringify(true) },
+      { method: "POST" },
+    );
     setIsMobile(window.innerWidth < 768);
     shopify.loading(true);
   }, []);
@@ -246,13 +249,13 @@ const Index = () => {
     if (!plan) {
       return;
     }
-    if (title === "Create rule" && dataSource.length >= planMapping[plan as keyof typeof planMapping]) {
-      setShowWarnModal(true);
-    } else {
-      setTitle(t(title));
-      setGlossaryModalId(key);
-      setIsGlossaryModalOpen(true); // 打开Modal
-    }
+    // if (title === "Create rule" && dataSource.length >= planMapping[plan as keyof typeof planMapping]) {
+    // setShowWarnModal(true);
+    // } else {
+    setTitle(t(title));
+    setGlossaryModalId(key);
+    setIsGlossaryModalOpen(true); // 打开Modal
+    // }
   };
 
   const columns = [
@@ -425,8 +428,13 @@ const Index = () => {
         shopLocales={shopLocales}
       />
       <TranslationWarnModal
-        title={t("The glossary limitations has been reached (Current restrictions: {{count}})", { count: planMapping[plan as keyof typeof planMapping] })}
-        content={t("Please upgrade to a higher plan to remove the current glossary limitations")}
+        title={t(
+          "The glossary limitations has been reached (Current restrictions: {{count}})",
+          { count: planMapping[plan as keyof typeof planMapping] },
+        )}
+        content={t(
+          "Please upgrade to a higher plan to remove the current glossary limitations",
+        )}
         action={() => {
           navigate("/app/pricing");
         }}
@@ -435,7 +443,7 @@ const Index = () => {
         setShow={setShowWarnModal}
       />
     </Page>
-  )
-}
+  );
+};
 
 export default Index;
