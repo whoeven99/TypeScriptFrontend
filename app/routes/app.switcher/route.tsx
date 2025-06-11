@@ -9,7 +9,6 @@ import {
   ColorPicker,
   Slider,
   Button,
-  message,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";

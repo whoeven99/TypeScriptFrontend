@@ -640,7 +640,9 @@ const Index = () => {
               justifyContent: "space-between",
             }}
           >
-            <Text>{t("Congratulations! You’ve received a 5-day free trial with full access to all features")}</Text>
+            <Text>
+              {t("Congratulations! You’ve received a 5-day free trial with full access to all features")}
+            </Text>
             <Button
               disabled={buyButtonLoading}
               type="primary"
