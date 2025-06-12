@@ -22,7 +22,9 @@ interface GroupedDeleteData {
 
 export const StartFreePlan = async ({ shopName }: { shopName: string }) => {
   try {
-    const response = await axios.post(`${process.env.SERVER_URL}/userTrials/startFreePlan?shopName=${shopName}`);
+    const response = await axios.post(
+      `${process.env.SERVER_URL}/userTrials/startFreePlan?shopName=${shopName}`,
+    );
     console.log("StartFreePlan: ", response.data);
     return response.data;
   } catch (error) {
@@ -30,7 +32,7 @@ export const StartFreePlan = async ({ shopName }: { shopName: string }) => {
     return {
       success: false,
       errorCode: 0,
-      errorMsg: 'Error StartFreePlan',
+      errorMsg: "Error StartFreePlan",
       response: null,
     };
   }
@@ -497,23 +499,26 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
     });
 
     console.log("GetUserSubscriptionPlan: ", response.data);
-    
 
-    if (response.data?.success) {
-      const res = response.data?.response;
-      if (shop == "ciwishop.myshopify.com" && res.userSubscriptionPlan < 3) {
-        return {
-          userSubscriptionPlan: 6,
-          currentPeriodEnd: null,
-        };
-      }
-      return res;
-    } else {
-      return {
-        userSubscriptionPlan: 2,
-        currentPeriodEnd: null,
-      };
-    }
+    // if (response.data?.success) {
+    //   const res = response.data?.response;
+    //   if (shop == "ciwishop.myshopify.com" && res.userSubscriptionPlan < 3) {
+    //     return {
+    //       userSubscriptionPlan: 6,
+    //       currentPeriodEnd: null,
+    //     };
+    //   }
+    //   return res;
+    // } else {
+    //   return {
+    //     userSubscriptionPlan: 2,
+    //     currentPeriodEnd: null,
+    //   };
+    // }
+    return {
+      userSubscriptionPlan: 2,
+      currentPeriodEnd: null,
+    };
   } catch (error) {
     console.error("Error GetUserSubscriptionPlan:", error);
   }
@@ -614,7 +619,7 @@ export const GetTranslationItemsInfo = async ({
     translatedNumber: number;
     totalNumber: number;
   }[] = [];
-  console.log({
+  console.log("GetTranslationItemsInfo Input: ", {
     shopName: shop,
     accessToken: accessToken,
     source: source,
@@ -634,7 +639,10 @@ export const GetTranslationItemsInfo = async ({
       },
     });
 
+    console.log("GetTranslationItemsInfo Response: ", response.data);
+
     const data = response.data.response;
+
     res = [
       ...res,
       ...Object.keys(data).map((key) => {
@@ -646,6 +654,9 @@ export const GetTranslationItemsInfo = async ({
         };
       }),
     ];
+
+    console.log("GetTranslationItemsInfo Return: ", res);
+
     return res;
   } catch (error) {
     console.error("Error GetTranslationItemsInfo:", error);
@@ -1545,12 +1556,16 @@ export const GetGlossaryByShopName = async ({
     });
 
     // 按创建时间降序排序
-    const sortedRes = res.sort((a: { createdDate: string }, b: { createdDate: string }) => {
-      return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime();
-    });
-    
+    const sortedRes = res.sort(
+      (a: { createdDate: string }, b: { createdDate: string }) => {
+        return (
+          new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+        );
+      },
+    );
+
     console.log("GetGlossaryByShopName: ", sortedRes);
-    
+
     return {
       glossaryTableData: sortedRes,
       shopLocales: shopLanguagesWithoutPrimaryIndex,
@@ -1585,7 +1600,7 @@ export const UpdateTargetTextById = async ({
     const res = response.data;
 
     console.log("UpdateTargetTextById: ", res);
-    
+
     return res;
   } catch (error) {
     console.error("Error UpdateTargetTextById:", error);

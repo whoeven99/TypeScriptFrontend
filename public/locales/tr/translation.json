@@ -230,7 +230,7 @@
     "transLanguageCard2.title": "Mağaza dillerini yönetin",
     "transLanguageCard2.description": "Dilleri ekleyin, silin ve yayınlayın, çevirilerin manuel yönetimini destekleyin",
     "transLanguageCard2.button": "Dil Yönetimi",
-    "transLanguageCard3.title": "100% çeviri hizmeti kalitesi garantisi",
+    "transLanguageCard3.title": "En iyi mümkün çeviri kalitesini sunmaya kararlıyız",
     "transLanguageCard3.description1": "<strong>Kalite</strong>: Ücretsiz düzeltme + kredi iade",
     "transLanguageCard3.description2": "<strong>Destek</strong>: İhtiyacınıza uygun özellikler oluşturma",
     "transLanguageCard3.description3": "<strong>Fiyat</strong>: Sadece model kullanımı için ödeme",
@@ -407,5 +407,6 @@
     "Free trial": "Ücretsiz Deneyim",
     "Congratulations! You’ve received a 5-day free trial with full access to all features": "Tebrikler! 5 gün boyunca tüm özellikleri ücretsiz deneyimleyebilirsiniz.",
     "Free trial failed": "Ücretsiz deneyim başarısız",
-    "Free trial started successfully": "Ücretsiz deneyim başarıyla başlatıldı"
+    "Free trial started successfully": "Ücretsiz deneyim başarıyla başlatıldı",
+    "Switcher Configuration Guide": "Seçici Yapılandırma Kılavuzu"
 }

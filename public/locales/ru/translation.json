@@ -187,7 +187,7 @@
     "transLanguageCard2.title": "Управление языками магазина",
     "transLanguageCard2.description": "Добавляйте, удаляйте и публикуйте языки, поддерживайте ручное управление переводами",
     "transLanguageCard2.button": "Управление языками",
-    "transLanguageCard3.title": "100% гарантия качества перевода",
+    "transLanguageCard3.title": "Мы стремимся обеспечить наилучшее качество перевода",
     "transLanguageCard3.description1": "<strong>Качество</strong>: Бесплатный ремонт + возврат кредитов",
     "transLanguageCard3.description2": "<strong>Поддержка</strong>: Создание необходимых функций для вас",
     "transLanguageCard3.description3": "<strong>Цена</strong>: Оплата только за использование модели",
@@ -407,5 +407,6 @@
     "Free trial": "Бесплатная пробная версия",
     "Congratulations! You’ve received a 5-day free trial with full access to all features": "Поздравляем! Вы получили 5-дневную бесплатную пробную версию с полным доступом ко всем функциям",
     "Free trial failed": "Бесплатная пробная версия не удалась",
-    "Free trial started successfully": "Бесплатная пробная версия успешно запущена"
+    "Free trial started successfully": "Бесплатная пробная версия успешно запущена",
+    "Switcher Configuration Guide": "Руководство по настройке переключателя"
 }

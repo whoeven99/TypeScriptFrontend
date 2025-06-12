@@ -186,7 +186,7 @@
     "transLanguageCard2.title": "Hantera butiksspråk",
     "transLanguageCard2.description": "Lägg till, ta bort och publicera språk, stöd för hantering av manuell översättning",
     "transLanguageCard2.button": "Hantera språk",
-    "transLanguageCard3.title": "100% garanti för översättningskvalitet",
+    "transLanguageCard3.title": "Vi strävar efter att erbjuda den bästa möjliga översättningskvaliteten",
     "transLanguageCard3.description1": "<strong>Kvalitet</strong>: Gratis reparation + återbetalning av krediter",
     "transLanguageCard3.description2": "<strong>Stöd</strong>: Skapa de funktioner du behöver",
     "transLanguageCard3.description3": "<strong>Pris</strong>: Betala endast för modellanvändning",
@@ -407,6 +407,7 @@
     "Free trial": "Gratis provperiod",
     "Congratulations! You’ve received a 5-day free trial with full access to all features": "Grattis! Du har fått en 5-dagars gratis provperiod med full tillgång till alla funktioner",
     "Free trial failed": "Gratis provperiod misslyckades",
-    "Free trial started successfully": "Gratis provperiod startade"
+    "Free trial started successfully": "Gratis provperiod startade",
+    "Switcher Configuration Guide": "Väljarens konfigurationsguide"
 }   
   

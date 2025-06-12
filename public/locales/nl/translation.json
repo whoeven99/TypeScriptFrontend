@@ -184,12 +184,12 @@
     "transLanguageCard2.title": "Winkeltaal beheren",
     "transLanguageCard2.description": "Talen toevoegen, verwijderen en publiceren, ondersteuning voor handmatige vertalingbeheer",
     "transLanguageCard2.button": "Taal beheren",
-    "transLanguageCard3.title": "100% 번역 서비스 품질 보장",
-    "transLanguageCard3.description1": "<strong>품질</strong>: 무료 수정 + 크레딧 반환",
-    "transLanguageCard3.description2": "<strong>지원</strong>: 당신에게 & 필요한 기능 만들기",
-    "transLanguageCard3.description3": "<strong>가격</strong>: 모델 사용만 지불",
-    "transLanguageCard3.description4": "<strong>자산</strong>: 당신의 지불 내용은 당신의 것입니다",
-    "transLanguageCard3.description5": "<a href='https://ciwi.bogdatech.com/help/uncategorized/translation-service-guarantees/' target='_blank'>완전한 서비스 보장 확인</a>",
+    "transLanguageCard3.title": "Wij zetten ons in voor de best mogelijke vertaalkwaliteit",
+    "transLanguageCard3.description1": "<strong>Kwaliteit</strong>: gratis revisie + krediet terugbetaling",
+    "transLanguageCard3.description2": "<strong>Ondersteuning</strong>: maak functies die u nodig heeft",
+    "transLanguageCard3.description3": "<strong>Prijs</strong>: betaal alleen voor modelgebruik",
+    "transLanguageCard3.description4": "<strong>Activa</strong>: wat u betaalt is van u",
+    "transLanguageCard3.description5": "<a href='https://ciwi.bogdatech.com/help/uncategorized/translation-service-guarantees/' target='_blank'>Bekijk volledige servicegarantie</a>",
     "transLanguageCard3.button": "Bekijk details",
     "transCurrencyCard1.title": "Meerdere valuta's instellen",
     "transCurrencyCard1.description": "Afhankelijk van de markt die u definieert, passen we automatisch valuta's aan en stellen we een wisselkoers in",
@@ -406,6 +406,7 @@
     "Free trial": "Gratis proefperiode",
     "Congratulations! You’ve received a 5-day free trial with full access to all features": "Gefeliciteerd! U heeft een 5-dag gratis proefperiode ontvangen met volledige toegang tot alle functies",
     "Free trial failed": "Gratis proefperiode mislukt",
-    "Free trial started successfully": "Gratis proefperiode is succesvol gestart"
+    "Free trial started successfully": "Gratis proefperiode is succesvol gestart",
+    "Switcher Configuration Guide": "Handleiding voor Switcher-configuratie"
 }
   

@@ -183,7 +183,7 @@
     "transLanguageCard2.title": "Gestisci le lingue del negozio",
     "transLanguageCard2.description": "Aggiungi, elimina e pubblica lingue, supporto per la gestione manuale delle traduzioni",
     "transLanguageCard2.button": "Gestisci la lingua",
-    "transLanguageCard3.title": "Garantiamo 100% della qualità del servizio di traduzione",
+    "transLanguageCard3.title": "Ci impegniamo a offrire la migliore qualità di traduzione possibile",
     "transLanguageCard3.description1": "<strong>Qualità</strong>: Riparazioni gratuite + rimborso dei crediti",
     "transLanguageCard3.description2": "<strong>Supporto</strong>: Aiuto a te & creare le funzioni necessarie",
     "transLanguageCard3.description3": "<strong>Prezzo</strong>: Paga solo per l'uso del modello",
@@ -405,6 +405,7 @@
     "Free trial": "Prova gratuita",
     "Congratulations! You’ve received a 5-day free trial with full access to all features": "Congratulazioni! Hai ricevuto una prova gratuita di 5 giorni con accesso completo a tutte le funzioni",
     "Free trial failed": "Prova gratuita fallita",
-    "Free trial started successfully": "Prova gratuita avviata con successo"
+    "Free trial started successfully": "Prova gratuita avviata con successo",
+    "Switcher Configuration Guide": "Guida di configurazione del selettore"
 }
   

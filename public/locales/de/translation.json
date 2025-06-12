@@ -184,9 +184,9 @@
   "transLanguageCard2.title": "Sprachen im Shop verwalten",
   "transLanguageCard2.description": "Sprachen hinzufügen, löschen und veröffentlichen, Unterstützung für manuelle Übersetzungsverwaltung",
   "transLanguageCard2.button": "Sprachen verwalten",
-  "transLanguageCard3.title": "Wir garantieren 100% Übersetzungsdienstqualität",
-"transLanguageCard3.description1": "<strong>Qualität</strong>: Kostenlose Reparaturen + Rückerstattung von Credits",
-"transLanguageCard3.description2": "<strong>Support</strong>: Hilfe Ihnen & erstellen Sie benötigte Funktionen",
+  "transLanguageCard3.title": "Wir verpflichten uns, die bestmögliche Übersetzungsqualität anzubieten",
+  "transLanguageCard3.description1": "<strong>Qualität</strong>: Kostenlose Reparaturen + Rückerstattung von Credits",
+  "transLanguageCard3.description2": "<strong>Support</strong>: Hilfe Ihnen & erstellen Sie benötigte Funktionen",
   "transLanguageCard3.description3": "<strong>Preis</strong>: Nur für Modellnutzung bezahlen",
   "transLanguageCard3.description4": "<strong>Assets</strong>: Ihre bezahlten Inhalte bleiben Ihren",
   "transLanguageCard3.description5": "<a href='https://ciwi.bogdatech.com/help/uncategorized/translation-service-guarantees/' target='_blank'>View full service guarantees</a>",
@@ -407,6 +407,7 @@
   "Free trial": "Kostenlose Testversion",
   "Congratulations! You’ve received a 5-day free trial with full access to all features": "Glückwunsch! Sie haben eine 5-tägige kostenlose Testversion mit vollem Zugang zu allen Funktionen erhalten",
   "Free trial failed": "Kostenlose Testversion fehlgeschlagen",
-  "Free trial started successfully": "Kostenlose Testversion erfolgreich gestartet"
+  "Free trial started successfully": "Kostenlose Testversion erfolgreich gestartet",
+  "Switcher Configuration Guide": "Sprachwechsler-Konfiguration-Leitfaden"
 }
     

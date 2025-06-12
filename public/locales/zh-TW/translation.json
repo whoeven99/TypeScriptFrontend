@@ -184,7 +184,7 @@
     "transLanguageCard2.title":"管理商店語言",
     "transLanguageCard2.description":"添加、刪除和發布語言，支持手動翻譯管理",
     "transLanguageCard2.button":"管理語言",
-    "transLanguageCard3.title":"100% 翻譯服務質量保證",
+    "transLanguageCard3.title":"我們致力於提供最優質的翻譯服務",
     "transLanguageCard3.description1":"<strong>質量</strong>: 免費修復 + 退款",
     "transLanguageCard3.description2":"<strong>支持</strong>: 為您創建所需功能",
     "transLanguageCard3.description3":"<strong>價格</strong>: 僅按模型使用付費",
@@ -406,6 +406,7 @@
     "Free trial": "免費試用",
     "Congratulations! You’ve received a 5-day free trial with full access to all features": "恭喜！您已獲得5天免費試用，可訪問所有功能",
     "Free trial failed": "免費試用失敗",
-    "Free trial started successfully": "免費試用已成功啟動"
+    "Free trial started successfully": "免費試用已成功啟動",
+    "Switcher Configuration Guide": "切換器配置指南"
 }
 

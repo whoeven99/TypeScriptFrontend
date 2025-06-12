@@ -6,6 +6,7 @@ import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   Button,
   Flex,
+  Popconfirm,
   Popover,
   Skeleton,
   Space,
@@ -240,7 +241,7 @@ const Index = () => {
       action: "/app/glossary",
     });
     dispatch(setGLossaryStatusLoadingState({ key, loading: true }));
-  };  
+  };
 
   const handleIsModalOpen = (title: string, key: number) => {
     if (!plan) {
@@ -392,16 +393,34 @@ const Index = () => {
                   ? `${t("Selected")}${selectedRowKeys.length}${t("items")}`
                   : null}
               </Flex>
-              <div>
-                <Space>
+              {planMapping[plan as keyof typeof planMapping] === 0 ?
+                <Popconfirm
+                  title=""
+                  description={t("Upgrading to at least the Basic plan unlocks this feature")}
+                  trigger={["hover", "click"]}
+                  showCancel={false}
+                  okText={t("Upgrade")}
+                  onConfirm={() => navigate("/app/pricing")}
+                >
                   <Button
-                    type="primary"
-                    onClick={() => handleIsModalOpen("Create rule", -1)}
+                    disabled
+                    style={{
+                      borderColor: "#d9d9d9",
+                      color: "#d9d9d9",
+                    }}
+                  // style={{ backgroundColor: "#000000", color: "#ffffff" }}
                   >
                     {t("Create rule")}
                   </Button>
-                </Space>
-              </div>
+                </Popconfirm>
+                :
+                <Button
+                  type="primary"
+                  onClick={() => handleIsModalOpen("Create rule", -1)}
+                >
+                  {t("Create rule")}
+                </Button>
+              }
             </Flex>
             <Suspense fallback={<Skeleton active />}>
               <Table

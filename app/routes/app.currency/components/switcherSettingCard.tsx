@@ -1,6 +1,7 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Link } from "@shopify/polaris";
 import { Card, Space, Button, Typography, Skeleton, ConfigProvider, Divider } from "antd";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 const { Text, Paragraph, Title } = Typography;
@@ -22,8 +23,6 @@ interface SwitcherSettingCardProps {
 const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   step1Visible,
   step2Visible,
-  setStep1Visible,
-  setStep2Visible,
   loading,
   shop,
   ciwiSwitcherId,
@@ -31,34 +30,29 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   withMoneyValue,
   withoutMoneyValue,
 }) => {
+  const [visible, setVisible] = useState(false);
   const blockUrl = `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/switcher`;
   const supportUrl =
     "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/";
 
   const { t } = useTranslation();
 
+  useEffect(() => {
+    if (step1Visible || step2Visible) {
+      setVisible(true);
+    }
+  }, [step1Visible, step2Visible]);
+
   return (
-    // <ConfigProvider
-    //   theme={{
-    //     components: {
-    //       Card: {
-    //         /* 这里是你的组件 token */
-    //         headerBg: "rgb(136,216,255)",
-    //       },
-    //     },
-    //   }}
-    // >
-    //  {step1Visible &&
-    //   (loading ? (
-    //     <Skeleton.Button active style={{ height: 300 }} block />
-    //   ) : ( 
     <Card
+      // style={{ display: visible ? "block" : "none" }}
       title={t("Switcher Configuration Guide")}
       extra={
-        <Button type="text" onClick={() => setStep1Visible(false)}>
+        <Button type="text" onClick={() => setVisible(false)}>
           <CloseOutlined />
         </Button>
       }
+      loading={loading}
     >
       <Title level={5}>{t("Step 1: Set up Currency Format")}</Title>
       <Space
@@ -83,8 +77,8 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             <Text
               strong
               style={{
-                backgroundColor: "rgb(254,211,209)",
-                color: "rgb(142, 31, 11)",
+                backgroundColor: "rgb(224,247,224)",
+                color: "rgb(76,175,80)",
                 padding: "2px 10px",
                 borderRadius: "20px",
               }}
@@ -183,8 +177,8 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             <Text
               strong
               style={{
-                backgroundColor: "rgb(254,211,209)",
-                color: "rgb(142, 31, 11)",
+                backgroundColor: "rgb(224,247,224)",
+                color: "rgb(76,175,80)",
                 padding: "2px 10px",
                 borderRadius: "20px",
               }}
@@ -210,8 +204,6 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
         </Text>
       </Space>
     </Card>
-    //  ))} 
-    // </ConfigProvider>
   );
 };
 

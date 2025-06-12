@@ -71,7 +71,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
           return json({ data: shopLanguages });
         } catch (error) {
-          console.error("Error GetTranslationItemsInfo itemsCount:", error);
+          console.error("Error manage_translation language:", error);
         }
       case !!itemsCount:
         try {
@@ -85,10 +85,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.log("GetTranslationItemsInfo: ", data);
           return json({ data: data });
         } catch (error) {
-          console.error("Error GetTranslationItemsInfo itemsCount:", error);
+          console.error("Error manage_translation itemsCount:", error);
           return json({
             success: false,
-            message: "Error GetTranslationItemsInfo itemsCount",
+            message: "Error manage_translation itemsCount",
           });
         }
       default:

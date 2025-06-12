@@ -184,7 +184,7 @@
     "transLanguageCard2.title": "ストア言語を管理する",
     "transLanguageCard2.description": "言語を追加、削除、公開し、手動翻訳管理をサポートします。",
     "transLanguageCard2.button": "言語を管理する",
-    "transLanguageCard3.title": "100%の翻訳サービス品質を保証します",
+    "transLanguageCard3.title": "最高品質の翻訳サービスを提供することをお約束いたします",
     "transLanguageCard3.description1": "<strong>品質</strong>: 無料修正 + クレジット返金",
     "transLanguageCard3.description2": "<strong>サポート</strong>: あなたに&必要な機能を作成する",
     "transLanguageCard3.description3": "<strong>価格</strong>: モデルの使用のみを支払う",
@@ -406,6 +406,7 @@
     "Free trial": "無料試用",
     "Congratulations! You’ve received a 5-day free trial with full access to all features": "おめでとうございます！5日間無料ですべての機能にアクセスできるようになりました。",
     "Free trial failed": "無料試用に失敗しました",
-    "Free trial started successfully": "無料試用が正常に開始されました"
+    "Free trial started successfully": "無料試用が正常に開始されました",
+    "Switcher Configuration Guide": "スイッチャーの設定ガイド"
 }   
   
