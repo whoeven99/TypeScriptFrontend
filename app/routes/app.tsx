@@ -398,7 +398,7 @@ export default function App() {
       <ConfigProvider
         theme={{
           token: {
-            colorPrimary: "#007F61", // 设置主色
+            colorPrimary: "var(--p-color-bg-fill-brand)",
           },
         }}
       >

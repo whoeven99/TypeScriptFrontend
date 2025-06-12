@@ -1,10 +1,9 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Link } from "@shopify/polaris";
 import { Card, Space, Button, Typography, Skeleton, ConfigProvider } from "antd";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 
 interface SwitcherSettingCardProps {
   step1Visible: boolean | undefined;
