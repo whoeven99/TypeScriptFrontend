@@ -79,7 +79,7 @@ async function fetchAutoRate(shop, currencyCode) {
 async function checkUserIp(shop) {
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
+      url: `https://springbackendprod.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
       method: "POST",
     });
     return response.data?.response;

@@ -454,26 +454,6 @@ const Index = () => {
       //   )
       // );
 
-      // console.log(Object.values(themeData.sections));
-      // console.log(isAppEnabled);
-
-      // setSwitcherEnableCardOpen(isAppEnabled);
-
-      // if (blocks) {
-      //   const switcherJson: any = Object.values(blocks).find(
-      //     (block: any) => block.type === ciwiSwitcherBlocksId,
-      //   );
-
-      //   if (switcherJson) {
-      //     setSwitcherEnableCardOpen(true);
-      //   }
-      // }
-      // const isAppEnabled = Object.values(themeData.sections).some((section: any) =>
-      //   section?.blocks && Object.values(section.blocks).some((block: any) =>
-      //     block.type.includes(ciwiSwitcherBlocksId)
-      //   )
-      // );
-
       // setSwitcherEnableCardOpen(isAppEnabled);
     }
   }, [themeFetcher.data]);
