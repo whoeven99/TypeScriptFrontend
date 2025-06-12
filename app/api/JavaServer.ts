@@ -500,25 +500,21 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
 
     console.log("GetUserSubscriptionPlan: ", response.data);
 
-    // if (response.data?.success) {
-    //   const res = response.data?.response;
-    //   if (shop == "ciwishop.myshopify.com" && res.userSubscriptionPlan < 3) {
-    //     return {
-    //       userSubscriptionPlan: 6,
-    //       currentPeriodEnd: null,
-    //     };
-    //   }
-    //   return res;
-    // } else {
-    //   return {
-    //     userSubscriptionPlan: 2,
-    //     currentPeriodEnd: null,
-    //   };
-    // }
-    return {
-      userSubscriptionPlan: 2,
-      currentPeriodEnd: null,
-    };
+    if (response.data?.success) {
+      const res = response.data?.response;
+      if (shop == "ciwishop.myshopify.com" && res.userSubscriptionPlan < 3) {
+        return {
+          userSubscriptionPlan: 6,
+          currentPeriodEnd: null,
+        };
+      }
+      return res;
+    } else {
+      return {
+        userSubscriptionPlan: 2,
+        currentPeriodEnd: null,
+      };
+    }
   } catch (error) {
     console.error("Error GetUserSubscriptionPlan:", error);
   }
@@ -1578,13 +1574,15 @@ export const GetGlossaryByShopName = async ({
 export const UpdateTargetTextById = async ({
   shop,
   data,
+  server,
 }: {
   shop: string;
   data: any;
+  server: string;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/glossary/updateTargetTextById`,
+      url: `${server}/glossary/updateTargetTextById`,
       method: "POST",
       data: {
         id: data.key,
@@ -1609,21 +1607,29 @@ export const UpdateTargetTextById = async ({
 
 export const InsertGlossaryInfo = async ({
   shop,
-  data,
+  sourceText,
+  targetText,
+  rangeCode,
+  type,
+  server,
 }: {
   shop: string;
-  data: any;
+  sourceText: string;
+  targetText: string;
+  rangeCode: string;
+  type: number;
+  server: string;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/glossary/insertGlossaryInfo`,
+      url: `${server}/glossary/insertGlossaryInfo`,
       method: "POST",
       data: {
         shopName: shop,
-        sourceText: data.sourceText,
-        targetText: data.targetText,
-        rangeCode: data.rangeCode,
-        caseSensitive: data.type,
+        sourceText: sourceText,
+        targetText: targetText,
+        rangeCode: rangeCode,
+        caseSensitive: type,
         status: 1,
       },
     });

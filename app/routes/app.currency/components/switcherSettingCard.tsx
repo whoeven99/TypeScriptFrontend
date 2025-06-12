@@ -45,7 +45,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
 
   return (
     <Card
-      // style={{ display: visible ? "block" : "none" }}
+      style={{ display: visible ? "block" : "none" }}
       title={t("Switcher Configuration Guide")}
       extra={
         <Button type="text" onClick={() => setVisible(false)}>

@@ -17,12 +17,13 @@ import ScrollNotice from "~/components/ScrollNotice";
 import styles from "./styles.module.css";
 import { useEffect, useState } from "react";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { useFetcher, useNavigate } from "@remix-run/react";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { SaveAndUpdateData, WidgetConfigurations } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useSelector } from "react-redux";
 import TranslationWarnModal from "~/components/translationWarnModal";
 import { InfoCircleOutlined } from "@ant-design/icons";
+import axios from "axios";
 const { Text, Title } = Typography;
 
 interface EditData {
@@ -96,7 +97,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   console.log(`${shop} load switcher`);
-  return null;
+  return {
+    shop,
+    server: process.env.SERVER_URL,
+  };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -167,6 +171,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   // const [isSwitcherEnabled, setIsSwitcherEnabled] = useState(false);
+  const { shop, server } = useLoaderData<typeof loader>();
   const [isGeoLocationEnabled, setIsGeoLocationEnabled] = useState(false);
   const [isIncludedFlag, setIsIncludedFlag] = useState(false);
   const [languageSelector, setLanguageSelector] = useState(true);
@@ -423,7 +428,7 @@ const Index = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     editFetcher.submit(
       {
         editData: JSON.stringify(editData),
@@ -432,6 +437,9 @@ const Index = () => {
         method: "POST",
       },
     );
+    if (isGeoLocationEnabled) {
+      await axios.post(`${server}/userIp/addOrUpdateUserIp?shopName=${shop}`);
+    }
   };
 
   const handleCancel = () => {
@@ -693,7 +701,7 @@ const Index = () => {
                 </Space>
               </Card>
               <Card loading={isLoading}>
-                <Flex justify="space-between" align="center">
+                <Flex justify="space-between">
                   <Title level={5}>
                     {t("Selector Auto IP position configuration:")}
                   </Title>
@@ -705,7 +713,7 @@ const Index = () => {
                     okText={t("Upgrade")}
                     onConfirm={() => navigate("/app/pricing")}
                   >
-                    <InfoCircleOutlined />
+                    <InfoCircleOutlined style={{ paddingBottom: "0.5rem" }} />
                   </Popconfirm>
                 </Flex>
                 <div
