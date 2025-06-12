@@ -3,22 +3,19 @@ import {
   Modal,
   Input,
   Space,
-  message,
   Button,
   Typography,
   Select,
   Checkbox,
-  InputProps,
-  SelectProps,
-  CheckboxProps,
 } from "antd";
-import { FetcherWithComponents, useFetcher } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { ShopLocalesType } from "~/routes/app.language/route";
-import { GLossaryDataType, planMapping } from "../route";
+import { planMapping } from "../route";
 import { updateGLossaryTableData } from "~/store/modules/glossaryTableData";
 import { useTranslation } from "react-i18next";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { InsertGlossaryInfo, UpdateTargetTextById } from "~/api/JavaServer";
 
 const { Text } = Typography;
 
@@ -28,6 +25,8 @@ interface GlossaryModalProps {
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   shopLocales: ShopLocalesType[];
+  shop: string;
+  server: string;
 }
 
 const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
@@ -36,6 +35,8 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   isVisible,
   setIsModalOpen,
   shopLocales,
+  shop,
+  server,
 }) => {
   const [sourceText, setSourceText] = useState<string>("");
   const [targetText, setTargetText] = useState<string>("");
@@ -73,38 +74,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
 
   useEffect(() => {
     if (updateFetcher.data) {
-      if (updateFetcher.data.data.success) {
-        const res = updateFetcher.data.data.response;
-        let data = {
-          key: res.id,
-          status: res.status,
-          sourceText: res.sourceText,
-          targetText: res.targetText,
-          language: "",
-          rangeCode: res.rangeCode,
-          type: res.caseSensitive,
-        };
-        if (
-          shopLocales.find((language: ShopLocalesType) => {
-            return language.locale == data.rangeCode;
-          }) ||
-          data.rangeCode === "ALL"
-        ) {
-          data = {
-            ...data,
-            language:
-              shopLocales.find((language: ShopLocalesType) => {
-                return language.locale === data.rangeCode;
-              })?.name || "All Languages",
-          };
-        }
-        dispatch(updateGLossaryTableData(data));
-        shopify.toast.show("Saved successfully");
-        handleCloseModal();
-      } else {
-        shopify.toast.show(updateFetcher.data.data.errorMsg);
-        setConfirmButtonDisable(false);
-      }
+
     }
   }, [updateFetcher.data]);
 
@@ -130,7 +100,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
     }
   }, [isVisible]);
 
-  const handleConfirm = (id: number) => {
+  const handleConfirm = async (id: number) => {
     let isValid = true;
     let isOversizeError = true;
     let isSameRuleError = true;
@@ -183,6 +153,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
     });
 
     if (isValid && isSameRuleError && isOversizeError) {
+      setConfirmButtonDisable(true);
       setSourceTextStatus("");
       setSourceTextError(false);
       setSourceTextErrorMsg("");
@@ -192,24 +163,58 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       setRangeCodeStatus("");
       setRangeCodeError(false);
       setRangeCodeErrorMsg("");
-      const data = dataSource.find((item: any) => item.key === id);
-      const formData = new FormData();
-      formData.append(
-        "updateInfo",
-        JSON.stringify({
-          key: id,
+      const item = dataSource.find((item: any) => item.key === id);
+      let data;
+      console.log(item);
+      if (item) {
+        data = await UpdateTargetTextById({
+          shop: shop,
+          data: {
+            key: id,
+            sourceText: sourceText,
+            targetText: targetText,
+            rangeCode: rangeCode,
+            type: checked ? 1 : 0,
+            status: item?.status,
+          },
+          server: server as string,
+        });
+      } else {
+        data = await InsertGlossaryInfo({
+          shop: shop,
           sourceText: sourceText,
           targetText: targetText,
           rangeCode: rangeCode,
           type: checked ? 1 : 0,
-          status: data?.status,
-        }),
-      );
-      updateFetcher.submit(formData, {
-        method: "post",
-        action: "/app/glossary",
-      });
-      setConfirmButtonDisable(true);
+          server: server as string,
+        });
+      }
+
+      if (data.success) {
+        let res = data.response;
+        if (
+          shopLocales.find((language: ShopLocalesType) => {
+            return language.locale == res.rangeCode;
+          }) ||
+          res.rangeCode === "ALL"
+        ) {
+          res = {
+            ...res,
+            language:
+              shopLocales.find((language: ShopLocalesType) => {
+                return language.locale === res.rangeCode;
+              })?.name || "All Languages",
+          };
+        }
+        console.log(res);
+        dispatch(updateGLossaryTableData(res));
+        shopify.toast.show("Saved successfully");
+        setConfirmButtonDisable(false);
+        handleCloseModal();
+      } else {
+        shopify.toast.show(data.errorMsg);
+        setConfirmButtonDisable(false);
+      }
     } else if (!isOversizeError) {
       shopify.toast.show(t("You can add up to {{count}} translation rules", { count: 10 }));
       return;

@@ -12,9 +12,9 @@ scopes = "read_content,read_legal_policies,read_markets,read_metaobjects,read_on
 
 [auth]
 redirect_urls = [
-  "https://82cd0f43191c.ngrok.app/auth/callback",
-  "https://82cd0f43191c.ngrok.app/auth/shopify/callback",
-  "https://82cd0f43191c.ngrok.app/api/auth/callback"
+  "https://typescriptfrontend.onrender.com/auth/callback",
+  "https://typescriptfrontend.onrender.com/auth/shopify/callback",
+  "https://typescriptfrontend.onrender.com/api/auth/callback"
 ]
 
 [webhooks]

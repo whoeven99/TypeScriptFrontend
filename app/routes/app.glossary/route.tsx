@@ -6,6 +6,7 @@ import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   Button,
   Flex,
+  Popconfirm,
   Popover,
   Skeleton,
   Space,
@@ -13,7 +14,7 @@ import {
   Table,
   Typography,
 } from "antd";
-import { useFetcher, useNavigate } from "@remix-run/react";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import {
   DeleteGlossaryInfo,
   GetGlossaryByShopName,
@@ -27,7 +28,7 @@ import {
 } from "~/store/modules/glossaryTableData";
 import { ShopLocalesType } from "../app.language/route";
 import UpdateGlossaryModal from "./components/updateGlossaryModal";
-import { WarningOutlined } from "@ant-design/icons";
+import { InfoCircleOutlined, WarningOutlined } from "@ant-design/icons";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
@@ -62,7 +63,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   console.log(`${shop} load glossary`);
 
-  return null;
+  return {
+    shop,
+    server: process.env.SERVER_URL,
+  };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -72,7 +76,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
-    const updateInfo = JSON.parse(formData.get("updateInfo") as string);
     const deleteInfo: number[] = JSON.parse(
       formData.get("deleteInfo") as string,
     );
@@ -84,24 +87,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             accessToken: accessToken as string,
           });
           return json({ data: data });
-        } catch (error) {
-          console.error("Error glossary loading:", error);
-        }
-      case !!updateInfo:
-        try {
-          if (updateInfo.key >= 0) {
-            const data = await UpdateTargetTextById({
-              shop: shop,
-              data: updateInfo,
-            });
-            return json({ data: data });
-          } else {
-            const data = await InsertGlossaryInfo({
-              shop: shop,
-              data: updateInfo,
-            });
-            return json({ data: data });
-          }
         } catch (error) {
           console.error("Error glossary loading:", error);
         }
@@ -134,6 +119,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
+  const { shop, server } = useLoaderData<typeof loader>();
   const [title, setTitle] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
@@ -153,7 +139,6 @@ const Index = () => {
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
   const loadingFetcher = useFetcher<any>();
-  const statusFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
 
   const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
@@ -196,28 +181,6 @@ const Index = () => {
     }
   }, [deleteFetcher.data]);
 
-  useEffect(() => {
-    if (statusFetcher.data) {
-      if (statusFetcher.data?.data?.success) {
-        shopify.toast.show(t("Saved successfully"));
-        dispatch(
-          setGLossaryStatusLoadingState({
-            key: statusFetcher.data.data.response.id,
-            loading: false,
-            status: statusFetcher.data.data.response.status,
-          }),
-        );
-      } else {
-        shopify.toast.show(statusFetcher.data?.data?.errorMsg);
-        dispatch(
-          setGLossaryStatusLoadingState({
-            key: statusFetcher.data.data.response.id,
-            loading: true,
-          }),
-        );
-      }
-    }
-  }, [statusFetcher.data]);
 
   const handleDelete = () => {
     const formData = new FormData();
@@ -226,21 +189,50 @@ const Index = () => {
     setDeleteLoading(true);
   };
 
-  const handleApplication = (key: number) => {
+  const handleApplication = async (key: number) => {
     const row = dataSource.find((item: any) => item.key === key);
-    const formData = new FormData();
+    if (row.status === 0) {
+      const activeItemsCount = dataSource.filter((item: any) => item.status === 1).length;
+      if (activeItemsCount >= planMapping[plan as keyof typeof planMapping]) {
+        setShowWarnModal(true);
+        return;
+      }
+    }
+
+    dispatch(setGLossaryStatusLoadingState({ key, loading: true }));
+
     const updateInfo = {
       ...row,
       type: row.type ? 1 : 0,
       status: row.status === 0 ? 1 : 0,
     };
-    formData.append("updateInfo", JSON.stringify(updateInfo));
-    statusFetcher.submit(formData, {
-      method: "post",
-      action: "/app/glossary",
+
+    const data = await UpdateTargetTextById({
+      shop: shop,
+      data: updateInfo,
+      server: server as string,
     });
-    dispatch(setGLossaryStatusLoadingState({ key, loading: true }));
-  };  
+
+
+    if (data?.success) {
+      shopify.toast.show(t("Saved successfully"));
+      dispatch(
+        setGLossaryStatusLoadingState({
+          key: data.response.id,
+          loading: false,
+          status: data.response.status,
+        }),
+      );
+    } else {
+      shopify.toast.show(data?.errorMsg);
+      dispatch(
+        setGLossaryStatusLoadingState({
+          key: data.response.id,
+          loading: false,
+        }),
+      );
+    }
+  }
 
   const handleIsModalOpen = (title: string, key: number) => {
     if (!plan) {
@@ -392,28 +384,42 @@ const Index = () => {
                   ? `${t("Selected")}${selectedRowKeys.length}${t("items")}`
                   : null}
               </Flex>
-              <div>
-                <Space>
+              {planMapping[plan as keyof typeof planMapping] === 0 ?
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Popconfirm
+                    title=""
+                    description={t("Upgrade to a paid plan to unlock this feature")}
+                    trigger="hover"
+                    showCancel={false}
+                    okText={t("Upgrade")}
+                    onConfirm={() => navigate("/app/pricing")}
+                  >
+                    <InfoCircleOutlined />
+                  </Popconfirm>
                   <Button
-                    type="primary"
-                    onClick={() => handleIsModalOpen("Create rule", -1)}
+                    disabled
                   >
                     {t("Create rule")}
                   </Button>
-                </Space>
-              </div>
+                </div>
+                :
+                <Button
+                  type="primary"
+                  onClick={() => handleIsModalOpen("Create rule", -1)}
+                >
+                  {t("Create rule")}
+                </Button>
+              }
             </Flex>
-            <Suspense fallback={<Skeleton active />}>
-              <Table
-                virtual={isMobile}
-                scroll={isMobile ? { x: 900 } : {}}
-                rowSelection={rowSelection}
-                columns={columns}
-                loading={deleteLoading || loading}
-                dataSource={dataSource}
-                style={{ width: "100%" }}
-              />
-            </Suspense>
+            <Table
+              virtual={isMobile}
+              scroll={isMobile ? { x: 900 } : {}}
+              rowSelection={rowSelection}
+              columns={columns}
+              loading={deleteLoading || loading}
+              dataSource={dataSource}
+              style={{ width: "100%" }}
+            />
           </div>
         )}
       </Space>
@@ -423,6 +429,8 @@ const Index = () => {
         isVisible={isGlossaryModalOpen}
         setIsModalOpen={setIsGlossaryModalOpen}
         shopLocales={shopLocales}
+        shop={shop}
+        server={server as string}
       />
       <TranslationWarnModal
         title={t("The glossary limitations has been reached (Current restrictions: {{count}})", { count: planMapping[plan as keyof typeof planMapping] })}
