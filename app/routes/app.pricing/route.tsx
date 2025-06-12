@@ -640,7 +640,9 @@ const Index = () => {
               justifyContent: "space-between",
             }}
           >
-            <Text>{t("Congratulations! You’ve received a 5-day free trial with full access to all features")}</Text>
+            <Text>
+              {t("Congratulations! You’ve received a 5-day free trial with full access to all features")}
+            </Text>
             <Button
               disabled={buyButtonLoading}
               type="primary"
@@ -665,7 +667,7 @@ const Index = () => {
               <Title level={4} style={{ marginBottom: 0, marginRight: 10 }}>
                 {t("Buy Credits")}
               </Title>
-              <Text style={{ color: "red", fontWeight: "bold" }}>
+              <Text style={{ fontWeight: "bold" }}>
                 {selectedPlan === 6 ? t("discountText.premium") : selectedPlan === 5 ? t("discountText.pro") : selectedPlan === 4 ? t("discountText.basic") : t("discountText.free")}
               </Text>
             </div>

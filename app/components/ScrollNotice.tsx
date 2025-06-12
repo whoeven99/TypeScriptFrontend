@@ -1,4 +1,3 @@
-import { ExclamationCircleOutlined } from '@ant-design/icons';
 import React, { useRef } from 'react';
 import { Typography } from 'antd';
 

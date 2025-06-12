@@ -11,7 +11,7 @@ include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_content,read_legal_policies,read_metaobjects,read_online_store_navigation,read_themes,read_translations,write_locales,write_metaobjects,write_products,write_translations"
+scopes = "read_content,read_legal_policies,read_metaobjects,read_online_store_navigation,read_themes,read_translations,unauthenticated_read_metaobjects,write_locales,write_markets,write_metaobjects,write_products,write_translations"
 
 [auth]
 redirect_urls = [

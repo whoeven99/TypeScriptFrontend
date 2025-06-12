@@ -76,6 +76,19 @@ async function fetchAutoRate(shop, currencyCode) {
   return res.exchangeRate;
 }
 
+async function checkUserIp(shop) {
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
+      method: "POST",
+    });
+    return response.data?.response;
+  } catch (error) {
+    console.error("Error checkUserIp:", error);
+    return null;
+  }
+}
+
 async function fetchUserCountryInfo(access_key) {
   try {
     const response = await axios.get(
@@ -83,7 +96,7 @@ async function fetchUserCountryInfo(access_key) {
     );
     return response.data;
   } catch (error) {
-    console.error("Error fetching IP:", error);
+    console.error("Error fetchUserCountryInfo:", error);
     return null;
   }
 }
@@ -855,13 +868,17 @@ window.onload = async function () {
         if (countryCode) {
           selectedOption.insertBefore(optionFlagImg, selectedOption.firstChild);
         }
-        if (mainLanguageFlag && (data.languageSelector || data.currencySelector)) {
+        if (
+          mainLanguageFlag &&
+          (data.languageSelector || data.currencySelector)
+        ) {
           mainLanguageFlag.src = countryCode;
           mainLanguageFlag.hidden = false;
         }
         if (
           translateFloatBtnIcon &&
-          (!data.languageSelector && !data.currencySelector)
+          !data.languageSelector &&
+          !data.currencySelector
         ) {
           translateFloatBtnIcon.src = countryCode;
           translateFloatBtnIcon.hidden = false;
@@ -951,6 +968,10 @@ window.onload = async function () {
         countryInput.value = storedCountry;
       }
     } else {
+      const userIp = await checkUserIp(shop.value);
+      if (!userIp) {
+        return;
+      }
       const IpData = await fetchUserCountryInfo(iptokenValue);
       if (
         IpData?.country_code &&
@@ -976,6 +997,8 @@ window.onload = async function () {
     );
     if (
       (countryInput.value !== country || languageInput.value !== language) &&
+      countryInput.value &&
+      languageInput.value &&
       !isInThemeEditor
     ) {
       updateLocalization({

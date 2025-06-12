@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Rate, Input, Form, message, Typography } from 'antd';
+import { Card, Rate, Input, Form, message, Typography, Button } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useFetcher } from '@remix-run/react';
+import { CloseOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
@@ -10,8 +11,8 @@ interface PreviewCardProps {
 
 const PreviewCard: React.FC<PreviewCardProps> = () => {
     const { t } = useTranslation();
+    const [isVisible, setIsVisible] = useState(false);
     const [count, setCount] = useState(0);
-    const [mounted, setMounted] = useState(false);
     const fetcher = useFetcher<any>();
 
     // 确保组件只在客户端渲染
@@ -20,7 +21,10 @@ const PreviewCard: React.FC<PreviewCardProps> = () => {
         if (rate) {
             setCount(JSON.parse(rate));
         }
-        setMounted(true);
+        const isVisible = localStorage.getItem("isVisible");
+        if (!isVisible) {
+            setIsVisible(true);
+        }
     }, []);
 
     const handleRate = async (value: number) => {
@@ -37,12 +41,19 @@ const PreviewCard: React.FC<PreviewCardProps> = () => {
         }
     };
 
-    if (!mounted) {
-        return null;
-    }
+    const handleClose = () => {
+        localStorage.setItem("isVisible", JSON.stringify(false));
+        setIsVisible(false);
+    };
 
     return (
         <Card
+            style={{ display: isVisible ? 'block' : 'none' }}
+            extra={
+                <Button type="text" onClick={handleClose}>
+                    <CloseOutlined />
+                </Button>
+            }
         >
             <div
                 style={{

@@ -22,7 +22,9 @@ interface GroupedDeleteData {
 
 export const StartFreePlan = async ({ shopName }: { shopName: string }) => {
   try {
-    const response = await axios.post(`${process.env.SERVER_URL}/userTrials/startFreePlan?shopName=${shopName}`);
+    const response = await axios.post(
+      `${process.env.SERVER_URL}/userTrials/startFreePlan?shopName=${shopName}`,
+    );
     console.log("StartFreePlan: ", response.data);
     return response.data;
   } catch (error) {
@@ -30,7 +32,7 @@ export const StartFreePlan = async ({ shopName }: { shopName: string }) => {
     return {
       success: false,
       errorCode: 0,
-      errorMsg: 'Error StartFreePlan',
+      errorMsg: "Error StartFreePlan",
       response: null,
     };
   }
@@ -497,7 +499,6 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
     });
 
     console.log("GetUserSubscriptionPlan: ", response.data);
-    
 
     if (response.data?.success) {
       const res = response.data?.response;
@@ -614,7 +615,7 @@ export const GetTranslationItemsInfo = async ({
     translatedNumber: number;
     totalNumber: number;
   }[] = [];
-  console.log({
+  console.log("GetTranslationItemsInfo Input: ", {
     shopName: shop,
     accessToken: accessToken,
     source: source,
@@ -634,7 +635,10 @@ export const GetTranslationItemsInfo = async ({
       },
     });
 
+    console.log("GetTranslationItemsInfo Response: ", response.data);
+
     const data = response.data.response;
+
     res = [
       ...res,
       ...Object.keys(data).map((key) => {
@@ -646,6 +650,9 @@ export const GetTranslationItemsInfo = async ({
         };
       }),
     ];
+
+    console.log("GetTranslationItemsInfo Return: ", res);
+
     return res;
   } catch (error) {
     console.error("Error GetTranslationItemsInfo:", error);
@@ -1545,12 +1552,16 @@ export const GetGlossaryByShopName = async ({
     });
 
     // 按创建时间降序排序
-    const sortedRes = res.sort((a: { createdDate: string }, b: { createdDate: string }) => {
-      return new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime();
-    });
-    
+    const sortedRes = res.sort(
+      (a: { createdDate: string }, b: { createdDate: string }) => {
+        return (
+          new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+        );
+      },
+    );
+
     console.log("GetGlossaryByShopName: ", sortedRes);
-    
+
     return {
       glossaryTableData: sortedRes,
       shopLocales: shopLanguagesWithoutPrimaryIndex,
@@ -1563,13 +1574,15 @@ export const GetGlossaryByShopName = async ({
 export const UpdateTargetTextById = async ({
   shop,
   data,
+  server,
 }: {
   shop: string;
   data: any;
+  server: string;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/glossary/updateTargetTextById`,
+      url: `${server}/glossary/updateTargetTextById`,
       method: "POST",
       data: {
         id: data.key,
@@ -1585,7 +1598,7 @@ export const UpdateTargetTextById = async ({
     const res = response.data;
 
     console.log("UpdateTargetTextById: ", res);
-    
+
     return res;
   } catch (error) {
     console.error("Error UpdateTargetTextById:", error);
@@ -1594,21 +1607,29 @@ export const UpdateTargetTextById = async ({
 
 export const InsertGlossaryInfo = async ({
   shop,
-  data,
+  sourceText,
+  targetText,
+  rangeCode,
+  type,
+  server,
 }: {
   shop: string;
-  data: any;
+  sourceText: string;
+  targetText: string;
+  rangeCode: string;
+  type: number;
+  server: string;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/glossary/insertGlossaryInfo`,
+      url: `${server}/glossary/insertGlossaryInfo`,
       method: "POST",
       data: {
         shopName: shop,
-        sourceText: data.sourceText,
-        targetText: data.targetText,
-        rangeCode: data.rangeCode,
-        caseSensitive: data.type,
+        sourceText: sourceText,
+        targetText: targetText,
+        rangeCode: rangeCode,
+        caseSensitive: type,
         status: 1,
       },
     });

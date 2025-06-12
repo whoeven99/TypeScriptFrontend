@@ -168,7 +168,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           data,
           languageSetting,
         });
-        
+
         return json({ data, languageSetting, shop });
       } catch (error) {
         console.error("Error languageData app:", error);
@@ -399,6 +399,12 @@ export default function App() {
         theme={{
           token: {
             colorPrimary: "var(--p-color-bg-fill-brand)",
+          },
+          components: {
+            Table: {
+              rowSelectedBg: "rgba(217, 217, 217, 0.7)",
+              rowSelectedHoverBg: "rgba(217, 217, 217, 0.7)",
+            },
           },
         }}
       >
