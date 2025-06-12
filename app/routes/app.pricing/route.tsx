@@ -667,7 +667,7 @@ const Index = () => {
               <Title level={4} style={{ marginBottom: 0, marginRight: 10 }}>
                 {t("Buy Credits")}
               </Title>
-              <Text style={{ color: "red", fontWeight: "bold" }}>
+              <Text style={{ fontWeight: "bold" }}>
                 {selectedPlan === 6 ? t("discountText.premium") : selectedPlan === 5 ? t("discountText.pro") : selectedPlan === 4 ? t("discountText.basic") : t("discountText.free")}
               </Text>
             </div>

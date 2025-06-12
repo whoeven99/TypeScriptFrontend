@@ -28,7 +28,7 @@ import {
 } from "~/store/modules/glossaryTableData";
 import { ShopLocalesType } from "../app.language/route";
 import UpdateGlossaryModal from "./components/updateGlossaryModal";
-import { WarningOutlined } from "@ant-design/icons";
+import { InfoCircleOutlined, WarningOutlined } from "@ant-design/icons";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
@@ -394,25 +394,23 @@ const Index = () => {
                   : null}
               </Flex>
               {planMapping[plan as keyof typeof planMapping] === 0 ?
-                <Popconfirm
-                  title=""
-                  description={t("Upgrading to at least the Basic plan unlocks this feature")}
-                  trigger={["hover", "click"]}
-                  showCancel={false}
-                  okText={t("Upgrade")}
-                  onConfirm={() => navigate("/app/pricing")}
-                >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Popconfirm
+                    title=""
+                    description={t("Upgrade to a paid plan to unlock this feature")}
+                    trigger="hover"
+                    showCancel={false}
+                    okText={t("Upgrade")}
+                    onConfirm={() => navigate("/app/pricing")}
+                  >
+                    <InfoCircleOutlined />
+                  </Popconfirm>
                   <Button
                     disabled
-                    style={{
-                      borderColor: "#d9d9d9",
-                      color: "#d9d9d9",
-                    }}
-                  // style={{ backgroundColor: "#000000", color: "#ffffff" }}
                   >
                     {t("Create rule")}
                   </Button>
-                </Popconfirm>
+                </div>
                 :
                 <Button
                   type="primary"

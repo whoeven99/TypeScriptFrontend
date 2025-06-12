@@ -3,19 +3,15 @@ import {
   Modal,
   Input,
   Space,
-  message,
   Button,
   Typography,
   Select,
   Checkbox,
-  InputProps,
-  SelectProps,
-  CheckboxProps,
 } from "antd";
-import { FetcherWithComponents, useFetcher } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { ShopLocalesType } from "~/routes/app.language/route";
-import { GLossaryDataType, planMapping } from "../route";
+import { planMapping } from "../route";
 import { updateGLossaryTableData } from "~/store/modules/glossaryTableData";
 import { useTranslation } from "react-i18next";
 import { ExclamationCircleOutlined } from "@ant-design/icons";

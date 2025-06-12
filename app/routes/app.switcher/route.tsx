@@ -9,6 +9,8 @@ import {
   ColorPicker,
   Slider,
   Button,
+  Popconfirm,
+  Flex,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
@@ -20,6 +22,7 @@ import { SaveAndUpdateData, WidgetConfigurations } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useSelector } from "react-redux";
 import TranslationWarnModal from "~/components/translationWarnModal";
+import { InfoCircleOutlined } from "@ant-design/icons";
 const { Text, Title } = Typography;
 
 interface EditData {
@@ -690,9 +693,21 @@ const Index = () => {
                 </Space>
               </Card>
               <Card loading={isLoading}>
-                <Title level={5}>
-                  {t("Selector Auto IP position configuration:")}
-                </Title>
+                <Flex justify="space-between" align="center">
+                  <Title level={5}>
+                    {t("Selector Auto IP position configuration:")}
+                  </Title>
+                  <Popconfirm
+                    title=""
+                    description={t("Upgrade to a paid plan to unlock this feature")}
+                    trigger="hover"
+                    showCancel={false}
+                    okText={t("Upgrade")}
+                    onConfirm={() => navigate("/app/pricing")}
+                  >
+                    <InfoCircleOutlined />
+                  </Popconfirm>
+                </Flex>
                 <div
                   style={{
                     display: "flex",
@@ -702,6 +717,7 @@ const Index = () => {
                 >
                   <Text>Geolocation: </Text>
                   <Switch
+                    disabled={!!planMapping[plan as keyof typeof planMapping]}
                     checked={isGeoLocationEnabled}
                     onChange={handleIpOpenChange}
                   />
