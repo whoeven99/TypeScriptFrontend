@@ -1,14 +1,12 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "fb9fc15cbec02bd735e2a5b491cf8409"
-name = "Ciwi.ai:AI Translate&adapt-GPT"
+name = "Ciwi-Translator"
 handle = "ciwi-translator"
 application_url = "https://typescriptfrontendprod.onrender.com"
 embedded = true
 
 [build]
-automatically_update_urls_on_dev = true
-dev_store_url = "ciwishop.myshopify.com"
 include_config_on_deploy = true
 
 [access_scopes]
