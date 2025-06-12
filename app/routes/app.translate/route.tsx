@@ -399,10 +399,11 @@ const Index = () => {
       const words = response.data.response;
       if (words?.totalChars <= words?.chars) {
         setNeedPay(true);
+        setShowPaymentModal(true);
       } else {
         setNeedPay(false);
+        handleTranslate();
       }
-      setShowPaymentModal(true);
       const modalSettingOption = translateSettings1Options.find(
         (option) => option.value === translateSettings1,
       );
@@ -485,7 +486,14 @@ const Index = () => {
           </div>
           {
             languageSetting?.primaryLanguageCode ?
-              <Button type="primary" onClick={() => checkIfNeedPay()} style={{ visibility: languageData.length != 0 ? "visible" : "hidden" }}>{t("Translate")}</Button>
+              <Button
+                type="primary"
+                onClick={() => checkIfNeedPay()}
+                style={{ visibility: languageData.length != 0 ? "visible" : "hidden" }}
+                loading={fetcher.state === "submitting"}
+              >
+                {t("Translate")}
+              </Button>
               :
               <Skeleton.Button active />
           }
