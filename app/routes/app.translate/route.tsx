@@ -658,8 +658,7 @@ const Index = () => {
                           style={
                             translateSettings1 === option.value
                               ? {
-                                borderColor: "#168c6d",
-                                color: "#168c6d",
+                                borderColor: "var(--p-color-bg-fill-brand)",
                               }
                               : undefined
                           }
