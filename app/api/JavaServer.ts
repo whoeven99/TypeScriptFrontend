@@ -1352,9 +1352,10 @@ export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
       method: "GET",
     });
 
-    const res = response.data.response;
+    const res = response.data?.response;
     console.log("GetCurrencyByShopName: ", res);
-    if (res) {
+
+    if (Array.isArray(res)) {
       const data = res.map((item: any) => ({
         key: item.id, // 将 id 转换为 key
         currency: item?.currencyName, // 将 currencyName 作为 currency
@@ -1365,7 +1366,7 @@ export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
       }));
       return data;
     } else {
-      return undefined;
+      return [];
     }
   } catch (error) {
     console.error("Error get currency:", error);

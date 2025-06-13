@@ -130,10 +130,10 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ }) => {
     }, [statusFetcher.data]);
 
     useEffect(() => {
-        if (itemsFetcher.data?.data && itemsFetcher.data?.data?.length > 0) {
+        if (typeof itemsFetcher.data?.data[0]?.totalNumber === 'number' && typeof itemsFetcher.data?.data[0]?.translatedNumber === 'number') {
             setItemsCount({
-                totalNumber: itemsFetcher.data?.data[0].totalNumber || 0,
-                translatedNumber: itemsFetcher.data?.data[0].translatedNumber || 0,
+                totalNumber: itemsFetcher.data?.data[0]?.totalNumber || 0,
+                translatedNumber: itemsFetcher.data?.data[0]?.translatedNumber || 0,
             });
         }
     }, [itemsFetcher.data]);
