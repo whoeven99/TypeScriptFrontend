@@ -816,7 +816,7 @@ const Index = () => {
                       <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
                         ${plan.price}
                       </Text>
-                      <Text style={{ fontSize: "14px" }}>/月</Text>
+                      <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
                     </div>
                     <Paragraph type="secondary" style={{ fontSize: "13px" }}>
                       {plan.subtitle}
