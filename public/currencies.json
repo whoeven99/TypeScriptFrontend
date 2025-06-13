@@ -1069,5 +1069,19 @@
     "currencyCode": "ZMW",
     "symbol": "ZK",
     "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/ZM.webp"
+  },
+  {
+    "key": 153,
+    "currencyName": "São Tomé & Príncipe Dobra (2018–present)",
+    "currencyCode": "STN",
+    "symbol": "Db",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/STD.webp"
+  },
+  {
+    "key": 154,
+    "currencyName": "São Tomé & Príncipe Dobra (1977–2017)",
+    "currencyCode": "STD",
+    "symbol": "Db",
+    "locale": "https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/STD.webp"
   }
 ]
