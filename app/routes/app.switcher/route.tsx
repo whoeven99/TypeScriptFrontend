@@ -519,10 +519,20 @@ const Index = () => {
               type="primary"
               onClick={handleSave}
               loading={editFetcher.state === "submitting"}
+              style={{
+                width: "100px",
+              }}
             >
               {t("Save")}
             </Button>
-            <Button disabled={!isEdit} type="default" onClick={handleCancel}>
+            <Button
+              disabled={!isEdit}
+              type="default"
+              onClick={handleCancel}
+              style={{
+                width: "100px",
+              }}
+            >
               {t("Cancel")}
             </Button>
           </Space>

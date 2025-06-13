@@ -405,6 +405,18 @@ export default function App() {
               rowSelectedBg: "rgba(217, 217, 217, 0.7)",
               rowSelectedHoverBg: "rgba(217, 217, 217, 0.7)",
             },
+            Button: {
+              primaryShadow: "none",
+            },
+            Select: {
+              optionSelectedBg: "rgba(217, 217, 217, 0.7)",
+            },
+            Menu: {
+              itemSelectedBg: "rgba(217, 217, 217, 0.7)",
+            },
+            Card: {
+              headerHeight: 42,
+            },
           },
         }}
       >
