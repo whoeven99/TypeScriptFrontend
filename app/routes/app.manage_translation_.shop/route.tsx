@@ -379,22 +379,24 @@ const Index = () => {
   };
 
   const generateMenuItemsArray = (items: any) => {
-    return items.nodes.flatMap((item: any, index: number) => {
-      if (item?.translatableContent.length !== 0) {
+    return items.nodes[0]?.translatableContent.flatMap(
+      (item: any, index: number) => {
         // 创建当前项的对象
         const currentItem = {
-          key: `${item?.resourceId}`, // 使用 key 生成唯一的 key
-          index: index,
-          resource: item?.translatableContent[0]?.key,
-          default_language: item?.translatableContent[0]?.value, // 默认语言为 item 的标题
-          translated: item?.translations[0]?.value, // 翻译字段初始化为空字符串
-          type: item?.translatableContent[0]?.type,
+          key: `${item.key}`, // 使用 key 生成唯一的 key
+          resource: item.key,
+          default_language: item.value, // 默认语言为 item 的标题
+          translated:
+            items.nodes[0]?.translations.find(
+              (translation: any) => translation.key === item.key,
+            )?.value || "", // 翻译字段初始化为空字符串
+          type: item.type,
         };
         return [currentItem];
-      }
-      return [];
-    });
+      },
+    );
   };
+
 
   const handleTranslate = async (resourceType: string, key: string, type: string, context: string, index: number) => {
     if (!key || !type || !context) {
