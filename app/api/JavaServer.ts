@@ -20,7 +20,13 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
-export const GetUserValue = async ({ shop, server }: { shop: string, server: string }) => {
+export const GetUserValue = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
   try {
     const response = await axios({
       url: `${server}/translate/getUserValue?shopName=${shop}`,
@@ -1078,34 +1084,41 @@ export const updateManageTranslation = async ({
 
     if (itemsToDelete.length > 0) {
       // 创建 Map 对象
-      const groupedMap = new Map<
-        string,
-        {
-          resourceId: string;
-          locales: string[];
-          translationKeys: string[];
-        }
-      >();
+      // const groupedMap = new Map<
+      //   string,
+      //   {
+      //     resourceId: string;
+      //     locales: string[];
+      //     translationKeys: string[];
+      //   }
+      // >();
 
-      // 使用 forEach 填充 Map
-      itemsToDelete.forEach((item) => {
-        if (!groupedMap.has(item.resourceId)) {
-          groupedMap.set(item.resourceId, {
-            resourceId: item.resourceId,
-            locales: [item.target],
-            translationKeys: [item.key],
-          });
-        } else {
-          const group = groupedMap.get(item.resourceId)!;
-          if (!group.locales.includes(item.target)) {
-            group.locales.push(item.target);
-          }
-          group.translationKeys.push(item.key);
-        }
-      });
+      // // 使用 forEach 填充 Map
+      // itemsToDelete.forEach((item) => {
+      //   if (!groupedMap.has(item.resourceId)) {
+      //     groupedMap.set(item.resourceId, {
+      //       resourceId: item.resourceId,
+      //       locales: [item.target],
+      //       translationKeys: [item.key],
+      //     });
+      //   } else {
+      //     const group = groupedMap.get(item.resourceId)!;
+      //     if (!group.locales.includes(item.target)) {
+      //       group.locales.push(item.target);
+      //     }
+      //     group.translationKeys.push(item.key);
+      //   }
+      // });
 
       // 将 Map 转换为数组
-      const deleteData = Array.from(groupedMap.values());
+      const deleteData = itemsToDelete.map((item) => {
+        return {
+          resourceId: item.resourceId,
+          locales: [item.target],
+          translationKeys: [item.key],
+        };
+      });
+
       console.log("deleteData: ", deleteData);
 
       try {
