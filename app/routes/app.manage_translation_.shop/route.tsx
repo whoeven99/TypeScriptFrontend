@@ -332,7 +332,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("SHOP", record?.key || "", record?.type || "", record?.default_language || "", record?.index || 0);
+              handleTranslate("SHOP", record?.key || "", record?.type || "", record?.default_language || "");
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -343,7 +343,7 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string, value: string, index: number) => {
+  const handleInputChange = (key: string, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
@@ -364,12 +364,12 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: shops.nodes[index]?.resourceId,
-          locale: shops.nodes[index]?.translatableContent[0]?.locale,
-          key: shops.nodes[index]?.translatableContent[0]?.key,
+          resourceId: shops.nodes[0]?.resourceId,
+          locale: shops.nodes[0]?.translatableContent.find((item: any) => item.key === key)?.locale,
+          key: key,
           value: value, // 初始为空字符串
           translatableContentDigest:
-            shops.nodes[index]?.translatableContent[0]?.digest,
+            shops.nodes[0]?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",
         };
 
@@ -379,11 +379,13 @@ const Index = () => {
   };
 
   const generateMenuItemsArray = (items: any) => {
+    console.log("items: ", items);
+
     return items.nodes[0]?.translatableContent.flatMap(
       (item: any, index: number) => {
         // 创建当前项的对象
         const currentItem = {
-          key: `${item.key}`, // 使用 key 生成唯一的 key
+          key: item.key, // 使用 key 生成唯一的 key
           resource: item.key,
           default_language: item.value, // 默认语言为 item 的标题
           translated:
@@ -398,7 +400,7 @@ const Index = () => {
   };
 
 
-  const handleTranslate = async (resourceType: string, key: string, type: string, context: string, index: number) => {
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
     if (!key || !type || !context) {
       return;
     }
@@ -418,7 +420,7 @@ const Index = () => {
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response, index)
+        handleInputChange(key, data.response)
         shopify.toast.show(t("Translated successfully"))
       }
     } else {
