@@ -1,9 +1,12 @@
 import {
   Button,
+  Card,
+  Divider,
   Layout,
   Menu,
   MenuProps,
   Result,
+  Space,
   Spin,
   Table,
   theme,
@@ -30,7 +33,7 @@ import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
 import ManageTableInput from "~/components/manageTableInput";
-import { Modal } from "@shopify/app-bridge-react";
+import { Modal, TitleBar } from "@shopify/app-bridge-react";
 import { useDispatch, useSelector } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setUserConfig } from "~/store/modules/userConfig";
@@ -38,7 +41,7 @@ import { ShopLocalesType } from "../app.language/route";
 
 const { Sider, Content } = Layout;
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 interface ItemType {
   key: string;
@@ -209,7 +212,7 @@ const Index = () => {
   const isManualChange = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
-  const menuData: MenuProps["items"] = [
+  const menuData: any[] = [
     {
       key: "names",
       label: "Menu names",
@@ -261,6 +264,7 @@ const Index = () => {
   const [hasNext, setHasNext] = useState<boolean>(
     navigationsData.pageInfo.hasNextPage || false
   );
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     if (languageTableData.length === 0) {
@@ -271,6 +275,14 @@ const Index = () => {
         action: "/app/manage_translation",
       });
     }
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -698,65 +710,19 @@ const Index = () => {
 
   return (
     <Modal
-      id="manage-modal"
       variant="max"
       open={isVisible}
       onHide={onCancel}
     >
-      <FullscreenBar onAction={onCancel}>
-        <div
-          style={{
-            display: 'flex',
-            flexGrow: 1,
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingLeft: '1rem',
-            paddingRight: '1rem',
-          }}
+      <TitleBar title={t("Navigation")} >
+        <button
+          variant="primary"
+          onClick={handleConfirm}
+          disabled={confirmLoading || !confirmData.length}
         >
-          <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
-            <Text>
-              {t("Navigation")}
-            </Text>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
-            <div
-              style={{
-                width: "150px",
-              }}
-            >
-              <Select
-                label={""}
-                options={languageOptions}
-                value={selectedLanguage}
-                onChange={(value) => handleLanguageChange(value)}
-              />
-            </div>
-            <div
-              style={{
-                width: "150px",
-              }}
-            >
-              <Select
-                label={""}
-                options={itemOptions}
-                value={selectedItem}
-                onChange={(value) => handleItemChange(value)}
-              />
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'flex-end' }}>
-            <Button
-              type="primary"
-              onClick={handleConfirm}
-              disabled={confirmLoading || !confirmData.length}
-              loading={confirmLoading}
-            >
-              {t("Save")}
-            </Button>
-          </div>
-        </div>
-      </FullscreenBar>
+          {t("Save")}
+        </button>
+      </TitleBar>
       <Layout
         style={{
           padding: "24px 0",
@@ -767,36 +733,46 @@ const Index = () => {
         }}
       >
         {isLoading ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+            <Spin />
+          </div>
         ) : navigations.nodes.length ? (
           <>
-            <Sider
-              style={{
-                background: colorBgContainer,
-                height: 'calc(100vh - 124px)',
-                width: '200px',
-              }}
-            >
-              <Menu
-                mode="inline"
-                defaultSelectedKeys={[navigationsData.nodes[0]?.resourceId]}
-                defaultOpenKeys={["sub1"]}
-                style={{ height: "100%" }}
-                items={menuData}
-                selectedKeys={[selectNavigationKey]}
-                onClick={(e: any) => {
-                  setSelectNavigationKey(e.key);
+            {!isMobile && (
+              <Sider
+                style={{
+                  background: colorBgContainer,
+                  height: 'calc(100vh - 124px)',
+                  minHeight: '70vh',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'auto',
                 }}
-              />
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <Pagination
-                  hasPrevious={hasPrevious}
-                  onPrevious={onPrevious}
-                  hasNext={hasNext}
-                  onNext={onNext}
+              >
+                <Menu
+                  mode="inline"
+                  defaultSelectedKeys={[navigationsData.nodes[0]?.resourceId]}
+                  style={{
+                    flex: 1,
+                    overflowY: "auto",
+                    minHeight: 0,
+                  }}
+                  items={menuData}
+                  selectedKeys={[selectNavigationKey]}
+                  onClick={(e: any) => {
+                    setSelectNavigationKey(e.key);
+                  }}
                 />
-              </div>
-            </Sider>
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Pagination
+                    hasPrevious={hasPrevious}
+                    onPrevious={onPrevious}
+                    hasNext={hasNext}
+                    onNext={onNext}
+                  />
+                </div>
+              </Sider>
+            )}
             <Content
               style={{
                 padding: "0 24px",
@@ -805,11 +781,105 @@ const Index = () => {
                 minHeight: '70vh',
               }}
             >
-              <Table
-                columns={resourceColumns}
-                dataSource={resourceData}
-                pagination={false}
-              />
+              {isMobile ? (
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {menuData!.find((item: any) => item.key === selectNavigationKey)?.label}
+                    </Title>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                      <div
+                        style={{
+                          width: "100px",
+                        }}
+                      >
+                        <Select
+                          label={""}
+                          options={languageOptions}
+                          value={selectedLanguage}
+                          onChange={(value) => handleLanguageChange(value)}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          width: "100px",
+                        }}
+                      >
+                        <Select
+                          label={""}
+                          options={itemOptions}
+                          value={selectedItem}
+                          onChange={(value) => handleItemChange(value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <Card
+                    title={t("Resource")}
+                  >
+                    <Space direction="vertical" style={{ width: '100%' }}>
+                      {resourceData.map((item: any, index: number) => {
+                        return (
+                          <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
+                            <Text
+                              strong
+                              style={{
+                                fontSize: "16px"
+                              }}>
+                              {t(item.resource)}
+                            </Text>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <Text>{t("Default Language")}</Text>
+                              <ManageTableInput record={item} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <Text>{t("Translated")}</Text>
+                              <ManageTableInput
+                                translatedValues={translatedValues}
+                                setTranslatedValues={setTranslatedValues}
+                                handleInputChange={handleInputChange}
+                                isRtl={searchTerm === "ar"}
+                                record={item}
+                              />
+                            </div>
+                            <Divider
+                              style={{
+                                margin: "8px 0"
+                              }}
+                            />
+                          </Space>
+                        )
+                      })}
+                    </Space>
+                  </Card>
+                  <Menu
+                    mode="inline"
+                    defaultSelectedKeys={[navigationsData.nodes[0]?.resourceId]}
+                    style={{
+                      flex: 1,
+                      overflowY: "auto",
+                      minHeight: 0,
+                    }}
+                    items={menuData}
+                    selectedKeys={[selectNavigationKey]}
+                    onClick={(e) => setSelectNavigationKey(e.key)}
+                  />
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <Pagination
+                      hasPrevious={hasPrevious}
+                      onPrevious={onPrevious}
+                      hasNext={hasNext}
+                      onNext={onNext}
+                    />
+                  </div>
+                </Space>
+              ) : (
+                <Table
+                  columns={resourceColumns}
+                  dataSource={resourceData}
+                  pagination={false}
+                />
+              )}
             </Content>
           </>
         ) : (
