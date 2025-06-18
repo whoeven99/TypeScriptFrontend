@@ -408,6 +408,8 @@
     "Free trial failed": "Essai gratuit échoué",
     "Free trial started successfully": "Essai gratuit démarré avec succès",
     "Switcher Configuration Guide": "Guide de configuration du sélecteur",
-    "/month": "/mois"
+    "/month": "/mois",
+    "Summary": "Résumé",
+    "label": "Étiquette"
 }
   

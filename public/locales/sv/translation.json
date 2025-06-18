@@ -409,6 +409,8 @@
     "Free trial failed": "Gratis provperiod misslyckades",
     "Free trial started successfully": "Gratis provperiod startade",
     "Switcher Configuration Guide": "Väljarens konfigurationsguide",
-    "/month": "/månad"
+    "/month": "/månad",
+    "Summary": "Sammanfattning",
+    "label": "Etiket"
 }   
   

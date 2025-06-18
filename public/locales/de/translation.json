@@ -409,6 +409,8 @@
   "Free trial failed": "Kostenlose Testversion fehlgeschlagen",
   "Free trial started successfully": "Kostenlose Testversion erfolgreich gestartet",
   "Switcher Configuration Guide": "Sprachwechsler-Konfiguration-Leitfaden",
-  "/month": "/Monat"
+  "/month": "/Monat",
+  "Summary": "Zusammenfassung",
+  "label": "Bezeichnung"
 }
     

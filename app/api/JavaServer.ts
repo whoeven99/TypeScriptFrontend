@@ -20,11 +20,31 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
-export const StartFreePlan = async ({ shopName }: { shopName: string }) => {
+export const GetUserValue = async ({ shop, server }: { shop: string, server: string }) => {
   try {
-    const response = await axios.post(
-      `${process.env.SERVER_URL}/userTrials/startFreePlan?shopName=${shopName}`,
-    );
+    const response = await axios({
+      url: `${server}/translate/getUserValue?shopName=${shop}`,
+      method: "GET",
+    });
+    console.log("GetUserValue: ", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error GetUserValue:", error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMsg: "Error GetUserValue",
+      response: null,
+    };
+  }
+};
+
+export const StartFreePlan = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/userTrials/startFreePlan?shopName=${shop}`,
+      method: "POST",
+    });
     console.log("StartFreePlan: ", response.data);
     return response.data;
   } catch (error) {

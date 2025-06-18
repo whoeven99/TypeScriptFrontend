@@ -409,5 +409,7 @@
     "Free trial failed": "Безкоштовна пробна версія не вдалася",
     "Free trial started successfully": "Безкоштовна пробна версія успішно запущена",
     "Switcher Configuration Guide": "Конфігурація перемикача",
-    "/month": "/місяць"
+    "/month": "/місяць",
+    "Summary": "Сума",
+    "label": "Мітка"
 }

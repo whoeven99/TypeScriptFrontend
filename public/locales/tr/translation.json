@@ -409,5 +409,7 @@
     "Free trial failed": "Ücretsiz deneyim başarısız",
     "Free trial started successfully": "Ücretsiz deneyim başarıyla başlatıldı",
     "Switcher Configuration Guide": "Seçici Yapılandırma Kılavuzu",
-    "/month": "/ay"
+    "/month": "/ay",
+    "Summary": "Özet",
+    "label": "Etiket"
 }
