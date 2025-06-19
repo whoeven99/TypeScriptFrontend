@@ -186,7 +186,6 @@ const Index = () => {
 
   // 添加分页状态
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10; // 每页显示的数量
 
   useEffect(() => {
     if (languageTableData.length === 0) {
@@ -541,13 +540,14 @@ const Index = () => {
                       {filteredResourceData.length > 20 ? (
                         <List
                           itemLayout="vertical"
+                          style={{ listStyle: 'none' }}
                           pagination={{
                             onChange: (page) => {
                               setCurrentPage(page);
                               // 滚动到顶部
                               window.scrollTo(0, 0);
                             },
-                            pageSize: pageSize,
+                            pageSize: 10,
                             total: filteredResourceData.length,
                             current: currentPage,
                             showSizeChanger: false
@@ -578,6 +578,17 @@ const Index = () => {
                                     record={item}
                                   />
                                 </div>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                  <Button
+                                    type="primary"
+                                    onClick={() => {
+                                      handleTranslate("ONLINE_STORE_THEME", item?.key || "", item?.type || "", item?.default_language || "");
+                                    }}
+                                    loading={loadingItems.includes(item?.key || "")}
+                                  >
+                                    {t("Translate")}
+                                  </Button>
+                                </div>
                                 <Divider style={{ margin: "8px 0" }} />
                               </Space>
                             </List.Item>
@@ -601,7 +612,22 @@ const Index = () => {
                                 record={item}
                               />
                             </div>
-                            <Divider style={{ margin: "8px 0" }} />
+                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <Button
+                                type="primary"
+                                onClick={() => {
+                                  handleTranslate("ONLINE_STORE_THEME", item?.key || "", item?.type || "", item?.default_language || "");
+                                }}
+                                loading={loadingItems.includes(item?.key || "")}
+                              >
+                                {t("Translate")}
+                              </Button>
+                            </div>
+                            <Divider
+                              style={{
+                                margin: "8px 0"
+                              }}
+                            />
                           </Space>
                         ))
                       )}

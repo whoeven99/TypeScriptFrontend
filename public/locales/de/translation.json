@@ -154,7 +154,7 @@
   "rating.description":"Wenn Sie mit den Übersetzungsergebnissen zufrieden sind, betrachten Sie uns bitte als fünf Sterne-Bewertung.",
   "progressing.title":"Übersetzungsaufgaben: ",
   "progressing.target":"Zielsprache: ",
-  "progressing.progressingWithSpace":"Übersetzen Sie {{item}} Modul",
+  "progressing.progressingWithSpace":"Übersetzen Sie {{item}} Modul: ",
   "progressing.finished":"Die Übersetzung wurde abgeschlossen. Der übersetzte Inhalt muss vor der Wirkung veröffentlicht werden.",
   "progressing.buyCredits":"Credits kaufen",
   "progressing.publish":"Sprache veröffentlichen",
