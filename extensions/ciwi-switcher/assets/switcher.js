@@ -886,51 +886,19 @@ window.onload = async function () {
     }
   }
 
-  if (
-    data.currencySelector ||
-    (!data.languageSelector && !data.currencySelector)
-  ) {
-    const currencySelector = document.getElementById(
-      "currency-switcher-container",
-    );
-    currencySelector.style.display = "block";
-    const currencySelectorHeader = document.querySelector(
-      ".selector-header[data-type='currency']",
-    );
-    currencySelectorHeader.style.backgroundColor = data.backgroundColor;
-    currencySelectorHeader.style.border = `1px solid ${data.optionBorderColor}`;
-    const currencySelectorSelectedOption = document.querySelector(
-      ".options-container[data-type='currency']",
-    );
-    currencySelectorSelectedOption.style.backgroundColor = data.backgroundColor;
-    currencySelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
-    // 在页面加载时执行初始化
-    const currencyData = await fetchCurrencies(shop.value);
-    if (currencyData) {
-      await initializeCurrency(currencyData, shop);
-    }
-    if (!data.languageSelector) {
-      const mainLanguageFlag = document.getElementById("main-language-flag");
-      if (mainLanguageFlag) {
-        mainLanguageFlag.hidden = true;
-      }
-      const mainBox = document.getElementById("main-box");
-      if (mainBox) {
-        mainBox.style.justifyContent = "center";
-      }
-    }
-  }
-
   if (data.ipOpen) {
     const iptoken = document.querySelector('input[name="iptoken"]');
     const iptokenValue = iptoken.value;
     if (iptokenValue) iptoken.remove();
     const storedLanguage = localStorage.getItem("selectedLanguage");
     const storedCountry = localStorage.getItem("selectedCountry");
+    const storedCurrency = localStorage.getItem("selectedCurrency");
     const languageInput = document.querySelector('input[name="language_code"]');
     const language = languageInput.value;
     const countryInput = document.querySelector('input[name="country_code"]');
     const country = countryInput.value;
+    const currencyInput = document.querySelector('input[name="currency_code"]');
+    const currency = currencyInput.value;
     const availableLanguages = Array.from(
       document.querySelectorAll(".option-item[data-type='language']"),
     ).map((option) => option.dataset.value);
@@ -959,12 +927,15 @@ window.onload = async function () {
       }
     }
 
-    if (storedCountry) {
+    if (storedCountry && storedCurrency) {
       if (
         countryInput.value !== storedCountry &&
         availableCountries.includes(storedCountry)
       ) {
         countryInput.value = storedCountry;
+      }
+      if (currencyInput.value !== storedCurrency) {
+        currencyInput.value = storedCurrency;
       }
     } else {
       const userIp = await checkUserIp(shop.value);
@@ -972,6 +943,12 @@ window.onload = async function () {
         return;
       }
       const IpData = await fetchUserCountryInfo(iptokenValue);
+      console.log(IpData);
+
+      if (IpData?.currency?.code) {
+        localStorage.setItem("selectedCurrency", IpData.currency.code);
+      }
+
       if (
         IpData?.country_code &&
         availableCountries.includes(IpData.country_code)
@@ -1004,6 +981,41 @@ window.onload = async function () {
         country: countryInput.value,
         language: languageInput.value,
       });
+    }
+  }
+
+  if (
+    data.currencySelector ||
+    (!data.languageSelector && !data.currencySelector)
+  ) {
+    const currencySelector = document.getElementById(
+      "currency-switcher-container",
+    );
+    currencySelector.style.display = "block";
+    const currencySelectorHeader = document.querySelector(
+      ".selector-header[data-type='currency']",
+    );
+    currencySelectorHeader.style.backgroundColor = data.backgroundColor;
+    currencySelectorHeader.style.border = `1px solid ${data.optionBorderColor}`;
+    const currencySelectorSelectedOption = document.querySelector(
+      ".options-container[data-type='currency']",
+    );
+    currencySelectorSelectedOption.style.backgroundColor = data.backgroundColor;
+    currencySelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
+    // 在页面加载时执行初始化
+    const currencyData = await fetchCurrencies(shop.value);
+    if (currencyData) {
+      await initializeCurrency(currencyData, shop);
+    }
+    if (!data.languageSelector) {
+      const mainLanguageFlag = document.getElementById("main-language-flag");
+      if (mainLanguageFlag) {
+        mainLanguageFlag.hidden = true;
+      }
+      const mainBox = document.getElementById("main-box");
+      if (mainBox) {
+        mainBox.style.justifyContent = "center";
+      }
     }
   }
 
