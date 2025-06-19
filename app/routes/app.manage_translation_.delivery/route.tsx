@@ -330,7 +330,6 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           <Button
-            type="primary"
             onClick={() => {
               handleTranslate("DELIVERY_METHOD_DEFINITION", record?.key || "", record?.type || "", record?.default_language || "", record?.index || 0);
             }}
@@ -568,7 +567,6 @@ const Index = () => {
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                             <Button
-                              type="primary"
                               onClick={() => {
                                 handleTranslate("DELIVERY_METHOD_DEFINITION", item?.key || "", item?.type || "", item?.default_language || "", item?.index || 0);
                               }}

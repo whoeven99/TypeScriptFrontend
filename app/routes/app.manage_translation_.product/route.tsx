@@ -959,7 +959,6 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           <Button
-            type="primary"
             onClick={() => {
               handleTranslate("PRODUCT", record?.key || "", record?.type || "", record?.default_language || "");
             }}
@@ -1011,7 +1010,6 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           <Button
-            type="primary"
             onClick={() => {
               handleTranslate("PRODUCT", record?.key || "", record?.type || "", record?.default_language || "");
             }}
@@ -1068,7 +1066,6 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           <Button
-            type="primary"
             onClick={() => {
               handleTranslate("PRODUCT_OPTION", record?.key || "", record?.type || "", record?.default_language || "", Number(1 + "" + record?.index));
             }}
@@ -1125,7 +1122,6 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           <Button
-            type="primary"
             onClick={() => {
               handleTranslate("METAFIELD", record?.key || "", record?.type || "", record?.default_language || "", Number(2 + "" + record?.index));
             }}
@@ -1180,7 +1176,6 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           <Button
-            type="primary"
             onClick={() => {
               handleTranslate("PRODUCT_OPTION_VALUE", record?.key || "", record?.type || "", record?.default_language || "", Number(3 + "" + record?.index));
             }}
@@ -1701,7 +1696,6 @@ const Index = () => {
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                               <Button
-                                type="primary"
                                 onClick={() => {
                                   handleTranslate("PRODUCT", item?.key || "", item?.type || "", item?.default_language || "");
                                 }}
@@ -1750,7 +1744,6 @@ const Index = () => {
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                               <Button
-                                type="primary"
                                 onClick={() => {
                                   handleTranslate("PRODUCT", item?.key || "", item?.type || "", item?.default_language || "");
                                 }}
@@ -1802,7 +1795,6 @@ const Index = () => {
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                   <Button
-                                    type="primary"
                                     onClick={() => {
                                       handleTranslate("PRODUCT_OPTION", item?.key || "", item?.type || "", item?.default_language || "", Number(1 + "" + item?.index));
                                     }}
@@ -1854,7 +1846,6 @@ const Index = () => {
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                   <Button
-                                    type="primary"
                                     onClick={() => {
                                       handleTranslate("METAFIELD", item?.key || "", item?.type || "", item?.default_language || "", Number(2 + "" + item?.index));
                                     }}
@@ -1907,7 +1898,6 @@ const Index = () => {
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                   <Button
-                                    type="primary"
                                     onClick={() => {
                                       handleTranslate("PRODUCT_OPTION_VALUE", item?.key || "", item?.type || "", item?.default_language || "", Number(3 + "" + item?.index));
                                     }}

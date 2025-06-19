@@ -336,14 +336,14 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                                 alignItems: "flex-start",
                                             }}
                                         >
-                                            <Text
+                                            {/* <Text
                                                 style={{
                                                     whiteSpace: "nowrap", // 防止文字换行
                                                     lineHeight: "30px",
                                                 }}
                                             >
                                                 {t("progressing.target")}
-                                            </Text>
+                                            </Text> */}
                                             <Text
                                                 style={{
                                                     fontSize: "18px",
@@ -369,10 +369,12 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                                 <Text>{t("progressing.finished")}</Text>
                                             )}
                                             {status === 2 && (
-                                                <>
+                                                <div style={{ width: "100%" }}>
                                                     <Text
                                                         style={{
-                                                            minWidth: "120px",
+                                                            width: "100%",
+                                                            whiteSpace: "nowrap",
+                                                            display: "block"
                                                         }}
                                                     >
                                                         {t("progressing.progressingWithSpace", {
@@ -398,7 +400,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                                             <span style={{ flexShrink: 0 }}>]</span>
                                                         </Text>
                                                     </div>
-                                                </>
+                                                </div>
                                             )}
                                             {status === 3 && (
                                                 <Text>⚠️{t("progressing.contact")}</Text>
