@@ -623,7 +623,9 @@ const Index = () => {
         }}
       >
         {isLoading ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+            <Spin />
+          </div>
         ) : blogs.nodes.length ? (
           <>
             {!isMobile && (
@@ -640,7 +642,6 @@ const Index = () => {
                 <Menu
                   mode="inline"
                   defaultSelectedKeys={[blogsData.nodes[0]?.resourceId]}
-                  defaultOpenKeys={["sub1"]}
                   style={{
                     flex: 1,
                     overflowY: "auto",
@@ -726,6 +727,17 @@ const Index = () => {
                                 isRtl={searchTerm === "ar"}
                                 record={item}
                               />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <Button
+                                type="primary"
+                                onClick={() => {
+                                  handleTranslate("BLOG", item?.key || "", item?.type || "", item?.default_language || "");
+                                }}
+                                loading={loadingItems.includes(item?.key || "")}
+                              >
+                                {t("Translate")}
+                              </Button>
                             </div>
                             <Divider
                               style={{

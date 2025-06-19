@@ -1699,6 +1699,17 @@ const Index = () => {
                                 record={item}
                               />
                             </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <Button
+                                type="primary"
+                                onClick={() => {
+                                  handleTranslate("PRODUCT", item?.key || "", item?.type || "", item?.default_language || "");
+                                }}
+                                loading={loadingItems.includes(item?.key || "")}
+                              >
+                                {t("Translate")}
+                              </Button>
+                            </div>
                             <Divider
                               style={{
                                 margin: "8px 0"
@@ -1736,6 +1747,17 @@ const Index = () => {
                                 isRtl={searchTerm === "ar"}
                                 record={item}
                               />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <Button
+                                type="primary"
+                                onClick={() => {
+                                  handleTranslate("PRODUCT", item?.key || "", item?.type || "", item?.default_language || "");
+                                }}
+                                loading={loadingItems.includes(item?.key || "")}
+                              >
+                                {t("Translate")}
+                              </Button>
                             </div>
                             <Divider
                               style={{
@@ -1778,6 +1800,17 @@ const Index = () => {
                                     record={item}
                                   />
                                 </div>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                  <Button
+                                    type="primary"
+                                    onClick={() => {
+                                      handleTranslate("PRODUCT_OPTION", item?.key || "", item?.type || "", item?.default_language || "", Number(1 + "" + item?.index));
+                                    }}
+                                    loading={loadingItems.includes(item?.key || "")}
+                                  >
+                                    {t("Translate")}
+                                  </Button>
+                                </div>
                                 <Divider
                                   style={{
                                     margin: "8px 0"
@@ -1818,6 +1851,17 @@ const Index = () => {
                                     isRtl={searchTerm === "ar"}
                                     record={item}
                                   />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                  <Button
+                                    type="primary"
+                                    onClick={() => {
+                                      handleTranslate("METAFIELD", item?.key || "", item?.type || "", item?.default_language || "", Number(2 + "" + item?.index));
+                                    }}
+                                    loading={loadingItems.includes(item?.key || "")}
+                                  >
+                                    {t("Translate")}
+                                  </Button>
                                 </div>
                                 <Divider
                                   style={{
@@ -1860,6 +1904,17 @@ const Index = () => {
                                     isRtl={searchTerm === "ar"}
                                     record={item}
                                   />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                  <Button
+                                    type="primary"
+                                    onClick={() => {
+                                      handleTranslate("PRODUCT_OPTION_VALUE", item?.key || "", item?.type || "", item?.default_language || "", Number(3 + "" + item?.index));
+                                    }}
+                                    loading={loadingItems.includes(item?.key || "")}
+                                  >
+                                    {t("Translate")}
+                                  </Button>
                                 </div>
                                 <Divider
                                   style={{

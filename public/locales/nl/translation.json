@@ -154,7 +154,7 @@
     "rating.description":"Als u tevreden bent met onze producten en diensten, laat ons dan uw beoordeling achter. Zo kunnen wij onze diensten nog verder verbeteren!",
     "progressing.title":"Vertaalopdrachten: ",
     "progressing.target":"Doeltaal: ",
-    "progressing.progressingWithSpace":"Vertalen {{item}} module",
+    "progressing.progressingWithSpace":"Vertalen {{item}} module: ",
     "progressing.finished":"De vertaling is voltooid. De vertaalde inhoud moet worden gepubliceerd voordat deze in werking treedt.",
     "progressing.buyCredits":"Credits kopen",
     "progressing.publish":"Taal publiceren",

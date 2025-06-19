@@ -30,6 +30,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
     const [progress, setProgress] = useState<number>(0);
     const [status, setStatus] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(true);
+    const [isMobile, setIsMobile] = useState<boolean>(false);
     const { t } = useTranslation();
     const navigate = useNavigate();
     const fetcher = useFetcher<any>();
@@ -47,6 +48,14 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                 action: "/app",
             },
         );
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => {
+            window.removeEventListener("resize", handleResize);
+        };
     }, []);
 
     useEffect(() => {
@@ -304,46 +313,43 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                     style={{
                                         display: "flex",
                                         justifyContent: "space-between",
-                                        alignItems: "flex-start",
+                                        alignItems: "center",
                                         width: "80%", // 确保占满容器宽度
                                         textAlign: "center",
                                         flexDirection: "column",
-                                        // height: '69px'
+                                        height: '69px'
                                     }}
                                 >
                                     <div
                                         style={{
                                             display: "flex",
-                                            alignItems: "flex-start",
                                             width: "100%", // 确保占满容器宽度
-                                            textAlign: "center",
                                             marginBottom: "auto",
-                                            gap: 30,
+                                            gap: 10,
                                         }}
                                     >
                                         {/* 左侧部分 */}
                                         <div
                                             style={{
                                                 display: "flex",
-                                                maxWidth: "20%", // 限制最大宽度
-                                                flexDirection: "column",
-                                                lineHeight: "1.5",
-                                                textAlign: "left",
-                                                flex: 1,
+                                                minWidth: "100px", // 限制最大宽度
+                                                alignItems: "flex-start",
                                             }}
                                         >
                                             <Text
                                                 style={{
                                                     whiteSpace: "nowrap", // 防止文字换行
+                                                    lineHeight: "30px",
                                                 }}
                                             >
                                                 {t("progressing.target")}
                                             </Text>
                                             <Text
                                                 style={{
-                                                    textAlign: "left",
-                                                    fontSize: "24px",
-                                                    fontWeight: 600,
+                                                    fontSize: "18px",
+                                                    fontWeight: 700,
+                                                    color: "#007F61",
+                                                    lineHeight: "30px",
                                                 }}
                                             >
                                                 {target}
@@ -352,23 +358,44 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
 
                                         <div
                                             style={{
-                                                display: "flex",
-                                                maxWidth: status === 1 ? "100%" : "80%", // 限制最大宽度
-                                                alignItems: status === 1 ? "flex-end" : "center", // 居中对齐
-                                                textAlign: "left",
-                                                flex: 7,
+                                                maxWidth: isMobile ? "50%" : status === 1 ? "100%" : "80%", // 限制最大宽度
+                                                textAlign: "start",
                                             }}
                                         >
                                             {status === 1 && (
                                                 <Text>{t("progressing.finished")}</Text>
                                             )}
                                             {status === 2 && (
-                                                <Text style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                                    {t("progressing.progressingWithSpace", {
-                                                        item: t(item),
-                                                        value: value,
-                                                    })}
-                                                </Text>
+                                                <>
+                                                    <Text
+                                                        style={{
+                                                            minWidth: "120px",
+                                                        }}
+                                                    >
+                                                        {t("progressing.progressingWithSpace", {
+                                                            item: t(item)
+                                                        })}
+                                                    </Text>
+                                                    <div style={{ width: "100%" }}>
+                                                        <Text style={{
+                                                            display: "flex",
+                                                            width: "100%",
+                                                            overflow: "hidden",
+                                                            color: "#007F61",
+                                                            whiteSpace: "nowrap"
+                                                        }}>
+                                                            <span style={{ flexShrink: 0 }}>[</span>
+                                                            <span style={{
+                                                                overflow: "hidden",
+                                                                textOverflow: "ellipsis",
+                                                                whiteSpace: "nowrap",
+                                                            }}>
+                                                                {value}
+                                                            </span>
+                                                            <span style={{ flexShrink: 0 }}>]</span>
+                                                        </Text>
+                                                    </div>
+                                                </>
                                             )}
                                             {status === 3 && (
                                                 <Text>⚠️{t("progressing.contact")}</Text>

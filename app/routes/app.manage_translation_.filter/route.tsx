@@ -570,6 +570,17 @@ const Index = () => {
                               record={item}
                             />
                           </div>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <Button
+                              type="primary"
+                              onClick={() => {
+                                handleTranslate("FILTER", item?.key || "", item?.type || "", item?.default_language || "", item?.index || 0);
+                              }}
+                              loading={loadingItems.includes(item?.key || "")}
+                            >
+                              {t("Translate")}
+                            </Button>
+                          </div>
                           <Divider
                             style={{
                               margin: "8px 0"

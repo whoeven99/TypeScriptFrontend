@@ -158,7 +158,7 @@
   "rating.description":"If you are satisfied with our products and services, please give us your evaluation to help us improve better!",
   "progressing.title":"Translation tasks: ",
   "progressing.target":"Target language:",
-  "progressing.progressingWithSpace":"Translating {{item}} Module: {{value}}",
+  "progressing.progressingWithSpace":"Translating {{item}} Module: ",
   "progressing.finished":"The translation has been completed. The translated content needs to be published before it takes effect.",
   "progressing.buyCredits":"Buy credits",
   "progressing.publish":"Publish language",
