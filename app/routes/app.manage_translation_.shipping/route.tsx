@@ -14,7 +14,7 @@ import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import ManageTableInput from "~/components/manageTableInput";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal } from "@shopify/app-bridge-react";
+import { Modal, TitleBar } from "@shopify/app-bridge-react";
 import { FullscreenBar, Select } from "@shopify/polaris";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setUserConfig } from "~/store/modules/userConfig";
@@ -388,61 +388,15 @@ const Index = () => {
       open={isVisible}
       onHide={onCancel}
     >
-      <FullscreenBar onAction={onCancel}>
-        <div
-          style={{
-            display: 'flex',
-            flexGrow: 1,
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingLeft: '1rem',
-            paddingRight: '1rem',
-          }}
+      <TitleBar title={t("Shipping")} >
+        <button
+          variant="primary"
+          onClick={handleConfirm}
+          disabled={confirmLoading || !confirmData.length}
         >
-          <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
-            <Text>
-              {t("Shipping")}
-            </Text>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
-            <div
-              style={{
-                width: "150px",
-              }}
-            >
-              <Select
-                label={""}
-                options={languageOptions}
-                value={selectedLanguage}
-                onChange={(value) => handleLanguageChange(value)}
-              />
-            </div>
-            <div
-              style={{
-                width: "150px",
-              }}
-            >
-              <Select
-                label={""}
-                options={itemOptions}
-                value={selectedItem}
-                onChange={(value) => handleItemChange(value)}
-              />
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'flex-end' }}>
-            <Button
-              type="primary"
-              onClick={handleConfirm}
-              disabled={confirmLoading || !confirmData.length}
-              loading={confirmLoading}
-            >
-              {t("Save")}
-            </Button>
-          </div>
-        </div>
-      </FullscreenBar>
-
+          {t("Save")}
+        </button>
+      </TitleBar>
       <Layout
         style={{
           padding: "24px 0",

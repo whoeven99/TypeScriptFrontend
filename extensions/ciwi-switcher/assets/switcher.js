@@ -729,7 +729,6 @@ class CiwiswitcherForm extends HTMLElement {
     ) {
       if (this.elements.selectorBox) {
         this.elements.selectorBox.style.display = "none";
-        console.log(this.elements.translateFloatBtn.style.justifyContent);
         if (this.elements.translateFloatBtn.style.justifyContent) {
           this.elements.translateFloatBtn.style.display = "flex";
         }
