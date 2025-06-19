@@ -1,4 +1,4 @@
-import { Layout, Table, theme, Result, Button, Typography, Spin } from "antd";
+import { Layout, Table, theme, Result, Button, Typography, Spin, Space, Card, Divider } from "antd";
 import { useEffect, useRef, useState } from "react";
 import {
   useFetcher,
@@ -14,7 +14,7 @@ import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import ManageTableInput from "~/components/manageTableInput";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal } from "@shopify/app-bridge-react";
+import { Modal, TitleBar } from "@shopify/app-bridge-react";
 import { FullscreenBar, Select } from "@shopify/polaris";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setUserConfig } from "~/store/modules/userConfig";
@@ -138,6 +138,7 @@ const Index = () => {
   const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
   const [selectedItem, setSelectedItem] = useState<string>("shipping");
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     if (languageTableData.length === 0) {
@@ -148,6 +149,14 @@ const Index = () => {
         action: "/app/manage_translation",
       });
     }
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -375,65 +384,19 @@ const Index = () => {
 
   return (
     <Modal
-      id="manage-modal"
       variant="max"
       open={isVisible}
       onHide={onCancel}
     >
-      <FullscreenBar onAction={onCancel}>
-        <div
-          style={{
-            display: 'flex',
-            flexGrow: 1,
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingLeft: '1rem',
-            paddingRight: '1rem',
-          }}
+      <TitleBar title={t("Shipping")} >
+        <button
+          variant="primary"
+          onClick={handleConfirm}
+          disabled={confirmLoading || !confirmData.length}
         >
-          <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
-            <Text>
-              {t("Shipping")}
-            </Text>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
-            <div
-              style={{
-                width: "150px",
-              }}
-            >
-              <Select
-                label={""}
-                options={languageOptions}
-                value={selectedLanguage}
-                onChange={(value) => handleLanguageChange(value)}
-              />
-            </div>
-            <div
-              style={{
-                width: "150px",
-              }}
-            >
-              <Select
-                label={""}
-                options={itemOptions}
-                value={selectedItem}
-                onChange={(value) => handleItemChange(value)}
-              />
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'flex-end' }}>
-            <Button
-              type="primary"
-              onClick={handleConfirm}
-              disabled={confirmLoading || !confirmData.length}
-              loading={confirmLoading}
-            >
-              {t("Save")}
-            </Button>
-          </div>
-        </div>
-      </FullscreenBar>
+          {t("Save")}
+        </button>
+      </TitleBar>
       <Layout
         style={{
           padding: "24px 0",
@@ -444,7 +407,9 @@ const Index = () => {
         }}
       >
         {isLoading ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+            <Spin />
+          </div>
         ) : shippings.nodes.length ? (
           <Content
             style={{
@@ -454,11 +419,124 @@ const Index = () => {
               minHeight: '70vh',
             }}
           >
-            <Table
-              columns={resourceColumns}
-              dataSource={resourceData}
-              pagination={false}
-            />
+            {isMobile ? (
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                  <div
+                    style={{
+                      width: "100px",
+                    }}
+                  >
+                    <Select
+                      label={""}
+                      options={languageOptions}
+                      value={selectedLanguage}
+                      onChange={(value) => handleLanguageChange(value)}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      width: "100px",
+                    }}
+                  >
+                    <Select
+                      label={""}
+                      options={itemOptions}
+                      value={selectedItem}
+                      onChange={(value) => handleItemChange(value)}
+                    />
+                  </div>
+                </div>
+                <Card
+                  title={t("Resource")}
+                >
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    {resourceData.map((item: any) => {
+                      return (
+                        <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                          <Text
+                            strong
+                            style={{
+                              fontSize: "16px"
+                            }}
+                          >
+                            {t(item.resource)}
+                          </Text>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <Text>{t("Default Language")}</Text>
+                            <ManageTableInput record={item} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <Text>{t("Translated")}</Text>
+                            <ManageTableInput
+                              translatedValues={translatedValues}
+                              setTranslatedValues={setTranslatedValues}
+                              handleInputChange={handleInputChange}
+                              isRtl={searchTerm === "ar"}
+                              record={item}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <Button
+                              type="primary"
+                              onClick={() => {
+                                handleTranslate("PACKING_SLIP_TEMPLATE", item?.key || "", item?.type || "", item?.default_language || "", item?.index || 0);
+                              }}
+                              loading={loadingItems.includes(item?.key || "")}
+                            >
+                              {t("Translate")}
+                            </Button>
+                          </div>
+                          <Divider
+                            style={{
+                              margin: "8px 0"
+                            }}
+                          />
+                        </Space>
+                      )
+                    })}
+                  </Space>
+                </Card>
+              </Space>
+            ) : (
+              <Space
+                direction="vertical"
+                size="large"
+                style={{ width: '100%' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                  <div
+                    style={{
+                      width: "150px",
+                    }}
+                  >
+                    <Select
+                      label={""}
+                      options={languageOptions}
+                      value={selectedLanguage}
+                      onChange={(value) => handleLanguageChange(value)}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      width: "150px",
+                    }}
+                  >
+                    <Select
+                      label={""}
+                      options={itemOptions}
+                      value={selectedItem}
+                      onChange={(value) => handleItemChange(value)}
+                    />
+                  </div>
+                </div>
+                <Table
+                  columns={resourceColumns}
+                  dataSource={resourceData}
+                  pagination={false}
+                />
+              </Space>
+            )}
           </Content>
         ) : (
           <Result

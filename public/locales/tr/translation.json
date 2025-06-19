@@ -200,7 +200,7 @@
     "rating.description": "Ürün ve hizmetlerimizden memnunsanız, daha iyi gelişmemize yardımcı olmak için lütfen değerlendirmenizi yapın!",
     "progressing.title": "Çeviri görevleri: ",
     "progressing.target": "Hedef dil:",
-    "progressing.progressingWithSpace": "{{item}} modülü çevriliyor",
+    "progressing.progressingWithSpace": "{{item}} modülü çevriliyor: ",
     "progressing.finished": "Çeviri tamamlandı. Çevrilen içeriğin etkili olması için yayınlanması gerekiyor.",
     "progressing.buyCredits": "Kredi satın al",
     "progressing.publish": "Dili yayınla",
@@ -409,5 +409,7 @@
     "Free trial failed": "Ücretsiz deneyim başarısız",
     "Free trial started successfully": "Ücretsiz deneyim başarıyla başlatıldı",
     "Switcher Configuration Guide": "Seçici Yapılandırma Kılavuzu",
-    "/month": "/ay"
+    "/month": "/ay",
+    "Summary": "Özet",
+    "label": "Etiket"
 }

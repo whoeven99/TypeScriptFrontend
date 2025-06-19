@@ -154,7 +154,7 @@
     "rating.description":"Se estiver satisfeito com os nossos produtos e serviços, envie-nos a sua avaliação para nos ajudar a melhorar!",
     "progressing.title":"Tarefas de tradução: ",
     "progressing.target":"Idioma alvo: ",
-    "progressing.progressingWithSpace":"Traduzindo {{item}} módulo",
+    "progressing.progressingWithSpace":"Traduzindo {{item}} módulo: ",
     "progressing.finished":"A tradução foi concluída. O conteúdo traduzido precisa ser publicado antes de entrar em vigor.",
     "progressing.buyCredits":"Comprar créditos",
     "progressing.publish":"Publicar idioma",
@@ -408,6 +408,8 @@
     "Free trial failed": "Teste gratuito falhou",
     "Free trial started successfully": "Teste gratuito iniciado com sucesso",
     "Switcher Configuration Guide": "Guia de configuração do seletor",
-    "/month": "/mês"
+    "/month": "/mês",
+    "Summary": "Resumo",
+    "label": "Etiqueta"
 }   
   

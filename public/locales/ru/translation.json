@@ -157,7 +157,7 @@
     "rating.description": "Если вы довольны нашими продуктами и услугами, пожалуйста, оставьте свою оценку, чтобы помочь нам стать лучше!",
     "progressing.title": "Задачи перевода: ",
     "progressing.target": "Целевой язык:",
-    "progressing.progressingWithSpace": "Перевод модуля {{item}}",
+    "progressing.progressingWithSpace": "Перевод модуля {{item}}: ",
     "progressing.finished": "Перевод завершен. Переведенный контент необходимо опубликовать, прежде чем он вступит в силу.",
     "progressing.buyCredits": "Купить кредиты",
     "progressing.publish": "Опубликовать язык",
@@ -409,5 +409,7 @@
     "Free trial failed": "Бесплатная пробная версия не удалась",
     "Free trial started successfully": "Бесплатная пробная версия успешно запущена",
     "Switcher Configuration Guide": "Руководство по настройке переключателя",
-    "/month": "/месяц"
+    "/month": "/месяц",
+    "Summary": "Сводка",
+    "label": "Метка"
 }

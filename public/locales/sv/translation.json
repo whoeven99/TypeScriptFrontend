@@ -156,7 +156,7 @@
     "rating.description":"Om du är nöjd med våra produkter och tjänster, vänligen ge oss din utvärdering för att hjälpa oss att bli bättre!",
     "progressing.title":"Översättningsuppgifter: ",
     "progressing.target":"Målspråk: ",
-    "progressing.progressingWithSpace":"Översätter {{item}} modul",
+    "progressing.progressingWithSpace":"Översätter {{item}} modul: ",
     "progressing.finished":"Översättningen är klar. Översättningen måste publiceras innan den träder i kraft.",
     "progressing.buyCredits":"Köp krediter",
     "progressing.publish":"Publicera språk",
@@ -409,6 +409,8 @@
     "Free trial failed": "Gratis provperiod misslyckades",
     "Free trial started successfully": "Gratis provperiod startade",
     "Switcher Configuration Guide": "Väljarens konfigurationsguide",
-    "/month": "/månad"
+    "/month": "/månad",
+    "Summary": "Sammanfattning",
+    "label": "Etiket"
 }   
   

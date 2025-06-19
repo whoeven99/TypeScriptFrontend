@@ -1,9 +1,12 @@
 import {
     Button,
+    Card,
+    Divider,
     Layout,
     Menu,
     MenuProps,
     Result,
+    Space,
     Spin,
     Table,
     theme,
@@ -31,14 +34,14 @@ import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { SessionService } from "~/utils/session.server";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal } from "@shopify/app-bridge-react";
+import { Modal, TitleBar } from "@shopify/app-bridge-react";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setUserConfig } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 
 const { Sider, Content } = Layout;
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 interface EmailType {
     key: string;
@@ -179,7 +182,7 @@ const Index = () => {
         return !!searchParams.get('language');
     });
 
-    const [menuData, setMenuData] = useState<MenuProps["items"]>([]);
+    const [menuData, setMenuData] = useState<any[]>([]);
     const [emailsData, setEmailsData] = useState(emails);
     const [emailData, setEmailData] = useState<EmailType>();
     const [resourceData, setResourceData] = useState<TableDataType[]>([]);
@@ -217,6 +220,7 @@ const Index = () => {
     const [hasNext, setHasNext] = useState<boolean>(
         emailsData.pageInfo.hasNextPage || false
     );
+    const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
         if (languageTableData.length === 0) {
@@ -227,10 +231,18 @@ const Index = () => {
                 action: "/app/manage_translation",
             });
         }
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        handleResize();
+        window.addEventListener("resize", handleResize);
         if (emails) {
             setMenuData(exMenuData(emails));
             setIsLoading(false);
         }
+        return () => {
+            window.removeEventListener("resize", handleResize);
+        };
     }, []);
 
     useEffect(() => {
@@ -277,14 +289,14 @@ const Index = () => {
             [
                 {
                     key: "title",
-                    resource: "Title",
+                    resource: t("Title"),
                     default_language: emailData?.title?.value,
                     translated: emailData?.translations?.title,
                     type: emailData?.title?.type,
                 },
                 {
                     key: "body_html",
-                    resource: "Description",
+                    resource: t("Description"),
                     default_language: emailData?.body?.value,
                     translated: emailData?.translations?.body,
                     type: emailData?.body?.type,
@@ -615,65 +627,19 @@ const Index = () => {
 
     return (
         <Modal
-            id="manage-modal"
             variant="max"
             open={isVisible}
             onHide={onCancel}
         >
-            <FullscreenBar onAction={onCancel}>
-                <div
-                    style={{
-                        display: 'flex',
-                        flexGrow: 1,
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        paddingLeft: '1rem',
-                        paddingRight: '1rem',
-                    }}
+            <TitleBar title={t("Email")} >
+                <button
+                    variant="primary"
+                    onClick={handleConfirm}
+                    disabled={confirmLoading || !confirmData.length}
                 >
-                    <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
-                        <Text>
-                            {t("Email")}
-                        </Text>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
-                        <div
-                            style={{
-                                width: "150px",
-                            }}
-                        >
-                            <Select
-                                label={""}
-                                options={languageOptions}
-                                value={selectedLanguage}
-                                onChange={(value) => handleLanguageChange(value)}
-                            />
-                        </div>
-                        <div
-                            style={{
-                                width: "150px",
-                            }}
-                        >
-                            <Select
-                                label={""}
-                                options={itemOptions}
-                                value={selectedItem}
-                                onChange={(value) => handleItemChange(value)}
-                            />
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'flex-end' }}>
-                        <Button
-                            type="primary"
-                            onClick={handleConfirm}
-                            disabled={confirmLoading || !confirmData.length}
-                            loading={confirmLoading}
-                        >
-                            {t("Save")}
-                        </Button>
-                    </div>
-                </div>
-            </FullscreenBar>
+                    {t("Save")}
+                </button>
+            </TitleBar>
             <Layout
                 style={{
                     padding: "24px 0",
@@ -684,44 +650,47 @@ const Index = () => {
                 }}
             >
                 {isLoading ? (
-                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
+                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                        <Spin />
+                    </div>
                 ) : emails.nodes.length ? (
                     <>
-                        <Sider
-                            style={{
-                                background: colorBgContainer,
-                                height: 'calc(100vh - 124px)',
-                                width: '200px',
-                                minHeight: '70vh',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                overflow: 'auto',
-                            }}
-                        >
-                            <Menu
-                                mode="inline"
-                                defaultSelectedKeys={[emailsData.nodes[0]?.resourceId]}
-                                defaultOpenKeys={["sub1"]}
+                        {!isMobile && (
+                            <Sider
                                 style={{
-                                    flex: 1,
-                                    overflowY: "auto",
-                                    minHeight: 0,
+                                    background: colorBgContainer,
+                                    height: 'calc(100vh - 124px)',
+                                    minHeight: '70vh',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    overflow: 'auto',
                                 }}
-                                items={menuData}
-                                selectedKeys={[selectEmailKey]}
-                                onClick={(e: any) => {
-                                    setSelectEmailKey(e.key);
-                                }}
-                            />
-                            <div style={{ display: "flex", justifyContent: "center" }}>
-                                <Pagination
-                                    hasPrevious={hasPrevious}
-                                    onPrevious={onPrevious}
-                                    hasNext={hasNext}
-                                    onNext={onNext}
+                            >
+                                <Menu
+                                    mode="inline"
+                                    defaultSelectedKeys={[emailsData.nodes[0]?.resourceId]}
+                                    defaultOpenKeys={["sub1"]}
+                                    style={{
+                                        flex: 1,
+                                        overflowY: "auto",
+                                        minHeight: 0,
+                                    }}
+                                    items={menuData}
+                                    selectedKeys={[selectEmailKey]}
+                                    onClick={(e: any) => {
+                                        setSelectEmailKey(e.key);
+                                    }}
                                 />
-                            </div>
-                        </Sider>
+                                <div style={{ display: "flex", justifyContent: "center" }}>
+                                    <Pagination
+                                        hasPrevious={hasPrevious}
+                                        onPrevious={onPrevious}
+                                        hasNext={hasNext}
+                                        onNext={onNext}
+                                    />
+                                </div>
+                            </Sider>
+                        )}
                         <Content
                             style={{
                                 padding: "0 24px",
@@ -730,11 +699,150 @@ const Index = () => {
                                 minHeight: '70vh',
                             }}
                         >
-                            <Table
-                                columns={resourceColumns}
-                                dataSource={resourceData}
-                                pagination={false}
-                            />
+                            {isMobile ? (
+                                <Space direction="vertical" style={{ width: '100%' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {menuData!.find((item: any) => item.key === selectEmailKey)?.label}
+                                        </Title>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                                            <div
+                                                style={{
+                                                    width: "100px",
+                                                }}
+                                            >
+                                                <Select
+                                                    label={""}
+                                                    options={languageOptions}
+                                                    value={selectedLanguage}
+                                                    onChange={(value) => handleLanguageChange(value)}
+                                                />
+                                            </div>
+                                            <div
+                                                style={{
+                                                    width: "100px",
+                                                }}
+                                            >
+                                                <Select
+                                                    label={""}
+                                                    options={itemOptions}
+                                                    value={selectedItem}
+                                                    onChange={(value) => handleItemChange(value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Card
+                                        title={t("Resource")}
+                                    >
+                                        <Space direction="vertical" style={{ width: '100%' }}>
+                                            {resourceData.map((item: any, index: number) => {
+                                                return (
+                                                    <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
+                                                        <Text
+                                                            strong
+                                                            style={{
+                                                                fontSize: "16px"
+                                                            }}>
+                                                            {t(item.resource)}
+                                                        </Text>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                            <Text>{t("Default Language")}</Text>
+                                                            <ManageTableInput record={item} />
+                                                        </div>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                            <Text>{t("Translated")}</Text>
+                                                            <ManageTableInput
+                                                                translatedValues={translatedValues}
+                                                                setTranslatedValues={setTranslatedValues}
+                                                                handleInputChange={handleInputChange}
+                                                                isRtl={searchTerm === "ar"}
+                                                                record={item}
+                                                            />
+                                                        </div>
+                                                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                                            <Button
+                                                                type="primary"
+                                                                onClick={() => {
+                                                                    handleTranslate("EMAIL_TEMPLATE", item?.key || "", item?.type || "", item?.default_language || "");
+                                                                }}
+                                                                loading={loadingItems.includes(item?.key || "")}
+                                                            >
+                                                                {t("Translate")}
+                                                            </Button>
+                                                        </div>
+                                                        <Divider
+                                                            style={{
+                                                                margin: "8px 0"
+                                                            }}
+                                                        />
+                                                    </Space>
+                                                )
+                                            })}
+                                        </Space>
+                                    </Card>
+                                    <Menu
+                                        mode="inline"
+                                        defaultSelectedKeys={[emailsData.nodes[0]?.resourceId]}
+                                        style={{
+                                            flex: 1,
+                                            overflowY: "auto",
+                                            minHeight: 0,
+                                        }}
+                                        items={menuData}
+                                        selectedKeys={[selectEmailKey]}
+                                        onClick={(e) => setSelectEmailKey(e.key)}
+                                    />
+                                    <div style={{ display: "flex", justifyContent: "center" }}>
+                                        <Pagination
+                                            hasPrevious={hasPrevious}
+                                            onPrevious={onPrevious}
+                                            hasNext={hasNext}
+                                            onNext={onNext}
+                                        />
+                                    </div>
+                                </Space>)
+                                :
+                                (
+                                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {menuData!.find((item: any) => item.key === selectEmailKey)?.label}
+                                            </Title>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                                                <div
+                                                    style={{
+                                                        width: "150px",
+                                                    }}
+                                                >
+                                                    <Select
+                                                        label={""}
+                                                        options={languageOptions}
+                                                        value={selectedLanguage}
+                                                        onChange={(value) => handleLanguageChange(value)}
+                                                    />
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        width: "150px",
+                                                    }}
+                                                >
+                                                    <Select
+                                                        label={""}
+                                                        options={itemOptions}
+                                                        value={selectedItem}
+                                                        onChange={(value) => handleItemChange(value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Table
+                                            columns={resourceColumns}
+                                            dataSource={resourceData}
+                                            pagination={false}
+                                        />
+                                    </Space>
+                                )}
                         </Content>
                     </>
                 ) : (

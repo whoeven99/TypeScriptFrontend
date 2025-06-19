@@ -154,7 +154,7 @@
     "rating.description":"如果您對翻譯結果滿意，請考慮給我們留下五星評價。",
     "progressing.title":"翻譯任務：",
     "progressing.target":"目標語言：",
-    "progressing.progressingWithSpace": "正在翻譯{{item}}模組",
+    "progressing.progressingWithSpace": "正在翻譯{{item}}模組: ",
     "progressing.finished":"翻譯已完成。翻譯內容需要發布後才能生效。",
     "progressing.buyCredits":"購買積分",
     "progressing.publish":"發布語言",
@@ -408,6 +408,8 @@
     "Free trial failed": "免費試用失敗",
     "Free trial started successfully": "免費試用已成功啟動",
     "Switcher Configuration Guide": "切換器配置指南",
-    "/month": "/月"
+    "/month": "/月",
+    "Summary": "摘要",
+    "label": "標籤"
 }
 

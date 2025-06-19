@@ -6,7 +6,7 @@ import {
   useLoaderData,
   useNavigate,
 } from "@remix-run/react";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import UserGuideCard from "./components/userGuideCard";
 import ContactCard from "./components/contactCard";
@@ -14,6 +14,7 @@ import PreviewCard from "./components/previewCard";
 import ScrollNotice from "~/components/ScrollNotice";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import ProgressingCard from "~/components/progressingCard";
+import { authenticate } from "~/shopify.server";
 
 const { Title, Text } = Typography;
 
@@ -23,22 +24,28 @@ export interface WordsType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
   const language =
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   const languageCode = language.split("-")[0];
-  if( languageCode === "zh" || languageCode === "zh-CN" ) {
+  if (languageCode === "zh" || languageCode === "zh-CN") {
     return {
       isChinese: true,
+      server: process.env.SERVER_URL,
+      shop: shop,
     }
-  }else{
+  } else {
     return {
       isChinese: false,
+      server: process.env.SERVER_URL,
+      shop: shop,
     }
   }
 }
 
 const Index = () => {
-  const { isChinese } = useLoaderData<typeof loader>();
+  const { isChinese, server, shop } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
@@ -138,7 +145,7 @@ const Index = () => {
               </div>
             </Space>
           </Card>
-          <ProgressingCard />
+          <ProgressingCard shop={shop} server={server || ""} />
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
               <Card

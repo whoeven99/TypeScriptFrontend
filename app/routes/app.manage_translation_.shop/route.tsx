@@ -1,5 +1,7 @@
 import {
   Button,
+  Card,
+  Divider,
   Layout,
   Result,
   Space,
@@ -29,7 +31,7 @@ import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal } from "@shopify/app-bridge-react";
+import { Modal, TitleBar } from "@shopify/app-bridge-react";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setUserConfig } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
@@ -188,7 +190,8 @@ const Index = () => {
   const [hasNext, setHasNext] = useState<boolean>(
     shopsData.pageInfo.hasNextPage || false
   );
-  
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
     if (languageTableData.length === 0) {
       languageFetcher.submit({
@@ -198,6 +201,14 @@ const Index = () => {
         action: "/app/manage_translation",
       });
     }
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -321,7 +332,7 @@ const Index = () => {
           <Button
             type="primary"
             onClick={() => {
-              handleTranslate("SHOP", record?.key || "", record?.type || "", record?.default_language || "", record?.index || 0);
+              handleTranslate("SHOP", record?.key || "", record?.type || "", record?.default_language || "");
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -332,7 +343,7 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string, value: string, index: number) => {
+  const handleInputChange = (key: string, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
@@ -353,12 +364,12 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: shops.nodes[index]?.resourceId,
-          locale: shops.nodes[index]?.translatableContent[0]?.locale,
-          key: shops.nodes[index]?.translatableContent[0]?.key,
+          resourceId: shops.nodes[0]?.resourceId,
+          locale: shops.nodes[0]?.translatableContent.find((item: any) => item.key === key)?.locale,
+          key: key,
           value: value, // 初始为空字符串
           translatableContentDigest:
-            shops.nodes[index]?.translatableContent[0]?.digest,
+            shops.nodes[0]?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",
         };
 
@@ -368,24 +379,28 @@ const Index = () => {
   };
 
   const generateMenuItemsArray = (items: any) => {
-    return items.nodes.flatMap((item: any, index: number) => {
-      if (item?.translatableContent.length !== 0) {
+    console.log("items: ", items);
+
+    return items.nodes[0]?.translatableContent.flatMap(
+      (item: any, index: number) => {
         // 创建当前项的对象
         const currentItem = {
-          key: `${item?.resourceId}`, // 使用 key 生成唯一的 key
-          index: index,
-          resource: item?.translatableContent[0]?.key,
-          default_language: item?.translatableContent[0]?.value, // 默认语言为 item 的标题
-          translated: item?.translations[0]?.value, // 翻译字段初始化为空字符串
-          type: item?.translatableContent[0]?.type,
+          key: item.key, // 使用 key 生成唯一的 key
+          resource: item.key,
+          default_language: item.value, // 默认语言为 item 的标题
+          translated:
+            items.nodes[0]?.translations.find(
+              (translation: any) => translation.key === item.key,
+            )?.value || "", // 翻译字段初始化为空字符串
+          type: item.type,
         };
         return [currentItem];
-      }
-      return [];
-    });
+      },
+    );
   };
 
-  const handleTranslate = async (resourceType: string, key: string, type: string, context: string, index: number) => {
+
+  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
     if (!key || !type || !context) {
       return;
     }
@@ -405,7 +420,7 @@ const Index = () => {
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response, index)
+        handleInputChange(key, data.response)
         shopify.toast.show(t("Translated successfully"))
       }
     } else {
@@ -473,60 +488,15 @@ const Index = () => {
       open={isVisible}
       onHide={onCancel}
     >
-      <FullscreenBar onAction={onCancel}>
-        <div
-          style={{
-            display: 'flex',
-            flexGrow: 1,
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingLeft: '1rem',
-            paddingRight: '1rem',
-          }}
+      <TitleBar title={t("Shop")} >
+        <button
+          variant="primary"
+          onClick={handleConfirm}
+          disabled={confirmLoading || !confirmData.length}
         >
-          <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
-            <Text>
-              {t("Shop")}
-            </Text>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
-            <div
-              style={{
-                width: "150px",
-              }}
-            >
-              <Select
-                label={""}
-                options={languageOptions}
-                value={selectedLanguage}
-                onChange={(value) => handleLanguageChange(value)}
-              />
-            </div>
-            <div
-              style={{
-                width: "150px",
-              }}
-            >
-              <Select
-                label={""}
-                options={itemOptions}
-                value={selectedItem}
-                onChange={(value) => handleItemChange(value)}
-              />
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'flex-end' }}>
-            <Button
-              type="primary"
-              onClick={handleConfirm}
-              disabled={confirmLoading || !confirmData.length}
-              loading={confirmLoading}
-            >
-              {t("Save")}
-            </Button>
-          </div>
-        </div>
-      </FullscreenBar>
+          {t("Save")}
+        </button>
+      </TitleBar>
       <Layout
         style={{
           padding: "24px 0",
@@ -543,29 +513,142 @@ const Index = () => {
             style={{
               padding: "0 24px",
               height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
-              overflow: 'auto',
-              minHeight: '70vh',
             }}
           >
-            <Space
-              direction="vertical"
-              size="middle"
-              style={{ display: "flex" }}
-            >
-              <Table
-                columns={resourceColumns}
-                dataSource={resourceData}
-                pagination={false}
-              />
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                <Pagination
-                  hasPrevious={hasPrevious}
-                  onPrevious={onPrevious}
-                  hasNext={hasNext}
-                  onNext={onNext}
+            {isMobile ? (
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                  <div
+                    style={{
+                      width: "100px",
+                    }}
+                  >
+                    <Select
+                      label={""}
+                      options={languageOptions}
+                      value={selectedLanguage}
+                      onChange={(value) => handleLanguageChange(value)}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      width: "100px",
+                    }}
+                  >
+                    <Select
+                      label={""}
+                      options={itemOptions}
+                      value={selectedItem}
+                      onChange={(value) => handleItemChange(value)}
+                    />
+                  </div>
+                </div>
+                <Card
+                  title={t("Resource")}
+                >
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    {resourceData.map((item: any) => {
+                      return (
+                        <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                          <Text
+                            strong
+                            style={{
+                              fontSize: "16px"
+                            }}
+                          >
+                            {t(item.resource)}
+                          </Text>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <Text>{t("Default Language")}</Text>
+                            <ManageTableInput record={item} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <Text>{t("Translated")}</Text>
+                            <ManageTableInput
+                              translatedValues={translatedValues}
+                              setTranslatedValues={setTranslatedValues}
+                              handleInputChange={handleInputChange}
+                              isRtl={searchTerm === "ar"}
+                              record={item}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <Button
+                              type="primary"
+                              onClick={() => {
+                                handleTranslate("SHOP", item?.key || "", item?.type || "", item?.default_language || "");
+                              }}
+                              loading={loadingItems.includes(item?.key || "")}
+                            >
+                              {t("Translate")}
+                            </Button>
+                          </div>
+                          <Divider
+                            style={{
+                              margin: "8px 0"
+                            }}
+                          />
+                        </Space>
+                      )
+                    })}
+                  </Space>
+                </Card>
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Pagination
+                    hasPrevious={hasPrevious}
+                    onPrevious={onPrevious}
+                    hasNext={hasNext}
+                    onNext={onNext}
+                  />
+                </div>
+              </Space>
+            ) : (
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ display: "flex" }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                  <div
+                    style={{
+                      width: "150px",
+                    }}
+                  >
+                    <Select
+                      label={""}
+                      options={languageOptions}
+                      value={selectedLanguage}
+                      onChange={(value) => handleLanguageChange(value)}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      width: "150px",
+                    }}
+                  >
+                    <Select
+                      label={""}
+                      options={itemOptions}
+                      value={selectedItem}
+                      onChange={(value) => handleItemChange(value)}
+                    />
+                  </div>
+                </div>
+                <Table
+                  columns={resourceColumns}
+                  dataSource={resourceData}
+                  pagination={false}
                 />
-              </div>
-            </Space>
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Pagination
+                    hasPrevious={hasPrevious}
+                    onPrevious={onPrevious}
+                    hasNext={hasNext}
+                    onNext={onNext}
+                  />
+                </div>
+              </Space>
+            )}
           </Content>
         ) : (
           <Result

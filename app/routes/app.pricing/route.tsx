@@ -113,7 +113,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       case !!freeTrial:
         try {
-          const data = await StartFreePlan({ shopName: shop });
+          const data = await StartFreePlan({ shop });
           console.log("freeTrial: ", data);
           return data;
         } catch (error) {
