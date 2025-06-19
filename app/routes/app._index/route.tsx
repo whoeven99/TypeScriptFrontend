@@ -6,7 +6,7 @@ import {
   useLoaderData,
   useNavigate,
 } from "@remix-run/react";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import UserGuideCard from "./components/userGuideCard";
 import ContactCard from "./components/contactCard";
