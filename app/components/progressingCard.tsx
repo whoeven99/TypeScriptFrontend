@@ -350,6 +350,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                                     fontWeight: 700,
                                                     color: "#007F61",
                                                     lineHeight: "30px",
+                                                    whiteSpace: "nowrap",
                                                 }}
                                             >
                                                 {target}
@@ -360,6 +361,8 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                             style={{
                                                 maxWidth: isMobile ? "50%" : status === 1 ? "100%" : "80%", // 限制最大宽度
                                                 textAlign: "start",
+                                                display: "flex",
+                                                alignItems: "center",
                                             }}
                                         >
                                             {status === 1 && (
