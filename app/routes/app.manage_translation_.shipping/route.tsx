@@ -275,7 +275,6 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           <Button
-            type="primary"
             onClick={() => {
               handleTranslate("PACKING_SLIP_TEMPLATE", record?.key || "", record?.type || "", record?.default_language || "", record?.index || 0);
             }}
@@ -478,7 +477,6 @@ const Index = () => {
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                             <Button
-                              type="primary"
                               onClick={() => {
                                 handleTranslate("PACKING_SLIP_TEMPLATE", item?.key || "", item?.type || "", item?.default_language || "", item?.index || 0);
                               }}
