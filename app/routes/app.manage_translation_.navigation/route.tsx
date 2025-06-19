@@ -488,7 +488,6 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           <Button
-            type="primary"
             onClick={() => {
               handleTranslate(selectNavigationKey === "names" ? "MENU" : "LINK", record?.key || "", record?.type || "", record?.default_language || "", record?.index || 0);
             }}
@@ -844,7 +843,6 @@ const Index = () => {
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                               <Button
-                                type="primary"
                                 onClick={() => {
                                   handleTranslate(selectNavigationKey === "names" ? "MENU" : "LINK", item?.key || "", item?.type || "", item?.default_language || "", item?.index || 0);
                                 }}
