@@ -411,6 +411,15 @@
     "Switcher Configuration Guide": "Väljarens konfigurationsguide",
     "/month": "/månad",
     "Summary": "Sammanfattning",
-    "label": "Etiket"
+    "label": "Etiket",
+    "publishModal.title": "Tilldela {{ languageName }} till domän",
+    "Domain": "Domän",
+    "Asia": "Asien",
+    "Europe": "Europa",
+    "Africa": "Afrika",
+    "North America": "Nordamerika",
+    "South America": "Sydamerika",
+    "Oceania": "Oceanien",
+    "Common_Languages": "Vanliga språk"
 }   
   

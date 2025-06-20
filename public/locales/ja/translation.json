@@ -410,6 +410,15 @@
     "Switcher Configuration Guide": "スイッチャーの設定ガイド",
     "/month": "/月",
     "Summary": "サマリー",
-    "label": "ラベル"
+    "label": "ラベル",
+    "publishModal.title": "{{ languageName }} をドメインに割り当てる",
+    "Domain": "ドメイン",
+    "Asia": "アジア",
+    "Europe": "ヨーロッパ",
+    "Africa": "アフリカ",
+    "North America": "北アメリカ",
+    "South America": "南アメリカ",
+    "Oceania": "オセアニア",
+    "Common_Languages": "共通言語"
 }   
   

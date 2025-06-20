@@ -411,6 +411,15 @@
   "Switcher Configuration Guide": "Sprachwechsler-Konfiguration-Leitfaden",
   "/month": "/Monat",
   "Summary": "Zusammenfassung",
-  "label": "Bezeichnung"
+  "label": "Bezeichnung",
+  "publishModal.title": "{{ languageName }} zu Domain zuweisen",
+  "Domain": "Domain",
+  "Asia": "Asien",
+  "Europe": "Europa",
+  "Africa": "Afrika",
+  "North America": "Nordamerika",
+  "South America": "Südamerika",
+  "Oceania": "Ozeanien",
+  "Common_Languages": "Häufige Sprachen"
 }
     
