@@ -185,6 +185,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
         <Modal
             title={t("publishModal.title", { languageName })}
             open={isVisible}
+            onCancel={() => setIsModalOpen(false)}
             footer={
                 <Space>
                     <Button onClick={() => setIsModalOpen(false)}>
