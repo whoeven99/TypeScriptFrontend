@@ -410,6 +410,15 @@
     "Switcher Configuration Guide": "切換器配置指南",
     "/month": "/月",
     "Summary": "摘要",
-    "label": "標籤"
+    "label": "標籤",
+    "publishModal.title": "{{ languageName }} 域名分配",
+    "Domain": "域名",
+    "Asia": "亞洲",
+    "Europe": "歐洲",
+    "Africa": "非洲",
+    "North America": "北美洲",
+    "South America": "南美洲",
+    "Oceania": "大洋洲",
+    "Common_Languages": "常用語言"
 }
 

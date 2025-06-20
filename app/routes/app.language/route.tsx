@@ -48,6 +48,7 @@ import PreviewModal from "~/components/previewModal";
 import ScrollNotice from "~/components/ScrollNotice";
 import DeleteConfirmModal from "./components/deleteConfirmModal";
 import TranslationWarnModal from "~/components/translationWarnModal";
+import PublishModal from "./components/publishModal";
 
 const { Title, Text } = Typography;
 
@@ -103,10 +104,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
+  const { admin } = adminAuthResult;
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
+    const markets = JSON.parse(formData.get("markets") as string);
+    const webPresences = JSON.parse(formData.get("webPresences") as string);
     const addData = JSON.parse(formData.get("addData") as string);
     const addLanguages = JSON.parse(formData.get("addLanguages") as string); // 获取语言数组
     const translation = JSON.parse(formData.get("translation") as string);
@@ -146,6 +150,104 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         } catch (error) {
           console.error("Error loading language:", error);
           return json({ error: "Error loading language" }, { status: 500 });
+        }
+
+      case !!markets:
+        try {
+          const response = await admin.graphql(
+            `#graphql
+            query {
+              webPresences(first: 10) {
+                nodes {
+                  id
+                  domain {
+                    id
+                    localization {
+                      alternateLocales
+                    }
+                    host
+                  }
+                }
+              }
+            }`,
+          );
+
+          const marketsData = await response.json();
+
+          console.log(marketsData);
+
+          return json({
+            success: true,
+            data: { markets: marketsData.data?.webPresences?.nodes },
+          });
+        } catch (error) {
+          console.error("Error markets language:", error);
+          return {
+            success: false,
+            data: { markets: [] }
+          };
+        }
+
+      case !!webPresences:
+        try {
+          console.log(webPresences);
+
+          const promises = webPresences.map((item: any) => {
+            return admin.graphql(
+              `#graphql
+              mutation webPresenceUpdate($id: ID!, $input: WebPresenceUpdateInput!) {
+                webPresenceUpdate(id: $id, input: $input) {
+                  userErrors {
+                    field
+                    message
+                  }
+                  webPresence {
+                    id
+                    domain {
+                      id
+                      localization {
+                        alternateLocales
+                      }
+                    }
+                  }
+                }
+              }`,
+              {
+                variables: {
+                  "id": item.id,
+                  "input": {
+                    "alternateLocales": item.alternateLocales,
+                  }
+                }
+              }
+            ).then(response => response.json());
+          });
+
+          // 并发执行所有请求
+          const results = await Promise.allSettled(promises);
+
+          console.log("webPresences: ", results[0]);
+
+          if (results.every(item => item.status === "fulfilled")) {
+            return json({
+              success: true,
+              data: {
+                webPresences: results,
+                publishedCode: webPresences[0].publishedCode
+              },
+            });
+          } else {
+            return json({
+              success: false,
+              data: {
+                webPresences: results,
+                publishedCode: webPresences[0].publishedCode
+              },
+            });
+          }
+
+        } catch (error) {
+          console.error("Error webPresences language:", error);
         }
 
       case !!addData:
@@ -286,6 +388,8 @@ const Index = () => {
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [dontPromptAgain, setDontPromptAgain] = useState(false);
   const [deleteConfirmModalVisible, setDeleteConfirmModalVisible] = useState(false);
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [publishModalLanguageCode, setPublishModalLanguageCode] = useState<string>("");
   const [noFirstTranslation, setNoFirstTranslation] = useState(false);
   const [noFirstTranslationLocale, setNoFirstTranslationLocale] = useState<string>("");
   const [warnModalTitle, setWarnModalTitle] = useState<string>("")
@@ -573,18 +677,22 @@ const Index = () => {
   };
 
   const handlePublishChange = (locale: string, checked: boolean) => {
+    console.log("locale: ", locale);
+    
     const row = dataSource.find((item: any) => item.locale === locale);
     if (checked && row) {
-      dispatch(setPublishLoadingState({ locale, loading: true }));
-      publishFetcher.submit({
-        publishInfo: JSON.stringify({
-          locale: row.locale,
-          shopLocale: { published: true },
-        })
-      }, {
-        method: "POST",
-        action: "/app/language",
-      });
+      setPublishModalLanguageCode(locale);
+      setIsPublishModalOpen(true);
+      // dispatch(setPublishLoadingState({ locale, loading: true }));
+      // publishFetcher.submit({
+      //   publishInfo: JSON.stringify({
+      //     locale: row.locale,
+      //     shopLocale: { published: true },
+      //   })
+      // }, {
+      //   method: "POST",
+      //   action: "/app/language",
+      // });
     } else if (!checked && row) {
       dispatch(setPublishLoadingState({ locale, loading: true }));
       publishFetcher.submit({
@@ -747,6 +855,12 @@ const Index = () => {
         content={t("Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.")}
         show={showWarnModal}
         setShow={setShowWarnModal}
+      />
+      <PublishModal
+        isVisible={isPublishModalOpen}
+        setIsModalOpen={setIsPublishModalOpen}
+        languageCode={publishModalLanguageCode}
+        languageName={shopLanguagesLoad.find((item: any) => item.locale === publishModalLanguageCode)?.name || ""}
       />
       <Modal
         open={noFirstTranslation}

@@ -410,6 +410,15 @@
     "Switcher Configuration Guide": "Guia de configuração do seletor",
     "/month": "/mês",
     "Summary": "Resumo",
-    "label": "Etiqueta"
+    "label": "Etiqueta",
+    "publishModal.title": "Atribuir {{ languageName }} ao domínio",
+    "Domain": "Domínio",
+    "Asia": "Ásia",
+    "Europe": "Europa",
+    "Africa": "África",
+    "North America": "América do Norte",
+    "South America": "América do Sul",
+    "Oceania": "Oceania",
+    "Common_Languages": "Idiomas comuns"
 }   
   
