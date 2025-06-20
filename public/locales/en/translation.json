@@ -410,5 +410,14 @@
   "Switcher Configuration Guide": "Switcher Configuration Guide",
   "/month": "/month",
   "Summary": "Summary",
-  "label": "label"
+  "label": "label",
+  "publishModal.title": "Assign {{ languageName }} to domain",
+  "Domain": "Domain",
+  "Asia": "Asia",
+  "Europe": "Europe",
+  "Africa": "Africa",
+  "North America": "North America",
+  "South America": "South America",
+  "Oceania": "Oceania",
+  "Common_Languages": "Common Languages"
 }

@@ -411,5 +411,14 @@
     "Switcher Configuration Guide": "Seçici Yapılandırma Kılavuzu",
     "/month": "/ay",
     "Summary": "Özet",
-    "label": "Etiket"
+    "label": "Etiket",
+    "publishModal.title": "{{ languageName }} etiketini etiketlere atayın",
+    "Domain": "Alan Adı",
+    "Asia": "Asya",
+    "Europe": "Avrupa",
+    "Africa": "Afrika",
+    "North America": "Kuzey Amerika",
+    "South America": "Güney Amerika",
+    "Oceania": "Okyanusya",
+    "Common_Languages": "Sık kullanılan Diller"
 }

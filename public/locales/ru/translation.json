@@ -411,5 +411,14 @@
     "Switcher Configuration Guide": "Руководство по настройке переключателя",
     "/month": "/месяц",
     "Summary": "Сводка",
-    "label": "Метка"
+    "label": "Метка",
+    "publishModal.title": "{{ languageName }} к домену",
+    "Domain": "Домен",
+    "Asia": "Азия",
+    "Europe": "Европа",
+    "Africa": "Африка",
+    "North America": "Северная Америка",
+    "South America": "Южная Америка",
+    "Oceania": "Океания",
+    "Common_Languages": "Общие языки"
 }

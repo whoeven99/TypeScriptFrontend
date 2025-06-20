@@ -409,6 +409,15 @@
     "Switcher Configuration Guide": "Guida di configurazione del selettore",
     "/month": "/mese",
     "Summary": "Riepilogo",
-    "label": "Etichetta"
+    "label": "Etichetta",
+    "publishModal.title": "Assegna {{ languageName }} al dominio",
+    "Domain": "Dominio",
+    "Asia": "Asia",
+    "Europe": "Europa",
+    "Africa": "Africa",
+    "North America": "Nord America",
+    "South America": "Sud America",
+    "Oceania": "Oceania",
+    "Common_Languages": "Lingue comuni"
 }
   

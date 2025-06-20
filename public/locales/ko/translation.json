@@ -409,6 +409,15 @@
     "Switcher Configuration Guide": "스위처 구성 가이드",
     "/month": "/월",
     "Summary": "요약",
-    "label": "레이블"
+    "label": "레이블",
+    "publishModal.title": "{{ languageName }} 도메인에 할당",
+    "Domain": "도메인",
+    "Asia": "아시아",
+    "Europe": "유럽",
+    "Africa": "아프리카",
+    "North America": "북아메리카",
+    "South America": "남아메리카",
+    "Oceania": "오세아니아",
+    "Common_Languages": "공통 언어"
 } 
   

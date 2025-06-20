@@ -411,5 +411,14 @@
     "Switcher Configuration Guide": "Конфігурація перемикача",
     "/month": "/місяць",
     "Summary": "Сума",
-    "label": "Мітка"
+    "label": "Мітка",
+    "publishModal.title": "{{ languageName }} домену призначити",
+    "Domain": "Домен",
+    "Asia": "Азія",
+    "Europe": "Європа",
+    "Africa": "Африка",
+    "North America": "Північна Америка",
+    "South America": "Південна Америка",
+    "Oceania": "Океанія",
+    "Common_Languages": "Спільні мови"
 }
