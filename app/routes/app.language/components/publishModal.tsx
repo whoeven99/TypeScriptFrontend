@@ -56,15 +56,15 @@ const PublishModal: React.FC<PublishModalProps> = ({
             marketFetcher.data.data.markets.forEach((market: any) => {
                 setMarkets((prevMarkets) => {
                     // 判断 key 是否已存在
-                    if (prevMarkets.some((m) => m.key === market.id)) {
+                    if (prevMarkets.some((m) => m.key === market?.id)) {
                         return prevMarkets; // 已存在则不添加
                     }
                     return [
                         ...prevMarkets,
                         {
-                            key: market.id,
+                            key: market?.id,
                             domain: {
-                                [market.domain.host]: market.domain.localization.alternateLocales
+                                [market?.domain?.host]: market?.domain?.localization?.alternateLocales
                             }
                         }
                     ];
