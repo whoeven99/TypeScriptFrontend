@@ -503,7 +503,6 @@ const Index = () => {
           <Title style={{ fontSize: "1.25rem", display: "inline" }}>
             {t("Currency")}
           </Title>
-
           {defaultCurrencyCode ? (
             <div>
               <Text type="secondary">{t("Your store's default currency:")}</Text>
