@@ -174,7 +174,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           const marketsData = await response.json();
 
-          console.log(`${shop} marketsData: `, marketsData.data?.webPresences);
+          console.log(`${shop} marketsData: `, marketsData.data?.webPresences?.nodes);
 
           return json({
             success: true,
