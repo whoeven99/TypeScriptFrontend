@@ -226,7 +226,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           results.forEach((result) => {
             if (result.status === "fulfilled" && result.value) {
-              console.log(`${shop} webPresences result: `, result.value.data);
+              console.log(`${shop} webPresences result: `, result.value.data?.webPresenceUpdate?.userErrors);
+              console.log(`${shop} webPresences result: `, result.value.data?.webPresenceUpdate?.webPresence);
             }
           });
 
@@ -602,7 +603,7 @@ const Index = () => {
       title: t("Status"),
       dataIndex: "status",
       key: "status",
-      width: "15%",
+      width: "20%",
       render: (_: any, record: any) => {
         return <TranslatedIcon status={record.status} />;
       },
@@ -624,7 +625,7 @@ const Index = () => {
       title: t("Auto translate"),
       dataIndex: "autoTranslate",
       key: "autoTranslate",
-      width: "20%",
+      width: "15%",
       render: (_: any, record: any) => (
         <Switch
           checked={record.autoTranslate}
