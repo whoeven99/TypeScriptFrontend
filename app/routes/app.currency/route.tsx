@@ -34,7 +34,6 @@ import { authenticate } from "~/shopify.server";
 import AddCurrencyModal from "./components/addCurrencyModal";
 import CurrencyEditModal from "./components/currencyEditModal";
 import { setTableData } from "~/store/modules/currencyDataTable";
-import SwitcherSettingCard from "./components/switcherSettingCard";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 const { Title, Text } = Typography;
@@ -61,8 +60,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   console.log(`${shop} load currency`);
   return json({
     shop,
-    ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
-    ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
   });
 };
 
@@ -122,19 +119,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           if (primaryCurrency && shopLoad.currencyCode !== primaryCurrency.currencyCode) {
             await UpdateDefaultCurrency({ shop, currencyName: currencyLocaleData.find((item: any) => item.currencyCode === shopLoad.currencyCode).currencyName, currencyCode: shopLoad.currencyCode, primaryStatus: 1 });
           }
-          const moneyFormat = shopLoad.currencyFormats.moneyFormat;
-          const moneyWithCurrencyFormat =
-            shopLoad.currencyFormats.moneyWithCurrencyFormat;
           return json({
             primaryCurrency,
             defaultCurrencyCode: shopLoad.currencyCode,
             currencyLocaleData: currencyLocaleData,
-            moneyFormat,
-            moneyWithCurrencyFormat,
           });
         } catch (error) {
           console.error("Error init currency:", error);
-          return json({ error: "Error init currency" }, { status: 500 });
         }
       case !!loading:
         try {
@@ -142,7 +133,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ currencyList });
         } catch (error) {
           console.error("Error loading currency:", error);
-          return json({ error: "Error loading currency" }, { status: 500 });
         }
       case !!theme:
         try {
@@ -169,7 +159,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ data: data.data.themes });
         } catch (error) {
           console.error("Error theme currency:", error);
-          return json({ error: "Error theme currency" }, { status: 500 });
         }
       case !!rateData:
         try {
@@ -180,7 +169,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ data });
         } catch (error) {
           console.error("Error rateData currency:", error);
-          return json({ error: "Error rateData currency" }, { status: 500 });
         }
       case !!updateDefaultCurrency:
         try {
@@ -193,10 +181,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ data });
         } catch (error) {
           console.error("Error updateDefaultCurrency currency:", error);
-          return json(
-            { error: "Error updateDefaultCurrency currency" },
-            { status: 500 },
-          );
         }
       case !!addCurrencies:
         try {
@@ -212,10 +196,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ data });
         } catch (error) {
           console.error("Error addCurrencies currency:", error);
-          return json(
-            { error: "Error addCurrencies currency" },
-            { status: 500 },
-          );
         }
       case !!deleteCurrencies:
         const promises = deleteCurrencies.map((currency) =>
@@ -232,10 +212,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ data });
         } catch (error) {
           console.error("Error updateCurrencies currency:", error);
-          return json(
-            { error: "Error updateCurrencies currency" },
-            { status: 500 },
-          );
         }
     }
     return null;
@@ -246,12 +222,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, ciwiSwitcherId, ciwiSwitcherBlocksId } =
-    useLoaderData<typeof loader>();
+  const { shop } = useLoaderData<typeof loader>();
   const userShop = `https://${shop}`;
-  const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
   const [loading, setLoading] = useState<boolean>(true);
-  const [cardLoading, setCardLoading] = useState<boolean>(true);
   const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>("");
   const [searchInput, setSearchInput] = useState("");
   const [currencyData, setCurrencyData] = useState<CurrencyType[]>([]);
@@ -262,12 +235,6 @@ const Index = () => {
   const [isAddCurrencyModalOpen, setIsAddCurrencyModalOpen] = useState(false);
   const [addCurrencies, setAddCurrencies] = useState<CurrencyType[]>([]);
   const [isCurrencyEditModalOpen, setIsCurrencyEditModalOpen] = useState(false);
-  const [currencyFormatConfigCardOpen, setCurrencyFormatConfigCardOpen] =
-    useState<boolean>(false);
-  const [switcherEnableCardOpen, setSwitcherEnableCardOpen] =
-    useState<boolean>(false);
-  const [withMoneyValue, setWithMoneyValue] = useState<string>("");
-  const [withoutMoneyValue, setWithoutMoneyValue] = useState<string>("");
   const [selectedRow, setSelectedRow] = useState<
     CurrencyDataType | undefined
   >();
@@ -286,92 +253,28 @@ const Index = () => {
   const { t } = useTranslation();
   const initFetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
-  const themeFetcher = useFetcher<any>();
   const rateFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
 
   useEffect(() => {
-    const currencyFormatConfigCardOpen = localStorage.getItem("currencyFormatConfigCardOpen");
-    if (currencyFormatConfigCardOpen) {
-      setCurrencyFormatConfigCardOpen(currencyFormatConfigCardOpen === "true");
-    }
-    const switcherEnableCardOpen = localStorage.getItem("switcherEnableCardOpen");
-    if (switcherEnableCardOpen) {
-      setSwitcherEnableCardOpen(switcherEnableCardOpen === "true");
-    }
     const initFormData = new FormData();
     initFormData.append("init", JSON.stringify(true));
     initFetcher.submit(initFormData, {
       method: "post",
       action: "/app/currency",
     });
-
-    const themeFormData = new FormData();
-    themeFormData.append("theme", JSON.stringify(true));
-    themeFetcher.submit(themeFormData, {
-      method: "post",
-      action: "/app/currency",
-    });
-    setIsMobile(window.innerWidth < 768);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   useEffect(() => {
     if (initFetcher.data) {
-      const parser = new DOMParser();
-      const moneyFormatHtmlData = parser.parseFromString(initFetcher.data.moneyFormat, "text/html")
-        .documentElement.textContent;
-      const moneyWithCurrencyFormatHtmlData = parser.parseFromString(
-        initFetcher.data.moneyWithCurrencyFormat,
-        "text/html",
-      ).documentElement.textContent;
-      if (moneyFormatHtmlData && moneyWithCurrencyFormatHtmlData) {
-        const parser = new DOMParser();
-        const moneyWithMoneyDoc = parser.parseFromString(
-          moneyWithCurrencyFormatHtmlData,
-          "text/html",
-        );
-        const moneyWithoutMoneyDoc = parser.parseFromString(
-          moneyFormatHtmlData,
-          "text/html",
-        );
-
-        const moneyWithMoneyElement =
-          moneyWithMoneyDoc.querySelector(".ciwi-money");
-        const moneyWithoutMoneyElement =
-          moneyWithoutMoneyDoc.querySelector(".ciwi-money");
-        if (moneyWithMoneyElement && moneyWithoutMoneyElement) {
-          setCurrencyFormatConfigCardOpen(false);
-          localStorage.setItem("currencyFormatConfigCardOpen", "false");
-        } else {
-          setCurrencyFormatConfigCardOpen(true);
-          localStorage.setItem("currencyFormatConfigCardOpen", "true");
-        }
-
-        const spansWithMoney = moneyWithMoneyDoc.querySelectorAll("span");
-
-        if (spansWithMoney.length) {
-          spansWithMoney.forEach((span) => {
-            if (span.textContent && span.textContent.trim()) {
-              setWithMoneyValue(span.textContent.trim());
-            }
-          });
-        } else {
-          setWithMoneyValue(moneyWithCurrencyFormatHtmlData);
-        }
-
-        const spansWithoutMoney = moneyWithoutMoneyDoc.querySelectorAll("span");
-
-        if (spansWithoutMoney.length) {
-          spansWithoutMoney.forEach((span) => {
-            if (span.textContent && span.textContent.trim()) {
-              setWithoutMoneyValue(span.textContent.trim());
-            }
-          });
-        } else {
-          setWithoutMoneyValue(moneyFormatHtmlData);
-        }
-      }
-
       setDefaultCurrencyCode(initFetcher.data.defaultCurrencyCode);
       setCurrencyData(initFetcher.data.currencyLocaleData);
       setAddCurrencies(initFetcher.data.currencyLocaleData.filter((item: any) => item.currencyCode !== initFetcher.data.defaultCurrencyCode));
@@ -410,53 +313,6 @@ const Index = () => {
       setLoading(false);
     }
   }, [loadingFetcher.data]);
-
-  useEffect(() => {
-    if (themeFetcher.data) {
-      const switcherData =
-        themeFetcher.data.data.nodes[0].files.nodes[0]?.body?.content;
-      const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
-      const blocks = JSON.parse(jsonString).current?.blocks;
-      if (blocks) {
-        const switcherJson: any = Object.values(blocks).find(
-          (block: any) => block.type === ciwiSwitcherBlocksId,
-        );
-        if (switcherJson) {
-          if (!switcherJson.disabled) {
-            setSwitcherEnableCardOpen(false);
-            localStorage.setItem("switcherEnableCardOpen", "false");
-          } else {
-            setSwitcherEnableCardOpen(true);
-            localStorage.setItem("switcherEnableCardOpen", "true");
-          }
-        }
-      }
-
-      setCardLoading(false);
-      // const switcherData =
-      //   themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
-      // const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
-      // const themeData = JSON.parse(jsonString);
-
-      // const footer = themeData.sections?.footer;
-      // if (footer?.blocks) {
-      //   const switcherJson: any = Object.values(footer.blocks).find(
-      //     (block: any) => block.type === ciwiSwitcherBlocksId,
-      //   );
-
-      //   if (switcherJson) {
-      //     setSwitcherEnableCardOpen(true);
-      //   }
-      // }
-      // const isAppEnabled = Object.values(themeData.sections).some((section: any) =>
-      //   section?.blocks && Object.values(section.blocks).some((block: any) =>
-      //     block.type.includes(ciwiSwitcherBlocksId)
-      //   )
-      // );
-
-      // setSwitcherEnableCardOpen(isAppEnabled);
-    }
-  }, [themeFetcher.data]);
 
   useEffect(() => {
     if (rateFetcher.data) {
@@ -643,19 +499,6 @@ const Index = () => {
       <TitleBar title={t("Currency")}></TitleBar>
       <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <SwitcherSettingCard
-          step1Visible={currencyFormatConfigCardOpen}
-          step2Visible={switcherEnableCardOpen}
-          setStep1Visible={setCurrencyFormatConfigCardOpen}
-          setStep2Visible={setSwitcherEnableCardOpen}
-          loading={cardLoading}
-          settingUrl={settingUrl}
-          shop={shop}
-          ciwiSwitcherId={ciwiSwitcherId}
-          defaultCurrencyCode={defaultCurrencyCode}
-          withMoneyValue={withMoneyValue}
-          withoutMoneyValue={withoutMoneyValue}
-        />
         <div className="currency-header">
           <Title style={{ fontSize: "1.25rem", display: "inline" }}>
             {t("Currency")}
