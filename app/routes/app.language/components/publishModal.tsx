@@ -193,7 +193,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
                     </Button>
                     <Button
                         type="primary"
-                        disabled={dataSource.some((item) => !item.published)}
+                        disabled={dataSource.every((item) => !item.published)}
                         loading={publishedLoading}
                         onClick={handlePublish}
                     >

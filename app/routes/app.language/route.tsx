@@ -174,7 +174,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           const marketsData = await response.json();
 
-          console.log(marketsData);
+          console.log(`${shop} marketsData: `, marketsData.data?.webPresences);
 
           return json({
             success: true,
@@ -190,8 +190,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       case !!webPresences:
         try {
-          console.log(webPresences);
-
           const promises = webPresences.map((item: any) => {
             return admin.graphql(
               `#graphql
@@ -226,7 +224,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           // 并发执行所有请求
           const results = await Promise.allSettled(promises);
 
-          console.log("webPresences: ", results[0]);
+          results.forEach((result) => {
+            if (result.status === "fulfilled" && result.value) {
+              console.log(`${shop} webPresences result: `, result.value.data);
+            }
+          });
 
           if (results.every(item => item.status === "fulfilled")) {
             return json({
@@ -245,7 +247,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               },
             });
           }
-
         } catch (error) {
           console.error("Error webPresences language:", error);
         }
@@ -678,7 +679,7 @@ const Index = () => {
 
   const handlePublishChange = (locale: string, checked: boolean) => {
     console.log("locale: ", locale);
-    
+
     const row = dataSource.find((item: any) => item.locale === locale);
     if (checked && row) {
       setPublishModalLanguageCode(locale);
