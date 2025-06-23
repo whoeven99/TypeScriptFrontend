@@ -499,43 +499,44 @@ const Index = () => {
       <TitleBar title={t("Currency")}></TitleBar>
       <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <div className="currency-header">
+        <div>
           <Title style={{ fontSize: "1.25rem", display: "inline" }}>
             {t("Currency")}
           </Title>
-          <div className="currency-action">
-            <Space>
-              <Text
-                style={{ color: "#007F61" }}
-              >
-                {hasSelected ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}` : null}
-              </Text>
-              <Button
-                onClick={() => handleDelete()}
-                disabled={!hasSelected}
-                loading={deleteloading}
-              >
-                {t("Delete")}
-              </Button>
-              <Button
-                type="primary"
-                onClick={() => setIsAddCurrencyModalOpen(true)}
-              >
-                {t("Add Currency")}
-              </Button>
-            </Space>
-          </div>
+
+          {defaultCurrencyCode ? (
+            <div>
+              <Text type="secondary">{t("Your store's default currency:")}</Text>
+              <Text strong> {defaultCurrencyCode}</Text>
+            </div>
+          ) : (
+            <Skeleton active paragraph={{ rows: 0 }} />
+          )}
         </div>
-        {defaultCurrencyCode ? (
-          <div>
-            <Text type="secondary">{t("Your store's default currency:")}</Text>
-            <Text strong> {defaultCurrencyCode}</Text>
-          </div>
-        ) : (
-          <Skeleton active paragraph={{ rows: 0 }} />
-        )}
-        <Flex gap="middle" vertical>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
           <Flex align="center" gap="middle">
+            <Button
+              onClick={() => handleDelete()}
+              disabled={!hasSelected}
+              loading={deleteloading}
+            >
+              {t("Delete")}
+            </Button>
+            <Text
+              style={{ color: "#007F61" }}
+            >
+              {hasSelected ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}` : null}
+            </Text>
+          </Flex>
+          <Button
+            type="primary"
+            onClick={() => setIsAddCurrencyModalOpen(true)}
+          >
+            {t("Add Currency")}
+          </Button>
+        </div>
+        <Flex gap="middle" vertical>
+          {/* <Flex align="center" gap="middle">
             <Text>
               {t("After setting, you can")}
               <Link url={userShop} target="_blank">
@@ -550,7 +551,7 @@ const Index = () => {
             value={searchInput}
             onChange={handleSearch}
             style={{ marginBottom: 16 }}
-          />
+          /> */}
           <Table
             virtual={isMobile}
             scroll={isMobile ? { x: 900 } : {}}

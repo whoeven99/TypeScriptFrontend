@@ -9,8 +9,6 @@ const { Text, Paragraph, Title } = Typography;
 interface SwitcherSettingCardProps {
   step1Visible: boolean | undefined;
   step2Visible: boolean | undefined;
-  setStep1Visible: (visible: boolean) => void;
-  setStep2Visible: (visible: boolean) => void;
   loading: boolean;
   shop: string;
   ciwiSwitcherId: string;
@@ -59,7 +57,13 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
         size="small"
         style={{ display: "flex" }}
       >
-        <div className="card-header">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           {step1Visible ?
             <Text
               strong
