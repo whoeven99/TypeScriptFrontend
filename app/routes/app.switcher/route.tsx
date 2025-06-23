@@ -666,8 +666,6 @@ const Index = () => {
         <SwitcherSettingCard
           step1Visible={currencyFormatConfigCardOpen}
           step2Visible={switcherEnableCardOpen}
-          setStep1Visible={setCurrencyFormatConfigCardOpen}
-          setStep2Visible={setSwitcherEnableCardOpen}
           loading={cardLoading}
           shop={shop}
           ciwiSwitcherId={ciwiSwitcherId}
