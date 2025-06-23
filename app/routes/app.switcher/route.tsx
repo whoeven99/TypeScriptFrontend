@@ -24,6 +24,8 @@ import { useSelector } from "react-redux";
 import TranslationWarnModal from "~/components/translationWarnModal";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import axios from "axios";
+import { queryShop } from "~/api/admin";
+import SwitcherSettingCard from "./components/switcherSettingCard";
 const { Text, Title } = Typography;
 
 interface EditData {
@@ -100,6 +102,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return {
     shop,
     server: process.env.SERVER_URL,
+    ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
+    ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
   };
 };
 
@@ -110,6 +114,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
+    const shopInfo = JSON.parse(formData.get("shopInfo") as string);
     const editData = JSON.parse(formData.get("editData") as string);
     switch (true) {
       case !!loading:
@@ -152,6 +157,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         } catch (error) {
           console.error("Error switcher loading:", error);
         }
+      case !!shopInfo:
+        try {
+          const shopLoad = await queryShop({ shop, accessToken: accessToken as string });
+          const moneyFormat = shopLoad.currencyFormats.moneyFormat;
+          const moneyWithCurrencyFormat =
+            shopLoad.currencyFormats.moneyWithCurrencyFormat;
+          return {
+            defaultCurrencyCode: shopLoad.currencyFormats.defaultCurrencyCode,
+            moneyFormat,
+            moneyWithCurrencyFormat,
+          };
+        } catch (error) {
+          console.error("Error switcher shopInfo:", error);
+        }
       case !!editData:
         try {
           const data = SaveAndUpdateData(editData);
@@ -170,8 +189,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 
 const Index = () => {
-  // const [isSwitcherEnabled, setIsSwitcherEnabled] = useState(false);
-  const { shop, server } = useLoaderData<typeof loader>();
+  const { shop, server, ciwiSwitcherId, ciwiSwitcherBlocksId } = useLoaderData<typeof loader>();
   const [isGeoLocationEnabled, setIsGeoLocationEnabled] = useState(false);
   const [isIncludedFlag, setIsIncludedFlag] = useState(false);
   const [languageSelector, setLanguageSelector] = useState(true);
@@ -206,14 +224,33 @@ const Index = () => {
   const [isEdit, setIsEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showWarnModal, setShowWarnModal] = useState(false);
+  const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>("");
+  const [currencyFormatConfigCardOpen, setCurrencyFormatConfigCardOpen] =
+    useState<boolean>(false);
+  const [switcherEnableCardOpen, setSwitcherEnableCardOpen] =
+    useState<boolean>(false);
+  const [withMoneyValue, setWithMoneyValue] = useState<string>("");
+  const [withoutMoneyValue, setWithoutMoneyValue] = useState<string>("");
+  const [cardLoading, setCardLoading] = useState<boolean>(true);
+
 
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
   const fetcher = useFetcher<any>();
+  const themeFetcher = useFetcher<any>();
+  const shopFetcher = useFetcher<any>();
   const editFetcher = useFetcher<any>();
 
   useEffect(() => {
+    const currencyFormatConfigCardOpen = localStorage.getItem("currencyFormatConfigCardOpen");
+    if (currencyFormatConfigCardOpen) {
+      setCurrencyFormatConfigCardOpen(currencyFormatConfigCardOpen === "true");
+    }
+    const switcherEnableCardOpen = localStorage.getItem("switcherEnableCardOpen");
+    if (switcherEnableCardOpen) {
+      setSwitcherEnableCardOpen(switcherEnableCardOpen === "true");
+    }
     fetcher.submit(
       {
         loading: JSON.stringify(true),
@@ -223,6 +260,18 @@ const Index = () => {
         action: "/app/switcher",
       },
     );
+    themeFetcher.submit({
+      theme: JSON.stringify(true),
+    }, {
+      method: "post",
+      action: "/app/currency",
+    });
+    shopFetcher.submit({
+      shopInfo: JSON.stringify(true),
+    }, {
+      method: "post",
+      action: "/app/switcher",
+    });
   }, []);
 
   useEffect(() => {
@@ -243,6 +292,114 @@ const Index = () => {
       setIsLoading(false);
     }
   }, [fetcher.data]);
+
+  useEffect(() => {
+    if (themeFetcher.data) {
+      const switcherData =
+        themeFetcher.data.data.nodes[0].files.nodes[0]?.body?.content;
+      const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+      const blocks = JSON.parse(jsonString).current?.blocks;
+      if (blocks) {
+        const switcherJson: any = Object.values(blocks).find(
+          (block: any) => block.type === ciwiSwitcherBlocksId,
+        );
+        if (switcherJson) {
+          if (!switcherJson.disabled) {
+            setSwitcherEnableCardOpen(false);
+            localStorage.setItem("switcherEnableCardOpen", "false");
+          } else {
+            setSwitcherEnableCardOpen(true);
+            localStorage.setItem("switcherEnableCardOpen", "true");
+          }
+        }
+      }
+
+      setCardLoading(false);
+      // const switcherData =
+      //   themeFetcher.data.data.nodes[0].files.nodes[0].body.content;
+      // const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+      // const themeData = JSON.parse(jsonString);
+
+      // const footer = themeData.sections?.footer;
+      // if (footer?.blocks) {
+      //   const switcherJson: any = Object.values(footer.blocks).find(
+      //     (block: any) => block.type === ciwiSwitcherBlocksId,
+      //   );
+
+      //   if (switcherJson) {
+      //     setSwitcherEnableCardOpen(true);
+      //   }
+      // }
+      // const isAppEnabled = Object.values(themeData.sections).some((section: any) =>
+      //   section?.blocks && Object.values(section.blocks).some((block: any) =>
+      //     block.type.includes(ciwiSwitcherBlocksId)
+      //   )
+      // );
+
+      // setSwitcherEnableCardOpen(isAppEnabled);
+    }
+  }, [themeFetcher.data]);
+
+  useEffect(() => {
+    if (shopFetcher.data) {
+      const parser = new DOMParser();
+      const moneyFormatHtmlData = parser.parseFromString(shopFetcher.data.moneyFormat, "text/html")
+        .documentElement.textContent;
+      const moneyWithCurrencyFormatHtmlData = parser.parseFromString(
+        shopFetcher.data.moneyWithCurrencyFormat,
+        "text/html",
+      ).documentElement.textContent;
+      if (moneyFormatHtmlData && moneyWithCurrencyFormatHtmlData) {
+        const parser = new DOMParser();
+        const moneyWithMoneyDoc = parser.parseFromString(
+          moneyWithCurrencyFormatHtmlData,
+          "text/html",
+        );
+        const moneyWithoutMoneyDoc = parser.parseFromString(
+          moneyFormatHtmlData,
+          "text/html",
+        );
+
+        const moneyWithMoneyElement =
+          moneyWithMoneyDoc.querySelector(".ciwi-money");
+        const moneyWithoutMoneyElement =
+          moneyWithoutMoneyDoc.querySelector(".ciwi-money");
+        if (moneyWithMoneyElement && moneyWithoutMoneyElement) {
+          setCurrencyFormatConfigCardOpen(false);
+          localStorage.setItem("currencyFormatConfigCardOpen", "false");
+        } else {
+          setCurrencyFormatConfigCardOpen(true);
+          localStorage.setItem("currencyFormatConfigCardOpen", "true");
+        }
+
+        const spansWithMoney = moneyWithMoneyDoc.querySelectorAll("span");
+
+        if (spansWithMoney.length) {
+          spansWithMoney.forEach((span) => {
+            if (span.textContent && span.textContent.trim()) {
+              setWithMoneyValue(span.textContent.trim());
+            }
+          });
+        } else {
+          setWithMoneyValue(moneyWithCurrencyFormatHtmlData);
+        }
+
+        const spansWithoutMoney = moneyWithoutMoneyDoc.querySelectorAll("span");
+
+        if (spansWithoutMoney.length) {
+          spansWithoutMoney.forEach((span) => {
+            if (span.textContent && span.textContent.trim()) {
+              setWithoutMoneyValue(span.textContent.trim());
+            }
+          });
+        } else {
+          setWithoutMoneyValue(moneyFormatHtmlData);
+        }
+      }
+
+      setDefaultCurrencyCode(shopFetcher.data.defaultCurrencyCode);
+    }
+  }, [shopFetcher.data]);
 
   useEffect(() => {
     if (editFetcher.data) {
@@ -506,6 +663,16 @@ const Index = () => {
         )}
       />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <SwitcherSettingCard
+          step1Visible={currencyFormatConfigCardOpen}
+          step2Visible={switcherEnableCardOpen}
+          loading={cardLoading}
+          shop={shop}
+          ciwiSwitcherId={ciwiSwitcherId}
+          defaultCurrencyCode={defaultCurrencyCode}
+          withMoneyValue={withMoneyValue}
+          withoutMoneyValue={withoutMoneyValue}
+        />
         <Card styles={{ body: { padding: "12px" } }}>
           <Space
             style={{

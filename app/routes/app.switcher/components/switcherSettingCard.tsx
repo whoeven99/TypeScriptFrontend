@@ -9,12 +9,9 @@ const { Text, Paragraph, Title } = Typography;
 interface SwitcherSettingCardProps {
   step1Visible: boolean | undefined;
   step2Visible: boolean | undefined;
-  setStep1Visible: (visible: boolean) => void;
-  setStep2Visible: (visible: boolean) => void;
   loading: boolean;
   shop: string;
   ciwiSwitcherId: string;
-  settingUrl: string;
   withMoneyValue: string;
   withoutMoneyValue: string;
   defaultCurrencyCode: string;
@@ -26,7 +23,6 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   loading,
   shop,
   ciwiSwitcherId,
-  settingUrl,
   withMoneyValue,
   withoutMoneyValue,
 }) => {
@@ -34,6 +30,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   const blockUrl = `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/switcher`;
   const supportUrl =
     "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/";
+  const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
 
   const { t } = useTranslation();
 
@@ -60,7 +57,13 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
         size="small"
         style={{ display: "flex" }}
       >
-        <div className="card-header">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           {step1Visible ?
             <Text
               strong
