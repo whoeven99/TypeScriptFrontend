@@ -1744,7 +1744,11 @@ export const Uninstall = async ({ shop }: { shop: string }) => {
         shopName: shop,
       },
     });
+
     const res = response.data.response;
+
+    console.log(`${shop} has been uninstalled`);
+
     return res;
   } catch (error) {
     console.error("Error Uninstall:", error);
