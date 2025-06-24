@@ -22,6 +22,7 @@ import {
   mutationShopLocaleUnpublish,
   PublishInfoType,
   queryAllLanguages,
+  queryPrimaryMarket,
   queryShopLanguages,
   UnpublishInfoType,
 } from "~/api/admin";
@@ -109,8 +110,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
-    const markets = JSON.parse(formData.get("markets") as string);
+    const primaryMarket = JSON.parse(formData.get("primaryMarket") as string);
     const webPresences = JSON.parse(formData.get("webPresences") as string);
+    const webPresencesUpdate = JSON.parse(formData.get("webPresencesUpdate") as string);
     const addData = JSON.parse(formData.get("addData") as string);
     const addLanguages = JSON.parse(formData.get("addLanguages") as string); // 获取语言数组
     const translation = JSON.parse(formData.get("translation") as string);
@@ -152,7 +154,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return json({ error: "Error loading language" }, { status: 500 });
         }
 
-      case !!markets:
+      case !!primaryMarket:
+        try {
+          const response = await queryPrimaryMarket({
+            shop,
+            accessToken: accessToken as string,
+          });
+          return json({
+            success: true,
+            data: { primaryMarket: response },
+          });
+        } catch (error) {
+          console.error("Error primaryMarket language:", error);
+        }
+
+      case !!webPresences:
         try {
           const response = await admin.graphql(
             `#graphql
@@ -181,16 +197,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             data: { markets: marketsData.data?.webPresences?.nodes },
           });
         } catch (error) {
-          console.error("Error markets language:", error);
+          console.error("Error webPresences language:", error);
           return {
             success: false,
             data: { markets: [] }
           };
         }
 
-      case !!webPresences:
+      case !!webPresencesUpdate:
         try {
-          const promises = webPresences.map((item: any) => {
+          const promises = webPresencesUpdate.map((item: any) => {
             return admin.graphql(
               `#graphql
               mutation webPresenceUpdate($id: ID!, $input: WebPresenceUpdateInput!) {
@@ -223,7 +239,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           // 并发执行所有请求
           const results = await Promise.allSettled(promises);
-
+          
           results.forEach((result) => {
             if (result.status === "fulfilled" && result.value) {
               console.log(`${shop} webPresences result: `, result.value.data?.webPresenceUpdate?.userErrors);
@@ -236,7 +252,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               success: true,
               data: {
                 webPresences: results,
-                publishedCode: webPresences[0].publishedCode
+                publishedCode: webPresencesUpdate[0].publishedCode
               },
             });
           } else {
@@ -244,12 +260,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               success: false,
               data: {
                 webPresences: results,
-                publishedCode: webPresences[0].publishedCode
+                publishedCode: webPresencesUpdate[0].publishedCode
               },
             });
           }
         } catch (error) {
-          console.error("Error webPresences language:", error);
+          console.error("Error webPresencesUpdate language:", error);
         }
 
       case !!addData:
@@ -269,7 +285,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
           return json({
             success: true,
-            data: { allLanguages: allLanguages, languageLocaleInfo: languageLocaleInfo, }
+            data: {
+              allLanguages: allLanguages,
+              languageLocaleInfo: languageLocaleInfo,
+            }
           });
         } catch (error) {
           console.error("Error addData language:", error);
@@ -679,8 +698,6 @@ const Index = () => {
   };
 
   const handlePublishChange = (locale: string, checked: boolean) => {
-    console.log("locale: ", locale);
-
     const row = dataSource.find((item: any) => item.locale === locale);
     if (checked && row) {
       setPublishModalLanguageCode(locale);

@@ -32,19 +32,27 @@ const PublishModal: React.FC<PublishModalProps> = ({
     languageCode,
     languageName
 }) => {
+    const [primaryMarketId, setPrimaryMarketId] = useState<any>([])
     const [markets, setMarkets] = useState<MarketType[]>([])
     const [dataSource, setDataSource] = useState<MarketDataType[]>([])
     const [publishedLoading, setPublishedLoading] = useState<boolean>(false)
     const { t } = useTranslation()
     const dispatch = useDispatch()
 
-    const marketFetcher = useFetcher<any>()
+    const primaryMarketFetcher = useFetcher<any>()
     const webPresencesFetcher = useFetcher<any>()
+    const webPresencesUpdateFetcher = useFetcher<any>()
     const publishFetcher = useFetcher<any>()
 
     useEffect(() => {
-        marketFetcher.submit({
-            markets: JSON.stringify(true)
+        primaryMarketFetcher.submit({
+            primaryMarket: JSON.stringify(true)
+        }, {
+            method: "POST",
+            action: "/app/language"
+        })
+        webPresencesFetcher.submit({
+            webPresences: JSON.stringify(true)
         }, {
             method: "POST",
             action: "/app/language"
@@ -52,8 +60,16 @@ const PublishModal: React.FC<PublishModalProps> = ({
     }, [])
 
     useEffect(() => {
-        if (marketFetcher.data?.success) {
-            marketFetcher.data.data.markets.forEach((market: any) => {
+        if (primaryMarketFetcher.data?.success) {
+            setPrimaryMarketId(primaryMarketFetcher.data.data.primaryMarket.map(
+                (item: any) => item.id
+            ))
+        }
+    }, [primaryMarketFetcher.data])
+
+    useEffect(() => {
+        if (webPresencesFetcher.data?.success) {
+            webPresencesFetcher.data.data.markets.forEach((market: any) => {
                 if (market?.id && market?.domain) {
                     setMarkets((prevMarkets) => {
                         // 判断 key 是否已存在
@@ -73,21 +89,24 @@ const PublishModal: React.FC<PublishModalProps> = ({
                 }
             });
         }
-    }, [marketFetcher.data]);
+    }, [webPresencesFetcher.data]);
 
     useEffect(() => {
-        if (webPresencesFetcher.data?.success) {
+        if (webPresencesUpdateFetcher.data?.success) {
             publishFetcher.submit({
                 publishInfo: JSON.stringify({
-                    locale: webPresencesFetcher.data.data.publishedCode || languageCode,
-                    shopLocale: { published: true },
+                    locale: webPresencesUpdateFetcher.data.data.publishedCode || languageCode,
+                    shopLocale: {
+                        marketWebPresenceIds: primaryMarketId,
+                        published: true
+                    },
                 })
             }, {
                 method: "POST",
                 action: "/app/language",
             });
         }
-    }, [webPresencesFetcher.data])
+    }, [webPresencesUpdateFetcher.data])
 
     useEffect(() => {
         if (publishFetcher.data) {
@@ -175,8 +194,8 @@ const PublishModal: React.FC<PublishModalProps> = ({
             };
         });
         setPublishedLoading(true)
-        webPresencesFetcher.submit({
-            webPresences: JSON.stringify(webPresencesData)
+        webPresencesUpdateFetcher.submit({
+            webPresencesUpdate: JSON.stringify(webPresencesData)
         }, {
             method: "POST",
             action: "/app/language",
@@ -195,7 +214,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
                     </Button>
                     <Button
                         type="primary"
-                        disabled={dataSource.every((item) => !item.published)}
+                        disabled={dataSource.every((item) => !item.published) || primaryMarketFetcher.data.data.primaryMarket.id?.length === 0}
                         loading={publishedLoading}
                         onClick={handlePublish}
                     >
