@@ -14,7 +14,10 @@ import { authenticate } from "~/shopify.server";
 
 export interface PublishInfoType {
   locale: string;
-  shopLocale: { published: boolean; marketWebPresenceIds: string | null };
+  shopLocale: {
+    published: boolean;
+    marketWebPresenceIds: string | null;
+  };
 }
 
 export interface UnpublishInfoType {
@@ -1437,44 +1440,41 @@ export const queryAllLanguages = async ({
   }
 };
 
-// export const queryAllMarket = async ({
-//   shop,
-//   accessToken,
-// }: {
-//   shop: string;
-//   accessToken: string;
-// }) => {
-//   try {
-//     const query = `{
-//       markets(first: 250) {
-//         nodes {
-//           name
-//           primary
-//           webPresences(first: 250) {
-//             nodes {
-//               id
-//             }
-//           }
-//         }
-//       }
-//     }`;
+export const queryPrimaryMarket = async ({
+  shop,
+  accessToken,
+}: {
+  shop: string;
+  accessToken: string;
+}) => {
+  try {
+    const query = `{
+      primaryMarket {
+        webPresences(first: 10) {
+          nodes {
+            id
+          }
+        }
+      }
+    }`;
 
-//     const response = await axios({
-//       url: `https://${shop}/admin/api/2024-10/graphql.json`,
-//       method: "POST",
-//       headers: {
-//         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
-//         "Content-Type": "application/json",
-//       },
-//       data: JSON.stringify({ query }),
-//     });
-//     const res = response.data.data.markets.nodes;
+    const response = await axios({
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query }),
+    });
 
-//     return res;
-//   } catch (error) {
-//     console.error("Error fetching all markets:", error);
-//   }
-// };
+    const res = response.data.data.primaryMarket.webPresences.nodes;
+
+    return res;
+  } catch (error) {
+    console.error("Error fetching all markets:", error);
+  }
+};
 
 //查询订单状态
 export const queryOrders = async ({
@@ -1664,12 +1664,26 @@ export const mutationShopLocalePublish = async ({
   publishInfo: PublishInfoType; // 接受语言数组
 }) => {
   try {
+    // 处理marketWebPresenceIds，将双引号转换为单引号
+    let marketWebPresenceIdsString = "";
+    if (publishInfo.shopLocale?.marketWebPresenceIds) {
+      // 如果是字符串，直接使用；如果是数组，转换为字符串并替换双引号为单引号
+      if (Array.isArray(publishInfo.shopLocale.marketWebPresenceIds)) {
+        marketWebPresenceIdsString = JSON.stringify(
+          publishInfo.shopLocale.marketWebPresenceIds,
+        ).replace(/'/g, '"');
+      } else {
+        marketWebPresenceIdsString = `["${publishInfo.shopLocale.marketWebPresenceIds}"]`;
+      }
+    }
+
     // 遍历语言数组并逐个执行 GraphQL mutation
     const confirmMutation = `
         mutation {
           shopLocaleUpdate(
             locale: "${publishInfo.locale}"
             shopLocale: {
+              marketWebPresenceIds: ${marketWebPresenceIdsString},
               published: ${publishInfo.shopLocale.published},
             }
           ){
@@ -1693,7 +1707,9 @@ export const mutationShopLocalePublish = async ({
       },
       data: JSON.stringify({ query: confirmMutation }),
     });
+
     const res = response.data.data.shopLocaleUpdate.shopLocale;
+
     return res;
   } catch (error) {
     console.error("Error publish shopLanguage:", error);
@@ -1744,7 +1760,7 @@ export const mutationShopLocaleUnpublish = async ({
       return res;
     }
   } catch (error) {
-    console.error("Error publish shopLanguage:", error);
+    console.error("Error unpublish shopLanguage:", error);
   }
 };
 
