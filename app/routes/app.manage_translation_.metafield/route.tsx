@@ -484,14 +484,7 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("metafield-confirm-save");
-    if (actionData && "data" in actionData) {
-      console.log(2);
-      // 在这里处理 nexts
-      setMetafieldsData(actionData.data);
-    } else {
-      // 如果不存在 nexts，可以执行其他逻辑
-      setMetafieldsData(metafields);
-    }
+    setMetafieldsData(metafieldsData);
     setConfirmData([]);
   };
 

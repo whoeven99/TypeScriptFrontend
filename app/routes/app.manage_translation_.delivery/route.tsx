@@ -484,13 +484,7 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("delivery-confirm-save");
-    if (actionData && "data" in actionData) {
-      // 在这里处理 nexts
-      setDeliverysData(actionData.data);
-    } else {
-      // 如果不存在 nexts，可以执行其他逻辑
-      setDeliverysData(deliverys);
-    }
+    setDeliverysData(deliverysData);
     setConfirmData([]);
   };
 

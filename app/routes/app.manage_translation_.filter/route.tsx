@@ -486,13 +486,7 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("filter-confirm-save");
-    if (actionData && "data" in actionData) {
-      // 在这里处理 nexts
-      setFiltersData(actionData.data);
-    } else {
-      // 如果不存在 nexts，可以执行其他逻辑
-      setFiltersData(filters);
-    }
+    setFiltersData(filtersData);
     setConfirmData([]);
   };
 
