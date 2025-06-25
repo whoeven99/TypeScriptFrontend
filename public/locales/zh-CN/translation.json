@@ -163,6 +163,7 @@
   "progressing.contactButton":"联系支持",
   "progressing.somethingWentWrong":"发生意外错误。请点击按钮联系支持获取解决方案。",
   "progressing.privateApiKeyAmountLimit":"私有API key限制已达到。请点击右侧按钮重置限制并重新开始翻译。",
+  "progressing.apikeySetting":"重置限制",
   "progressing.hasPayed":"您的翻译积分已添加。请继续翻译。",
   "progressing.reTranslate":"重新翻译",
   "contact.title":"联系我们",

@@ -33,7 +33,7 @@ import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { Modal, TitleBar } from "@shopify/app-bridge-react";
+import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
@@ -207,10 +207,10 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
   const [selectedItem, setSelectedItem] = useState<string>("blog");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    blogsData.pageInfo.hasPreviousPage || false
+    blogs.pageInfo.hasPreviousPage || false
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    blogsData.pageInfo.hasNextPage || false
+    blogs.pageInfo.hasNextPage || false
   );
   const [isMobile, setIsMobile] = useState(false);
 
@@ -370,6 +370,14 @@ const Index = () => {
   useEffect(() => {
     setIsVisible(!!searchParams.get('language'));
   }, [location]);
+
+  useEffect(() => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.show("blog-confirm-save");
+    } else {
+      shopify.saveBar.hide("blog-confirm-save");
+    }
+  }, [confirmData]);
 
   const resourceColumns = [
     {
@@ -561,23 +569,39 @@ const Index = () => {
   }
 
   const onPrevious = () => {
-    const formData = new FormData();
-    const startCursor = blogsData.pageInfo.startCursor;
-    formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-    submit(formData, {
-      method: "post",
-      action: `/app/manage_translation/blog?language=${searchTerm}`,
-    }); // 提交表单请求
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      const formData = new FormData();
+      const startCursor = blogsData.pageInfo.startCursor;
+      formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
+      submit(formData, {
+        method: "post",
+        action: `/app/manage_translation/blog?language=${searchTerm}`,
+      }); // 提交表单请求
+    }
   };
 
   const onNext = () => {
-    const formData = new FormData();
-    const endCursor = blogsData.pageInfo.endCursor;
-    formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-    submit(formData, {
-      method: "post",
-      action: `/app/manage_translation/blog?language=${searchTerm}`,
-    }); // 提交表单请求
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      const formData = new FormData();
+      const endCursor = blogsData.pageInfo.endCursor;
+      formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
+      submit(formData, {
+        method: "post",
+        action: `/app/manage_translation/blog?language=${searchTerm}`,
+      }); // 提交表单请求
+    }
+  };
+
+  const handleMenuChange = (key: string) => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      setSelectBlogKey(key);
+    }
   };
 
   const handleConfirm = () => {
@@ -590,163 +614,70 @@ const Index = () => {
     }); // 提交表单请求
   };
 
+  const handleDiscard = () => {
+    shopify.saveBar.hide("blog-confirm-save");
+    const data = transBeforeData({
+      blogs: blogsData,
+    });
+    setBlogData(data);
+    setConfirmData([]);
+  };
+
+
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
+    shopify.saveBar.hide("blog-confirm-save");
     navigate(`/app/manage_translation?language=${searchTerm}`, {
       state: { key: searchTerm },
     }); // 跳转到 /app/manage_translation
   };
 
   return (
-    <Modal
-      variant="max"
-      open={isVisible}
-      onHide={onCancel}
-    >
-      <TitleBar title={t("Blog")} >
+    <>
+      <SaveBar id="blog-confirm-save">
         <button
           variant="primary"
           onClick={handleConfirm}
-          disabled={confirmLoading || !confirmData.length}
         >
-          {t("Save")}
         </button>
-      </TitleBar>
-      <Layout
-        style={{
-          padding: "24px 0",
-          height: 'calc(100vh - 64px)',
-          overflow: 'auto',
-          background: colorBgContainer,
-          borderRadius: borderRadiusLG,
-        }}
+        <button
+          onClick={handleDiscard}
+        >
+        </button>
+      </SaveBar>
+      <Modal
+        variant="max"
+        open={isVisible}
+        onHide={onCancel}
       >
-        {isLoading ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
-            <Spin />
-          </div>
-        ) : blogs.nodes.length ? (
-          <>
-            {!isMobile && (
-              <Sider
-                style={{
-                  background: colorBgContainer,
-                  height: 'calc(100vh - 124px)',
-                  minHeight: '70vh',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflow: 'auto',
-                }}
-              >
-                <Menu
-                  mode="inline"
-                  defaultSelectedKeys={[blogsData.nodes[0]?.resourceId]}
+        <TitleBar title={t("Blog")} >
+        </TitleBar>
+        <Layout
+          style={{
+            padding: "24px 0",
+            height: 'calc(100vh - 64px)',
+            overflow: 'auto',
+            background: colorBgContainer,
+            borderRadius: borderRadiusLG,
+          }}
+        >
+          {isLoading ? (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+              <Spin />
+            </div>
+          ) : blogs.nodes.length ? (
+            <>
+              {!isMobile && (
+                <Sider
                   style={{
-                    flex: 1,
-                    overflowY: "auto",
-                    minHeight: 0,
+                    background: colorBgContainer,
+                    height: 'calc(100vh - 124px)',
+                    minHeight: '70vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'auto',
                   }}
-                  items={menuData}
-                  selectedKeys={[selectBlogKey]}
-                  onClick={(e) => setSelectBlogKey(e.key)}
-                />
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                  <Pagination
-                    hasPrevious={hasPrevious}
-                    onPrevious={onPrevious}
-                    hasNext={hasNext}
-                    onNext={onNext}
-                  />
-                </div>
-              </Sider>
-            )}
-            <Content
-              style={{
-                padding: "0 24px",
-                height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
-              }}
-            >
-              {isMobile ? (
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {menuData!.find((item: any) => item.key === selectBlogKey)?.label}
-                    </Title>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
-                      <div
-                        style={{
-                          width: "100px",
-                        }}
-                      >
-                        <Select
-                          label={""}
-                          options={languageOptions}
-                          value={selectedLanguage}
-                          onChange={(value) => handleLanguageChange(value)}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          width: "100px",
-                        }}
-                      >
-                        <Select
-                          label={""}
-                          options={itemOptions}
-                          value={selectedItem}
-                          onChange={(value) => handleItemChange(value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <Card
-                    title={t("Resource")}
-                  >
-                    <Space direction="vertical" style={{ width: '100%' }}>
-                      {resourceData.map((item: any, index: number) => {
-                        return (
-                          <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
-                            <Text
-                              strong
-                              style={{
-                                fontSize: "16px"
-                              }}>
-                              {t(item.resource)}
-                            </Text>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              <Text>{t("Default Language")}</Text>
-                              <ManageTableInput record={item} />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              <Text>{t("Translated")}</Text>
-                              <ManageTableInput
-                                translatedValues={translatedValues}
-                                setTranslatedValues={setTranslatedValues}
-                                handleInputChange={handleInputChange}
-                                isRtl={searchTerm === "ar"}
-                                record={item}
-                              />
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                              <Button
-                                onClick={() => {
-                                  handleTranslate("BLOG", item?.key || "", item?.type || "", item?.default_language || "");
-                                }}
-                                loading={loadingItems.includes(item?.key || "")}
-                              >
-                                {t("Translate")}
-                              </Button>
-                            </div>
-                            <Divider
-                              style={{
-                                margin: "8px 0"
-                              }}
-                            />
-                          </Space>
-                        )
-                      })}
-                    </Space>
-                  </Card>
+                >
                   <Menu
                     mode="inline"
                     defaultSelectedKeys={[blogsData.nodes[0]?.resourceId]}
@@ -757,7 +688,7 @@ const Index = () => {
                     }}
                     items={menuData}
                     selectedKeys={[selectBlogKey]}
-                    onClick={(e) => setSelectBlogKey(e.key)}
+                    onClick={(e) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     <Pagination
@@ -767,61 +698,171 @@ const Index = () => {
                       onNext={onNext}
                     />
                   </div>
-                </Space>
-              ) : (
-                <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {menuData!.find((item: any) => item.key === selectBlogKey)?.label}
-                    </Title>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
-                      <div
-                        style={{
-                          width: "150px",
-                        }}
-                      >
-                        <Select
-                          label={""}
-                          options={languageOptions}
-                          value={selectedLanguage}
-                          onChange={(value) => handleLanguageChange(value)}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          width: "150px",
-                        }}
-                      >
-                        <Select
-                          label={""}
-                          options={itemOptions}
-                          value={selectedItem}
-                          onChange={(value) => handleItemChange(value)}
-                        />
+                </Sider>
+              )}
+              <Content
+                style={{
+                  padding: "0 24px",
+                  height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+                }}
+              >
+                {isMobile ? (
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {menuData!.find((item: any) => item.key === selectBlogKey)?.label}
+                      </Title>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                        <div
+                          style={{
+                            width: "100px",
+                          }}
+                        >
+                          <Select
+                            label={""}
+                            options={languageOptions}
+                            value={selectedLanguage}
+                            onChange={(value) => handleLanguageChange(value)}
+                          />
+                        </div>
+                        <div
+                          style={{
+                            width: "100px",
+                          }}
+                        >
+                          <Select
+                            label={""}
+                            options={itemOptions}
+                            value={selectedItem}
+                            onChange={(value) => handleItemChange(value)}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <Table
-                    columns={resourceColumns}
-                    dataSource={resourceData}
-                    pagination={false}
-                  />
-                </Space>
-              )}
-            </Content>
-          </>
-        ) : (
-          <Result
-            title={t("The specified fields were not found in the store.")}
-            extra={
-              <Button type="primary" onClick={onCancel}>
-                {t("Yes")}
-              </Button>
-            }
-          />
-        )}
-      </Layout>
-    </Modal>
+                    <Card
+                      title={t("Resource")}
+                    >
+                      <Space direction="vertical" style={{ width: '100%' }}>
+                        {resourceData.map((item: any, index: number) => {
+                          return (
+                            <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
+                              <Text
+                                strong
+                                style={{
+                                  fontSize: "16px"
+                                }}>
+                                {t(item.resource)}
+                              </Text>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <Text>{t("Default Language")}</Text>
+                                <ManageTableInput record={item} />
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <Text>{t("Translated")}</Text>
+                                <ManageTableInput
+                                  translatedValues={translatedValues}
+                                  setTranslatedValues={setTranslatedValues}
+                                  handleInputChange={handleInputChange}
+                                  isRtl={searchTerm === "ar"}
+                                  record={item}
+                                />
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <Button
+                                  onClick={() => {
+                                    handleTranslate("BLOG", item?.key || "", item?.type || "", item?.default_language || "");
+                                  }}
+                                  loading={loadingItems.includes(item?.key || "")}
+                                >
+                                  {t("Translate")}
+                                </Button>
+                              </div>
+                              <Divider
+                                style={{
+                                  margin: "8px 0"
+                                }}
+                              />
+                            </Space>
+                          )
+                        })}
+                      </Space>
+                    </Card>
+                    <Menu
+                      mode="inline"
+                      defaultSelectedKeys={[blogsData.nodes[0]?.resourceId]}
+                      style={{
+                        flex: 1,
+                        overflowY: "auto",
+                        minHeight: 0,
+                      }}
+                      items={menuData}
+                      selectedKeys={[selectBlogKey]}
+                      onClick={(e) => handleMenuChange(e.key)}
+                    />
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                      <Pagination
+                        hasPrevious={hasPrevious}
+                        onPrevious={onPrevious}
+                        hasNext={hasNext}
+                        onNext={onNext}
+                      />
+                    </div>
+                  </Space>
+                ) : (
+                  <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {menuData!.find((item: any) => item.key === selectBlogKey)?.label}
+                      </Title>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                        <div
+                          style={{
+                            width: "150px",
+                          }}
+                        >
+                          <Select
+                            label={""}
+                            options={languageOptions}
+                            value={selectedLanguage}
+                            onChange={(value) => handleLanguageChange(value)}
+                          />
+                        </div>
+                        <div
+                          style={{
+                            width: "150px",
+                          }}
+                        >
+                          <Select
+                            label={""}
+                            options={itemOptions}
+                            value={selectedItem}
+                            onChange={(value) => handleItemChange(value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <Table
+                      columns={resourceColumns}
+                      dataSource={resourceData}
+                      pagination={false}
+                    />
+                  </Space>
+                )}
+              </Content>
+            </>
+          ) : (
+            <Result
+              title={t("The specified fields were not found in the store.")}
+              extra={
+                <Button type="primary" onClick={onCancel}>
+                  {t("Yes")}
+                </Button>
+              }
+            />
+          )}
+        </Layout>
+      </Modal>
+    </>
   );
 };
 

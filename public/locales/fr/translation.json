@@ -162,6 +162,7 @@
     "progressing.noTranslate":"Aucune tâche de traduction maintenant",
     "progressing.contactButton":"Contacter le support",
     "progressing.somethingWentWrong":"Une erreur inattendue est survenue. Veuillez cliquer sur le bouton ci-dessous pour contacter le support pour obtenir une solution.",
+    "progressing.apikeySetting":"Réinitialiser la limite",
     "progressing.privateApiKeyAmountLimit":"La limite de clé API privée a été atteinte. Veuillez cliquer sur le bouton ci-dessous pour réinitialiser la limite et redémarrer le processus de traduction.",
     "progressing.hasPayed":"Vos crédits de traduction ont été ajoutés. Veuillez continuer la traduction.",
     "progressing.reTranslate":"Traduire",

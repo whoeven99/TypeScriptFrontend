@@ -480,7 +480,13 @@ const Index = () => {
                 tone="base"
               />
             </Button>
-            <Title level={1} style={{ margin: "0" }}>
+            <Title
+              style={{
+                margin: "0",
+                fontSize: "1.25rem",
+                fontWeight: 700,
+              }}
+            >
               {t("Translate Store")}
             </Title>
           </div>
@@ -517,7 +523,13 @@ const Index = () => {
         ) : languageData.length != 0 ? (
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
             <div style={{ paddingLeft: "8px" }}>
-              <Title level={2} style={{ margin: "0" }}>
+              <Title
+                style={{
+                  margin: "0",
+                  fontSize: "1.25rem",
+                  fontWeight: 700,
+                }}
+              >
                 {t("translateSettings.title1")}
               </Title>
             </div>
@@ -601,7 +613,13 @@ const Index = () => {
               </Link>
             </>
             <div style={{ paddingLeft: "8px" }}>
-              <Title level={2} style={{ margin: "0" }}>
+              <Title
+                style={{
+                  margin: "0",
+                  fontSize: "1.25rem",
+                  fontWeight: 700,
+                }}
+              >
                 {t("translateSettings.title2")}
               </Title>
               {/* <Text style={{ margin: "0" }}>

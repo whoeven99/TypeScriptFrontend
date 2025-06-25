@@ -303,7 +303,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                 style={{
                                     display: "flex",
                                     justifyContent: "space-between",
-                                    alignItems: "center",
+                                    flexDirection: isMobile ? "column" : "row",
                                     width: "100%", // 确保占满容器宽度
                                     textAlign: "center",
                                     gap: 10,
@@ -314,10 +314,10 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                         display: "flex",
                                         justifyContent: "space-between",
                                         alignItems: "center",
-                                        width: "80%", // 确保占满容器宽度
+                                        width: isMobile ? "100%" : "80%", // 确保占满容器宽度
                                         textAlign: "center",
                                         flexDirection: "column",
-                                        height: '69px'
+                                        height: isMobile ? "100%" : '69px'
                                     }}
                                 >
                                     <div
@@ -325,14 +325,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                             display: "flex",
                                             width: "100%", // 确保占满容器宽度
                                             marginBottom: "auto",
-                                            gap: 10,
+                                            gap: 30,
                                         }}
                                     >
                                         {/* 左侧部分 */}
                                         <div
                                             style={{
                                                 display: "flex",
-                                                minWidth: "100px", // 限制最大宽度
                                                 alignItems: "flex-start",
                                             }}
                                         >
@@ -426,6 +425,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                         style={{
                                             width: "100%",
                                             marginTop: "auto", // 将进度条推到底部
+                                            display: isMobile ? "none" : "block",
                                         }}
                                     >
                                         <Progress
@@ -448,8 +448,8 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                         display: "flex",
                                         justifyContent: "space-between",
                                         alignItems: "flex-end",
-                                        width: "20%",
-                                        height: "82px",
+                                        width: isMobile ? "100%" : "20%",
+                                        // height: "82px",
                                     }}
                                 >
                                     {status === 1 && (
@@ -461,7 +461,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                                     state: { publishLanguageCode: target },
                                                 })
                                             }
-                                            style={{ marginTop: "auto" }}
+                                            style={{
+                                                marginTop: "auto",
+                                            }}
                                         >
                                             {t("progressing.publish")}
                                         </Button>
@@ -532,7 +534,10 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                             block
                                             type="primary"
                                             onClick={handleReTranslate}
-                                            style={{ marginTop: "auto" }}
+                                            style={{
+                                                marginTop: "auto",
+                                                alignItems: "flex-end"
+                                            }}
                                         >
                                             {t("progressing.reTranslate")}
                                         </Button>

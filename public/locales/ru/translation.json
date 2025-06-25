@@ -166,6 +166,7 @@
     "progressing.contactButton": "Поддержка",
     "progressing.somethingWentWrong": "Произошли некоторые непредвиденные ошибки. Пожалуйста, нажмите кнопку для связи с поддержкой для решения.",
     "progressing.privateApiKeyAmountLimit": "Лимит частного API-ключа достигнут. Пожалуйста, нажмите кнопку справа для сброса лимита и перезапуска процесса перевода.",
+    "progressing.apikeySetting": "Сбросить лимит",
     "progressing.hasPayed": "Ваши кредиты перевода были добавлены. Пожалуйста, продолжите перевод.",
     "progressing.reTranslate": "Перевести",
     "contact.title": "Свяжитесь с нами",
