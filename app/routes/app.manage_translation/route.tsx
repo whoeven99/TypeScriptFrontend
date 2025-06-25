@@ -7,11 +7,9 @@ import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
 import {
-  Outlet,
   useFetcher,
   useLoaderData,
   useLocation,
-  useNavigate,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
@@ -378,6 +376,7 @@ const Index = () => {
       method: "post",
       action: "/app/manage_translation",
     });
+    shopify.saveBar.hide("article-confirm-save");
   }, []);
 
   useEffect(() => {

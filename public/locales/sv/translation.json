@@ -165,6 +165,7 @@
     "progressing.contactButton":"Kontakta oss",
     "progressing.somethingWentWrong":"Något oväntat fel uppstod. Klicka på knappen nedan för att kontakta oss för att få en lösning.",
     "progressing.privateApiKeyAmountLimit":"Den privata API-nyckelgränsen har uppnåtts. Klicka på knappen till höger för att återställa gränsen och starta om översättningsprocessen.",
+    "progressing.apikeySetting":"Återställ gräns",
     "progressing.hasPayed":"Dina översättningskrediter har lagts till. Vänligen fortsätt med översättningen.",
     "progressing.reTranslate":"Översätt",
     "contact.title":"Kontakta oss",

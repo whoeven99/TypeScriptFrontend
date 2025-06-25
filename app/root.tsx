@@ -10,9 +10,9 @@ import {
 } from "@remix-run/react";
 import { Provider } from "react-redux";
 import store from "./store";
-import "./styles.css";
 import { useEffect } from "react";
 import { createHead } from 'remix-island'
+import "./styles.css";
 
 export function ErrorBoundary() {
   const error = useRouteError();

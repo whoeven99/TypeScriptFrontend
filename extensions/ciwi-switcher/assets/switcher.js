@@ -801,7 +801,6 @@ window.onload = async function () {
   const switcher = document.getElementById("ciwi-container");
   const shop = document.getElementById("queryCiwiId");
   const mainBox = document.getElementById("main-box");
-  const translateFloatBtn = document.getElementById("translate-float-btn");
   shop.remove();
   const data = await fetchSwitcherConfig(shop.value);
 

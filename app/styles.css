@@ -8,6 +8,10 @@
   }
 }
 
+.Polaris-Page {
+  padding: 0 var(--p-space-600) !important;
+}
+
 body {
   margin: 0;
 }

@@ -97,10 +97,6 @@
   transition: transform 0.3s ease; /* 平滑过渡 */
 }
 
-.mobile_trans_img {
-  display: none;
-}
-
 /* @media (max-width: 768px) {
   .ciwi_container {
     position: fixed;

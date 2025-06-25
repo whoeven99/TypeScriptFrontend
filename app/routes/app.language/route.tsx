@@ -239,7 +239,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           // 并发执行所有请求
           const results = await Promise.allSettled(promises);
-          
+
           results.forEach((result) => {
             if (result.status === "fulfilled" && result.value) {
               console.log(`${shop} webPresences result: `, result.value.data?.webPresenceUpdate?.userErrors);
@@ -439,10 +439,17 @@ const Index = () => {
       method: "post",
       action: "/app/language",
     });
-    setIsMobile(window.innerWidth < 768);
     if (localStorage.getItem("dontPromptAgain")) {
       setDontPromptAgain(true);
     }
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -831,9 +838,9 @@ const Index = () => {
               </Space>
               :
               <Space>
-                <Button type="default" onClick={PreviewClick}>
+                {!isMobile && <Button type="default" onClick={PreviewClick}>
                   {t("Preview store")}
-                </Button>
+                </Button>}
                 <Button type="primary" onClick={handleOpenModal}>
                   {t("Add Language")}
                 </Button>

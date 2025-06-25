@@ -31,7 +31,7 @@ import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal, TitleBar } from "@shopify/app-bridge-react";
+import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setUserConfig } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
@@ -105,7 +105,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           startCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-        return json({ previousFilters: previousFilters });
+        return json({ data: previousFilters });
       case !!endCursor:
         const nextFilters = await queryNextTransType({
           shop,
@@ -114,7 +114,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-        return json({ nextFilters: nextFilters });
+        return json({ data: nextFilters });
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
@@ -187,10 +187,10 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
   const [selectedItem, setSelectedItem] = useState<string>("filter");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    filtersData.pageInfo.hasPreviousPage || false
+    filters?.pageInfo?.hasPreviousPage || false
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    filtersData.pageInfo.hasNextPage || false
+    filters?.pageInfo?.hasNextPage || false
   );
   const [isMobile, setIsMobile] = useState(false);
 
@@ -247,11 +247,9 @@ const Index = () => {
   }, [filtersData]);
 
   useEffect(() => {
-    if (actionData && "nextFilters" in actionData) {
+    if (actionData && "data" in actionData) {
       // 在这里处理 nexts
-      setFiltersData(actionData.nextFilters);
-    } else if (actionData && "previousFilters" in actionData) {
-      setFiltersData(actionData.previousFilters);
+      setFiltersData(actionData.data);
     } else {
       // 如果不存在 nexts，可以执行其他逻辑
     }
@@ -260,6 +258,14 @@ const Index = () => {
   useEffect(() => {
     setIsVisible(!!searchParams.get('language'));
   }, [location]);
+
+  useEffect(() => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.show("filter-confirm-save");
+    } else {
+      shopify.saveBar.hide("filter-confirm-save");
+    }
+  }, [confirmData]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -440,24 +446,32 @@ const Index = () => {
   }
 
   const onPrevious = () => {
-    const formData = new FormData();
-    const startCursor = filtersData.pageInfo.startCursor;
-    formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-    submit(formData, {
-      method: "post",
-      action: `/app/manage_translation/filter?language=${searchTerm}`,
-    }); // 提交表单请求
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      const formData = new FormData();
+      const startCursor = filtersData.pageInfo.startCursor;
+      formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
+      submit(formData, {
+        method: "post",
+        action: `/app/manage_translation/filter?language=${searchTerm}`,
+      }); // 提交表单请求
+    }
   };
 
   const onNext = () => {
-    const formData = new FormData();
-    const endCursor = filtersData.pageInfo.endCursor;
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      const formData = new FormData();
+      const endCursor = filtersData.pageInfo.endCursor;
 
-    formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-    submit(formData, {
-      method: "post",
-      action: `/app/manage_translation/filter?language=${searchTerm}`,
-    }); // 提交表单请求
+      formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
+      submit(formData, {
+        method: "post",
+        action: `/app/manage_translation/filter?language=${searchTerm}`,
+      }); // 提交表单请求
+    }
   };
 
   const handleConfirm = () => {
@@ -470,194 +484,213 @@ const Index = () => {
     }); // 提交表单请求
   };
 
+  const handleDiscard = () => {
+    shopify.saveBar.hide("filter-confirm-save");
+    if (actionData && "data" in actionData) {
+      // 在这里处理 nexts
+      setFiltersData(actionData.data);
+    } else {
+      // 如果不存在 nexts，可以执行其他逻辑
+      setFiltersData(filters);
+    }
+    setConfirmData([]);
+  };
+
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
+    shopify.saveBar.hide("filter-confirm-save");
     navigate(`/app/manage_translation?language=${searchTerm}`, {
       state: { key: searchTerm },
     }); // 跳转到 /app/manage_translation
   };
 
   return (
-    <Modal
-      variant="max"
-      open={isVisible}
-      onHide={onCancel}
-    >
-      <TitleBar title={t("Filters")} >
+    <>
+      <SaveBar id="filter-confirm-save">
         <button
           variant="primary"
           onClick={handleConfirm}
-          disabled={confirmLoading || !confirmData.length}
         >
-          {t("Save")}
         </button>
-      </TitleBar>
-      <Layout
-        style={{
-          padding: "24px 0",
-          height: 'calc(100vh - 64px)',
-          overflow: 'auto',
-          background: colorBgContainer,
-          borderRadius: borderRadiusLG,
-        }}
+        <button
+          onClick={handleDiscard}
+        >
+        </button>
+      </SaveBar>
+      <Modal
+        variant="max"
+        open={isVisible}
+        onHide={onCancel}
       >
-        {isLoading ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
-            <Spin />
-          </div>
-        ) : filters.nodes.length ? (
-          <Content
-            style={{
-              padding: "0 24px",
-              height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
-            }}
-          >
-            {isMobile ? (
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
-                  <div
-                    style={{
-                      width: "100px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={languageOptions}
-                      value={selectedLanguage}
-                      onChange={(value) => handleLanguageChange(value)}
-                    />
+        <TitleBar title={t("Filters")} >
+        </TitleBar>
+        <Layout
+          style={{
+            padding: "24px 0",
+            height: 'calc(100vh - 64px)',
+            overflow: 'auto',
+            background: colorBgContainer,
+            borderRadius: borderRadiusLG,
+          }}
+        >
+          {isLoading ? (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+              <Spin />
+            </div>
+          ) : filters.nodes.length ? (
+            <Content
+              style={{
+                padding: "0 24px",
+                height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+              }}
+            >
+              {isMobile ? (
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                    <div
+                      style={{
+                        width: "100px",
+                      }}
+                    >
+                      <Select
+                        label={""}
+                        options={languageOptions}
+                        value={selectedLanguage}
+                        onChange={(value) => handleLanguageChange(value)}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        width: "100px",
+                      }}
+                    >
+                      <Select
+                        label={""}
+                        options={itemOptions}
+                        value={selectedItem}
+                        onChange={(value) => handleItemChange(value)}
+                      />
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      width: "100px",
-                    }}
+                  <Card
+                    title={t("Resource")}
                   >
-                    <Select
-                      label={""}
-                      options={itemOptions}
-                      value={selectedItem}
-                      onChange={(value) => handleItemChange(value)}
-                    />
-                  </div>
-                </div>
-                <Card
-                  title={t("Resource")}
-                >
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    {resourceData.map((item: any, index: number) => {
-                      return (
-                        <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
-                          <Text
-                            strong
-                            style={{
-                              fontSize: "16px"
-                            }}
-                          >
-                            {t(item.resource)}
-                          </Text>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <Text>{t("Default Language")}</Text>
-                            <ManageTableInput record={item} />
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <Text>{t("Translated")}</Text>
-                            <ManageTableInput
-                              translatedValues={translatedValues}
-                              setTranslatedValues={setTranslatedValues}
-                              handleInputChange={handleInputChange}
-                              isRtl={searchTerm === "ar"}
-                              record={item}
-                            />
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <Button
-                              onClick={() => {
-                                handleTranslate("FILTER", item?.key || "", item?.type || "", item?.default_language || "", item?.index || 0);
+                    <Space direction="vertical" style={{ width: '100%' }}>
+                      {resourceData.map((item: any, index: number) => {
+                        return (
+                          <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
+                            <Text
+                              strong
+                              style={{
+                                fontSize: "16px"
                               }}
-                              loading={loadingItems.includes(item?.key || "")}
                             >
-                              {t("Translate")}
-                            </Button>
-                          </div>
-                          <Divider
-                            style={{
-                              margin: "8px 0"
-                            }}
-                          />
-                        </Space>
-                      )
-                    })}
-                  </Space>
-                </Card>
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                  <Pagination
-                    hasPrevious={hasPrevious}
-                    onPrevious={onPrevious}
-                    hasNext={hasNext}
-                    onNext={onNext}
-                  />
-                </div>
-              </Space>
-            ) : (
-              <Space
-                direction="vertical"
-                size="large"
-                style={{ display: "flex" }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
-                  <div
-                    style={{
-                      width: "150px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={languageOptions}
-                      value={selectedLanguage}
-                      onChange={(value) => handleLanguageChange(value)}
+                              {t(item.resource)}
+                            </Text>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <Text>{t("Default Language")}</Text>
+                              <ManageTableInput record={item} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <Text>{t("Translated")}</Text>
+                              <ManageTableInput
+                                translatedValues={translatedValues}
+                                setTranslatedValues={setTranslatedValues}
+                                handleInputChange={handleInputChange}
+                                isRtl={searchTerm === "ar"}
+                                record={item}
+                              />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <Button
+                                onClick={() => {
+                                  handleTranslate("FILTER", item?.key || "", item?.type || "", item?.default_language || "", item?.index || 0);
+                                }}
+                                loading={loadingItems.includes(item?.key || "")}
+                              >
+                                {t("Translate")}
+                              </Button>
+                            </div>
+                            <Divider
+                              style={{
+                                margin: "8px 0"
+                              }}
+                            />
+                          </Space>
+                        )
+                      })}
+                    </Space>
+                  </Card>
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <Pagination
+                      hasPrevious={hasPrevious}
+                      onPrevious={onPrevious}
+                      hasNext={hasNext}
+                      onNext={onNext}
                     />
                   </div>
-                  <div
-                    style={{
-                      width: "150px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={itemOptions}
-                      value={selectedItem}
-                      onChange={(value) => handleItemChange(value)}
+                </Space>
+              ) : (
+                <Space
+                  direction="vertical"
+                  size="large"
+                  style={{ display: "flex" }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                    <div
+                      style={{
+                        width: "150px",
+                      }}
+                    >
+                      <Select
+                        label={""}
+                        options={languageOptions}
+                        value={selectedLanguage}
+                        onChange={(value) => handleLanguageChange(value)}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        width: "150px",
+                      }}
+                    >
+                      <Select
+                        label={""}
+                        options={itemOptions}
+                        value={selectedItem}
+                        onChange={(value) => handleItemChange(value)}
+                      />
+                    </div>
+                  </div>
+                  <Table
+                    columns={resourceColumns}
+                    dataSource={resourceData}
+                    pagination={false}
+                  />
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <Pagination
+                      hasPrevious={hasPrevious}
+                      onPrevious={onPrevious}
+                      hasNext={hasNext}
+                      onNext={onNext}
                     />
                   </div>
-                </div>
-                <Table
-                  columns={resourceColumns}
-                  dataSource={resourceData}
-                  pagination={false}
-                />
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                  <Pagination
-                    hasPrevious={hasPrevious}
-                    onPrevious={onPrevious}
-                    hasNext={hasNext}
-                    onNext={onNext}
-                  />
-                </div>
-              </Space>
-            )}
-          </Content>
-        ) : (
-          <Result
-            title={t("The specified fields were not found in the store.")}
-            extra={
-              <Button type="primary" onClick={onCancel}>
-                {t("Yes")}
-              </Button>
-            }
-          />
-        )}
-      </Layout>
-    </Modal>
+                </Space>
+              )}
+            </Content>
+          ) : (
+            <Result
+              title={t("The specified fields were not found in the store.")}
+              extra={
+                <Button type="primary" onClick={onCancel}>
+                  {t("Yes")}
+                </Button>
+              }
+            />
+          )}
+        </Layout>
+      </Modal>
+    </>
   );
 };
 

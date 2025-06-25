@@ -163,6 +163,7 @@
     "progressing.contactButton":"聯繫支持",
     "progressing.somethingWentWrong":"發生意外錯誤。請點擊按鈕聯繫支持以獲取解決方案。",
     "progressing.privateApiKeyAmountLimit":"私人API金鑰限制已達到。請點擊右側按鈕重置限制並重新啟動翻譯過程。",
+    "progressing.apikeySetting":"重置限制",
     "progressing.hasPayed":"您的翻譯積分已添加。請繼續翻譯。",
     "progressing.reTranslate":"翻譯",
     "contact.title":"聯繫我們",
