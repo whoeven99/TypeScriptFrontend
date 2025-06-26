@@ -265,6 +265,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
     useState<boolean>(false);
   const [checkedCountries, setCheckedCountries] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [activeKeys, setActiveKeys] = useState<string[]>([]); // 新增：管理折叠面板展开状态
   const selectedLanguage: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
@@ -278,7 +279,11 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   useEffect(() => {
     if (updatedLocales) {
       setFilteredLanguages(updatedLocales);
-      setIsLoading(false)
+      setIsLoading(false);
+      // 默认展开第一个折叠面板
+      if (updatedLocales.length > 0) {
+        setActiveKeys([updatedLocales[0].name]);
+      }
     }
   }, [updatedLocales]);
 
@@ -318,6 +323,10 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
     if (!value.trim() || !updatedLocales) {
       // 搜索框为空，恢复所有
       setFilteredLanguages(updatedLocales);
+      // 恢复默认展开第一个面板
+      if (updatedLocales && updatedLocales.length > 0) {
+        setActiveKeys([updatedLocales[0].name]);
+      }
       return;
     }
 
@@ -332,6 +341,10 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
       .filter(region => region.countries.length > 0); // 只保留有匹配项的大洲
 
     setFilteredLanguages(filtered);
+
+    // 展开包含匹配结果的折叠面板
+    const matchedRegionNames = filtered.map(region => region.name);
+    setActiveKeys(matchedRegionNames);
   };
 
   // 增量更新 allSelectedLanguage
@@ -411,6 +424,10 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
     setAllSelectedKeys([])
     setCheckedCountries(selectedLanguagesIscode);
     setFilteredLanguages(updatedLocales);
+    // 重置折叠面板状态，默认展开第一个
+    if (updatedLocales && updatedLocales.length > 0) {
+      setActiveKeys([updatedLocales[0].name]);
+    }
     setIsModalOpen(false); // 关闭Modal
   };
 
@@ -492,7 +509,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
         </div>
         :
         (filteredLanguages.length ?
-          <Collapse>
+          <Collapse activeKey={activeKeys} onChange={setActiveKeys}>
             {filteredLanguages.map((state: any) => (
               <Panel
                 header={

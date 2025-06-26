@@ -1711,7 +1711,12 @@ const Index = () => {
                       <Space direction="vertical" style={{ width: '100%' }}>
                         {resourceData.map((item: any, index: number) => {
                           return (
-                            <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
+                            <Space
+                              key={index}
+                              direction="vertical"
+                              size="small"
+                              style={{ width: '100%' }}
+                            >
                               <Text
                                 strong
                                 style={{
@@ -1759,7 +1764,12 @@ const Index = () => {
                       <Space direction="vertical" style={{ width: '100%' }}>
                         {SeoData.map((item: any, index: number) => {
                           return (
-                            <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
+                            <Space
+                              key={index}
+                              direction="vertical"
+                              size="small"
+                              style={{ width: '100%' }}
+                            >
                               <Text
                                 strong
                                 style={{
@@ -1810,7 +1820,12 @@ const Index = () => {
                           <Space direction="vertical" style={{ width: '100%' }}>
                             {optionsData.map((item: any, index: number) => {
                               return (
-                                <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
+                                <Space
+                                  key={index}
+                                  direction="vertical"
+                                  size="small"
+                                  style={{ width: '100%' }}
+                                >
                                   <Text
                                     strong
                                     style={{
@@ -1861,7 +1876,12 @@ const Index = () => {
                           <Space direction="vertical" style={{ width: '100%' }}>
                             {metafieldsData.map((item: any, index: number) => {
                               return (
-                                <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
+                                <Space
+                                  key={index}
+                                  direction="vertical"
+                                  size="small"
+                                  style={{ width: '100%' }}
+                                >
                                   <Text
                                     strong
                                     style={{
@@ -1912,7 +1932,12 @@ const Index = () => {
                           <Space direction="vertical" style={{ width: '100%' }}>
                             {variantsData.map((item: any, index: number) => {
                               return (
-                                <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
+                                <Space
+                                  key={index}
+                                  direction="vertical"
+                                  size="small"
+                                  style={{ width: '100%' }}
+                                >
                                   <Text
                                     strong
                                     style={{
