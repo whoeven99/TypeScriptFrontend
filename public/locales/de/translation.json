@@ -163,6 +163,7 @@
   "progressing.contactButton":"Support kontaktieren",
   "progressing.somethingWentWrong":"Es ist ein unerwarteter Fehler aufgetreten. Bitte klicken Sie auf die Schaltfläche, um Support zu kontaktieren, um die Auflösung zu erhalten.",
   "progressing.privateApiKeyAmountLimit":"Die private API-Schlüsselgrenze wurde erreicht. Bitte klicken Sie auf die Schaltfläche rechts, um die Grenze zurückzusetzen und den Übersetzungsprozess neu zu starten.",
+  "progressing.apikeySetting":"Grenze zurücksetzen",
   "progressing.hasPayed":"Ihre Übersetzungscredits wurden hinzugefügt. Bitte fahren Sie mit der Übersetzung fort.",
   "progressing.reTranslate":"Übersetzen",
   "contact.title":"Kontaktieren Sie uns",

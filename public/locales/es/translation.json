@@ -163,6 +163,7 @@
     "progressing.contactButton":"Contactar con soporte",
     "progressing.somethingWentWrong":"Se produjo un error inesperado. Por favor, haga clic en el botón para contactar con el soporte para obtener una solución.",
     "progressing.privateApiKeyAmountLimit":"Se ha alcanzado el límite de claves API privadas. Por favor, haga clic en el botón de la derecha para restablecer el límite y reiniciar el proceso de traducción.",
+    "progressing.apikeySetting":"Grenze zurücksetzen",
     "progressing.hasPayed":"Sus créditos de traducción han sido agregados. Por favor, continúe con la traducción.",
     "progressing.reTranslate":"Traducir",
     "contact.title":"Contacta con nosotros",

@@ -166,6 +166,7 @@
     "progressing.contactButton": "Підтримка",
     "progressing.somethingWentWrong": "Сталися деякі неочікувані помилки. Будь ласка, натисніть кнопку, щоб зв'язатися з підтримкою для вирішення.",
     "progressing.privateApiKeyAmountLimit": "Особистий API-ключ обмежений. Будь ласка, натисніть кнопку праворуч, щоб скинути обмеження та повторити переклад.",
+    "progressing.apikeySetting": "Скинути обмеження",
     "progressing.hasPayed": "Ваші кредити перекладу додано. Будь ласка, продовжте переклад.",
     "progressing.reTranslate": "Перекласти",
     "contact.title": "Зв'язатися з нами",

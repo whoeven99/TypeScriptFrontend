@@ -1,4 +1,4 @@
-import { TitleBar } from "@shopify/app-bridge-react";
+import { SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
 import {
   Space,
@@ -441,9 +441,9 @@ const Index = () => {
       editData.shopName &&
       JSON.stringify(editData) !== JSON.stringify(originalData)
     ) {
-      setIsEdit(true);
+      shopify.saveBar.show("switcher-save-bar");
     } else {
-      setIsEdit(false);
+      shopify.saveBar.hide("switcher-save-bar");
     }
   }, [editData, originalData]);
 
@@ -600,6 +600,7 @@ const Index = () => {
   };
 
   const handleCancel = () => {
+    shopify.saveBar.hide("switcher-save-bar");
     if (originalData) {
       setIsIncludedFlag(originalData.includedFlag);
       setLanguageSelector(originalData.languageSelector);
@@ -656,6 +657,18 @@ const Index = () => {
 
   return (
     <Page>
+      <SaveBar id="switcher-save-bar">
+        <button
+          variant="primary"
+          onClick={handleSave}
+          loading={editFetcher.state === "submitting" && ""}
+        >
+        </button>
+        <button
+          onClick={handleCancel}
+        >
+        </button>
+      </SaveBar>
       <TitleBar title={t("Switcher")} />
       <ScrollNotice
         text={t(
@@ -673,7 +686,7 @@ const Index = () => {
           withMoneyValue={withMoneyValue}
           withoutMoneyValue={withoutMoneyValue}
         />
-        <Card styles={{ body: { padding: "12px" } }}>
+        {/* <Card styles={{ body: { padding: "12px" } }}>
           <Space
             style={{
               display: "flex",
@@ -703,7 +716,7 @@ const Index = () => {
               {t("Cancel")}
             </Button>
           </Space>
-        </Card>
+        </Card> */}
         <div className={styles.switcher_container}>
           <div className={styles.switcher_editor}>
             <Space
