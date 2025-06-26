@@ -14,7 +14,7 @@ import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import ManageTableInput from "~/components/manageTableInput";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal, TitleBar } from "@shopify/app-bridge-react";
+import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { FullscreenBar, Select } from "@shopify/polaris";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setUserConfig } from "~/store/modules/userConfig";
@@ -197,6 +197,14 @@ const Index = () => {
   }, [location]);
 
   useEffect(() => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.show("shipping-confirm-save");
+    } else {
+      shopify.saveBar.hide("shipping-confirm-save");
+    }
+  }, [confirmData]);
+
+  useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
       const errorItem = confirmFetcher.data.data.filter((item: any) =>
         item.success === false
@@ -363,7 +371,6 @@ const Index = () => {
     navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
   }
 
-
   const handleConfirm = () => {
     setConfirmLoading(true);
     const formData = new FormData();
@@ -374,180 +381,201 @@ const Index = () => {
     }); // 提交表单请求
   };
 
+  const handleDiscard = () => {
+    shopify.saveBar.hide("shipping-confirm-save");
+    const Data = shippings.nodes.map((node: any, index: number) => ({
+      key: "body",
+      index: index,
+      resource: "Label",
+      default_language: node?.translatableContent[0].value,
+      translated: node?.translations[0]?.value,
+      type: node?.translatableContent[0]?.type,
+    }));
+    setResourceData(Data);
+    setConfirmData([]);
+  };
+
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
+    shopify.saveBar.hide("shipping-confirm-save");
     navigate(`/app/manage_translation?language=${searchTerm}`, {
       state: { key: searchTerm },
     }); // 跳转到 /app/manage_translation
   };
 
   return (
-    <Modal
-      variant="max"
-      open={isVisible}
-      onHide={onCancel}
-    >
-      <TitleBar title={t("Shipping")} >
+    <>
+      <SaveBar id="shipping-confirm-save">
         <button
           variant="primary"
           onClick={handleConfirm}
-          disabled={confirmLoading || !confirmData.length}
         >
-          {t("Save")}
         </button>
-      </TitleBar>
-      <Layout
-        style={{
-          padding: "24px 0",
-          height: 'calc(100vh - 64px)',
-          overflow: 'auto',
-          background: colorBgContainer,
-          borderRadius: borderRadiusLG,
-        }}
+        <button
+          onClick={handleDiscard}
+        >
+        </button>
+      </SaveBar>
+      <Modal
+        variant="max"
+        open={isVisible}
+        onHide={onCancel}
       >
-        {isLoading ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
-            <Spin />
-          </div>
-        ) : shippings.nodes.length ? (
-          <Content
-            style={{
-              padding: "0 24px",
-              height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
-              overflow: 'auto',
-              minHeight: '70vh',
-            }}
-          >
-            {isMobile ? (
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
-                  <div
-                    style={{
-                      width: "100px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={languageOptions}
-                      value={selectedLanguage}
-                      onChange={(value) => handleLanguageChange(value)}
-                    />
+        <TitleBar title={t("Shipping")} >
+        </TitleBar>
+        <Layout
+          style={{
+            padding: "24px 0",
+            height: 'calc(100vh - 64px)',
+            overflow: 'auto',
+            background: colorBgContainer,
+            borderRadius: borderRadiusLG,
+          }}
+        >
+          {isLoading ? (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+              <Spin />
+            </div>
+          ) : shippings.nodes.length ? (
+            <Content
+              style={{
+                padding: "0 24px",
+                height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+                overflow: 'auto',
+                minHeight: '70vh',
+              }}
+            >
+              {isMobile ? (
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                    <div
+                      style={{
+                        width: "100px",
+                      }}
+                    >
+                      <Select
+                        label={""}
+                        options={languageOptions}
+                        value={selectedLanguage}
+                        onChange={(value) => handleLanguageChange(value)}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        width: "100px",
+                      }}
+                    >
+                      <Select
+                        label={""}
+                        options={itemOptions}
+                        value={selectedItem}
+                        onChange={(value) => handleItemChange(value)}
+                      />
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      width: "100px",
-                    }}
+                  <Card
+                    title={t("Resource")}
                   >
-                    <Select
-                      label={""}
-                      options={itemOptions}
-                      value={selectedItem}
-                      onChange={(value) => handleItemChange(value)}
-                    />
-                  </div>
-                </div>
-                <Card
-                  title={t("Resource")}
-                >
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    {resourceData.map((item: any) => {
-                      return (
-                        <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                          <Text
-                            strong
-                            style={{
-                              fontSize: "16px"
-                            }}
-                          >
-                            {t(item.resource)}
-                          </Text>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <Text>{t("Default Language")}</Text>
-                            <ManageTableInput record={item} />
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <Text>{t("Translated")}</Text>
-                            <ManageTableInput
-                              translatedValues={translatedValues}
-                              setTranslatedValues={setTranslatedValues}
-                              handleInputChange={handleInputChange}
-                              isRtl={searchTerm === "ar"}
-                              record={item}
-                            />
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <Button
-                              onClick={() => {
-                                handleTranslate("PACKING_SLIP_TEMPLATE", item?.key || "", item?.type || "", item?.default_language || "", item?.index || 0);
+                    <Space direction="vertical" style={{ width: '100%' }}>
+                      {resourceData.map((item: any) => {
+                        return (
+                          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                            <Text
+                              strong
+                              style={{
+                                fontSize: "16px"
                               }}
-                              loading={loadingItems.includes(item?.key || "")}
                             >
-                              {t("Translate")}
-                            </Button>
-                          </div>
-                          <Divider
-                            style={{
-                              margin: "8px 0"
-                            }}
-                          />
-                        </Space>
-                      )
-                    })}
-                  </Space>
-                </Card>
-              </Space>
-            ) : (
-              <Space
-                direction="vertical"
-                size="large"
-                style={{ width: '100%' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
-                  <div
-                    style={{
-                      width: "150px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={languageOptions}
-                      value={selectedLanguage}
-                      onChange={(value) => handleLanguageChange(value)}
-                    />
+                              {t(item.resource)}
+                            </Text>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <Text>{t("Default Language")}</Text>
+                              <ManageTableInput record={item} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <Text>{t("Translated")}</Text>
+                              <ManageTableInput
+                                translatedValues={translatedValues}
+                                setTranslatedValues={setTranslatedValues}
+                                handleInputChange={handleInputChange}
+                                isRtl={searchTerm === "ar"}
+                                record={item}
+                              />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <Button
+                                onClick={() => {
+                                  handleTranslate("PACKING_SLIP_TEMPLATE", item?.key || "", item?.type || "", item?.default_language || "", item?.index || 0);
+                                }}
+                                loading={loadingItems.includes(item?.key || "")}
+                              >
+                                {t("Translate")}
+                              </Button>
+                            </div>
+                            <Divider
+                              style={{
+                                margin: "8px 0"
+                              }}
+                            />
+                          </Space>
+                        )
+                      })}
+                    </Space>
+                  </Card>
+                </Space>
+              ) : (
+                <Space
+                  direction="vertical"
+                  size="large"
+                  style={{ width: '100%' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                    <div
+                      style={{
+                        width: "150px",
+                      }}
+                    >
+                      <Select
+                        label={""}
+                        options={languageOptions}
+                        value={selectedLanguage}
+                        onChange={(value) => handleLanguageChange(value)}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        width: "150px",
+                      }}
+                    >
+                      <Select
+                        label={""}
+                        options={itemOptions}
+                        value={selectedItem}
+                        onChange={(value) => handleItemChange(value)}
+                      />
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      width: "150px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={itemOptions}
-                      value={selectedItem}
-                      onChange={(value) => handleItemChange(value)}
-                    />
-                  </div>
-                </div>
-                <Table
-                  columns={resourceColumns}
-                  dataSource={resourceData}
-                  pagination={false}
-                />
-              </Space>
-            )}
-          </Content>
-        ) : (
-          <Result
-            title={t("The specified fields were not found in the store.")}
-            extra={
-              <Button type="primary" onClick={onCancel}>
-                {t("Yes")}
-              </Button>
-            }
-          />
-        )}
-      </Layout>
-    </Modal>
+                  <Table
+                    columns={resourceColumns}
+                    dataSource={resourceData}
+                    pagination={false}
+                  />
+                </Space>
+              )}
+            </Content>
+          ) : (
+            <Result
+              title={t("The specified fields were not found in the store.")}
+              extra={
+                <Button type="primary" onClick={onCancel}>
+                  {t("Yes")}
+                </Button>
+              }
+            />
+          )}
+        </Layout>
+      </Modal>
+    </>
   );
 };
 

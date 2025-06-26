@@ -484,7 +484,7 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("metafield-confirm-save");
-    setMetafieldsData(metafieldsData);
+    setMetafieldsData({ ...metafieldsData });
     setConfirmData([]);
   };
 

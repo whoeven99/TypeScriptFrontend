@@ -31,7 +31,7 @@ import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal, TitleBar } from "@shopify/app-bridge-react";
+import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { FullscreenBar, Select } from "@shopify/polaris";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setUserConfig } from "~/store/modules/userConfig";
@@ -223,11 +223,7 @@ const Index = () => {
 
   useEffect(() => {
     if (themes && isManualChange.current) {
-      const start = performance.now();
       const data = generateMenuItemsArray(themes);
-
-      const end = performance.now();
-      console.log('generateMenuItemsArray 执行耗时:', (end - start).toFixed(2), 'ms');
       setResourceData(data);
       setFilteredResourceData(data);
       isManualChange.current = false;
@@ -238,6 +234,14 @@ const Index = () => {
   useEffect(() => {
     setIsVisible(!!searchParams.get('language'));
   }, [location]);
+
+  useEffect(() => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.show("theme-confirm-save");
+    } else {
+      shopify.saveBar.hide("theme-confirm-save");
+    }
+  }, [confirmData]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -448,28 +452,40 @@ const Index = () => {
     }); // 提交表单请求
   };
 
+  const handleDiscard = () => {
+    shopify.saveBar.hide("theme-confirm-save");
+    const data = generateMenuItemsArray(themes);
+    setFilteredResourceData(data);
+    setConfirmData([]);
+  };
+
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
+    shopify.saveBar.hide("theme-confirm-save");
     navigate(`/app/manage_translation?language=${searchTerm}`, {
       state: { key: searchTerm },
     }); // 跳转到 /app/manage_translation
   };
 
   return (
-    <Modal
-      id="manage-modal"
-      variant="max"
-      open={isVisible}
-      onHide={onCancel}
-    >
-      <TitleBar title={t("Theme")} >
+    <>
+      <SaveBar id="theme-confirm-save">
         <button
           variant="primary"
           onClick={handleConfirm}
-          disabled={confirmLoading || !confirmData.length}
         >
-          {t("Save")}
         </button>
+        <button
+          onClick={handleDiscard}
+        >
+        </button>
+      </SaveBar>
+      {/* <Modal
+        variant="max"
+        open={isVisible}
+        onHide={onCancel}
+      > */}
+      <TitleBar title={t("Theme")} >
       </TitleBar>
       <Layout
         style={{
@@ -542,6 +558,7 @@ const Index = () => {
                           style={{ listStyle: 'none' }}
                           pagination={{
                             onChange: (page) => {
+                              handleDiscard();
                               setCurrentPage(page);
                               // 滚动到顶部
                               window.scrollTo(0, 0);
@@ -648,7 +665,7 @@ const Index = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
                       <div
                         style={{
-                          width: "100px",
+                          width: "150px",
                         }}
                       >
                         <Select
@@ -660,7 +677,7 @@ const Index = () => {
                       </div>
                       <div
                         style={{
-                          width: "100px",
+                          width: "150px",
                         }}
                       >
                         <Select
@@ -675,7 +692,15 @@ const Index = () => {
                   <Table
                     columns={resourceColumns}
                     dataSource={filteredResourceData}
-                    pagination={{ position: ["bottomCenter"], showSizeChanger: false }}
+                    pagination={
+                      {
+                        position: ["bottomCenter"],
+                        showSizeChanger: false,
+                        onChange: () => {
+                          handleDiscard();
+                        },
+                      }
+                    }
                   />
                 </Space>
               )}
@@ -692,7 +717,8 @@ const Index = () => {
           />
         )}
       </Layout>
-    </Modal>
+      {/* </Modal> */}
+    </>
   );
 };
 
