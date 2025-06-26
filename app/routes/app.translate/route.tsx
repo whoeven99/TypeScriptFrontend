@@ -167,32 +167,32 @@ const Index = () => {
 
   const translateSettings1Options = [
     {
-      label: "OpenAI/GPT-4",
+      label: t("ChatGPT 4o"),
+      description: t("translateSettings1.description1"),
+      speed: 2,
+      price: 4,
       value: "1",
     },
     {
-      label: "Google/Gemini-1.5",
+      label: t("DeepL"),
+      description: t("translateSettings1.description2"),
+      speed: 2,
+      price: 4,
       value: "2",
     },
     {
-      label: "DeepL/DeepL-translator",
+      label: t("ciwi hybrid model"),
+      description: t("translateSettings1.description3"),
+      speed: 2,
+      price: 2,
       value: "3",
     },
     {
-      label: "Qwen/Qwen-Max",
+      label: t("Google Translation"),
+      description: t("translateSettings1.description4"),
+      speed: 2,
+      price: 4,
       value: "4",
-    },
-    {
-      label: "DeepSeek-ai/DeepSeek-V3",
-      value: "5",
-    },
-    {
-      label: "Meta/Llama-3",
-      value: "6",
-    },
-    {
-      label: "Google/Google translate",
-      value: "7",
     },
   ];
 
@@ -533,85 +533,83 @@ const Index = () => {
                 {t("translateSettings.title1")}
               </Title>
             </div>
-            <>
-              <Card
-                ref={languageCardRef}
-                style={{
-                  width: "100%",
-                }}
+            <Card
+              ref={languageCardRef}
+              style={{
+                width: "100%",
+              }}
+            >
+              <Radio.Group
+                value={selectedLanguageCode}
+                onChange={onChange}
+                style={{ width: "100%" }}
               >
-                <Radio.Group
-                  value={selectedLanguageCode}
-                  onChange={onChange}
-                  style={{ width: "100%" }}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(300px, 1fr))",
+                    gap: "16px",
+                    width: "100%",
+                  }}
                 >
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(300px, 1fr))",
-                      gap: "16px",
-                      width: "100%",
-                    }}
-                  >
-                    {languageData.map((lang) => (
-                      <Radio
-                        key={lang.locale}
-                        value={lang.locale}
+                  {languageData.map((lang) => (
+                    <Radio
+                      key={lang.locale}
+                      value={lang.locale}
+                      style={{
+                        width: "100%",
+                        marginRight: 0,
+                        padding: "8px 12px",
+                        border: "1px solid #f0f0f0",
+                        borderRadius: "4px",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div
                         style={{
-                          width: "100%",
-                          marginRight: 0,
-                          padding: "8px 12px",
-                          border: "1px solid #f0f0f0",
-                          borderRadius: "4px",
+                          display: "flex",
                           alignItems: "center",
+                          justifyContent: "space-between",
+                          width: "100%",
                         }}
                       >
-                        <div
+                        <img
+                          src={lang.src[0]}
+                          alt={lang.name}
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            width: "100%",
+                            width: "30px",
+                            height: "auto",
+                            justifyContent: "center",
+                            border: "1px solid #888",
+                            borderRadius: "2px",
+                            marginRight: "8px",
                           }}
-                        >
-                          <img
-                            src={lang.src[0]}
-                            alt={lang.name}
-                            style={{
-                              width: "30px",
-                              height: "auto",
-                              justifyContent: "center",
-                              border: "1px solid #888",
-                              borderRadius: "2px",
-                              marginRight: "8px",
-                            }}
-                          />
-                          <span>{lang.name}</span>
-                        </div>
-                      </Radio>
-                    ))}
-                  </div>
-                </Radio.Group>
-                <Text
-                  type="danger"
-                  style={{ display: "block", marginTop: "12px" }}
-                >
-                  <ExclamationCircleOutlined
-                    style={{
-                      display: languageCardWarnText ? "inline-block" : "none",
-                      marginRight: "4px",
-                    }}
-                  />
-                  {t(languageCardWarnText)}
-                </Text>
-              </Card>
-              <Link to={"/app/language"} style={{ paddingLeft: "8px" }}>
-                {t(
-                  "Can't find the language you want to translate into? Click here to add a language.",
-                )}
-              </Link>
-            </>
+                        />
+                        <span>{lang.name}</span>
+                      </div>
+                    </Radio>
+                  ))}
+                </div>
+              </Radio.Group>
+              <Text
+                type="danger"
+                style={{ display: "block", marginTop: "12px" }}
+              >
+                <ExclamationCircleOutlined
+                  style={{
+                    display: languageCardWarnText ? "inline-block" : "none",
+                    marginRight: "4px",
+                  }}
+                />
+                {t(languageCardWarnText)}
+              </Text>
+            </Card>
+            <Link to={"/app/language"} style={{ paddingLeft: "8px" }}>
+              {t(
+                "Can't find the language you want to translate into? Click here to add a language.",
+              )}
+            </Link>
             <div style={{ paddingLeft: "8px" }}>
               <Title
                 style={{
@@ -622,9 +620,6 @@ const Index = () => {
               >
                 {t("translateSettings.title2")}
               </Title>
-              {/* <Text style={{ margin: "0" }}>
-                                {t("translateSettings.description")}
-                            </Text> */}
             </div>
             <Card
               style={{
@@ -749,6 +744,46 @@ const Index = () => {
                       </Col>
                     )}
                   </Row>
+                  <Radio.Group
+                    value={selectedLanguageCode}
+                    onChange={onChange}
+                    style={{ width: "100%" }}
+                  >
+                    <div
+                      style={{
+                        display: "grid",
+                        gap: "16px",
+                        width: "100%",
+                      }}
+                    >
+                      {translateSettings1Options.map((item, index) => (
+                        <Radio
+                          key={index}
+                          value={item.value}
+                          style={{
+                            width: "100%",
+                            marginRight: 0,
+                            padding: "8px 12px",
+                            border: "1px solid #f0f0f0",
+                            borderRadius: "4px",
+                            alignItems: "center",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              width: "100%",
+                            }}
+                          >
+                            <div>{item.label}: {item.description}</div>
+                            <div>{item.speed} words/s, ${item.price}/1000 words</div>
+                          </div>
+                        </Radio>
+                      ))}
+                    </div>
+                  </Radio.Group>
                 </Space>
                 <Space
                   direction="vertical"
