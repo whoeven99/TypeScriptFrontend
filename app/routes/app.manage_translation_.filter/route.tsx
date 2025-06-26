@@ -486,7 +486,7 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("filter-confirm-save");
-    setFiltersData(filtersData);
+    setFiltersData({ ...filtersData });
     setConfirmData([]);
   };
 

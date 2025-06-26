@@ -484,7 +484,7 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("delivery-confirm-save");
-    setDeliverysData(deliverysData);
+    setDeliverysData({ ...deliverysData });
     setConfirmData([]);
   };
 

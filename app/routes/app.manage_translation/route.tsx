@@ -376,7 +376,6 @@ const Index = () => {
       method: "post",
       action: "/app/manage_translation",
     });
-    shopify.saveBar.hide("article-confirm-save");
   }, []);
 
   useEffect(() => {
