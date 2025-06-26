@@ -30,7 +30,7 @@ const TranslationWarnModal: React.FC<TranslationWarnModalProps> = ({
       footer={
         <Space>
           <Button onClick={() => setShow(false)}>
-            {t("Cancel")}
+            {t("OK")}
           </Button>
           {action && actionText && (
             <Button type="primary" onClick={action}>

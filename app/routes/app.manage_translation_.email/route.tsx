@@ -662,6 +662,7 @@ const Index = () => {
                 <button
                     variant="primary"
                     onClick={handleConfirm}
+                    loading={confirmLoading && ""}
                 >
                 </button>
                 <button
@@ -773,7 +774,12 @@ const Index = () => {
                                             <Space direction="vertical" style={{ width: '100%' }}>
                                                 {resourceData.map((item: any, index: number) => {
                                                     return (
-                                                        <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
+                                                        <Space
+                                                            key={index}
+                                                            direction="vertical"
+                                                            size="small"
+                                                            style={{ width: '100%' }}
+                                                        >
                                                             <Text
                                                                 strong
                                                                 style={{
