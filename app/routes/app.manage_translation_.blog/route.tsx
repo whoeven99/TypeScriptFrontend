@@ -638,6 +638,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
+          loading={confirmLoading && ""}
         >
         </button>
         <button
