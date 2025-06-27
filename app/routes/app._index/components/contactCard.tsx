@@ -16,7 +16,6 @@ const ContactCard: React.FC<ContactCardProps> = ({ isChinese, onClick }) => {
     return (
         <Suspense fallback={<Skeleton.Button active style={{ height: 150 }} block />}>
             <Card
-                bordered={false}
                 style={{
                     height: "100%",
                     display: "flex",
