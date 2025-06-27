@@ -9,7 +9,15 @@ const NoLanguageSetCard = () => {
   const { t } = useTranslation();
 
   return (
-    <Card style={{ textAlign: "center", padding: "20px" }} bordered={false}>
+    <Card
+      style={{
+        textAlign: "center",
+        padding: "20px",
+        width: "100%",
+        maxWidth: "400px",
+      }}
+      bordered={false}
+    >
       <Title level={4}>{t("No languages to translate.")}</Title>
       <Paragraph>
         {t("Your store currently has no languages requiring translation. Please try adding a language.")}

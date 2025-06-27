@@ -194,7 +194,7 @@ const Index = () => {
       value: "2",
     },
     {
-      label: t("ciwi hybrid model"),
+      label: t("DeepSeek"),
       description: t("translateSettings1.description3"),
       speed: 1,
       price: 2,
@@ -724,10 +724,10 @@ const Index = () => {
                           }
                         >
                           <Text>{t("Speed")}: {item.speed === 2 ? t("Medium") : t("Fast")}</Text>
-                          <Text>
+                          {/* <Text>
                             |
                           </Text>
-                          <Text>{t("Rates", { price: item.price })}</Text>
+                          <Text>{t("Rates", { price: item.price })}</Text> */}
                         </Space>
                       </div>
                     </Flex>
