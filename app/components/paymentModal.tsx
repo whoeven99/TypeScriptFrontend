@@ -14,7 +14,7 @@ interface PaymentModalProps {
   setVisible: (visible: boolean) => void;
   source: string;
   target: string;
-  modal: string;
+  model: any;
   translateSettings3: string[];
   needPay: boolean;
   handleTranslate: () => void;
@@ -31,12 +31,12 @@ export interface OptionType {
   };
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source, target, modal, translateSettings3, needPay, handleTranslate }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source, target, model, translateSettings3, needPay, handleTranslate }) => {
   const [selectedOption, setSelectedOption] = useState<OptionType>();
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [credits, setCredits] = useState<number | undefined>(undefined);
-  const [multiple1, setMultiple1] = useState<number>(2);
-  const [multiple2, setMultiple2] = useState<number>(1);
+  const [multiple1, setMultiple1] = useState<number>(1);
+  const [multiple2, setMultiple2] = useState<number>(model.speed || 2);
   const { t } = useTranslation();
   const fetcher = useFetcher<any>();
   const recalculateFetcher = useFetcher<any>();
@@ -360,7 +360,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <div>
             <Text strong>{t("Translate modal: ")}</Text>
-            <Text strong>{modal}</Text>
+            <Text strong>{model.label}</Text>
           </div>
           <Text strong>*{multiple2}</Text>
         </div>

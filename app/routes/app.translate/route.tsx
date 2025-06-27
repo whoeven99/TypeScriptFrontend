@@ -6,6 +6,7 @@ import {
   Card,
   Checkbox,
   Divider,
+  Flex,
   Radio,
   RadioChangeEvent,
   Skeleton,
@@ -80,7 +81,7 @@ const Index = () => {
     "shipping",
   ]);
   const [translateSettings4, setTranslateSettings4] = useState<string>("1");
-  const [model, setModel] = useState<string>("");
+  const [model, setModel] = useState<any>("");
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [customApikeyData, setCustomApikeyData] = useState<boolean>(false);
@@ -88,6 +89,8 @@ const Index = () => {
   const [source, setSource] = useState("");
   const [target, setTarget] = useState("");
   const [languageCardWarnText, setLanguageCardWarnText] = useState<string>("");
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
   const dispatch = useDispatch();
   const languageCardRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
@@ -117,6 +120,14 @@ const Index = () => {
     if (location) {
       setSelectedLanguageCode(location?.state?.selectedLanguageCode || "");
     }
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -147,6 +158,10 @@ const Index = () => {
   }, [fetcher.data]);
 
   useEffect(() => {
+    console.log(isMobile);
+  }, [isMobile]);
+
+  useEffect(() => {
     if (languageData.length) {
       const data = languageData.map((lang) => ({
         key: lang.key,
@@ -168,7 +183,7 @@ const Index = () => {
       label: t("ChatGPT 4o"),
       description: t("translateSettings1.description1"),
       speed: 2,
-      price: 4,
+      price: 5,
       value: "1",
     },
     {
@@ -181,14 +196,14 @@ const Index = () => {
     {
       label: t("ciwi hybrid model"),
       description: t("translateSettings1.description3"),
-      speed: 2,
+      speed: 1,
       price: 2,
       value: "3",
     },
     {
       label: t("Google Translation"),
       description: t("translateSettings1.description4"),
-      speed: 2,
+      speed: 1,
       price: 4,
       value: "4",
     },
@@ -402,10 +417,10 @@ const Index = () => {
         setNeedPay(false);
         handleTranslate();
       }
-      const modalSettingOption = translateSettings1Options.find(
+      const modalSetting = translateSettings1Options.find(
         (option) => option.value === translateSettings1,
       );
-      setModel(modalSettingOption?.label || "OpenAI/GPT-4");
+      setModel(modalSetting);
     } else {
       shopify.toast.show(
         t(
@@ -643,23 +658,88 @@ const Index = () => {
                     </Title>
                     <Button
                       icon={<Icon source={PlusIcon} />}
-                      type="primary"
                       onClick={() => navigate("/app/apikeySetting")}
-                      style={{ fontSize: "1rem", margin: "0" }}
                     >
                       {t("Use private api to translate")}
                     </Button>
                   </Space>
-                  <div
+                  {/* <div
                     style={{
                       display: "grid",
+                      gridTemplateColumns: "1fr", // 每行只一列，自动换行
                       gap: "16px",
                       width: "100%",
                     }}
-                  >
-                    {translateSettings1Options.map((item, index) => (
-                      <div
+                  > */}
+                  {translateSettings1Options.map((item, index) => (
+                    <Flex
+                      key={index}
+                      style={{
+                        width: "100%",
+                        marginRight: 0,
+                        padding: "8px 12px",
+                        border: "1px solid #f0f0f0",
+                        borderRadius: "4px",
+                        alignItems: "center",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => setTranslateSettings1(item.value)}
+                    >
+                      <Radio
                         key={index}
+                        value={item.value}
+                        checked={translateSettings1 === item.value}
+                      />
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          width: "95%",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: !isMobile ? "65%" : "",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <Text>{item.label}</Text>
+                          {!isMobile
+                            &&
+                            <Text
+                              type="secondary"
+                            >
+                              : {item.description}
+                            </Text>
+                          }
+                        </div>
+                        <Space
+                          style={
+                            {
+                              justifyContent: "flex-end",
+                            }
+                          }
+                        >
+                          <Text>{t("Speed")}: {item.speed === 2 ? t("Medium") : t("Fast")}</Text>
+                          <Text>
+                            |
+                          </Text>
+                          <Text>{t("Rates", { price: item.price })}</Text>
+                        </Space>
+                      </div>
+                    </Flex>
+                  ))}
+                  {customApikeyData && (
+                    <Badge.Ribbon
+                      text={t("Private")}
+                      color="red"
+                      style={{ top: -2, right: -8 }}
+                    >
+                      <div
+                        key={8}
                         style={{
                           display: "flex", // 关键
                           width: "100%",
@@ -670,12 +750,12 @@ const Index = () => {
                           alignItems: "center",
                           cursor: "pointer",
                         }}
-                        onClick={() => setTranslateSettings1(item.value)}
+                        onClick={() => setTranslateSettings1("8")}
                       >
                         <Radio
-                          key={index}
-                          value={item.value}
-                          checked={translateSettings1 === item.value}
+                          key={8}
+                          value={"8"}
+                          checked={translateSettings1 === "8"}
                         />
                         <div
                           style={{
@@ -690,108 +770,13 @@ const Index = () => {
                               width: "50%",
                             }}
                           >
-                            <Text>{item.label}</Text>
-                            <Text
-                              type="secondary"
-                              style={{
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                                width: "100%",
-                              }}
-                            >
-                              : {item.description}
-                            </Text>
+                            <Text>{t("Google Translation")}</Text>
                           </div>
-                          <Space
-                            style={
-                              {
-                                width: "50%",
-                                justifyContent: "flex-end",
-                              }
-                            }
-                          >
-                            <Text>
-                              |
-                            </Text>
-                            <Text>{t("Speed")}: {item.speed === 2 ? t("Medium") : t("Fast")}</Text>
-                            <Text>
-                              |
-                            </Text>
-                            <Text>{t("Rates", { price: item.price })}</Text>
-                          </Space>
                         </div>
                       </div>
-                    ))}
-                    {customApikeyData && (
-                      <Badge.Ribbon
-                        text={t("Private")}
-                        color="red"
-                        style={{ top: -2, right: -8 }}
-                      >
-                        <div
-                          key={8}
-                          style={{
-                            display: "flex", // 关键
-                            width: "100%",
-                            marginRight: 0,
-                            padding: "8px 12px",
-                            border: "1px solid #f0f0f0",
-                            borderRadius: "4px",
-                            alignItems: "center",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => setTranslateSettings1("8")}
-                        >
-                          <Radio
-                            key={8}
-                            value={"8"}
-                            checked={translateSettings1 === "8"}
-                          />
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              width: "100%",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "50%",
-                              }}
-                            >
-                              <Text>{t("Google Translation")}</Text>
-                              <Text
-                                type="secondary"
-                                style={{
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  whiteSpace: "nowrap",
-                                  width: "100%",
-                                }}
-                              >
-                                : {t("Google Translation Description")}
-                              </Text>
-                            </div>
-                            <Space
-                              style={
-                                {
-                                  width: "50%",
-                                  justifyContent: "flex-end",
-                                }
-                              }
-                            >
-                              <Text>
-                                |
-                              </Text>
-                              <Text>{t("Private API")}</Text>
-                            </Space>
-                          </div>
-                        </div>
-                      </Badge.Ribbon>
-                    )}
-                  </div>
+                    </Badge.Ribbon>
+                  )}
+                  {/* </div> */}
                 </Space>
                 <Space
                   direction="vertical"
@@ -859,7 +844,7 @@ const Index = () => {
           setVisible={setShowPaymentModal}
           source={source}
           target={target}
-          modal={model}
+          model={model}
           translateSettings3={translateSettings3 || []}
           handleTranslate={handleTranslate}
           needPay={needPay}
