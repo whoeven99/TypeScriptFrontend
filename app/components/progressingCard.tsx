@@ -441,7 +441,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                         }}
                                     >
                                         <Progress
-                                            percent={status === 1 ? 100 : translateStatus === 1 ? 0 : progress}
+                                            percent={status === 1 ? 100 : translateStatus === 1 && status === 2 ? 0 : progress}
                                             status={
                                                 status === 1
                                                     ? "success"
