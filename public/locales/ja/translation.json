@@ -420,6 +420,19 @@
     "North America": "北アメリカ",
     "South America": "南アメリカ",
     "Oceania": "オセアニア",
-    "Common_Languages": "共通言語"
+    "Common_Languages": "共通言語",
+    "Speed": "速度",
+    "Rates": "料金: *{{price}}",
+    "Medium": "中",
+    "Fast": "速い",
+    "ChatGPT 4o": "ChatGPT 4o",
+    "DeepL": "DeepL",
+    "Google Translation": "Google Translation",
+    "ciwi hybrid model": "ciwi ハイブリッドモデル",
+    "translateSettings1.description1": "欧米諸国の言語に特化した翻訳モデルです。英語、フランス語、イタリア語、ドイツ語、スペイン語などの言語に対応しています。",
+    "translateSettings1.description2": "欧米諸国の言語に対応した翻訳モデルです。言語のスタイルに厳密に従わない翻訳を行います。",
+    "translateSettings1.description3": "アジア諸国の言語に特化した翻訳モデルです。中国語、日本語、韓国語などの言語に対応しています。",
+    "translateSettings1.description4": "世界中の言語に対応した翻訳モデルです。直接翻訳を使用して、広範囲の言語を翻訳します。"
+
 }   
   

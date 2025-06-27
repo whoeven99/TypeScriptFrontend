@@ -370,7 +370,7 @@
     "free": "Upgrade auf einen bezahlten Plan, genießen Sie 50% Rabatt"
   },
   "The specified fields were not found in the store.": "Die angegebenen Felder wurden nicht im Store gefunden.",
-  "Don’t prompt again next time": "Nicht erneut anzeigen",
+  "Don't prompt again next time": "Nicht erneut anzeigen",
   "Localized content:": "Lokalisierter Inhalt:",
   "Product Options": "Produktoptionen",
   "Metafield": "Metafeld",
@@ -406,7 +406,7 @@
   "Confirm": "Bestätigen",
   "Try Premium Plan": "Premium-Plan ausprobieren",
   "Free trial": "Kostenlose Testversion",
-  "Congratulations! You’ve received a 5-day free trial with full access to all features": "Glückwunsch! Sie haben eine 5-tägige kostenlose Testversion mit vollem Zugang zu allen Funktionen erhalten",
+  "Congratulations! You've received a 5-day free trial with full access to all features": "Glückwunsch! Sie haben eine 5-tägige kostenlose Testversion mit vollem Zugang zu allen Funktionen erhalten",
   "Free trial failed": "Kostenlose Testversion fehlgeschlagen",
   "Free trial started successfully": "Kostenlose Testversion erfolgreich gestartet",
   "Switcher Configuration Guide": "Sprachwechsler-Konfiguration-Leitfaden",
@@ -421,6 +421,18 @@
   "North America": "Nordamerika",
   "South America": "Südamerika",
   "Oceania": "Ozeanien",
-  "Common_Languages": "Häufige Sprachen"
+  "Common_Languages": "Häufige Sprachen",
+  "Speed": "Geschwindigkeit",
+  "Rates": "Rates: *{{price}}",
+  "Medium": "Mittel",
+  "Fast": "Schnell",
+  "ChatGPT 4o": "ChatGPT 4o",
+  "DeepL": "DeepL",
+  "ciwi hybrid model": "ciwi Hybrid-Modell",
+  "Google Translation": "Google Übersetzung",
+  "translateSettings1.description1": "Spezialisiert auf europäische und amerikanische Sprachen, Englisch, Französisch, Italienisch, Deutsch, Spanisch und ähnliche Sprachen mit hoher Flüssigkeit und Genauigkeit.",
+  "translateSettings1.description2": "Ausgewogene Übersetzung für europäische und amerikanische Sprachen. Fokussiert auf westliche Sprachübersetzung ohne strikte Einhaltung des Stils.",
+  "translateSettings1.description3": "Spezialisiert auf asiatische Sprachen, Chinesisch, Japanisch, Koreanisch und andere wichtige asiatische Sprachen.",
+  "translateSettings1.description4": "Unterstützt die meisten globalen Sprachen. Übersetzt eine breite Palette von Sprachen durch direkte Übersetzung."
 }
     
