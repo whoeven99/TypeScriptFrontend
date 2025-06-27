@@ -5,11 +5,9 @@ import {
   Button,
   Card,
   Checkbox,
-  Col,
   Divider,
   Radio,
   RadioChangeEvent,
-  Row,
   Skeleton,
   Space,
   Typography,
@@ -22,12 +20,12 @@ import { setTableData } from "~/store/modules/languageTableData";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import PaymentModal from "~/components/paymentModal";
 import ScrollNotice from "~/components/ScrollNotice";
-import styles from "./styles.module.css";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import {
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  PlusIcon
 } from '@shopify/polaris-icons';
 import axios from "axios";
 
@@ -471,7 +469,7 @@ const Index = () => {
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Button
               type="text"
-              variant="breadcrumb"
+              variant="outlined"
               onClick={handleNavigate}
               style={{ padding: "4px" }}
             >
@@ -634,141 +632,122 @@ const Index = () => {
                   size={16}
                   style={{ display: "flex" }}
                 >
-                  <div>
-                    <Space>
-                      <Title
-                        level={5}
-                        style={{ fontSize: "1rem", margin: "0" }}
-                      >
-                        {t("translateSettings1.title")}
-                      </Title>
-                      <Link
-                        to={"/app/apikeySetting"}
-                        style={{ fontSize: "1rem", margin: "0" }}
-                      >
-                        {t("Use private api to translate")}
-                      </Link>
-                    </Space>
-                  </div>
-                  <Row key={translateSettings1} gutter={[16, 16]}>
-                    {translateSettings1Options.map((option) => (
-                      <Col
-                        key={option.value}
-                        xs={24}
-                        sm={24}
-                        md={12}
-                        lg={6}
-                        style={{
-                          display: "flex",
-                          width: "100%",
-                        }}
-                      >
-                        <Button
-                          key={option.value}
-                          value={option.value}
-                          onClick={() => setTranslateSettings1(option.value)}
-                          className={styles.translateSettings1Options}
-                          style={
-                            translateSettings1 === option.value
-                              ? {
-                                borderColor: "var(--p-color-bg-fill-brand)",
-                              }
-                              : undefined
-                          }
-                        >
-                          <div
-                            style={{
-                              position: "absolute",
-                              left: "50%",
-                              transform: "translateX(-50%)",
-                              maxWidth: "100%",
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              padding: "0 8px",
-                            }}
-                          >
-                            {option.label}
-                          </div>
-                        </Button>
-                      </Col>
-                    ))}
-                    {customApikeyData && (
-                      <Col
-                        key="custom key"
-                        xs={24}
-                        sm={24}
-                        md={12}
-                        lg={6}
-                        style={{
-                          display: "flex",
-                          width: "100%",
-                        }}>
-                        <Badge.Ribbon
-                          text={t("Private")}
-                          color="red"
-                          style={{ top: -2, right: -8 }}
-                        >
-                          <Button
-                            key={"8"}
-                            value={"8"}
-                            onClick={() => setTranslateSettings1("8")}
-                            className={styles.translateSettings1Options}
-                            style={{
-                              borderColor:
-                                translateSettings1 === "8"
-                                  ? "#168c6d"
-                                  : "#d9d9d9",
-                              color:
-                                translateSettings1 === "8"
-                                  ? "#168c6d"
-                                  : "rgba(0, 0, 0, 0.88)",
-                            }}
-                          >
-                            <div
-                              style={{
-                                position: "absolute",
-                                left: "50%",
-                                transform: "translateX(-50%)",
-                                maxWidth: "100%",
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                padding: "0 8px",
-                              }}
-                            >
-                              Google Cloud Translation
-                            </div>
-                          </Button>
-                        </Badge.Ribbon>
-                      </Col>
-                    )}
-                  </Row>
-                  <Radio.Group
-                    value={selectedLanguageCode}
-                    onChange={onChange}
-                    style={{ width: "100%" }}
+                  <Space
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
                   >
-                    <div
-                      style={{
-                        display: "grid",
-                        gap: "16px",
-                        width: "100%",
-                      }}
+                    <Title
+                      level={5}
+                      style={{ fontSize: "1rem", margin: "0" }}
                     >
-                      {translateSettings1Options.map((item, index) => (
+                      {t("translateSettings1.title")}
+                    </Title>
+                    <Button
+                      icon={<Icon source={PlusIcon} />}
+                      type="primary"
+                      onClick={() => navigate("/app/apikeySetting")}
+                      style={{ fontSize: "1rem", margin: "0" }}
+                    >
+                      {t("Use private api to translate")}
+                    </Button>
+                  </Space>
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: "16px",
+                      width: "100%",
+                    }}
+                  >
+                    {translateSettings1Options.map((item, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: "flex", // 关键
+                          width: "100%",
+                          marginRight: 0,
+                          padding: "8px 12px",
+                          border: "1px solid #f0f0f0",
+                          borderRadius: "4px",
+                          alignItems: "center",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => setTranslateSettings1(item.value)}
+                      >
                         <Radio
                           key={index}
                           value={item.value}
+                          checked={translateSettings1 === item.value}
+                        />
+                        <div
                           style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            width: "100%",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "50%",
+                            }}
+                          >
+                            <Text>{item.label}</Text>
+                            <Text
+                              type="secondary"
+                              style={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                width: "100%",
+                              }}
+                            >
+                              : {item.description}
+                            </Text>
+                          </div>
+                          <Space
+                            style={
+                              {
+                                width: "50%",
+                                justifyContent: "flex-end",
+                              }
+                            }
+                          >
+                            <Text>
+                              |
+                            </Text>
+                            <Text>{t("Speed")}: {item.speed === 2 ? t("Medium") : t("Fast")}</Text>
+                            <Text>
+                              |
+                            </Text>
+                            <Text>{t("Rates", { price: item.price })}</Text>
+                          </Space>
+                        </div>
+                      </div>
+                    ))}
+                    {customApikeyData && (
+                      <Badge.Ribbon
+                        text={t("Private")}
+                        color="red"
+                        style={{ top: -2, right: -8 }}
+                      >
+                        <div
+                          key={8}
+                          style={{
+                            display: "flex", // 关键
                             width: "100%",
                             marginRight: 0,
                             padding: "8px 12px",
                             border: "1px solid #f0f0f0",
                             borderRadius: "4px",
                             alignItems: "center",
+                            cursor: "pointer",
                           }}
+                          onClick={() => setTranslateSettings1("8")}
                         >
+                          <Radio
+                            key={8}
+                            value={"8"}
+                            checked={translateSettings1 === "8"}
+                          />
                           <div
                             style={{
                               display: "flex",
@@ -777,13 +756,42 @@ const Index = () => {
                               width: "100%",
                             }}
                           >
-                            <div>{item.label}: {item.description}</div>
-                            <div>{item.speed} words/s, ${item.price}/1000 words</div>
+                            <div
+                              style={{
+                                width: "50%",
+                              }}
+                            >
+                              <Text>{t("Google Translation")}</Text>
+                              <Text
+                                type="secondary"
+                                style={{
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                  width: "100%",
+                                }}
+                              >
+                                : {t("Google Translation Description")}
+                              </Text>
+                            </div>
+                            <Space
+                              style={
+                                {
+                                  width: "50%",
+                                  justifyContent: "flex-end",
+                                }
+                              }
+                            >
+                              <Text>
+                                |
+                              </Text>
+                              <Text>{t("Private API")}</Text>
+                            </Space>
                           </div>
-                        </Radio>
-                      ))}
-                    </div>
-                  </Radio.Group>
+                        </div>
+                      </Badge.Ribbon>
+                    )}
+                  </div>
                 </Space>
                 <Space
                   direction="vertical"
@@ -842,8 +850,9 @@ const Index = () => {
           </Space>
         ) : (
           <NoLanguageSetCard />
-        )}
-      </Space>
+        )
+        }
+      </Space >
       {showPaymentModal && (
         <PaymentModal
           visible={showPaymentModal}
@@ -856,7 +865,7 @@ const Index = () => {
           needPay={needPay}
         />
       )}
-    </Page>
+    </Page >
   );
 };
 
