@@ -370,7 +370,7 @@
         "free": "Uppgradera till betalplan, njut av 50% rabatt"
     },
     "The specified fields were not found in the store.": "De angivna fälten hittades inte i butiken.",
-    "Don’t prompt again next time": "Fråga inte igen nästa gång",
+    "Don't prompt again next time": "Fråga inte igen nästa gång",
     "Localized content:": "Lokaliserat innehåll:",
     "Product Options": "Produktalternativ",
     "Metafield": "Metafält",
@@ -406,7 +406,7 @@
     "Confirm": "Bekräfta",
     "Try Premium Plan": "Prova Premium-planen",
     "Free trial": "Gratis provperiod",
-    "Congratulations! You’ve received a 5-day free trial with full access to all features": "Grattis! Du har fått en 5-dagars gratis provperiod med full tillgång till alla funktioner",
+    "Congratulations! You've received a 5-day free trial with full access to all features": "Grattis! Du har fått en 5-dagars gratis provperiod med full tillgång till alla funktioner",
     "Free trial failed": "Gratis provperiod misslyckades",
     "Free trial started successfully": "Gratis provperiod startade",
     "Switcher Configuration Guide": "Väljarens konfigurationsguide",
@@ -421,6 +421,18 @@
     "North America": "Nordamerika",
     "South America": "Sydamerika",
     "Oceania": "Oceanien",
-    "Common_Languages": "Vanliga språk"
+    "Common_Languages": "Vanliga språk",
+    "Speed": "Hastighet",
+    "Rates": "Priser: *{{price}}",
+    "Medium": "Medel",
+    "Fast": "Snabb",
+    "ChatGPT 4o": "ChatGPT 4o",
+    "DeepL": "DeepL",
+    "Google Translation": "Google översättning",
+    "DeepSeek": "DeepSeek",
+    "translateSettings1.description1": "Specialiserad på europeiska och amerikanska språk, engelska, franska, italienska, tyska, spanska och liknande språk med hög flyt och noggrannhet.",
+    "translateSettings1.description2": "Balanserad översättning för europeiska och amerikanska språk. Fokuserad på västerländsk språköversättning utan strikt följande av stil.",
+    "translateSettings1.description3": "Specialiserad på asiatiska språk, kinesiska, japanska, koreanska och andra viktiga asiatiska språk.",
+    "translateSettings1.description4": "Stöder de flesta globala språk. Översätter ett brett utbud av språk genom direkt översättning."
 }   
   

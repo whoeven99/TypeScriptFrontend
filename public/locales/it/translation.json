@@ -419,6 +419,20 @@
     "North America": "Nord America",
     "South America": "Sud America",
     "Oceania": "Oceania",
-    "Common_Languages": "Lingue comuni"
+    "Common_Languages": "Lingue comuni",
+    "Speed": "Velocità",
+    "Rates": "Tassi: *{{price}}",
+    "Medium": "Medio",
+    "Fast": "Veloce",
+    "ChatGPT 4o": "ChatGPT 4o",
+    "DeepL": "DeepL",
+    "Google Translation": "Traduzione Google",
+    "DeepSeek": "DeepSeek",
+    "translateSettings1.description1": "Specializzato in lingue europee e americane, inglese, francese, italiano, tedesco, spagnolo e altre lingue simili con alta fluidità e precisione.",
+    "translateSettings1.description2": "Traduzione bilanciata per le lingue europee e americane. Focalizzato sulla traduzione delle lingue occidentali senza una stretta adesione allo stile.",
+    "translateSettings1.description3": "Specializzato in lingue asiatiche, cinese, giapponese, coreano e altre lingue importanti asiatiche.",
+    "translateSettings1.description4": "Supporta la maggior parte delle lingue globali. Traduce una vasta gamma di lingue utilizzando la traduzione diretta."
+    
+
 }
   

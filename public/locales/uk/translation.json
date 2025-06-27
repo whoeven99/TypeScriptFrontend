@@ -406,7 +406,7 @@
     "Confirm": "Підтвердити",
     "Try Premium Plan": "Спробувати план Преміум",
     "Free trial": "Безкоштовна пробна версія",
-    "Congratulations! You’ve received a 5-day free trial with full access to all features": "Вітаємо! Ви отримали 5-денну безкоштовну пробну версію з повним доступом до всіх функцій",
+    "Congratulations! You've received a 5-day free trial with full access to all features": "Вітаємо! Ви отримали 5-денну безкоштовну пробну версію з повним доступом до всіх функцій",
     "Free trial failed": "Безкоштовна пробна версія не вдалася",
     "Free trial started successfully": "Безкоштовна пробна версія успішно запущена",
     "Switcher Configuration Guide": "Конфігурація перемикача",
@@ -421,5 +421,17 @@
     "North America": "Північна Америка",
     "South America": "Південна Америка",
     "Oceania": "Океанія",
-    "Common_Languages": "Спільні мови"
+    "Common_Languages": "Спільні мови",
+    "Speed": "Швидкість",
+    "Rates": "Ціни: *{{price}}",
+    "Medium": "Середня",
+    "Fast": "Швидка",
+    "ChatGPT 4o": "ChatGPT 4o",
+    "DeepL": "DeepL",
+    "Google Translation": "Google Translation",
+    "DeepSeek": "DeepSeek",
+    "translateSettings1.description1": "Спеціалізується на європейських та американських мовах, англійській, французькій, італійській, німецькій, іспанській та подібних мовах з високою плавністю та точністю.",
+    "translateSettings1.description2": "Збалансований переклад для європейських та американських мов. Фокусується на західних мовних перекладах без суворого дотримання стилю.",
+    "translateSettings1.description3": "Спеціалізується на азійських мовах, китайській, японській, корейській та інших основних азійських мовах.",
+    "translateSettings1.description4": "Підтримує більшість світових мов. Перекладає широкий спектр мов за допомогою прямого перекладу."
 }

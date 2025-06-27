@@ -420,6 +420,18 @@
     "North America": "北美洲",
     "South America": "南美洲",
     "Oceania": "大洋洲",
-    "Common_Languages": "常用語言"
+    "Common_Languages": "常用語言",
+    "Speed": "速度",
+    "Rates": "費率：*{{price}}",
+    "Medium": "中等",
+    "Fast": "快速",
+    "ChatGPT 4o": "ChatGPT 4o",
+    "DeepL": "DeepL",
+    "DeepSeek": "DeepSeek",
+    "Google Translation": "Google 翻譯",
+    "translateSettings1.description1": "專注於歐洲和美洲語言，英語、法語、義大利語、德語、西班牙語和類似的語言，具有高流利度和準確性。",
+    "translateSettings1.description2": "平衡翻譯歐洲和美洲語言。專注於西方語言翻譯，沒有嚴格的風格遵循。",
+    "translateSettings1.description3": "專注於亞洲語言，中文、日語、韓語和其他主要亞洲語言。",
+    "translateSettings1.description4": "支持大多數全球語言。使用直接翻譯翻譯多種語言。"
 }
 
