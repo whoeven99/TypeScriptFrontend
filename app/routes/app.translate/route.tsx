@@ -5,11 +5,9 @@ import {
   Button,
   Card,
   Checkbox,
-  Col,
   Divider,
   Radio,
   RadioChangeEvent,
-  Row,
   Skeleton,
   Space,
   Typography,
@@ -22,12 +20,12 @@ import { setTableData } from "~/store/modules/languageTableData";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import PaymentModal from "~/components/paymentModal";
 import ScrollNotice from "~/components/ScrollNotice";
-import styles from "./styles.module.css";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import {
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  PlusIcon
 } from '@shopify/polaris-icons';
 import axios from "axios";
 
@@ -167,32 +165,32 @@ const Index = () => {
 
   const translateSettings1Options = [
     {
-      label: "OpenAI/GPT-4",
+      label: t("ChatGPT 4o"),
+      description: t("translateSettings1.description1"),
+      speed: 2,
+      price: 4,
       value: "1",
     },
     {
-      label: "Google/Gemini-1.5",
+      label: t("DeepL"),
+      description: t("translateSettings1.description2"),
+      speed: 2,
+      price: 4,
       value: "2",
     },
     {
-      label: "DeepL/DeepL-translator",
+      label: t("ciwi hybrid model"),
+      description: t("translateSettings1.description3"),
+      speed: 2,
+      price: 2,
       value: "3",
     },
     {
-      label: "Qwen/Qwen-Max",
+      label: t("Google Translation"),
+      description: t("translateSettings1.description4"),
+      speed: 2,
+      price: 4,
       value: "4",
-    },
-    {
-      label: "DeepSeek-ai/DeepSeek-V3",
-      value: "5",
-    },
-    {
-      label: "Meta/Llama-3",
-      value: "6",
-    },
-    {
-      label: "Google/Google translate",
-      value: "7",
     },
   ];
 
@@ -471,7 +469,7 @@ const Index = () => {
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Button
               type="text"
-              variant="breadcrumb"
+              variant="outlined"
               onClick={handleNavigate}
               style={{ padding: "4px" }}
             >
@@ -533,85 +531,83 @@ const Index = () => {
                 {t("translateSettings.title1")}
               </Title>
             </div>
-            <>
-              <Card
-                ref={languageCardRef}
-                style={{
-                  width: "100%",
-                }}
+            <Card
+              ref={languageCardRef}
+              style={{
+                width: "100%",
+              }}
+            >
+              <Radio.Group
+                value={selectedLanguageCode}
+                onChange={onChange}
+                style={{ width: "100%" }}
               >
-                <Radio.Group
-                  value={selectedLanguageCode}
-                  onChange={onChange}
-                  style={{ width: "100%" }}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(300px, 1fr))",
+                    gap: "16px",
+                    width: "100%",
+                  }}
                 >
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(300px, 1fr))",
-                      gap: "16px",
-                      width: "100%",
-                    }}
-                  >
-                    {languageData.map((lang) => (
-                      <Radio
-                        key={lang.locale}
-                        value={lang.locale}
+                  {languageData.map((lang) => (
+                    <Radio
+                      key={lang.locale}
+                      value={lang.locale}
+                      style={{
+                        width: "100%",
+                        marginRight: 0,
+                        padding: "8px 12px",
+                        border: "1px solid #f0f0f0",
+                        borderRadius: "4px",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div
                         style={{
-                          width: "100%",
-                          marginRight: 0,
-                          padding: "8px 12px",
-                          border: "1px solid #f0f0f0",
-                          borderRadius: "4px",
+                          display: "flex",
                           alignItems: "center",
+                          justifyContent: "space-between",
+                          width: "100%",
                         }}
                       >
-                        <div
+                        <img
+                          src={lang.src[0]}
+                          alt={lang.name}
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            width: "100%",
+                            width: "30px",
+                            height: "auto",
+                            justifyContent: "center",
+                            border: "1px solid #888",
+                            borderRadius: "2px",
+                            marginRight: "8px",
                           }}
-                        >
-                          <img
-                            src={lang.src[0]}
-                            alt={lang.name}
-                            style={{
-                              width: "30px",
-                              height: "auto",
-                              justifyContent: "center",
-                              border: "1px solid #888",
-                              borderRadius: "2px",
-                              marginRight: "8px",
-                            }}
-                          />
-                          <span>{lang.name}</span>
-                        </div>
-                      </Radio>
-                    ))}
-                  </div>
-                </Radio.Group>
-                <Text
-                  type="danger"
-                  style={{ display: "block", marginTop: "12px" }}
-                >
-                  <ExclamationCircleOutlined
-                    style={{
-                      display: languageCardWarnText ? "inline-block" : "none",
-                      marginRight: "4px",
-                    }}
-                  />
-                  {t(languageCardWarnText)}
-                </Text>
-              </Card>
-              <Link to={"/app/language"} style={{ paddingLeft: "8px" }}>
-                {t(
-                  "Can't find the language you want to translate into? Click here to add a language.",
-                )}
-              </Link>
-            </>
+                        />
+                        <span>{lang.name}</span>
+                      </div>
+                    </Radio>
+                  ))}
+                </div>
+              </Radio.Group>
+              <Text
+                type="danger"
+                style={{ display: "block", marginTop: "12px" }}
+              >
+                <ExclamationCircleOutlined
+                  style={{
+                    display: languageCardWarnText ? "inline-block" : "none",
+                    marginRight: "4px",
+                  }}
+                />
+                {t(languageCardWarnText)}
+              </Text>
+            </Card>
+            <Link to={"/app/language"} style={{ paddingLeft: "8px" }}>
+              {t(
+                "Can't find the language you want to translate into? Click here to add a language.",
+              )}
+            </Link>
             <div style={{ paddingLeft: "8px" }}>
               <Title
                 style={{
@@ -622,9 +618,6 @@ const Index = () => {
               >
                 {t("translateSettings.title2")}
               </Title>
-              {/* <Text style={{ margin: "0" }}>
-                                {t("translateSettings.description")}
-                            </Text> */}
             </div>
             <Card
               style={{
@@ -639,116 +632,166 @@ const Index = () => {
                   size={16}
                   style={{ display: "flex" }}
                 >
-                  <div>
-                    <Space>
-                      <Title
-                        level={5}
-                        style={{ fontSize: "1rem", margin: "0" }}
-                      >
-                        {t("translateSettings1.title")}
-                      </Title>
-                      <Link
-                        to={"/app/apikeySetting"}
-                        style={{ fontSize: "1rem", margin: "0" }}
-                      >
-                        {t("Use private api to translate")}
-                      </Link>
-                    </Space>
-                  </div>
-                  <Row key={translateSettings1} gutter={[16, 16]}>
-                    {translateSettings1Options.map((option) => (
-                      <Col
-                        key={option.value}
-                        xs={24}
-                        sm={24}
-                        md={12}
-                        lg={6}
+                  <Space
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                  >
+                    <Title
+                      level={5}
+                      style={{ fontSize: "1rem", margin: "0" }}
+                    >
+                      {t("translateSettings1.title")}
+                    </Title>
+                    <Button
+                      icon={<Icon source={PlusIcon} />}
+                      type="primary"
+                      onClick={() => navigate("/app/apikeySetting")}
+                      style={{ fontSize: "1rem", margin: "0" }}
+                    >
+                      {t("Use private api to translate")}
+                    </Button>
+                  </Space>
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: "16px",
+                      width: "100%",
+                    }}
+                  >
+                    {translateSettings1Options.map((item, index) => (
+                      <div
+                        key={index}
                         style={{
-                          display: "flex",
+                          display: "flex", // 关键
                           width: "100%",
+                          marginRight: 0,
+                          padding: "8px 12px",
+                          border: "1px solid #f0f0f0",
+                          borderRadius: "4px",
+                          alignItems: "center",
+                          cursor: "pointer",
                         }}
+                        onClick={() => setTranslateSettings1(item.value)}
                       >
-                        <Button
-                          key={option.value}
-                          value={option.value}
-                          onClick={() => setTranslateSettings1(option.value)}
-                          className={styles.translateSettings1Options}
-                          style={
-                            translateSettings1 === option.value
-                              ? {
-                                borderColor: "var(--p-color-bg-fill-brand)",
-                              }
-                              : undefined
-                          }
+                        <Radio
+                          key={index}
+                          value={item.value}
+                          checked={translateSettings1 === item.value}
+                        />
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            width: "100%",
+                          }}
                         >
                           <div
                             style={{
-                              position: "absolute",
-                              left: "50%",
-                              transform: "translateX(-50%)",
-                              maxWidth: "100%",
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              padding: "0 8px",
+                              width: "50%",
                             }}
                           >
-                            {option.label}
+                            <Text>{item.label}</Text>
+                            <Text
+                              type="secondary"
+                              style={{
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                width: "100%",
+                              }}
+                            >
+                              : {item.description}
+                            </Text>
                           </div>
-                        </Button>
-                      </Col>
+                          <Space
+                            style={
+                              {
+                                width: "50%",
+                                justifyContent: "flex-end",
+                              }
+                            }
+                          >
+                            <Text>
+                              |
+                            </Text>
+                            <Text>{t("Speed")}: {item.speed === 2 ? t("Medium") : t("Fast")}</Text>
+                            <Text>
+                              |
+                            </Text>
+                            <Text>{t("Rates", { price: item.price })}</Text>
+                          </Space>
+                        </div>
+                      </div>
                     ))}
                     {customApikeyData && (
-                      <Col
-                        key="custom key"
-                        xs={24}
-                        sm={24}
-                        md={12}
-                        lg={6}
-                        style={{
-                          display: "flex",
-                          width: "100%",
-                        }}>
-                        <Badge.Ribbon
-                          text={t("Private")}
-                          color="red"
-                          style={{ top: -2, right: -8 }}
+                      <Badge.Ribbon
+                        text={t("Private")}
+                        color="red"
+                        style={{ top: -2, right: -8 }}
+                      >
+                        <div
+                          key={8}
+                          style={{
+                            display: "flex", // 关键
+                            width: "100%",
+                            marginRight: 0,
+                            padding: "8px 12px",
+                            border: "1px solid #f0f0f0",
+                            borderRadius: "4px",
+                            alignItems: "center",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => setTranslateSettings1("8")}
                         >
-                          <Button
-                            key={"8"}
+                          <Radio
+                            key={8}
                             value={"8"}
-                            onClick={() => setTranslateSettings1("8")}
-                            className={styles.translateSettings1Options}
+                            checked={translateSettings1 === "8"}
+                          />
+                          <div
                             style={{
-                              borderColor:
-                                translateSettings1 === "8"
-                                  ? "#168c6d"
-                                  : "#d9d9d9",
-                              color:
-                                translateSettings1 === "8"
-                                  ? "#168c6d"
-                                  : "rgba(0, 0, 0, 0.88)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              width: "100%",
                             }}
                           >
                             <div
                               style={{
-                                position: "absolute",
-                                left: "50%",
-                                transform: "translateX(-50%)",
-                                maxWidth: "100%",
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                padding: "0 8px",
+                                width: "50%",
                               }}
                             >
-                              Google Cloud Translation
+                              <Text>{t("Google Translation")}</Text>
+                              <Text
+                                type="secondary"
+                                style={{
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                  width: "100%",
+                                }}
+                              >
+                                : {t("Google Translation Description")}
+                              </Text>
                             </div>
-                          </Button>
-                        </Badge.Ribbon>
-                      </Col>
+                            <Space
+                              style={
+                                {
+                                  width: "50%",
+                                  justifyContent: "flex-end",
+                                }
+                              }
+                            >
+                              <Text>
+                                |
+                              </Text>
+                              <Text>{t("Private API")}</Text>
+                            </Space>
+                          </div>
+                        </div>
+                      </Badge.Ribbon>
                     )}
-                  </Row>
+                  </div>
                 </Space>
                 <Space
                   direction="vertical"
@@ -807,8 +850,9 @@ const Index = () => {
           </Space>
         ) : (
           <NoLanguageSetCard />
-        )}
-      </Space>
+        )
+        }
+      </Space >
       {showPaymentModal && (
         <PaymentModal
           visible={showPaymentModal}
@@ -821,7 +865,7 @@ const Index = () => {
           needPay={needPay}
         />
       )}
-    </Page>
+    </Page >
   );
 };
 

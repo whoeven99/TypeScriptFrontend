@@ -420,5 +420,19 @@
   "North America": "北美洲",
   "South America": "南美洲",
   "Oceania": "大洋洲",
-  "Common_Languages": "常用语言"
+  "Common_Languages": "常用语言",
+  "Speed": "速度",
+  "Rates": "费率：*{{price}}",
+  "Medium": "中等",
+  "Fast": "快速",
+  "ChatGPT 4o": "ChatGPT 4o",
+  "DeepL": "DeepL",
+  "ciwi hybrid model": "ciwi 混合模型",
+  "Google Translation": "Google Translation",
+  "Private API": "私有 API",
+  "translateSettings1.description1": "擅长英语、西班牙语、法语、意大利语等",
+  "translateSettings1.description2": "擅长英语、西班牙语、法语、意大利语等",
+  "translateSettings1.description3": "擅长英语、西班牙语、法语、意大利语等",
+  "translateSettings1.description4": "擅长英语、西班牙语、法语、意大利语等",
+  "Google Translation Description": "擅长英语、西班牙语、法语、意大利语等"
 }

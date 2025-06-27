@@ -116,7 +116,6 @@ export default async function handleRequest(
     );
   }
 
-
   let markup = renderToString(<MainApp />);
 
   let head = renderHeadToString({ request, remixContext, Head })
