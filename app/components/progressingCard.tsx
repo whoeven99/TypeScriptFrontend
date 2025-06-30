@@ -114,7 +114,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                 }
             };
         }
-    }, [status]); // 添加 item 到依赖数组
+    }, [status, item]); // 添加 item 到依赖数组
 
     useEffect(() => {
         if (fetcher.data?.translatingLanguage) {
@@ -531,7 +531,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                             block
                                             type="primary"
                                             onClick={handleReTranslate}
-                                            loading={translateFetcher.state === "submitting"}   
+                                            loading={translateFetcher.state === "submitting"}
                                         >
                                             {t("progressing.reTranslate")}
                                         </Button>
