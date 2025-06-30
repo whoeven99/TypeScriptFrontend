@@ -7,6 +7,7 @@ import {
   Checkbox,
   Divider,
   Flex,
+  Input,
   Radio,
   RadioChangeEvent,
   Skeleton,
@@ -80,7 +81,15 @@ const Index = () => {
     "delivery",
     "shipping",
   ]);
-  const [translateSettings4, setTranslateSettings4] = useState<string>("1");
+  const [translateSettings4, setTranslateSettings4] = useState<{
+    option1: string;
+    option2: string;
+    option3: string;
+  }>({
+    option1: "",
+    option2: "",
+    option3: "",
+  });
   const [model, setModel] = useState<any>("");
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -103,6 +112,10 @@ const Index = () => {
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
+
+  useEffect(() => {
+    console.log(translateSettings4);
+  }, [translateSettings4]);
 
   useEffect(() => {
     const languageFormData = new FormData();
@@ -337,21 +350,6 @@ const Index = () => {
       label: "handle",
       value: "handle",
     }
-  ];
-
-  const translateSettings4Options = [
-    {
-      label: t("translateSettings4Options.option1"),
-      value: "1",
-    },
-    {
-      label: t("translateSettings4Options.option1"),
-      value: "2",
-    },
-    {
-      label: t("translateSettings4Options.option1"),
-      value: "3",
-    },
   ];
 
   const onChange = (e: RadioChangeEvent) => {
@@ -829,6 +827,36 @@ const Index = () => {
                     }}
                     onChange={(e) => handleTranslateSettings3Change(e)}
                   ></Checkbox.Group>
+                </Space>
+                <Space
+                  direction="vertical"
+                  size={16}
+                  style={{ display: "flex" }}
+                >
+                  <div>
+                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+                      {t("translateSettings4.title")}
+                    </Title>
+                    <Text type="secondary">{t("translateSettings4.description")}</Text>
+                  </div>
+                  <Space
+                    direction="vertical"
+                    style={{ width: "100%" }}
+                  >
+                    <Text strong>{t("translateSettings4.apprules")}</Text>
+                    <div>
+                      <Text>{t("translateSettings4.title1")}</Text>
+                      <Input style={{ width: "100%" }} value={translateSettings4.option1} onChange={(e) => setTranslateSettings4({ ...translateSettings4, option1: e.target.value })}></Input>
+                    </div>
+                    <div>
+                      <Text>{t("translateSettings4.title2")}</Text>
+                      <Input style={{ width: "100%" }} value={translateSettings4.option2} onChange={(e) => setTranslateSettings4({ ...translateSettings4, option2: e.target.value })}></Input>
+                    </div>
+                    <div>
+                      <Text>{t("translateSettings4.title3")}</Text>
+                      <Input style={{ width: "100%" }} value={translateSettings4.option3} onChange={(e) => setTranslateSettings4({ ...translateSettings4, option3: e.target.value })}></Input>
+                    </div>
+                  </Space>
                 </Space>
               </Space>
             </Card>

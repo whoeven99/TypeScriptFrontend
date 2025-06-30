@@ -225,9 +225,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       searchTerm,
       products,
     });
-  } catch (error) {
-    console.error("Error load product:", error);
-    throw new Response("Error load product", { status: 500 });
+  } catch (error: any) {
+    console.error("Error load product:", error?.errors);
+    console.error("Error load product:", error?.errors?.graphQLErrors);
   }
 };
 
