@@ -89,21 +89,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                     action: "/app",
                 });
 
-                // 项目计数请求
-                // const itemsFormData = new FormData();
-                // itemsFormData.append(
-                //     "itemsCount",
-                //     JSON.stringify({
-                //         source: source,
-                //         target: target,
-                //         resourceType: item, // 使用当前的 item
-                //     }),
-                // );
-
-                // itemsFetcher.submit(itemsFormData, {
-                //     method: "post",
-                //     action: "/app/manage_translation",
-                // });
 
                 async function getUserValue() {
                     const userValue = await GetUserValue({ shop: shop, server });
@@ -129,7 +114,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                 }
             };
         }
-    }, [status, source, target, item, translateFetcher.data]); // 添加 item 到依赖数组
+    }, [status, item]); // 添加 item 到依赖数组
 
     useEffect(() => {
         if (fetcher.data?.translatingLanguage) {
@@ -546,10 +531,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                             block
                                             type="primary"
                                             onClick={handleReTranslate}
-                                            style={{
-                                                marginTop: "auto",
-                                                alignItems: "flex-end"
-                                            }}
+                                            loading={translateFetcher.state === "submitting"}
                                         >
                                             {t("progressing.reTranslate")}
                                         </Button>
