@@ -327,6 +327,10 @@ const Index = () => {
       value: "notifications",
     },
     {
+      label: t("Policies"),
+      value: "policies",
+    },
+    {
       label: t("Navigation"),
       value: "navigation",
     },
@@ -448,7 +452,7 @@ const Index = () => {
 
   const handleTranslateSettings2Change = (value: string[]) => {
     if (!value.length) {
-      shopify.toast.show("Select at least one language pack")
+      shopify.toast.show(t("Select at least one language pack"))
       return;
     } else {
       setTranslateSettings2(value)
@@ -457,7 +461,7 @@ const Index = () => {
 
   const handleTranslateSettings3Change = (value: string[]) => {
     if (!value.length) {
-      shopify.toast.show("Select at least one translation item")
+      shopify.toast.show(t("Select at least one translation item"))
       return;
     } else {
       setTranslateSettings3(value)
@@ -828,7 +832,7 @@ const Index = () => {
                     onChange={(e) => handleTranslateSettings3Change(e)}
                   ></Checkbox.Group>
                 </Space>
-                <Space
+                {/* <Space
                   direction="vertical"
                   size={16}
                   style={{ display: "flex" }}
@@ -857,7 +861,7 @@ const Index = () => {
                       <Input style={{ width: "100%" }} value={translateSettings4.option3} onChange={(e) => setTranslateSettings4({ ...translateSettings4, option3: e.target.value })}></Input>
                     </div>
                   </Space>
-                </Space>
+                </Space> */}
               </Space>
             </Card>
           </Space>

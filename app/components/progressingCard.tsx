@@ -179,7 +179,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                 setItem("Shipping");
                 return 30;
             case "SHOP_POLICY":
-                setItem("Shipping");
+                setItem("Policies");
                 return 40;
             case "EMAIL_TEMPLATE":
                 setItem("Shipping");

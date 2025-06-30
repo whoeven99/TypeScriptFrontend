@@ -252,6 +252,7 @@ const Index = () => {
     { label: t("Metaobjects"), value: "metaobject" },
     { label: t("Navigation"), value: "navigation" },
     { label: t("Email"), value: "email" },
+    { label: t("Policies"), value: "policy" },
     { label: t("Delivery"), value: "delivery" },
     { label: t("Shipping"), value: "shipping" },
   ]
@@ -772,7 +773,7 @@ const Index = () => {
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
               <Spin />
             </div>
-          ) : navigations.nodes.length ? (
+          ) : navigationsData?.nodes?.length ? (
             <>
               {!isMobile && (
                 <Sider

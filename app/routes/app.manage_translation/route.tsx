@@ -267,22 +267,22 @@ const Index = () => {
       sync_status: false,
       navigation: "email",
     },
-    // {
-    //   key: "policies",
-    //   title: t("Policies"),
-    //   allTranslatedItems:
-    //     languageItemsData.find(
-    //       (item: any) =>
-    //         item?.language === current && item?.type === "SHOP_POLICY",
-    //     )?.translatedNumber ?? undefined,
-    //   allItems:
-    //     languageItemsData.find(
-    //       (item: any) =>
-    //         item?.language === current && item?.type === "SHOP_POLICY",
-    //     )?.totalNumber ?? undefined,
-    //   sync_status: false,
-    //   navigation: "policy",
-    // },
+    {
+      key: "policies",
+      title: t("Policies"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "SHOP_POLICY",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "SHOP_POLICY",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "policy",
+    },
     {
       key: "shop",
       title: t("Shop"),
