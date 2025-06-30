@@ -332,22 +332,22 @@ const Index = () => {
         );
       },
     },
-    {
-      title: t("Translate"),
-      width: "10%",
-      render: (_: any, record: TableDataType) => {
-        return (
-          <Button
-            onClick={() => {
-              handleTranslate("SHOP_POLICY", record?.key || "", record?.type || "", record?.default_language || "");
-            }}
-            loading={loadingItems.includes(record?.key || "")}
-          >
-            {t("Translate")}
-          </Button>
-        );
-      },
-    },
+    // {
+    //   title: t("Translate"),
+    //   width: "10%",
+    //   render: (_: any, record: TableDataType) => {
+    //     return (
+    //       <Button
+    //         onClick={() => {
+    //           handleTranslate("SHOP_POLICY", record?.key || "", record?.type || "", record?.default_language || "");
+    //         }}
+    //         loading={loadingItems.includes(record?.key || "")}
+    //       >
+    //         {t("Translate")}
+    //       </Button>
+    //     );
+    //   },
+    // },
   ];
 
   const handleInputChange = (key: string, value: string) => {
@@ -589,7 +589,7 @@ const Index = () => {
                                   record={item}
                                 />
                               </div>
-                              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              {/* <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                 <Button
                                   onClick={() => {
                                     handleTranslate("ARTICLE", item?.key || "", item?.type || "", item?.default_language || "");
@@ -598,7 +598,7 @@ const Index = () => {
                                 >
                                   {t("Translate")}
                                 </Button>
-                              </div>
+                              </div> */}
                               <Divider
                                 style={{
                                   margin: "8px 0"
