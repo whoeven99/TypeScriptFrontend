@@ -16,7 +16,6 @@ const NoLanguageSetCard = () => {
         width: "100%",
         maxWidth: "400px",
       }}
-      bordered={false}
     >
       <Title level={4}>{t("No languages to translate.")}</Title>
       <Paragraph>

@@ -155,7 +155,13 @@ const Index = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
-    return !!searchParams.get('language');
+    // 更安全的状态初始化
+    try {
+      return !!searchParams.get('language');
+    } catch (error) {
+      console.error('Error initializing isVisible state:', error);
+      return false;
+    }
   });
 
   const [metafieldsData, setMetafieldsData] = useState(metafields);
@@ -179,6 +185,7 @@ const Index = () => {
     { label: t("Metaobjects"), value: "metaobject" },
     { label: t("Navigation"), value: "navigation" },
     { label: t("Email"), value: "email" },
+    { label: t("Policies"), value: "policy" },
     { label: t("Delivery"), value: "delivery" },
     { label: t("Shipping"), value: "shipping" },
   ]
@@ -502,7 +509,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={confirmLoading && ""}
+          loading={confirmLoading ? "true" : undefined}
         >
         </button>
         <button
@@ -528,7 +535,7 @@ const Index = () => {
         >
           {isLoading ? (
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
-          ) : metafields.nodes.length ? (
+          ) : metafieldsData?.nodes?.length ? (
             <Content
               style={{
                 padding: "0 24px",

@@ -166,6 +166,7 @@ const Index = () => {
     { label: t("Metaobjects"), value: "metaobject" },
     { label: t("Navigation"), value: "navigation" },
     { label: t("Email"), value: "email" },
+    { label: t("Policies"), value: "policy" },
     { label: t("Delivery"), value: "delivery" },
     { label: t("Shipping"), value: "shipping" },
   ]
@@ -514,7 +515,7 @@ const Index = () => {
         >
           {isLoading ? (
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
-          ) : metaobjects.nodes.length ? (
+          ) : metaobjectsData?.nodes?.length ? (
             <Content
               style={{
                 padding: "0 24px",

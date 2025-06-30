@@ -127,9 +127,7 @@ const Index = () => {
               {t("dashboard.description1")}
             </Text>
           </div>
-          <Card
-            bordered={false}
-          >
+          <Card>
             <Space direction="vertical" size="middle" style={{ display: "flex" }}>
               <Title level={4}>
                 {t("transLanguageCard1.title")}
@@ -156,7 +154,6 @@ const Index = () => {
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
               <Card
-                bordered={false}
                 style={{
                   height: "100%",
                 }}
@@ -191,7 +188,6 @@ const Index = () => {
             </Col>
             <Col xs={24} sm={24} md={12}>
               <Card
-                bordered={false}
                 style={{
                   height: "100%",
                 }}
@@ -224,9 +220,7 @@ const Index = () => {
               {t("dashboard.description2")}
             </Text>
           </div>
-          <Card
-            bordered={false}
-          >
+          <Card>
             <Space direction="vertical" size="middle" style={{ display: "flex" }}>
               <Title level={4}>
                 {t("transCurrencyCard1.title")}
@@ -252,7 +246,6 @@ const Index = () => {
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
               <Card
-                bordered={false}
                 style={{
                   height: "100%",
                   display: "flex",
@@ -294,7 +287,6 @@ const Index = () => {
             </Col>
             <Col xs={24} sm={24} md={12}>
               <Card
-                bordered={false}
                 style={{
                   height: "100%",
                   display: "flex",
@@ -338,7 +330,6 @@ const Index = () => {
             </Text>
           </div>
           <Card
-            bordered={false}
           >
             <Space direction="vertical" size="middle" style={{ display: "flex" }}>
               <div

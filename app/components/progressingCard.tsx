@@ -29,6 +29,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
     const [resourceType, setResourceType] = useState<string>("");
     const [progress, setProgress] = useState<number>(0);
     const [status, setStatus] = useState<number>(0);
+    const [translateStatus, setTranslateStatus] = useState<number>(1);
     const [loading, setLoading] = useState<boolean>(true);
     const [isMobile, setIsMobile] = useState<boolean>(false);
     const { t } = useTranslation();
@@ -88,25 +89,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                     action: "/app",
                 });
 
-                // 项目计数请求
-                // const itemsFormData = new FormData();
-                // itemsFormData.append(
-                //     "itemsCount",
-                //     JSON.stringify({
-                //         source: source,
-                //         target: target,
-                //         resourceType: item, // 使用当前的 item
-                //     }),
-                // );
-
-                // itemsFetcher.submit(itemsFormData, {
-                //     method: "post",
-                //     action: "/app/manage_translation",
-                // });
 
                 async function getUserValue() {
                     const userValue = await GetUserValue({ shop: shop, server });
-                    setValue(userValue?.response);
+                    setValue(userValue?.response?.value || "");
+                    setTranslateStatus(userValue?.response?.status || 2);
                 }
 
                 getUserValue();
@@ -127,7 +114,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                 }
             };
         }
-    }, [status, source, target, item, translateFetcher.data]); // 添加 item 到依赖数组
+    }, [status, item]); // 添加 item 到依赖数组
 
     useEffect(() => {
         if (fetcher.data?.translatingLanguage) {
@@ -177,7 +164,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                 setItem("Shipping");
                 return 30;
             case "SHOP_POLICY":
-                setItem("Shipping");
+                setItem("Policies");
                 return 40;
             case "EMAIL_TEMPLATE":
                 setItem("Shipping");
@@ -368,38 +355,48 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                                 <Text>{t("progressing.finished")}</Text>
                                             )}
                                             {status === 2 && (
-                                                <div style={{ width: "100%" }}>
-                                                    <Text
-                                                        style={{
-                                                            width: "100%",
-                                                            whiteSpace: "nowrap",
-                                                            display: "block"
-                                                        }}
-                                                    >
-                                                        {t("progressing.progressingWithSpace", {
-                                                            item: t(item)
-                                                        })}
-                                                    </Text>
+                                                translateStatus === 1 ?
+                                                    <Text>{t("progressing.init")}</Text>
+                                                    :
+
                                                     <div style={{ width: "100%" }}>
-                                                        <Text style={{
-                                                            display: "flex",
-                                                            width: "100%",
-                                                            overflow: "hidden",
-                                                            color: "#007F61",
-                                                            whiteSpace: "nowrap"
-                                                        }}>
-                                                            <span style={{ flexShrink: 0 }}>[</span>
-                                                            <span style={{
-                                                                overflow: "hidden",
-                                                                textOverflow: "ellipsis",
+                                                        <Text
+                                                            style={{
+                                                                width: "100%",
                                                                 whiteSpace: "nowrap",
-                                                            }}>
-                                                                {value}
-                                                            </span>
-                                                            <span style={{ flexShrink: 0 }}>]</span>
+                                                                display: "block"
+                                                            }}
+                                                        >
+                                                            {translateStatus === 2 ?
+                                                                t("progressing.progressingWithSpace", {
+                                                                    item: t(item)
+                                                                }) :
+                                                                t("progressing.progressingWriting", {
+                                                                    item: t(item)
+                                                                })
+                                                            }
                                                         </Text>
+                                                        <div style={{ width: "100%" }}>
+                                                            <Text style={{
+                                                                display: "flex",
+                                                                width: "100%",
+                                                                overflow: "hidden",
+                                                                color: "#007F61",
+                                                                whiteSpace: "nowrap"
+                                                            }}>
+                                                                <span style={{ flexShrink: 0 }}>[</span>
+                                                                <span style={{
+                                                                    overflow: "hidden",
+                                                                    textOverflow: "ellipsis",
+                                                                    whiteSpace: "nowrap",
+                                                                }}>
+                                                                    {value}
+                                                                </span>
+                                                                <span style={{ flexShrink: 0 }}>]</span>
+                                                            </Text>
+                                                        </div>
                                                     </div>
-                                                </div>
+
                                             )}
                                             {status === 3 && (
                                                 <Text>⚠️{t("progressing.contact")}</Text>
@@ -429,7 +426,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                         }}
                                     >
                                         <Progress
-                                            percent={status === 1 ? 100 : progress}
+                                            percent={status === 1 ? 100 : translateStatus === 1 && status === 2 ? 0 : progress}
                                             status={
                                                 status === 1
                                                     ? "success"
@@ -534,10 +531,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                             block
                                             type="primary"
                                             onClick={handleReTranslate}
-                                            style={{
-                                                marginTop: "auto",
-                                                alignItems: "flex-end"
-                                            }}
+                                            loading={translateFetcher.state === "submitting"}
                                         >
                                             {t("progressing.reTranslate")}
                                         </Button>
