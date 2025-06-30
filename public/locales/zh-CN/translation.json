@@ -434,5 +434,11 @@
   "translateSettings1.description1": "专注于欧洲和美洲语言，英语、法语、意大利语、德语、西班牙语和类似的语言，具有高流利度和准确性。",
   "translateSettings1.description2": "平衡翻译欧洲和美洲语言。专注于西方语言翻译，没有严格的风格遵循。",
   "translateSettings1.description3": "专注于亚洲语言，中文、日语、韩语和其他主要亚洲语言。",
-  "translateSettings1.description4": "支持大多数全球语言。使用直接翻译翻译多种语言。"
+  "translateSettings1.description4": "支持大多数全球语言。使用直接翻译翻译多种语言。",
+  "translateSettings4.title": "大模型翻译风格设置",
+  "translateSettings4.apprules": "应用规则",
+  "translateSettings4.title1": "专家定义",
+  "translateSettings4.title2": "语言风格",
+  "translateSettings4.title3": "借鉴对象",
+  "translateSettings4.description": "仅针对产品和文章生效"
 }

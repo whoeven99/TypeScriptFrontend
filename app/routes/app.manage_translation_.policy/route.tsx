@@ -1,9 +1,12 @@
 import {
   Button,
+  Card,
+  Divider,
   Layout,
   Menu,
   MenuProps,
   Result,
+  Space,
   Spin,
   Table,
   theme,
@@ -24,7 +27,7 @@ import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import ManageTableInput from "~/components/manageTableInput";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal } from "@shopify/app-bridge-react";
+import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { FullscreenBar, Select } from "@shopify/polaris";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setUserConfig } from "~/store/modules/userConfig";
@@ -32,7 +35,7 @@ import { ShopLocalesType } from "../app.language/route";
 
 const { Sider, Content } = Layout;
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 type TableDataType = {
   key: string;
@@ -123,7 +126,7 @@ const Index = () => {
     return !!searchParams.get('language');
   });
 
-  const menuData: MenuProps["items"] = useMemo(() => policies.nodes.map((policy: any) => ({
+  const menuData: any = useMemo(() => policies.nodes.map((policy: any) => ({
     key: policy.resourceId,
     label: policy.translatableContent.find((item: any) => item.key === "body")
       .value,
@@ -149,12 +152,14 @@ const Index = () => {
     { label: t("Metaobjects"), value: "metaobject" },
     { label: t("Navigation"), value: "navigation" },
     { label: t("Email"), value: "email" },
+    { label: t("Policies"), value: "policy" },
     { label: t("Delivery"), value: "delivery" },
     { label: t("Shipping"), value: "shipping" },
   ]
   const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
   const [selectedItem, setSelectedItem] = useState<string>("policy");
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     if (languageTableData.length === 0) {
@@ -165,7 +170,22 @@ const Index = () => {
         action: "/app/manage_translation",
       });
     }
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    if (policies) {
+      setIsLoading(false);
+    }
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
+
+  useEffect(() => {
+    loadingItemsRef.current = loadingItems;
+  }, [loadingItems]);
 
   useEffect(() => {
     if (languageTableData) {
@@ -224,20 +244,20 @@ const Index = () => {
         item.success === false
       );
 
-      // successfulItem.forEach((item: any) => {
-      //   const index = policies.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
-      //   if (index !== -1) {
-      //     const policy = policies.nodes[index].translations.find((option: any) => option.key === item.data.key);
-      //     if (policy) {
-      //       policy.value = item.data.value;
-      //     } else {
-      //       policies.nodes[index].translations.push({
-      //         key: item.data.key,
-      //         value: item.data.value,
-      //       });
-      //     }
-      //   }
-      // })
+      successfulItem.forEach((item: any) => {
+        const index = policies.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+        if (index !== -1) {
+          const policy = policies.nodes[index].translations.find((option: any) => option.key === item.data.key);
+          if (policy) {
+            policy.value = item.data.value;
+          } else {
+            policies.nodes[index].translations.push({
+              key: item.data.key,
+              value: item.data.value,
+            });
+          }
+        }
+      })
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
       } else {
@@ -267,6 +287,13 @@ const Index = () => {
     }
   }, [languageFetcher.data]);
 
+  useEffect(() => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.show("policy-confirm-save");
+    } else {
+      shopify.saveBar.hide("policy-confirm-save");
+    }
+  }, [confirmData]);
 
   const resourceColumns = [
     {
@@ -311,7 +338,6 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           <Button
-            type="primary"
             onClick={() => {
               handleTranslate("SHOP_POLICY", record?.key || "", record?.type || "", record?.default_language || "");
             }}
@@ -402,6 +428,14 @@ const Index = () => {
     navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
   }
 
+  const handleMenuChange = (key: string) => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      setSelectPolicyKey(key);
+    }
+  };
+
   const handleConfirm = () => {
     setConfirmLoading(true);
     const formData = new FormData();
@@ -412,131 +446,244 @@ const Index = () => {
     }); // 提交表单请求
   };
 
+  const handleDiscard = () => {
+    shopify.saveBar.hide("policy-confirm-save");
+    const data: any = policies.nodes.find(
+      (policy: any) => policy.resourceId === selectPolicyKey,
+    );
+    setPolicyData(data);
+    setConfirmData([]);
+  };
+
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
+    shopify.saveBar.hide("policy-confirm-save");
     navigate(`/app/manage_translation?language=${searchTerm}`); // 跳转到 /app/manage_translation
   };
 
   return (
-    <Modal
-      id="manage-modal"
-      variant="max"
-      open={isVisible}
-      onHide={onCancel}
-    >
-      <FullscreenBar onAction={onCancel}>
-        <div
+    <>
+      <SaveBar id="policy-confirm-save">
+        <button
+          variant="primary"
+          onClick={handleConfirm}
+          loading={confirmLoading && ""}
+        >
+        </button>
+        <button
+          onClick={handleDiscard}
+        >
+        </button>
+      </SaveBar>
+      <Modal
+        variant="max"
+        open={isVisible}
+        onHide={onCancel}
+      >
+        <TitleBar title={t("Policies")} >
+        </TitleBar>
+        <Layout
           style={{
-            display: 'flex',
-            flexGrow: 1,
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingLeft: '1rem',
-            paddingRight: '1rem',
+            padding: "24px 0",
+            height: 'calc(100vh - 64px)',
+            overflow: 'auto',
+            background: colorBgContainer,
+            borderRadius: borderRadiusLG,
           }}
         >
-          <div style={{ marginLeft: '1rem', flexGrow: 1 }}>
-            <Text>
-              {t("Policy")}
-            </Text>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 2, justifyContent: 'center' }}>
-            <div
-              style={{
-                width: "150px",
-              }}
-            >
-              <Select
-                label={""}
-                options={languageOptions}
-                value={selectedLanguage}
-                onChange={(value) => handleLanguageChange(value)}
-              />
-            </div>
-            <div
-              style={{
-                width: "150px",
-              }}
-            >
-              <Select
-                label={""}
-                options={itemOptions}
-                value={selectedItem}
-                onChange={(value) => handleItemChange(value)}
-              />
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexGrow: 1, justifyContent: 'flex-end' }}>
-            <Button
-              type="primary"
-              onClick={handleConfirm}
-              disabled={confirmLoading || !confirmData.length}
-              loading={confirmLoading}
-            >
-              {t("Save")}
-            </Button>
-          </div>
-        </div>
-      </FullscreenBar>
-      <Layout
-        style={{
-          padding: "24px 0",
-          height: 'calc(100vh - 64px)',
-          overflow: 'auto',
-          background: colorBgContainer,
-          borderRadius: borderRadiusLG,
-        }}
-      >
-        {isLoading ? (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
-        ) : policies.nodes.length ? (
-          <>
-            <Sider
-              style={{
-                background: colorBgContainer,
-                height: 'calc(100vh - 124px)',
-                width: '200px',
-              }}
-            >
-              <Menu
-                mode="inline"
-                defaultOpenKeys={["sub1"]}
-                style={{ height: "100%" }}
-                items={menuData}
-                // onChange={onChange}
-                selectedKeys={[selectPolicyKey]}
-                onClick={(e: any) => {
-                  setSelectPolicyKey(e.key);
+          {isLoading ? (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
+          ) : policies.nodes.length ? (
+            <>
+              {!isMobile
+                &&
+                (
+                  <Sider
+                    style={{
+                      background: colorBgContainer,
+                      height: 'calc(100vh - 124px)',
+                      width: '200px',
+                    }}
+                  >
+                    <Menu
+                      mode="inline"
+                      defaultOpenKeys={["sub1"]}
+                      style={{ height: "100%" }}
+                      items={menuData}
+                      selectedKeys={[selectPolicyKey]}
+                      onClick={(e: any) => {
+                        handleMenuChange(e.key);
+                      }}
+                    />
+                  </Sider>
+                )}
+              <Content
+                style={{
+                  padding: "0 24px",
+                  height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
                 }}
-              />
-            </Sider>
-            <Content
-              style={{
-                padding: "0 24px",
-                height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
-                overflow: 'auto',
-                minHeight: '70vh',
-              }}
-            >
-              <Table
-                columns={resourceColumns}
-                dataSource={resourceData}
-                pagination={false}
-              />
-            </Content>
-          </>
-        ) : (
-          <Result
-            title={t("The specified fields were not found in the store.")}
-            extra={
-              <Button type="primary" onClick={onCancel}>
-                {t("Yes")}
-              </Button>
-            }
-          />
-        )}
-      </Layout>
-    </Modal>
+              >
+                {isMobile ? (
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {menuData!.find((item: any) => item.key === selectPolicyKey)?.label}
+                      </Title>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                        <div
+                          style={{
+                            width: "100px",
+                          }}
+                        >
+                          <Select
+                            label={""}
+                            options={languageOptions}
+                            value={selectedLanguage}
+                            onChange={(value) => handleLanguageChange(value)}
+                          />
+                        </div>
+                        <div
+                          style={{
+                            width: "100px",
+                          }}
+                        >
+                          <Select
+                            label={""}
+                            options={itemOptions}
+                            value={selectedItem}
+                            onChange={(value) => handleItemChange(value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <Card
+                      title={t("Resource")}
+                    >
+                      <Space direction="vertical" style={{ width: '100%' }}>
+                        {resourceData.map((item: any, index: number) => {
+                          return (
+                            <Space
+                              key={item.key}
+                              direction="vertical"
+                              size="small"
+                              style={{ width: '100%' }}
+                            >
+                              <Text
+                                strong
+                                style={{
+                                  fontSize: "16px"
+                                }}>
+                                {t(item.resource)}
+                              </Text>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <Text>{t("Default Language")}</Text>
+                                <ManageTableInput record={item} />
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <Text>{t("Translated")}</Text>
+                                <ManageTableInput
+                                  translatedValues={translatedValues}
+                                  setTranslatedValues={setTranslatedValues}
+                                  handleInputChange={handleInputChange}
+                                  isRtl={searchTerm === "ar"}
+                                  record={item}
+                                />
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <Button
+                                  onClick={() => {
+                                    handleTranslate("ARTICLE", item?.key || "", item?.type || "", item?.default_language || "");
+                                  }}
+                                  loading={loadingItems.includes(item?.key || "")}
+                                >
+                                  {t("Translate")}
+                                </Button>
+                              </div>
+                              <Divider
+                                style={{
+                                  margin: "8px 0"
+                                }}
+                              />
+                            </Space>
+                          )
+                        })}
+                      </Space>
+                    </Card>
+                    <Menu
+                      mode="inline"
+                      defaultOpenKeys={["sub1"]}
+                      style={{ height: "100%" }}
+                      items={menuData}
+                      selectedKeys={[selectPolicyKey]}
+                      onClick={(e: any) => {
+                        handleMenuChange(e.key);
+                      }}
+                    />
+                  </Space>
+                ) : (
+                  <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Title
+                        level={4}
+                        style={{
+                          margin: 0,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                        {menuData!.find((item: any) => item.key === selectPolicyKey)?.label}
+                      </Title>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                        <div
+                          style={{
+                            width: "150px",
+                          }}
+                        >
+                          <Select
+                            label={""}
+                            options={languageOptions}
+                            value={selectedLanguage}
+                            onChange={(value) => handleLanguageChange(value)}
+                          />
+                        </div>
+                        <div
+                          style={{
+                            width: "150px",
+                          }}
+                        >
+                          <Select
+                            label={""}
+                            options={itemOptions}
+                            value={selectedItem}
+                            onChange={(value) => handleItemChange(value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <Table
+                      columns={resourceColumns}
+                      dataSource={resourceData}
+                      pagination={false}
+                    />
+                  </Space>
+                )}
+              </Content>
+
+            </>
+          ) : (
+            <Result
+              title={t("The specified fields were not found in the store.")}
+              extra={
+                <Button type="primary" onClick={onCancel}>
+                  {t("Yes")}
+                </Button>
+              }
+            />
+          )}
+        </Layout>
+      </Modal>
+    </>
   );
 };
 

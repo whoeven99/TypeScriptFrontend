@@ -225,9 +225,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       searchTerm,
       products,
     });
-  } catch (error) {
-    console.error("Error load product:", error);
-    throw new Response("Error load product", { status: 500 });
+  } catch (error: any) {
+    console.error("Error load product:", error?.errors);
+    console.error("Error load product:", error?.errors?.graphQLErrors);
   }
 };
 
@@ -530,6 +530,7 @@ const Index = () => {
     { label: t("Metaobjects"), value: "metaobject" },
     { label: t("Navigation"), value: "navigation" },
     { label: t("Email"), value: "email" },
+    { label: t("Policies"), value: "policy" },
     { label: t("Delivery"), value: "delivery" },
     { label: t("Shipping"), value: "shipping" },
   ]
