@@ -159,7 +159,7 @@
     "progressing.target": "Цільова мова:",
     "progressing.init":"Ініціалізація завдання перекладу...",
     "progressing.progressingWithSpace":"Переклад модуля {{item}}: ",
-    "progressing.progressingWriting":"Запис модуля {{item}}: ",
+    "progressing.progressingWriting":"Запис модуля {{item}}",
     "progressing.finished": "Переклад завершено. Перекладений вміст потребує публікації, перш ніж він набуде чинності.",
     "progressing.buyCredits": "Купити кредити",
     "progressing.publish": "Опублікувати мову",

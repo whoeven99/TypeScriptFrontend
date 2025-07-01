@@ -155,7 +155,7 @@
     "progressing.target":"Lingua obiettivo: ",
     "progressing.init":"Inizializzazione della traduzione...",
     "progressing.progressingWithSpace":"Traduzione {{item}} modulo: ",
-    "progressing.progressingWriting":"Scrittura {{item}} modulo: ",
+    "progressing.progressingWriting":"Scrittura {{item}} modulo",
     "progressing.finished":"La traduzione è stata completata. Il contenuto tradotto deve essere pubblicato prima che entri in vigore.",
     "progressing.buyCredits":"Acquista crediti",
     "progressing.publish":"Pubblica lingua",
