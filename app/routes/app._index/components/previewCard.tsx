@@ -37,7 +37,7 @@ const PreviewCard: React.FC<PreviewCardProps> = () => {
             { method: 'post', action: '/app' },
         );
         if (value === 5) {
-            window.open("https://apps.shopify.com/translator-by-ciwi", "_blank");
+            window.open("https://apps.shopify.com/translator-by-ciwi#modal-show=WriteReviewModal", "_blank");
         }
     };
 
