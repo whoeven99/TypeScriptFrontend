@@ -156,7 +156,7 @@
     "progressing.target":"목표 언어: ",
     "progressing.init":"번역 작업을 초기화하고 있습니다...",
     "progressing.progressingWithSpace":"번역 중 {{item}} 모듈: ",
-    "progressing.progressingWriting":"{{item}} 모듈 작성:",
+    "progressing.progressingWriting":"{{item}} 모듈 작성",
     "progressing.finished":"번역이 완료되었습니다. 번역된 콘텐츠는 효력이 발생하기 전에 게시되어야 합니다.",
     "progressing.buyCredits":"크레딧 구매",
     "progressing.publish":"언어 게시",
