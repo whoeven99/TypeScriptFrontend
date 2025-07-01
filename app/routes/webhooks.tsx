@@ -32,8 +32,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (topic) {
     case "APP_UNINSTALLED":
       try {
-        Uninstall({ shop });
-        UpdateUserPlan({ shop, plan: 2 });
+        await Uninstall({ shop });
+        await UpdateUserPlan({ shop, plan: 2 });
         if (session) {
           await db.session.deleteMany({ where: { shop } });
         }
@@ -189,7 +189,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     case "SHOP_REDACT":
       try {
         new Response(null, { status: 200 });
-        await CleanData({ shop });
+        await Uninstall({ shop });
+        await UpdateUserPlan({ shop, plan: 2 });
+        if (session) {
+          await db.session.deleteMany({ where: { shop } });
+        }
         break;
       } catch (error) {
         console.error("Error SHOP_REDACT:", error);
