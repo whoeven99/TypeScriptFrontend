@@ -12,7 +12,9 @@ import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
 import { GetTranslationItemsInfo } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
-import { updateData } from "~/store/modules/languageItemsData";
+import languageItemsData, {
+  updateData,
+} from "~/store/modules/languageItemsData";
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
@@ -52,49 +54,39 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  try {
-    const formData = await request.formData();
-    const language = JSON.parse(formData.get("language") as string);
-    const itemsCount = JSON.parse(formData.get("itemsCount") as string);
-    switch (true) {
-      case !!language:
-        try {
-          const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
-            shop,
-            accessToken: accessToken as string,
-          });
-          return json({ data: shopLanguages });
-        } catch (error) {
-          console.error("Error manage_translation language:", error);
-        }
-      case !!itemsCount:
-        try {
-          const data = await GetTranslationItemsInfo({
-            shop,
-            accessToken,
-            source: itemsCount.source,
-            target: itemsCount.target,
-            resourceType: itemsCount.resourceType,
-          });
-          console.log("GetTranslationItemsInfo: ", data);
-          return json({ data: data });
-        } catch (error) {
-          console.error("Error manage_translation itemsCount:", error);
-          return json({
-            success: false,
-            message: "Error manage_translation itemsCount",
-          });
-        }
-      default:
-        // 你可以在这里处理一个默认的情况，如果没有符合的条件
-        return json({ success: false, message: "Invalid data" });
-    }
-  } catch (error) {
-    console.error("Error action manage_translation:", error);
-    return json(
-      { success: false, message: "Error action manage_translation" },
-      { status: 500 },
-    );
+
+  const formData = await request.formData();
+  const language = JSON.parse(formData.get("language") as string);
+  const itemsCount = JSON.parse(formData.get("itemsCount") as string);
+  switch (true) {
+    case !!language:
+      try {
+        const shopLanguages: ShopLocalesType[] = await queryShopLanguages({
+          shop,
+          accessToken: accessToken as string,
+        });
+        return json({ data: shopLanguages });
+      } catch (error) {
+        console.error("Error manage_translation language:", error);
+      }
+    case !!itemsCount:
+      try {
+        const data = await GetTranslationItemsInfo({
+          shop,
+          accessToken,
+          source: itemsCount.source,
+          target: itemsCount.target,
+          resourceType: itemsCount.resourceType,
+        });
+        console.log("GetTranslationItemsInfo: ", data);
+        return json({ data: data });
+      } catch (error) {
+        console.error("Error manage_translation itemsCount:", error);
+        return json({ data: [] });
+      }
+    default:
+      // 你可以在这里处理一个默认的情况，如果没有符合的条件
+      return json({ success: false, message: "Invalid data" });
   }
 };
 
@@ -422,91 +414,91 @@ const Index = () => {
   }, [languageFetcher.data]);
 
   useEffect(() => {
-    if (productsFetcher.data.data.length > 0) {
+    if (productsFetcher.data?.data?.length > 0) {
       dispatch(updateData(productsFetcher.data.data));
     }
   }, [productsFetcher.data]);
 
   useEffect(() => {
-    if (collectionsFetcher.data.data.length > 0) {
+    if (collectionsFetcher.data?.data?.length > 0) {
       dispatch(updateData(collectionsFetcher.data.data));
     }
   }, [collectionsFetcher.data]);
 
   useEffect(() => {
-    if (articlesFetcher.data.data.length > 0) {
+    if (articlesFetcher.data?.data?.length > 0) {
       dispatch(updateData(articlesFetcher.data.data));
     }
   }, [articlesFetcher.data]);
 
   useEffect(() => {
-    if (blog_titlesFetcher.data.data.length > 0) {
+    if (blog_titlesFetcher.data?.data?.length > 0) {
       dispatch(updateData(blog_titlesFetcher.data.data));
     }
   }, [blog_titlesFetcher.data]);
 
   useEffect(() => {
-    if (pagesFetcher.data.data.length > 0) {
+    if (pagesFetcher.data?.data?.length > 0) {
       dispatch(updateData(pagesFetcher.data.data));
     }
   }, [pagesFetcher.data]);
 
   useEffect(() => {
-    if (filtersFetcher.data.data.length > 0) {
+    if (filtersFetcher.data?.data?.length > 0) {
       dispatch(updateData(filtersFetcher.data.data));
     }
   }, [filtersFetcher.data]);
 
   useEffect(() => {
-    if (metaobjectsFetcher.data.data.length > 0) {
+    if (metaobjectsFetcher.data?.data?.length > 0) {
       dispatch(updateData(metaobjectsFetcher.data.data));
     }
   }, [metaobjectsFetcher.data]);
 
   useEffect(() => {
-    if (navigationFetcher.data.data.length > 0) {
+    if (navigationFetcher.data?.data?.length > 0) {
       dispatch(updateData(navigationFetcher.data.data));
     }
   }, [navigationFetcher.data]);
 
   useEffect(() => {
-    if (emailFetcher.data.data.length > 0) {
+    if (emailFetcher.data?.data?.length > 0) {
       dispatch(updateData(emailFetcher.data.data));
     }
   }, [emailFetcher.data]);
 
   useEffect(() => {
-    if (policiesFetcher.data.data.length > 0) {
+    if (policiesFetcher.data?.data?.length > 0) {
       dispatch(updateData(policiesFetcher.data.data));
     }
   }, [policiesFetcher.data]);
 
   useEffect(() => {
-    if (shopFetcher.data.data.length > 0) {
+    if (shopFetcher.data?.data?.length > 0) {
       dispatch(updateData(shopFetcher.data.data));
     }
   }, [shopFetcher.data]);
 
   useEffect(() => {
-    if (store_metadataFetcher.data.data.length > 0) {
+    if (store_metadataFetcher.data?.data?.length > 0) {
       dispatch(updateData(store_metadataFetcher.data.data));
     }
   }, [store_metadataFetcher.data]);
 
   useEffect(() => {
-    if (themeFetcher.data.data.length > 0) {
+    if (themeFetcher.data?.data?.length > 0) {
       dispatch(updateData(themeFetcher.data.data));
     }
   }, [themeFetcher.data]);
 
   useEffect(() => {
-    if (deliveryFetcher.data.data.length > 0) {
+    if (deliveryFetcher.data?.data?.length > 0) {
       dispatch(updateData(deliveryFetcher.data.data));
     }
   }, [deliveryFetcher.data]);
 
   useEffect(() => {
-    if (shippingFetcher.data.data.length > 0) {
+    if (shippingFetcher.data?.data?.length > 0) {
       dispatch(updateData(shippingFetcher.data.data));
     }
   }, [shippingFetcher.data]);
