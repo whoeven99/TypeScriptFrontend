@@ -6,11 +6,7 @@ import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import {
-  useFetcher,
-  useLoaderData,
-  useLocation,
-} from "@remix-run/react";
+import { useFetcher, useLoaderData, useLocation } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
 import { GetTranslationItemsInfo } from "~/api/JavaServer";
@@ -104,7 +100,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { searchTerm } = useLoaderData<typeof loader>();
-  const [selectOptions, setSelectOptions] = useState<ManageSelectDataType[]>([]);
+  const [selectOptions, setSelectOptions] = useState<ManageSelectDataType[]>(
+    [],
+  );
   const [primaryLanguage, setPrimaryLanguage] = useState<string>();
   const [current, setCurrent] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -113,7 +111,9 @@ const Index = () => {
   const location = useLocation();
   const [showWarnModal, setShowWarnModal] = useState(false);
   const { key } = useMemo(() => location.state || {}, [location.state]);
-  const languageItemsData = useSelector((state: any) => state.languageItemsData);
+  const languageItemsData = useSelector(
+    (state: any) => state.languageItemsData,
+  );
 
   const languageFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
@@ -370,12 +370,15 @@ const Index = () => {
   ];
 
   useEffect(() => {
-    languageFetcher.submit({
-      language: JSON.stringify(true),
-    }, {
-      method: "post",
-      action: "/app/manage_translation",
-    });
+    languageFetcher.submit(
+      {
+        language: JSON.stringify(true),
+      },
+      {
+        method: "post",
+        action: "/app/manage_translation",
+      },
+    );
   }, []);
 
   useEffect(() => {
@@ -398,13 +401,17 @@ const Index = () => {
         } else {
           setCurrent(searchTerm);
         }
-        dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
-          key: index,
-          language: language.name,
-          locale: language.locale,
-          primary: language.primary,
-          published: language.published,
-        }))));
+        dispatch(
+          setTableData(
+            shopLanguages.map((language: ShopLocalesType, index: number) => ({
+              key: index,
+              language: language.name,
+              locale: language.locale,
+              primary: language.primary,
+              published: language.published,
+            })),
+          ),
+        );
         setLoading(false);
         const locale = shopLanguages.find(
           (language: ShopLocalesType) => language.primary === true,
@@ -415,91 +422,91 @@ const Index = () => {
   }, [languageFetcher.data]);
 
   useEffect(() => {
-    if (productsFetcher.data) {
+    if (productsFetcher.data.data.length > 0) {
       dispatch(updateData(productsFetcher.data.data));
     }
   }, [productsFetcher.data]);
 
   useEffect(() => {
-    if (collectionsFetcher.data) {
+    if (collectionsFetcher.data.data.length > 0) {
       dispatch(updateData(collectionsFetcher.data.data));
     }
   }, [collectionsFetcher.data]);
 
   useEffect(() => {
-    if (articlesFetcher.data) {
+    if (articlesFetcher.data.data.length > 0) {
       dispatch(updateData(articlesFetcher.data.data));
     }
   }, [articlesFetcher.data]);
 
   useEffect(() => {
-    if (blog_titlesFetcher.data) {
+    if (blog_titlesFetcher.data.data.length > 0) {
       dispatch(updateData(blog_titlesFetcher.data.data));
     }
   }, [blog_titlesFetcher.data]);
 
   useEffect(() => {
-    if (pagesFetcher.data) {
+    if (pagesFetcher.data.data.length > 0) {
       dispatch(updateData(pagesFetcher.data.data));
     }
   }, [pagesFetcher.data]);
 
   useEffect(() => {
-    if (filtersFetcher.data) {
+    if (filtersFetcher.data.data.length > 0) {
       dispatch(updateData(filtersFetcher.data.data));
     }
   }, [filtersFetcher.data]);
 
   useEffect(() => {
-    if (metaobjectsFetcher.data) {
+    if (metaobjectsFetcher.data.data.length > 0) {
       dispatch(updateData(metaobjectsFetcher.data.data));
     }
   }, [metaobjectsFetcher.data]);
 
   useEffect(() => {
-    if (navigationFetcher.data) {
+    if (navigationFetcher.data.data.length > 0) {
       dispatch(updateData(navigationFetcher.data.data));
     }
   }, [navigationFetcher.data]);
 
   useEffect(() => {
-    if (emailFetcher.data) {
+    if (emailFetcher.data.data.length > 0) {
       dispatch(updateData(emailFetcher.data.data));
     }
   }, [emailFetcher.data]);
 
   useEffect(() => {
-    if (policiesFetcher.data) {
+    if (policiesFetcher.data.data.length > 0) {
       dispatch(updateData(policiesFetcher.data.data));
     }
   }, [policiesFetcher.data]);
 
   useEffect(() => {
-    if (shopFetcher.data) {
+    if (shopFetcher.data.data.length > 0) {
       dispatch(updateData(shopFetcher.data.data));
     }
   }, [shopFetcher.data]);
 
   useEffect(() => {
-    if (store_metadataFetcher.data) {
+    if (store_metadataFetcher.data.data.length > 0) {
       dispatch(updateData(store_metadataFetcher.data.data));
     }
   }, [store_metadataFetcher.data]);
 
   useEffect(() => {
-    if (themeFetcher.data) {
+    if (themeFetcher.data.data.length > 0) {
       dispatch(updateData(themeFetcher.data.data));
     }
   }, [themeFetcher.data]);
 
   useEffect(() => {
-    if (deliveryFetcher.data) {
+    if (deliveryFetcher.data.data.length > 0) {
       dispatch(updateData(deliveryFetcher.data.data));
     }
   }, [deliveryFetcher.data]);
 
   useEffect(() => {
-    if (shippingFetcher.data) {
+    if (shippingFetcher.data.data.length > 0) {
       dispatch(updateData(shippingFetcher.data.data));
     }
   }, [shippingFetcher.data]);
@@ -513,7 +520,9 @@ const Index = () => {
 
   useEffect(() => {
     dispatch(setSelectLanguageData(current));
-    const findItem = languageItemsData.find((item: any) => item?.language === current);
+    const findItem = languageItemsData.find(
+      (item: any) => item?.language === current,
+    );
     if (!findItem && primaryLanguage) {
       const productsFormData = new FormData();
       productsFormData.append(
@@ -734,13 +743,12 @@ const Index = () => {
         </div>
       ) : (
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <div
-            className="manage-header"
-          >
-            <div
-              className="manage-header-left"
-            >
-              <Title level={3} style={{ marginRight: "10px", marginBottom: "5px" }}>
+          <div className="manage-header">
+            <div className="manage-header-left">
+              <Title
+                level={3}
+                style={{ marginRight: "10px", marginBottom: "5px" }}
+              >
                 {t("Localized content:")}
               </Title>
               <Select
