@@ -35,17 +35,27 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   const { t } = useTranslation();
 
   useEffect(() => {
-    if (step1Visible || step2Visible) {
-      setVisible(true);
+    if (localStorage.getItem("switcherCard") == "false") {
+      setVisible(false);
+    } else {
+      if (step1Visible || step2Visible) {
+        setVisible(true);
+      }
     }
   }, [step1Visible, step2Visible]);
+
+  const handleClose = () => {
+    setVisible(false);
+    //保存当前的设置
+    localStorage.setItem("switcherCard", "false");
+  };
 
   return (
     <Card
       style={{ display: visible ? "block" : "none" }}
       title={t("Switcher Configuration Guide")}
       extra={
-        <Button type="text" onClick={() => setVisible(false)}>
+        <Button type="text" onClick={handleClose}>
           <CloseOutlined />
         </Button>
       }

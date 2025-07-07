@@ -355,12 +355,12 @@ const Index = () => {
   const translateSettings5Options = [
     {
       label: t("Full Translation"),
-      description: t("translateSettings1.description1"),
+      description: t("translateSettings5.description1"),
       value: true,
     },
     {
       label: t("Update Translation"),
-      description: t("translateSettings1.description2"),
+      description: t("translateSettings5.description2"),
       value: false,
     },
   ];
@@ -854,12 +854,6 @@ const Index = () => {
                     <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
                       {t("translateSettings5.title")}
                     </Title>
-                    <Button
-                      icon={<Icon source={PlusIcon} />}
-                      onClick={() => navigate("/app/apikeySetting")}
-                    >
-                      {t("Use private api to translate")}
-                    </Button>
                   </Space>
                   {/* <div
                     style={{
