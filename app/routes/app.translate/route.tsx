@@ -15,7 +15,13 @@ import {
   Typography,
 } from "antd";
 import { useTranslation } from "react-i18next";
-import { Link, useFetcher, useLoaderData, useLocation, useNavigate } from "@remix-run/react";
+import {
+  Link,
+  useFetcher,
+  useLoaderData,
+  useLocation,
+  useNavigate,
+} from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { LanguagesDataType } from "../app.language/route";
 import { setTableData } from "~/store/modules/languageTableData";
@@ -25,10 +31,7 @@ import ScrollNotice from "~/components/ScrollNotice";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import {
-  ArrowLeftIcon,
-  PlusIcon
-} from '@shopify/polaris-icons';
+import { ArrowLeftIcon, PlusIcon } from "@shopify/polaris-icons";
 import axios from "axios";
 
 const { Title, Text } = Typography;
@@ -54,7 +57,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   console.log(`${shop} load translate`);
   return {
     shop,
-    server: process.env.SERVER_URL
+    server: process.env.SERVER_URL,
   };
 };
 
@@ -90,6 +93,7 @@ const Index = () => {
     option2: "",
     option3: "",
   });
+  const [translateSettings5, setTranslateSettings5] = useState<boolean>(false);
   const [model, setModel] = useState<any>("");
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -112,10 +116,6 @@ const Index = () => {
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
-
-  useEffect(() => {
-    console.log(translateSettings4);
-  }, [translateSettings4]);
 
   useEffect(() => {
     const languageFormData = new FormData();
@@ -169,10 +169,6 @@ const Index = () => {
       }
     }
   }, [fetcher.data]);
-
-  useEffect(() => {
-    console.log(isMobile);
-  }, [isMobile]);
 
   useEffect(() => {
     if (languageData.length) {
@@ -353,7 +349,20 @@ const Index = () => {
     {
       label: "handle",
       value: "handle",
-    }
+    },
+  ];
+
+  const translateSettings5Options = [
+    {
+      label: t("Full Translation"),
+      description: t("translateSettings1.description1"),
+      value: true,
+    },
+    {
+      label: t("Update Translation"),
+      description: t("translateSettings1.description2"),
+      value: false,
+    },
   ];
 
   const onChange = (e: RadioChangeEvent) => {
@@ -394,8 +403,10 @@ const Index = () => {
       setLanguageCardWarnText("Please select a language to translate first.");
       return;
     }
-    if (translateSettings3.every(item => item === "handle")) {
-      shopify.toast.show(t("Handle needs to be used with 'Products item' or other items."));
+    if (translateSettings3.every((item) => item === "handle")) {
+      shopify.toast.show(
+        t("Handle needs to be used with 'Products item' or other items."),
+      );
       return;
     }
     const selectedItem = dataSource.find(
@@ -430,7 +441,7 @@ const Index = () => {
         ),
       );
     }
-  }
+  };
 
   const handleTranslate = async () => {
     const formData = new FormData();
@@ -442,6 +453,7 @@ const Index = () => {
         translateSettings1: translateSettings1,
         translateSettings2: translateSettings2,
         translateSettings3: translateSettings3,
+        translateSettings5: translateSettings5,
       }),
     ); // 将选中的语言作为字符串发送
     fetcher.submit(formData, {
@@ -452,21 +464,21 @@ const Index = () => {
 
   const handleTranslateSettings2Change = (value: string[]) => {
     if (!value.length) {
-      shopify.toast.show(t("Select at least one language pack"))
+      shopify.toast.show(t("Select at least one language pack"));
       return;
     } else {
-      setTranslateSettings2(value)
+      setTranslateSettings2(value);
     }
-  }
+  };
 
   const handleTranslateSettings3Change = (value: string[]) => {
     if (!value.length) {
-      shopify.toast.show(t("Select at least one translation item"))
+      shopify.toast.show(t("Select at least one translation item"));
       return;
     } else {
-      setTranslateSettings3(value)
+      setTranslateSettings3(value);
     }
-  }
+  };
 
   return (
     <Page>
@@ -490,10 +502,7 @@ const Index = () => {
               onClick={handleNavigate}
               style={{ padding: "4px" }}
             >
-              <Icon
-                source={ArrowLeftIcon}
-                tone="base"
-              />
+              <Icon source={ArrowLeftIcon} tone="base" />
             </Button>
             <Title
               style={{
@@ -505,24 +514,24 @@ const Index = () => {
               {t("Translate Store")}
             </Title>
           </div>
-          {
-            languageSetting?.primaryLanguageCode ?
-              <Button
-                type="primary"
-                onClick={() => checkIfNeedPay()}
-                style={{ visibility: languageData.length != 0 ? "visible" : "hidden" }}
-                loading={fetcher.state === "submitting"}
-              >
-                {t("Translate")}
-              </Button>
-              :
-              <Skeleton.Button active />
-          }
+          {languageSetting?.primaryLanguageCode ? (
+            <Button
+              type="primary"
+              onClick={() => checkIfNeedPay()}
+              style={{
+                visibility: languageData.length != 0 ? "visible" : "hidden",
+              }}
+              loading={fetcher.state === "submitting"}
+            >
+              {t("Translate")}
+            </Button>
+          ) : (
+            <Skeleton.Button active />
+          )}
         </div>
         <Divider style={{ margin: "0" }} />
         <div style={{ paddingLeft: "8px" }}>
-          <Text>{t("Your store's default language:")}</Text>
-          {" "}
+          <Text>{t("Your store's default language:")}</Text>{" "}
           {languageSetting && (
             <Text strong>
               {languageSetting?.primaryLanguage ? (
@@ -650,12 +659,13 @@ const Index = () => {
                   style={{ display: "flex" }}
                 >
                   <Space
-                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
                   >
-                    <Title
-                      level={5}
-                      style={{ fontSize: "1rem", margin: "0" }}
-                    >
+                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
                       {t("translateSettings1.title")}
                     </Title>
                     <Button
@@ -709,23 +719,19 @@ const Index = () => {
                           }}
                         >
                           <Text>{item.label}</Text>
-                          {!isMobile
-                            &&
-                            <Text
-                              type="secondary"
-                            >
-                              : {item.description}
-                            </Text>
-                          }
+                          {!isMobile && (
+                            <Text type="secondary">: {item.description}</Text>
+                          )}
                         </div>
                         <Space
-                          style={
-                            {
-                              justifyContent: "flex-end",
-                            }
-                          }
+                          style={{
+                            justifyContent: "flex-end",
+                          }}
                         >
-                          <Text>{t("Speed")}: {item.speed === 2 ? t("Medium") : t("Fast")}</Text>
+                          <Text>
+                            {t("Speed")}:{" "}
+                            {item.speed === 2 ? t("Medium") : t("Fast")}
+                          </Text>
                           {/* <Text>
                             |
                           </Text>
@@ -805,7 +811,8 @@ const Index = () => {
                     options={translateSettings2Options}
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(200px, 1fr))",
                       width: "100%",
                       alignItems: "center", // 关键：让每个格子内容垂直居中
                     }}
@@ -832,44 +839,102 @@ const Index = () => {
                     onChange={(e) => handleTranslateSettings3Change(e)}
                   ></Checkbox.Group>
                 </Space>
-                {/* <Space
+                <Space
                   direction="vertical"
                   size={16}
                   style={{ display: "flex" }}
                 >
-                  <div>
+                  <Space
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
                     <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                      {t("translateSettings4.title")}
+                      {t("translateSettings5.title")}
                     </Title>
-                    <Text type="secondary">{t("translateSettings4.description")}</Text>
-                  </div>
+                    <Button
+                      icon={<Icon source={PlusIcon} />}
+                      onClick={() => navigate("/app/apikeySetting")}
+                    >
+                      {t("Use private api to translate")}
+                    </Button>
+                  </Space>
+                  {/* <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr", // 每行只一列，自动换行
+                      gap: "16px",
+                      width: "100%",
+                    }}
+                  > */}
+                  {translateSettings5Options.map((item, index) => (
+                    <Flex
+                      key={index}
+                      style={{
+                        width: "100%",
+                        marginRight: 0,
+                        padding: "8px 12px",
+                        border: "1px solid #f0f0f0",
+                        borderRadius: "4px",
+                        alignItems: "center",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => setTranslateSettings5(item.value)}
+                    >
+                      <Radio
+                        key={index}
+                        value={item.value}
+                        checked={translateSettings5 === item.value}
+                      />
+
+                      <Text>{item.label}</Text>
+                      {!isMobile && (
+                        <Text type="secondary">: {item.description}</Text>
+                      )}
+                    </Flex>
+                  ))}
+                </Space>
+                {/* 
                   <Space
                     direction="vertical"
-                    style={{ width: "100%" }}
+                    size={16}
+                    style={{ display: "flex" }}
                   >
-                    <Text strong>{t("translateSettings4.apprules")}</Text>
                     <div>
-                      <Text>{t("translateSettings4.title1")}</Text>
-                      <Input style={{ width: "100%" }} value={translateSettings4.option1} onChange={(e) => setTranslateSettings4({ ...translateSettings4, option1: e.target.value })}></Input>
+                      <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+                        {t("translateSettings4.title")}
+                      </Title>
+                      <Text type="secondary">{t("translateSettings4.description")}</Text>
                     </div>
-                    <div>
-                      <Text>{t("translateSettings4.title2")}</Text>
-                      <Input style={{ width: "100%" }} value={translateSettings4.option2} onChange={(e) => setTranslateSettings4({ ...translateSettings4, option2: e.target.value })}></Input>
-                    </div>
-                    <div>
-                      <Text>{t("translateSettings4.title3")}</Text>
-                      <Input style={{ width: "100%" }} value={translateSettings4.option3} onChange={(e) => setTranslateSettings4({ ...translateSettings4, option3: e.target.value })}></Input>
-                    </div>
-                  </Space>
-                </Space> */}
+                    <Space
+                      direction="vertical"
+                      style={{ width: "100%" }}
+                    >
+                      <Text strong>{t("translateSettings4.apprules")}</Text>
+                      <div>
+                        <Text>{t("translateSettings4.title1")}</Text>
+                        <Input style={{ width: "100%" }} value={translateSettings4.option1} onChange={(e) => setTranslateSettings4({ ...translateSettings4, option1: e.target.value })}></Input>
+                      </div>
+                      <div>
+                        <Text>{t("translateSettings4.title2")}</Text>
+                        <Input style={{ width: "100%" }} value={translateSettings4.option2} onChange={(e) => setTranslateSettings4({ ...translateSettings4, option2: e.target.value })}></Input>
+                      </div>
+                      <div>
+                        <Text>{t("translateSettings4.title3")}</Text>
+                        <Input style={{ width: "100%" }} value={translateSettings4.option3} onChange={(e) => setTranslateSettings4({ ...translateSettings4, option3: e.target.value })}></Input>
+                      </div>
+                    </Space>
+                  </Space> 
+                */}
               </Space>
             </Card>
           </Space>
         ) : (
           <NoLanguageSetCard />
-        )
-        }
-      </Space >
+        )}
+      </Space>
       {showPaymentModal && (
         <PaymentModal
           visible={showPaymentModal}
@@ -882,7 +947,7 @@ const Index = () => {
           needPay={needPay}
         />
       )}
-    </Page >
+    </Page>
   );
 };
 

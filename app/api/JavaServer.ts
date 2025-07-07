@@ -876,6 +876,7 @@ export const GetTranslate = async ({
   translateSettings1,
   translateSettings2,
   translateSettings3,
+  translateSettings5,
 }: {
   shop: string;
   accessToken: string;
@@ -884,6 +885,7 @@ export const GetTranslate = async ({
   translateSettings1: string;
   translateSettings2: string[];
   translateSettings3: string[];
+  translateSettings5: boolean;
 }) => {
   try {
     console.log("GetTranslateData: ", {
@@ -894,6 +896,7 @@ export const GetTranslate = async ({
       translateSettings1: "google",
       translateSettings2: translateSettings2.toString(),
       translateSettings3: translateSettings3,
+      isCover: translateSettings5,
     });
     const response = await axios({
       url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`,
@@ -903,6 +906,7 @@ export const GetTranslate = async ({
         accessToken: accessToken,
         source: source,
         target: target,
+        isCover: translateSettings5,
         translateSettings1: "google",
         translateSettings2: translateSettings2.toString(),
         translateSettings3: translateSettings3,
@@ -910,6 +914,7 @@ export const GetTranslate = async ({
     });
     console.log(`${shop} ${source}翻译${target}`);
     console.log(`${shop} 翻译项: `, translateSettings3);
+    console.log(`${shop} 是否覆盖: `, translateSettings5);
     const res = { ...response.data, target: target };
     console.log("GetTranslate: ", res);
     return res;

@@ -450,17 +450,14 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmData.length > 0) {
-      const closeButton = document.querySelector(
-        ".Polaris-Button .Polaris-Button--pressable .Polaris-Button--variantTertiary .Polaris-Button--sizeLarge .Polaris-Button--textAlignCenter .Polaris-Button--iconOnly",
-      );
+      console.log("document: ", document);
+      const closeButton = document.querySelector(".Polaris-Button--sizeLarge");
       console.log(closeButton);
       if (closeButton) {
         (closeButton as HTMLElement).style.display = "none";
       }
     } else {
-      const closeButton = document.querySelector(
-        ".Polaris-Button .Polaris-Button--pressable .Polaris-Button--variantTertiary .Polaris-Button--sizeLarge .Polaris-Button--textAlignCenter .Polaris-Button--iconOnly",
-      );
+      const closeButton = document.querySelector(".Polaris-Button--sizeLarge");
       if (closeButton) {
         (closeButton as HTMLElement).style.display = "inline-block";
       }
@@ -852,7 +849,12 @@ const Index = () => {
 
   return (
     <>
-      <Modal variant="max" open={isVisible} onHide={onCancel}>
+      <Modal
+        id="article-manage-modal"
+        variant="max"
+        open={isVisible}
+        onHide={onCancel}
+      >
         <TitleBar title={t("Article")}>
           {confirmData.length > 0 && (
             <>
