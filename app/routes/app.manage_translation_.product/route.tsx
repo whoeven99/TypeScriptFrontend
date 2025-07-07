@@ -23,7 +23,11 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { FullscreenBar, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
+import {
+  ConfirmDataType,
+  SingleTextTranslate,
+  updateManageTranslation,
+} from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -135,7 +139,7 @@ const modelOptions = [
     label: "Google/Google translate",
     value: "7",
   },
-]
+];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -236,21 +240,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
-  try {
-    const formData = await request.formData();
-    const startCursor: any = JSON.parse(
-      formData.get("startCursor") as string,
-    );
-    const endCursor: any = JSON.parse(formData.get("endCursor") as string);
-    const variants: any = JSON.parse(formData.get("variants") as string);
-    const confirmData: ConfirmDataType[] = JSON.parse(
-      formData.get("confirmData") as string,
-    );
-    switch (true) {
-      case !!startCursor:
-        try {
-          const response = await admin.graphql(
-            `#graphql
+  const formData = await request.formData();
+  const startCursor: any = JSON.parse(formData.get("startCursor") as string);
+  const endCursor: any = JSON.parse(formData.get("endCursor") as string);
+  const variants: any = JSON.parse(formData.get("variants") as string);
+  const confirmData: ConfirmDataType[] = JSON.parse(
+    formData.get("confirmData") as string,
+  );
+  switch (true) {
+    case !!startCursor:
+      try {
+        const response = await admin.graphql(
+          `#graphql
             query {     
               translatableResources(resourceType: PRODUCT, last: 20, before: "${startCursor?.cursor}") {
                 nodes {
@@ -317,20 +318,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
           }`,
-          );
+        );
 
-          const previousProducts = await response.json();
+        const previousProducts = await response.json();
 
-          return json({
-            previousProducts: previousProducts,
-          });
-        } catch (error) {
-          console.error("Error action startCursor product:", error);
-        }
-      case !!endCursor:
-        try {
-          const response = await admin.graphql(
-            `#graphql
+        return json({
+          previousProducts: previousProducts,
+        });
+      } catch (error) {
+        console.error("Error action startCursor product:", error);
+      }
+    case !!endCursor:
+      try {
+        const response = await admin.graphql(
+          `#graphql
             query {     
               translatableResources(resourceType: PRODUCT, first: 20, after: "${endCursor?.cursor}") {
                 nodes {
@@ -397,22 +398,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
           }`,
-          );
+        );
 
-          const nextProducts = await response.json();
+        const nextProducts = await response.json();
 
-          return json({
-            nextProducts: nextProducts,
-          });
-        } catch (error) {
-          console.error("Error action endCursor product:", error);
-        }
-      case !!variants:
-        try {
-          const promise = variants.data.map(
-            async (variant: string) => {
-              const response = await admin.graphql(
-                `#graphql
+        return json({
+          nextProducts: nextProducts,
+        });
+      } catch (error) {
+        console.error("Error action endCursor product:", error);
+      }
+    case !!variants:
+      try {
+        const promise = variants.data.map(async (variant: string) => {
+          const response = await admin.graphql(
+            `#graphql
                 query {
                   translatableResourcesByIds(resourceIds: "${variant}", first: 1) {
                     nodes {
@@ -430,45 +430,41 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                       }
                     }
                   }
-                }`
-              );
-              return await response.json();
-            },
+                }`,
           );
-          const variantsData = await Promise.allSettled(promise);
-          return json({ variantsData: variantsData });
-        } catch (error) {
-          console.error("Error action variants product:", error);
+          return await response.json();
+        });
+        const variantsData = await Promise.allSettled(promise);
+        return json({ variantsData: variantsData });
+      } catch (error) {
+        console.error("Error action variants product:", error);
+      }
+    case !!confirmData:
+      const originalConfirmData = confirmData;
+      confirmData.map((item) => {
+        // 检查 key 是否是字符串并包含下划线
+        if (
+          typeof item.key === "string" &&
+          item.key.includes("_") &&
+          item.key.split("_")[1] !== "type" &&
+          item.key.split("_")[0] !== "meta" &&
+          item.key.split("_")[0] !== "body"
+        ) {
+          // 将 key 修改为下划线前的部分
+          item.key = item.key.split("_")[0]; // 取下划线前的部分
         }
-      case !!confirmData:
-        const originalConfirmData = confirmData;
-        confirmData.map((item) => {
-          // 检查 key 是否是字符串并包含下划线
-          if (
-            typeof item.key === "string" &&
-            item.key.includes("_") &&
-            item.key.split("_")[1] !== "type" &&
-            item.key.split("_")[0] !== "meta" &&
-            item.key.split("_")[0] !== "body"
-          ) {
-            // 将 key 修改为下划线前的部分
-            item.key = item.key.split("_")[0]; // 取下划线前的部分
-          }
 
-          return item;
-        });
-        const data = await updateManageTranslation({
-          shop,
-          accessToken: accessToken as string,
-          confirmData,
-        });
-        return json({ data: data, confirmData: originalConfirmData });
-      default:
-        // 你可以在这里处理一个默认的情况，如果没有符合的条件
-        return json({ success: false, message: "Invalid data" });
-    }
-  } catch (error) {
-    console.error("Error action confirmData product:", error);
+        return item;
+      });
+      const data = await updateManageTranslation({
+        shop,
+        accessToken: accessToken as string,
+        confirmData,
+      });
+      return json({ data: data, confirmData: originalConfirmData });
+    default:
+      // 你可以在这里处理一个默认的情况，如果没有符合的条件
+      return json({ success: false, message: "Invalid data" });
   }
 };
 
@@ -485,7 +481,9 @@ const Index = () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+  const languageTableData = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
@@ -496,7 +494,7 @@ const Index = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
-    return !!searchParams.get('language');
+    return !!searchParams.get("language");
   });
 
   const [menuData, setMenuData] = useState<MenuItem[]>([]);
@@ -533,7 +531,7 @@ const Index = () => {
     { label: t("Policies"), value: "policy" },
     { label: t("Delivery"), value: "delivery" },
     { label: t("Shipping"), value: "shipping" },
-  ]
+  ];
   const languagePackOptions = [
     {
       label: t("General"),
@@ -600,16 +598,20 @@ const Index = () => {
       value: "16",
     },
   ];
-  const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
+  const [languageOptions, setLanguageOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(
+    searchTerm || "",
+  );
   const [selectedItem, setSelectedItem] = useState<string>("product");
   // const [selectedModel, setSelectedModel] = useState<string>("1");
   // const [selectedLanguagePack, setSelectedLanguagePack] = useState<string>("en");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    products.data.translatableResources.pageInfo.hasPreviousPage || false
+    products.data.translatableResources.pageInfo.hasPreviousPage || false,
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    products.data.translatableResources.pageInfo.hasNextPage || false
+    products.data.translatableResources.pageInfo.hasNextPage || false,
   );
   const [isMobile, setIsMobile] = useState<boolean>(false);
 
@@ -617,12 +619,15 @@ const Index = () => {
     // setSelectedModel(localStorage.getItem("translateModel") || "1");
     // setSelectedLanguagePack(localStorage.getItem("translateLanguagePack") || "1");
     if (languageTableData.length === 0) {
-      languageFetcher.submit({
-        language: JSON.stringify(true),
-      }, {
-        method: "post",
-        action: "/app/manage_translation",
-      });
+      languageFetcher.submit(
+        {
+          language: JSON.stringify(true),
+        },
+        {
+          method: "post",
+          action: "/app/manage_translation",
+        },
+      );
     }
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -645,20 +650,24 @@ const Index = () => {
 
   useEffect(() => {
     if (languageTableData) {
-      setLanguageOptions(languageTableData
-        .filter((item: any) => !item.primary)
-        .map((item: any) => ({
-          label: item.language,
-          value: item.locale,
-        })));
+      setLanguageOptions(
+        languageTableData
+          .filter((item: any) => !item.primary)
+          .map((item: any) => ({
+            label: item.language,
+            value: item.locale,
+          })),
+      );
     }
-  }, [languageTableData])
+  }, [languageTableData]);
 
   useEffect(() => {
     if (products && isManualChange.current) {
       setProductsData(products);
       setMenuData(exMenuData(products));
-      setSelectProductKey(products.data.translatableResources.nodes[0]?.resourceId);
+      setSelectProductKey(
+        products.data.translatableResources.nodes[0]?.resourceId,
+      );
       setTimeout(() => {
         setIsLoading(false);
       }, 100);
@@ -677,21 +686,28 @@ const Index = () => {
     setLoadingItems([]);
     setConfirmData([]);
     setTranslatedValues({});
-    setHasPrevious(productsData.data.translatableResources.pageInfo.hasPreviousPage);
-    setHasNext(productsData.data.translatableResources.pageInfo.hasNextPage);
-    const variants = productsData.data.products.nodes.find((item: any) => item.id === selectProductKey)?.options.flatMap((item: any) =>
-      item.optionValues.map((opt: any) => opt.id)
+    setHasPrevious(
+      productsData.data.translatableResources.pageInfo.hasPreviousPage,
     );
+    setHasNext(productsData.data.translatableResources.pageInfo.hasNextPage);
+    const variants = productsData.data.products.nodes
+      .find((item: any) => item.id === selectProductKey)
+      ?.options.flatMap((item: any) =>
+        item.optionValues.map((opt: any) => opt.id),
+      );
     if (variants && Array.isArray(variants)) {
-      variantFetcher.submit({
-        variants: JSON.stringify({
-          data: variants,
-          searchTerm: searchTerm,
-        })
-      }, {
-        method: "post",
-        action: "/app/manage_translation/product",
-      });
+      variantFetcher.submit(
+        {
+          variants: JSON.stringify({
+            data: variants,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: "/app/manage_translation/product",
+        },
+      );
     } else {
       setVariantsLoading(false);
     }
@@ -786,21 +802,23 @@ const Index = () => {
       // 在这里处理 nextProducts
       setMenuData(exMenuData(actionData.nextProducts));
       setProductsData(actionData.nextProducts);
-      setSelectProductKey(actionData.nextProducts.data.translatableResources.nodes[0]?.resourceId);
-    } else if (
-      actionData &&
-      "previousProducts" in actionData
-    ) {
+      setSelectProductKey(
+        actionData.nextProducts.data.translatableResources.nodes[0]?.resourceId,
+      );
+    } else if (actionData && "previousProducts" in actionData) {
       setMenuData(exMenuData(actionData.previousProducts));
       setProductsData(actionData.previousProducts);
-      setSelectProductKey(actionData.previousProducts.data.translatableResources.nodes[0]?.resourceId);
+      setSelectProductKey(
+        actionData.previousProducts.data.translatableResources.nodes[0]
+          ?.resourceId,
+      );
     } else {
       // 如果不存在 nextProducts，可以执行其他逻辑
     }
   }, [actionData]);
 
   useEffect(() => {
-    setIsVisible(!!searchParams.get('language'));
+    setIsVisible(!!searchParams.get("language"));
   }, [location]);
 
   useEffect(() => {
@@ -813,35 +831,46 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const successfulItem = confirmFetcher.data.data.filter((item: any) =>
-        item.success === true
+      const successfulItem = confirmFetcher.data.data.filter(
+        (item: any) => item.success === true,
       );
-      const errorItem = confirmFetcher.data.data.filter((item: any) =>
-        item.success === false
+      const errorItem = confirmFetcher.data.data.filter(
+        (item: any) => item.success === false,
       );
 
       successfulItem.forEach((item: any) => {
         if (item.data.resourceId.split("/")[3] === "Product") {
-          const index = productsData.data.translatableResources.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+          const index = productsData.data.translatableResources.nodes.findIndex(
+            (option: any) => option.resourceId === item.data.resourceId,
+          );
           if (index !== -1) {
-            const product = productsData.data.translatableResources.nodes[index].translations.find((option: any) => option.key === item.data.key);
+            const product = productsData.data.translatableResources.nodes[
+              index
+            ].translations.find((option: any) => option.key === item.data.key);
             if (product) {
               product.value = item.data.value;
             } else {
-              productsData.data.translatableResources.nodes[index].translations.push({
+              productsData.data.translatableResources.nodes[
+                index
+              ].translations.push({
                 key: item.data.key,
                 value: item.data.value,
               });
             }
           }
         } else if (item.data.resourceId.split("/")[3] === "ProductOption") {
-          const index = productsData.data.translatableResources.nodes.findIndex((productOption: any) =>
-            productOption.options.nodes.some(
-              (option: any) => option.resourceId === item.data.resourceId
-            )
+          const index = productsData.data.translatableResources.nodes.findIndex(
+            (productOption: any) =>
+              productOption.options.nodes.some(
+                (option: any) => option.resourceId === item.data.resourceId,
+              ),
           );
           if (index !== -1) {
-            const productOption = productsData.data.translatableResources.nodes[index].options.nodes.find((option: any) => option.resourceId === item.data.resourceId);
+            const productOption = productsData.data.translatableResources.nodes[
+              index
+            ].options.nodes.find(
+              (option: any) => option.resourceId === item.data.resourceId,
+            );
             if (productOption.translations.length > 0) {
               productOption.translations[0].value = item.data.value;
             } else {
@@ -852,13 +881,19 @@ const Index = () => {
             }
           }
         } else if (item.data.resourceId.split("/")[3] === "Metafield") {
-          const index = productsData.data.translatableResources.nodes.findIndex((productMetafield: any) =>
-            productMetafield.metafields.nodes.some(
-              (option: any) => option.resourceId === item.data.resourceId
-            )
+          const index = productsData.data.translatableResources.nodes.findIndex(
+            (productMetafield: any) =>
+              productMetafield.metafields.nodes.some(
+                (option: any) => option.resourceId === item.data.resourceId,
+              ),
           );
           if (index !== -1) {
-            const productMetafield = productsData.data.translatableResources.nodes[index].metafields.nodes.find((option: any) => option.resourceId === item.data.resourceId);
+            const productMetafield =
+              productsData.data.translatableResources.nodes[
+                index
+              ].metafields.nodes.find(
+                (option: any) => option.resourceId === item.data.resourceId,
+              );
             if (productMetafield.translations.length > 0) {
               productMetafield.translations[0].value = item.data.value;
             } else {
@@ -869,7 +904,7 @@ const Index = () => {
             }
           }
         }
-      })
+      });
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
       } else {
@@ -884,13 +919,17 @@ const Index = () => {
     if (languageFetcher.data) {
       if (languageFetcher.data.data) {
         const shopLanguages = languageFetcher.data.data;
-        dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
-          key: index,
-          language: language.name,
-          locale: language.locale,
-          primary: language.primary,
-          published: language.published,
-        }))));
+        dispatch(
+          setTableData(
+            shopLanguages.map((language: ShopLocalesType, index: number) => ({
+              key: index,
+              language: language.name,
+              locale: language.locale,
+              primary: language.primary,
+              published: language.published,
+            })),
+          ),
+        );
         const locale = shopLanguages.find(
           (language: ShopLocalesType) => language.primary === true,
         )?.locale;
@@ -905,9 +944,10 @@ const Index = () => {
         if (result.status === "fulfilled") {
           setVariantsData((prev: any) => {
             const newData = result.value.data.translatableResourcesByIds.nodes
-              .filter((variant: any) =>
-                variant?.translatableContent[0]?.value &&
-                variant?.translatableContent[0]?.value !== "Default Title"
+              .filter(
+                (variant: any) =>
+                  variant?.translatableContent[0]?.value &&
+                  variant?.translatableContent[0]?.value !== "Default Title",
               )
               .map((variant: any, index: number) => ({
                 key: variant?.resourceId,
@@ -969,7 +1009,12 @@ const Index = () => {
         return (
           <Button
             onClick={() => {
-              handleTranslate("PRODUCT", record?.key || "", record?.type || "", record?.default_language || "");
+              handleTranslate(
+                "PRODUCT",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+              );
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1020,7 +1065,12 @@ const Index = () => {
         return (
           <Button
             onClick={() => {
-              handleTranslate("PRODUCT", record?.key || "", record?.type || "", record?.default_language || "");
+              handleTranslate(
+                "PRODUCT",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+              );
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1076,7 +1126,13 @@ const Index = () => {
         return (
           <Button
             onClick={() => {
-              handleTranslate("PRODUCT_OPTION", record?.key || "", record?.type || "", record?.default_language || "", Number(1 + "" + record?.index));
+              handleTranslate(
+                "PRODUCT_OPTION",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+                Number(1 + "" + record?.index),
+              );
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1132,7 +1188,13 @@ const Index = () => {
         return (
           <Button
             onClick={() => {
-              handleTranslate("METAFIELD", record?.key || "", record?.type || "", record?.default_language || "", Number(2 + "" + record?.index));
+              handleTranslate(
+                "METAFIELD",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+                Number(2 + "" + record?.index),
+              );
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1169,14 +1231,16 @@ const Index = () => {
       key: "translated",
       width: "40%",
       render: (_: any, record: TableDataType) => {
-        return <ManageTableInput
-          record={record}
-          translatedValues={translatedValues}
-          setTranslatedValues={setTranslatedValues}
-          handleInputChange={handleInputChange}
-          index={3}
-          isRtl={searchTerm === "ar"}
-        />;
+        return (
+          <ManageTableInput
+            record={record}
+            translatedValues={translatedValues}
+            setTranslatedValues={setTranslatedValues}
+            handleInputChange={handleInputChange}
+            index={3}
+            isRtl={searchTerm === "ar"}
+          />
+        );
       },
     },
     {
@@ -1186,7 +1250,13 @@ const Index = () => {
         return (
           <Button
             onClick={() => {
-              handleTranslate("PRODUCT_OPTION_VALUE", record?.key || "", record?.type || "", record?.default_language || "", Number(3 + "" + record?.index));
+              handleTranslate(
+                "PRODUCT_OPTION_VALUE",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+                Number(3 + "" + record?.index),
+              );
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1198,12 +1268,14 @@ const Index = () => {
   ];
 
   const exMenuData = (products: any) => {
-    const data = products.data.translatableResources.nodes.map((product: any) => ({
-      key: product?.resourceId,
-      label: product?.translatableContent.find(
-        (item: any) => item.key === "title",
-      ).value,
-    }));
+    const data = products.data.translatableResources.nodes.map(
+      (product: any) => ({
+        key: product?.resourceId,
+        label: product?.translatableContent.find(
+          (item: any) => item.key === "title",
+        ).value,
+      }),
+    );
     return data;
   };
 
@@ -1213,7 +1285,9 @@ const Index = () => {
       [key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.resourceId === key || item.key === key);
+      const existingItemIndex = prevData.findIndex(
+        (item) => item.resourceId === key || item.key === key,
+      );
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
         const updatedConfirmData = [...prevData];
@@ -1241,18 +1315,16 @@ const Index = () => {
             resourceId: productsData.data.translatableResources.nodes.find(
               (item: any) => item?.resourceId === selectProductKey,
             )?.metafields.nodes[count]?.resourceId,
-            locale: productsData.data.translatableResources.nodes
-              .find((item: any) => item?.resourceId === selectProductKey)
-              ?.metafields.nodes[
-              count
-            ]?.translatableContent[0]
-              ?.locale,
+            locale: productsData.data.translatableResources.nodes.find(
+              (item: any) => item?.resourceId === selectProductKey,
+            )?.metafields.nodes[count]?.translatableContent[0]?.locale,
             key: "value",
             value: value, // 初始为空字符串
-            translatableContentDigest: productsData.data.translatableResources.nodes
-              .find((item: any) => item?.resourceId === selectProductKey)
-              ?.metafields.nodes.find((item: any) => item.resourceId === key)?.translatableContent[0]
-              ?.digest,
+            translatableContentDigest:
+              productsData.data.translatableResources.nodes
+                .find((item: any) => item?.resourceId === selectProductKey)
+                ?.metafields.nodes.find((item: any) => item.resourceId === key)
+                ?.translatableContent[0]?.digest,
             target: searchTerm || "",
           };
           return [...prevData, newItem]; // 将新数据添加到 confirmData 中
@@ -1262,17 +1334,16 @@ const Index = () => {
             resourceId: productsData.data.translatableResources.nodes.find(
               (item: any) => item?.resourceId === selectProductKey,
             )?.options.nodes[count]?.resourceId,
-            locale: productsData.data.translatableResources.nodes
-              .find((item: any) => item?.resourceId === selectProductKey)
-              ?.options.nodes[
-              count
-            ]?.translatableContent[0]?.locale,
+            locale: productsData.data.translatableResources.nodes.find(
+              (item: any) => item?.resourceId === selectProductKey,
+            )?.options.nodes[count]?.translatableContent[0]?.locale,
             key: "name",
             value: value, // 初始为空字符串
-            translatableContentDigest: productsData.data.translatableResources.nodes
-              .find((item: any) => item?.resourceId === selectProductKey)
-              ?.options.nodes.find((item: any) => item.resourceId === key)?.translatableContent[0]
-              ?.digest,
+            translatableContentDigest:
+              productsData.data.translatableResources.nodes
+                .find((item: any) => item?.resourceId === selectProductKey)
+                ?.options.nodes.find((item: any) => item.resourceId === key)
+                ?.translatableContent[0]?.digest,
             target: searchTerm || "",
           };
           return [...prevData, newItem]; // 将新数据添加到 confirmData 中
@@ -1287,10 +1358,11 @@ const Index = () => {
               ?.locale,
             key: key,
             value: value, // 初始为空字符串
-            translatableContentDigest: productsData.data.translatableResources.nodes
-              .find((item: any) => item?.resourceId === selectProductKey)
-              ?.translatableContent.find((item: any) => item.key === key)
-              ?.digest,
+            translatableContentDigest:
+              productsData.data.translatableResources.nodes
+                .find((item: any) => item?.resourceId === selectProductKey)
+                ?.translatableContent.find((item: any) => item.key === key)
+                ?.digest,
             target: searchTerm || "",
           };
 
@@ -1300,11 +1372,7 @@ const Index = () => {
     });
   };
 
-  const transBeforeData = ({
-    products,
-  }: {
-    products: any;
-  }) => {
+  const transBeforeData = ({ products }: { products: any }) => {
     let data: ProductType = {
       key: "",
       title: {
@@ -1366,8 +1434,8 @@ const Index = () => {
     const product = products.data.translatableResources.nodes.find(
       (product: any) => product?.resourceId === selectProductKey,
     );
-    const productOption = product.options
-    const productMetafield = product.metafields
+    const productOption = product.options;
+    const productMetafield = product.metafields;
     data.key = product?.resourceId;
     data.title = {
       value: product?.translatableContent.find(
@@ -1392,7 +1460,7 @@ const Index = () => {
       type: product?.translatableContent.find(
         (item: any) => item.key === "product_type",
       )?.type,
-    }
+    };
     data.handle = {
       value: product?.translatableContent.find(
         (item: any) => item.key === "handle",
@@ -1460,7 +1528,13 @@ const Index = () => {
     return data;
   };
 
-  const handleTranslate = async (resourceType: string, key: string, type: string, context: string, index?: number) => {
+  const handleTranslate = async (
+    resourceType: string,
+    key: string,
+    type: string,
+    context: string,
+    index?: number,
+  ) => {
     if (!key || !type || !context) {
       return;
     }
@@ -1469,8 +1543,7 @@ const Index = () => {
       shopName: shopName,
       source: productsData.data.translatableResources.nodes
         .find((item: any) => item?.resourceId === selectProductKey)
-        ?.translatableContent.find((item: any) => item.key === key)
-        ?.locale,
+        ?.translatableContent.find((item: any) => item.key === key)?.locale,
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -1483,8 +1556,7 @@ const Index = () => {
       shopName: shopName,
       source: productsData.data.translatableResources.nodes
         .find((item: any) => item?.resourceId === selectProductKey)
-        ?.translatableContent.find((item: any) => item.key === key)
-        ?.locale,
+        ?.translatableContent.find((item: any) => item.key === key)?.locale,
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -1494,28 +1566,28 @@ const Index = () => {
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response, index)
-        shopify.toast.show(t("Translated successfully"))
+        handleInputChange(key, data.response, index);
+        shopify.toast.show(t("Translated successfully"));
       }
     } else {
-      shopify.toast.show(data.errorMsg)
+      shopify.toast.show(data.errorMsg);
     }
     setLoadingItems((prev) => prev.filter((item) => item !== key));
-  }
+  };
 
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);
     isManualChange.current = true;
     setSelectedLanguage(language);
     navigate(`/app/manage_translation/product?language=${language}`);
-  }
+  };
 
   const handleItemChange = (item: string) => {
     setIsLoading(true);
     isManualChange.current = true;
     setSelectedItem(item);
     navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
-  }
+  };
 
   // const handleModelChange = (model: string) => {
   //   setSelectedModel(model);
@@ -1539,15 +1611,19 @@ const Index = () => {
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
     } else {
-      submit({
-        startCursor: JSON.stringify({
-          cursor: productsData.data.translatableResources.pageInfo.startCursor,
-          searchTerm: searchTerm,
-        }),
-      }, {
-        method: "post",
-        action: `/app/manage_translation/product?language=${searchTerm}`,
-      }); // 提交表单请求
+      submit(
+        {
+          startCursor: JSON.stringify({
+            cursor:
+              productsData.data.translatableResources.pageInfo.startCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/product?language=${searchTerm}`,
+        },
+      ); // 提交表单请求
     }
   };
 
@@ -1555,15 +1631,18 @@ const Index = () => {
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
     } else {
-      submit({
-        endCursor: JSON.stringify({
-          cursor: productsData.data.translatableResources.pageInfo.endCursor,
-          searchTerm: searchTerm,
-        }),
-      }, {
-        method: "post",
-        action: `/app/manage_translation/product?language=${searchTerm}`,
-      }); // 提交表单请求
+      submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: productsData.data.translatableResources.pageInfo.endCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/product?language=${searchTerm}`,
+        },
+      ); // 提交表单请求
     }
   };
 
@@ -1601,43 +1680,43 @@ const Index = () => {
           variant="primary"
           onClick={handleConfirm}
           loading={confirmLoading && ""}
-        >
-        </button>
-        <button
-          onClick={handleDiscard}
-        >
-        </button>
+        ></button>
+        <button onClick={handleDiscard}></button>
       </SaveBar>
-      <Modal
-        variant="max"
-        open={isVisible}
-        onHide={onCancel}
-      >
-        <TitleBar title={t("Products")} >
-        </TitleBar>
+      <Modal variant="max" open={isVisible} onHide={onCancel}>
+        <TitleBar title={t("Products")}></TitleBar>
         <Layout
           style={{
             padding: "24px 0",
-            height: 'calc(100vh - 64px)',
-            overflow: 'auto',
+            height: "calc(100vh - 64px)",
+            overflow: "auto",
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
           }}
         >
           {isLoading ? (
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100%",
+              }}
+            >
+              <Spin />
+            </div>
           ) : productsData.data.translatableResources.nodes.length ? (
             <>
               {!isMobile && (
                 <Sider
                   style={{
                     background: colorBgContainer,
-                    height: 'calc(100vh - 124px)',
-                    width: '200px',
-                    minHeight: '70vh',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'auto',
+                    height: "calc(100vh - 124px)",
+                    width: "200px",
+                    minHeight: "70vh",
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "auto",
                   }}
                 >
                   {/* <ItemsScroll
@@ -1647,8 +1726,10 @@ const Index = () => {
               /> */}
                   <Menu
                     mode="inline"
-                    defaultSelectedKeys={[productsData.data.translatableResources.nodes[0]?.resourceId]}
-                    defaultOpenKeys={["sub1"]}
+                    defaultSelectedKeys={[
+                      productsData.data.translatableResources.nodes[0]
+                        ?.resourceId,
+                    ]}
                     style={{
                       flex: 1,
                       overflowY: "auto",
@@ -1671,16 +1752,42 @@ const Index = () => {
               <Content
                 style={{
                   padding: "0 24px",
-                  height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+                  height: "calc(100vh - 112px)", // 64px为FullscreenBar高度
                 }}
               >
                 {isMobile ? (
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {menuData!.find((item: any) => item.key === selectProductKey)?.label}
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Title
+                        level={4}
+                        style={{
+                          margin: 0,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {
+                          menuData!.find(
+                            (item: any) => item.key === selectProductKey,
+                          )?.label
+                        }
                       </Title>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          flexGrow: 2,
+                          justifyContent: "flex-end",
+                        }}
+                      >
                         <div
                           style={{
                             width: "100px",
@@ -1707,30 +1814,41 @@ const Index = () => {
                         </div>
                       </div>
                     </div>
-                    <Card
-                      title={t("Resource")}
-                    >
-                      <Space direction="vertical" style={{ width: '100%' }}>
+                    <Card title={t("Resource")}>
+                      <Space direction="vertical" style={{ width: "100%" }}>
                         {resourceData.map((item: any, index: number) => {
                           return (
                             <Space
                               key={index}
                               direction="vertical"
                               size="small"
-                              style={{ width: '100%' }}
+                              style={{ width: "100%" }}
                             >
                               <Text
                                 strong
                                 style={{
-                                  fontSize: "16px"
-                                }}>
+                                  fontSize: "16px",
+                                }}
+                              >
                                 {t(item.resource)}
                               </Text>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
                                 <Text>{t("Default Language")}</Text>
                                 <ManageTableInput record={item} />
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
                                 <Text>{t("Translated")}</Text>
                                 <ManageTableInput
                                   translatedValues={translatedValues}
@@ -1740,50 +1858,73 @@ const Index = () => {
                                   record={item}
                                 />
                               </div>
-                              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "flex-end",
+                                }}
+                              >
                                 <Button
                                   onClick={() => {
-                                    handleTranslate("PRODUCT", item?.key || "", item?.type || "", item?.default_language || "");
+                                    handleTranslate(
+                                      "PRODUCT",
+                                      item?.key || "",
+                                      item?.type || "",
+                                      item?.default_language || "",
+                                    );
                                   }}
-                                  loading={loadingItems.includes(item?.key || "")}
+                                  loading={loadingItems.includes(
+                                    item?.key || "",
+                                  )}
                                 >
                                   {t("Translate")}
                                 </Button>
                               </div>
                               <Divider
                                 style={{
-                                  margin: "8px 0"
+                                  margin: "8px 0",
                                 }}
                               />
                             </Space>
-                          )
+                          );
                         })}
                       </Space>
                     </Card>
-                    <Card
-                      title={t("Seo")}
-                    >
-                      <Space direction="vertical" style={{ width: '100%' }}>
+                    <Card title={t("Seo")}>
+                      <Space direction="vertical" style={{ width: "100%" }}>
                         {SeoData.map((item: any, index: number) => {
                           return (
                             <Space
                               key={index}
                               direction="vertical"
                               size="small"
-                              style={{ width: '100%' }}
+                              style={{ width: "100%" }}
                             >
                               <Text
                                 strong
                                 style={{
-                                  fontSize: "16px"
-                                }}>
+                                  fontSize: "16px",
+                                }}
+                              >
                                 {t(item.resource)}
                               </Text>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
                                 <Text>{t("Default Language")}</Text>
                                 <ManageTableInput record={item} />
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
                                 <Text>{t("Translated")}</Text>
                                 <ManageTableInput
                                   translatedValues={translatedValues}
@@ -1793,53 +1934,75 @@ const Index = () => {
                                   record={item}
                                 />
                               </div>
-                              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "flex-end",
+                                }}
+                              >
                                 <Button
                                   onClick={() => {
-                                    handleTranslate("PRODUCT", item?.key || "", item?.type || "", item?.default_language || "");
+                                    handleTranslate(
+                                      "PRODUCT",
+                                      item?.key || "",
+                                      item?.type || "",
+                                      item?.default_language || "",
+                                    );
                                   }}
-                                  loading={loadingItems.includes(item?.key || "")}
+                                  loading={loadingItems.includes(
+                                    item?.key || "",
+                                  )}
                                 >
                                   {t("Translate")}
                                 </Button>
                               </div>
                               <Divider
                                 style={{
-                                  margin: "8px 0"
+                                  margin: "8px 0",
                                 }}
                               />
                             </Space>
-                          )
+                          );
                         })}
                       </Space>
                     </Card>
                     {Array.isArray(optionsData) &&
-                      optionsData[0] !== undefined &&
-                      (
-                        <Card
-                          title={t("Product Options")}
-                        >
-                          <Space direction="vertical" style={{ width: '100%' }}>
+                      optionsData[0] !== undefined && (
+                        <Card title={t("Product Options")}>
+                          <Space direction="vertical" style={{ width: "100%" }}>
                             {optionsData.map((item: any, index: number) => {
                               return (
                                 <Space
                                   key={index}
                                   direction="vertical"
                                   size="small"
-                                  style={{ width: '100%' }}
+                                  style={{ width: "100%" }}
                                 >
                                   <Text
                                     strong
                                     style={{
-                                      fontSize: "16px"
-                                    }}>
+                                      fontSize: "16px",
+                                    }}
+                                  >
                                     {t(item.resource)}
                                   </Text>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      gap: "8px",
+                                    }}
+                                  >
                                     <Text>{t("Default Language")}</Text>
                                     <ManageTableInput record={item} />
                                   </div>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      gap: "8px",
+                                    }}
+                                  >
                                     <Text>{t("Translated")}</Text>
                                     <ManageTableInput
                                       translatedValues={translatedValues}
@@ -1849,53 +2012,77 @@ const Index = () => {
                                       record={item}
                                     />
                                   </div>
-                                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "flex-end",
+                                    }}
+                                  >
                                     <Button
                                       onClick={() => {
-                                        handleTranslate("PRODUCT_OPTION", item?.key || "", item?.type || "", item?.default_language || "", Number(1 + "" + item?.index));
+                                        handleTranslate(
+                                          "PRODUCT_OPTION",
+                                          item?.key || "",
+                                          item?.type || "",
+                                          item?.default_language || "",
+                                          Number(1 + "" + item?.index),
+                                        );
                                       }}
-                                      loading={loadingItems.includes(item?.key || "")}
+                                      loading={loadingItems.includes(
+                                        item?.key || "",
+                                      )}
                                     >
                                       {t("Translate")}
                                     </Button>
                                   </div>
                                   <Divider
                                     style={{
-                                      margin: "8px 0"
+                                      margin: "8px 0",
                                     }}
                                   />
                                 </Space>
-                              )
+                              );
                             })}
                           </Space>
                         </Card>
                       )}
                     {Array.isArray(metafieldsData) &&
                       metafieldsData[0] !== undefined && (
-                        <Card
-                          title={t("Metafield")}
-                        >
-                          <Space direction="vertical" style={{ width: '100%' }}>
+                        <Card title={t("Metafield")}>
+                          <Space direction="vertical" style={{ width: "100%" }}>
                             {metafieldsData.map((item: any, index: number) => {
                               return (
                                 <Space
                                   key={index}
                                   direction="vertical"
                                   size="small"
-                                  style={{ width: '100%' }}
+                                  style={{ width: "100%" }}
                                 >
                                   <Text
                                     strong
                                     style={{
-                                      fontSize: "16px"
-                                    }}>
+                                      fontSize: "16px",
+                                    }}
+                                  >
                                     {t(item.resource)}
                                   </Text>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      gap: "8px",
+                                    }}
+                                  >
                                     <Text>{t("Default Language")}</Text>
                                     <ManageTableInput record={item} />
                                   </div>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      gap: "8px",
+                                    }}
+                                  >
                                     <Text>{t("Translated")}</Text>
                                     <ManageTableInput
                                       translatedValues={translatedValues}
@@ -1905,54 +2092,77 @@ const Index = () => {
                                       record={item}
                                     />
                                   </div>
-                                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "flex-end",
+                                    }}
+                                  >
                                     <Button
                                       onClick={() => {
-                                        handleTranslate("METAFIELD", item?.key || "", item?.type || "", item?.default_language || "", Number(2 + "" + item?.index));
+                                        handleTranslate(
+                                          "METAFIELD",
+                                          item?.key || "",
+                                          item?.type || "",
+                                          item?.default_language || "",
+                                          Number(2 + "" + item?.index),
+                                        );
                                       }}
-                                      loading={loadingItems.includes(item?.key || "")}
+                                      loading={loadingItems.includes(
+                                        item?.key || "",
+                                      )}
                                     >
                                       {t("Translate")}
                                     </Button>
                                   </div>
                                   <Divider
                                     style={{
-                                      margin: "8px 0"
+                                      margin: "8px 0",
                                     }}
                                   />
                                 </Space>
-                              )
+                              );
                             })}
                           </Space>
                         </Card>
                       )}
                     {Array.isArray(variantsData) &&
                       variantsData[0] !== undefined && (
-                        <Card
-                          title={t("OptionValue")}
-                        >
-                          <Space direction="vertical" style={{ width: '100%' }}>
+                        <Card title={t("OptionValue")}>
+                          <Space direction="vertical" style={{ width: "100%" }}>
                             {variantsData.map((item: any, index: number) => {
                               return (
                                 <Space
                                   key={index}
                                   direction="vertical"
                                   size="small"
-                                  style={{ width: '100%' }}
+                                  style={{ width: "100%" }}
                                 >
                                   <Text
                                     strong
                                     style={{
-                                      fontSize: "16px"
+                                      fontSize: "16px",
                                     }}
                                   >
                                     {t(item.resource)}
                                   </Text>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      gap: "8px",
+                                    }}
+                                  >
                                     <Text>{t("Default Language")}</Text>
                                     <ManageTableInput record={item} />
                                   </div>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      gap: "8px",
+                                    }}
+                                  >
                                     <Text>{t("Translated")}</Text>
                                     <ManageTableInput
                                       translatedValues={translatedValues}
@@ -1962,30 +2172,46 @@ const Index = () => {
                                       record={item}
                                     />
                                   </div>
-                                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      justifyContent: "flex-end",
+                                    }}
+                                  >
                                     <Button
                                       onClick={() => {
-                                        handleTranslate("PRODUCT_OPTION_VALUE", item?.key || "", item?.type || "", item?.default_language || "", Number(3 + "" + item?.index));
+                                        handleTranslate(
+                                          "PRODUCT_OPTION_VALUE",
+                                          item?.key || "",
+                                          item?.type || "",
+                                          item?.default_language || "",
+                                          Number(3 + "" + item?.index),
+                                        );
                                       }}
-                                      loading={loadingItems.includes(item?.key || "")}
+                                      loading={loadingItems.includes(
+                                        item?.key || "",
+                                      )}
                                     >
                                       {t("Translate")}
                                     </Button>
                                   </div>
                                   <Divider
                                     style={{
-                                      margin: "8px 0"
+                                      margin: "8px 0",
                                     }}
                                   />
                                 </Space>
-                              )
+                              );
                             })}
                           </Space>
                         </Card>
                       )}
                     <Menu
                       mode="inline"
-                      defaultSelectedKeys={[productsData.data.translatableResources.nodes[0]?.resourceId]}
+                      defaultSelectedKeys={[
+                        productsData.data.translatableResources.nodes[0]
+                          ?.resourceId,
+                      ]}
                       style={{
                         flex: 1,
                         overflowY: "auto",
@@ -2005,12 +2231,42 @@ const Index = () => {
                     </div>
                   </Space>
                 ) : (
-                  <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {menuData!.find((item: any) => item.key === selectProductKey)?.label}
+                  <Space
+                    direction="vertical"
+                    size="large"
+                    style={{ width: "100%" }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Title
+                        level={4}
+                        style={{
+                          margin: 0,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {
+                          menuData!.find(
+                            (item: any) => item.key === selectProductKey,
+                          )?.label
+                        }
                       </Title>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          flexGrow: 2,
+                          justifyContent: "flex-end",
+                        }}
+                      >
                         <div
                           style={{
                             width: "150px",
@@ -2066,7 +2322,10 @@ const Index = () => {
                     {Array.isArray(variantsData) &&
                       variantsData[0] !== undefined && (
                         <Table
-                          loading={variantFetcher.state === "submitting" || variantsLoading}
+                          loading={
+                            variantFetcher.state === "submitting" ||
+                            variantsLoading
+                          }
                           columns={variantsColumns}
                           dataSource={variantsData}
                           pagination={false}
@@ -2087,7 +2346,7 @@ const Index = () => {
             />
           )}
         </Layout>
-      </Modal >
+      </Modal>
     </>
   );
 };

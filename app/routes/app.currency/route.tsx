@@ -1,9 +1,8 @@
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Link, Page } from "@shopify/polaris";
+import { Page } from "@shopify/polaris";
 import {
   Button,
   Flex,
-  Input,
   message,
   Space,
   Table,
@@ -13,14 +12,13 @@ import {
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { json } from "@remix-run/node";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import "./styles.css";
 import { ColumnsType } from "antd/es/table";
 import { TableRowSelection } from "antd/es/table/interface";
 import { useDispatch, useSelector } from "react-redux";
-import { SearchOutlined } from "@ant-design/icons";
 import { BaseOptionType, DefaultOptionType } from "antd/es/select";
-import { queryShop, queryTheme } from "~/api/admin";
+import { queryShop } from "~/api/admin";
 import {
   AddCurrency,
   DeleteCurrency,
@@ -64,80 +62,100 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  try {
-    const { session, admin } = await authenticate.admin(request);
-    const { shop, accessToken } = session;
-    const formData = await request.formData();
-    const init = JSON.parse(formData.get("init") as string);
-    const loading = JSON.parse(formData.get("loading") as string);
-    const theme = JSON.parse(formData.get("theme") as string);
-    const rateData = JSON.parse(formData.get("rateData") as string);
-    const updateDefaultCurrency = JSON.parse(
-      formData.get("updateDefaultCurrency") as string,
-    );
-    const addCurrencies = JSON.parse(formData.get("addCurrencies") as string);
-    const deleteCurrencies: number[] = JSON.parse(
-      formData.get("deleteCurrencies") as string,
-    );
-    const updateCurrencies = JSON.parse(
-      formData.get("updateCurrencies") as string,
-    );
+  const { session, admin } = await authenticate.admin(request);
+  const { shop, accessToken } = session;
+  const formData = await request.formData();
+  const init = JSON.parse(formData.get("init") as string);
+  const loading = JSON.parse(formData.get("loading") as string);
+  const theme = JSON.parse(formData.get("theme") as string);
+  const rateData = JSON.parse(formData.get("rateData") as string);
+  const updateDefaultCurrency = JSON.parse(
+    formData.get("updateDefaultCurrency") as string,
+  );
+  const addCurrencies = JSON.parse(formData.get("addCurrencies") as string);
+  const deleteCurrencies: number[] = JSON.parse(
+    formData.get("deleteCurrencies") as string,
+  );
+  const updateCurrencies = JSON.parse(
+    formData.get("updateCurrencies") as string,
+  );
 
-    switch (true) {
-      case !!init:
-        try {
-          const primaryCurrency = await InitCurrency({ shop });
-          const shopLoad = await queryShop({ shop, accessToken: accessToken as string });
-          const url = new URL("/currencies.json", request.url).toString();
-          const currencyLocaleData = await fetch(url)
-            .then((response) => response.json())
-            .catch((error) => console.error("Error loading currencies:", error));
-          if (!primaryCurrency && shopLoad.currencyCode) {
-            const currencyData = shopLoad.currencySettings.nodes
-              .filter((item1: any) => item1.enabled)
-              .filter((item2: any) => item2.currencyCode !== shopLoad.currencyCode)
-              .map((item3: any) => ({
-                currencyName: currencyLocaleData.find((item4: any) => item4.currencyCode === item3.currencyCode)?.currencyName || "",
-                currencyCode: item3.currencyCode,
-                primaryStatus: 0,
-              }));
-            currencyData.push({
-              currencyName: currencyLocaleData.find((item: any) => item.currencyCode === shopLoad.currencyCode)?.currencyName || "",
-              currencyCode: shopLoad.currencyCode,
-              primaryStatus: 1,
-            });
-            const promises = currencyData.map((currency: any) =>
-              AddCurrency({
-                shop,
-                currencyName: currency?.currencyName,
-                currencyCode: currency?.currencyCode,
-                primaryStatus: currency?.primaryStatus || 0,
-              }),
-            );
-            await Promise.allSettled(promises);
-          }
-          if (primaryCurrency && shopLoad.currencyCode !== primaryCurrency.currencyCode) {
-            await UpdateDefaultCurrency({ shop, currencyName: currencyLocaleData.find((item: any) => item.currencyCode === shopLoad.currencyCode).currencyName, currencyCode: shopLoad.currencyCode, primaryStatus: 1 });
-          }
-          return json({
-            primaryCurrency,
-            defaultCurrencyCode: shopLoad.currencyCode,
-            currencyLocaleData: currencyLocaleData,
+  switch (true) {
+    case !!init:
+      try {
+        const primaryCurrency = await InitCurrency({ shop });
+        const shopLoad = await queryShop({
+          shop,
+          accessToken: accessToken as string,
+        });
+        const url = new URL("/currencies.json", request.url).toString();
+        const currencyLocaleData = await fetch(url)
+          .then((response) => response.json())
+          .catch((error) => console.error("Error loading currencies:", error));
+        if (!primaryCurrency && shopLoad.currencyCode) {
+          const currencyData = shopLoad.currencySettings.nodes
+            .filter((item1: any) => item1.enabled)
+            .filter(
+              (item2: any) => item2.currencyCode !== shopLoad.currencyCode,
+            )
+            .map((item3: any) => ({
+              currencyName:
+                currencyLocaleData.find(
+                  (item4: any) => item4.currencyCode === item3.currencyCode,
+                )?.currencyName || "",
+              currencyCode: item3.currencyCode,
+              primaryStatus: 0,
+            }));
+          currencyData.push({
+            currencyName:
+              currencyLocaleData.find(
+                (item: any) => item.currencyCode === shopLoad.currencyCode,
+              )?.currencyName || "",
+            currencyCode: shopLoad.currencyCode,
+            primaryStatus: 1,
           });
-        } catch (error) {
-          console.error("Error init currency:", error);
+          const promises = currencyData.map((currency: any) =>
+            AddCurrency({
+              shop,
+              currencyName: currency?.currencyName,
+              currencyCode: currency?.currencyCode,
+              primaryStatus: currency?.primaryStatus || 0,
+            }),
+          );
+          await Promise.allSettled(promises);
         }
-      case !!loading:
-        try {
-          const currencyList = await GetCurrencyByShopName({ shop });
-          return json({ currencyList });
-        } catch (error) {
-          console.error("Error loading currency:", error);
+        if (
+          primaryCurrency &&
+          shopLoad.currencyCode !== primaryCurrency.currencyCode
+        ) {
+          await UpdateDefaultCurrency({
+            shop,
+            currencyName: currencyLocaleData.find(
+              (item: any) => item.currencyCode === shopLoad.currencyCode,
+            ).currencyName,
+            currencyCode: shopLoad.currencyCode,
+            primaryStatus: 1,
+          });
         }
-      case !!theme:
-        try {
-          const response = await admin.graphql(
-            `#graphql
+        return json({
+          primaryCurrency,
+          defaultCurrencyCode: shopLoad.currencyCode,
+          currencyLocaleData: currencyLocaleData,
+        });
+      } catch (error) {
+        console.error("Error init currency:", error);
+      }
+    case !!loading:
+      try {
+        const currencyList = await GetCurrencyByShopName({ shop });
+        return json({ currencyList });
+      } catch (error) {
+        console.error("Error loading currency:", error);
+      }
+    case !!theme:
+      try {
+        const response = await admin.graphql(
+          `#graphql
             query {
               themes(roles: MAIN, first: 1) {
                 nodes {
@@ -154,70 +172,71 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
             }`,
-          );
-          const data = await response.json();
-          return json({ data: data.data.themes });
-        } catch (error) {
-          console.error("Error theme currency:", error);
-        }
-      case !!rateData:
-        try {
-          const promises = rateData.map((currencyCode: any) =>
-            GetCacheData({ shop, currencyCode }),
-          );
-          const data = await Promise.allSettled(promises);
-          return json({ data });
-        } catch (error) {
-          console.error("Error rateData currency:", error);
-        }
-      case !!updateDefaultCurrency:
-        try {
-          const data = await UpdateDefaultCurrency({
+        );
+        const data = await response.json();
+        return json({ data: data.data.themes });
+      } catch (error) {
+        console.error("Error theme currency:", error);
+      }
+    case !!rateData:
+      try {
+        const promises = rateData.map((currencyCode: any) =>
+          GetCacheData({ shop, currencyCode }),
+        );
+        const data = await Promise.allSettled(promises);
+        return json({ data });
+      } catch (error) {
+        console.error("Error rateData currency:", error);
+      }
+    case !!updateDefaultCurrency:
+      try {
+        const data = await UpdateDefaultCurrency({
+          shop,
+          currencyName: updateDefaultCurrency.currencyName,
+          currencyCode: updateDefaultCurrency.currencyCode,
+          primaryStatus: updateDefaultCurrency.primaryStatus,
+        });
+        return json({ data });
+      } catch (error) {
+        console.error("Error updateDefaultCurrency currency:", error);
+      }
+    case !!addCurrencies:
+      try {
+        const promises = addCurrencies.map((currency: any) =>
+          AddCurrency({
             shop,
-            currencyName: updateDefaultCurrency.currencyName,
-            currencyCode: updateDefaultCurrency.currencyCode,
-            primaryStatus: updateDefaultCurrency.primaryStatus,
-          });
-          return json({ data });
-        } catch (error) {
-          console.error("Error updateDefaultCurrency currency:", error);
-        }
-      case !!addCurrencies:
-        try {
-          const promises = addCurrencies.map((currency: any) =>
-            AddCurrency({
-              shop,
-              currencyName: currency.currencyName,
-              currencyCode: currency.currencyCode,
-              primaryStatus: currency?.primaryStatus || 0,
-            }),
-          );
-          const data = await Promise.allSettled(promises);
-          return json({ data });
-        } catch (error) {
-          console.error("Error addCurrencies currency:", error);
-        }
-      case !!deleteCurrencies:
+            currencyName: currency.currencyName,
+            currencyCode: currency.currencyCode,
+            primaryStatus: currency?.primaryStatus || 0,
+          }),
+        );
+        const data = await Promise.allSettled(promises);
+        return json({ data });
+      } catch (error) {
+        console.error("Error addCurrencies currency:", error);
+      }
+    case !!deleteCurrencies:
+      try {
         const promises = deleteCurrencies.map((currency) =>
           DeleteCurrency({ shop, id: currency }),
         );
         const data = await Promise.allSettled(promises);
         return json({ data });
-      case !!updateCurrencies:
-        try {
-          const data = await UpdateCurrency({
-            shop,
-            updateCurrencies,
-          });
-          return json({ data });
-        } catch (error) {
-          console.error("Error updateCurrencies currency:", error);
-        }
-    }
-    return null;
-  } catch (error) {
-    console.error("Error action currency:", error);
-    return json({ error: "Error action currency" }, { status: 500 });
+      } catch (error) {
+        console.error("Error deleteCurrencies currency:", error);
+      }
+    case !!updateCurrencies:
+      try {
+        const data = await UpdateCurrency({
+          shop,
+          updateCurrencies,
+        });
+        return json({ data });
+      } catch (error) {
+        console.error("Error updateCurrencies currency:", error);
+      }
+    default:
+      return null;
   }
 };
 
@@ -277,7 +296,12 @@ const Index = () => {
     if (initFetcher.data) {
       setDefaultCurrencyCode(initFetcher.data.defaultCurrencyCode);
       setCurrencyData(initFetcher.data.currencyLocaleData);
-      setAddCurrencies(initFetcher.data.currencyLocaleData.filter((item: any) => item.currencyCode !== initFetcher.data.defaultCurrencyCode));
+      setAddCurrencies(
+        initFetcher.data.currencyLocaleData.filter(
+          (item: any) =>
+            item.currencyCode !== initFetcher.data.defaultCurrencyCode,
+        ),
+      );
       const defaultCurrency = currencyData.find(
         (item) => item.currencyCode === initFetcher.data.defaultCurrencyCode,
       );
@@ -497,7 +521,11 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Currency")}></TitleBar>
-      <ScrollNotice text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")} />
+      <ScrollNotice
+        text={t(
+          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
+        )}
+      />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <div>
           <Title style={{ fontSize: "1.25rem", display: "inline" }}>
@@ -505,7 +533,9 @@ const Index = () => {
           </Title>
           {defaultCurrencyCode ? (
             <div>
-              <Text type="secondary">{t("Your store's default currency:")}</Text>
+              <Text type="secondary">
+                {t("Your store's default currency:")}
+              </Text>
               <Text strong> {defaultCurrencyCode}</Text>
             </div>
           ) : (
@@ -521,10 +551,10 @@ const Index = () => {
             >
               {t("Delete")}
             </Button>
-            <Text
-              style={{ color: "#007F61" }}
-            >
-              {hasSelected ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}` : null}
+            <Text style={{ color: "#007F61" }}>
+              {hasSelected
+                ? `${t("Selected")} ${selectedRowKeys.length} ${t("items")}`
+                : null}
             </Text>
           </Flex>
           <Button

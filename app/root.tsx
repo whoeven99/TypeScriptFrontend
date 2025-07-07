@@ -11,7 +11,7 @@ import {
 import { Provider } from "react-redux";
 import store from "./store";
 import { useEffect } from "react";
-import { createHead } from 'remix-island'
+import { createHead } from "remix-island";
 import "./styles.css";
 
 export function ErrorBoundary() {
@@ -97,12 +97,8 @@ export function ErrorBoundary() {
                 padding: "24px",
               }}
             >
-              <h1 style={{ fontSize: 72, margin: "24px 0" }}>
-                {errorCode}
-              </h1>
-              <h2 style={{ margin: "24px 0" }}>
-                {currentError.title}
-              </h2>
+              <h1 style={{ fontSize: 72, margin: "24px 0" }}>{errorCode}</h1>
+              <h2 style={{ margin: "24px 0" }}>{currentError.title}</h2>
               <p
                 style={{
                   display: "block",
@@ -140,7 +136,7 @@ export default function App() {
   // 从 loader 数据中获取国际化语言代码
   useEffect(() => {
     // GTM 初始化脚本
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.innerHTML = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
       new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
       j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
@@ -148,7 +144,7 @@ export default function App() {
       })(window,document,'script','dataLayer','GTM-NVPT5XDV')`;
     document.head.appendChild(script);
 
-    const gaInitScript = document.createElement('script');
+    const gaInitScript = document.createElement("script");
     gaInitScript.innerHTML = `
       window.dataLayer = window.dataLayer || [];
       function gtag(){window.dataLayer.push(arguments)}
@@ -157,7 +153,7 @@ export default function App() {
     `;
     document.head.appendChild(gaInitScript);
 
-    const gtagScript = document.createElement('script');
+    const gtagScript = document.createElement("script");
     gtagScript.innerHTML = `
       gtag('event', 'conversion', {
         'send_to': 'AW-11460630366/7Dj1CNvO4cYaEN6u7dgq',
@@ -174,14 +170,20 @@ export default function App() {
       <Provider store={store}>
         <Head />
         <noscript>
-          <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NVPT5XDV"
-            height="0" width="0" style={{ display: "none", visibility: "hidden" }}>
-          </iframe>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-NVPT5XDV"
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+          ></iframe>
         </noscript>
         <Outlet />
         <ScrollRestoration />
         <Scripts />
-        <script src="//code.tidio.co/inl4rrmds8vvbldv1k6gyc2nzxongl3p.js" async></script>
+        <script
+          src="//code.tidio.co/inl4rrmds8vvbldv1k6gyc2nzxongl3p.js"
+          async
+        ></script>
       </Provider>
     </>
   );

@@ -322,6 +322,24 @@ const Index = () => {
       navigation: "theme",
     },
   ];
+  const imageDataSource: TableDataType[] = [
+    {
+      key: "product_images",
+      title: t("Product images"),
+      allTranslatedItems: 1,
+      allItems: 2,
+      sync_status: false,
+      navigation: "productImage",
+    },
+    {
+      key: "product_image_alt",
+      title: t("Product image alt"),
+      allTranslatedItems: 1,
+      allItems: 2,
+      sync_status: false,
+      navigation: "productImageAlt",
+    },
+  ];
   const settingsDataSource: TableDataType[] = [
     {
       key: "delivery",
@@ -777,6 +795,12 @@ const Index = () => {
                   current={current}
                   setShowWarnModal={setShowWarnModal}
                 />
+                {/* <ManageTranslationsCard
+                  cardTitle={t("Images data")}
+                  dataSource={imageDataSource}
+                  current={current}
+                  setShowWarnModal={setShowWarnModal}
+                /> */}
                 <ManageTranslationsCard
                   cardTitle={t("Settings")}
                   dataSource={settingsDataSource}
