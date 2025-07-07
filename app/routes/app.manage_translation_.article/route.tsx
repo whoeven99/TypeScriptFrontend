@@ -11,11 +11,7 @@ import {
   theme,
   Typography,
 } from "antd";
-import {
-  useEffect,
-  useState,
-  useRef
-} from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   useActionData,
   useFetcher,
@@ -27,11 +23,12 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
+import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
 import {
-  queryNextTransType,
-  queryPreviousTransType,
-} from "~/api/admin";
-import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
+  ConfirmDataType,
+  SingleTextTranslate,
+  updateManageTranslation,
+} from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -43,7 +40,7 @@ import { setUserConfig } from "~/store/modules/userConfig";
 
 const { Sider, Content } = Layout;
 
-const { Title, Text } = Typography
+const { Title, Text } = Typography;
 
 interface ArticleType {
   key: string;
@@ -187,7 +184,9 @@ const Index = () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+  const languageTableData = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
@@ -198,7 +197,7 @@ const Index = () => {
   const actionData = useActionData<typeof action>();
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(() => {
-    return !!searchParams.get('language');
+    return !!searchParams.get("language");
   });
   const [menuData, setMenuData] = useState<any[]>([]);
   const [articlesData, setArticlesData] = useState<any>(articles);
@@ -230,27 +229,34 @@ const Index = () => {
     { label: t("Policies"), value: "policy" },
     { label: t("Delivery"), value: "delivery" },
     { label: t("Shipping"), value: "shipping" },
-  ]
-  const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
+  ];
+  const [languageOptions, setLanguageOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(
+    searchTerm || "",
+  );
   const [selectedItem, setSelectedItem] = useState<string>("article");
 
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    articles?.pageInfo.hasPreviousPage || false
+    articles?.pageInfo.hasPreviousPage || false,
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    articles?.pageInfo.hasNextPage || false
+    articles?.pageInfo.hasNextPage || false,
   );
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     if (languageTableData.length === 0) {
-      languageFetcher.submit({
-        language: JSON.stringify(true),
-      }, {
-        method: "post",
-        action: "/app/manage_translation",
-      });
+      languageFetcher.submit(
+        {
+          language: JSON.stringify(true),
+        },
+        {
+          method: "post",
+          action: "/app/manage_translation",
+        },
+      );
     }
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -272,14 +278,16 @@ const Index = () => {
 
   useEffect(() => {
     if (languageTableData) {
-      setLanguageOptions(languageTableData
-        .filter((item: any) => !item.primary)
-        .map((item: any) => ({
-          label: item.language,
-          value: item.locale,
-        })));
+      setLanguageOptions(
+        languageTableData
+          .filter((item: any) => !item.primary)
+          .map((item: any) => ({
+            label: item.language,
+            value: item.locale,
+          })),
+      );
     }
-  }, [languageTableData])
+  }, [languageTableData]);
 
   useEffect(() => {
     if (articles && isManualChange.current) {
@@ -294,7 +302,7 @@ const Index = () => {
   }, [articles]);
 
   useEffect(() => {
-    setIsVisible(!!searchParams.get('language'));
+    setIsVisible(!!searchParams.get("language"));
   }, [location]);
 
   useEffect(() => {
@@ -382,17 +390,21 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const successfulItem = confirmFetcher.data.data.filter((item: any) =>
-        item.success === true
+      const successfulItem = confirmFetcher.data.data.filter(
+        (item: any) => item.success === true,
       );
-      const errorItem = confirmFetcher.data.data.filter((item: any) =>
-        item.success === false
+      const errorItem = confirmFetcher.data.data.filter(
+        (item: any) => item.success === false,
       );
 
       successfulItem.forEach((item: any) => {
-        const index = articlesData.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+        const index = articlesData.nodes.findIndex(
+          (option: any) => option.resourceId === item.data.resourceId,
+        );
         if (index !== -1) {
-          const article = articlesData.nodes[index].translations.find((option: any) => option.key === item.data.key);
+          const article = articlesData.nodes[index].translations.find(
+            (option: any) => option.key === item.data.key,
+          );
           if (article) {
             article.value = item.data.value;
           } else {
@@ -402,7 +414,7 @@ const Index = () => {
             });
           }
         }
-      })
+      });
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
       } else {
@@ -417,13 +429,17 @@ const Index = () => {
     if (languageFetcher.data) {
       if (languageFetcher.data.data) {
         const shopLanguages = languageFetcher.data.data;
-        dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
-          key: index,
-          language: language.name,
-          locale: language.locale,
-          primary: language.primary,
-          published: language.published,
-        }))));
+        dispatch(
+          setTableData(
+            shopLanguages.map((language: ShopLocalesType, index: number) => ({
+              key: index,
+              language: language.name,
+              locale: language.locale,
+              primary: language.primary,
+              published: language.published,
+            })),
+          ),
+        );
         const locale = shopLanguages.find(
           (language: ShopLocalesType) => language.primary === true,
         )?.locale;
@@ -434,9 +450,20 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmData.length > 0) {
-      shopify.saveBar.show("article-confirm-save");
+      const closeButton = document.querySelector(
+        ".Polaris-Button .Polaris-Button--pressable .Polaris-Button--variantTertiary .Polaris-Button--sizeLarge .Polaris-Button--textAlignCenter .Polaris-Button--iconOnly",
+      );
+      console.log(closeButton);
+      if (closeButton) {
+        (closeButton as HTMLElement).style.display = "none";
+      }
     } else {
-      shopify.saveBar.hide("article-confirm-save");
+      const closeButton = document.querySelector(
+        ".Polaris-Button .Polaris-Button--pressable .Polaris-Button--variantTertiary .Polaris-Button--sizeLarge .Polaris-Button--textAlignCenter .Polaris-Button--iconOnly",
+      );
+      if (closeButton) {
+        (closeButton as HTMLElement).style.display = "inline-block";
+      }
     }
   }, [confirmData]);
 
@@ -480,7 +507,12 @@ const Index = () => {
         return (
           <Button
             onClick={() => {
-              handleTranslate("ARTICLE", record?.key || "", record?.type || "", record?.default_language || "");
+              handleTranslate(
+                "ARTICLE",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+              );
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -531,7 +563,12 @@ const Index = () => {
         return (
           <Button
             onClick={() => {
-              handleTranslate("ARTICLE", record?.key || "", record?.type || "", record?.default_language || "");
+              handleTranslate(
+                "ARTICLE",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+              );
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -705,7 +742,12 @@ const Index = () => {
     return data;
   };
 
-  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+  const handleTranslate = async (
+    resourceType: string,
+    key: string,
+    type: string,
+    context: string,
+  ) => {
     if (!key || !type || !context) {
       return;
     }
@@ -714,8 +756,7 @@ const Index = () => {
       shopName: shopName,
       source: articlesData.nodes
         .find((item: any) => item?.resourceId === selectArticleKey)
-        ?.translatableContent.find((item: any) => item.key === key)
-        ?.locale,
+        ?.translatableContent.find((item: any) => item.key === key)?.locale,
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -725,14 +766,14 @@ const Index = () => {
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response)
-        shopify.toast.show(t("Translated successfully"))
+        handleInputChange(key, data.response);
+        shopify.toast.show(t("Translated successfully"));
       }
     } else {
-      shopify.toast.show(data.errorMsg)
+      shopify.toast.show(data.errorMsg);
     }
     setLoadingItems((prev) => prev.filter((item) => item !== key));
-  }
+  };
 
   const onPrevious = () => {
     if (confirmData.length > 0) {
@@ -778,7 +819,7 @@ const Index = () => {
 
   const handleMenuChange = (key: string) => {
     if (confirmData.length > 0) {
-      shopify.saveBar.leaveConfirmation();
+      shopify.toast.show(t("Please confirm or discard the changes"));
     } else {
       setSelectArticleKey(key);
     }
@@ -795,7 +836,6 @@ const Index = () => {
   };
 
   const handleDiscard = () => {
-    shopify.saveBar.hide("article-confirm-save");
     const data = transBeforeData({
       articles: articlesData,
     });
@@ -805,7 +845,6 @@ const Index = () => {
 
   const onCancel = () => {
     setIsVisible(false); // 关闭 Modal
-    shopify.saveBar.hide("article-confirm-save");
     navigate(`/app/manage_translation?language=${searchTerm}`, {
       state: { key: searchTerm },
     }); // 跳转到 /app/manage_translation
@@ -813,36 +852,39 @@ const Index = () => {
 
   return (
     <>
-      <SaveBar id="article-confirm-save">
-        <button
-          variant="primary"
-          onClick={handleConfirm}
-          loading={confirmLoading && ""}
-        >
-        </button>
-        <button
-          onClick={handleDiscard}
-        >
-        </button>
-      </SaveBar>
-      <Modal
-        variant="max"
-        open={isVisible}
-        onHide={onCancel}
-      >
-        <TitleBar title={t("Article")} >
+      <Modal variant="max" open={isVisible} onHide={onCancel}>
+        <TitleBar title={t("Article")}>
+          {confirmData.length > 0 && (
+            <>
+              <button
+                variant="primary"
+                onClick={handleConfirm}
+                loading={confirmLoading && ""}
+              >
+                {t("Confirm")}
+              </button>
+              <button onClick={handleDiscard}>{t("Cancel")}</button>
+            </>
+          )}
         </TitleBar>
         <Layout
           style={{
             padding: "24px 0",
-            height: 'calc(100vh - 64px)',
-            overflow: 'auto',
+            height: "calc(100vh - 64px)",
+            overflow: "auto",
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
           }}
         >
           {isLoading ? (
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100%",
+              }}
+            >
               <Spin />
             </div>
           ) : articles.nodes.length ? (
@@ -851,11 +893,11 @@ const Index = () => {
                 <Sider
                   style={{
                     background: colorBgContainer,
-                    height: 'calc(100vh - 124px)',
-                    minHeight: '70vh',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'auto',
+                    height: "calc(100vh - 124px)",
+                    minHeight: "70vh",
+                    display: "flex",
+                    flexDirection: "column",
+                    overflow: "auto",
                   }}
                 >
                   <Menu
@@ -883,16 +925,42 @@ const Index = () => {
               <Content
                 style={{
                   padding: "0 24px",
-                  height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
+                  height: "calc(100vh - 112px)", // 64px为FullscreenBar高度
                 }}
               >
                 {isMobile ? (
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {menuData!.find((item: any) => item.key === selectArticleKey)?.label}
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Title
+                        level={4}
+                        style={{
+                          margin: 0,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {
+                          menuData!.find(
+                            (item: any) => item.key === selectArticleKey,
+                          )?.label
+                        }
                       </Title>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          flexGrow: 2,
+                          justifyContent: "flex-end",
+                        }}
+                      >
                         <div
                           style={{
                             width: "100px",
@@ -919,30 +987,41 @@ const Index = () => {
                         </div>
                       </div>
                     </div>
-                    <Card
-                      title={t("Resource")}
-                    >
-                      <Space direction="vertical" style={{ width: '100%' }}>
+                    <Card title={t("Resource")}>
+                      <Space direction="vertical" style={{ width: "100%" }}>
                         {resourceData.map((item: any, index: number) => {
                           return (
                             <Space
                               key={item.key}
                               direction="vertical"
                               size="small"
-                              style={{ width: '100%' }}
+                              style={{ width: "100%" }}
                             >
                               <Text
                                 strong
                                 style={{
-                                  fontSize: "16px"
-                                }}>
+                                  fontSize: "16px",
+                                }}
+                              >
                                 {t(item.resource)}
                               </Text>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
                                 <Text>{t("Default Language")}</Text>
                                 <ManageTableInput record={item} />
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
                                 <Text>{t("Translated")}</Text>
                                 <ManageTableInput
                                   translatedValues={translatedValues}
@@ -952,45 +1031,73 @@ const Index = () => {
                                   record={item}
                                 />
                               </div>
-                              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "flex-end",
+                                }}
+                              >
                                 <Button
                                   onClick={() => {
-                                    handleTranslate("ARTICLE", item?.key || "", item?.type || "", item?.default_language || "");
+                                    handleTranslate(
+                                      "ARTICLE",
+                                      item?.key || "",
+                                      item?.type || "",
+                                      item?.default_language || "",
+                                    );
                                   }}
-                                  loading={loadingItems.includes(item?.key || "")}
+                                  loading={loadingItems.includes(
+                                    item?.key || "",
+                                  )}
                                 >
                                   {t("Translate")}
                                 </Button>
                               </div>
                               <Divider
                                 style={{
-                                  margin: "8px 0"
+                                  margin: "8px 0",
                                 }}
                               />
                             </Space>
-                          )
+                          );
                         })}
                       </Space>
                     </Card>
-                    <Card
-                      title={t("SEO")}
-                    >
-                      <Space direction="vertical" style={{ width: '100%' }}>
+                    <Card title={t("SEO")}>
+                      <Space direction="vertical" style={{ width: "100%" }}>
                         {SeoData.map((item: any, index: number) => {
                           return (
-                            <Space key={index} direction="vertical" size="small" style={{ width: '100%' }}>
+                            <Space
+                              key={index}
+                              direction="vertical"
+                              size="small"
+                              style={{ width: "100%" }}
+                            >
                               <Text
                                 strong
                                 style={{
-                                  fontSize: "16px"
-                                }}>
+                                  fontSize: "16px",
+                                }}
+                              >
                                 {t(item.resource)}
                               </Text>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
                                 <Text>{t("Default Language")}</Text>
                                 <ManageTableInput record={item} />
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
                                 <Text>{t("Translated")}</Text>
                                 <ManageTableInput
                                   translatedValues={translatedValues}
@@ -1000,23 +1107,35 @@ const Index = () => {
                                   record={item}
                                 />
                               </div>
-                              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "flex-end",
+                                }}
+                              >
                                 <Button
                                   onClick={() => {
-                                    handleTranslate("ARTICLE", item?.key || "", item?.type || "", item?.default_language || "");
+                                    handleTranslate(
+                                      "ARTICLE",
+                                      item?.key || "",
+                                      item?.type || "",
+                                      item?.default_language || "",
+                                    );
                                   }}
-                                  loading={loadingItems.includes(item?.key || "")}
+                                  loading={loadingItems.includes(
+                                    item?.key || "",
+                                  )}
                                 >
                                   {t("Translate")}
                                 </Button>
                               </div>
                               <Divider
                                 style={{
-                                  margin: "8px 0"
+                                  margin: "8px 0",
                                 }}
                               />
                             </Space>
-                          )
+                          );
                         })}
                       </Space>
                     </Card>
@@ -1042,12 +1161,42 @@ const Index = () => {
                     </div>
                   </Space>
                 ) : (
-                  <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {menuData!.find((item: any) => item.key === selectArticleKey)?.label}
+                  <Space
+                    direction="vertical"
+                    size="large"
+                    style={{ width: "100%" }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Title
+                        level={4}
+                        style={{
+                          margin: 0,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {
+                          menuData!.find(
+                            (item: any) => item.key === selectArticleKey,
+                          )?.label
+                        }
                       </Title>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          flexGrow: 2,
+                          justifyContent: "flex-end",
+                        }}
+                      >
                         <div
                           style={{
                             width: "150px",
