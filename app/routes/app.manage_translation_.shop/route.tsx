@@ -20,13 +20,14 @@ import {
   useSearchParams,
   useSubmit,
 } from "@remix-run/react"; // 引入 useNavigate
-import { FullscreenBar, Pagination, Select } from "@shopify/polaris";
+import { FullscreenBar, Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
+import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
 import {
-  queryNextTransType,
-  queryPreviousTransType,
-} from "~/api/admin";
-import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
+  ConfirmDataType,
+  SingleTextTranslate,
+  updateManageTranslation,
+} from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -39,7 +40,6 @@ import { ShopLocalesType } from "../app.language/route";
 const { Content } = Layout;
 
 const { Text } = Typography;
-
 
 type TableDataType = {
   key: string;
@@ -132,35 +132,30 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const [searchParams] = useSearchParams();
-  const location = useLocation();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const languageTableData = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
+
   const { searchTerm, shops, server, shopName } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
-  const { t } = useTranslation();
 
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
+  const isManualChangeRef = useRef(true);
+  const loadingItemsRef = useRef<string[]>([]);
+
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
-  const isManualChange = useRef(true);
-  const loadingItemsRef = useRef<string[]>([]);
-
   const [isLoading, setIsLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState(() => {
-    return !!searchParams.get('language');
-  });
+  const [isVisible, setIsVisible] = useState<boolean | string>(false);
 
   const [shopsData, setShopsData] = useState(shops);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
-  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
@@ -181,26 +176,33 @@ const Index = () => {
     { label: t("Policies"), value: "policy" },
     { label: t("Delivery"), value: "delivery" },
     { label: t("Shipping"), value: "shipping" },
-  ]
-  const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
+  ];
+  const [languageOptions, setLanguageOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(
+    searchTerm || "",
+  );
   const [selectedItem, setSelectedItem] = useState<string>("shop");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    shops.pageInfo.hasPreviousPage || false
+    shops.pageInfo.hasPreviousPage || false,
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    shops.pageInfo.hasNextPage || false
+    shops.pageInfo.hasNextPage || false,
   );
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     if (languageTableData.length === 0) {
-      languageFetcher.submit({
-        language: JSON.stringify(true),
-      }, {
-        method: "post",
-        action: "/app/manage_translation",
-      });
+      languageFetcher.submit(
+        {
+          language: JSON.stringify(true),
+        },
+        {
+          method: "post",
+          action: "/app/manage_translation",
+        },
+      );
     }
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -217,23 +219,24 @@ const Index = () => {
   }, [loadingItems]);
 
   useEffect(() => {
-    if (shops && isManualChange.current) {
+    if (shops && isManualChangeRef.current) {
       setShopsData(shops);
-      isManualChange.current = false; // 重置
+      isManualChangeRef.current = false; // 重置
     }
   }, [shops]);
 
   useEffect(() => {
     if (languageTableData) {
-      setLanguageOptions(languageTableData
-        .filter((item: any) => !item.primary)
-        .map((item: any) => ({
-          label: item.language,
-          value: item.locale,
-        })));
+      setLanguageOptions(
+        languageTableData
+          .filter((item: any) => !item.primary)
+          .map((item: any) => ({
+            label: item.language,
+            value: item.locale,
+          })),
+      );
     }
-  }, [languageTableData])
-
+  }, [languageTableData]);
 
   useEffect(() => {
     const data = generateMenuItemsArray(shopsData);
@@ -245,7 +248,7 @@ const Index = () => {
 
   useEffect(() => {
     if (actionData && "data" in actionData) {
-      // 在这里处理 nexts
+      setConfirmData([]);
       setShopsData(actionData.data);
     } else {
       // 如果不存在 nexts，可以执行其他逻辑
@@ -253,21 +256,9 @@ const Index = () => {
   }, [actionData]);
 
   useEffect(() => {
-    setIsVisible(!!searchParams.get('language'));
-  }, [location]);
-
-  useEffect(() => {
-    if (confirmData.length > 0) {
-      shopify.saveBar.show("shop-confirm-save");
-    } else {
-      shopify.saveBar.hide("shop-confirm-save");
-    }
-  }, [confirmData]);
-
-  useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.filter((item: any) =>
-        item.success === false
+      const errorItem = confirmFetcher.data.data.filter(
+        (item: any) => item.success === false,
       );
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
@@ -276,20 +267,23 @@ const Index = () => {
       }
       setConfirmData([]);
     }
-    setConfirmLoading(false);
   }, [confirmFetcher.data]);
 
   useEffect(() => {
     if (languageFetcher.data) {
       if (languageFetcher.data.data) {
         const shopLanguages = languageFetcher.data.data;
-        dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
-          key: index,
-          language: language.name,
-          locale: language.locale,
-          primary: language.primary,
-          published: language.published,
-        }))));
+        dispatch(
+          setTableData(
+            shopLanguages.map((language: ShopLocalesType, index: number) => ({
+              key: index,
+              language: language.name,
+              locale: language.locale,
+              primary: language.primary,
+              published: language.published,
+            })),
+          ),
+        );
         const locale = shopLanguages.find(
           (language: ShopLocalesType) => language.primary === true,
         )?.locale;
@@ -338,7 +332,12 @@ const Index = () => {
         return (
           <Button
             onClick={() => {
-              handleTranslate("SHOP", record?.key || "", record?.type || "", record?.default_language || "");
+              handleTranslate(
+                "SHOP",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+              );
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -371,11 +370,14 @@ const Index = () => {
         // 如果 key 不存在，新增一条数据
         const newItem = {
           resourceId: shops.nodes[0]?.resourceId,
-          locale: shops.nodes[0]?.translatableContent.find((item: any) => item.key === key)?.locale,
+          locale: shops.nodes[0]?.translatableContent.find(
+            (item: any) => item.key === key,
+          )?.locale,
           key: key,
           value: value, // 初始为空字符串
-          translatableContentDigest:
-            shops.nodes[0]?.translatableContent.find((item: any) => item.key === key)?.digest,
+          translatableContentDigest: shops.nodes[0]?.translatableContent.find(
+            (item: any) => item.key === key,
+          )?.digest,
           target: searchTerm || "",
         };
 
@@ -403,8 +405,12 @@ const Index = () => {
     );
   };
 
-
-  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+  const handleTranslate = async (
+    resourceType: string,
+    key: string,
+    type: string,
+    context: string,
+  ) => {
     if (!key || !type || !context) {
       return;
     }
@@ -413,8 +419,7 @@ const Index = () => {
       shopName: shopName,
       source: shops.nodes
         .find((item: any) => item?.resourceId === key)
-        ?.translatableContent.find((item: any) => item.key === key)
-        ?.locale,
+        ?.translatableContent.find((item: any) => item.key === key)?.locale,
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -424,32 +429,32 @@ const Index = () => {
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response)
-        shopify.toast.show(t("Translated successfully"))
+        handleInputChange(key, data.response);
+        shopify.toast.show(t("Translated successfully"));
       }
     } else {
-      shopify.toast.show(data.errorMsg)
+      shopify.toast.show(data.errorMsg);
     }
     setLoadingItems((prev) => prev.filter((item) => item !== key));
-  }
+  };
 
   const handleLanguageChange = (language: string) => {
     setIsLoading(true);
-    isManualChange.current = true;
+    isManualChangeRef.current = true;
     setSelectedLanguage(language);
     navigate(`/app/manage_translation/shop?language=${language}`);
-  }
+  };
 
   const handleItemChange = (item: string) => {
     setIsLoading(true);
-    isManualChange.current = true;
+    isManualChangeRef.current = true;
     setSelectedItem(item);
     navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
-  }
+  };
 
   const onPrevious = () => {
     if (confirmData.length > 0) {
-      shopify.saveBar.leaveConfirmation();
+      setIsVisible("previous");
     } else {
       const formData = new FormData();
       const startCursor = shopsData.pageInfo.startCursor;
@@ -463,7 +468,7 @@ const Index = () => {
 
   const onNext = () => {
     if (confirmData.length > 0) {
-      shopify.saveBar.leaveConfirmation();
+      setIsVisible("next");
     } else {
       const formData = new FormData();
       const endCursor = shopsData.pageInfo.endCursor;
@@ -477,7 +482,6 @@ const Index = () => {
   };
 
   const handleConfirm = () => {
-    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
@@ -487,210 +491,307 @@ const Index = () => {
   };
 
   const handleDiscard = () => {
-    shopify.saveBar.hide("shop-confirm-save");
     setShopsData({ ...shopsData });
     setConfirmData([]);
   };
 
+  const handleLeaveItem = (key: string | boolean | "previous" | "next") => {
+    setIsVisible(false);
+    if (key === "previous") {
+      // 向前翻页
+      const formData = new FormData();
+      const startCursor = shopsData.pageInfo.startCursor;
+      formData.append("startCursor", JSON.stringify(startCursor));
+      submit(formData, {
+        method: "post",
+        action: `/app/manage_translation/shop?language=${searchTerm}`,
+      });
+    } else if (key === "next") {
+      // 向后翻页
+      const formData = new FormData();
+      const endCursor = shopsData.pageInfo.endCursor;
+      formData.append("endCursor", JSON.stringify(endCursor));
+      submit(formData, {
+        method: "post",
+        action: `/app/manage_translation/shop?language=${searchTerm}`,
+      });
+    } else {
+      navigate(`/app/manage_translation?language=${searchTerm}`, {
+        state: { key: searchTerm },
+      }); // 跳转到 /app/manage_translation
+    }
+  };
+
   const onCancel = () => {
-    setIsVisible(false); // 关闭 Modal
-    shopify.saveBar.hide("shop-confirm-save");
-    navigate(`/app/manage_translation?language=${searchTerm}`, {
-      state: { key: searchTerm },
-    }); // 跳转到 /app/manage_translation
+    if (confirmData.length > 0) {
+      setIsVisible(true); // 关闭 Modal
+    } else {
+      navigate(`/app/manage_translation?language=${searchTerm}`, {
+        state: { key: searchTerm },
+      }); // 跳转到 /app/manage_translation
+    }
   };
 
   return (
-    <>
-      <SaveBar id="shop-confirm-save">
-        <button
-          variant="primary"
-          onClick={handleConfirm}
-          loading={confirmLoading && ""}
-        >
-        </button>
-        <button
-          onClick={handleDiscard}
-        >
-        </button>
-      </SaveBar>
-      <Modal
-        variant="max"
-        open={isVisible}
-        onHide={onCancel}
+    <Page
+      title={t("Shop")}
+      fullWidth={true}
+      primaryAction={{
+        content: t("Save"),
+        loading: confirmFetcher.state === "submitting",
+        disabled:
+          confirmData.length == 0 || confirmFetcher.state === "submitting",
+        onAction: handleConfirm,
+      }}
+      secondaryActions={[
+        {
+          content: t("Cancel"),
+          loading: confirmFetcher.state === "submitting",
+          disabled:
+            confirmData.length == 0 || confirmFetcher.state === "submitting",
+          onAction: handleDiscard,
+        },
+      ]}
+      backAction={{
+        onAction: onCancel,
+      }}
+    >
+      <Layout
+        style={{
+          overflow: "auto",
+          backgroundColor: "var(--p-color-bg)",
+          height: "calc(100vh - 104px)",
+        }}
       >
-        <TitleBar title={t("Shop")} >
-        </TitleBar>
-        <Layout
+        {isLoading ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100%",
+            }}
+          >
+            <Spin />
+          </div>
+        ) : shops.nodes.length ? (
+          <Content
+            style={{
+              paddingLeft: isMobile ? "16px" : "0",
+            }}
+          >
+            {isMobile ? (
+              <Space direction="vertical" style={{ width: "100%" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    flexGrow: 2,
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "100px",
+                    }}
+                  >
+                    <Select
+                      label={""}
+                      options={languageOptions}
+                      value={selectedLanguage}
+                      onChange={(value) => handleLanguageChange(value)}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      width: "100px",
+                    }}
+                  >
+                    <Select
+                      label={""}
+                      options={itemOptions}
+                      value={selectedItem}
+                      onChange={(value) => handleItemChange(value)}
+                    />
+                  </div>
+                </div>
+                <Card title={t("Resource")}>
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    {resourceData.map((item: any, index: number) => {
+                      return (
+                        <Space
+                          key={index}
+                          direction="vertical"
+                          size="small"
+                          style={{ width: "100%" }}
+                        >
+                          <Text
+                            strong
+                            style={{
+                              fontSize: "16px",
+                            }}
+                          >
+                            {t(item.resource)}
+                          </Text>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "8px",
+                            }}
+                          >
+                            <Text>{t("Default Language")}</Text>
+                            <ManageTableInput record={item} />
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "8px",
+                            }}
+                          >
+                            <Text>{t("Translated")}</Text>
+                            <ManageTableInput
+                              translatedValues={translatedValues}
+                              setTranslatedValues={setTranslatedValues}
+                              handleInputChange={handleInputChange}
+                              isRtl={searchTerm === "ar"}
+                              record={item}
+                            />
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "flex-end",
+                            }}
+                          >
+                            <Button
+                              onClick={() => {
+                                handleTranslate(
+                                  "SHOP",
+                                  item?.key || "",
+                                  item?.type || "",
+                                  item?.default_language || "",
+                                );
+                              }}
+                              loading={loadingItems.includes(item?.key || "")}
+                            >
+                              {t("Translate")}
+                            </Button>
+                          </div>
+                          <Divider
+                            style={{
+                              margin: "8px 0",
+                            }}
+                          />
+                        </Space>
+                      );
+                    })}
+                  </Space>
+                </Card>
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Pagination
+                    hasPrevious={hasPrevious}
+                    onPrevious={onPrevious}
+                    hasNext={hasNext}
+                    onNext={onNext}
+                  />
+                </div>
+              </Space>
+            ) : (
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ display: "flex" }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    flexGrow: 2,
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "150px",
+                    }}
+                  >
+                    <Select
+                      label={""}
+                      options={languageOptions}
+                      value={selectedLanguage}
+                      onChange={(value) => handleLanguageChange(value)}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      width: "150px",
+                    }}
+                  >
+                    <Select
+                      label={""}
+                      options={itemOptions}
+                      value={selectedItem}
+                      onChange={(value) => handleItemChange(value)}
+                    />
+                  </div>
+                </div>
+                <Table
+                  columns={resourceColumns}
+                  dataSource={resourceData}
+                  pagination={false}
+                />
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Pagination
+                    hasPrevious={hasPrevious}
+                    onPrevious={onPrevious}
+                    hasNext={hasNext}
+                    onNext={onNext}
+                  />
+                </div>
+              </Space>
+            )}
+          </Content>
+        ) : (
+          <Result
+            title={t("The specified fields were not found in the store.")}
+            extra={
+              <Button type="primary" onClick={onCancel}>
+                {t("Yes")}
+              </Button>
+            }
+          />
+        )}
+      </Layout>
+      <Modal
+        variant={"base"}
+        open={!!isVisible}
+        onHide={() => setIsVisible(false)}
+      >
+        <div
           style={{
-            padding: "24px 0",
-            height: 'calc(100vh - 64px)',
-            overflow: 'auto',
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
+            padding: "16px",
           }}
         >
-          {isLoading ? (
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}><Spin /></div>
-          ) : shops.nodes.length ? (
-            <Content
-              style={{
-                padding: "0 24px",
-                height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
-              }}
-            >
-              {isMobile ? (
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
-                    <div
-                      style={{
-                        width: "100px",
-                      }}
-                    >
-                      <Select
-                        label={""}
-                        options={languageOptions}
-                        value={selectedLanguage}
-                        onChange={(value) => handleLanguageChange(value)}
-                      />
-                    </div>
-                    <div
-                      style={{
-                        width: "100px",
-                      }}
-                    >
-                      <Select
-                        label={""}
-                        options={itemOptions}
-                        value={selectedItem}
-                        onChange={(value) => handleItemChange(value)}
-                      />
-                    </div>
-                  </div>
-                  <Card
-                    title={t("Resource")}
-                  >
-                    <Space direction="vertical" style={{ width: '100%' }}>
-                      {resourceData.map((item: any, index: number) => {
-                        return (
-                          <Space
-                            key={index}
-                            direction="vertical"
-                            size="small"
-                            style={{ width: '100%' }}
-                          >
-                            <Text
-                              strong
-                              style={{
-                                fontSize: "16px"
-                              }}
-                            >
-                              {t(item.resource)}
-                            </Text>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              <Text>{t("Default Language")}</Text>
-                              <ManageTableInput record={item} />
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              <Text>{t("Translated")}</Text>
-                              <ManageTableInput
-                                translatedValues={translatedValues}
-                                setTranslatedValues={setTranslatedValues}
-                                handleInputChange={handleInputChange}
-                                isRtl={searchTerm === "ar"}
-                                record={item}
-                              />
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                              <Button
-                                onClick={() => {
-                                  handleTranslate("SHOP", item?.key || "", item?.type || "", item?.default_language || "");
-                                }}
-                                loading={loadingItems.includes(item?.key || "")}
-                              >
-                                {t("Translate")}
-                              </Button>
-                            </div>
-                            <Divider
-                              style={{
-                                margin: "8px 0"
-                              }}
-                            />
-                          </Space>
-                        )
-                      })}
-                    </Space>
-                  </Card>
-                  <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={hasPrevious}
-                      onPrevious={onPrevious}
-                      hasNext={hasNext}
-                      onNext={onNext}
-                    />
-                  </div>
-                </Space>
-              ) : (
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{ display: "flex" }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
-                    <div
-                      style={{
-                        width: "150px",
-                      }}
-                    >
-                      <Select
-                        label={""}
-                        options={languageOptions}
-                        value={selectedLanguage}
-                        onChange={(value) => handleLanguageChange(value)}
-                      />
-                    </div>
-                    <div
-                      style={{
-                        width: "150px",
-                      }}
-                    >
-                      <Select
-                        label={""}
-                        options={itemOptions}
-                        value={selectedItem}
-                        onChange={(value) => handleItemChange(value)}
-                      />
-                    </div>
-                  </div>
-                  <Table
-                    columns={resourceColumns}
-                    dataSource={resourceData}
-                    pagination={false}
-                  />
-                  <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={hasPrevious}
-                      onPrevious={onPrevious}
-                      hasNext={hasNext}
-                      onNext={onNext}
-                    />
-                  </div>
-                </Space>
-              )}
-            </Content>
-          ) : (
-            <Result
-              title={t("The specified fields were not found in the store.")}
-              extra={
-                <Button type="primary" onClick={onCancel}>
-                  {t("Yes")}
-                </Button>
-              }
-            />
-          )}
-        </Layout>
+          <Text>
+            {t("If you leave this page, any unsaved changes will be lost.")}
+          </Text>
+        </div>
+        <TitleBar title={t("Unsaved changes")}>
+          <button
+            variant="primary"
+            tone="critical"
+            onClick={() => handleLeaveItem(isVisible)}
+          >
+            {t("Yes")}
+          </button>
+          <button onClick={() => setIsVisible(false)}>{t("No")}</button>
+        </TitleBar>
       </Modal>
-    </>
+    </Page>
   );
 };
 

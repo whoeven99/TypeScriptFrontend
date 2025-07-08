@@ -250,6 +250,7 @@ const Index = () => {
 
   useEffect(() => {
     if (actionData && "data" in actionData) {
+      setConfirmData([])
       setMetaobjectsData(actionData.data);
     } else {
       // 如果不存在 nextProducts，可以执行其他逻辑
@@ -529,7 +530,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("Filters")}
+      title={t("Metaobjects")}
       fullWidth={true}
       primaryAction={{
         content: t("Save"),

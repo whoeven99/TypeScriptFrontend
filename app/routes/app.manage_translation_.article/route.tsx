@@ -192,9 +192,7 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState<
-    boolean | string | "previous" | "next"
-  >(false);
+  const [isVisible, setIsVisible] = useState<boolean | string>(false);
   const [menuData, setMenuData] = useState<any[]>([]);
   const [articlesData, setArticlesData] = useState<any>(articles);
   const [articleData, setArticleData] = useState<ArticleType>();
@@ -437,25 +435,6 @@ const Index = () => {
       }
     }
   }, [languageFetcher.data]);
-
-  useEffect(() => {
-    if (confirmData.length > 0) {
-      const closeButton = document.querySelector(
-        "Polaris-Button Polaris-Button--pressable Polaris-Button--variantTertiary Polaris-Button--sizeLarge Polaris-Button--textAlignCenter Polaris-Button--iconOnly",
-      );
-      console.log(1);
-      if (closeButton) {
-        (closeButton as HTMLElement).style.display = "none";
-      }
-    } else {
-      const closeButton = document.querySelector(
-        "Polaris-Button Polaris-Button--pressable Polaris-Button--variantTertiary Polaris-Button--sizeLarge Polaris-Button--textAlignCenter Polaris-Button--iconOnly",
-      );
-      if (closeButton) {
-        (closeButton as HTMLElement).style.display = "inline-block";
-      }
-    }
-  }, [confirmData]);
 
   const resourceColumns = [
     {
@@ -878,14 +857,16 @@ const Index = () => {
       primaryAction={{
         content: t("Save"),
         loading: confirmFetcher.state === "submitting",
-        disabled: confirmData.length == 0 || confirmFetcher.state === "submitting",
+        disabled:
+          confirmData.length == 0 || confirmFetcher.state === "submitting",
         onAction: handleConfirm,
       }}
       secondaryActions={[
         {
           content: t("Cancel"),
           loading: confirmFetcher.state === "submitting",
-          disabled: confirmData.length == 0 || confirmFetcher.state === "submitting",
+          disabled:
+            confirmData.length == 0 || confirmFetcher.state === "submitting",
           onAction: handleDiscard,
         },
       ]}
@@ -1277,7 +1258,11 @@ const Index = () => {
           />
         )}
       </Layout>
-      <Modal variant={"base"} open={!!isVisible} onHide={() => setIsVisible(false)}>
+      <Modal
+        variant={"base"}
+        open={!!isVisible}
+        onHide={() => setIsVisible(false)}
+      >
         <div
           style={{
             padding: "16px",
