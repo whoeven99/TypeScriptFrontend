@@ -507,7 +507,6 @@ const Index = () => {
                   >
                     <Menu
                       mode="inline"
-                      defaultOpenKeys={["sub1"]}
                       style={{ height: "100%" }}
                       items={menuData}
                       selectedKeys={[selectPolicyKey]}
@@ -611,7 +610,6 @@ const Index = () => {
                     </Card>
                     <Menu
                       mode="inline"
-                      defaultOpenKeys={["sub1"]}
                       style={{ height: "100%" }}
                       items={menuData}
                       selectedKeys={[selectPolicyKey]}
