@@ -828,6 +828,7 @@ const Index = () => {
   return (
     <Page
       title={t("Collection")}
+      fullWidth={true}
       primaryAction={{
         content: t("Confirm"),
         loading: confirmFetcher.state === "submitting",
