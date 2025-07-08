@@ -252,7 +252,7 @@ const Index = () => {
 
   useEffect(() => {
     if (actionData && "data" in actionData) {
-      // 在这里处理 nexts
+      setConfirmData([]);
       setMetafieldsData(actionData.data);
     } else {
       // 如果不存在 nexts，可以执行其他逻辑
@@ -532,7 +532,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("Filters")}
+      title={t("Store metadata")}
       fullWidth={true}
       primaryAction={{
         content: t("Save"),

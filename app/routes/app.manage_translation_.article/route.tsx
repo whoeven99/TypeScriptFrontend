@@ -195,9 +195,7 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState<
-    boolean | string | "previous" | "next"
-  >(false);
+  const [isVisible, setIsVisible] = useState<boolean | string>(false);
   const [menuData, setMenuData] = useState<any[]>([]);
   const [articlesData, setArticlesData] = useState<any>(articles);
   const [articleData, setArticleData] = useState<ArticleType>();
@@ -832,14 +830,16 @@ const Index = () => {
       primaryAction={{
         content: t("Save"),
         loading: confirmFetcher.state === "submitting",
-        disabled: confirmData.length == 0 || confirmFetcher.state === "submitting",
+        disabled:
+          confirmData.length == 0 || confirmFetcher.state === "submitting",
         onAction: handleConfirm,
       }}
       secondaryActions={[
         {
           content: t("Cancel"),
           loading: confirmFetcher.state === "submitting",
-          disabled: confirmData.length == 0 || confirmFetcher.state === "submitting",
+          disabled:
+            confirmData.length == 0 || confirmFetcher.state === "submitting",
           onAction: handleDiscard,
         },
       ]}
@@ -1231,7 +1231,11 @@ const Index = () => {
           />
         )}
       </Layout>
-      <Modal variant={"base"} open={!!isVisible} onHide={() => setIsVisible(false)}>
+      <Modal
+        variant={"base"}
+        open={!!isVisible}
+        onHide={() => setIsVisible(false)}
+      >
         <div
           style={{
             padding: "16px",

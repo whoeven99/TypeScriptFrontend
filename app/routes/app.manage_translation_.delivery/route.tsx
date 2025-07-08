@@ -249,7 +249,7 @@ const Index = () => {
 
   useEffect(() => {
     if (actionData && "data" in actionData) {
-      // 在这里处理 nexts
+      setConfirmData([]);
       setDeliverysData(actionData.data);
     } else {
       // 如果不存在 nexts，可以执行其他逻辑
