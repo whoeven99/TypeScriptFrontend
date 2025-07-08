@@ -669,7 +669,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("Blog")}
+      title={t("Blog titles")}
       fullWidth={true}
       primaryAction={{
         content: t("Save"),

@@ -32,7 +32,7 @@ import ManageTableInput from "~/components/manageTableInput";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
-import { FullscreenBar, Select } from "@shopify/polaris";
+import { Select } from "@shopify/polaris";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setUserConfig } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
