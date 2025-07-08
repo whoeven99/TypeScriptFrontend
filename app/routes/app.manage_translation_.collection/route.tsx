@@ -827,7 +827,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("Collection")}
+      title={t("Collections")}
       fullWidth={true}
       primaryAction={{
         content: t("Confirm"),

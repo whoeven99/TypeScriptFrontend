@@ -490,7 +490,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("Policy")}
+      title={t("Policies")}
       fullWidth={true}
       primaryAction={{
         content: t("Save"),

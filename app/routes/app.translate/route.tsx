@@ -448,7 +448,7 @@ const Index = () => {
   };
 
   const handleTranslate = async () => {
-    const customKey = `${translateSettings4.option1 && `Adopt a ${translateSettings4.option1} tone.`} ${translateSettings4.option2 && `Follow the brand tone of ${translateSettings4.option2}.`} ${translateSettings4.option3 && `using terminology and tone appropriate for the ${translateSettings4.option3} industry.`} ${translateSettings4.option4 && `Use a ${translateSettings4.option4} writing style.`} ${translateSettings4.option5 && `${translateSettings4.option5}.`}`;
+    const customKey = `${translateSettings4.option3 && `using terminology and tone appropriate for the ${translateSettings4.option3} industry.`} ${translateSettings4.option1 && `Adopt a ${translateSettings4.option1} tone.`} ${translateSettings4.option2 && `Follow the brand tone of ${translateSettings4.option2}.`} ${translateSettings4.option4 && `Use a ${translateSettings4.option4} writing style.`} ${translateSettings4.option5 && `${translateSettings4.option5}.`}`;
 
     console.log("customKey: ", customKey);
 
