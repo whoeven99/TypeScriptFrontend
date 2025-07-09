@@ -150,7 +150,9 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState<boolean | number>(false);
+  const [isVisible, setIsVisible] = useState<
+    boolean | number | { language: string } | { item: string }
+  >(false);
   const [resourceData, setResourceData] = useState<any>([]);
   const [filteredResourceData, setFilteredResourceData] = useState<any>([]);
   const [searchInput, setSearchInput] = useState("");
@@ -443,17 +445,25 @@ const Index = () => {
   };
 
   const handleLanguageChange = (language: string) => {
-    setIsLoading(true);
-    isManualChangeRef.current = true;
-    setSelectedLanguage(language);
-    navigate(`/app/manage_translation/theme?language=${language}`);
+    if (confirmData.length > 0) {
+      setIsVisible({ language: language });
+    } else {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedLanguage(language);
+      navigate(`/app/manage_translation/theme?language=${language}`);
+    }
   };
 
   const handleItemChange = (item: string) => {
-    setIsLoading(true);
-    isManualChangeRef.current = true;
-    setSelectedItem(item);
-    navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+    if (confirmData.length > 0) {
+      setIsVisible({ item: item });
+    } else {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedItem(item);
+      navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+    }
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -482,12 +492,24 @@ const Index = () => {
     setConfirmData([]);
   };
 
-  const handleLeaveItem = (key: number | boolean) => {
+  const handleLeaveItem = (
+    key: number | boolean | { language: string } | { item: string },
+  ) => {
     setIsVisible(false);
     if (typeof key === "number") {
       // 向前翻页
       setCurrentPage(key);
       setConfirmData([]);
+    } else if (typeof key === "object" && "language" in key) {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedLanguage(key.language);
+      navigate(`/app/manage_translation/theme?language=${key.language}`);
+    } else if (typeof key === "object" && "item" in key) {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedItem(key.item);
+      navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
     } else {
       navigate(`/app/manage_translation?language=${searchTerm}`, {
         state: { key: searchTerm },

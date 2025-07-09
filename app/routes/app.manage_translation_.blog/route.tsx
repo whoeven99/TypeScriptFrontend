@@ -162,7 +162,7 @@ const Index = () => {
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
-  const isManualChangeRef= useRef(true);
+  const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
   const submit = useSubmit(); // 使用 useSubmit 钩子
@@ -170,7 +170,9 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState<boolean | string>(false);
+  const [isVisible, setIsVisible] = useState<
+    boolean | string | { language: string } | { item: string }
+  >(false);
 
   const [menuData, setMenuData] = useState<any[]>([]);
   const [blogsData, setBlogsData] = useState(blogs);
@@ -562,17 +564,25 @@ const Index = () => {
   };
 
   const handleLanguageChange = (language: string) => {
-    setIsLoading(true);
-    isManualChangeRef.current = true;
-    setSelectedLanguage(language);
-    navigate(`/app/manage_translation/blog?language=${language}`);
+    if (confirmData.length > 0) {
+      setIsVisible({ language: language });
+    } else {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedLanguage(language);
+      navigate(`/app/manage_translation/blog?language=${language}`);
+    }
   };
 
   const handleItemChange = (item: string) => {
-    setIsLoading(true);
-    isManualChangeRef.current = true;
-    setSelectedItem(item);
-    navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+    if (confirmData.length > 0) {
+      setIsVisible({ item: item });
+    } else {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedItem(item);
+      navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+    }
   };
 
   const onPrevious = () => {
@@ -628,7 +638,9 @@ const Index = () => {
     setConfirmData([]);
   };
 
-  const handleLeaveItem = (key: string | boolean | "previous" | "next") => {
+  const handleLeaveItem = (
+    key: string | boolean | { language: string } | { item: string },
+  ) => {
     setIsVisible(false);
     if (typeof key === "string" && key !== "previous" && key !== "next") {
       setSelectBlogKey(key);
@@ -650,6 +662,16 @@ const Index = () => {
         method: "post",
         action: `/app/manage_translation/blog?language=${searchTerm}`,
       });
+    } else if (typeof key === "object" && "language" in key) {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedLanguage(key.language);
+      navigate(`/app/manage_translation/blog?language=${key.language}`);
+    } else if (typeof key === "object" && "item" in key) {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedItem(key.item);
+      navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
     } else {
       navigate(`/app/manage_translation?language=${searchTerm}`, {
         state: { key: searchTerm },
@@ -674,14 +696,16 @@ const Index = () => {
       primaryAction={{
         content: t("Save"),
         loading: confirmFetcher.state === "submitting",
-        disabled: confirmData.length == 0 || confirmFetcher.state === "submitting",
+        disabled:
+          confirmData.length == 0 || confirmFetcher.state === "submitting",
         onAction: handleConfirm,
       }}
       secondaryActions={[
         {
           content: t("Cancel"),
           loading: confirmFetcher.state === "submitting",
-          disabled: confirmData.length == 0 || confirmFetcher.state === "submitting",
+          disabled:
+            confirmData.length == 0 || confirmFetcher.state === "submitting",
           onAction: handleDiscard,
         },
       ]}
@@ -995,7 +1019,11 @@ const Index = () => {
           />
         )}
       </Layout>
-      <Modal variant={"base"} open={!!isVisible} onHide={() => setIsVisible(false)}>
+      <Modal
+        variant={"base"}
+        open={!!isVisible}
+        onHide={() => setIsVisible(false)}
+      >
         <div
           style={{
             padding: "16px",
@@ -1013,7 +1041,9 @@ const Index = () => {
           >
             {t("Leave Anyway")}
           </button>
-          <button onClick={() => setIsVisible(false)}>{t("Stay on Page")}</button>
+          <button onClick={() => setIsVisible(false)}>
+            {t("Stay on Page")}
+          </button>
         </TitleBar>
       </Modal>
     </Page>

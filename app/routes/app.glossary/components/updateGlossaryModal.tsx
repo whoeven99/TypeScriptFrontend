@@ -74,7 +74,6 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
 
   useEffect(() => {
     if (updateFetcher.data) {
-
     }
   }, [updateFetcher.data]);
 
@@ -125,7 +124,10 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       isValid = false;
     }
 
-    if (title === "Create rule" && dataSource.length >= planMapping[plan as keyof typeof planMapping]) {
+    if (
+      title === "Create rule" &&
+      dataSource.length >= planMapping[plan as keyof typeof planMapping]
+    ) {
       isOversizeError = false;
     }
 
@@ -216,7 +218,9 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
         setConfirmButtonDisable(false);
       }
     } else if (!isOversizeError) {
-      shopify.toast.show(t("You can add up to {{count}} translation rules", { count: 10 }));
+      shopify.toast.show(
+        t("You can add up to {{count}} translation rules", { count: 10 }),
+      );
       return;
     } else if (!isSameRuleError) {
       shopify.toast.show(t("You cannot add two conflicting rules."));
@@ -254,11 +258,14 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       open={isVisible}
       onCancel={handleCloseModal}
       footer={[
-        <div key={"footer_buttons"} style={{
-          display: "flex",
-          justifyContent: "center",
-          width: "100%",
-        }}>
+        <div
+          key={"footer_buttons"}
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+          }}
+        >
           <Button
             key={"manage_cancel_button"}
             onClick={handleCloseModal}
@@ -279,7 +286,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       ]}
     >
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <Text strong>{t("Always translate")}</Text>
+        <Text>{t("Always translate")}</Text>
         <div
           style={{
             display: "flex",
@@ -299,8 +306,13 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
               status={sourceTextStatus}
             />
             {sourceTextError && (
-              <Text type="danger" style={{ marginTop: 2 }}>
-                <ExclamationCircleOutlined style={{ display: sourceTextError ? "inline-block" : "none", marginRight: "4px" }} />
+              <Text type="danger" style={{ marginTop: 2, color: "#8E0A21" }}>
+                <ExclamationCircleOutlined
+                  style={{
+                    display: sourceTextError ? "inline-block" : "none",
+                    marginRight: "4px",
+                  }}
+                />
                 {sourceTextErrorMsg}
               </Text>
             )}
@@ -316,8 +328,13 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
               status={targetTextStatus}
             />
             {targetTextError && (
-              <Text type="danger" style={{ marginTop: 2 }}>
-                <ExclamationCircleOutlined style={{ display: targetTextError ? "inline-block" : "none", marginRight: "4px" }} />
+              <Text type="danger" style={{ marginTop: 2, color: "#8E0A21" }}>
+                <ExclamationCircleOutlined
+                  style={{
+                    display: targetTextError ? "inline-block" : "none",
+                    marginRight: "4px",
+                  }}
+                />
                 {targetTextErrorMsg}
               </Text>
             )}
@@ -336,17 +353,23 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
           />
           {rangeCodeError && (
             <Text type="danger" style={{ marginTop: 2 }}>
-              <ExclamationCircleOutlined style={{ display: rangeCodeError ? "inline-block" : "none", marginRight: "4px" }} />
+              <ExclamationCircleOutlined
+                style={{
+                  display: rangeCodeError ? "inline-block" : "none",
+                  marginRight: "4px",
+                }}
+              />
               {rangeCodeErrorMsg}
             </Text>
           )}
         </div>
         <Text strong>{t("Match by")}</Text>
-        <Checkbox checked={checked} onChange={
-          (e) => {
+        <Checkbox
+          checked={checked}
+          onChange={(e) => {
             setChecked(e.target.checked);
-          }
-        }>
+          }}
+        >
           {t("Case-sensitive")}
         </Checkbox>
       </Space>

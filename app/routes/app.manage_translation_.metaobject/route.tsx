@@ -143,7 +143,7 @@ const Index = () => {
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
-  const isManualChange = useRef(true);
+  const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
   const submit = useSubmit(); // 使用 useSubmit 钩子
@@ -151,7 +151,9 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState<boolean | string>(false);
+  const [isVisible, setIsVisible] = useState<
+    boolean | string | { language: string } | { item: string }
+  >(false);
 
   const [metaobjectsData, setMetaobjectsData] = useState(metaobjects);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
@@ -219,9 +221,9 @@ const Index = () => {
   }, [loadingItems]);
 
   useEffect(() => {
-    if (metaobjects && isManualChange.current) {
+    if (metaobjects && isManualChangeRef.current) {
       setMetaobjectsData(metaobjects);
-      isManualChange.current = false; // 重置
+      isManualChangeRef.current = false; // 重置
     }
   }, [metaobjects]);
 
@@ -250,7 +252,7 @@ const Index = () => {
 
   useEffect(() => {
     if (actionData && "data" in actionData) {
-      setConfirmData([])
+      setConfirmData([]);
       setMetaobjectsData(actionData.data);
     } else {
       // 如果不存在 nextProducts，可以执行其他逻辑
@@ -436,17 +438,25 @@ const Index = () => {
   };
 
   const handleLanguageChange = (language: string) => {
-    setIsLoading(true);
-    isManualChange.current = true;
-    setSelectedLanguage(language);
-    navigate(`/app/manage_translation/metaobject?language=${language}`);
+    if (confirmData.length > 0) {
+      setIsVisible({ language: language });
+    } else {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedLanguage(language);
+      navigate(`/app/manage_translation/metaobject?language=${language}`);
+    }
   };
 
   const handleItemChange = (item: string) => {
-    setIsLoading(true);
-    isManualChange.current = true;
-    setSelectedItem(item);
-    navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+    if (confirmData.length > 0) {
+      setIsVisible({ item: item });
+    } else {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedItem(item);
+      navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+    }
   };
 
   const onPrevious = () => {
@@ -491,7 +501,9 @@ const Index = () => {
     setConfirmData([]);
   };
 
-  const handleLeaveItem = (key: string | boolean | "previous" | "next") => {
+  const handleLeaveItem = (
+    key: string | boolean | { language: string } | { item: string },
+  ) => {
     setIsVisible(false);
     if (key === "previous") {
       // 向前翻页
@@ -511,6 +523,16 @@ const Index = () => {
         method: "post",
         action: `/app/manage_translation/metaobject?language=${searchTerm}`,
       });
+    } else if (typeof key === "object" && "language" in key) {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedLanguage(key.language);
+      navigate(`/app/manage_translation/metaobject?language=${key.language}`);
+    } else if (typeof key === "object" && "item" in key) {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedItem(key.item);
+      navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
     } else {
       navigate(`/app/manage_translation?language=${searchTerm}`, {
         state: { key: searchTerm },
@@ -785,7 +807,9 @@ const Index = () => {
           >
             {t("Leave Anyway")}
           </button>
-          <button onClick={() => setIsVisible(false)}>{t("Stay on Page")}</button>
+          <button onClick={() => setIsVisible(false)}>
+            {t("Stay on Page")}
+          </button>
         </TitleBar>
       </Modal>
     </Page>
