@@ -1080,6 +1080,8 @@ export const updateManageTranslation = async ({
           }),
         });
 
+        console.log("response: ", response.data);
+
         res.push({
           success: response.data.success,
           errorMsg: response.data.errorMsg,

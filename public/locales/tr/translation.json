@@ -457,5 +457,11 @@
     "If you leave this page, any unsaved changes will be lost.": "Bu sayfayı bırakırsanız, kaydedilmemiş değişiklikler kaybolacaktır.",
     "Unsaved changes": "Kaydedilmemiş değişiklikler",
     "Stay on Page": "Sayfada kal",
-    "Leave Anyway": "Her neyse"
+    "Leave Anyway": "Her neyse",
+    "The switcher is currently enabled.": "Seçici şu an etkinleştirilmiştir.",
+    "Enable language and currency switcher": "Dil ve para birimi seçiciyi etkinleştir",
+    "Customers can switch languages and currencies when visiting the site. ": "Müşteriler, sitesini ziyaret ederken dil ve para birimi seçebilirler.",
+    "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Seçici şu an devre dışı bırakılmıştır. IP tabanlı otomatik dil ve para birimi değişimi gerekiyorsa, lütfen “Setup”'a tıklayın.",
+    "Disable App": "Uygulamayı devre dışı bırak",
+    "Setup App": "Uygulamayı yapılandır"
 }

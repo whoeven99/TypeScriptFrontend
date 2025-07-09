@@ -457,6 +457,12 @@
     "If you leave this page, any unsaved changes will be lost.": "Om du lämnar denna sida kommer alla osparade ändringar att gå förlorade.",
     "Unsaved changes": "Osparade ändringar",
     "Stay on Page": "Stanna på sidan",
-    "Leave Anyway": "Lämna ändå"
+    "Leave Anyway": "Lämna ändå",
+    "The switcher is currently enabled.": "Väljaren är aktiverad.",
+    "Enable language and currency switcher": "Aktivera språk- och valutaväljare",
+    "Customers can switch languages and currencies when visiting the site. ": "Kunder kan byta språk och valutor när de besöker webbplatsen.",
+    "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Väljaren är inaktiverad. Om du behöver automatiskt byta språk och valuta baserat på IP, klicka på 'Setup'.",
+    "Disable App": "Inaktivera app",
+    "Setup App": "Konfigurera app"
 }   
   

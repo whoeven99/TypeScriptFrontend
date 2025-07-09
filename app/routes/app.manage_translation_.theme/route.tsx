@@ -242,18 +242,23 @@ const Index = () => {
       });
       if (!errorItem) {
         confirmFetcher.data.confirmData.forEach((item: any) => {
-          const index = resourceData.findIndex(
+          const resourceIndex = resourceData.findIndex(
             (option: any) => option.key === item.key,
           );
-          if (index !== -1) {
+          if (resourceIndex !== -1) {
             setResourceData((prev: any) => {
               const newResourceData = [...prev];
-              newResourceData[index].translated = item.value;
+              newResourceData[resourceIndex].translated = item.value;
               return newResourceData;
             });
+          }
+          const filteredIndex = filteredResourceData.findIndex(
+            (option: any) => option.key === item.key,
+          );
+          if (filteredIndex !== -1) {
             setFilteredResourceData((prev: any) => {
               const newFilteredResourceData = [...prev];
-              newFilteredResourceData[index].translated = item.value;
+              newFilteredResourceData[filteredIndex].translated = item.value;
               return newFilteredResourceData;
             });
           }
@@ -861,7 +866,9 @@ const Index = () => {
           >
             {t("Leave Anyway")}
           </button>
-          <button onClick={() => setIsVisible(false)}>{t("Stay on Page")}</button>
+          <button onClick={() => setIsVisible(false)}>
+            {t("Stay on Page")}
+          </button>
         </TitleBar>
       </Modal>
     </Page>

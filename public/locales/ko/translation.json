@@ -455,6 +455,11 @@
     "If you leave this page, any unsaved changes will be lost.": "이 페이지를 떠나면 저장되지 않은 모든 변경 사항이 사라집니다.",
     "Unsaved changes": "저장되지 않은 변경 사항",
     "Stay on Page": "페이지에 남아있기",
-    "Leave Anyway": "어떤 경우에도 떠나기"
-} 
-  
+    "Leave Anyway": "어떤 경우에도 떠나기",
+    "The switcher is currently enabled.": "스위처가 현재 활성화되어 있습니다.",
+    "Enable language and currency switcher": "언어와 통화 스위처 활성화",
+    "Customers can switch languages and currencies when visiting the site. ": "고객은 사이트를 방문할 때 언어와 통화를 전환할 수 있습니다.",
+    "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "스위처가 현재 비활성화되어 있습니다. IP 기반 자동 언어 및 통화 전환이 필요한 경우 “설정”을 클릭하세요.",
+    "Disable App": "앱 비활성화",
+    "Setup App": "앱 설정"
+}

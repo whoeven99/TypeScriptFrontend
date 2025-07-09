@@ -457,5 +457,11 @@
     "If you leave this page, any unsaved changes will be lost.": "Якщо ви залишите цю сторінку, будь-які незбережені зміни будуть втрачені.",
     "Unsaved changes": "Незбережені зміни",
     "Stay on Page": "Залишитися на сторінці",
-    "Leave Anyway": "Залишити все одно"
+    "Leave Anyway": "Залишити все одно",
+    "The switcher is currently enabled.": "Перемикач в даний момент включений.",
+    "Enable language and currency switcher": "Включити перемикач мови та валюти",
+    "Customers can switch languages and currencies when visiting the site. ": "Клієнти можуть перемикати мови та валюти при відвідуванні сайту.",
+    "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Перемикач в даний момент вимкнений. Якщо вам потрібно автоматичне перемикання мови та валюти на основі IP, будь ласка, натисніть 'Setup'.",
+    "Disable App": "Вимкнути додаток",
+    "Setup App": "Налаштувати додаток"
 }

@@ -456,6 +456,12 @@
     "If you leave this page, any unsaved changes will be lost.": "Se você sair desta página, qualquer alteração não salva será perdida.",
     "Unsaved changes": "Alterações não salvas",
     "Stay on Page": "Ficar na página",
-    "Leave Anyway": "Sair de qualquer forma"
+    "Leave Anyway": "Sair de qualquer forma",
+    "The switcher is currently enabled.": "O seletor está atualmente habilitado.",
+    "Enable language and currency switcher": "Habilitar seletor de idioma e moeda",
+    "Customers can switch languages and currencies when visiting the site. ": "Os clientes podem alternar idiomas e moedas ao visitar o site.",
+    "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "O seletor está atualmente desabilitado. Se você precisar de uma alternância automática de idioma e moeda baseada em IP, clique em 'Setup'.",
+    "Disable App": "Desativar aplicativo",
+    "Setup App": "Configurar aplicativo"
 }   
   

@@ -11,8 +11,8 @@ import {
   Table,
   Typography,
 } from "antd";
-import { Link, useLoaderData, useNavigate } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { Link, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import UserGuideCard from "./components/userGuideCard";
 import ContactCard from "./components/contactCard";
@@ -39,12 +39,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (languageCode === "zh" || languageCode === "zh-CN") {
     return {
       isChinese: true,
+      ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
+      ciwiSwitcherBlocksId: process.env
+        .SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
       server: process.env.SERVER_URL,
       shop: shop,
     };
   } else {
     return {
       isChinese: false,
+      ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
+      ciwiSwitcherBlocksId: process.env
+        .SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
       server: process.env.SERVER_URL,
       shop: shop,
     };
@@ -52,14 +58,57 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 const Index = () => {
-  const { isChinese, server, shop } = useLoaderData<typeof loader>();
+  const { isChinese, server, shop, ciwiSwitcherBlocksId, ciwiSwitcherId } =
+    useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
+  const [switcherOpen, setSwitcherOpen] = useState(true);
+  const [switcherLoading, setSwitcherLoading] = useState(true);
+  const blockUrl = useMemo(
+    () =>
+      `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/switcher`,
+    [shop, ciwiSwitcherBlocksId],
+  );
+
+  const themeFetcher = useFetcher<any>();
 
   useEffect(() => {
     setIsLoading(false);
+    themeFetcher.submit(
+      {
+        theme: JSON.stringify(true),
+      },
+      {
+        method: "post",
+        action: "/app/currency",
+      },
+    );
   }, []);
+
+  useEffect(() => {
+    if (themeFetcher.data) {
+      const switcherData =
+        themeFetcher.data.data.nodes[0].files.nodes[0]?.body?.content;
+      const jsonString = switcherData.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+      const blocks = JSON.parse(jsonString).current?.blocks;
+      if (blocks) {
+        const switcherJson: any = Object.values(blocks).find(
+          (block: any) => block.type === ciwiSwitcherBlocksId,
+        );
+        if (switcherJson) {
+          if (!switcherJson.disabled) {
+            setSwitcherOpen(false);
+            localStorage.setItem("switcherEnableCardOpen", "false");
+          } else {
+            setSwitcherOpen(true);
+            localStorage.setItem("switcherEnableCardOpen", "true");
+          }
+        }
+      }
+      setSwitcherLoading(false);
+    }
+  }, [themeFetcher.data]);
 
   const columns = [
     {
@@ -127,7 +176,12 @@ const Index = () => {
           overflowX: "hidden",
         }}
       >
-        <WelcomeCard />
+        <WelcomeCard
+          switcherOpen={switcherOpen}
+          blockUrl={blockUrl}
+          loading={switcherLoading}
+          // handleReload={handleReload}
+        />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
             <Title level={3}>{t("dashboard.title1")}</Title>
