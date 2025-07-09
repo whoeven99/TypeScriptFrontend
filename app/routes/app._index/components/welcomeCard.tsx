@@ -27,6 +27,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
         components: {
           Card: {
             headerBg: !switcherOpen ? "rgb(145, 208, 255)" : "rgb(255,184,0)",
+            bodyPadding: 16,
           },
         },
       }}
@@ -49,14 +50,13 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
           <Text>
             {!switcherOpen
               ? t(
-                  "Customers can switch languages and currencies when visiting the site. "
+                  "Customers can switch languages and currencies when visiting the site. ",
                 )
               : t(
-                  "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. "
+                  "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ",
                 )}
           </Text>
           <Button
-            type="primary"
             onClick={() => {
               if (!switcherOpen) {
                 // TODO: Disable App
