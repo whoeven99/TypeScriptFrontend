@@ -192,7 +192,9 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState<boolean | string>(false);
+  const [isVisible, setIsVisible] = useState<
+    boolean | string | { language: string } | { item: string }
+  >(false);
   const [menuData, setMenuData] = useState<any[]>([]);
   const [articlesData, setArticlesData] = useState<any>(articles);
   const [articleData, setArticleData] = useState<ArticleType>();
@@ -773,17 +775,25 @@ const Index = () => {
   };
 
   const handleLanguageChange = (language: string) => {
-    setIsLoading(true);
-    isManualChangeRef.current = true;
-    setSelectedLanguage(language);
-    navigate(`/app/manage_translation/article?language=${language}`);
+    if (confirmData.length > 0) {
+      setIsVisible({ language: language });
+    } else {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedLanguage(language);
+      navigate(`/app/manage_translation/article?language=${language}`);
+    }
   };
 
   const handleItemChange = (item: string) => {
-    setIsLoading(true);
-    isManualChangeRef.current = true;
-    setSelectedItem(item);
-    navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+    if (confirmData.length > 0) {
+      setIsVisible({ item: item });
+    } else {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedItem(item);
+      navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+    }
   };
 
   const handleMenuChange = (key: string) => {
@@ -811,7 +821,9 @@ const Index = () => {
     setConfirmData([]);
   };
 
-  const handleLeaveItem = (key: string | boolean | "previous" | "next") => {
+  const handleLeaveItem = (
+    key: string | boolean | { language: string } | { item: string },
+  ) => {
     setIsVisible(false);
     if (typeof key === "string" && key !== "previous" && key !== "next") {
       setSelectArticleKey(key);
@@ -833,6 +845,16 @@ const Index = () => {
         method: "post",
         action: `/app/manage_translation/article?language=${searchTerm}`,
       });
+    } else if (typeof key === "object" && "language" in key) {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedLanguage(key.language);
+      navigate(`/app/manage_translation/article?language=${key.language}`);
+    } else if (typeof key === "object" && "item" in key) {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedItem(key.item);
+      navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
     } else {
       navigate(`/app/manage_translation?language=${searchTerm}`, {
         state: { key: searchTerm },
@@ -1280,7 +1302,9 @@ const Index = () => {
           >
             {t("Leave Anyway")}
           </button>
-          <button onClick={() => setIsVisible(false)}>{t("Stay on Page")}</button>
+          <button onClick={() => setIsVisible(false)}>
+            {t("Stay on Page")}
+          </button>
         </TitleBar>
       </Modal>
     </Page>
