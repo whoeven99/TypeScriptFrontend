@@ -453,5 +453,7 @@
     "translateSettings1.description1": "Avrupa ve Amerika dilinde uzman, İngilizce, Fransızca, İtalyanca, Almanca, İspanyolca ve benzer dillerde yüksek akışlı ve doğru çeviri.",
     "translateSettings1.description2": "Avrupa ve Amerika dilinde dengeli çeviri. Batı dil çevirisiyle ilgili sıkı bir stil takibi olmadan odaklanır.",
     "translateSettings1.description3": "Asya dillerinde uzman, Çince, Japonca, Korece ve diğer büyük Asya dilleri.",
-    "translateSettings1.description4": "En çok kullanılan dilleri destekler. Doğrudan çeviri kullanarak birçok dil çevirir."
+    "translateSettings1.description4": "En çok kullanılan dilleri destekler. Doğrudan çeviri kullanarak birçok dil çevirir.",
+    "If you leave this page, any unsaved changes will be lost.": "Bu sayfayı bırakırsanız, kaydedilmemiş değişiklikler kaybolacaktır.",
+    "Unsaved changes": "Kaydedilmemiş değişiklikler"
 }

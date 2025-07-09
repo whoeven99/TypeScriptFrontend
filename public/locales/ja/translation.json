@@ -452,7 +452,8 @@
     "translateSettings1.description1": "欧米諸国の言語に特化した翻訳モデルです。英語、フランス語、イタリア語、ドイツ語、スペイン語などの言語に対応しています。",
     "translateSettings1.description2": "欧米諸国の言語に対応した翻訳モデルです。言語のスタイルに厳密に従わない翻訳を行います。",
     "translateSettings1.description3": "アジア諸国の言語に特化した翻訳モデルです。中国語、日本語、韓国語などの言語に対応しています。",
-    "translateSettings1.description4": "世界中の言語に対応した翻訳モデルです。直接翻訳を使用して、広範囲の言語を翻訳します。"
-
+    "translateSettings1.description4": "世界中の言語に対応した翻訳モデルです。直接翻訳を使用して、広範囲の言語を翻訳します。",
+    "If you leave this page, any unsaved changes will be lost.": "このページを離れると、未保存の変更が失われます。",
+    "Unsaved changes": "未保存の変更"
 }   
   
