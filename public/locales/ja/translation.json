@@ -456,6 +456,12 @@
     "If you leave this page, any unsaved changes will be lost.": "このページを離れると、未保存の変更が失われます。",
     "Unsaved changes": "未保存の変更",
     "Stay on Page": "ページに留まる",
-    "Leave Anyway": "離れる"
+    "Leave Anyway": "離れる",
+    "The switcher is currently enabled.": "スイッチャーは現在有効です。",
+    "Enable language and currency switcher": "言語と通貨スイッチャーを有効にする",
+    "Customers can switch languages and currencies when visiting the site. ": "顧客はサイトを訪問する際に言語と通貨を切り替えることができます。",
+    "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "スイッチャーは現在無効です。IPベースの自動言語と通貨の切り替えが必要な場合は、「設定」をクリックしてください。",
+    "Disable App": "アプリを無効にする",
+    "Setup App": "アプリを設定する"
 }   
   

@@ -93,7 +93,7 @@ const planMapping = {
   1: "Free",
   2: "Free",
   3: "Starter",
-}
+};
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -111,85 +111,83 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  try {
-    const formData = await request.formData();
-    const loading = JSON.parse(formData.get("loading") as string);
-    const shopInfo = JSON.parse(formData.get("shopInfo") as string);
-    const editData = JSON.parse(formData.get("editData") as string);
-    switch (true) {
-      case !!loading:
-        try {
-          const data = await WidgetConfigurations({
-            shop: shop,
-          });
-          const initData = {
-            shopName: shop,
-            includedFlag: true,
-            languageSelector: true,
-            currencySelector: true,
-            ipOpen: false,
-            fontColor: "#000000",
-            backgroundColor: "#ffffff",
-            buttonColor: "#ffffff",
-            buttonBackgroundColor: "#000000",
-            optionBorderColor: "#ccc",
-            selectorPosition: "bottom_left",
-            positionData: 10,
+  const formData = await request.formData();
+  const loading = JSON.parse(formData.get("loading") as string);
+  const shopInfo = JSON.parse(formData.get("shopInfo") as string);
+  const editData = JSON.parse(formData.get("editData") as string);
+  switch (true) {
+    case !!loading:
+      try {
+        const data = await WidgetConfigurations({
+          shop: shop,
+        });
+        const initData = {
+          shopName: shop,
+          includedFlag: true,
+          languageSelector: true,
+          currencySelector: true,
+          ipOpen: false,
+          fontColor: "#000000",
+          backgroundColor: "#ffffff",
+          buttonColor: "#ffffff",
+          buttonBackgroundColor: "#000000",
+          optionBorderColor: "#ccc",
+          selectorPosition: "bottom_left",
+          positionData: 10,
+        };
+        if (
+          data.success &&
+          typeof data.response === "object" &&
+          data.response !== null
+        ) {
+          const filteredResponse = Object.fromEntries(
+            Object.entries(data.response).filter(
+              ([_, value]) => value !== null,
+            ),
+          );
+          const res = {
+            ...initData,
+            ...filteredResponse,
           };
-          if (
-            data.success &&
-            typeof data.response === "object" &&
-            data.response !== null
-          ) {
-            const filteredResponse = Object.fromEntries(
-              Object.entries(data.response).filter(
-                ([_, value]) => value !== null,
-              ),
-            );
-            const res = {
-              ...initData,
-              ...filteredResponse,
-            };
-            return res;
-          } else {
-            return initData;
-          }
-        } catch (error) {
-          console.error("Error switcher loading:", error);
+          return res;
+        } else {
+          return initData;
         }
-      case !!shopInfo:
-        try {
-          const shopLoad = await queryShop({ shop, accessToken: accessToken as string });
-          const moneyFormat = shopLoad.currencyFormats.moneyFormat;
-          const moneyWithCurrencyFormat =
-            shopLoad.currencyFormats.moneyWithCurrencyFormat;
-          return {
-            defaultCurrencyCode: shopLoad.currencyFormats.defaultCurrencyCode,
-            moneyFormat,
-            moneyWithCurrencyFormat,
-          };
-        } catch (error) {
-          console.error("Error switcher shopInfo:", error);
-        }
-      case !!editData:
-        try {
-          const data = SaveAndUpdateData(editData);
-          return data;
-        } catch (error) {
-          console.error("Error switcher editData:", error);
-        }
-      default:
-        return null;
-    }
-  } catch (error) {
-    console.error("Error switcher action:", error);
+      } catch (error) {
+        console.error("Error switcher loading:", error);
+      }
+    case !!shopInfo:
+      try {
+        const shopLoad = await queryShop({
+          shop,
+          accessToken: accessToken as string,
+        });
+        const moneyFormat = shopLoad.currencyFormats.moneyFormat;
+        const moneyWithCurrencyFormat =
+          shopLoad.currencyFormats.moneyWithCurrencyFormat;
+        return {
+          defaultCurrencyCode: shopLoad.currencyFormats.defaultCurrencyCode,
+          moneyFormat,
+          moneyWithCurrencyFormat,
+        };
+      } catch (error) {
+        console.error("Error switcher shopInfo:", error);
+      }
+    case !!editData:
+      try {
+        const data = SaveAndUpdateData(editData);
+        return data;
+      } catch (error) {
+        console.error("Error switcher editData:", error);
+      }
+    default:
+      return null;
   }
 };
 
-
-
 const Index = () => {
-  const { shop, server, ciwiSwitcherId, ciwiSwitcherBlocksId } = useLoaderData<typeof loader>();
+  const { shop, server, ciwiSwitcherId, ciwiSwitcherBlocksId } =
+    useLoaderData<typeof loader>();
   const [isGeoLocationEnabled, setIsGeoLocationEnabled] = useState(false);
   const [isIncludedFlag, setIsIncludedFlag] = useState(false);
   const [languageSelector, setLanguageSelector] = useState(true);
@@ -233,7 +231,6 @@ const Index = () => {
   const [withoutMoneyValue, setWithoutMoneyValue] = useState<string>("");
   const [cardLoading, setCardLoading] = useState<boolean>(true);
 
-
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
@@ -243,11 +240,15 @@ const Index = () => {
   const editFetcher = useFetcher<any>();
 
   useEffect(() => {
-    const currencyFormatConfigCardOpen = localStorage.getItem("currencyFormatConfigCardOpen");
+    const currencyFormatConfigCardOpen = localStorage.getItem(
+      "currencyFormatConfigCardOpen",
+    );
     if (currencyFormatConfigCardOpen) {
       setCurrencyFormatConfigCardOpen(currencyFormatConfigCardOpen === "true");
     }
-    const switcherEnableCardOpen = localStorage.getItem("switcherEnableCardOpen");
+    const switcherEnableCardOpen = localStorage.getItem(
+      "switcherEnableCardOpen",
+    );
     if (switcherEnableCardOpen) {
       setSwitcherEnableCardOpen(switcherEnableCardOpen === "true");
     }
@@ -260,18 +261,24 @@ const Index = () => {
         action: "/app/switcher",
       },
     );
-    themeFetcher.submit({
-      theme: JSON.stringify(true),
-    }, {
-      method: "post",
-      action: "/app/currency",
-    });
-    shopFetcher.submit({
-      shopInfo: JSON.stringify(true),
-    }, {
-      method: "post",
-      action: "/app/switcher",
-    });
+    themeFetcher.submit(
+      {
+        theme: JSON.stringify(true),
+      },
+      {
+        method: "post",
+        action: "/app/currency",
+      },
+    );
+    shopFetcher.submit(
+      {
+        shopInfo: JSON.stringify(true),
+      },
+      {
+        method: "post",
+        action: "/app/switcher",
+      },
+    );
   }, []);
 
   useEffect(() => {
@@ -343,8 +350,10 @@ const Index = () => {
   useEffect(() => {
     if (shopFetcher.data) {
       const parser = new DOMParser();
-      const moneyFormatHtmlData = parser.parseFromString(shopFetcher.data.moneyFormat, "text/html")
-        .documentElement.textContent;
+      const moneyFormatHtmlData = parser.parseFromString(
+        shopFetcher.data.moneyFormat,
+        "text/html",
+      ).documentElement.textContent;
       const moneyWithCurrencyFormatHtmlData = parser.parseFromString(
         shopFetcher.data.moneyWithCurrencyFormat,
         "text/html",
@@ -428,9 +437,9 @@ const Index = () => {
       setMainBoxText(
         localization.languages.find((language) => language.selected)
           ?.localeName +
-        " / " +
-        localization.currencies.find((currency) => currency.selected)
-          ?.localeName,
+          " / " +
+          localization.currencies.find((currency) => currency.selected)
+            ?.localeName,
       );
     }
   }, [languageSelector, currencySelector, localization]);
@@ -662,12 +671,8 @@ const Index = () => {
           variant="primary"
           onClick={handleSave}
           loading={editFetcher.state === "submitting" && ""}
-        >
-        </button>
-        <button
-          onClick={handleCancel}
-        >
-        </button>
+        ></button>
+        <button onClick={handleCancel}></button>
       </SaveBar>
       <TitleBar title={t("Switcher")} />
       <ScrollNotice
@@ -897,7 +902,9 @@ const Index = () => {
                   </Title>
                   <Popconfirm
                     title=""
-                    description={t("Upgrade to a paid plan to unlock this feature")}
+                    description={t(
+                      "Upgrade to a paid plan to unlock this feature",
+                    )}
                     trigger="hover"
                     showCancel={false}
                     okText={t("Upgrade")}
@@ -978,15 +985,15 @@ const Index = () => {
                     position: "relative",
                     top:
                       selectorPosition === "top_left" ||
-                        selectorPosition === "top_right"
+                      selectorPosition === "top_right"
                         ? ((Number(positionData) * 82) / 100).toString() + "%"
                         : (
-                          ((100 - Number(positionData)) * 82) /
-                          100
-                        ).toString() + "%",
+                            ((100 - Number(positionData)) * 82) /
+                            100
+                          ).toString() + "%",
                     left:
                       selectorPosition === "top_left" ||
-                        selectorPosition === "bottom_left"
+                      selectorPosition === "bottom_left"
                         ? "0"
                         : "calc(100% - 200px)",
                     height: "auto",
@@ -1002,7 +1009,7 @@ const Index = () => {
                       position: "absolute", // 改为绝对定位
                       top:
                         selectorPosition === "top_left" ||
-                          selectorPosition === "top_right"
+                        selectorPosition === "top_right"
                           ? "40px"
                           : languageSelector === currencySelector
                             ? "-170px"
@@ -1274,8 +1281,13 @@ const Index = () => {
           </div>
         </div>
         <TranslationWarnModal
-          title={t("The Auto IP position has been limited due to your plan (Current plan: {{plan}})", { plan: planMapping[plan as keyof typeof planMapping] })}
-          content={t("Please upgrade to a higher plan to unlock the Auto IP position")}
+          title={t(
+            "The Auto IP position has been limited due to your plan (Current plan: {{plan}})",
+            { plan: planMapping[plan as keyof typeof planMapping] },
+          )}
+          content={t(
+            "Please upgrade to a higher plan to unlock the Auto IP position",
+          )}
           action={() => {
             navigate("/app/pricing");
           }}

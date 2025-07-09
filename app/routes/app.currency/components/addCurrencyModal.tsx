@@ -27,8 +27,6 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     (item: CurrencyType) => item.currencyCode != defaultCurrencyCode,
   );
   const [allSelectedKeys, setAllSelectedKeys] = useState<React.Key[]>([]); // 保存所有选中的key
-  const [confirmButtonDisable, setConfirmButtonDisable] =
-    useState<boolean>(false);
   const [searchInput, setSearchInput] = useState("");
   const [filteredCurrencies, setFilteredCurrencies] = useState<CurrencyType[]>(
     [],
@@ -69,13 +67,11 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
           dispatch(updateTableData(data));
           shopify.toast.show(t("Add success"));
           setFilteredCurrencies(defaultData);
-          setConfirmButtonDisable(false);
           setAllSelectedKeys([]);
           setSearchInput("");
           setAllSelectedCurrency([]);
           setIsModalOpen(false);
         } else {
-          setConfirmButtonDisable(false);
           shopify.toast.show(res.value.errorMsg);
         }
       });
@@ -179,7 +175,6 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   const handleConfirm = () => {
     const formData = new FormData();
     formData.append("addCurrencies", JSON.stringify(allSelectedCurrency)); // 将选中的语言作为字符串发送
-
     addFetcher.submit(formData, {
       method: "post",
       action: "/app/currency",
@@ -187,11 +182,9 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     setAllSelectedKeys([]); // 清除已选中的语言
     setSearchInput(""); // 清除搜索框内容
     setAllSelectedCurrency([]); // 清除已选中的语言对象
-    setConfirmButtonDisable(true);
   };
 
   const handleCloseModal = () => {
-    setConfirmButtonDisable(false);
     setAllSelectedKeys([]);
     setSearchInput("");
     setFilteredCurrencies(defaultData);
@@ -300,8 +293,8 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
             onClick={handleConfirm}
             key={"manage_confirm_button"}
             type="primary"
-            disabled={confirmButtonDisable}
-            loading={confirmButtonDisable}
+            disabled={allSelectedKeys.length === 0}
+            loading={addFetcher.state === "submitting"}
           >
             {t("Add")}
           </Button>
@@ -330,11 +323,10 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
           );
         })}
       </Space>
-
       <Table
         rowSelection={rowSelection}
         dataSource={filteredCurrencies}
-        loading={confirmButtonDisable}
+        loading={addFetcher.state === "submitting"}
         columns={columns}
         rowKey="key"
         pagination={{

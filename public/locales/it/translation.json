@@ -455,6 +455,12 @@
     "If you leave this page, any unsaved changes will be lost.": "Se lascia questa pagina, tutti i cambiamenti non salvati verranno persi.",
     "Unsaved changes": "Cambiamenti non salvati",
     "Stay on Page": "Rimani sulla pagina",
-    "Leave Anyway": "Lascia comunque"
+    "Leave Anyway": "Lascia comunque",
+    "The switcher is currently enabled.": "Il selettore è attualmente attivo.",
+    "Enable language and currency switcher": "Attiva selettore di lingua e valuta",
+    "Customers can switch languages and currencies when visiting the site. ": "I clienti possono cambiare lingue e valute durante la visita al sito.",
+    "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Il selettore è attualmente disattivato. Se hai bisogno di un cambiamento automatico di lingua e valuta basato sull'IP, clicca su 'Setup'.",
+    "Disable App": "Disabilita App",
+    "Setup App": "Configura App"
 }
   

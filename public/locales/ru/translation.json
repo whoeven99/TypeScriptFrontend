@@ -457,5 +457,11 @@
     "If you leave this page, any unsaved changes will be lost.": "Если вы покинете эту страницу, любые несохраненные изменения будут потеряны.",
     "Unsaved changes": "Несохраненные изменения",
     "Stay on Page": "Остаться на странице",
-    "Leave Anyway": "Оставить все равно"
+    "Leave Anyway": "Оставить все равно",
+    "The switcher is currently enabled.": "Переключатель в данный момент включен.",
+    "Enable language and currency switcher": "Включить переключатель языка и валюты",
+    "Customers can switch languages and currencies when visiting the site. ": "Клиенты могут переключать языки и валюты при посещении сайта.",
+    "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Переключатель в данный момент отключен. Если вам нужно автоматическое переключение языка и валюты на основе IP, пожалуйста, нажмите «Настроить».",
+    "Disable App": "Отключить приложение",
+    "Setup App": "Настроить приложение"
 }

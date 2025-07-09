@@ -456,7 +456,13 @@
     "If you leave this page, any unsaved changes will be lost.": "Als u deze pagina verlaat, worden alle niet-opgeslagen wijzigingen verloren.",
     "Unsaved changes": "Niet-opgeslagen wijzigingen",
     "Stay on Page": "Blijven op de pagina",
-    "Leave Anyway": "Toch verlaten"
+    "Leave Anyway": "Toch verlaten",
+    "The switcher is currently enabled.": "De switcher is momenteel ingeschakeld.",
+    "Enable language and currency switcher": "Taal- en valutawisselaar inschakelen",
+    "Customers can switch languages and currencies when visiting the site. ": "Klanten kunnen taal en valuta wisselen bij het bezoeken van de site.",
+    "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "De switcher is momenteel uitgeschakeld. Als u IP-gebaseerde automatische taal- en valuta-wisseling nodig hebt, klikt u op 'Setup'.",
+    "Disable App": "App uitschakelen",
+    "Setup App": "App instellen"
 }
   
   

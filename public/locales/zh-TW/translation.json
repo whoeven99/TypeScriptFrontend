@@ -456,6 +456,12 @@
     "If you leave this page, any unsaved changes will be lost.": "如果您離開此頁面，任何未保存的更改都將丟失。",
     "Unsaved changes": "未保存的更改",
     "Stay on Page": "留在頁面上",
-    "Leave Anyway": "離開"
-}
+    "Leave Anyway": "離開",
+    "The switcher is currently enabled.": "切換器目前處於啟用狀態。",
+    "Enable language and currency switcher": "啟用語言和貨幣切換器",
+    "Customers can switch languages and currencies when visiting the site. ": "當訪問網站時，客戶可以切換語言和貨幣。",
+    "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "切換器目前處於禁用狀態。如果您需要基於IP的自動語言和貨幣切換，請點擊“Setup”。",
+    "Disable App": "禁用應用",
+    "Setup App": "設置應用"
+  }
 
