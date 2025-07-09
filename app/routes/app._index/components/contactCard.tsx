@@ -46,7 +46,6 @@ const ContactCard: React.FC<ContactCardProps> = ({ isChinese, onClick }) => {
                             <img src="/images/wechat.webp" alt="Wechat"  width={200} height={270}/>
                         } trigger="click">
                             <Button
-                                icon={isChinese ? <WechatOutlined /> : <PhoneOutlined />}
                                 onClick={!isChinese ? onClick : () => {}}
                             >
                                 {t("contact.contactButton")}

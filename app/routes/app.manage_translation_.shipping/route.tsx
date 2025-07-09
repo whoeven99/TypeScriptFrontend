@@ -667,9 +667,9 @@ const Index = () => {
             tone="critical"
             onClick={() => handleLeaveItem(isVisible)}
           >
-            {t("Yes")}
+            {t("Leave Anyway")}
           </button>
-          <button onClick={() => setIsVisible(false)}>{t("No")}</button>
+          <button onClick={() => setIsVisible(false)}>{t("Stay on Page")}</button>
         </TitleBar>
       </Modal>
     </Page>

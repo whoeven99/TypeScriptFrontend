@@ -830,14 +830,14 @@ const Index = () => {
       title={t("Collections")}
       fullWidth={true}
       primaryAction={{
-        content: t("Confirm"),
+        content: t("Save"),
         loading: confirmFetcher.state === "submitting",
         disabled: confirmData.length == 0 || confirmFetcher.state === "submitting",
         onAction: handleConfirm,
       }}
       secondaryActions={[
         {
-          content: t("Discard"),
+          content: t("Cancel"),
           loading: confirmFetcher.state === "submitting",
           disabled: confirmData.length == 0 || confirmFetcher.state === "submitting",
           onAction: handleDiscard,
@@ -1250,9 +1250,9 @@ const Index = () => {
             tone="critical"
             onClick={() => handleLeaveItem(isVisible)}
           >
-            {t("Yes")}
+            {t("Leave Anyway")}
           </button>
-          <button onClick={() => setIsVisible(false)}>{t("No")}</button>
+          <button onClick={() => setIsVisible(false)}>{t("Stay on Page")}</button>
         </TitleBar>
       </Modal>
     </Page>

@@ -730,7 +730,7 @@ const Index = () => {
 
   const handleMenuChange = (key: string) => {
     if (confirmData.length > 0) {
-      shopify.saveBar.leaveConfirmation();
+      setIsVisible(key);
     } else {
       setSelectPageKey(key);
     }
@@ -738,7 +738,7 @@ const Index = () => {
 
   const onPrevious = () => {
     if (confirmData.length > 0) {
-      shopify.saveBar.leaveConfirmation();
+      setIsVisible("previous");
     } else {
       const formData = new FormData();
       const startCursor = pagesData.pageInfo.startCursor;
@@ -781,11 +781,43 @@ const Index = () => {
     setConfirmData([]);
   };
 
+  const handleLeaveItem = (key: string | boolean | "previous" | "next") => {
+    setIsVisible(false);
+    if (typeof key === "string" && key !== "previous" && key !== "next") {
+      setSelectPageKey(key);
+    } else if (key === "previous") {
+      // 向前翻页
+      const formData = new FormData();
+      const startCursor = pagesData.pageInfo.startCursor;
+      formData.append("startCursor", JSON.stringify(startCursor));
+      submit(formData, {
+        method: "post",
+        action: `/app/manage_translation/page?language=${searchTerm}`,
+      });
+    } else if (key === "next") {
+      // 向后翻页
+      const formData = new FormData();
+      const endCursor = pagesData.pageInfo.endCursor;
+      formData.append("endCursor", JSON.stringify(endCursor));
+      submit(formData, {
+        method: "post",
+        action: `/app/manage_translation/page?language=${searchTerm}`,
+      });
+    } else {
+      navigate(`/app/manage_translation?language=${searchTerm}`, {
+        state: { key: searchTerm },
+      }); // 跳转到 /app/manage_translation
+    }
+  };
+
   const onCancel = () => {
-    setIsVisible(false); // 关闭 Modal
-    navigate(`/app/manage_translation?language=${searchTerm}`, {
-      state: { key: searchTerm },
-    }); // 跳转到 /app/manage_translation
+    if (confirmData.length > 0) {
+      setIsVisible(true);
+    } else {
+      navigate(`/app/manage_translation?language=${searchTerm}`, {
+        state: { key: searchTerm },
+      }); // 跳转到 /app/manage_translation
+    }
   };
 
   return (
@@ -1197,6 +1229,33 @@ const Index = () => {
           />
         )}
       </Layout>
+      <Modal
+        variant={"base"}
+        open={!!isVisible}
+        onHide={() => setIsVisible(false)}
+      >
+        <div
+          style={{
+            padding: "16px",
+          }}
+        >
+          <Text>
+            {t("If you leave this page, any unsaved changes will be lost.")}
+          </Text>
+        </div>
+        <TitleBar title={t("Unsaved changes")}>
+          <button
+            variant="primary"
+            tone="critical"
+            onClick={() => handleLeaveItem(isVisible)}
+          >
+            {t("Leave Anyway")}
+          </button>
+          <button onClick={() => setIsVisible(false)}>
+            {t("Stay on Page")}
+          </button>
+        </TitleBar>
+      </Modal>
     </Page>
   );
 };
