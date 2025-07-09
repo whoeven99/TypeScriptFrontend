@@ -482,6 +482,7 @@ const Index = () => {
     if (typeof key === "number") {
       // 向前翻页
       setCurrentPage(key);
+      setConfirmData([]);
     } else {
       navigate(`/app/manage_translation?language=${searchTerm}`, {
         state: { key: searchTerm },
@@ -501,7 +502,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("Shop")}
+      title={t("Theme")}
       fullWidth={true}
       primaryAction={{
         content: t("Save"),
@@ -858,9 +859,9 @@ const Index = () => {
             tone="critical"
             onClick={() => handleLeaveItem(isVisible)}
           >
-            {t("Yes")}
+            {t("Leave Anyway")}
           </button>
-          <button onClick={() => setIsVisible(false)}>{t("No")}</button>
+          <button onClick={() => setIsVisible(false)}>{t("Stay on Page")}</button>
         </TitleBar>
       </Modal>
     </Page>

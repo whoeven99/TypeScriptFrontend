@@ -1,11 +1,17 @@
 import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Button, Card, Col, Row, Skeleton, Space, Spin, Table, Typography } from "antd";
 import {
-  Link,
-  useLoaderData,
-  useNavigate,
-} from "@remix-run/react";
+  Button,
+  Card,
+  Col,
+  Row,
+  Skeleton,
+  Space,
+  Spin,
+  Table,
+  Typography,
+} from "antd";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import UserGuideCard from "./components/userGuideCard";
@@ -15,6 +21,7 @@ import ScrollNotice from "~/components/ScrollNotice";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import ProgressingCard from "~/components/progressingCard";
 import { authenticate } from "~/shopify.server";
+import WelcomeCard from "./components/welcomeCard";
 
 const { Title, Text } = Typography;
 
@@ -34,15 +41,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       isChinese: true,
       server: process.env.SERVER_URL,
       shop: shop,
-    }
+    };
   } else {
     return {
       isChinese: false,
       server: process.env.SERVER_URL,
       shop: shop,
-    }
+    };
   }
-}
+};
 
 const Index = () => {
   const { isChinese, server, shop } = useLoaderData<typeof loader>();
@@ -78,37 +85,39 @@ const Index = () => {
     votes: number;
     devStatus: string;
   }[] = [
-      {
-        key: 1,
-        need: t("devplanCard1.title"),
-        votes: 100,
-        devStatus: t("Launched"),
-      },
-      {
-        key: 2,
-        need: t("devplanCard2.title"),
-        votes: 35,
-        devStatus: t("Launched"),
-      },
-      {
-        key: 3,
-        need: t("devplanCard3.title"),
-        votes: 35,
-        devStatus: t("In development"),
-      },
-      {
-        key: 4,
-        need: t("devplanCard4.title"),
-        votes: 25,
-        devStatus: t("In development"),
-      },
-    ];
+    {
+      key: 1,
+      need: t("devplanCard1.title"),
+      votes: 100,
+      devStatus: t("Launched"),
+    },
+    {
+      key: 2,
+      need: t("devplanCard2.title"),
+      votes: 35,
+      devStatus: t("Launched"),
+    },
+    {
+      key: 3,
+      need: t("devplanCard3.title"),
+      votes: 35,
+      devStatus: t("In development"),
+    },
+    {
+      key: 4,
+      need: t("devplanCard4.title"),
+      votes: 25,
+      devStatus: t("In development"),
+    },
+  ];
 
   return (
     <Page>
       <TitleBar title={t("Dashboard")} />
       <ScrollNotice
-        text={t("Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.")}
+        text={t(
+          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
+        )}
       />
       <Space
         direction="vertical"
@@ -118,35 +127,35 @@ const Index = () => {
           overflowX: "hidden",
         }}
       >
+        <WelcomeCard />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>
-              {t("dashboard.title1")}
-            </Title>
-            <Text strong>
-              {t("dashboard.description1")}
-            </Text>
+            <Title level={3}>{t("dashboard.title1")}</Title>
+            <Text strong>{t("dashboard.description1")}</Text>
           </div>
           <Card>
-            <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-              <Title level={4}>
-                {t("transLanguageCard1.title")}
-              </Title>
+            <Space
+              direction="vertical"
+              size="middle"
+              style={{ display: "flex" }}
+            >
+              <Title level={4}>{t("transLanguageCard1.title")}</Title>
               <Text>{t("transLanguageCard1.description")}</Text>
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                {isLoading
-                  ?
-                  <Skeleton.Button
-                    active
-                  />
-                  :
+                {isLoading ? (
+                  <Skeleton.Button active />
+                ) : (
                   <Button
                     type="primary"
-                    onClick={() => navigate("/app/translate", { state: { from: "/app", selectedLanguageCode: "" } })}
+                    onClick={() =>
+                      navigate("/app/translate", {
+                        state: { from: "/app", selectedLanguageCode: "" },
+                      })
+                    }
                   >
                     {t("transLanguageCard1.button")}
                   </Button>
-                }
+                )}
               </div>
             </Space>
           </Card>
@@ -160,29 +169,35 @@ const Index = () => {
                 styles={{
                   body: {
                     height: "100%",
-                  }
+                  },
                 }}
               >
-                <div style={{ height: "100%", display: "flex", justifyContent: "space-between", flexDirection: "column" }}>
-                  <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-                    <Text strong>
-                      {t("transLanguageCard2.title")}
-                    </Text>
-                    <Text >{t("transLanguageCard2.description")}</Text>
+                <div
+                  style={{
+                    height: "100%",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    flexDirection: "column",
+                  }}
+                >
+                  <Space
+                    direction="vertical"
+                    size="middle"
+                    style={{ display: "flex" }}
+                  >
+                    <Text strong>{t("transLanguageCard2.title")}</Text>
+                    <Text>{t("transLanguageCard2.description")}</Text>
                   </Space>
-                  {isLoading
-                    ?
-                    <Skeleton.Button
-                      active
-                    />
-                    :
+                  {isLoading ? (
+                    <Skeleton.Button active />
+                  ) : (
                     <Button
                       onClick={() => navigate("/app/language")}
-                      style={{ marginLeft: "auto", alignSelf: 'flex-start' }}
+                      style={{ marginLeft: "auto", alignSelf: "flex-start" }}
                     >
                       {t("transLanguageCard2.button")}
                     </Button>
-                  }
+                  )}
                 </div>
               </Card>
             </Col>
@@ -192,18 +207,55 @@ const Index = () => {
                   height: "100%",
                 }}
               >
-                <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-                  <Text strong>
-                    {t("transLanguageCard3.title")}
-                  </Text>
-                  <div style={{ display: "flex", flexDirection: "row-reverse", gap: "10px", justifyContent: "flex-start" }}>
-                    <img src="https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/safeicon-min.png" alt="safe" style={{ width: "50px", height: "50px", borderRadius: "4px" }} />
+                <Space
+                  direction="vertical"
+                  size="middle"
+                  style={{ display: "flex" }}
+                >
+                  <Text strong>{t("transLanguageCard3.title")}</Text>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "row-reverse",
+                      gap: "10px",
+                      justifyContent: "flex-start",
+                    }}
+                  >
+                    <img
+                      src="https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/safeicon-min.png"
+                      alt="safe"
+                      style={{
+                        width: "50px",
+                        height: "50px",
+                        borderRadius: "4px",
+                      }}
+                    />
                     <div style={{ marginRight: "auto" }}>
-                      <div dangerouslySetInnerHTML={{ __html: t("transLanguageCard3.description1") }} />
-                      <div dangerouslySetInnerHTML={{ __html: t("transLanguageCard3.description2") }} />
-                      <div dangerouslySetInnerHTML={{ __html: t("transLanguageCard3.description3") }} />
-                      <div dangerouslySetInnerHTML={{ __html: t("transLanguageCard3.description4") }} />
-                      <div dangerouslySetInnerHTML={{ __html: t("transLanguageCard3.description5") }} />
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: t("transLanguageCard3.description1"),
+                        }}
+                      />
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: t("transLanguageCard3.description2"),
+                        }}
+                      />
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: t("transLanguageCard3.description3"),
+                        }}
+                      />
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: t("transLanguageCard3.description4"),
+                        }}
+                      />
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: t("transLanguageCard3.description5"),
+                        }}
+                      />
                     </div>
                   </div>
                 </Space>
@@ -213,33 +265,28 @@ const Index = () => {
         </Space>
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>
-              {t("dashboard.title2")}
-            </Title>
-            <Text strong>
-              {t("dashboard.description2")}
-            </Text>
+            <Title level={3}>{t("dashboard.title2")}</Title>
+            <Text strong>{t("dashboard.description2")}</Text>
           </div>
           <Card>
-            <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-              <Title level={4}>
-                {t("transCurrencyCard1.title")}
-              </Title>
-              <Text >{t("transCurrencyCard1.description")}</Text>
+            <Space
+              direction="vertical"
+              size="middle"
+              style={{ display: "flex" }}
+            >
+              <Title level={4}>{t("transCurrencyCard1.title")}</Title>
+              <Text>{t("transCurrencyCard1.description")}</Text>
               <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                {isLoading
-                  ?
-                  <Skeleton.Button
-                    active
-                  />
-                  :
+                {isLoading ? (
+                  <Skeleton.Button active />
+                ) : (
                   <Button
                     type="primary"
                     onClick={() => navigate("/app/currency")}
                   >
                     {t("transCurrencyCard1.button")}
                   </Button>
-                }
+                )}
               </div>
             </Space>
           </Card>
@@ -255,32 +302,36 @@ const Index = () => {
                   body: {
                     display: "flex",
                     flexDirection: "column",
-                    flex: 1
-                  }
+                    flex: 1,
+                  },
                 }}
               >
-                <Space direction="vertical" size="middle" style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  flex: 1
-                }}>
-                  <Text strong >
-                    {t("transCurrencyCard2.title")}
-                  </Text>
-                  <Text >{t("transCurrencyCard2.description")}</Text>
+                <Space
+                  direction="vertical"
+                  size="middle"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    flex: 1,
+                  }}
+                >
+                  <Text strong>{t("transCurrencyCard2.title")}</Text>
+                  <Text>{t("transCurrencyCard2.description")}</Text>
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    {isLoading
-                      ?
-                      <Skeleton.Button
-                        active
-                      />
-                      :
+                    {isLoading ? (
+                      <Skeleton.Button active />
+                    ) : (
                       <Button
-                        onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/", "_blank")}
+                        onClick={() =>
+                          window.open(
+                            "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/",
+                            "_blank",
+                          )
+                        }
                       >
                         {t("transCurrencyCard2.button")}
                       </Button>
-                    }
+                    )}
                   </div>
                 </Space>
               </Card>
@@ -293,27 +344,31 @@ const Index = () => {
                   flexDirection: "column",
                 }}
               >
-                <Space direction="vertical" size="middle" style={{
-                  display: "flex",
-                  flex: 1
-                }}>
-                  <Text strong>
-                    {t("transCurrencyCard3.title")}
-                  </Text>
-                  <Text >{t("transCurrencyCard3.description")}</Text>
+                <Space
+                  direction="vertical"
+                  size="middle"
+                  style={{
+                    display: "flex",
+                    flex: 1,
+                  }}
+                >
+                  <Text strong>{t("transCurrencyCard3.title")}</Text>
+                  <Text>{t("transCurrencyCard3.description")}</Text>
                   <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    {isLoading
-                      ?
-                      <Skeleton.Button
-                        active
-                      />
-                      :
+                    {isLoading ? (
+                      <Skeleton.Button active />
+                    ) : (
                       <Button
-                        onClick={() => window.open("https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/", "_blank")}
+                        onClick={() =>
+                          window.open(
+                            "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/",
+                            "_blank",
+                          )
+                        }
                       >
                         {t("transCurrencyCard3.button")}
                       </Button>
-                    }
+                    )}
                   </div>
                 </Space>
               </Card>
@@ -322,16 +377,15 @@ const Index = () => {
         </Space>
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>
-              {t("dashboard.title3")}
-            </Title>
-            <Text strong>
-              {t("dashboard.description3")}
-            </Text>
+            <Title level={3}>{t("dashboard.title3")}</Title>
+            <Text strong>{t("dashboard.description3")}</Text>
           </div>
-          <Card
-          >
-            <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+          <Card>
+            <Space
+              direction="vertical"
+              size="middle"
+              style={{ display: "flex" }}
+            >
               <div
                 style={{
                   display: "flex",
@@ -339,34 +393,26 @@ const Index = () => {
                   alignItems: "center",
                 }}
               >
-                <Title level={4}>
-                  {t("planCard.title")}
-                </Title>
+                <Title level={4}>{t("planCard.title")}</Title>
 
-                {isLoading
-                  ?
-                  <Skeleton.Button
-                    active
-                  />
-                  :
-                  <Button
-                    onClick={handleContactSupport}
-                  >
+                {isLoading ? (
+                  <Skeleton.Button active />
+                ) : (
+                  <Button onClick={handleContactSupport}>
                     {t("planCard.button")}
                   </Button>
-                }
+                )}
               </div>
-              <Text >{t("planCard.description")}</Text>
-              <Table
-                columns={columns}
-                dataSource={data}
-                pagination={false}
-              />
+              <Text>{t("planCard.description")}</Text>
+              <Table columns={columns} dataSource={data} pagination={false} />
             </Space>
           </Card>
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
-              <ContactCard isChinese={isChinese} onClick={handleContactSupport} />
+              <ContactCard
+                isChinese={isChinese}
+                onClick={handleContactSupport}
+              />
             </Col>
             <Col xs={24} sm={24} md={12}>
               <UserGuideCard />
@@ -399,7 +445,7 @@ const Index = () => {
         </Text>
       </Space>
     </Page>
-  )
+  );
 };
 
 export const handleContactSupport = () => {
@@ -407,13 +453,13 @@ export const handleContactSupport = () => {
   interface Window {
     tidioChatApi?: {
       open: () => void;
-    }
+    };
   }
 
   if ((window as Window)?.tidioChatApi) {
     (window as Window).tidioChatApi?.open();
   } else {
-    console.warn('Tidio Chat API not loaded');
+    console.warn("Tidio Chat API not loaded");
   }
 };
 
