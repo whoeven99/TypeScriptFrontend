@@ -1,5 +1,14 @@
 import { useNavigate } from "@remix-run/react";
-import { Card, Space, Button, Typography, Table, Modal, Result, Skeleton } from "antd";
+import {
+  Card,
+  Space,
+  Button,
+  Typography,
+  Table,
+  Modal,
+  Result,
+  Skeleton,
+} from "antd";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -32,9 +41,10 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   const { plan } = useSelector((state: any) => state.userConfig);
 
   const handleEdit = (record: DataType) => {
-    navigate(
-      `/app/manage_translation/${record.navigation}?language=${current}`,
-    );
+    if (current)
+      navigate(
+        `/app/manage_translation/${record.navigation}?language=${current}`,
+      );
   };
 
   const columns = [
@@ -68,14 +78,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       key: "operation",
       width: "40%",
       render: (_: any, record: DataType) => {
-        return (
-          typeof plan === "number" ?
-            <Button onClick={() => handleEdit(record)}>
-              {t("Edit")}
-            </Button>
-            :
-            <Skeleton.Button active />
-        );
+        return <Button onClick={() => handleEdit(record)}>{t("Edit")}</Button>;
       },
     },
   ];
@@ -86,11 +89,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
         <Title style={{ fontSize: "1.5rem", display: "inline" }}>
           {cardTitle}
         </Title>
-        <Table
-          columns={columns}
-          dataSource={dataSource}
-          pagination={false}
-        />
+        <Table columns={columns} dataSource={dataSource} pagination={false} />
       </Space>
     </Card>
   );

@@ -212,6 +212,19 @@
     "translateSettings1.title": "Modelli IA utilizzati",
     "translateSettings2.title": "Pacchetti di lingue utilizzati",
     "translateSettings3.title": "Impostazioni del modulo di traduzione",
+    "translateSettings4.title": "Impostazioni della richiesta di traduzione",
+    "translateSettings4.apprules": "Regole di applicazione",
+    "translateSettings4.title1": "Stile di lingua",
+    "translateSettings4.title2": "Riferimento al tono della marca",
+    "translateSettings4.title3": "Categoria di prodotti",
+    "translateSettings4.title4": "Stile di scrittura",
+    "translateSettings4.title5": "Dettagli della richiesta aggiuntiva",
+    "translateSettings4.description": "Si applica solo ai prodotti e agli articoli. I prompts devono essere inseriti in inglese.",
+    "translateSettings4.placeholder1": "Definisci il tono della traduzione.e.g. Clear, Formal, Luxurious",
+    "translateSettings4.placeholder2": "Riferimento alle marche con un tono simile.e.g. Apple, Tesla",
+    "translateSettings4.placeholder3": "Migliora la precisione con il contesto.e.g. Fashion, Travel",
+    "translateSettings4.placeholder4": "Guida il formato di output.e.g. Marketing, Technical",
+    "translateSettings4.placeholder5": "Aggiungi istruzioni opzionali.e.g. Keep original structure",
     "translateSettings5.title": "Methode de mise à jour de la traduction",
     "Full Translation": "Traduzione completa",
     "Update Translation": "Aggiorna traduzione",
@@ -438,8 +451,16 @@
     "translateSettings1.description1": "Specializzato in lingue europee e americane, inglese, francese, italiano, tedesco, spagnolo e altre lingue simili con alta fluidità e precisione.",
     "translateSettings1.description2": "Traduzione bilanciata per le lingue europee e americane. Focalizzato sulla traduzione delle lingue occidentali senza una stretta adesione allo stile.",
     "translateSettings1.description3": "Specializzato in lingue asiatiche, cinese, giapponese, coreano e altre lingue importanti asiatiche.",
-    "translateSettings1.description4": "Supporta la maggior parte delle lingue globali. Traduce una vasta gamma di lingue utilizzando la traduzione diretta."
-    
-
+    "translateSettings1.description4": "Supporta la maggior parte delle lingue globali. Traduce una vasta gamma di lingue utilizzando la traduzione diretta.",
+    "If you leave this page, any unsaved changes will be lost.": "Se lascia questa pagina, tutti i cambiamenti non salvati verranno persi.",
+    "Unsaved changes": "Cambiamenti non salvati",
+    "Stay on Page": "Rimani sulla pagina",
+    "Leave Anyway": "Lascia comunque",
+    "The switcher is currently enabled.": "Il selettore è attualmente attivo.",
+    "Enable language and currency switcher": "Attiva selettore di lingua e valuta",
+    "Customers can switch languages and currencies when visiting the site. ": "I clienti possono cambiare lingue e valute durante la visita al sito.",
+    "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Il selettore è attualmente disattivato. Se hai bisogno di un cambiamento automatico di lingua e valuta basato sull'IP, clicca su 'Setup'.",
+    "Disable App": "Disabilita App",
+    "Setup App": "Configura App"
 }
   

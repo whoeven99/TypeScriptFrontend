@@ -876,6 +876,7 @@ export const GetTranslate = async ({
   translateSettings1,
   translateSettings2,
   translateSettings3,
+  customKey,
   translateSettings5,
 }: {
   shop: string;
@@ -885,6 +886,7 @@ export const GetTranslate = async ({
   translateSettings1: string;
   translateSettings2: string[];
   translateSettings3: string[];
+  customKey: string;
   translateSettings5: boolean;
 }) => {
   try {
@@ -896,6 +898,7 @@ export const GetTranslate = async ({
       translateSettings1: "google",
       translateSettings2: translateSettings2.toString(),
       translateSettings3: translateSettings3,
+      customKey: customKey,
       isCover: translateSettings5,
     });
     const response = await axios({
@@ -907,6 +910,7 @@ export const GetTranslate = async ({
         source: source,
         target: target,
         isCover: translateSettings5,
+        customKey: customKey,
         translateSettings1: "google",
         translateSettings2: translateSettings2.toString(),
         translateSettings3: translateSettings3,
@@ -915,6 +919,7 @@ export const GetTranslate = async ({
     console.log(`${shop} ${source}翻译${target}`);
     console.log(`${shop} 翻译项: `, translateSettings3);
     console.log(`${shop} 是否覆盖: `, translateSettings5);
+    console.log(`${shop} 自定义提示: `, customKey);
     const res = { ...response.data, target: target };
     console.log("GetTranslate: ", res);
     return res;
@@ -1074,6 +1079,8 @@ export const updateManageTranslation = async ({
             };
           }),
         });
+
+        console.log("response: ", response.data);
 
         res.push({
           success: response.data.success,

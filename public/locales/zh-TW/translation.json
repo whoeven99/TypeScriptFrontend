@@ -213,6 +213,19 @@
     "translateSettings1.title":"使用的AI模型",
     "translateSettings2.title":"使用的語言包",
     "translateSettings3.title":"翻譯模組設定",
+    "translateSettings4.title": "翻譯提示詞設定",
+    "translateSettings4.apprules": "應用規則",
+    "translateSettings4.title1": "語言風格",
+    "translateSettings4.title2": "品牌調性參考",
+    "translateSettings4.title3": "產品類別",
+    "translateSettings4.title4": "寫作風格",
+    "translateSettings4.title5": "附加提示信息",
+    "translateSettings4.description": "僅對產品和文章有效，提示詞需使用英文輸入。",
+    "translateSettings4.placeholder1": "定義翻譯語氣，例如：清晰、正式、奢華",
+    "translateSettings4.placeholder2": "參考具有相似風格的品牌，例如：Apple、Tesla",
+    "translateSettings4.placeholder3": "提供上下文，提升翻譯準確度，例如：時尚、旅遊",
+    "translateSettings4.placeholder4": "指導輸出格式，例如：行銷、技術",
+    "translateSettings4.placeholder5": "選用指令，例如：保持原段落結構",
     "translateSettings5.title": "翻譯更新方法",
     "Full Translation": "全翻譯",
     "Update Translation": "更新翻譯",
@@ -439,6 +452,16 @@
     "translateSettings1.description1": "專注於歐洲和美洲語言，英語、法語、義大利語、德語、西班牙語和類似的語言，具有高流利度和準確性。",
     "translateSettings1.description2": "平衡翻譯歐洲和美洲語言。專注於西方語言翻譯，沒有嚴格的風格遵循。",
     "translateSettings1.description3": "專注於亞洲語言，中文、日語、韓語和其他主要亞洲語言。",
-    "translateSettings1.description4": "支持大多數全球語言。使用直接翻譯翻譯多種語言。"
-}
+    "translateSettings1.description4": "支持大多數全球語言。使用直接翻譯翻譯多種語言。",
+    "If you leave this page, any unsaved changes will be lost.": "如果您離開此頁面，任何未保存的更改都將丟失。",
+    "Unsaved changes": "未保存的更改",
+    "Stay on Page": "留在頁面上",
+    "Leave Anyway": "離開",
+    "The switcher is currently enabled.": "切換器目前處於啟用狀態。",
+    "Enable language and currency switcher": "啟用語言和貨幣切換器",
+    "Customers can switch languages and currencies when visiting the site. ": "當訪問網站時，客戶可以切換語言和貨幣。",
+    "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "切換器目前處於禁用狀態。如果您需要基於IP的自動語言和貨幣切換，請點擊“Setup”。",
+    "Disable App": "禁用應用",
+    "Setup App": "設置應用"
+  }
 

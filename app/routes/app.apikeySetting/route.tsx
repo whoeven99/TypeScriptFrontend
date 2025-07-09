@@ -244,7 +244,7 @@ const Index = () => {
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Button
               type="text"
-              variant="breadcrumb"
+              variant="outlined"
               onClick={() => navigate("/app/translate")}
               style={{ padding: "4px" }}
             >

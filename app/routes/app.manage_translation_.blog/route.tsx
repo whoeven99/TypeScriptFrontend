@@ -10,7 +10,7 @@ import {
   Spin,
   Table,
   theme,
-  Typography
+  Typography,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -22,18 +22,19 @@ import {
   useLocation,
   useSearchParams,
 } from "@remix-run/react"; // 引入 useNavigate, useLocation, useSearchParams
-import { FullscreenBar, Pagination, Select } from "@shopify/polaris";
+import { FullscreenBar, Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  queryNextTransType,
-  queryPreviousTransType,
-} from "~/api/admin";
+import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
+import {
+  ConfirmDataType,
+  SingleTextTranslate,
+  updateManageTranslation,
+} from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
+import { Modal, TitleBar } from "@shopify/app-bridge-react";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
@@ -150,29 +151,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const [searchParams] = useSearchParams();
-  const location = useLocation();
   const { t } = useTranslation();
-
-  const { searchTerm, blogs, server, shopName } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
-  const isManualChange = useRef(true);
-  const loadingItemsRef = useRef<string[]>([]);
-
-  const languageTableData = useSelector((state: any) => state.languageTableData.rows);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const languageTableData = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
+
+  const { searchTerm, blogs, server, shopName } =
+    useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
+
+  const isManualChangeRef = useRef(true);
+  const loadingItemsRef = useRef<string[]>([]);
+
   const submit = useSubmit(); // 使用 useSubmit 钩子
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState(() => {
-    return !!searchParams.get('language');
-  });
+  const [isVisible, setIsVisible] = useState<
+    boolean | string | { language: string } | { item: string }
+  >(false);
 
   const [menuData, setMenuData] = useState<any[]>([]);
   const [blogsData, setBlogsData] = useState(blogs);
@@ -182,7 +182,6 @@ const Index = () => {
     blogs.nodes[0]?.resourceId,
   );
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
-  const [confirmLoading, setConfirmLoading] = useState<boolean>(false);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
@@ -203,26 +202,33 @@ const Index = () => {
     { label: t("Policies"), value: "policy" },
     { label: t("Delivery"), value: "delivery" },
     { label: t("Shipping"), value: "shipping" },
-  ]
-  const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
+  ];
+  const [languageOptions, setLanguageOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(
+    searchTerm || "",
+  );
   const [selectedItem, setSelectedItem] = useState<string>("blog");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    blogs.pageInfo.hasPreviousPage || false
+    blogs.pageInfo.hasPreviousPage || false,
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    blogs.pageInfo.hasNextPage || false
+    blogs.pageInfo.hasNextPage || false,
   );
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     if (languageTableData.length === 0) {
-      languageFetcher.submit({
-        language: JSON.stringify(true),
-      }, {
-        method: "post",
-        action: "/app/manage_translation",
-      });
+      languageFetcher.submit(
+        {
+          language: JSON.stringify(true),
+        },
+        {
+          method: "post",
+          action: "/app/manage_translation",
+        },
+      );
     }
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -244,26 +250,28 @@ const Index = () => {
 
   useEffect(() => {
     if (languageTableData) {
-      setLanguageOptions(languageTableData
-        .filter((item: any) => !item.primary)
-        .map((item: any) => ({
-          label: item.language,
-          value: item.locale,
-        })));
+      setLanguageOptions(
+        languageTableData
+          .filter((item: any) => !item.primary)
+          .map((item: any) => ({
+            label: item.language,
+            value: item.locale,
+          })),
+      );
     }
-  }, [languageTableData])
+  }, [languageTableData]);
 
   useEffect(() => {
-    if (blogs && isManualChange.current) {
-      setBlogsData(blogs)
+    if (blogs && isManualChangeRef.current) {
+      setBlogsData(blogs);
       setMenuData(exMenuData(blogs));
       setSelectBlogKey(blogs.nodes[0]?.resourceId);
       setTimeout(() => {
         setIsLoading(false);
       }, 100);
-      isManualChange.current = false; // 重置
+      isManualChangeRef.current = false; // 重置
     }
-  }, [blogs])
+  }, [blogs]);
 
   useEffect(() => {
     const data = transBeforeData({
@@ -317,17 +325,21 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const successfulItem = confirmFetcher.data.data.filter((item: any) =>
-        item.success === true
+      const successfulItem = confirmFetcher.data.data.filter(
+        (item: any) => item.success === true,
       );
-      const errorItem = confirmFetcher.data.data.filter((item: any) =>
-        item.success === false
+      const errorItem = confirmFetcher.data.data.filter(
+        (item: any) => item.success === false,
       );
 
       successfulItem.forEach((item: any) => {
-        const index = blogsData.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+        const index = blogsData.nodes.findIndex(
+          (option: any) => option.resourceId === item.data.resourceId,
+        );
         if (index !== -1) {
-          const blog = blogsData.nodes[index].translations.find((option: any) => option.key === item.data.key);
+          const blog = blogsData.nodes[index].translations.find(
+            (option: any) => option.key === item.data.key,
+          );
           if (blog) {
             blog.value = item.data.value;
           } else {
@@ -337,29 +349,31 @@ const Index = () => {
             });
           }
         }
-      })
+      });
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
       } else {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
-
     }
-    setConfirmLoading(false);
   }, [confirmFetcher.data]);
 
   useEffect(() => {
     if (languageFetcher.data) {
       if (languageFetcher.data.data) {
         const shopLanguages = languageFetcher.data.data;
-        dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
-          key: index,
-          language: language.name,
-          locale: language.locale,
-          primary: language.primary,
-          published: language.published,
-        }))));
+        dispatch(
+          setTableData(
+            shopLanguages.map((language: ShopLocalesType, index: number) => ({
+              key: index,
+              language: language.name,
+              locale: language.locale,
+              primary: language.primary,
+              published: language.published,
+            })),
+          ),
+        );
         const locale = shopLanguages.find(
           (language: ShopLocalesType) => language.primary === true,
         )?.locale;
@@ -367,18 +381,6 @@ const Index = () => {
       }
     }
   }, [languageFetcher.data]);
-
-  useEffect(() => {
-    setIsVisible(!!searchParams.get('language'));
-  }, [location]);
-
-  useEffect(() => {
-    if (confirmData.length > 0) {
-      shopify.saveBar.show("blog-confirm-save");
-    } else {
-      shopify.saveBar.hide("blog-confirm-save");
-    }
-  }, [confirmData]);
 
   const resourceColumns = [
     {
@@ -420,7 +422,12 @@ const Index = () => {
         return (
           <Button
             onClick={() => {
-              handleTranslate("BLOG", record?.key || "", record?.type || "", record?.default_language || "");
+              handleTranslate(
+                "BLOG",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+              );
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -491,20 +498,17 @@ const Index = () => {
     );
     data.key = blog?.resourceId;
     data.title = {
-      value: blog?.translatableContent.find(
-        (item: any) => item.key === "title",
-      )?.value,
-      type: blog?.translatableContent.find(
-        (item: any) => item.key === "title",
-      )?.type,
+      value: blog?.translatableContent.find((item: any) => item.key === "title")
+        ?.value,
+      type: blog?.translatableContent.find((item: any) => item.key === "title")
+        ?.type,
     };
     data.handle = {
       value: blog?.translatableContent.find(
         (item: any) => item.key === "handle",
       )?.value,
-      type: blog?.translatableContent.find(
-        (item: any) => item.key === "handle",
-      )?.type,
+      type: blog?.translatableContent.find((item: any) => item.key === "handle")
+        ?.type,
     };
     data.translations.key = blog?.resourceId;
     data.translations.title = blog?.translations.find(
@@ -526,7 +530,12 @@ const Index = () => {
     return data;
   };
 
-  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+  const handleTranslate = async (
+    resourceType: string,
+    key: string,
+    type: string,
+    context: string,
+  ) => {
     if (!key || !type || !context) {
       return;
     }
@@ -535,8 +544,7 @@ const Index = () => {
       shopName: shopName,
       source: blogsData.nodes
         .find((item: any) => item?.resourceId === selectBlogKey)
-        ?.translatableContent.find((item: any) => item.key === key)
-        ?.locale,
+        ?.translatableContent.find((item: any) => item.key === key)?.locale,
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -546,32 +554,40 @@ const Index = () => {
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response)
-        shopify.toast.show(t("Translated successfully"))
+        handleInputChange(key, data.response);
+        shopify.toast.show(t("Translated successfully"));
       }
     } else {
-      shopify.toast.show(data.errorMsg)
+      shopify.toast.show(data.errorMsg);
     }
     setLoadingItems((prev) => prev.filter((item) => item !== key));
-  }
+  };
 
   const handleLanguageChange = (language: string) => {
-    setIsLoading(true);
-    isManualChange.current = true;
-    setSelectedLanguage(language);
-    navigate(`/app/manage_translation/blog?language=${language}`);
-  }
+    if (confirmData.length > 0) {
+      setIsVisible({ language: language });
+    } else {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedLanguage(language);
+      navigate(`/app/manage_translation/blog?language=${language}`);
+    }
+  };
 
   const handleItemChange = (item: string) => {
-    setIsLoading(true);
-    isManualChange.current = true;
-    setSelectedItem(item);
-    navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
-  }
+    if (confirmData.length > 0) {
+      setIsVisible({ item: item });
+    } else {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedItem(item);
+      navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+    }
+  };
 
   const onPrevious = () => {
     if (confirmData.length > 0) {
-      shopify.saveBar.leaveConfirmation();
+      setIsVisible("previous");
     } else {
       const formData = new FormData();
       const startCursor = blogsData.pageInfo.startCursor;
@@ -585,7 +601,7 @@ const Index = () => {
 
   const onNext = () => {
     if (confirmData.length > 0) {
-      shopify.saveBar.leaveConfirmation();
+      setIsVisible("next");
     } else {
       const formData = new FormData();
       const endCursor = blogsData.pageInfo.endCursor;
@@ -599,14 +615,13 @@ const Index = () => {
 
   const handleMenuChange = (key: string) => {
     if (confirmData.length > 0) {
-      shopify.saveBar.leaveConfirmation();
+      setIsVisible(key);
     } else {
       setSelectBlogKey(key);
     }
   };
 
   const handleConfirm = () => {
-    setConfirmLoading(true);
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
@@ -616,7 +631,6 @@ const Index = () => {
   };
 
   const handleDiscard = () => {
-    shopify.saveBar.hide("blog-confirm-save");
     const data = transBeforeData({
       blogs: blogsData,
     });
@@ -624,62 +638,283 @@ const Index = () => {
     setConfirmData([]);
   };
 
+  const handleLeaveItem = (
+    key: string | boolean | { language: string } | { item: string },
+  ) => {
+    setIsVisible(false);
+    if (typeof key === "string" && key !== "previous" && key !== "next") {
+      setSelectBlogKey(key);
+    } else if (key === "previous") {
+      // 向前翻页
+      const formData = new FormData();
+      const startCursor = blogsData.pageInfo.startCursor;
+      formData.append("startCursor", JSON.stringify(startCursor));
+      submit(formData, {
+        method: "post",
+        action: `/app/manage_translation/blog?language=${searchTerm}`,
+      });
+    } else if (key === "next") {
+      // 向后翻页
+      const formData = new FormData();
+      const endCursor = blogsData.pageInfo.endCursor;
+      formData.append("endCursor", JSON.stringify(endCursor));
+      submit(formData, {
+        method: "post",
+        action: `/app/manage_translation/blog?language=${searchTerm}`,
+      });
+    } else if (typeof key === "object" && "language" in key) {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedLanguage(key.language);
+      navigate(`/app/manage_translation/blog?language=${key.language}`);
+    } else if (typeof key === "object" && "item" in key) {
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedItem(key.item);
+      navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
+    } else {
+      navigate(`/app/manage_translation?language=${searchTerm}`, {
+        state: { key: searchTerm },
+      }); // 跳转到 /app/manage_translation
+    }
+  };
 
   const onCancel = () => {
-    setIsVisible(false); // 关闭 Modal
-    shopify.saveBar.hide("blog-confirm-save");
-    navigate(`/app/manage_translation?language=${searchTerm}`, {
-      state: { key: searchTerm },
-    }); // 跳转到 /app/manage_translation
+    if (confirmData.length > 0) {
+      setIsVisible(true);
+    } else {
+      navigate(`/app/manage_translation?language=${searchTerm}`, {
+        state: { key: searchTerm },
+      }); // 跳转到 /app/manage_translation
+    }
   };
 
   return (
-    <>
-      <SaveBar id="blog-confirm-save">
-        <button
-          variant="primary"
-          onClick={handleConfirm}
-          loading={confirmLoading && ""}
-        >
-        </button>
-        <button
-          onClick={handleDiscard}
-        >
-        </button>
-      </SaveBar>
-      <Modal
-        variant="max"
-        open={isVisible}
-        onHide={onCancel}
+    <Page
+      title={t("Blog titles")}
+      fullWidth={true}
+      primaryAction={{
+        content: t("Save"),
+        loading: confirmFetcher.state === "submitting",
+        disabled:
+          confirmData.length == 0 || confirmFetcher.state === "submitting",
+        onAction: handleConfirm,
+      }}
+      secondaryActions={[
+        {
+          content: t("Cancel"),
+          loading: confirmFetcher.state === "submitting",
+          disabled:
+            confirmData.length == 0 || confirmFetcher.state === "submitting",
+          onAction: handleDiscard,
+        },
+      ]}
+      backAction={{
+        onAction: onCancel,
+      }}
+    >
+      <Layout
+        style={{
+          overflow: "auto",
+          backgroundColor: "var(--p-color-bg)",
+          height: "calc(100vh - 104px)",
+        }}
       >
-        <TitleBar title={t("Blog")} >
-        </TitleBar>
-        <Layout
-          style={{
-            padding: "24px 0",
-            height: 'calc(100vh - 64px)',
-            overflow: 'auto',
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
-        >
-          {isLoading ? (
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
-              <Spin />
-            </div>
-          ) : blogs.nodes.length ? (
-            <>
-              {!isMobile && (
-                <Sider
+        {isLoading ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100%",
+            }}
+          >
+            <Spin />
+          </div>
+        ) : blogs.nodes.length ? (
+          <>
+            {!isMobile && (
+              <Sider
+                style={{
+                  height: "100%",
+                  minHeight: "70vh",
+                  display: "flex",
+                  flexDirection: "column",
+                  overflow: "auto",
+                  backgroundColor: "var(--p-color-bg)",
+                }}
+              >
+                <div
                   style={{
-                    background: colorBgContainer,
-                    height: 'calc(100vh - 124px)',
-                    minHeight: '70vh',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'auto',
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "100%",
+                    justifyContent: "space-between",
                   }}
                 >
+                  <Menu
+                    mode="inline"
+                    defaultSelectedKeys={[blogsData.nodes[0]?.resourceId]}
+                    style={{
+                      flex: 1,
+                      overflowY: "auto",
+                      minHeight: 0,
+                      backgroundColor: "var(--p-color-bg)",
+                    }}
+                    items={menuData}
+                    selectedKeys={[selectBlogKey]}
+                    onClick={(e) => handleMenuChange(e.key)}
+                  />
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <Pagination
+                      hasPrevious={hasPrevious}
+                      onPrevious={onPrevious}
+                      hasNext={hasNext}
+                      onNext={onNext}
+                    />
+                  </div>
+                </div>
+              </Sider>
+            )}
+            <Content
+              style={{
+                paddingLeft: isMobile ? "16px" : "24px",
+                height: "calc(100vh - 112px)", // 64px为FullscreenBar高度
+              }}
+            >
+              {isMobile ? (
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Title
+                      level={4}
+                      style={{
+                        margin: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {
+                        menuData!.find(
+                          (item: any) => item.key === selectBlogKey,
+                        )?.label
+                      }
+                    </Title>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        flexGrow: 2,
+                        justifyContent: "flex-end",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "100px",
+                        }}
+                      >
+                        <Select
+                          label={""}
+                          options={languageOptions}
+                          value={selectedLanguage}
+                          onChange={(value) => handleLanguageChange(value)}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          width: "100px",
+                        }}
+                      >
+                        <Select
+                          label={""}
+                          options={itemOptions}
+                          value={selectedItem}
+                          onChange={(value) => handleItemChange(value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <Card title={t("Resource")}>
+                    <Space direction="vertical" style={{ width: "100%" }}>
+                      {resourceData.map((item: any, index: number) => {
+                        return (
+                          <Space
+                            key={item.key}
+                            direction="vertical"
+                            size="small"
+                            style={{ width: "100%" }}
+                          >
+                            <Text
+                              strong
+                              style={{
+                                fontSize: "16px",
+                              }}
+                            >
+                              {t(item.resource)}
+                            </Text>
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "8px",
+                              }}
+                            >
+                              <Text>{t("Default Language")}</Text>
+                              <ManageTableInput record={item} />
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "8px",
+                              }}
+                            >
+                              <Text>{t("Translated")}</Text>
+                              <ManageTableInput
+                                translatedValues={translatedValues}
+                                setTranslatedValues={setTranslatedValues}
+                                handleInputChange={handleInputChange}
+                                isRtl={searchTerm === "ar"}
+                                record={item}
+                              />
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              <Button
+                                onClick={() => {
+                                  handleTranslate(
+                                    "BLOG",
+                                    item?.key || "",
+                                    item?.type || "",
+                                    item?.default_language || "",
+                                  );
+                                }}
+                                loading={loadingItems.includes(item?.key || "")}
+                              >
+                                {t("Translate")}
+                              </Button>
+                            </div>
+                            <Divider
+                              style={{
+                                margin: "8px 0",
+                              }}
+                            />
+                          </Space>
+                        );
+                      })}
+                    </Space>
+                  </Card>
                   <Menu
                     mode="inline"
                     defaultSelectedKeys={[blogsData.nodes[0]?.resourceId]}
@@ -700,176 +935,118 @@ const Index = () => {
                       onNext={onNext}
                     />
                   </div>
-                </Sider>
-              )}
-              <Content
-                style={{
-                  padding: "0 24px",
-                  height: 'calc(100vh - 112px)', // 64px为FullscreenBar高度
-                }}
-              >
-                {isMobile ? (
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {menuData!.find((item: any) => item.key === selectBlogKey)?.label}
-                      </Title>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
-                        <div
-                          style={{
-                            width: "100px",
-                          }}
-                        >
-                          <Select
-                            label={""}
-                            options={languageOptions}
-                            value={selectedLanguage}
-                            onChange={(value) => handleLanguageChange(value)}
-                          />
-                        </div>
-                        <div
-                          style={{
-                            width: "100px",
-                          }}
-                        >
-                          <Select
-                            label={""}
-                            options={itemOptions}
-                            value={selectedItem}
-                            onChange={(value) => handleItemChange(value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <Card
-                      title={t("Resource")}
-                    >
-                      <Space direction="vertical" style={{ width: '100%' }}>
-                        {resourceData.map((item: any, index: number) => {
-                          return (
-                            <Space
-                              key={item.key}
-                              direction="vertical"
-                              size="small"
-                              style={{ width: '100%' }}
-                            >
-                              <Text
-                                strong
-                                style={{
-                                  fontSize: "16px"
-                                }}>
-                                {t(item.resource)}
-                              </Text>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <Text>{t("Default Language")}</Text>
-                                <ManageTableInput record={item} />
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <Text>{t("Translated")}</Text>
-                                <ManageTableInput
-                                  translatedValues={translatedValues}
-                                  setTranslatedValues={setTranslatedValues}
-                                  handleInputChange={handleInputChange}
-                                  isRtl={searchTerm === "ar"}
-                                  record={item}
-                                />
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                <Button
-                                  onClick={() => {
-                                    handleTranslate("BLOG", item?.key || "", item?.type || "", item?.default_language || "");
-                                  }}
-                                  loading={loadingItems.includes(item?.key || "")}
-                                >
-                                  {t("Translate")}
-                                </Button>
-                              </div>
-                              <Divider
-                                style={{
-                                  margin: "8px 0"
-                                }}
-                              />
-                            </Space>
-                          )
-                        })}
-                      </Space>
-                    </Card>
-                    <Menu
-                      mode="inline"
-                      defaultSelectedKeys={[blogsData.nodes[0]?.resourceId]}
+                </Space>
+              ) : (
+                <Space
+                  direction="vertical"
+                  size="large"
+                  style={{ width: "100%" }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Title
+                      level={4}
                       style={{
-                        flex: 1,
-                        overflowY: "auto",
-                        minHeight: 0,
+                        margin: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
                       }}
-                      items={menuData}
-                      selectedKeys={[selectBlogKey]}
-                      onClick={(e) => handleMenuChange(e.key)}
-                    />
-                    <div style={{ display: "flex", justifyContent: "center" }}>
-                      <Pagination
-                        hasPrevious={hasPrevious}
-                        onPrevious={onPrevious}
-                        hasNext={hasNext}
-                        onNext={onNext}
-                      />
-                    </div>
-                  </Space>
-                ) : (
-                  <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Title level={4} style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {menuData!.find((item: any) => item.key === selectBlogKey)?.label}
-                      </Title>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexGrow: 2, justifyContent: 'flex-end' }}>
-                        <div
-                          style={{
-                            width: "150px",
-                          }}
-                        >
-                          <Select
-                            label={""}
-                            options={languageOptions}
-                            value={selectedLanguage}
-                            onChange={(value) => handleLanguageChange(value)}
-                          />
-                        </div>
-                        <div
-                          style={{
-                            width: "150px",
-                          }}
-                        >
-                          <Select
-                            label={""}
-                            options={itemOptions}
-                            value={selectedItem}
-                            onChange={(value) => handleItemChange(value)}
-                          />
-                        </div>
+                    >
+                      {
+                        menuData!.find(
+                          (item: any) => item.key === selectBlogKey,
+                        )?.label
+                      }
+                    </Title>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        flexGrow: 2,
+                        justifyContent: "flex-end",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "150px",
+                        }}
+                      >
+                        <Select
+                          label={""}
+                          options={languageOptions}
+                          value={selectedLanguage}
+                          onChange={(value) => handleLanguageChange(value)}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          width: "150px",
+                        }}
+                      >
+                        <Select
+                          label={""}
+                          options={itemOptions}
+                          value={selectedItem}
+                          onChange={(value) => handleItemChange(value)}
+                        />
                       </div>
                     </div>
-                    <Table
-                      columns={resourceColumns}
-                      dataSource={resourceData}
-                      pagination={false}
-                    />
-                  </Space>
-                )}
-              </Content>
-            </>
-          ) : (
-            <Result
-              title={t("The specified fields were not found in the store.")}
-              extra={
-                <Button type="primary" onClick={onCancel}>
-                  {t("Yes")}
-                </Button>
-              }
-            />
-          )}
-        </Layout>
+                  </div>
+                  <Table
+                    columns={resourceColumns}
+                    dataSource={resourceData}
+                    pagination={false}
+                  />
+                </Space>
+              )}
+            </Content>
+          </>
+        ) : (
+          <Result
+            title={t("The specified fields were not found in the store.")}
+            extra={
+              <Button type="primary" onClick={onCancel}>
+                {t("Yes")}
+              </Button>
+            }
+          />
+        )}
+      </Layout>
+      <Modal
+        variant={"base"}
+        open={!!isVisible}
+        onHide={() => setIsVisible(false)}
+      >
+        <div
+          style={{
+            padding: "16px",
+          }}
+        >
+          <Text>
+            {t("If you leave this page, any unsaved changes will be lost.")}
+          </Text>
+        </div>
+        <TitleBar title={t("Unsaved changes")}>
+          <button
+            variant="primary"
+            tone="critical"
+            onClick={() => handleLeaveItem(isVisible)}
+          >
+            {t("Leave Anyway")}
+          </button>
+          <button onClick={() => setIsVisible(false)}>
+            {t("Stay on Page")}
+          </button>
+        </TitleBar>
       </Modal>
-    </>
+    </Page>
   );
 };
 

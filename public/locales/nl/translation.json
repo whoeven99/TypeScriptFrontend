@@ -213,6 +213,19 @@
     "translateSettings1.title": "Gebruikte AI-modellen",
     "translateSettings2.title": "Gebruikte taalpakketten",
     "translateSettings3.title": "Vertaalmodule-instellingen",
+    "translateSettings4.title": "Vertaalprompt-instellingen",
+    "translateSettings4.apprules": "Toepassingsregels",
+    "translateSettings4.title1": "Taalstijl",
+    "translateSettings4.title2": "Merktoonreferentie",
+    "translateSettings4.title3": "Productcategorie",
+    "translateSettings4.title4": "Schrijfstijl",
+    "translateSettings4.title5": "Aanvullende promptdetails",
+    "translateSettings4.description": "Is alleen van toepassing op product- en artikelinhoud. Prompts moeten in het Engels worden ingevoerd.",
+    "translateSettings4.placeholder1": "Definieer de toon van de vertaling. Bijv. Duidelijk, Formeel, Luxueus",
+    "translateSettings4.placeholder2": "Verwijs naar merken met een vergelijkbare stem. Bijv. Apple, Tesla",
+    "translateSettings4.placeholder3": "Verbeter nauwkeurigheid met context. Bijv. Mode, Reizen",
+    "translateSettings4.placeholder4": "Leid het uitvoerformaat. Bijv. Marketing, Technisch",
+    "translateSettings4.placeholder5": "Voeg optionele instructies toe. Bijv. Behoud originele structuur",
     "translateSettings5.title": "Vertaling bijwerken",
     "Full Translation": "Volledige vertaling",
     "Update Translation": "Bijwerken",
@@ -439,7 +452,17 @@
     "translateSettings1.description1": "Gespecialiseerd in Europese en Amerikaanse talen, Engels, Frans, Italiaans, Duits, Spaans en vergelijkbare talen met hoge vloeiendheid en nauwkeurigheid.",
     "translateSettings1.description2": "Gebalanceerde vertaling voor Europese en Amerikaanse talen. Gericht op westerse taalvertaling zonder strikte naleving van stijl.",
     "translateSettings1.description3": "Gespecialiseerd in Aziatische talen, Chinees, Japans, Koreaans en andere belangrijke Aziatische talen.",
-    "translateSettings1.description4": "Ondersteunt de meeste wereldtalen. Vertaalt een breed scala aan talen door middel van directe vertaling."
+    "translateSettings1.description4": "Ondersteunt de meeste wereldtalen. Vertaalt een breed scala aan talen door middel van directe vertaling.",
+    "If you leave this page, any unsaved changes will be lost.": "Als u deze pagina verlaat, worden alle niet-opgeslagen wijzigingen verloren.",
+    "Unsaved changes": "Niet-opgeslagen wijzigingen",
+    "Stay on Page": "Blijven op de pagina",
+    "Leave Anyway": "Toch verlaten",
+    "The switcher is currently enabled.": "De switcher is momenteel ingeschakeld.",
+    "Enable language and currency switcher": "Taal- en valutawisselaar inschakelen",
+    "Customers can switch languages and currencies when visiting the site. ": "Klanten kunnen taal en valuta wisselen bij het bezoeken van de site.",
+    "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "De switcher is momenteel uitgeschakeld. Als u IP-gebaseerde automatische taal- en valuta-wisseling nodig hebt, klikt u op 'Setup'.",
+    "Disable App": "App uitschakelen",
+    "Setup App": "App instellen"
 }
   
   

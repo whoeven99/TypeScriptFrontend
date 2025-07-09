@@ -322,9 +322,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
 
     case !!translation:
-      try {
-        console.log("translation: ", translation);
-        
+      try {        
         // 字符数未超限，调用翻译接口
         const data = await GetTranslate({
           shop,
@@ -334,6 +332,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           translateSettings1: translation.translateSettings1,
           translateSettings2: translation.translateSettings2,
           translateSettings3: translation.translateSettings3,
+          customKey: translation.customKey,
           translateSettings5: translation.translateSettings5,
         });
         return data;

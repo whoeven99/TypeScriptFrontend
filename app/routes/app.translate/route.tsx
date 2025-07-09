@@ -88,10 +88,14 @@ const Index = () => {
     option1: string;
     option2: string;
     option3: string;
+    option4: string;
+    option5: string;
   }>({
     option1: "",
     option2: "",
     option3: "",
+    option4: "",
+    option5: "",
   });
   const [translateSettings5, setTranslateSettings5] = useState<boolean>(false);
   const [model, setModel] = useState<any>("");
@@ -444,6 +448,7 @@ const Index = () => {
   };
 
   const handleTranslate = async () => {
+    const customKey = `${translateSettings4.option3 && `using terminology and tone appropriate for the ${translateSettings4.option3} industry. `}${translateSettings4.option1 && `Adopt a ${translateSettings4.option1} tone. `}${translateSettings4.option2 && `Follow the brand tone of ${translateSettings4.option2}. `}${translateSettings4.option4 && `Use a ${translateSettings4.option4} writing style. `}${translateSettings4.option5 && `${translateSettings4.option5}.`}`;
     const formData = new FormData();
     formData.append(
       "translation",
@@ -453,6 +458,7 @@ const Index = () => {
         translateSettings1: translateSettings1,
         translateSettings2: translateSettings2,
         translateSettings3: translateSettings3,
+        customKey: customKey,
         translateSettings5: translateSettings5,
       }),
     ); // 将选中的语言作为字符串发送
@@ -890,38 +896,92 @@ const Index = () => {
                     </Flex>
                   ))}
                 </Space>
-                {/* 
-                  <Space
-                    direction="vertical"
-                    size={16}
-                    style={{ display: "flex" }}
-                  >
+                {/* <Space
+                  direction="vertical"
+                  size={16}
+                  style={{ display: "flex" }}
+                >
+                  <div>
+                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+                      {t("translateSettings4.title")}
+                    </Title>
+                    <Text type="secondary">
+                      {t("translateSettings4.description")}
+                    </Text>
+                  </div>
+                  <Space direction="vertical" style={{ width: "100%" }}>
                     <div>
-                      <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                        {t("translateSettings4.title")}
-                      </Title>
-                      <Text type="secondary">{t("translateSettings4.description")}</Text>
+                      <Text>{t("translateSettings4.title1")}</Text>
+                      <Input
+                        style={{ width: "100%" }}
+                        value={translateSettings4.option1}
+                        onChange={(e) =>
+                          setTranslateSettings4({
+                            ...translateSettings4,
+                            option1: e.target.value,
+                          })
+                        }
+                        placeholder={t("translateSettings4.placeholder1")}
+                      />
                     </div>
-                    <Space
-                      direction="vertical"
-                      style={{ width: "100%" }}
-                    >
-                      <Text strong>{t("translateSettings4.apprules")}</Text>
-                      <div>
-                        <Text>{t("translateSettings4.title1")}</Text>
-                        <Input style={{ width: "100%" }} value={translateSettings4.option1} onChange={(e) => setTranslateSettings4({ ...translateSettings4, option1: e.target.value })}></Input>
-                      </div>
-                      <div>
-                        <Text>{t("translateSettings4.title2")}</Text>
-                        <Input style={{ width: "100%" }} value={translateSettings4.option2} onChange={(e) => setTranslateSettings4({ ...translateSettings4, option2: e.target.value })}></Input>
-                      </div>
-                      <div>
-                        <Text>{t("translateSettings4.title3")}</Text>
-                        <Input style={{ width: "100%" }} value={translateSettings4.option3} onChange={(e) => setTranslateSettings4({ ...translateSettings4, option3: e.target.value })}></Input>
-                      </div>
-                    </Space>
-                  </Space> 
-                */}
+                    <div>
+                      <Text>{t("translateSettings4.title2")}</Text>
+                      <Input
+                        style={{ width: "100%" }}
+                        value={translateSettings4.option2}
+                        onChange={(e) =>
+                          setTranslateSettings4({
+                            ...translateSettings4,
+                            option2: e.target.value,
+                          })
+                        }
+                        placeholder={t("translateSettings4.placeholder2")}
+                      />
+                    </div>
+                    <div>
+                      <Text>{t("translateSettings4.title3")}</Text>
+                      <Input
+                        style={{ width: "100%" }}
+                        value={translateSettings4.option3}
+                        onChange={(e) =>
+                          setTranslateSettings4({
+                            ...translateSettings4,
+                            option3: e.target.value,
+                          })
+                        }
+                        placeholder={t("translateSettings4.placeholder3")}
+                      />
+                    </div>
+                    <div>
+                      <Text>{t("translateSettings4.title4")}</Text>
+                      <Input
+                        style={{ width: "100%" }}
+                        value={translateSettings4.option4}
+                        onChange={(e) =>
+                          setTranslateSettings4({
+                            ...translateSettings4,
+                            option4: e.target.value,
+                          })
+                        }
+                        placeholder={t("translateSettings4.placeholder4")}
+                      />
+                    </div>
+                    <div>
+                      <Text>{t("translateSettings4.title5")}</Text>
+                      <Input
+                        style={{ width: "100%" }}
+                        value={translateSettings4.option5}
+                        onChange={(e) =>
+                          setTranslateSettings4({
+                            ...translateSettings4,
+                            option5: e.target.value,
+                          })
+                        }
+                        placeholder={t("translateSettings4.placeholder5")}
+                      />
+                    </div>
+                  </Space>
+                </Space> */}
               </Space>
             </Card>
           </Space>
