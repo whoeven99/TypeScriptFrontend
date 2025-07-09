@@ -63,7 +63,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
                 window.open(blockUrl, "_blank");
               } else {
                 // TODO: Setup App
-                localStorage.setItem("switcherEnableCardOpen", "true");
+                localStorage.setItem("switcherCard", "true");
                 setTimeout(() => {
                   navigate("/app/switcher");
                 }, 500);
