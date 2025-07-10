@@ -221,9 +221,9 @@ const Index = () => {
     },
   ];
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isVisible, setIsVisible] = useState<
-    boolean | string | { language: string } | { item: string }
-  >(false);
+  // const [isVisible, setIsVisible] = useState<
+  //   boolean | string | { language: string } | { item: string }
+  // >(false);
 
   const [navigationsData, setNavigationsData] = useState(navigations);
   const [itemsData, setItemsData] = useState(navigationItems);
@@ -460,6 +460,14 @@ const Index = () => {
     }
   }, [languageFetcher.data]);
 
+  useEffect(() => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.show("save-bar");
+    } else {
+      shopify.saveBar.hide("save-bar");
+    }
+  }, [confirmData]);
+
   const resourceColumns = [
     {
       title: t("Resource"),
@@ -662,8 +670,9 @@ const Index = () => {
 
   const handleLanguageChange = (language: string) => {
     if (confirmData.length > 0) {
-      setIsVisible({ language: language });
+      shopify.saveBar.leaveConfirmation();
     } else {
+      shopify.saveBar.hide("save-bar");
       setIsLoading(true);
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
@@ -673,8 +682,9 @@ const Index = () => {
 
   const handleItemChange = (item: string) => {
     if (confirmData.length > 0) {
-      setIsVisible({ item: item });
+      shopify.saveBar.leaveConfirmation();
     } else {
+      shopify.saveBar.hide("save-bar");
       setIsLoading(true);
       isManualChangeRef.current = true;
       setSelectedItem(item);
@@ -684,16 +694,18 @@ const Index = () => {
 
   const handleMenuChange = (key: string) => {
     if (confirmData.length > 0) {
-      setIsVisible(key);
+      shopify.saveBar.leaveConfirmation();
     } else {
+      shopify.saveBar.hide("save-bar");
       setSelectNavigationKey(key);
     }
   };
 
   const onPrevious = () => {
     if (confirmData.length > 0) {
-      setIsVisible("previous");
+      shopify.saveBar.leaveConfirmation();
     } else {
+      shopify.saveBar.hide("save-bar");
       if (selectNavigationKey === "names") {
         const formData = new FormData();
         const startCursor = navigationsData.pageInfo.startCursor;
@@ -716,8 +728,9 @@ const Index = () => {
 
   const onNext = () => {
     if (confirmData.length > 0) {
-      setIsVisible("next");
+      shopify.saveBar.leaveConfirmation();
     } else {
+      shopify.saveBar.hide("save-bar");
       if (selectNavigationKey === "names") {
         const formData = new FormData();
         const endCursor = navigationsData.pageInfo.endCursor;
@@ -738,66 +751,66 @@ const Index = () => {
     }
   };
 
-  const handleLeaveItem = (
-    key: string | boolean | { language: string } | { item: string },
-  ) => {
-    setIsVisible(false);
-    if (typeof key === "string" && key !== "previous" && key !== "next") {
-      setSelectNavigationKey(key);
-    } else if (key === "previous") {
-      // 向前翻页
-      if (selectNavigationKey === "names") {
-        const formData = new FormData();
-        const startCursor = navigationsData.pageInfo.startCursor;
-        formData.append("navigationStartCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-        submit(formData, {
-          method: "post",
-          action: `/app/manage_translation/navigation?language=${searchTerm}`,
-        }); // 提交表单请求
-      } else {
-        const formData = new FormData();
-        const startCursor = itemsData.pageInfo.startCursor;
-        formData.append("itemStartCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-        submit(formData, {
-          method: "post",
-          action: `/app/manage_translation/navigation?language=${searchTerm}`,
-        }); // 提交表单请求
-      }
-    } else if (key === "next") {
-      // 向后翻页
-      if (selectNavigationKey === "names") {
-        const formData = new FormData();
-        const endCursor = navigationsData.pageInfo.endCursor;
-        formData.append("navigationEndCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-        submit(formData, {
-          method: "post",
-          action: `/app/manage_translation/navigation?language=${searchTerm}`,
-        }); // 提交表单请求
-      } else {
-        const formData = new FormData();
-        const endCursor = itemsData.pageInfo.endCursor;
-        formData.append("itemEndCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-        submit(formData, {
-          method: "post",
-          action: `/app/manage_translation/navigation?language=${searchTerm}`,
-        }); // 提交表单请求
-      }
-    } else if (typeof key === "object" && "language" in key) {
-      setIsLoading(true);
-      isManualChangeRef.current = true;
-      setSelectedLanguage(key.language);
-      navigate(`/app/manage_translation/navigation?language=${key.language}`);
-    } else if (typeof key === "object" && "item" in key) {
-      setIsLoading(true);
-      isManualChangeRef.current = true;
-      setSelectedItem(key.item);
-      navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
-    } else {
-      navigate(`/app/manage_translation?language=${searchTerm}`, {
-        state: { key: searchTerm },
-      }); // 跳转到 /app/manage_translation
-    }
-  };
+  // const handleLeaveItem = (
+  //   key: string | boolean | { language: string } | { item: string },
+  // ) => {
+  //   setIsVisible(false);
+  //   if (typeof key === "string" && key !== "previous" && key !== "next") {
+  //     setSelectNavigationKey(key);
+  //   } else if (key === "previous") {
+  //     // 向前翻页
+  //     if (selectNavigationKey === "names") {
+  //       const formData = new FormData();
+  //       const startCursor = navigationsData.pageInfo.startCursor;
+  //       formData.append("navigationStartCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
+  //       submit(formData, {
+  //         method: "post",
+  //         action: `/app/manage_translation/navigation?language=${searchTerm}`,
+  //       }); // 提交表单请求
+  //     } else {
+  //       const formData = new FormData();
+  //       const startCursor = itemsData.pageInfo.startCursor;
+  //       formData.append("itemStartCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
+  //       submit(formData, {
+  //         method: "post",
+  //         action: `/app/manage_translation/navigation?language=${searchTerm}`,
+  //       }); // 提交表单请求
+  //     }
+  //   } else if (key === "next") {
+  //     // 向后翻页
+  //     if (selectNavigationKey === "names") {
+  //       const formData = new FormData();
+  //       const endCursor = navigationsData.pageInfo.endCursor;
+  //       formData.append("navigationEndCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
+  //       submit(formData, {
+  //         method: "post",
+  //         action: `/app/manage_translation/navigation?language=${searchTerm}`,
+  //       }); // 提交表单请求
+  //     } else {
+  //       const formData = new FormData();
+  //       const endCursor = itemsData.pageInfo.endCursor;
+  //       formData.append("itemEndCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
+  //       submit(formData, {
+  //         method: "post",
+  //         action: `/app/manage_translation/navigation?language=${searchTerm}`,
+  //       }); // 提交表单请求
+  //     }
+  //   } else if (typeof key === "object" && "language" in key) {
+  //     setIsLoading(true);
+  //     isManualChangeRef.current = true;
+  //     setSelectedLanguage(key.language);
+  //     navigate(`/app/manage_translation/navigation?language=${key.language}`);
+  //   } else if (typeof key === "object" && "item" in key) {
+  //     setIsLoading(true);
+  //     isManualChangeRef.current = true;
+  //     setSelectedItem(key.item);
+  //     navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
+  //   } else {
+  //     navigate(`/app/manage_translation?language=${searchTerm}`, {
+  //       state: { key: searchTerm },
+  //     }); // 跳转到 /app/manage_translation
+  //   }
+  // };
 
   const handleConfirm = () => {
     const formData = new FormData();
@@ -809,6 +822,7 @@ const Index = () => {
   };
 
   const handleDiscard = () => {
+    shopify.saveBar.hide("save-bar");
     setNavigationsData({ ...navigationsData });
     setItemsData({ ...itemsData });
     setConfirmData([]);
@@ -816,8 +830,9 @@ const Index = () => {
 
   const onCancel = () => {
     if (confirmData.length > 0) {
-      setIsVisible(true);
+      shopify.saveBar.leaveConfirmation();
     } else {
+      shopify.saveBar.hide("save-bar");
       navigate(`/app/manage_translation?language=${searchTerm}`, {
         state: { key: searchTerm },
       }); // 跳转到 /app/manage_translation
@@ -828,26 +843,36 @@ const Index = () => {
     <Page
       title={t("Navigation")}
       fullWidth={true}
-      primaryAction={{
-        content: t("Save"),
-        loading: confirmFetcher.state === "submitting",
-        disabled:
-          confirmData.length == 0 || confirmFetcher.state === "submitting",
-        onAction: handleConfirm,
-      }}
-      secondaryActions={[
-        {
-          content: t("Cancel"),
-          loading: confirmFetcher.state === "submitting",
-          disabled:
-            confirmData.length == 0 || confirmFetcher.state === "submitting",
-          onAction: handleDiscard,
-        },
-      ]}
+      // primaryAction={{
+      //   content: t("Save"),
+      //   loading: confirmFetcher.state === "submitting",
+      //   disabled:
+      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
+      //   onAction: handleConfirm,
+      // }}
+      // secondaryActions={[
+      //   {
+      //     content: t("Cancel"),
+      //     loading: confirmFetcher.state === "submitting",
+      //     disabled:
+      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
+      //     onAction: handleDiscard,
+      //   },
+      // ]}
       backAction={{
         onAction: onCancel,
       }}
     >
+      <SaveBar id="save-bar">
+        <button
+          variant="primary"
+          onClick={handleConfirm}
+          loading={confirmFetcher.state === "submitting" && ""}
+        >
+          {t("Save")}
+        </button>
+        <button onClick={handleDiscard}>{t("Cancel")}</button>
+      </SaveBar>
       <Layout
         style={{
           overflow: "auto",
@@ -1158,7 +1183,7 @@ const Index = () => {
           />
         )}
       </Layout>
-      <Modal
+      {/* <Modal
         variant={"base"}
         open={!!isVisible}
         onHide={() => setIsVisible(false)}
@@ -1184,7 +1209,7 @@ const Index = () => {
             {t("Stay on Page")}
           </button>
         </TitleBar>
-      </Modal>
+      </Modal> */}
     </Page>
   );
 };
