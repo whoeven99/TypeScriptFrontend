@@ -462,6 +462,14 @@
     "Customers can switch languages and currencies when visiting the site. ": "Les clients peuvent changer de langue et de devise lorsqu'ils visitent le site.",
     "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Le sélecteur est actuellement désactivé. Si vous avez besoin d'un changement de langue et de devise automatique basé sur l'IP, veuillez cliquer sur « Setup ».",
     "Disable App": "Désactiver l'application",
-    "Setup App": "Configurer l'application"
+    "Setup App": "Configurer l'application",
+    "Product images": "Images de produits",
+    "Product image alt text": "Texte alternatif de l'image du produit",
+    "Click to Upload": "Cliquer pour télécharger",
+    "Upload Success": "Téléchargement réussi",
+    "Upload Failed": "Téléchargement échoué",
+    "Only images can be uploaded": "Seuls les images peuvent être téléchargées",
+    "File must be less than 4MB": "Le fichier doit être inférieur à 4MB",
+    "Images data": "Données d'images"
 }
   

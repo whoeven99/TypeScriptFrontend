@@ -9,7 +9,7 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
-import { Pagination, Select } from "@shopify/polaris";
+import { Page, Pagination, Select } from "@shopify/polaris";
 import {
   Button,
   Card,
@@ -32,6 +32,11 @@ import { ShopLocalesType } from "../app.language/route";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setUserConfig } from "~/store/modules/userConfig";
 import { authenticate } from "~/shopify.server";
+import {
+  DeleteProductImageData,
+  GetProductImageData,
+  UpdateProductImageAltData,
+} from "~/api/JavaServer";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -39,7 +44,15 @@ const { Title, Text } = Typography;
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchParams = new URL(request.url).searchParams;
   const searchTerm = searchParams.get("language");
-  return json({ searchTerm });
+
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+
+  return json({
+    searchTerm,
+    shop,
+    server: process.env.SERVER_URL,
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -81,6 +94,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                     edges {
                       node {
                         id
+                        url
                         altText
                       }
                     }
@@ -117,6 +131,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 key: image?.node?.id,
                 productId: item?.node?.id,
                 productTitle: item?.node?.title,
+                imageUrl: image?.node?.url,
                 imageId: image?.node?.id,
                 altText: image?.node?.altText,
                 targetAltText: "",
@@ -171,6 +186,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                       edges {
                         node {
                           id    
+                          url
                           altText
                         }
                       }
@@ -207,6 +223,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 key: image?.node?.id,
                 productId: item?.node?.id,
                 productTitle: item?.node?.title,
+                imageUrl: image?.node?.url,
                 imageId: image?.node?.id,
                 altText: image?.node?.altText,
                 targetAltText: "",
@@ -261,6 +278,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                       edges {
                         node {
                           id    
+                          url
                           altText
                         }
                       }
@@ -297,6 +315,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 key: image?.node?.id,
                 productId: item?.node?.id,
                 productTitle: item?.node?.title,
+                imageUrl: image?.node?.url,
                 imageId: image?.node?.id,
                 altText: image?.node?.altText,
                 targetAltText: "",
@@ -349,6 +368,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 edges {
                   node {
                     id
+                    url
                     altText
                   }
                 }
@@ -372,6 +392,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 productId: response?.data?.product?.id,
                 productTitle: response?.data?.product?.title,
                 imageId: item?.node?.id,
+                imageUrl: item?.node?.url,
                 altText: item?.node?.altText,
                 targetAltText: "",
                 imageStartCursor:
@@ -410,6 +431,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 edges {
                   node {
                     id
+                    url
                     altText
                   }
                 }
@@ -433,6 +455,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 productId: response?.data?.product?.id,
                 productTitle: response?.data?.product?.title,
                 imageId: item?.node?.id,
+                imageUrl: item?.node?.url,
                 altText: item?.node?.altText,
                 targetAltText: "",
                 imageStartCursor:
@@ -467,27 +490,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const [searchParams] = useSearchParams();
-  const location = useLocation();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const languageTableData = useSelector(
     (state: any) => state.languageTableData.rows,
   );
-  const navigate = useNavigate();
-  const { searchTerm } = useLoaderData<typeof loader>();
-  const [isVisible, setIsVisible] = useState(() => {
-    return !!searchParams.get("language");
-  });
 
-  const isManualChange = useRef(false);
+  const { searchTerm, shop, server } = useLoaderData<typeof loader>();
 
+  const isManualChangeRef = useRef(false);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [saveLoading, setSaveLoading] = useState<boolean>(false);
+  const [tableDataLoading, setTableDataLoading] = useState(false);
   const [menuData, setMenuData] = useState<any>([]);
   const [selectedKey, setSelectedKey] = useState("");
-  const [dataResource, setDataResource] = useState([]);
+  const [dataResource, setDataResource] = useState<any>([]);
   const [productAltTextData, setProductAltTextData] = useState<
     {
+      key: string;
       productTitle: string;
+      imageUrl: string;
       altText: string;
       targetAltText: string;
       imageHasNextPage: boolean;
@@ -497,7 +521,9 @@ const Index = () => {
     }[]
   >([
     {
+      key: "",
       productTitle: "",
+      imageUrl: "",
       altText: "",
       targetAltText: "",
       imageHasNextPage: false,
@@ -514,7 +540,7 @@ const Index = () => {
   const [imageHasNextPage, setImageHasNextPage] = useState(false);
   const [imageStartCursor, setImageStartCursor] = useState("");
   const [imageEndCursor, setImageEndCursor] = useState("");
-  const [tableDataLoading, setTableDataLoading] = useState(false);
+  const [confirmData, setConfirmData] = useState<any>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(
     searchTerm || "",
@@ -577,7 +603,6 @@ const Index = () => {
 
   useEffect(() => {
     if (loadFetcher.data) {
-      console.log("loadFetcher.data", loadFetcher.data);
       setMenuData(loadFetcher.data.menuData);
       setDataResource(loadFetcher.data.imageData);
       setSelectedKey(loadFetcher.data.menuData[0]?.key || "");
@@ -586,12 +611,12 @@ const Index = () => {
       setProductsStartCursor(loadFetcher.data.productStartCursor);
       setProductsEndCursor(loadFetcher.data.productEndCursor);
       setTableDataLoading(false);
+      setIsLoading(false);
     }
   }, [loadFetcher.data]);
 
   useEffect(() => {
     if (productsFetcher.data) {
-      console.log("productsFetcher.data", productsFetcher.data);
       setMenuData(productsFetcher.data.menuData);
       setDataResource(productsFetcher.data.imageData);
       setSelectedKey(productsFetcher.data.menuData[0]?.key || "");
@@ -604,7 +629,6 @@ const Index = () => {
 
   useEffect(() => {
     if (imageFetcher.data) {
-      console.log("imageFetcher.data", imageFetcher.data);
       setProductAltTextData(imageFetcher.data.imageData);
     }
   }, [imageFetcher.data]);
@@ -634,11 +658,35 @@ const Index = () => {
 
   useEffect(() => {
     if (selectedKey && dataResource.length > 0) {
-      setProductAltTextData(
+      const data =
         dataResource.filter(
           (item: any) => item[0]?.productId === selectedKey,
-        )[0] || [],
-      );
+        )[0] || [];
+      async function getTargetData() {
+        const targetData = await GetProductImageData({
+          server: server || "",
+          shopName: shop,
+          productId: selectedKey,
+          languageCode: selectedLanguage,
+        });
+
+        setProductAltTextData(
+          data.map((item: any) => {
+            const index = targetData.response.findIndex(
+              (image: any) => item.imageUrl === image.imageBeforeUrl,
+            );
+            if (index !== -1) {
+              return {
+                ...item,
+                targetAltText: targetData.response[index].altAfterTranslation,
+              };
+            }
+            return item;
+          }),
+        );
+      }
+
+      getTargetData();
     }
   }, [selectedKey, dataResource]);
 
@@ -663,8 +711,12 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
-    setIsVisible(!!searchParams.get("language"));
-  }, [location]);
+    if (confirmData.length > 0) {
+      shopify.saveBar.show("save-bar");
+    } else {
+      shopify.saveBar.hide("save-bar");
+    }
+  }, [confirmData]);
 
   const columns = [
     {
@@ -678,7 +730,7 @@ const Index = () => {
       key: "altText",
       width: "40%",
       render: (_: any, record: any) => {
-        return <Input disabled value={record?.imageUrl} />;
+        return <Input disabled value={record?.altText} />;
       },
     },
     {
@@ -686,163 +738,283 @@ const Index = () => {
       key: "targetAltText",
       width: "40%",
       render: (_: any, record: any) => {
-        return <Input value={record?.targetImageUrl} />;
-      },
-    },
-    {
-      title: t("Translate"),
-      key: "translate",
-      width: "10%",
-      render: (_: any, record: any) => {
         return (
-          <Space>
-            <Button>{t("Translate")}</Button>
-            <Button disabled={!record?.targetImageUrl}>{t("Delete")}</Button>
-          </Space>
+          <Input
+            value={
+              confirmData.find((item: any) => item.key === record?.imageId)
+                ?.value || record.targetAltText
+            }
+            onChange={(e) =>
+              handleInputChange(
+                record?.imageId,
+                record?.productId,
+                record?.imageUrl,
+                record?.altText,
+                e.target.value,
+              )
+            }
+          />
         );
       },
     },
   ];
 
+  const handleInputChange = (
+    key: string,
+    productId: string,
+    imageUrl: string,
+    altText: string,
+    value: string,
+  ) => {
+    setConfirmData((prevData: any) => {
+      const existingItemIndex = prevData.findIndex(
+        (item: any) => item.key === key,
+      );
+      if (existingItemIndex !== -1) {
+        const updatedConfirmData = [...prevData];
+        updatedConfirmData[existingItemIndex] = {
+          ...updatedConfirmData[existingItemIndex],
+          value: value,
+        };
+        return updatedConfirmData;
+      } else {
+        return [...prevData, { key, productId, imageUrl, altText, value }];
+      }
+    });
+  };
+
   const handleMenuChange = (key: string) => {
-    // if (confirmData.length > 0) {
-    // shopify.saveBar.leaveConfirmation();
-    // } else {
-    setSelectedKey(key);
-    // }
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      setSelectedKey(key);
+    }
   };
 
   const handleLanguageChange = (language: string) => {
-    isManualChange.current = true;
-    setSelectedLanguage(language);
-    navigate(`/app/manage_translation/productImageAlt?language=${language}`);
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      shopify.saveBar.hide("save-bar");
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedLanguage(language);
+      navigate(`/app/manage_translation/productImageAlt?language=${language}`);
+    }
   };
 
   const handleItemChange = (item: string) => {
-    isManualChange.current = true;
-    setSelectedItem(item);
-    navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      shopify.saveBar.hide("save-bar");
+      setIsLoading(true);
+      isManualChangeRef.current = true;
+      setSelectedItem(item);
+      navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
+    }
   };
 
   const handleProductPrevious = () => {
-    // if (confirmData.length > 0) {
-    //   shopify.saveBar.leaveConfirmation();
-    // } else {
-    productsFetcher.submit(
-      {
-        productStartCursor: JSON.stringify({
-          productsStartCursor,
-        }),
-      },
-      {
-        method: "post",
-      },
-    ); // 提交表单请求
-    // }
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      shopify.saveBar.hide("save-bar");
+      productsFetcher.submit(
+        {
+          productStartCursor: JSON.stringify({
+            productsStartCursor,
+          }),
+        },
+        {
+          method: "post",
+        },
+      ); // 提交表单请求
+    }
   };
 
   const handleProductNext = () => {
-    // if (confirmData.length > 0) {
-    //   shopify.saveBar.leaveConfirmation();
-    // } else {
-    productsFetcher.submit(
-      {
-        productEndCursor: JSON.stringify({
-          productsEndCursor,
-        }),
-      },
-      {
-        method: "post",
-      },
-    ); // 提交表单请求
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      shopify.saveBar.hide("save-bar");
+      productsFetcher.submit(
+        {
+          productEndCursor: JSON.stringify({
+            productsEndCursor,
+          }),
+        },
+        {
+          method: "post",
+        },
+      ); // 提交表单请求
+    }
   };
 
   const handleImagePrevious = () => {
-    imageFetcher.submit(
-      {
-        imageStartCursor: JSON.stringify({
-          imageStartCursor,
-          productId: selectedKey,
-        }),
-      },
-      {
-        method: "post",
-      },
-    );
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      shopify.saveBar.hide("save-bar");
+      imageFetcher.submit(
+        {
+          imageStartCursor: JSON.stringify({
+            imageStartCursor,
+            productId: selectedKey,
+          }),
+        },
+        {
+          method: "post",
+        },
+      );
+    }
   };
 
   const handleImageNext = () => {
-    imageFetcher.submit(
-      {
-        imageEndCursor: JSON.stringify({
-          imageEndCursor,
-          productId: selectedKey,
-        }),
-      },
-      {
-        method: "post",
-      },
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      shopify.saveBar.hide("save-bar");
+      imageFetcher.submit(
+        {
+          imageEndCursor: JSON.stringify({
+            imageEndCursor,
+            productId: selectedKey,
+          }),
+        },
+        {
+          method: "post",
+        },
+      );
+    }
+  };
+
+  const handleConfirm = async () => {
+    setSaveLoading(true);
+    const promises = confirmData.map((item: any) =>
+      UpdateProductImageAltData({
+        server: server || "",
+        shopName: shop,
+        productId: item.productId,
+        imageUrl: item.imageUrl,
+        altText: item.altText,
+        targetAltText: item.value,
+        languageCode: selectedLanguage,
+      }),
     );
+
+    // 并发执行所有请求
+    try {
+      let successCount = 0;
+      const results = await Promise.all(promises);
+      // 这里可以根据 results 做成功/失败的提示
+      results.forEach((result) => {
+        if (result.success) {
+          successCount++;
+        }
+      });
+      if (successCount === confirmData.length) {
+        shopify.toast.show(t("Saved successfully"));
+      } else {
+        shopify.toast.show(t("Some items saved failed"));
+      }
+    } catch (error) {
+      shopify.saveBar.hide("save-bar");
+      shopify.toast.show(t("Some items saved failed"));
+    } finally {
+      setConfirmData([]);
+      shopify.saveBar.hide("save-bar");
+      setSaveLoading(false);
+    }
+  };
+
+  const handleDiscard = () => {
+    setConfirmData([]);
+    shopify.saveBar.hide("save-bar");
   };
 
   const onCancel = () => {
-    setIsVisible(false);
-    shopify.saveBar.hide("product-image-confirm-save");
-    navigate(`/app/manage_translation?language=${searchTerm}`, {
-      state: { key: searchTerm },
-    }); // 跳转到 /app/manage_translation
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      shopify.saveBar.hide("save-bar");
+      navigate(`/app/manage_translation?language=${searchTerm}`, {
+        state: { key: searchTerm },
+      }); // 跳转到 /app/manage_translation
+    }
   };
 
   return (
-    <>
-      <SaveBar id="product-image-confirm-save">
-        {/* 
-            <button
-                variant="primary"
-                onClick={handleConfirm}
-                loading={confirmLoading && ""}
-            >
-            </button>
-            <button
-                onClick={handleDiscard}
-            >
-            </button> 
-            */}
-      </SaveBar>
-      <Modal variant="max" open={isVisible} onHide={onCancel}>
-        <TitleBar title={t("Article")}></TitleBar>
-        <Layout
-          style={{
-            padding: "24px 0",
-            height: "calc(100vh - 64px)",
-            overflow: "auto",
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-          }}
+    <Page
+      title={t("Product image alt text")}
+      fullWidth={true}
+      // primaryAction={{
+      //   content: t("Save"),
+      //   loading: confirmFetcher.state === "submitting",
+      //   disabled:
+      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
+      //   onAction: handleConfirm,
+      // }}
+      // secondaryActions={[
+      //   {
+      //     content: t("Cancel"),
+      //     loading: confirmFetcher.state === "submitting",
+      //     disabled:
+      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
+      //     onAction: handleDiscard,
+      //   },
+      // ]}
+      backAction={{
+        onAction: onCancel,
+      }}
+    >
+      <SaveBar id="save-bar">
+        <button
+          variant="primary"
+          onClick={handleConfirm}
+          loading={saveLoading && ""}
         >
-          {loadFetcher.state === "submitting" ? (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: "100%",
-              }}
-            >
-              <Spin />
-            </div>
-          ) : (
-            <>
-              {!isMobile && (
-                <Sider
+          {t("Save")}
+        </button>
+        <button onClick={handleDiscard}>{t("Cancel")}</button>
+      </SaveBar>
+      <Layout
+        style={{
+          overflow: "auto",
+          backgroundColor: "var(--p-color-bg)",
+          height: "calc(100vh - 104px)",
+        }}
+      >
+        {isLoading ? (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "100%",
+            }}
+          >
+            <Spin />
+          </div>
+        ) : (
+          <>
+            {!isMobile && (
+              <Sider
+                style={{
+                  height: "100%",
+                  minHeight: "70vh",
+                  display: "flex",
+                  flexDirection: "column",
+                  overflow: "auto",
+                  backgroundColor: "var(--p-color-bg)",
+                }}
+              >
+                <div
                   style={{
-                    background: colorBgContainer,
-                    height: "calc(100vh - 124px)",
-                    width: "200px",
-                    minHeight: "70vh",
                     display: "flex",
                     flexDirection: "column",
-                    overflow: "auto",
+                    height: "100%",
+                    justifyContent: "space-between",
                   }}
                 >
                   <Menu
@@ -851,6 +1023,7 @@ const Index = () => {
                       flex: 1,
                       overflowY: "auto",
                       minHeight: 0,
+                      backgroundColor: "var(--p-color-bg)",
                     }}
                     items={menuData}
                     selectedKeys={[selectedKey]}
@@ -864,235 +1037,233 @@ const Index = () => {
                       onNext={handleProductNext}
                     />
                   </div>
-                </Sider>
-              )}
-              <Content
-                style={{
-                  padding: "0 24px",
-                  height: "calc(100vh - 112px)", // 64px为FullscreenBar高度
-                }}
-              >
-                {isMobile ? (
-                  <Space direction="vertical" style={{ width: "100%" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Title
-                        level={4}
-                        style={{
-                          margin: 0,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {
-                          menuData!.find(
-                            (item: any) => item.key === selectedKey,
-                          )?.label
-                        }
-                      </Title>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          flexGrow: 2,
-                          justifyContent: "flex-end",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "100px",
-                          }}
-                        >
-                          <Select
-                            label={""}
-                            options={languageOptions}
-                            value={selectedLanguage}
-                            onChange={(value) => handleLanguageChange(value)}
-                          />
-                        </div>
-                        <div
-                          style={{
-                            width: "100px",
-                          }}
-                        >
-                          <Select
-                            label={""}
-                            options={itemOptions}
-                            value={selectedItem}
-                            onChange={(value) => handleItemChange(value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <Card title={t("Resource")}>
-                      <Space direction="vertical" style={{ width: "100%" }}>
-                        {productAltTextData.map((item: any, index: number) => {
-                          return (
-                            <Space
-                              key={index}
-                              direction="vertical"
-                              size="small"
-                              style={{ width: "100%" }}
-                            >
-                              <Text
-                                strong
-                                style={{
-                                  fontSize: "16px",
-                                }}
-                              >
-                                {item.productTitle}
-                              </Text>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  gap: "8px",
-                                }}
-                              >
-                                <Text>{t("Default Language")}</Text>
-                                <Input disabled value={item.altText} />
-                              </div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  gap: "8px",
-                                }}
-                              >
-                                <Text>{t("Translated")}</Text>
-                                <Input value={item.targetAltText} />
-                              </div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "flex-end",
-                                }}
-                              >
-                                <Button>{t("Translate")}</Button>
-                              </div>
-                              <Divider
-                                style={{
-                                  margin: "8px 0",
-                                }}
-                              />
-                            </Space>
-                          );
-                        })}
-                      </Space>
-                    </Card>
-                    <Menu
-                      mode="inline"
-                      style={{
-                        flex: 1,
-                        overflowY: "auto",
-                        minHeight: 0,
-                        marginBottom: "10px",
-                      }}
-                      items={menuData}
-                      selectedKeys={[selectedKey]}
-                      onClick={(e: any) => handleMenuChange(e.key)}
-                    />
-                    <div style={{ display: "flex", justifyContent: "center" }}>
-                      <Pagination
-                        hasPrevious={productsHasPreviousPage}
-                        onPrevious={handleProductPrevious}
-                        hasNext={productsHasNextPage}
-                        onNext={handleProductNext}
-                      />
-                    </div>
-                  </Space>
-                ) : (
-                  <Space
-                    direction="vertical"
-                    size="large"
-                    style={{ width: "100%" }}
+                </div>
+              </Sider>
+            )}
+            <Content
+              style={{
+                padding: "0 24px",
+                height: "calc(100vh - 112px)", // 64px为FullscreenBar高度
+              }}
+            >
+              {isMobile ? (
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
                   >
+                    <Title
+                      level={4}
+                      style={{
+                        margin: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {
+                        menuData!.find((item: any) => item.key === selectedKey)
+                          ?.label
+                      }
+                    </Title>
                     <div
                       style={{
                         display: "flex",
-                        justifyContent: "space-between",
                         alignItems: "center",
+                        gap: "8px",
+                        flexGrow: 2,
+                        justifyContent: "flex-end",
                       }}
                     >
-                      <Title
-                        level={4}
-                        style={{
-                          margin: 0,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {
-                          menuData!.find(
-                            (item: any) => item.key === selectedKey,
-                          )?.label
-                        }
-                      </Title>
                       <div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          flexGrow: 2,
-                          justifyContent: "flex-end",
+                          width: "100px",
                         }}
                       >
-                        <div
-                          style={{
-                            width: "150px",
-                          }}
-                        >
-                          <Select
-                            label={""}
-                            options={languageOptions}
-                            value={selectedLanguage}
-                            onChange={(value) => handleLanguageChange(value)}
-                          />
-                        </div>
-                        <div
-                          style={{
-                            width: "150px",
-                          }}
-                        >
-                          <Select
-                            label={""}
-                            options={itemOptions}
-                            value={selectedItem}
-                            onChange={(value) => handleItemChange(value)}
-                          />
-                        </div>
+                        <Select
+                          label={""}
+                          options={languageOptions}
+                          value={selectedLanguage}
+                          onChange={(value) => handleLanguageChange(value)}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          width: "100px",
+                        }}
+                      >
+                        <Select
+                          label={""}
+                          options={itemOptions}
+                          value={selectedItem}
+                          onChange={(value) => handleItemChange(value)}
+                        />
                       </div>
                     </div>
-                    <Table
-                      columns={columns}
-                      dataSource={productAltTextData}
-                      pagination={false}
-                      loading={tableDataLoading}
+                  </div>
+                  <Card title={t("Resource")}>
+                    <Space direction="vertical" style={{ width: "100%" }}>
+                      {productAltTextData.map((item: any, index: number) => {
+                        return (
+                          <Space
+                            key={index}
+                            direction="vertical"
+                            size="small"
+                            style={{ width: "100%" }}
+                          >
+                            <Text
+                              strong
+                              style={{
+                                fontSize: "16px",
+                              }}
+                            >
+                              {item.productTitle}
+                            </Text>
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "8px",
+                              }}
+                            >
+                              <Text>{t("Default Language")}</Text>
+                              <Input disabled value={item.altText} />
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "8px",
+                              }}
+                            >
+                              <Text>{t("Translated")}</Text>
+                              <Input value={item.targetAltText} />
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              <Button>{t("Translate")}</Button>
+                            </div>
+                            <Divider
+                              style={{
+                                margin: "8px 0",
+                              }}
+                            />
+                          </Space>
+                        );
+                      })}
+                    </Space>
+                  </Card>
+                  <Menu
+                    mode="inline"
+                    style={{
+                      flex: 1,
+                      overflowY: "auto",
+                      minHeight: 0,
+                      marginBottom: "10px",
+                    }}
+                    items={menuData}
+                    selectedKeys={[selectedKey]}
+                    onClick={(e: any) => handleMenuChange(e.key)}
+                  />
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <Pagination
+                      hasPrevious={productsHasPreviousPage}
+                      onPrevious={handleProductPrevious}
+                      hasNext={productsHasNextPage}
+                      onNext={handleProductNext}
                     />
-                    <div style={{ display: "flex", justifyContent: "center" }}>
-                      <Pagination
-                        hasPrevious={imageHasPreviousPage}
-                        onPrevious={handleImagePrevious}
-                        hasNext={imageHasNextPage}
-                        onNext={handleImageNext}
-                      />
+                  </div>
+                </Space>
+              ) : (
+                <Space
+                  direction="vertical"
+                  size="large"
+                  style={{ width: "100%" }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Title
+                      level={4}
+                      style={{
+                        margin: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {
+                        menuData!.find((item: any) => item.key === selectedKey)
+                          ?.label
+                      }
+                    </Title>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        flexGrow: 2,
+                        justifyContent: "flex-end",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "150px",
+                        }}
+                      >
+                        <Select
+                          label={""}
+                          options={languageOptions}
+                          value={selectedLanguage}
+                          onChange={(value) => handleLanguageChange(value)}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          width: "150px",
+                        }}
+                      >
+                        <Select
+                          label={""}
+                          options={itemOptions}
+                          value={selectedItem}
+                          onChange={(value) => handleItemChange(value)}
+                        />
+                      </div>
                     </div>
-                  </Space>
-                )}
-              </Content>
-            </>
-          )}
-        </Layout>
-      </Modal>
-    </>
+                  </div>
+                  <Table
+                    columns={columns}
+                    dataSource={productAltTextData}
+                    pagination={false}
+                    loading={tableDataLoading}
+                  />
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <Pagination
+                      hasPrevious={imageHasPreviousPage}
+                      onPrevious={handleImagePrevious}
+                      hasNext={imageHasNextPage}
+                      onNext={handleImageNext}
+                    />
+                  </div>
+                </Space>
+              )}
+            </Content>
+          </>
+        )}
+      </Layout>
+    </Page>
   );
 };
 

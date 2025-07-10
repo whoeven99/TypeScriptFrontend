@@ -463,6 +463,14 @@
     "Customers can switch languages and currencies when visiting the site. ": "Kunder kan byta språk och valutor när de besöker webbplatsen.",
     "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Väljaren är inaktiverad. Om du behöver automatiskt byta språk och valuta baserat på IP, klicka på 'Setup'.",
     "Disable App": "Inaktivera app",
-    "Setup App": "Konfigurera app"
+    "Setup App": "Konfigurera app",
+    "Product images": "Produktbilder",
+    "Product image alt text": "Produktbild-Alt-Text",
+    "Click to Upload": "Klicka för att ladda upp",
+    "Upload Success": "Ladda upp lyckades",
+    "Upload Failed": "Ladda upp misslyckades",
+    "Only images can be uploaded": "Endast bilder kan laddas upp",
+    "File must be less than 4MB": "Filen måste vara mindre än 4MB",
+    "Images data": "Bilddata"
 }   
   

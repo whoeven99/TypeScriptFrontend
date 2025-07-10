@@ -462,7 +462,15 @@
     "Customers can switch languages and currencies when visiting the site. ": "Klanten kunnen taal en valuta wisselen bij het bezoeken van de site.",
     "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "De switcher is momenteel uitgeschakeld. Als u IP-gebaseerde automatische taal- en valuta-wisseling nodig hebt, klikt u op 'Setup'.",
     "Disable App": "App uitschakelen",
-    "Setup App": "App instellen"
+    "Setup App": "App instellen",
+    "Product images": "Productafbeeldingen",
+    "Product image alt text": "Productafbeelding alt-tekst",
+    "Click to Upload": "Klik om te uploaden",
+    "Upload Success": "Upload succesvol",
+    "Upload Failed": "Upload mislukt",
+    "Only images can be uploaded": "Alleen afbeeldingen kunnen worden geüpload",
+    "File must be less than 4MB": "De bestand moet kleiner zijn dan 4MB",
+    "Images data": "Afbeeldingengegevens"
 }
   
   
