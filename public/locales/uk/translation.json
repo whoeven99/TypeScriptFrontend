@@ -463,5 +463,13 @@
     "Customers can switch languages and currencies when visiting the site. ": "Клієнти можуть перемикати мови та валюти при відвідуванні сайту.",
     "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Перемикач в даний момент вимкнений. Якщо вам потрібно автоматичне перемикання мови та валюти на основі IP, будь ласка, натисніть 'Setup'.",
     "Disable App": "Вимкнути додаток",
-    "Setup App": "Налаштувати додаток"
+    "Setup App": "Налаштувати додаток",
+    "Product images": "Зображення продуктів",
+    "Product image alt text": "Альтернативний текст зображення продукту",
+    "Click to Upload": "Натисніть, щоб завантажити",
+    "Upload Success": "Завантаження успішне",
+    "Upload Failed": "Завантаження не вдалося",
+    "Only images can be uploaded": "Можна завантажити тільки зображення",
+    "File must be less than 4MB": "Файл повинен бути меншим за 4MB",
+    "Images data": "Дані зображень"
 }

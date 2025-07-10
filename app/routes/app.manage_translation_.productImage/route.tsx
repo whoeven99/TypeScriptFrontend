@@ -33,7 +33,7 @@ import { authenticate } from "~/shopify.server";
 import { ShopLocalesType } from "../app.language/route";
 import { setUserConfig } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
-import { GetProductImageData } from "~/api/JavaServer";
+import { DeleteProductImageData, GetProductImageData } from "~/api/JavaServer";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -497,12 +497,15 @@ const Index = () => {
   const navigate = useNavigate();
   const isManualChange = useRef(true);
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [tableDataLoading, setTableDataLoading] = useState(true);
   const [menuData, setMenuData] = useState<any>([]);
   const [selectedKey, setSelectedKey] = useState("");
   const [dataResource, setDataResource] = useState<any>([]);
   const [productImageData, setProductImageData] = useState<
     {
+      key: string;
       productTitle: string;
       imageUrl: string;
       targetImageUrl: string;
@@ -513,6 +516,7 @@ const Index = () => {
     }[]
   >([
     {
+      key: "",
       productTitle: "",
       imageUrl: "",
       targetImageUrl: "",
@@ -597,6 +601,7 @@ const Index = () => {
       setProductsStartCursor(loadFetcher.data.productStartCursor);
       setProductsEndCursor(loadFetcher.data.productEndCursor);
       setTableDataLoading(false);
+      setIsLoading(false);
     }
   }, [loadFetcher.data]);
 
@@ -642,40 +647,37 @@ const Index = () => {
   }, [languageFetcher.data]);
 
   useEffect(() => {
-    console.log(11111111);
-    
-    async function getTargetData() {
-      setTargetImageLoading(true);
-      const targetData = await GetProductImageData({
-        server: server || "",
-        shopName: shop,
-        productId: selectedKey,
-        languageCode: searchTerm || "",
-      });
-
-      console.log("targetData", targetData);
-      setProductImageData(
-        productImageData.map((item: any) => {
-          if (item.imageId === targetData.response.imageBeforeUrl) {
-            return {
-              ...item,
-              targetImageUrl: targetData.response.imageAfterUrl,
-            };
-          }
-          return item;
-        }),
-      );
-      setTargetImageLoading(false);
-    }
-
-    getTargetData();
-
     if (selectedKey && dataResource.length > 0) {
-      setProductImageData(
+      const data =
         dataResource.filter(
           (item: any) => item[0]?.productId === selectedKey,
-        )[0] || [],
-      );
+        )[0] || [];
+      async function getTargetData() {
+        const targetData = await GetProductImageData({
+          server: server || "",
+          shopName: shop,
+          productId: selectedKey,
+          languageCode: selectedLanguage,
+        });
+
+        setProductImageData(
+          data.map((item: any) => {
+            const index = targetData.response.findIndex(
+              (image: any) => item.imageUrl === image.imageBeforeUrl,
+            );
+            if (index !== -1) {
+              return {
+                ...item,
+                targetImageUrl: targetData.response[index].imageAfterUrl,
+              };
+            }
+            return item;
+          }),
+        );
+        setTargetImageLoading(false);
+      }
+
+      getTargetData();
     }
   }, [selectedKey, dataResource]);
 
@@ -698,14 +700,6 @@ const Index = () => {
       );
     }
   }, [languageTableData]);
-
-  useEffect(() => {
-    console.log("productImageData", productImageData);
-  }, [productImageData]);
-
-  useEffect(() => {
-    console.log("dataResource", dataResource);
-  }, [dataResource]);
 
   const columns = [
     {
@@ -754,11 +748,11 @@ const Index = () => {
               const isImage = file.type.startsWith("image/");
               const isLt4M = file.size / 1024 / 1024 < 4;
               if (!isImage) {
-                shopify.toast.show("只能上传图片文件！");
+                shopify.toast.show(t("Only images can be uploaded"));
                 return false;
               }
               if (!isLt4M) {
-                shopify.toast.show("文件必须小于 4MB！");
+                shopify.toast.show(t("File must be less than 4MB"));
                 return false;
               }
               return true;
@@ -773,7 +767,7 @@ const Index = () => {
                   imageBeforeUrl: record?.imageUrl,
                   altBeforeTranslation: "",
                   altAfterTranslation: "",
-                  languageCode: searchTerm,
+                  languageCode: selectedLanguage,
                 }),
               };
             }}
@@ -781,27 +775,28 @@ const Index = () => {
               if (info.file.status !== "uploading") {
               }
               if (info.file.status === "done") {
-                setDataResource(
-                  dataResource.map((item: any) => {
-                    return item.map((image: any) => {
-                      if (image.imageId === record?.imageId) {
-                        return {
-                          ...image,
-                          targetImageUrl:
-                            info.fileList[0].response.response.imageAfterUrl,
-                        };
-                      }
-                      return image;
-                    });
+                setProductImageData(
+                  productImageData.map((item: any) => {
+                    if (
+                      item.imageUrl ===
+                      info.fileList[0].response.response?.imageBeforeUrl
+                    ) {
+                      return {
+                        ...item,
+                        targetImageUrl:
+                          info.fileList[0].response.response.imageAfterUrl,
+                      };
+                    }
+                    return item;
                   }),
                 );
-                shopify.toast.show(`${info.file.name} 文件上传成功`);
+                shopify.toast.show(`${info.file.name} ${t("Upload Success")}`);
               } else if (info.file.status === "error") {
-                shopify.toast.show(`${info.file.name} 文件上传失败`);
+                shopify.toast.show(`${info.file.name} ${t("Upload Failed")}`);
               }
             }}
           >
-            <Button icon={<UploadOutlined />}>Click to Upload</Button>
+            <Button icon={<UploadOutlined />}>{t("Click to Upload")}</Button>
           </Upload>
         );
       },
@@ -814,7 +809,13 @@ const Index = () => {
         return (
           // <Space>
           //   <Button>{t("Translate")}</Button>
-          <Button disabled={!record?.targetImageUrl}>{t("Delete")}</Button>
+          <Button
+            disabled={!record?.targetImageUrl}
+            loading={isDeleteLoading}
+            onClick={() => handleDelete(record?.productId, record?.imageUrl)}
+          >
+            {t("Delete")}
+          </Button>
           // </Space>
         );
       },
@@ -830,12 +831,14 @@ const Index = () => {
   };
 
   const handleLanguageChange = (language: string) => {
+    setIsLoading(true);
     isManualChange.current = true;
     setSelectedLanguage(language);
-    navigate(`/app/manage_translation/product?language=${language}`);
+    navigate(`/app/manage_translation/productImage?language=${language}`);
   };
 
   const handleItemChange = (item: string) => {
+    setIsLoading(true);
     isManualChange.current = true;
     setSelectedItem(item);
     navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
@@ -902,6 +905,36 @@ const Index = () => {
     );
   };
 
+  const handleDelete = async (productId: string, imageUrl: string) => {
+    setIsDeleteLoading(true);
+    const res = await DeleteProductImageData({
+      server: server || "",
+      shopName: shop,
+      productId: productId,
+      imageUrl: imageUrl,
+      languageCode: selectedLanguage,
+    });
+
+    console.log("res", res);
+
+    if (res.success) {
+      setDataResource(
+        dataResource.map((item: any) => {
+          return item.map((image: any) => {
+            if (image.imageId === productId) {
+              image.targetImageUrl = "";
+            }
+            return image;
+          });
+        }),
+      );
+      shopify.toast.show(t("Delete Success"));
+    } else {
+      shopify.toast.show(t("Delete Failed"));
+    }
+    setIsDeleteLoading(false);
+  };
+
   const onCancel = () => {
     navigate(`/app/manage_translation?language=${searchTerm}`, {
       state: { key: searchTerm },
@@ -949,7 +982,7 @@ const Index = () => {
           height: "calc(100vh - 104px)",
         }}
       >
-        {loadFetcher.state === "submitting" ? (
+        {isLoading ? (
           <div
             style={{
               display: "flex",
