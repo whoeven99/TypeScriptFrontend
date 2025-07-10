@@ -151,9 +151,9 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState<
-    boolean | string | { language: string } | { item: string }
-  >(false);
+  // const [isVisible, setIsVisible] = useState<
+  //   boolean | string | { language: string } | { item: string }
+  // >(false);
 
   const [metaobjectsData, setMetaobjectsData] = useState(metaobjects);
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
@@ -295,6 +295,14 @@ const Index = () => {
       }
     }
   }, [languageFetcher.data]);
+
+  useEffect(() => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.show("save-bar");
+    } else {
+      shopify.saveBar.hide("save-bar");
+    }
+  }, [confirmData]);
 
   const resourceColumns = [
     {
@@ -439,8 +447,9 @@ const Index = () => {
 
   const handleLanguageChange = (language: string) => {
     if (confirmData.length > 0) {
-      setIsVisible({ language: language });
+      shopify.saveBar.leaveConfirmation();
     } else {
+      shopify.saveBar.hide("save-bar");
       setIsLoading(true);
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
@@ -450,8 +459,9 @@ const Index = () => {
 
   const handleItemChange = (item: string) => {
     if (confirmData.length > 0) {
-      setIsVisible({ item: item });
+      shopify.saveBar.leaveConfirmation();
     } else {
+      shopify.saveBar.hide("save-bar");
       setIsLoading(true);
       isManualChangeRef.current = true;
       setSelectedItem(item);
@@ -461,8 +471,9 @@ const Index = () => {
 
   const onPrevious = () => {
     if (confirmData.length > 0) {
-      setIsVisible("previous");
+      shopify.saveBar.leaveConfirmation();
     } else {
+      shopify.saveBar.hide("save-bar");
       const formData = new FormData();
       const startCursor = metaobjectsData.pageInfo.startCursor;
       formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
@@ -475,8 +486,9 @@ const Index = () => {
 
   const onNext = () => {
     if (confirmData.length > 0) {
-      setIsVisible("next");
+      shopify.saveBar.leaveConfirmation();
     } else {
+      shopify.saveBar.hide("save-bar");
       const formData = new FormData();
       const endCursor = metaobjectsData.pageInfo.endCursor;
       formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
@@ -497,53 +509,55 @@ const Index = () => {
   };
 
   const handleDiscard = () => {
+    shopify.saveBar.hide("save-bar");
     setMetaobjectsData({ ...metaobjectsData });
     setConfirmData([]);
   };
 
-  const handleLeaveItem = (
-    key: string | boolean | { language: string } | { item: string },
-  ) => {
-    setIsVisible(false);
-    if (key === "previous") {
-      // 向前翻页
-      const formData = new FormData();
-      const startCursor = metaobjectsData.pageInfo.startCursor;
-      formData.append("startCursor", JSON.stringify(startCursor));
-      submit(formData, {
-        method: "post",
-        action: `/app/manage_translation/metaobject?language=${searchTerm}`,
-      });
-    } else if (key === "next") {
-      // 向后翻页
-      const formData = new FormData();
-      const endCursor = metaobjectsData.pageInfo.endCursor;
-      formData.append("endCursor", JSON.stringify(endCursor));
-      submit(formData, {
-        method: "post",
-        action: `/app/manage_translation/metaobject?language=${searchTerm}`,
-      });
-    } else if (typeof key === "object" && "language" in key) {
-      setIsLoading(true);
-      isManualChangeRef.current = true;
-      setSelectedLanguage(key.language);
-      navigate(`/app/manage_translation/metaobject?language=${key.language}`);
-    } else if (typeof key === "object" && "item" in key) {
-      setIsLoading(true);
-      isManualChangeRef.current = true;
-      setSelectedItem(key.item);
-      navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
-    } else {
-      navigate(`/app/manage_translation?language=${searchTerm}`, {
-        state: { key: searchTerm },
-      }); // 跳转到 /app/manage_translation
-    }
-  };
+  // const handleLeaveItem = (
+  //   key: string | boolean | { language: string } | { item: string },
+  // ) => {
+  //   setIsVisible(false);
+  //   if (key === "previous") {
+  //     // 向前翻页
+  //     const formData = new FormData();
+  //     const startCursor = metaobjectsData.pageInfo.startCursor;
+  //     formData.append("startCursor", JSON.stringify(startCursor));
+  //     submit(formData, {
+  //       method: "post",
+  //       action: `/app/manage_translation/metaobject?language=${searchTerm}`,
+  //     });
+  //   } else if (key === "next") {
+  //     // 向后翻页
+  //     const formData = new FormData();
+  //     const endCursor = metaobjectsData.pageInfo.endCursor;
+  //     formData.append("endCursor", JSON.stringify(endCursor));
+  //     submit(formData, {
+  //       method: "post",
+  //       action: `/app/manage_translation/metaobject?language=${searchTerm}`,
+  //     });
+  //   } else if (typeof key === "object" && "language" in key) {
+  //     setIsLoading(true);
+  //     isManualChangeRef.current = true;
+  //     setSelectedLanguage(key.language);
+  //     navigate(`/app/manage_translation/metaobject?language=${key.language}`);
+  //   } else if (typeof key === "object" && "item" in key) {
+  //     setIsLoading(true);
+  //     isManualChangeRef.current = true;
+  //     setSelectedItem(key.item);
+  //     navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
+  //   } else {
+  //     navigate(`/app/manage_translation?language=${searchTerm}`, {
+  //       state: { key: searchTerm },
+  //     }); // 跳转到 /app/manage_translation
+  //   }
+  // };
 
   const onCancel = () => {
     if (confirmData.length > 0) {
-      setIsVisible(true);
+      shopify.saveBar.leaveConfirmation();
     } else {
+      shopify.saveBar.hide("save-bar");
       navigate(`/app/manage_translation?language=${searchTerm}`, {
         state: { key: searchTerm },
       }); // 跳转到 /app/manage_translation
@@ -554,26 +568,36 @@ const Index = () => {
     <Page
       title={t("Metaobjects")}
       fullWidth={true}
-      primaryAction={{
-        content: t("Save"),
-        loading: confirmFetcher.state === "submitting",
-        disabled:
-          confirmData.length == 0 || confirmFetcher.state === "submitting",
-        onAction: handleConfirm,
-      }}
-      secondaryActions={[
-        {
-          content: t("Cancel"),
-          loading: confirmFetcher.state === "submitting",
-          disabled:
-            confirmData.length == 0 || confirmFetcher.state === "submitting",
-          onAction: handleDiscard,
-        },
-      ]}
+      // primaryAction={{
+      //   content: t("Save"),
+      //   loading: confirmFetcher.state === "submitting",
+      //   disabled:
+      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
+      //   onAction: handleConfirm,
+      // }}
+      // secondaryActions={[
+      //   {
+      //     content: t("Cancel"),
+      //     loading: confirmFetcher.state === "submitting",
+      //     disabled:
+      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
+      //     onAction: handleDiscard,
+      //   },
+      // ]}
       backAction={{
         onAction: onCancel,
       }}
     >
+      <SaveBar id="save-bar">
+        <button
+          variant="primary"
+          onClick={handleConfirm}
+          loading={confirmFetcher.state === "submitting" && ""}
+        >
+          {t("Save")}
+        </button>
+        <button onClick={handleDiscard}>{t("Cancel")}</button>
+      </SaveBar>
       <Layout
         style={{
           overflow: "auto",
@@ -785,7 +809,7 @@ const Index = () => {
           />
         )}
       </Layout>
-      <Modal
+      {/* <Modal
         variant={"base"}
         open={!!isVisible}
         onHide={() => setIsVisible(false)}
@@ -811,7 +835,7 @@ const Index = () => {
             {t("Stay on Page")}
           </button>
         </TitleBar>
-      </Modal>
+      </Modal> */}
     </Page>
   );
 };
