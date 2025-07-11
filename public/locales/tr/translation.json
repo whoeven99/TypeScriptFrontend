@@ -463,5 +463,17 @@
     "Customers can switch languages and currencies when visiting the site. ": "Müşteriler, sitesini ziyaret ederken dil ve para birimi seçebilirler.",
     "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Seçici şu an devre dışı bırakılmıştır. IP tabanlı otomatik dil ve para birimi değişimi gerekiyorsa, lütfen “Setup”'a tıklayın.",
     "Disable App": "Uygulamayı devre dışı bırak",
-    "Setup App": "Uygulamayı yapılandır"
+    "Setup App": "Uygulamayı yapılandır",
+    "Product images": "Ürün görseleri",
+    "Product image alt text": "Ürün görseli alternatif metni",
+    "Click to Upload": "Yüklemek için tıklayın",
+    "Upload Success": "Yükleme başarılı",
+    "Upload Failed": "Yükleme başarısız",
+    "Only images can be uploaded": "Yalnızca görsel yükleyebilirsiniz",
+    "File must be less than 4MB": "Dosya 4MB'den küçük olmalıdır",
+    "Images data": "Görsel verileri",
+    "Image pixel size cannot exceed 20 million pixels": "Görselin piksel boyutu 20 milyon pikselden büyük olamaz",
+    "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Yalnızca JPEG, PNG, WEBP, HEIC ve GIF formatları desteklenir",
+    "Default image": "Varsayılan görsel",
+    "Translated image": "Çevirilmiş görsel"
 }

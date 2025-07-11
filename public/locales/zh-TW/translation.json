@@ -462,6 +462,18 @@
     "Customers can switch languages and currencies when visiting the site. ": "當訪問網站時，客戶可以切換語言和貨幣。",
     "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "切換器目前處於禁用狀態。如果您需要基於IP的自動語言和貨幣切換，請點擊“Setup”。",
     "Disable App": "禁用應用",
-    "Setup App": "設置應用"
+    "Setup App": "設置應用",
+    "Product images": "產品圖片",
+    "Product image alt text": "產品圖片替代文本",
+    "Click to Upload": "點擊上傳",
+    "Upload Success": "上傳成功",
+    "Upload Failed": "上傳失敗",
+    "Only images can be uploaded": "只能上傳圖片",
+    "File must be less than 4MB": "文件必須小於4MB",
+    "Images data": "圖片數據",
+    "Image pixel size cannot exceed 20 million pixels": "圖片像素大小不能超過2000萬像素",
+    "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "只支持JPEG、PNG、WEBP、HEIC和GIF格式",
+    "Default image": "默認圖片",
+    "Translated image": "翻譯圖片"
   }
 

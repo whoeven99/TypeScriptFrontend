@@ -1,3 +1,21 @@
+async function GetProductImageData({ shopName, productId, languageCode }) {
+  try {
+    const response = await axios({
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
+      method: "POST",
+      data: {
+        shopName: shopName,
+        imageId: `gid://shopify/Product/${productId}`,
+        languageCode: languageCode,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error GetProductImageData:", error);
+  }
+}
+
 async function fetchSwitcherConfig(shop) {
   const response = await axios({
     url: `https://springbackendprod.azurewebsites.net/widgetConfigurations/getData`,
@@ -801,8 +819,46 @@ window.onload = async function () {
   const switcher = document.getElementById("ciwi-container");
   const shop = document.getElementById("queryCiwiId");
   const mainBox = document.getElementById("main-box");
-  shop.remove();
+  const languageInput = document.querySelector('input[name="language_code"]');
+  const language = languageInput.value;
+  const productId = document.querySelector('input[name="product_id"]');
+
   const data = await fetchSwitcherConfig(shop.value);
+
+  if (productId) {
+    const productIdValue = productId.value;
+    const productImageData = await GetProductImageData({
+      shopName: shop.value,
+      productId: productIdValue,
+      languageCode: language,
+    });
+
+    console.log("productImageData: ", productImageData);
+    
+    if (productImageData.response.length > 0) {
+      const imageDomList = document.querySelectorAll("img");
+
+      // 遍历所有img
+      imageDomList.forEach((img) => {
+        // 在response数组中查找匹配项
+        const match = productImageData.response.find((item) =>
+          img.src.includes(item.imageBeforeUrl.split("/files/")[2]),
+        );
+        if (match) {
+          // 如果imageAfterUrl或altBeforeTranslation存在，则替换
+          if (match.imageAfterUrl || match.altBeforeTranslation) {
+            if (match.imageAfterUrl) {
+              img.src = match?.imageAfterUrl;
+              img.srcset = match?.imageAfterUrl;
+            }
+            if (match.altBeforeTranslation) {
+              img.alt = match?.altBeforeTranslation;
+            }
+          }
+        }
+      });
+    }
+  }
 
   if (
     data.languageSelector ||
@@ -855,10 +911,7 @@ window.onload = async function () {
         ".selector-header[data-type='language'] .selected-option",
       );
       if (selectedOption) {
-        const currentLangCode = document.querySelector(
-          'input[name="language_code"]',
-        ).value;
-        const countryCode = languageLocaleData[currentLangCode]?.countries[0];
+        const countryCode = languageLocaleData[language]?.countries[0];
         const optionFlagImg = document.createElement("img");
         optionFlagImg.className = "country-flag";
         optionFlagImg.src = countryCode;
@@ -892,8 +945,6 @@ window.onload = async function () {
     const storedLanguage = localStorage.getItem("selectedLanguage");
     const storedCountry = localStorage.getItem("selectedCountry");
     const storedCurrency = localStorage.getItem("selectedCurrency");
-    const languageInput = document.querySelector('input[name="language_code"]');
-    const language = languageInput.value;
     const countryInput = document.querySelector('input[name="country_code"]');
     const country = countryInput.value;
     const currencyInput = document.querySelector('input[name="currency_code"]');

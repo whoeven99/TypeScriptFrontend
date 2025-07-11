@@ -1,12 +1,17 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Space, Select, Typography, Button } from "antd";
+import { Space, Select, Typography, Button, Table, Card } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
 import { ShopLocalesType } from "../app.language/route";
-import { useFetcher, useLoaderData, useLocation } from "@remix-run/react";
+import {
+  useFetcher,
+  useLoaderData,
+  useLocation,
+  useNavigate,
+} from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
 import { GetTranslationItemsInfo } from "~/api/JavaServer";
@@ -91,6 +96,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
+  const navigate = useNavigate();
+
   const { searchTerm } = useLoaderData<typeof loader>();
   const [selectOptions, setSelectOptions] = useState<ManageSelectDataType[]>(
     [],
@@ -322,20 +329,16 @@ const Index = () => {
       navigation: "theme",
     },
   ];
-  const imageDataSource: TableDataType[] = [
+  const imageDataSource = [
     {
       key: "product_images",
       title: t("Product images"),
-      allTranslatedItems: 1,
-      allItems: 2,
       sync_status: false,
       navigation: "productImage",
     },
     {
       key: "product_image_alt",
-      title: t("Product image alt"),
-      allTranslatedItems: 1,
-      allItems: 2,
+      title: t("Product image alt text"),
       sync_status: false,
       navigation: "productImageAlt",
     },
@@ -732,6 +735,31 @@ const Index = () => {
     }
   }, [current]);
 
+  const imageColumns = [
+    {
+      title: t("Images data"),
+      dataIndex: "title",
+      key: "title",
+    },
+    {
+      title: t("Action"),
+      render: (_: any, record: any) => {
+        return (
+          <Button
+            onClick={() => {
+              if (current)
+                navigate(
+                  `/app/manage_translation/${record.navigation}?language=${current}`,
+                );
+            }}
+          >
+            {t("Edit")}
+          </Button>
+        );
+      },
+    },
+  ];
+
   return (
     <Page>
       <TitleBar title={t("Manage Translation")} />
@@ -795,12 +823,23 @@ const Index = () => {
                   current={current}
                   setShowWarnModal={setShowWarnModal}
                 />
-                {/* <ManageTranslationsCard
-                  cardTitle={t("Images data")}
-                  dataSource={imageDataSource}
-                  current={current}
-                  setShowWarnModal={setShowWarnModal}
-                /> */}
+                <Card>
+                  <Space
+                    direction="vertical"
+                    size="small"
+                    style={{ display: "flex" }}
+                  >
+                    <Title style={{ fontSize: "1.5rem", display: "inline" }}>
+                      {t("Images data")}
+                    </Title>
+                    <Table
+                      columns={imageColumns}
+                      dataSource={imageDataSource}
+                      pagination={false}
+                    />
+                  </Space>
+                </Card>
+
                 <ManageTranslationsCard
                   cardTitle={t("Settings")}
                   dataSource={settingsDataSource}

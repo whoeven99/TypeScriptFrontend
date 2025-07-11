@@ -463,5 +463,17 @@
     "Customers can switch languages and currencies when visiting the site. ": "Клиенты могут переключать языки и валюты при посещении сайта.",
     "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Переключатель в данный момент отключен. Если вам нужно автоматическое переключение языка и валюты на основе IP, пожалуйста, нажмите «Настроить».",
     "Disable App": "Отключить приложение",
-    "Setup App": "Настроить приложение"
+    "Setup App": "Настроить приложение",
+    "Product images": "Изображения продуктов",
+    "Product image alt text": "Альтернативный текст изображения продукта",
+    "Click to Upload": "Нажмите, чтобы загрузить",
+    "Upload Success": "Загрузка прошла успешно",
+    "Upload Failed": "Загрузка не удалась",
+    "Only images can be uploaded": "Можно загружать только изображения",
+    "File must be less than 4MB": "Файл должен быть меньше 4MB",
+    "Images data": "Данные изображений",
+    "Image pixel size cannot exceed 20 million pixels": "Размер изображения не может превышать 20 миллионов пикселей",
+    "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Поддерживаются только форматы JPEG, PNG, WEBP, HEIC и GIF",
+    "Default image": "Стандартное изображение",
+    "Translated image": "Переведенное изображение"
 }

@@ -20,6 +20,124 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const UpdateProductImageAltData = async ({
+  server,
+  shopName,
+  productId,
+  imageUrl,
+  altText,
+  targetAltText,
+  languageCode,
+}: {
+  server: string;
+  shopName: string;
+  productId: string;
+  imageUrl: string;
+  altText: string;
+  targetAltText: string;
+  languageCode: string;
+}) => {
+  try {
+    console.log("UpdateProductImageAltData: ", {
+      shopName,
+      productId,
+      imageUrl,
+      altText,
+      targetAltText,
+      languageCode,
+    });
+
+    const response = await axios({
+      url: `${server}/picture/insertPictureToDbAndCloud`,
+      method: "POST",
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      data: {
+        file: new File([], "file.png"),
+        shopName,
+        userPicturesDoJson: JSON.stringify({
+          shopName,
+          imageId: productId,
+          imageBeforeUrl: imageUrl,
+          altBeforeTranslation: altText,
+          altAfterTranslation: targetAltText,
+          languageCode: languageCode,
+        }),
+      },
+    });
+
+    console.log("UpdateProductImageAltData: ", response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error("Error UpdateProductImageAltData:", error);
+  }
+};
+
+export const DeleteProductImageData = async ({
+  server,
+  shopName,
+  productId,
+  imageUrl,
+  languageCode,
+}: {
+  server: string;
+  shopName: string;
+  productId: string;
+  imageUrl: string;
+  languageCode: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/picture/deletePictureData?shopName=${shopName}`,
+      method: "POST",
+      data: {
+        shopName: shopName,
+        imageId: productId,
+        imageBeforeUrl: imageUrl,
+        languageCode: languageCode,
+      },
+    });
+
+    console.log("DeleteProductImageData: ", response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error("Error DeleteProductImageData:", error);
+  }
+};
+
+export const GetProductImageData = async ({
+  server,
+  shopName,
+  productId,
+  languageCode,
+}: {
+  server: string;
+  shopName: string;
+  productId: string;
+  languageCode: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
+      method: "POST",
+      data: {
+        shopName: shopName,
+        imageId: productId,
+        languageCode: languageCode,
+      },
+    });
+
+    console.log("GetProductImageData: ", response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error("Error GetProductImageData:", error);
+  }
+};
+
 export const GetUserValue = async ({
   shop,
   server,

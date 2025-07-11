@@ -462,6 +462,18 @@
     "Customers can switch languages and currencies when visiting the site. ": "顧客はサイトを訪問する際に言語と通貨を切り替えることができます。",
     "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "スイッチャーは現在無効です。IPベースの自動言語と通貨の切り替えが必要な場合は、「設定」をクリックしてください。",
     "Disable App": "アプリを無効にする",
-    "Setup App": "アプリを設定する"
+    "Setup App": "アプリを設定する",
+    "Product images": "商品画像",
+    "Product image alt text": "商品画像の代替テキスト",
+    "Click to Upload": "クリックしてアップロード",
+    "Upload Success": "アップロード成功",
+    "Upload Failed": "アップロード失敗",
+    "Only images can be uploaded": "画像のみアップロードできます",
+    "File must be less than 4MB": "ファイルは4MB以下である必要があります",
+    "Images data": "画像データ",
+    "Image pixel size cannot exceed 20 million pixels": "画像のピクセルサイズは2000万ピクセルを超えてはいけません",
+    "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "JPEG、PNG、WEBP、HEIC、GIF形式のみサポートされています",
+    "Default image": "デフォルトの画像",
+    "Translated image": "翻訳された画像"
 }   
   

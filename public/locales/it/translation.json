@@ -461,6 +461,18 @@
     "Customers can switch languages and currencies when visiting the site. ": "I clienti possono cambiare lingue e valute durante la visita al sito.",
     "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Il selettore è attualmente disattivato. Se hai bisogno di un cambiamento automatico di lingua e valuta basato sull'IP, clicca su 'Setup'.",
     "Disable App": "Disabilita App",
-    "Setup App": "Configura App"
+    "Setup App": "Configura App",
+    "Product images": "Immagini del prodotto",
+    "Product image alt text": "Testo alternativo dell'immagine del prodotto",
+    "Click to Upload": "Clicca per caricare",
+    "Upload Success": "Caricamento riuscito",
+    "Upload Failed": "Caricamento fallito",
+    "Only images can be uploaded": "Solo le immagini possono essere caricate",
+    "File must be less than 4MB": "Il file deve essere inferiore a 4MB",
+    "Images data": "Dati delle immagini",
+    "Image pixel size cannot exceed 20 million pixels": "La dimensione dell'immagine non può superare 20 milioni di pixel",
+    "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Solo JPEG, PNG, WEBP, HEIC e GIF sono supportati",
+    "Default image": "Immagine predefinita",
+    "Translated image": "Immagine tradotta"
 }
   
