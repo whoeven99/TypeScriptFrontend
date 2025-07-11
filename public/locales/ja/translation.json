@@ -470,6 +470,10 @@
     "Upload Failed": "アップロード失敗",
     "Only images can be uploaded": "画像のみアップロードできます",
     "File must be less than 4MB": "ファイルは4MB以下である必要があります",
-    "Images data": "画像データ"
+    "Images data": "画像データ",
+    "Image pixel size cannot exceed 20 million pixels": "画像のピクセルサイズは2000万ピクセルを超えてはいけません",
+    "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "JPEG、PNG、WEBP、HEIC、GIF形式のみサポートされています",
+    "Default image": "デフォルトの画像",
+    "Translated image": "翻訳された画像"
 }   
   

@@ -470,6 +470,10 @@
     "Upload Failed": "上傳失敗",
     "Only images can be uploaded": "只能上傳圖片",
     "File must be less than 4MB": "文件必須小於4MB",
-    "Images data": "圖片數據"
+    "Images data": "圖片數據",
+    "Image pixel size cannot exceed 20 million pixels": "圖片像素大小不能超過2000萬像素",
+    "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "只支持JPEG、PNG、WEBP、HEIC和GIF格式",
+    "Default image": "默認圖片",
+    "Translated image": "翻譯圖片"
   }
 

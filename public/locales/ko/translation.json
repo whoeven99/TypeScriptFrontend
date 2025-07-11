@@ -469,5 +469,9 @@
     "Upload Failed": "업로드 실패",
     "Only images can be uploaded": "이미지만 업로드할 수 있습니다.",
     "File must be less than 4MB": "파일은 4MB 이하여야 합니다.",
-    "Images data": "이미지 데이터"
+    "Images data": "이미지 데이터",
+    "Image pixel size cannot exceed 20 million pixels": "이미지 픽셀 크기는 2000만 픽셀을 초과할 수 없습니다.",
+    "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "JPEG, PNG, WEBP, HEIC 및 GIF 형식만 지원됩니다.",
+    "Default image": "기본 이미지",
+    "Translated image": "번역된 이미지"
 }

@@ -471,6 +471,10 @@
     "Upload Failed": "Ladda upp misslyckades",
     "Only images can be uploaded": "Endast bilder kan laddas upp",
     "File must be less than 4MB": "Filen måste vara mindre än 4MB",
-    "Images data": "Bilddata"
+    "Images data": "Bilddata",
+    "Image pixel size cannot exceed 20 million pixels": "Bildens pixelstorlek får inte överstiga 20 miljoner pixlar",
+    "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Endast JPEG, PNG, WEBP, HEIC och GIF-format stöds",
+    "Default image": "Standardbild",
+    "Translated image": "Översatt bild"
 }   
   

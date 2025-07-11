@@ -471,5 +471,9 @@
     "Upload Failed": "Завантаження не вдалося",
     "Only images can be uploaded": "Можна завантажити тільки зображення",
     "File must be less than 4MB": "Файл повинен бути меншим за 4MB",
-    "Images data": "Дані зображень"
+    "Images data": "Дані зображень",
+    "Image pixel size cannot exceed 20 million pixels": "Розмір зображення не може перевищувати 20 мільйонів пікселів",
+    "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Підтримуються тільки формати JPEG, PNG, WEBP, HEIC та GIF",
+    "Default image": "Стандартне зображення",
+    "Translated image": "Перекладене зображення"
 }

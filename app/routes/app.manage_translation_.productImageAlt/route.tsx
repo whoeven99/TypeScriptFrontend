@@ -721,9 +721,18 @@ const Index = () => {
   const columns = [
     {
       title: t("Resource"),
-      dataIndex: "productTitle",
       key: "productTitle",
       width: "10%",
+      render: (_: any, record: any) => {
+        return (
+          <Image
+            src={record?.imageUrl}
+            preview={false}
+            width={"100%"}
+            height={"auto"}
+          />
+        );
+      },
     },
     {
       title: t("Default Language"),
@@ -922,6 +931,17 @@ const Index = () => {
       shopify.saveBar.hide("save-bar");
       shopify.toast.show(t("Some items saved failed"));
     } finally {
+      setProductAltTextData(
+        productAltTextData.map((item: any) => {
+          return {
+            ...item,
+            targetAltText:
+              confirmData.find(
+                (confirmItem: any) => item.key === confirmItem.key,
+              )?.value || item.targetAltText,
+          };
+        }),
+      );
       setConfirmData([]);
       shopify.saveBar.hide("save-bar");
       setSaveLoading(false);
@@ -972,7 +992,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={saveLoading && ""}
+          loading={saveLoading ? "true" : undefined}
         >
           {t("Save")}
         </button>

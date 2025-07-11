@@ -469,6 +469,10 @@
     "Upload Failed": "Caricamento fallito",
     "Only images can be uploaded": "Solo le immagini possono essere caricate",
     "File must be less than 4MB": "Il file deve essere inferiore a 4MB",
-    "Images data": "Dati delle immagini"
+    "Images data": "Dati delle immagini",
+    "Image pixel size cannot exceed 20 million pixels": "La dimensione dell'immagine non può superare 20 milioni di pixel",
+    "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Solo JPEG, PNG, WEBP, HEIC e GIF sono supportati",
+    "Default image": "Immagine predefinita",
+    "Translated image": "Immagine tradotta"
 }
   

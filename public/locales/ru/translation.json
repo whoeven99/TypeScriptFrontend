@@ -471,5 +471,9 @@
     "Upload Failed": "Загрузка не удалась",
     "Only images can be uploaded": "Можно загружать только изображения",
     "File must be less than 4MB": "Файл должен быть меньше 4MB",
-    "Images data": "Данные изображений"
+    "Images data": "Данные изображений",
+    "Image pixel size cannot exceed 20 million pixels": "Размер изображения не может превышать 20 миллионов пикселей",
+    "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Поддерживаются только форматы JPEG, PNG, WEBP, HEIC и GIF",
+    "Default image": "Стандартное изображение",
+    "Translated image": "Переведенное изображение"
 }

@@ -535,7 +535,6 @@ const Index = () => {
   const [imageStartCursor, setImageStartCursor] = useState("");
   const [imageEndCursor, setImageEndCursor] = useState("");
   const [isMobile, setIsMobile] = useState(false);
-  const [targetImageLoading, setTargetImageLoading] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(
     searchTerm || "",
   );
@@ -674,7 +673,6 @@ const Index = () => {
             return item;
           }),
         );
-        setTargetImageLoading(false);
       }
 
       getTargetData();
@@ -703,13 +701,15 @@ const Index = () => {
 
   const columns = [
     {
-      title: t("Resource"),
-      dataIndex: "productTitle",
+      title: t("Products"),
       key: "productTitle",
       width: "10%",
+      render: (_: any, record: any) => {
+        return <div>{record?.imageUrl.split("/files/")[2] || record?.productTitle}</div>;
+      },
     },
     {
-      title: t("Default Language"),
+      title: t("Default image"),
       key: "imageUrl",
       width: "40%",
       render: (_: any, record: any) => {
@@ -724,13 +724,11 @@ const Index = () => {
       },
     },
     {
-      title: t("Translated"),
+      title: t("Translated image"),
       key: "targetImageUrl",
       width: "40%",
       render: (_: any, record: any) => {
-        return targetImageLoading ? (
-          <Skeleton.Image active />
-        ) : record?.targetImageUrl ? (
+        return record?.targetImageUrl ? (
           <Image
             src={record?.targetImageUrl}
             preview={false}
@@ -746,16 +744,57 @@ const Index = () => {
             action={`${server}/picture/insertPictureToDbAndCloud`}
             beforeUpload={(file) => {
               const isImage = file.type.startsWith("image/");
-              const isLt4M = file.size / 1024 / 1024 < 4;
+              const isLt20M = file.size / 1024 / 1024 < 20;
+
+              // 检查文件格式
+              const supportedFormats = [
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+                "image/heic",
+                "image/gif",
+              ];
+              const isSupportedFormat = supportedFormats.includes(file.type);
+
               if (!isImage) {
                 shopify.toast.show(t("Only images can be uploaded"));
                 return false;
               }
-              if (!isLt4M) {
-                shopify.toast.show(t("File must be less than 4MB"));
+
+              if (!isSupportedFormat) {
+                shopify.toast.show(
+                  t("Only JPEG, PNG, WEBP, HEIC and GIF formats are supported"),
+                );
                 return false;
               }
-              return true;
+
+              if (!isLt20M) {
+                shopify.toast.show(t("File must be less than 20MB"));
+                return false;
+              }
+
+              // 检查图片像素大小
+              return new Promise((resolve) => {
+                const img = new window.Image();
+                img.onload = () => {
+                  const pixelCount = img.width * img.height;
+                  const maxPixels = 20000000; // 2000万像素
+
+                  if (pixelCount > maxPixels) {
+                    shopify.toast.show(
+                      t("Image pixel size cannot exceed 20 million pixels"),
+                    );
+                    resolve(false);
+                  } else {
+                    resolve(true);
+                  }
+                };
+                img.onerror = () => {
+                  shopify.toast.show(t("Failed to read image dimensions"));
+                  resolve(false);
+                };
+                img.src = URL.createObjectURL(file);
+              });
             }}
             data={(file) => {
               return {
@@ -802,7 +841,7 @@ const Index = () => {
       },
     },
     {
-      title: t("Translate"),
+      title: t("Action"),
       key: "translate",
       width: "10%",
       render: (_: any, record: any) => {
@@ -1159,6 +1198,113 @@ const Index = () => {
                                   headers={{
                                     authorization: "authorization-text",
                                   }}
+                                  action={`${server}/picture/insertPictureToDbAndCloud`}
+                                  accept="image/*"
+                                  maxCount={1}
+                                  data={(file) => {
+                                    return {
+                                      shopName: shop,
+                                      file: file,
+                                      userPicturesDoJson: JSON.stringify({
+                                        shopName: shop,
+                                        imageId: item?.productId,
+                                        imageBeforeUrl: item?.imageUrl,
+                                        altBeforeTranslation: "",
+                                        altAfterTranslation: "",
+                                        languageCode: selectedLanguage,
+                                      }),
+                                    };
+                                  }}
+                                  onChange={(info) => {
+                                    if (info.file.status === "done") {
+                                      setProductImageData(
+                                        productImageData.map((imgItem: any) => {
+                                          if (
+                                            imgItem.imageUrl ===
+                                            info.fileList[0].response.response?.imageBeforeUrl
+                                          ) {
+                                            return {
+                                              ...imgItem,
+                                              targetImageUrl:
+                                                info.fileList[0].response.response.imageAfterUrl,
+                                            };
+                                          }
+                                          return imgItem;
+                                        }),
+                                      );
+                                      shopify.toast.show(`${info.file.name} ${t("Upload Success")}`);
+                                    } else if (info.file.status === "error") {
+                                      shopify.toast.show(`${info.file.name} ${t("Upload Failed")}`);
+                                    }
+                                  }}
+                                  beforeUpload={(file) => {
+                                    const isImage =
+                                      file.type.startsWith("image/");
+                                    const isLt20M =
+                                      file.size / 1024 / 1024 < 20;
+
+                                    // 检查文件格式
+                                    const supportedFormats = [
+                                      "image/jpeg",
+                                      "image/png",
+                                      "image/webp",
+                                      "image/heic",
+                                      "image/gif",
+                                    ];
+                                    const isSupportedFormat =
+                                      supportedFormats.includes(file.type);
+
+                                    if (!isImage) {
+                                      shopify.toast.show(
+                                        t("Only images can be uploaded"),
+                                      );
+                                      return false;
+                                    }
+
+                                    if (!isSupportedFormat) {
+                                      shopify.toast.show(
+                                        t(
+                                          "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported",
+                                        ),
+                                      );
+                                      return false;
+                                    }
+
+                                    if (!isLt20M) {
+                                      shopify.toast.show(
+                                        t("File must be less than 20MB"),
+                                      );
+                                      return false;
+                                    }
+
+                                    // 检查图片像素大小
+                                    return new Promise((resolve) => {
+                                      const img = new window.Image();
+                                      img.onload = () => {
+                                        const pixelCount =
+                                          img.width * img.height;
+                                        const maxPixels = 20000000; // 2000万像素
+
+                                        if (pixelCount > maxPixels) {
+                                          shopify.toast.show(
+                                            t(
+                                              "Image pixel size cannot exceed 20 million pixels",
+                                            ),
+                                          );
+                                          resolve(false);
+                                        } else {
+                                          resolve(true);
+                                        }
+                                      };
+                                      img.onerror = () => {
+                                        shopify.toast.show(
+                                          t("Failed to read image dimensions"),
+                                        );
+                                        resolve(false);
+                                      };
+                                      img.src = URL.createObjectURL(file);
+                                    });
+                                  }}
                                 >
                                   <Button icon={<UploadOutlined />}>
                                     Click to Upload
@@ -1172,7 +1318,13 @@ const Index = () => {
                                 justifyContent: "flex-end",
                               }}
                             >
-                              <Button>{t("Translate")}</Button>
+                              <Button
+                                disabled={!item.targetImageUrl}
+                                loading={isDeleteLoading}
+                                onClick={() => handleDelete(item?.productId, item?.imageUrl)}
+                              >
+                                {t("Delete")}
+                              </Button>
                             </div>
                             <Divider
                               style={{
