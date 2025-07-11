@@ -471,6 +471,10 @@
   "Upload Failed": "Hochladen fehlgeschlagen",
   "Only images can be uploaded": "Nur Bilder können hochgeladen werden",
   "File must be less than 4MB": "Die Datei muss kleiner als 4MB sein",
-  "Images data": "Bilddaten"
+  "Images data": "Bilddaten",
+  "Image pixel size cannot exceed 20 million pixels": "Bildgröße darf nicht größer als 20 Millionen Pixel sein",
+  "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Nur JPEG, PNG, WEBP, HEIC und GIF-Formate werden unterstützt",
+  "Default image": "Standardbild",
+  "Translated image": "Übersetztes Bild"
 }
     

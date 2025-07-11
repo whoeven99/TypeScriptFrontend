@@ -9,6 +9,7 @@ async function GetProductImageData({ shopName, productId, languageCode }) {
         languageCode: languageCode,
       },
     });
+
     return response.data;
   } catch (error) {
     console.error("Error GetProductImageData:", error);
@@ -831,6 +832,9 @@ window.onload = async function () {
       productId: productIdValue,
       languageCode: language,
     });
+
+    console.log("productImageData: ", productImageData);
+    
     if (productImageData.response.length > 0) {
       const imageDomList = document.querySelectorAll("img");
 
@@ -838,7 +842,7 @@ window.onload = async function () {
       imageDomList.forEach((img) => {
         // 在response数组中查找匹配项
         const match = productImageData.response.find((item) =>
-          img.src.includes(item.imageBeforeUrl.split("/files/Snipaste_")[1]),
+          img.src.includes(item.imageBeforeUrl.split("/files/")[2]),
         );
         if (match) {
           // 如果imageAfterUrl或altBeforeTranslation存在，则替换

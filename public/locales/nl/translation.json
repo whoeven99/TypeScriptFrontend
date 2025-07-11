@@ -470,7 +470,11 @@
     "Upload Failed": "Upload mislukt",
     "Only images can be uploaded": "Alleen afbeeldingen kunnen worden geüpload",
     "File must be less than 4MB": "De bestand moet kleiner zijn dan 4MB",
-    "Images data": "Afbeeldingengegevens"
+    "Images data": "Afbeeldingengegevens",
+    "Image pixel size cannot exceed 20 million pixels": "De afbeelding moet minder dan 20 miljoen pixels bevatten",
+    "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Alleen JPEG, PNG, WEBP, HEIC en GIF-indelingen worden ondersteund",
+    "Default image": "Standaardafbeelding",
+    "Translated image": "Vertaalde afbeelding"
 }
   
   
