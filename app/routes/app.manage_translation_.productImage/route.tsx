@@ -1196,55 +1196,11 @@ const Index = () => {
                                 />
                               ) : (
                                 <Upload
-                                  name="file"
-                                  headers={{
-                                    authorization: "authorization-text",
-                                  }}
-                                  action={`${server}/picture/insertPictureToDbAndCloud`}
-                                  accept="image/*"
+                                  pastable={false}
                                   maxCount={1}
-                                  data={(file) => {
-                                    return {
-                                      shopName: shop,
-                                      file: file,
-                                      userPicturesDoJson: JSON.stringify({
-                                        shopName: shop,
-                                        imageId: item?.productId,
-                                        imageBeforeUrl: item?.imageUrl,
-                                        altBeforeTranslation: "",
-                                        altAfterTranslation: "",
-                                        languageCode: selectedLanguage,
-                                      }),
-                                    };
-                                  }}
-                                  onChange={(info) => {
-                                    if (info.file.status === "done") {
-                                      setProductImageData(
-                                        productImageData.map((imgItem: any) => {
-                                          if (
-                                            imgItem.imageUrl ===
-                                            info.fileList[0].response.response
-                                              ?.imageBeforeUrl
-                                          ) {
-                                            return {
-                                              ...imgItem,
-                                              targetImageUrl:
-                                                info.fileList[0].response
-                                                  .response.imageAfterUrl,
-                                            };
-                                          }
-                                          return imgItem;
-                                        }),
-                                      );
-                                      shopify.toast.show(
-                                        `${info.file.name} ${t("Upload Success")}`,
-                                      );
-                                    } else if (info.file.status === "error") {
-                                      shopify.toast.show(
-                                        `${info.file.name} ${t("Upload Failed")}`,
-                                      );
-                                    }
-                                  }}
+                                  accept="image/*"
+                                  name="file"
+                                  action={`${server}/picture/insertPictureToDbAndCloud`}
                                   beforeUpload={(file) => {
                                     const isImage =
                                       file.type.startsWith("image/");
@@ -1313,9 +1269,53 @@ const Index = () => {
                                       img.src = URL.createObjectURL(file);
                                     });
                                   }}
+                                  data={(file) => {
+                                    return {
+                                      shopName: shop,
+                                      file: file,
+                                      userPicturesDoJson: JSON.stringify({
+                                        shopName: shop,
+                                        imageId: item?.productId,
+                                        imageBeforeUrl: item?.imageUrl,
+                                        altBeforeTranslation: "",
+                                        altAfterTranslation: "",
+                                        languageCode: selectedLanguage,
+                                      }),
+                                    };
+                                  }}
+                                  onChange={(info) => {
+                                    if (info.file.status !== "uploading") {
+                                    }
+                                    if (info.file.status === "done") {
+                                      setProductImageData(
+                                        productImageData.map((item: any) => {
+                                          if (
+                                            item.imageUrl ===
+                                            info.fileList[0].response.response
+                                              ?.imageBeforeUrl
+                                          ) {
+                                            return {
+                                              ...item,
+                                              targetImageUrl:
+                                                info.fileList[0].response
+                                                  .response.imageAfterUrl,
+                                            };
+                                          }
+                                          return item;
+                                        }),
+                                      );
+                                      shopify.toast.show(
+                                        `${info.file.name} ${t("Upload Success")}`,
+                                      );
+                                    } else if (info.file.status === "error") {
+                                      shopify.toast.show(
+                                        `${info.file.name} ${t("Upload Failed")}`,
+                                      );
+                                    }
+                                  }}
                                 >
                                   <Button icon={<UploadOutlined />}>
-                                    Click to Upload
+                                    {t("Click to Upload")}
                                   </Button>
                                 </Upload>
                               )}
