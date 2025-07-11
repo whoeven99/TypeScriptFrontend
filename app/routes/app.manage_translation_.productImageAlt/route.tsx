@@ -1162,14 +1162,6 @@ const Index = () => {
                               <Text>{t("Translated")}</Text>
                               <Input value={item.targetAltText} />
                             </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "flex-end",
-                              }}
-                            >
-                              <Button>{t("Translate")}</Button>
-                            </div>
                             <Divider
                               style={{
                                 margin: "8px 0",
