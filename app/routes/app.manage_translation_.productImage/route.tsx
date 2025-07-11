@@ -833,7 +833,13 @@ const Index = () => {
                     return item;
                   }),
                 );
-                shopify.toast.show(`${info.file.name} ${t("Upload Success")}`);
+                if (info.fileList[0].response?.success) {
+                  shopify.toast.show(
+                    `${info.file.name} ${t("Upload Success")}`,
+                  );
+                } else {
+                  shopify.toast.show(`${info.file.name} ${t("Upload Failed")}`);
+                }
               } else if (info.file.status === "error") {
                 shopify.toast.show(`${info.file.name} ${t("Upload Failed")}`);
               }
@@ -1284,6 +1290,8 @@ const Index = () => {
                                     };
                                   }}
                                   onChange={(info) => {
+                                    console.log("info", info);
+
                                     if (info.file.status !== "uploading") {
                                     }
                                     if (info.file.status === "done") {
@@ -1304,9 +1312,15 @@ const Index = () => {
                                           return item;
                                         }),
                                       );
-                                      shopify.toast.show(
-                                        `${info.file.name} ${t("Upload Success")}`,
-                                      );
+                                      if (info.fileList[0].response?.success) {
+                                        shopify.toast.show(
+                                          `${info.file.name} ${t("Upload Success")}`,
+                                        );
+                                      } else {
+                                        shopify.toast.show(
+                                          `${info.file.name} ${t("Upload Failed")}`,
+                                        );
+                                      }
                                     } else if (info.file.status === "error") {
                                       shopify.toast.show(
                                         `${info.file.name} ${t("Upload Failed")}`,
