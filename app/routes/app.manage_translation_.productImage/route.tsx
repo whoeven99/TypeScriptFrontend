@@ -705,7 +705,11 @@ const Index = () => {
       key: "productTitle",
       width: "10%",
       render: (_: any, record: any) => {
-        return <div>{record?.imageUrl.split("/files/")[2] || record?.productTitle}</div>;
+        return (
+          <div>
+            {record?.imageUrl.split("/files/")[2] || record?.productTitle}
+          </div>
+        );
       },
     },
     {
@@ -1173,8 +1177,7 @@ const Index = () => {
                               <Image
                                 src={item.imageUrl}
                                 preview={false}
-                                width={100}
-                                height={100}
+                                width={"50%"}
                               />
                             </div>
                             <div
@@ -1185,12 +1188,11 @@ const Index = () => {
                               }}
                             >
                               <Text>{t("Translated")}</Text>
-                              {item.translatedImageUrl ? (
+                              {item.targetImageUrl ? (
                                 <Image
-                                  src={item.translatedImageUrl}
+                                  src={item.targetImageUrl}
                                   preview={false}
-                                  width={100}
-                                  height={100}
+                                  width={"50%"}
                                 />
                               ) : (
                                 <Upload
@@ -1221,20 +1223,26 @@ const Index = () => {
                                         productImageData.map((imgItem: any) => {
                                           if (
                                             imgItem.imageUrl ===
-                                            info.fileList[0].response.response?.imageBeforeUrl
+                                            info.fileList[0].response.response
+                                              ?.imageBeforeUrl
                                           ) {
                                             return {
                                               ...imgItem,
                                               targetImageUrl:
-                                                info.fileList[0].response.response.imageAfterUrl,
+                                                info.fileList[0].response
+                                                  .response.imageAfterUrl,
                                             };
                                           }
                                           return imgItem;
                                         }),
                                       );
-                                      shopify.toast.show(`${info.file.name} ${t("Upload Success")}`);
+                                      shopify.toast.show(
+                                        `${info.file.name} ${t("Upload Success")}`,
+                                      );
                                     } else if (info.file.status === "error") {
-                                      shopify.toast.show(`${info.file.name} ${t("Upload Failed")}`);
+                                      shopify.toast.show(
+                                        `${info.file.name} ${t("Upload Failed")}`,
+                                      );
                                     }
                                   }}
                                   beforeUpload={(file) => {
@@ -1321,7 +1329,9 @@ const Index = () => {
                               <Button
                                 disabled={!item.targetImageUrl}
                                 loading={isDeleteLoading}
-                                onClick={() => handleDelete(item?.productId, item?.imageUrl)}
+                                onClick={() =>
+                                  handleDelete(item?.productId, item?.imageUrl)
+                                }
                               >
                                 {t("Delete")}
                               </Button>
