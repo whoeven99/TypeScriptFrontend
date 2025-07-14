@@ -49,88 +49,87 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  try {
-    const formData = await request.formData();
-    const words = JSON.parse(formData.get("words") as string);
-    const planInfo = JSON.parse(formData.get("planInfo") as string);
-    const payForPlan = JSON.parse(formData.get("payForPlan") as string);
-    const freeTrial = JSON.parse(formData.get("freeTrial") as string);
-    switch (true) {
-      case !!words:
-        try {
-          const data = await GetUserWords({
-            shop,
-          });
+  const formData = await request.formData();
+  const words = JSON.parse(formData.get("words") as string);
+  const planInfo = JSON.parse(formData.get("planInfo") as string);
+  const payForPlan = JSON.parse(formData.get("payForPlan") as string);
+  const freeTrial = JSON.parse(formData.get("freeTrial") as string);
+  switch (true) {
+    case !!words:
+      try {
+        const data = await GetUserWords({
+          shop,
+        });
+        return data;
+      } catch (error) {
+        console.error("Error loading action:", error);
+        return null;
+      }
+    case !!planInfo:
+      try {
+        const data = await GetUserSubscriptionPlan({
+          shop,
+        });
+        return data;
+      } catch (error) {
+        console.error("Error planInfo action:", error);
+        return "1";
+      }
+    case !!payForPlan:
+      try {
+        const data = await GetUserSubscriptionPlan({
+          shop,
+        });
+        if (data === payForPlan.title) {
           return data;
-        } catch (error) {
-          console.error("Error loading action:", error);
-          return null;
-        }
-      case !!planInfo:
-        try {
-          const data = await GetUserSubscriptionPlan({
+        } else {
+          const returnUrl = new URL(
+            `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
+          );
+          const res = await mutationAppSubscriptionCreate({
             shop,
+            accessToken: accessToken as string,
+            name: payForPlan.title,
+            price: {
+              amount: payForPlan.price,
+              currencyCode: "USD",
+            },
+            trialDays: 0,
+            returnUrl,
+            test:
+              process.env.NODE_ENV === "development" ||
+              process.env.NODE_ENV === "test",
           });
-          return data;
-        } catch (error) {
-          console.error("Error planInfo action:", error);
-          return "1";
-        }
-      case !!payForPlan:
-        try {
-          const data = await GetUserSubscriptionPlan({
-            shop,
-          });
-          if (data === payForPlan.title) {
-            return data;
-          } else {
-            const returnUrl = new URL(
-              `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
-            );
-            const res = await mutationAppSubscriptionCreate({
-              shop,
-              accessToken: accessToken as string,
-              name: payForPlan.title,
+          return {
+            ...res,
+            appSubscription: {
+              ...res.appSubscription,
               price: {
                 amount: payForPlan.price,
                 currencyCode: "USD",
               },
-              trialDays: 0,
-              returnUrl,
-              test:
-                process.env.NODE_ENV === "development" ||
-                process.env.NODE_ENV === "test",
-            });
-            return {
-              ...res,
-              appSubscription: {
-                ...res.appSubscription,
-                price: {
-                  amount: payForPlan.price,
-                  currencyCode: "USD",
-                },
-              },
-            };
-          }
-        } catch (error) {
-          console.error("Error payForPlan action:", error);
-        }
-      case !!freeTrial:
-        try {
-        } catch (error) {
-          console.error("Error freeTrial action:", error);
-          return {
-            success: false,
-            errorCode: 0,
-            errorMsg: "Error freeTrial",
-            response: null,
+            },
           };
         }
-    }
-    return null;
-  } catch (error) {
-    console.error("Error pricing action:", error);
+      } catch (error) {
+        console.error("Error payForPlan action:", error);
+      }
+    case !!freeTrial:
+      try {
+        const data = await StartFreePlan({ shop });
+        console.log("freeTrial: ", data);
+        return data;
+      } catch (error) {
+        console.error("Error freeTrial action:", error);
+        return {
+          success: false,
+          errorCode: 0,
+          errorMsg: "Error freeTrial",
+          response: null,
+        };
+      }
   }
+  return null;
 };
 
 const Index = () => {
@@ -143,7 +142,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [buyButtonLoading, setBuyButtonLoading] = useState(false);
   // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
-  const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
+  // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
   const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
   const isQuotaExceeded = useMemo(
@@ -630,11 +629,14 @@ const Index = () => {
   };
 
   const handleFreeTrial = async () => {
-    setFreeTrialButtonLoading(true);
-    // freeTrialFetcher.submit({ freeTrial: JSON.stringify(true) }, { method: "POST" });
-    const data = await StartFreePlan({ shop, server: server as string });
-    console.log("freeTrial: ", data);
-    return data;
+    // setFreeTrialButtonLoading(true);
+    freeTrialFetcher.submit(
+      { freeTrial: JSON.stringify(true) },
+      { method: "POST" },
+    );
+    // const data = await StartFreePlan({ shop, server: server as string });
+    // console.log("freeTrial: ", data);
+    // return data;
   };
 
   return (
@@ -749,7 +751,7 @@ const Index = () => {
               <Button
                 type="primary"
                 onClick={handleFreeTrial}
-                loading={freeTrialButtonLoading}
+                loading={freeTrialFetcher.state === "submitting"}
               >
                 {t("Free trial")}
               </Button>

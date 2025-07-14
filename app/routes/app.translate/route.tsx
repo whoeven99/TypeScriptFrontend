@@ -197,28 +197,28 @@ const Index = () => {
       description: t("translateSettings1.description1"),
       speed: 2,
       price: 5,
-      value: "1",
+      value: "2",
     },
     {
       label: t("DeepL"),
       description: t("translateSettings1.description2"),
       speed: 2,
       price: 4,
-      value: "2",
+      value: "3",
     },
     {
       label: t("DeepSeek"),
       description: t("translateSettings1.description3"),
       speed: 1,
       price: 2,
-      value: "3",
+      value: "1",
     },
     {
       label: t("Google Translation"),
       description: t("translateSettings1.description4"),
       speed: 1,
       price: 4,
-      value: "4",
+      value: "1",
     },
   ];
 
