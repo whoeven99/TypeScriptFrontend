@@ -163,7 +163,11 @@ export const GetUserValue = async ({
   }
 };
 
-export const StartFreePlan = async ({ shop }: { shop: string }) => {
+export const StartFreePlan = async ({
+  shop,
+}: {
+  shop: string;
+}) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/userTrials/startFreePlan?shopName=${shop}`,

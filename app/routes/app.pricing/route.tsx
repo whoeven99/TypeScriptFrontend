@@ -18,7 +18,11 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import ScrollNotice from "~/components/ScrollNotice";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { GetUserSubscriptionPlan, GetUserWords, StartFreePlan } from "~/api/JavaServer";
+import {
+  GetUserSubscriptionPlan,
+  GetUserWords,
+  StartFreePlan,
+} from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
@@ -45,91 +49,87 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  try {
-    const formData = await request.formData();
-    const words = JSON.parse(formData.get("words") as string);
-    const planInfo = JSON.parse(formData.get("planInfo") as string);
-    const payForPlan = JSON.parse(formData.get("payForPlan") as string);
-    const freeTrial = JSON.parse(formData.get("freeTrial") as string);
-    switch (true) {
-      case !!words:
-        try {
-          const data = await GetUserWords({
-            shop,
-          });
+  const formData = await request.formData();
+  const words = JSON.parse(formData.get("words") as string);
+  const planInfo = JSON.parse(formData.get("planInfo") as string);
+  const payForPlan = JSON.parse(formData.get("payForPlan") as string);
+  const freeTrial = JSON.parse(formData.get("freeTrial") as string);
+  switch (true) {
+    case !!words:
+      try {
+        const data = await GetUserWords({
+          shop,
+        });
+        return data;
+      } catch (error) {
+        console.error("Error loading action:", error);
+        return null;
+      }
+    case !!planInfo:
+      try {
+        const data = await GetUserSubscriptionPlan({
+          shop,
+        });
+        return data;
+      } catch (error) {
+        console.error("Error planInfo action:", error);
+        return "1";
+      }
+    case !!payForPlan:
+      try {
+        const data = await GetUserSubscriptionPlan({
+          shop,
+        });
+        if (data === payForPlan.title) {
           return data;
-        } catch (error) {
-          console.error("Error loading action:", error);
-          return null;
-        }
-      case !!planInfo:
-        try {
-          const data = await GetUserSubscriptionPlan({
+        } else {
+          const returnUrl = new URL(
+            `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
+          );
+          const res = await mutationAppSubscriptionCreate({
             shop,
+            accessToken: accessToken as string,
+            name: payForPlan.title,
+            price: {
+              amount: payForPlan.price,
+              currencyCode: "USD",
+            },
+            trialDays: 0,
+            returnUrl,
+            test:
+              process.env.NODE_ENV === "development" ||
+              process.env.NODE_ENV === "test",
           });
-          return data;
-        } catch (error) {
-          console.error("Error planInfo action:", error);
-          return "1";
-        }
-      case !!payForPlan:
-        try {
-          const data = await GetUserSubscriptionPlan({
-            shop,
-          });
-          if (data === payForPlan.title) {
-            return data;
-          } else {
-            const returnUrl = new URL(
-              `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
-            );
-            const res = await mutationAppSubscriptionCreate({
-              shop,
-              accessToken: accessToken as string,
-              name: payForPlan.title,
+          return {
+            ...res,
+            appSubscription: {
+              ...res.appSubscription,
               price: {
                 amount: payForPlan.price,
                 currencyCode: "USD",
               },
-              trialDays: 0,
-              returnUrl,
-              test:
-                process.env.NODE_ENV === "development" ||
-                process.env.NODE_ENV === "test",
-            });
-            return {
-              ...res,
-              appSubscription: {
-                ...res.appSubscription,
-                price: {
-                  amount: payForPlan.price,
-                  currencyCode: "USD",
-                },
-              },
-            };
-          }
-        } catch (error) {
-          console.error("Error payForPlan action:", error);
-        }
-      case !!freeTrial:
-        try {
-          const data = await StartFreePlan({ shop });
-          console.log("freeTrial: ", data);
-          return data;
-        } catch (error) {
-          console.error("Error freeTrial action:", error);
-          return {
-            success: false,
-            errorCode: 0,
-            errorMsg: 'Error freeTrial',
-            response: null,
+            },
           };
         }
-    }
-    return null;
-  } catch (error) {
-    console.error("Error pricing action:", error);
+      } catch (error) {
+        console.error("Error payForPlan action:", error);
+      }
+    case !!freeTrial:
+      try {
+        const data = await StartFreePlan({ shop });
+        console.log("freeTrial: ", data);
+        return data;
+      } catch (error) {
+        console.error("Error freeTrial action:", error);
+        return {
+          success: false,
+          errorCode: 0,
+          errorMsg: "Error freeTrial",
+          response: null,
+        };
+      }
   }
+  return null;
 };
 
 const Index = () => {
@@ -147,7 +147,7 @@ const Index = () => {
   const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
   const isQuotaExceeded = useMemo(
     () => currentCredits >= maxCredits && maxCredits > 0,
-    [currentCredits, maxCredits]
+    [currentCredits, maxCredits],
   );
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -162,7 +162,10 @@ const Index = () => {
   useEffect(() => {
     wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
     if (!userConfig.plan || !userConfig.updateTime) {
-      planfetcher.submit({ planInfo: JSON.stringify(true) }, { method: "POST" });
+      planfetcher.submit(
+        { planInfo: JSON.stringify(true) },
+        { method: "POST" },
+      );
     } else {
       setSelectedPlan(userConfig.plan);
       setUpdateTime(userConfig.updateTime);
@@ -170,12 +173,14 @@ const Index = () => {
     setIsLoading(false);
     const getPlan = async () => {
       try {
-        const response = await axios.post(`${server}/userTrials/isOpenFreePlan?shopName=${shop}`);
+        const response = await axios.post(
+          `${server}/userTrials/isOpenFreePlan?shopName=${shop}`,
+        );
         setHasOpenFreePlan(response.data.response || false);
       } catch (error) {
         console.error("Error getPlan:", error);
       }
-    }
+    };
     getPlan();
   }, []);
 
@@ -191,11 +196,13 @@ const Index = () => {
       setSelectedPlan(planfetcher.data.userSubscriptionPlan);
       dispatch(setUserConfig({ plan: planfetcher.data.userSubscriptionPlan }));
       if (planfetcher.data.currentPeriodEnd) {
-        const date = new Date(planfetcher.data.currentPeriodEnd).toLocaleDateString('zh-CN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        }).replace(/\//g, '-');
+        const date = new Date(planfetcher.data.currentPeriodEnd)
+          .toLocaleDateString("zh-CN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          })
+          .replace(/\//g, "-");
         setUpdateTime(date);
         dispatch(setUserConfig({ updateTime: date }));
       }
@@ -250,18 +257,27 @@ const Index = () => {
         // setFreeTrialModalOpen(false);
         // setFreeTrialButtonLoading(false);
         setSelectedPlan(7);
-        dispatch(setUserConfig({
-          plan: "7", updateTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('zh-CN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-          }).replace(/\//g, '-')
-        }));
-        setUpdateTime(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('zh-CN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        }).replace(/\//g, '-'));
+        dispatch(
+          setUserConfig({
+            plan: "7",
+            updateTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+              .toLocaleDateString("zh-CN", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+              })
+              .replace(/\//g, "-"),
+          }),
+        );
+        setUpdateTime(
+          new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+            .toLocaleDateString("zh-CN", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            })
+            .replace(/\//g, "-"),
+        );
         setHasOpenFreePlan(true);
         shopify.toast.show("Free trial started successfully");
       } else {
@@ -271,88 +287,147 @@ const Index = () => {
     }
   }, [freeTrialFetcher.data]);
 
-  const creditOptions: OptionType[] = useMemo(() => [
-    {
-      key: "option-1",
-      name: "500K",
-      Credits: 500000,
-      price: {
-        currentPrice: selectedPlan === 6 ? 1.99 : (selectedPlan === 5 ? 2.99 : (selectedPlan === 4 ? 3.59 : 3.99)),
-        comparedPrice: 3.99,
-        currencyCode: "USD",
+  const creditOptions: OptionType[] = useMemo(
+    () => [
+      {
+        key: "option-1",
+        name: "500K",
+        Credits: 500000,
+        price: {
+          currentPrice:
+            selectedPlan === 6
+              ? 1.99
+              : selectedPlan === 5
+                ? 2.99
+                : selectedPlan === 4
+                  ? 3.59
+                  : 3.99,
+          comparedPrice: 3.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-2",
-      name: "1M",
-      Credits: 1000000,
-      price: {
-        currentPrice: selectedPlan === 6 ? 3.99 : (selectedPlan === 5 ? 5.99 : (selectedPlan === 4 ? 7.19 : 7.99)),
-        comparedPrice: 7.99,
-        currencyCode: "USD",
+      {
+        key: "option-2",
+        name: "1M",
+        Credits: 1000000,
+        price: {
+          currentPrice:
+            selectedPlan === 6
+              ? 3.99
+              : selectedPlan === 5
+                ? 5.99
+                : selectedPlan === 4
+                  ? 7.19
+                  : 7.99,
+          comparedPrice: 7.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-3",
-      name: "2M",
-      Credits: 2000000,
-      price: {
-        currentPrice: selectedPlan === 6 ? 7.99 : (selectedPlan === 5 ? 11.99 : (selectedPlan === 4 ? 14.39 : 15.99)),
-        comparedPrice: 15.99,
-        currencyCode: "USD",
+      {
+        key: "option-3",
+        name: "2M",
+        Credits: 2000000,
+        price: {
+          currentPrice:
+            selectedPlan === 6
+              ? 7.99
+              : selectedPlan === 5
+                ? 11.99
+                : selectedPlan === 4
+                  ? 14.39
+                  : 15.99,
+          comparedPrice: 15.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-4",
-      name: "3M",
-      Credits: 3000000,
-      price: {
-        currentPrice: selectedPlan === 6 ? 11.99 : (selectedPlan === 5 ? 17.99 : (selectedPlan === 4 ? 21.79 : 23.99)),
-        comparedPrice: 23.99,
-        currencyCode: "USD",
+      {
+        key: "option-4",
+        name: "3M",
+        Credits: 3000000,
+        price: {
+          currentPrice:
+            selectedPlan === 6
+              ? 11.99
+              : selectedPlan === 5
+                ? 17.99
+                : selectedPlan === 4
+                  ? 21.79
+                  : 23.99,
+          comparedPrice: 23.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-5",
-      name: "5M",
-      Credits: 5000000,
-      price: {
-        currentPrice: selectedPlan === 6 ? 19.99 : (selectedPlan === 5 ? 29.99 : (selectedPlan === 4 ? 35.99 : 39.99)),
-        comparedPrice: 39.99,
-        currencyCode: "USD",
+      {
+        key: "option-5",
+        name: "5M",
+        Credits: 5000000,
+        price: {
+          currentPrice:
+            selectedPlan === 6
+              ? 19.99
+              : selectedPlan === 5
+                ? 29.99
+                : selectedPlan === 4
+                  ? 35.99
+                  : 39.99,
+          comparedPrice: 39.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-6",
-      name: "10M",
-      Credits: 10000000,
-      price: {
-        currentPrice: selectedPlan === 6 ? 39.99 : (selectedPlan === 5 ? 59.99 : (selectedPlan === 4 ? 71.99 : 79.99)),
-        comparedPrice: 79.99,
-        currencyCode: "USD",
+      {
+        key: "option-6",
+        name: "10M",
+        Credits: 10000000,
+        price: {
+          currentPrice:
+            selectedPlan === 6
+              ? 39.99
+              : selectedPlan === 5
+                ? 59.99
+                : selectedPlan === 4
+                  ? 71.99
+                  : 79.99,
+          comparedPrice: 79.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-7",
-      name: "20M",
-      Credits: 20000000,
-      price: {
-        currentPrice: selectedPlan === 6 ? 79.99 : (selectedPlan === 5 ? 119.99 : (selectedPlan === 4 ? 143.99 : 159.99)),
-        comparedPrice: 159.99,
-        currencyCode: "USD",
+      {
+        key: "option-7",
+        name: "20M",
+        Credits: 20000000,
+        price: {
+          currentPrice:
+            selectedPlan === 6
+              ? 79.99
+              : selectedPlan === 5
+                ? 119.99
+                : selectedPlan === 4
+                  ? 143.99
+                  : 159.99,
+          comparedPrice: 159.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-8",
-      name: "30M",
-      Credits: 30000000,
-      price: {
-        currentPrice: selectedPlan === 6 ? 119.99 : (selectedPlan === 5 ? 179.99 : (selectedPlan === 4 ? 215.99 : 239.99)),
-        comparedPrice: 239.99,
-        currencyCode: "USD",
+      {
+        key: "option-8",
+        name: "30M",
+        Credits: 30000000,
+        price: {
+          currentPrice:
+            selectedPlan === 6
+              ? 119.99
+              : selectedPlan === 5
+                ? 179.99
+                : selectedPlan === 4
+                  ? 215.99
+                  : 239.99,
+          comparedPrice: 239.99,
+          currencyCode: "USD",
+        },
       },
-    },
-  ], [selectedPlan]);
+    ],
+    [selectedPlan],
+  );
 
   const plans = [
     {
@@ -555,7 +630,13 @@ const Index = () => {
 
   const handleFreeTrial = async () => {
     // setFreeTrialButtonLoading(true);
-    freeTrialFetcher.submit({ freeTrial: JSON.stringify(true) }, { method: "POST" });
+    freeTrialFetcher.submit(
+      { freeTrial: JSON.stringify(true) },
+      { method: "POST" },
+    );
+    // const data = await StartFreePlan({ shop, server: server as string });
+    // console.log("freeTrial: ", data);
+    // return data;
   };
 
   return (
@@ -570,29 +651,52 @@ const Index = () => {
         {/* 积分余额显示 */}
         <Card loading={isLoading}>
           <Space direction="vertical" size="small" style={{ width: "100%" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               <div style={{ display: "flex", alignItems: "baseline" }}>
                 <Title level={4} style={{ marginRight: 10, marginBottom: 0 }}>
                   {t("Your translation quota")}
                 </Title>
                 <Popover
-                  content={t("Permanent quotas · Never expire · Top up anytime.")}
+                  content={t(
+                    "Permanent quotas · Never expire · Top up anytime.",
+                  )}
                 >
                   <QuestionCircleOutlined />
                 </Popover>
               </div>
-              {selectedPlan &&
+              {selectedPlan && (
                 <div>
-                  <Text>
-                    {t("Current plan: ")}
-                  </Text>
+                  <Text>{t("Current plan: ")}</Text>
                   <Text style={{ color: "#007F61", fontWeight: "bold" }}>
-                    {selectedPlan === 3 ? "Starter" : selectedPlan === 4 ? "Basic" : selectedPlan === 5 ? "Pro" : selectedPlan === 6 ? "Premium" : selectedPlan === 7 ? "Free Trial" : "Free"} {t("plan")}
+                    {selectedPlan === 3
+                      ? "Starter"
+                      : selectedPlan === 4
+                        ? "Basic"
+                        : selectedPlan === 5
+                          ? "Pro"
+                          : selectedPlan === 6
+                            ? "Premium"
+                            : selectedPlan === 7
+                              ? "Free Trial"
+                              : "Free"}{" "}
+                    {t("plan")}
                   </Text>
                 </div>
-              }
+              )}
             </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               {maxCredits ? (
                 <div
                   dangerouslySetInnerHTML={{
@@ -606,15 +710,13 @@ const Index = () => {
                   }}
                 />
               ) : (
-                <Skeleton
-                  active
-                  paragraph={{ rows: 1 }}
-                  title={false}
-                />
+                <Skeleton active paragraph={{ rows: 1 }} title={false} />
               )}
-              {updateTime && maxCredits && <Text>
-                {t("This bill was issued on {{date}}", { date: updateTime })}
-              </Text>}
+              {updateTime && maxCredits && (
+                <Text>
+                  {t("This bill was issued on {{date}}", { date: updateTime })}
+                </Text>
+              )}
             </div>
             <Progress
               percent={Math.round((currentCredits / maxCredits) * 100)}
@@ -632,28 +734,34 @@ const Index = () => {
             showIcon
           />
         )}
-        {!hasOpenFreePlan && <Card styles={{ body: { padding: "12px" } }}>
-          <Space
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Text>
-              {t("Congratulations! You’ve received a 5-day free trial with full access to all features")}
-            </Text>
-            <Button
-              disabled={buyButtonLoading}
-              type="primary"
-              onClick={handleFreeTrial}
-              loading={freeTrialFetcher.state === "submitting"}
+        {!hasOpenFreePlan && (
+          <Card styles={{ body: { padding: "12px" } }}>
+            <Space
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
             >
-              {t("Free trial")}
-            </Button>
-          </Space>
-        </Card>}
-        <Card style={{ textAlign: "center" }} loading={isLoading || selectedPlan === null}>
+              <Text>
+                {t(
+                  "Congratulations! You’ve received a 5-day free trial with full access to all features",
+                )}
+              </Text>
+              <Button
+                type="primary"
+                onClick={handleFreeTrial}
+                loading={freeTrialFetcher.state === "submitting"}
+              >
+                {t("Free trial")}
+              </Button>
+            </Space>
+          </Card>
+        )}
+        <Card
+          style={{ textAlign: "center" }}
+          loading={isLoading || selectedPlan === null}
+        >
           {/* 价格选项 */}
           <Space direction="vertical" size="small" style={{ width: "100%" }}>
             <div
@@ -668,7 +776,13 @@ const Index = () => {
                 {t("Buy Credits")}
               </Title>
               <Text style={{ fontWeight: "bold" }}>
-                {selectedPlan === 6 ? t("discountText.premium") : selectedPlan === 5 ? t("discountText.pro") : selectedPlan === 4 ? t("discountText.basic") : t("discountText.free")}
+                {selectedPlan === 6
+                  ? t("discountText.premium")
+                  : selectedPlan === 5
+                    ? t("discountText.pro")
+                    : selectedPlan === 4
+                      ? t("discountText.basic")
+                      : t("discountText.free")}
               </Text>
             </div>
             <Row gutter={[16, 16]}>
@@ -680,12 +794,12 @@ const Index = () => {
                       textAlign: "center",
                       borderColor:
                         JSON.stringify(selectedOption) ===
-                          JSON.stringify(option)
+                        JSON.stringify(option)
                           ? "#007F61"
                           : undefined,
                       borderWidth:
                         JSON.stringify(selectedOption) ===
-                          JSON.stringify(option)
+                        JSON.stringify(option)
                           ? "2px"
                           : "1px",
                       cursor: "pointer",
@@ -707,28 +821,36 @@ const Index = () => {
                     >
                       {option.Credits.toLocaleString()} {t("Credits")}
                     </Text>
-                    {selectedPlan === 6 || selectedPlan === 5 || selectedPlan === 4 ? (
+                    {selectedPlan === 6 ||
+                    selectedPlan === 5 ||
+                    selectedPlan === 4 ? (
                       <>
                         <Title
                           level={3}
-                          style={{ margin: 0, color: "#007F61", fontWeight: 700 }}
+                          style={{
+                            margin: 0,
+                            color: "#007F61",
+                            fontWeight: 700,
+                          }}
                         >
                           ${option.price.currentPrice.toFixed(2)}
                         </Title>
-                        <Text delete type="secondary" style={{ fontSize: "14px" }}>
+                        <Text
+                          delete
+                          type="secondary"
+                          style={{ fontSize: "14px" }}
+                        >
                           ${option.price.comparedPrice.toFixed(2)}
                         </Text>
                       </>
-                    )
-                      :
-                      (
-                        <Title
-                          level={3}
-                          style={{ margin: 0, color: "#007F61", fontWeight: 700 }}
-                        >
-                          ${option.price.currentPrice.toFixed(2)}
-                        </Title>
-                      )}
+                    ) : (
+                      <Title
+                        level={3}
+                        style={{ margin: 0, color: "#007F61", fontWeight: 700 }}
+                      >
+                        ${option.price.currentPrice.toFixed(2)}
+                      </Title>
+                    )}
                   </Card>
                 </Col>
               ))}
@@ -795,8 +917,8 @@ const Index = () => {
                       borderColor: plan.disabled
                         ? "#007F61"
                         : plan.isRecommended &&
-                          selectedPlan <= 2 &&
-                          selectedPlan
+                            selectedPlan <= 2 &&
+                            selectedPlan
                           ? "#1890ff"
                           : undefined,
                       minWidth: "220px",
