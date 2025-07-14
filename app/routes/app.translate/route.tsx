@@ -66,7 +66,7 @@ const Index = () => {
   const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
   const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
   const [selectedLanguageCode, setSelectedLanguageCode] = useState<string>("");
-  const [translateSettings1, setTranslateSettings1] = useState<string>("1");
+  const [translateSettings1, setTranslateSettings1] = useState<string>("2");
   const [translateSettings2, setTranslateSettings2] = useState<string[]>(["1"]);
   const [translateSettings3, setTranslateSettings3] = useState<string[]>([
     "products",
@@ -151,6 +151,10 @@ const Index = () => {
     if (loadingLanguageFetcher.data) {
       setLanguageData(loadingLanguageFetcher.data?.data);
       setLanguageSetting(loadingLanguageFetcher.data?.languageSetting);
+      const translateSettings4 = localStorage.getItem("translateSettings4");
+      if (translateSettings4) {
+        setTranslateSettings4(JSON.parse(translateSettings4));
+      }
       setLoadingLanguage(false);
     }
   }, [loadingLanguageFetcher.data]);
@@ -193,7 +197,7 @@ const Index = () => {
 
   const translateSettings1Options = [
     {
-      label: t("ChatGPT 4o"),
+      label: t("ChatGPT 4.1"),
       description: t("translateSettings1.description1"),
       speed: 2,
       price: 5,
@@ -466,6 +470,7 @@ const Index = () => {
       method: "post",
       action: "/app/language",
     });
+    localStorage.setItem("translateSettings4", JSON.stringify(translateSettings4));
   };
 
   const handleTranslateSettings2Change = (value: string[]) => {
