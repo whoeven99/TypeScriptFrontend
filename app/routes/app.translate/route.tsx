@@ -915,7 +915,7 @@ const Index = () => {
                     </Text>
                   </div>
                   <Space direction="vertical" style={{ width: "100%" }}>
-                    <div>
+                    {/* <div>
                       <Text>{t("translateSettings4.title1")}</Text>
                       <Input
                         style={{ width: "100%" }}
@@ -970,7 +970,7 @@ const Index = () => {
                         }
                         placeholder={t("translateSettings4.placeholder4")}
                       />
-                    </div>
+                    </div> */}
                     {/* <div>
                       <Text>{t("translateSettings4.title5")}</Text>
                       <Input
