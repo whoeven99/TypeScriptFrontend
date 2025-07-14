@@ -218,7 +218,7 @@ const Index = () => {
       description: t("translateSettings1.description4"),
       speed: 1,
       price: 4,
-      value: "1",
+      value: "4",
     },
   ];
 

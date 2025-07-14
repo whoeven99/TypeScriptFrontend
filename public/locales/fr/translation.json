@@ -167,7 +167,7 @@
     "progressing.apikeySetting":"Réinitialiser la limite",
     "progressing.privateApiKeyAmountLimit":"La limite de clé API privée a été atteinte. Veuillez cliquer sur le bouton ci-dessous pour réinitialiser la limite et redémarrer le processus de traduction.",
     "progressing.hasPayed":"Vos crédits de traduction ont été ajoutés. Veuillez continuer la traduction.",
-    "progressing.reTranslate":"Traduire",
+    "progressing.reTranslate":"Continuer la traduction",
     "contact.title":"Contactez-nous",
     "contact.description":"Si vous avez des questions ou besoin d'aide, veuillez cliquer sur le bouton ci-dessous pour contacter le support.",
     "contact.contactButton":"Contacter le support",
