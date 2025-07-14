@@ -556,8 +556,8 @@ const Index = () => {
     { label: t("Navigation"), value: "navigation" },
     { label: t("Email"), value: "email" },
     { label: t("Policies"), value: "policy" },
-    { label: t("Product image"), value: "productImage" },
-    { label: t("Product image alt"), value: "productImageAlt" },
+    { label: t("Product images"), value: "productImage" },
+    { label: t("Product image alt text"), value: "productImageAlt" },
     { label: t("Delivery"), value: "delivery" },
     { label: t("Shipping"), value: "shipping" },
   ];
@@ -674,10 +674,10 @@ const Index = () => {
           }),
         );
       }
-
       getTargetData();
+      setIsLoading(false);
     }
-  }, [selectedKey, dataResource]);
+  }, [selectedKey, dataResource, selectedLanguage]);
 
   useEffect(() => {
     setImageHasNextPage(productImageData[0]?.imageHasNextPage);

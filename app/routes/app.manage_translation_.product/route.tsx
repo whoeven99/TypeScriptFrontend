@@ -524,6 +524,8 @@ const Index = () => {
     { label: t("Navigation"), value: "navigation" },
     { label: t("Email"), value: "email" },
     { label: t("Policies"), value: "policy" },
+    { label: t("Product images"), value: "productImage" },
+    { label: t("Product image alt text"), value: "productImageAlt" },
     { label: t("Delivery"), value: "delivery" },
     { label: t("Shipping"), value: "shipping" },
   ];
