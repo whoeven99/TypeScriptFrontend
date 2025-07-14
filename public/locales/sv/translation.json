@@ -161,6 +161,7 @@
     "progressing.progressingWriting":"Skriver {{item}} modul",
     "progressing.finished":"Översättningen är klar. Översättningen måste publiceras innan den träder i kraft.",
     "progressing.buyCredits":"Köp krediter",
+    "progressing.review":"Granska översättning",
     "progressing.publish":"Publicera språk",
     "progressing.contact":"De kostnadsfria översättningskrediterna är otillräckliga. Vänligen köp krediter och försök igen.",
     "progressing.noTranslate":"Det finns inga översättningsuppgifter just nu",

@@ -159,6 +159,7 @@
     "progressing.progressingWriting":"Escribiendo {{item}} módulo",
     "progressing.finished":"La traducción ha sido completada. El contenido traducido necesita ser publicado antes de que surta efecto.",
     "progressing.buyCredits":"Comprar créditos",
+    "progressing.review":"Revisar traducción",
     "progressing.publish":"Publicar idioma",
     "progressing.contact":"Los créditos de traducción gratuitos son insuficientes. Por favor, compre créditos y vuelva a intentarlo.",
     "progressing.noTranslate":"No hay tarea de traducción ahora",

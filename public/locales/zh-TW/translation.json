@@ -159,6 +159,7 @@
     "progressing.progressingWriting":"寫入{{item}}模組",
     "progressing.finished":"翻譯已完成。翻譯內容需要發布後才能生效。",
     "progressing.buyCredits":"購買積分",
+    "progressing.review":"檢查翻譯",
     "progressing.publish":"發布語言",
     "progressing.contact":"免費翻譯積分不足。請購買積分並重試。",
     "progressing.noTranslate":"目前沒有翻譯任務",

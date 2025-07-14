@@ -456,20 +456,41 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   }}
                 >
                   {status === 1 && (
-                    <Button
-                      block
-                      type="primary"
-                      onClick={() =>
-                        navigate("/app/language", {
-                          state: { publishLanguageCode: target },
-                        })
-                      }
+                    <div
                       style={{
-                        marginTop: "auto",
+                        width: "100%", // 限制最大宽度
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 10,
                       }}
                     >
-                      {t("progressing.publish")}
-                    </Button>
+                      <Button
+                        block
+                        onClick={() =>
+                          navigate("/app/manage_translation", {
+                            state: {
+                              key: target,
+                            },
+                          })
+                        }
+                      >
+                        {t("progressing.review")}
+                      </Button>
+                      <Button
+                        block
+                        type="primary"
+                        onClick={() =>
+                          navigate("/app/language", {
+                            state: { publishLanguageCode: target },
+                          })
+                        }
+                        style={{
+                          marginTop: "auto",
+                        }}
+                      >
+                        {t("progressing.publish")}
+                      </Button>
+                    </div>
                   )}
                   {status === 3 && (
                     <div

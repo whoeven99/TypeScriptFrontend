@@ -162,6 +162,7 @@
     "progressing.progressingWriting":"Запис модуля {{item}}",
     "progressing.finished": "Переклад завершено. Перекладений вміст потребує публікації, перш ніж він набуде чинності.",
     "progressing.buyCredits": "Купити кредити",
+    "progressing.review":"Перевірити переклад",
     "progressing.publish": "Опублікувати мову",
     "progressing.contact": "Безкоштовних кредитів на переклад недостатньо. Будь ласка, придбайте кредити та повторіть спробу перекладу.",
     "progressing.noTranslate": "Зараз немає завдань перекладу",

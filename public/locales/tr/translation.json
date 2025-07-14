@@ -205,6 +205,7 @@
     "progressing.progressingWriting":"{{item}} modülü yazılıyor",
     "progressing.finished": "Çeviri tamamlandı. Çevrilen içeriğin etkili olması için yayınlanması gerekiyor.",
     "progressing.buyCredits": "Kredi satın al",
+    "progressing.review":"Çeviriyi gözden geçir",
     "progressing.publish": "Dili yayınla",
     "progressing.contact": "Ücretsiz çeviri kredileri yetersiz. Lütfen kredi satın alın ve çeviriyi tekrar deneyin.",
     "progressing.noTranslate": "Şu anda çeviri görevi yok",
