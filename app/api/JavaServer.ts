@@ -1033,7 +1033,7 @@ export const GetTranslate = async ({
         target: target,
         isCover: translateSettings5,
         customKey: customKey,
-        translateSettings1: "google",
+        translateSettings1: translateSettings1,
         translateSettings2: translateSettings2.toString(),
         translateSettings3: translateSettings3,
       },

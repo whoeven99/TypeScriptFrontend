@@ -162,6 +162,7 @@
     "progressing.progressingWriting":"Написание модуля {{item}}",
     "progressing.finished": "Перевод завершен. Переведенный контент необходимо опубликовать, прежде чем он вступит в силу.",
     "progressing.buyCredits": "Купить кредиты",
+    "progressing.review":"Проверить перевод",
     "progressing.publish": "Опубликовать язык",
     "progressing.contact": "Недостаточно бесплатных кредитов для перевода. Пожалуйста, приобретите кредиты и повторите попытку перевода.",
     "progressing.noTranslate": "Сейчас нет задач перевода",

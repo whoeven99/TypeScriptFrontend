@@ -163,6 +163,7 @@
   "progressing.progressingWriting":"Writing {{item}} Module",
   "progressing.finished":"Your translation is ready. Publish it to apply the changes.",
   "progressing.buyCredits":"Buy credits",
+  "progressing.review":"Review Translation",
   "progressing.publish":"Publish",
   "progressing.contact":"You’re out of translation credits. Buy more to resume your translation.",
   "progressing.noTranslate":"There are no ongoing translation tasks.",

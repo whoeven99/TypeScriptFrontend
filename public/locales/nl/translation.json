@@ -159,6 +159,7 @@
     "progressing.progressingWriting":"Schrijven {{item}} module",
     "progressing.finished":"De vertaling is voltooid. De vertaalde inhoud moet worden gepubliceerd voordat deze in werking treedt.",
     "progressing.buyCredits":"Credits kopen",
+    "progressing.review":"Vertaling beoordelen",
     "progressing.publish":"Taal publiceren",
     "progressing.contact":"De gratis vertalingscredits zijn niet voldoende. Kopen u credits en probeer het opnieuw.",
     "progressing.noTranslate":"Er is momenteel geen vertalingstask",
