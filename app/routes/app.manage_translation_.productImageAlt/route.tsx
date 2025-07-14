@@ -569,10 +569,6 @@ const Index = () => {
     { label: t("Shipping"), value: "shipping" },
   ];
 
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
-
   const loadFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
@@ -678,6 +674,8 @@ const Index = () => {
             if (index !== -1) {
               return {
                 ...item,
+                imageUrl:
+                  targetData.response[index].imageAfterUrl || item.imageUrl,
                 targetAltText: targetData.response[index].altAfterTranslation,
               };
             }
