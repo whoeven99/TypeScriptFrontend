@@ -159,6 +159,7 @@
     "progressing.progressingWriting":"{{item}} 모듈 작성",
     "progressing.finished":"번역이 완료되었습니다. 번역된 콘텐츠는 효력이 발생하기 전에 게시되어야 합니다.",
     "progressing.buyCredits":"크레딧 구매",
+    "progressing.review":"번역 검토",
     "progressing.publish":"언어 게시",
     "progressing.contact":"무료 번역 크레딧이 부족합니다. 크레딧을 구매하고 다시 시도하세요.",
     "progressing.noTranslate":"현재 번역 작업이 없습니다",
