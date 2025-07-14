@@ -248,7 +248,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         translation: JSON.stringify({
           primaryLanguage: source,
           selectedLanguage: target,
-          translateSettings1: "google",
+          translateSettings1: "1",
           translateSettings2: "1",
           translateSettings3: [
             "products",
