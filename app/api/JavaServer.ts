@@ -1017,7 +1017,7 @@ export const GetTranslate = async ({
       accessToken: accessToken,
       source: source,
       target: target,
-      translateSettings1: "google",
+      translateSettings1: translateSettings1,
       translateSettings2: translateSettings2.toString(),
       translateSettings3: translateSettings3,
       customKey: customKey,
