@@ -1,7 +1,7 @@
 async function GetProductImageData({ shopName, productId, languageCode }) {
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
+      url: `https://springbackendprod.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
       method: "POST",
       data: {
         shopName: shopName,
