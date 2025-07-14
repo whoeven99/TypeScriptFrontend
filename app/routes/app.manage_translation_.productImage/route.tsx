@@ -677,7 +677,7 @@ const Index = () => {
       getTargetData();
       setIsLoading(false);
     }
-  }, [selectedKey, dataResource]);
+  }, [selectedKey, dataResource, selectedLanguage]);
 
   useEffect(() => {
     setImageHasNextPage(productImageData[0]?.imageHasNextPage);
