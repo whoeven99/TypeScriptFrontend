@@ -169,7 +169,7 @@
     "progressing.privateApiKeyAmountLimit":"Den privata API-nyckelgränsen har uppnåtts. Klicka på knappen till höger för att återställa gränsen och starta om översättningsprocessen.",
     "progressing.apikeySetting":"Återställ gräns",
     "progressing.hasPayed":"Dina översättningskrediter har lagts till. Vänligen fortsätt med översättningen.",
-    "progressing.reTranslate":"Översätt",
+    "progressing.reTranslate":"Fortsätt översätta",
     "contact.title":"Kontakta oss",
     "contact.description":"Om du har frågor eller behöver hjälp, klicka på knappen nedan för att kontakta oss.",
     "contact.contactButton":"Kontakta oss",

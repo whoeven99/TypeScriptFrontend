@@ -167,7 +167,7 @@
     "progressing.privateApiKeyAmountLimit":"私人API金鑰限制已達到。請點擊右側按鈕重置限制並重新啟動翻譯過程。",
     "progressing.apikeySetting":"重置限制",
     "progressing.hasPayed":"您的翻譯積分已添加。請繼續翻譯。",
-    "progressing.reTranslate":"翻譯",
+    "progressing.reTranslate":"繼續翻譯",
     "contact.title":"聯繫我們",
     "contact.description":"如果對我們的產品和服務感到滿意，請給予你的評價，幫助我們更好地改進!",
     "contact.contactButton":"聯繫支持",

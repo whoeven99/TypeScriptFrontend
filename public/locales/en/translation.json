@@ -171,7 +171,7 @@
   "progressing.privateApiKeyAmountLimit":"Your API key has hit the limit. Please reset it to continue your translation task.",
   "progressing.apikeySetting":"Reset limit",
   "progressing.hasPayed":"Translation credits have been added. You can now resume your translation.",
-  "progressing.reTranslate":"Translate",
+  "progressing.reTranslate":"Continue translating",
   "contact.title":"Contact Us",
   "contact.description":"Need help? Click the button below to contact our support team.",
   "contact.contactButton":"Contact Support",

@@ -167,7 +167,7 @@
     "progressing.privateApiKeyAmountLimit":"Se ha alcanzado el límite de claves API privadas. Por favor, haga clic en el botón de la derecha para restablecer el límite y reiniciar el proceso de traducción.",
     "progressing.apikeySetting":"Grenze zurücksetzen",
     "progressing.hasPayed":"Sus créditos de traducción han sido agregados. Por favor, continúe con la traducción.",
-    "progressing.reTranslate":"Traducir",
+    "progressing.reTranslate":"Continuar traduciendo",
     "contact.title":"Contacta con nosotros",
     "contact.description":"Si tiene alguna pregunta o necesita ayuda, haga clic en el botón de abajo para contactar con el soporte.",
     "contact.contactButton":"Contactar con soporte",
