@@ -466,7 +466,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                     >
                       <Button
                         block
-                        onClick={() => navigate("/app/manage_translation")}
+                        onClick={() =>
+                          navigate("/app/manage_translation", {
+                            state: {
+                              key: target,
+                            },
+                          })
+                        }
                       >
                         {t("progressing.review")}
                       </Button>
