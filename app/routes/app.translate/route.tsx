@@ -911,7 +911,12 @@ const Index = () => {
                     <div>
                       <Text>{t("translateSettings4.title1")}</Text>
                       <Select
+                        defaultActiveFirstOption={true}
                         options={[
+                          {
+                            label: "",
+                            value: "",
+                          },
                           {
                             label: t("Formal"),
                             value: "Formal",
@@ -947,7 +952,12 @@ const Index = () => {
                     <div>
                       <Text>{t("translateSettings4.title2")}</Text>
                       <Select
+                        defaultActiveFirstOption={true}
                         options={[
+                          {
+                            label: "",
+                            value: "",
+                          },
                           {
                             label: t("Apple – Minimal & premium (Tech/design)"),
                             value: "Apple – Minimal & premium (Tech/design)",
@@ -1141,7 +1151,12 @@ const Index = () => {
                     <div>
                       <Text>{t("translateSettings4.title3")}</Text>
                       <Select
+                        defaultActiveFirstOption={true}
                         options={[
+                          {
+                            label: "",
+                            value: "",
+                          },
                           {
                             label: t("Informational – Just the facts"),
                             value: "Informational – Just the facts",
@@ -1169,22 +1184,27 @@ const Index = () => {
                     <div>
                       <Text>{t("translateSettings4.title4")}</Text>
                       <Select
+                        defaultActiveFirstOption={true}
                         options={[
                           {
-                            label: t("SEO -friendly"),
-                            value: "SEO -friendly",
+                            label: "",
+                            value: "",
                           },
                           {
-                            label: t("minimalist"),
-                            value: "minimalist",
+                            label: t("SEO-friendly"),
+                            value: "SEO-friendly",
+                          },
+                          {
+                            label: t("Minimalist"),
+                            value: "Minimalist",
                           },
                           {
                             label: t("Storytelling"),
                             value: "Storytelling",
                           },
                           {
-                            label: t("Feature -first"),
-                            value: "Feature -first",
+                            label: t("Feature-first"),
+                            value: "Feature-first",
                           },
                           {
                             label: t("Call-to-action"),
