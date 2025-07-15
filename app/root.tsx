@@ -193,8 +193,6 @@ export const Head = createHead(() => (
   <>
     <meta charSet="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="shopify-debug" content="web-vitals" />
-    <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js" />
     <link rel="preconnect" href="https://cdn.shopify.com/" />
     <link
       rel="stylesheet"
