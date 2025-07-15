@@ -10,6 +10,7 @@ import {
   Input,
   Radio,
   RadioChangeEvent,
+  Select,
   Skeleton,
   Space,
   Typography,
@@ -452,7 +453,8 @@ const Index = () => {
   };
 
   const handleTranslate = async () => {
-    const customKey = `${translateSettings4.option3 && `using terminology and tone appropriate for the ${translateSettings4.option3} industry. `}${translateSettings4.option1 && `Adopt a ${translateSettings4.option1} tone. `}${translateSettings4.option2 && `Follow the brand tone of ${translateSettings4.option2}. `}${translateSettings4.option4 && `Use a ${translateSettings4.option4} writing style. `}${translateSettings4.option5 && `${translateSettings4.option5}.`}`;
+    const customKey = `${translateSettings4.option2 && ` in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `${translateSettings4.option4} format, `}${translateSettings4.option3 && `and ${translateSettings4.option3} focus. `}`;
+    console.log(customKey);
     const formData = new FormData();
     formData.append(
       "translation",
@@ -470,7 +472,10 @@ const Index = () => {
       method: "post",
       action: "/app/language",
     });
-    localStorage.setItem("translateSettings4", JSON.stringify(translateSettings4));
+    localStorage.setItem(
+      "translateSettings4",
+      JSON.stringify(translateSettings4),
+    );
   };
 
   const handleTranslateSettings2Change = (value: string[]) => {
@@ -805,18 +810,6 @@ const Index = () => {
                   <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
                     {t("translateSettings2.title")}
                   </Title>
-                  {/* <Select
-                    defaultValue={"1"}
-                    // value={translateSettings2}
-                    options={translateSettings2Options}
-                    style={{
-                      width: "100%",
-                    }}
-                    // optionType="button"
-                    // buttonStyle="solid"
-                    // onChange={(e) => setTranslateSettings2(e.target.value)}
-                    onSelect={(value) => setTranslateSettings2(value)}
-                  ></Select> */}
                   <Checkbox.Group
                     value={translateSettings2}
                     options={translateSettings2Options}
@@ -917,58 +910,296 @@ const Index = () => {
                   <Space direction="vertical" style={{ width: "100%" }}>
                     <div>
                       <Text>{t("translateSettings4.title1")}</Text>
-                      <Input
-                        style={{ width: "100%" }}
-                        value={translateSettings4.option1}
-                        onChange={(e) =>
+                      <Select
+                        options={[
+                          {
+                            label: t("Formal"),
+                            value: "Formal",
+                          },
+                          {
+                            label: t("Neutral"),
+                            value: "Neutral",
+                          },
+                          {
+                            label: t("Casual"),
+                            value: "Casual",
+                          },
+                          {
+                            label: t("Youthful"),
+                            value: "Youthful",
+                          },
+                          {
+                            label: t("Luxury"),
+                            value: "Luxury",
+                          },
+                        ]}
+                        style={{
+                          width: "100%",
+                        }}
+                        onSelect={(e) =>
                           setTranslateSettings4({
                             ...translateSettings4,
-                            option1: e.target.value,
+                            option1: e,
                           })
                         }
-                        placeholder={t("translateSettings4.placeholder1")}
                       />
                     </div>
                     <div>
                       <Text>{t("translateSettings4.title2")}</Text>
-                      <Input
-                        style={{ width: "100%" }}
-                        value={translateSettings4.option2}
-                        onChange={(e) =>
+                      <Select
+                        options={[
+                          {
+                            label: t("Apple – Minimal & premium (Tech/design)"),
+                            value: "Apple – Minimal & premium (Tech/design)",
+                          },
+                          {
+                            label: t(
+                              "Samsung – Innovative & versatile (Electronics)",
+                            ),
+                            value:
+                              "Samsung – Innovative & versatile (Electronics)",
+                          },
+                          {
+                            label: t("Nike – Bold & empowering (Sportswear)"),
+                            value: "Nike – Bold & empowering (Sportswear)",
+                          },
+                          {
+                            label: t(
+                              "Adidas – Dynamic & inclusive (Activewear)",
+                            ),
+                            value: "Adidas – Dynamic & inclusive (Activewear)",
+                          },
+                          {
+                            label: t(
+                              "Patagonia – Ethical & adventurous (Outdoor gear)",
+                            ),
+                            value:
+                              "Patagonia – Ethical & adventurous (Outdoor gear)",
+                          },
+                          {
+                            label: t("Zara – Modern & chic (Womenswear)"),
+                            value: "Zara – Modern & chic (Womenswear)",
+                          },
+                          {
+                            label: t("H&M – Trendy & casual (Fast fashion)"),
+                            value: "H&M – Trendy & casual (Fast fashion)",
+                          },
+                          {
+                            label: t(
+                              "Dior – Feminine & luxurious (High fashion)",
+                            ),
+                            value: "Dior – Feminine & luxurious (High fashion)",
+                          },
+                          {
+                            label: t(
+                              "Uniqlo – Simple & comfortable (Everyday basics)",
+                            ),
+                            value:
+                              "Uniqlo – Simple & comfortable (Everyday basics)",
+                          },
+                          {
+                            label: t(
+                              "Ralph Lauren – Timeless & masculine (Menswear)",
+                            ),
+                            value:
+                              "Ralph Lauren – Timeless & masculine (Menswear)",
+                          },
+                          {
+                            label: t(
+                              "Uniqlo – Clean & functional (Essentials)",
+                            ),
+                            value: "Uniqlo – Clean & functional (Essentials)",
+                          },
+                          {
+                            label: t(
+                              "Tommy Hilfiger – Classic & youthful (Men's fashion)",
+                            ),
+                            value:
+                              "Tommy Hilfiger – Classic & youthful (Men's fashion)",
+                          },
+                          {
+                            label: t("Tiffany – Elegant & romantic (Jewelry)"),
+                            value: "Tiffany – Elegant & romantic (Jewelry)",
+                          },
+                          {
+                            label: t(
+                              "Cartier – Luxurious & timeless (Fine jewelry)",
+                            ),
+                            value:
+                              "Cartier – Luxurious & timeless (Fine jewelry)",
+                          },
+                          {
+                            label: t(
+                              "Swarovski – Sparkling & accessible (Fashion jewelry)",
+                            ),
+                            value:
+                              "Swarovski – Sparkling & accessible (Fashion jewelry)",
+                          },
+                          {
+                            label: t(
+                              "L'Oréal – Confident & universal (Beauty)",
+                            ),
+                            value: "L'Oréal – Confident & universal (Beauty)",
+                          },
+                          {
+                            label: t(
+                              "Estée Lauder – Elegant & premium (Skincare)",
+                            ),
+                            value:
+                              "Estée Lauder – Elegant & premium (Skincare)",
+                          },
+                          {
+                            label: t(
+                              "Fenty Beauty – Bold & inclusive (Cosmetics)",
+                            ),
+                            value:
+                              "Fenty Beauty – Bold & inclusive (Cosmetics)",
+                          },
+                          {
+                            label: t(
+                              "Pampers – Caring & reassuring (Baby care)",
+                            ),
+                            value: "Pampers – Caring & reassuring (Baby care)",
+                          },
+                          {
+                            label: t("Mustela – Gentle & safe (Baby skincare)"),
+                            value: "Mustela – Gentle & safe (Baby skincare)",
+                          },
+                          {
+                            label: t(
+                              "IKEA – Practical & family-friendly (Home)",
+                            ),
+                            value: "IKEA – Practical & family-friendly (Home)",
+                          },
+                          {
+                            label: t("Dyson – Innovative & sleek (Appliances)"),
+                            value: "Dyson – Innovative & sleek (Appliances)",
+                          },
+                          {
+                            label: t("Philips – Smart & reliable (Home tech)"),
+                            value: "Philips – Smart & reliable (Home tech)",
+                          },
+                          {
+                            label: t(
+                              "Royal Canin – Scientific & premium (Pet food)",
+                            ),
+                            value:
+                              "Royal Canin – Scientific & premium (Pet food)",
+                          },
+                          {
+                            label: t("Pedigree – Friendly & caring (Pet care)"),
+                            value: "Pedigree – Friendly & caring (Pet care)",
+                          },
+                          {
+                            label: t("Unilever – Mass-market & trusted (FMCG)"),
+                            value: "Unilever – Mass-market & trusted (FMCG)",
+                          },
+                          {
+                            label: t("P&G – Reliable & practical (Household)"),
+                            value: "P&G – Reliable & practical (Household)",
+                          },
+                          {
+                            label: t(
+                              "Starbucks – Warm & lifestyle-driven (Coffee & culture)",
+                            ),
+                            value:
+                              "Starbucks – Warm & lifestyle-driven (Coffee & culture)",
+                          },
+                          {
+                            label: t(
+                              "Red Bull – Energetic & bold (Energy drinks)",
+                            ),
+                            value:
+                              "Red Bull – Energetic & bold (Energy drinks)",
+                          },
+                          {
+                            label: t(
+                              "Nestlé – Family-oriented & global (Food & beverage)",
+                            ),
+                            value:
+                              "Nestlé – Family-oriented & global (Food & beverage)",
+                          },
+                          {
+                            label: t(
+                              "Centrum – Scientific & trustworthy (Supplements)",
+                            ),
+                            value:
+                              "Centrum – Scientific & trustworthy (Supplements)",
+                          },
+                        ]}
+                        style={{
+                          width: "100%",
+                        }}
+                        onSelect={(e) =>
                           setTranslateSettings4({
                             ...translateSettings4,
-                            option2: e.target.value,
+                            option2: e,
                           })
                         }
-                        placeholder={t("translateSettings4.placeholder2")}
                       />
                     </div>
                     <div>
                       <Text>{t("translateSettings4.title3")}</Text>
-                      <Input
-                        style={{ width: "100%" }}
-                        value={translateSettings4.option3}
-                        onChange={(e) =>
+                      <Select
+                        options={[
+                          {
+                            label: t("Informational – Just the facts"),
+                            value: "Informational – Just the facts",
+                          },
+                          {
+                            label: t("Soft CTA – Gentle encouragement"),
+                            value: "Soft CTA – Gentle encouragement",
+                          },
+                          {
+                            label: t("Strong CTA – Clear call to buy"),
+                            value: "Strong CTA – Clear call to buy",
+                          },
+                        ]}
+                        style={{
+                          width: "100%",
+                        }}
+                        onSelect={(e) =>
                           setTranslateSettings4({
                             ...translateSettings4,
-                            option3: e.target.value,
+                            option3: e,
                           })
                         }
-                        placeholder={t("translateSettings4.placeholder3")}
                       />
                     </div>
                     <div>
                       <Text>{t("translateSettings4.title4")}</Text>
-                      <Input
-                        style={{ width: "100%" }}
-                        value={translateSettings4.option4}
-                        onChange={(e) =>
+                      <Select
+                        options={[
+                          {
+                            label: t("SEO -friendly"),
+                            value: "SEO -friendly",
+                          },
+                          {
+                            label: t("minimalist"),
+                            value: "minimalist",
+                          },
+                          {
+                            label: t("Storytelling"),
+                            value: "Storytelling",
+                          },
+                          {
+                            label: t("Feature -first"),
+                            value: "Feature -first",
+                          },
+                          {
+                            label: t("Call-to-action"),
+                            value: "Call-to-action",
+                          },
+                        ]}
+                        style={{
+                          width: "100%",
+                        }}
+                        onSelect={(e) =>
                           setTranslateSettings4({
                             ...translateSettings4,
-                            option4: e.target.value,
+                            option4: e,
                           })
                         }
-                        placeholder={t("translateSettings4.placeholder4")}
                       />
                     </div>
                     {/* <div>

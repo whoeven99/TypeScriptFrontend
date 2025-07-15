@@ -230,7 +230,7 @@
   "translateSettings4.apprules": "Anwendungsregeln",
   "translateSettings4.title1": "Sprachstil",
   "translateSettings4.title2": "Marke Ton Referenz",
-  "translateSettings4.title3": "Produkt Kategorie",
+  "translateSettings4.title3": "Conversion-Absicht",
   "translateSettings4.title4": "Schreibstil",
   "translateSettings4.title5": "Zusätzliche Prompt Details",
   "translateSettings4.description": "Nur für Produkte und Artikelinhalte wirksam. Prompts müssen in Englisch eingegeben werden.",
