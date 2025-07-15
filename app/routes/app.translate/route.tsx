@@ -894,7 +894,7 @@ const Index = () => {
                     </Flex>
                   ))}
                 </Space>
-                {/* <Space
+                <Space
                   direction="vertical"
                   size={16}
                   style={{ display: "flex" }}
@@ -1222,7 +1222,7 @@ const Index = () => {
                         }
                       />
                     </div>
-                     <div>
+                    {/* <div>
                       <Text>{t("translateSettings4.title5")}</Text>
                       <Input
                         style={{ width: "100%" }}
@@ -1235,9 +1235,9 @@ const Index = () => {
                         }
                         placeholder={t("translateSettings4.placeholder5")}
                       />
-                    </div> 
+                    </div> */}
                   </Space>
-                </Space> */}
+                </Space>
               </Space>
             </Card>
           </Space>
