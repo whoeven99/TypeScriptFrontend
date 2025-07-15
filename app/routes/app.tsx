@@ -46,6 +46,7 @@ import { useTranslation } from "react-i18next";
 import { ConfigProvider } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
+import ScrollNotice from "~/components/ScrollNotice";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -65,8 +66,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const languageInit = JSON.parse(formData.get("languageInit") as string);
     const languageData = JSON.parse(formData.get("languageData") as string);
     const plan = JSON.parse(formData.get("plan") as string);
-    const customApikeyData = JSON.parse(formData.get("customApikeyData") as string);
-    const nearTransaltedData = JSON.parse(formData.get("nearTransaltedData") as string);
+    const customApikeyData = JSON.parse(
+      formData.get("customApikeyData") as string,
+    );
+    const nearTransaltedData = JSON.parse(
+      formData.get("nearTransaltedData") as string,
+    );
     const userData = JSON.parse(formData.get("userData") as string);
     const languageCode = JSON.parse(formData.get("languageCode") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
@@ -79,9 +84,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (loading) {
       try {
         const init = await InitializationDetection({ shop });
-        await UserAdd({ shop, accessToken: accessToken as string, init: init?.add });
+        await UserAdd({
+          shop,
+          accessToken: accessToken as string,
+          init: init?.add,
+        });
         if (!init?.insertCharsByShopName) {
-          await InsertCharsByShopName({ shop, accessToken: accessToken as string });
+          await InsertCharsByShopName({
+            shop,
+            accessToken: accessToken as string,
+          });
         }
         if (!init?.addUserFreeSubscription) {
           await AddUserFreeSubscription({ shop });
@@ -147,13 +159,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
           key: i,
-          src: languageLocaleInfo ? languageLocaleInfo[lang.locale]?.countries : [],
+          src: languageLocaleInfo
+            ? languageLocaleInfo[lang.locale]?.countries
+            : [],
           name: lang.name,
-          localeName: languageLocaleInfo ? languageLocaleInfo[lang.locale]?.Local : "",
+          localeName: languageLocaleInfo
+            ? languageLocaleInfo[lang.locale]?.Local
+            : "",
           locale: lang.locale,
-          status:
-            languages ? languages.find((language: any) => language.target === lang.locale)
-              ?.status : 0,
+          status: languages
+            ? languages.find((language: any) => language.target === lang.locale)
+                ?.status
+            : 0,
           published: lang.published,
         }));
 
@@ -196,7 +213,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const customApikeyData = await GetUserData({
           shop,
         });
-        return json({ customApikeyData: customApikeyData?.response?.googleKey });
+        return json({
+          customApikeyData: customApikeyData?.response?.googleKey,
+        });
       } catch (error) {
         console.error("Error customApikeyData app:", error);
         return json({ error: "Error customApikeyData app" }, { status: 500 });
@@ -219,17 +238,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           (item) => item.locale,
         );
 
-        const data = await GetTranslateDOByShopNameAndSource({ shop, source: shopPrimaryLanguage[0].locale });
+        const data = await GetTranslateDOByShopNameAndSource({
+          shop,
+          source: shopPrimaryLanguage[0].locale,
+        });
 
-        if (shopLocalesIndex.includes(data.response?.target) && (data.response?.status !== 1 || !shopLanguagesWithoutPrimaryIndex.find((item) => item.locale === data.response?.target)?.published)) {
+        if (
+          shopLocalesIndex.includes(data.response?.target) &&
+          (data.response?.status !== 1 ||
+            !shopLanguagesWithoutPrimaryIndex.find(
+              (item) => item.locale === data.response?.target,
+            )?.published)
+        ) {
           return {
             translatingLanguage: {
               source: data.response?.source || shopPrimaryLanguage[0].locale,
               target: data.response?.target || "",
               status: data.response?.status || 0,
               resourceType: data.response?.resourceType || "",
-            }
-          }
+            },
+          };
         } else {
           return {
             translatingLanguage: {
@@ -237,7 +265,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               target: "",
               status: 0,
               resourceType: "",
-            }
+            },
           };
         }
       } catch (error) {
@@ -277,7 +305,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (languageCode) {
       try {
-        const totalWords = await GetTotalWords({ shop, accessToken: accessToken as string, target: languageCode });
+        const totalWords = await GetTotalWords({
+          shop,
+          accessToken: accessToken as string,
+          target: languageCode,
+        });
         return json({ totalWords });
       } catch (error) {
         console.error("Error languageCode app:", error);
@@ -296,7 +328,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           name: payInfo.name,
           price: payInfo.price,
           returnUrl,
-          test: process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test",
+          test:
+            process.env.NODE_ENV === "development" ||
+            process.env.NODE_ENV === "test",
         });
         return json({ data: payData });
       } catch (error) {
@@ -325,7 +359,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (credits) {
       try {
-        const data = await getCredits({ shop, accessToken: accessToken!, target: credits.target, source: credits.source });
+        const data = await getCredits({
+          shop,
+          accessToken: accessToken!,
+          target: credits.target,
+          source: credits.source,
+        });
         return json({ data });
       } catch (error) {
         console.error("Error credits app:", error);
@@ -343,13 +382,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           data: {
             success: false,
             message: "Error recalculate app",
-          }
+          },
         });
       }
     }
 
-    if (typeof rate === 'number') {
-      console.log(`商店${shop}的评分: ${rate}`)
+    if (typeof rate === "number") {
+      console.log(`商店${shop}的评分: ${rate}`);
     }
 
     return json({ success: false, message: "Invalid data" });
@@ -424,20 +463,22 @@ export default function App() {
           <Link to="/app" rel="home">
             Home
           </Link>
-          {isClient &&
+          {isClient && (
             <>
               <Link to="/app/language">{t("Language")}</Link>
-              <Link to="/app/manage_translation">{t("Manage Translation")}</Link>
+              <Link to="/app/manage_translation">
+                {t("Manage Translation")}
+              </Link>
               <Link to="/app/currency">{t("Currency")}</Link>
               <Link to="/app/switcher">{t("Switcher")}</Link>
               <Link to="/app/glossary">{t("Glossary")}</Link>
               <Link to="/app/pricing">{t("Pricing")}</Link>
             </>
-          }
+          )}
         </NavMenu>
         <Outlet />
       </ConfigProvider>
-    </AppProvider >
+    </AppProvider>
   );
 }
 
