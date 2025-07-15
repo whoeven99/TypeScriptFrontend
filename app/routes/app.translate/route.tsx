@@ -152,10 +152,10 @@ const Index = () => {
     if (loadingLanguageFetcher.data) {
       setLanguageData(loadingLanguageFetcher.data?.data);
       setLanguageSetting(loadingLanguageFetcher.data?.languageSetting);
-      const translateSettings4 = localStorage.getItem("translateSettings4");
-      if (translateSettings4) {
-        setTranslateSettings4(JSON.parse(translateSettings4));
-      }
+      // const translateSettings4 = localStorage.getItem("translateSettings4");
+      // if (translateSettings4) {
+      //   setTranslateSettings4(JSON.parse(translateSettings4));
+      // }
       setLoadingLanguage(false);
     }
   }, [loadingLanguageFetcher.data]);
@@ -472,10 +472,10 @@ const Index = () => {
       method: "post",
       action: "/app/language",
     });
-    localStorage.setItem(
-      "translateSettings4",
-      JSON.stringify(translateSettings4),
-    );
+    // localStorage.setItem(
+    //   "translateSettings4",
+    //   JSON.stringify(translateSettings4),
+    // );
   };
 
   const handleTranslateSettings2Change = (value: string[]) => {
