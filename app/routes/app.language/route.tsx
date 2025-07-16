@@ -888,10 +888,6 @@ const Index = () => {
     window.open(shopUrl, "_blank", "noopener,noreferrer");
   };
 
-  useEffect(() => {
-    console.log(selectedRowKeys);
-  }, [selectedRowKeys]);
-
   return (
     <Page>
       <TitleBar title={t("Language")} />
@@ -982,7 +978,6 @@ const Index = () => {
                     <Checkbox
                       checked={selectedRowKeys.includes(item.key)}
                       onChange={(e: any) => {
-                        console.log(e);
                         setSelectedRowKeys(
                           e.target.checked
                             ? [...selectedRowKeys, item.key]

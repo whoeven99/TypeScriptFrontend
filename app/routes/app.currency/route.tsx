@@ -547,10 +547,6 @@ const Index = () => {
     setDeleteLoading(true);
   };
 
-  useEffect(() => {
-    console.log(selectedRowKeys);
-  }, [selectedRowKeys]);
-
   return (
     <Page>
       <TitleBar title={t("Currency")}></TitleBar>
@@ -654,7 +650,6 @@ const Index = () => {
                     <Checkbox
                       checked={selectedRowKeys.includes(item.key)}
                       onChange={(e: any) => {
-                        console.log(e);
                         setSelectedRowKeys(
                           e.target.checked
                             ? [...selectedRowKeys, item.key]
