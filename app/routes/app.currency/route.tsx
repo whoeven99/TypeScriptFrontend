@@ -614,7 +614,7 @@ const Index = () => {
             <Card
               title={
                 <Checkbox
-                  checked={allCurrentPageSelected}
+                  checked={allCurrentPageSelected && !loading}
                   indeterminate={
                     someCurrentPageSelected && !allCurrentPageSelected
                   }
