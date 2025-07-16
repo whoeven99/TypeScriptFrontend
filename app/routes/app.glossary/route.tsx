@@ -5,7 +5,10 @@ import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   Button,
+  Card,
+  Checkbox,
   Flex,
+  Pagination,
   Popconfirm,
   Popover,
   Skeleton,
@@ -61,11 +64,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
 
+  const isMobile = request.headers.get("user-agent")?.includes("Mobile");
+
   console.log(`${shop} load glossary`);
 
   return {
     shop,
     server: process.env.SERVER_URL,
+    mobile: isMobile as boolean,
   };
 };
 
@@ -119,11 +125,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, server } = useLoaderData<typeof loader>();
+  const { shop, server, mobile } = useLoaderData<typeof loader>();
+  console.log(shop, server, mobile);
+
+  const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { plan } = useSelector((state: any) => state.userConfig);
+  const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
+
   const [title, setTitle] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
-  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(true);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [shopLocales, setShopLocales] = useState<ShopLocalesType[]>([]);
   const [isGlossaryModalOpen, setIsGlossaryModalOpen] =
@@ -133,20 +147,42 @@ const Index = () => {
   const hasSelected = useMemo(() => {
     return selectedRowKeys.length > 0;
   }, [selectedRowKeys]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10; // 每页显示5条，可自定义
+  const pagedData = useMemo(
+    () =>
+      dataSource.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [dataSource, currentPage, pageSize],
+  );
+  const currentPageKeys = useMemo(
+    () => pagedData.map((item: any) => item.key),
+    [pagedData],
+  );
+  const allCurrentPageSelected = useMemo(
+    () => currentPageKeys.every((key: any) => selectedRowKeys.includes(key)),
+    [currentPageKeys, selectedRowKeys],
+  );
+  const someCurrentPageSelected = useMemo(
+    () => currentPageKeys.some((key: any) => selectedRowKeys.includes(key)),
+    [currentPageKeys, selectedRowKeys],
+  );
 
-  const dispatch = useDispatch();
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { plan } = useSelector((state: any) => state.userConfig);
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
 
-  const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
-
   useEffect(() => {
-    loadingFetcher.submit({ loading: JSON.stringify(true) }, { method: "POST" });
-    setIsMobile(window.innerWidth < 768);
-    shopify.loading(true);
+    loadingFetcher.submit(
+      { loading: JSON.stringify(true) },
+      { method: "POST" },
+    );
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -155,7 +191,6 @@ const Index = () => {
         setGLossaryTableData(loadingFetcher.data.data.glossaryTableData),
       );
       setShopLocales(loadingFetcher.data.data.shopLocales);
-      shopify.loading(false);
       setLoading(false);
     }
   }, [loadingFetcher.data]);
@@ -181,7 +216,6 @@ const Index = () => {
     }
   }, [deleteFetcher.data]);
 
-
   const handleDelete = () => {
     const formData = new FormData();
     formData.append("deleteInfo", JSON.stringify(selectedRowKeys)); // 将选中的语言作为字符串发送
@@ -192,7 +226,9 @@ const Index = () => {
   const handleApplication = async (key: number) => {
     const row = dataSource.find((item: any) => item.key === key);
     if (row.status === 0) {
-      const activeItemsCount = dataSource.filter((item: any) => item.status === 1).length;
+      const activeItemsCount = dataSource.filter(
+        (item: any) => item.status === 1,
+      ).length;
       if (activeItemsCount >= planMapping[plan as keyof typeof planMapping]) {
         setShowWarnModal(true);
         return;
@@ -213,7 +249,6 @@ const Index = () => {
       server: server as string,
     });
 
-
     if (data?.success) {
       shopify.toast.show(t("Saved successfully"));
       dispatch(
@@ -232,13 +267,16 @@ const Index = () => {
         }),
       );
     }
-  }
+  };
 
   const handleIsModalOpen = (title: string, key: number) => {
     if (!plan) {
       return;
     }
-    if (title === "Create rule" && dataSource.length >= planMapping[plan as keyof typeof planMapping]) {
+    if (
+      title === "Create rule" &&
+      dataSource.length >= planMapping[plan as keyof typeof planMapping]
+    ) {
       setShowWarnModal(true);
     } else {
       setTitle(t(title));
@@ -311,13 +349,9 @@ const Index = () => {
       key: "action",
       width: "15%",
       render: (_: any, record: any) => (
-        <Space>
-          <Button
-            onClick={() => handleIsModalOpen(t("Edit rules"), record.key)}
-          >
-            {t("Edit")}
-          </Button>
-        </Space>
+        <Button onClick={() => handleIsModalOpen(t("Edit rules"), record.key)}>
+          {t("Edit")}
+        </Button>
       ),
     },
   ];
@@ -342,19 +376,7 @@ const Index = () => {
         <Text>
           {t("Create translation rules for certain words and phrases")}
         </Text>
-        {loading ? (
-          <div className="languageTable_action">
-            <Flex
-              align="center"
-              justify="space-between" // 使按钮左右分布
-              style={{ width: "100%", marginBottom: "16px" }}
-            >
-              <Skeleton.Button active />
-              <Skeleton.Button active />
-            </Flex>
-            <Table columns={columns} loading style={{ width: "100%" }} />
-          </div>
-        ) : !shopLocales?.length ? (
+        {!shopLocales?.length && !loading ? (
           <div
             style={{
               display: "flex",
@@ -373,22 +395,30 @@ const Index = () => {
               style={{ width: "100%", marginBottom: "16px" }}
             >
               <Flex align="center" gap="middle">
-                <Button
-                  onClick={handleDelete}
-                  disabled={!hasSelected}
-                  loading={deleteLoading}
-                >
-                  {t("Delete")}
-                </Button>
+                {loading ? (
+                  <Skeleton.Button active />
+                ) : (
+                  <Button
+                    onClick={handleDelete}
+                    disabled={!hasSelected}
+                    loading={deleteLoading}
+                  >
+                    {t("Delete")}
+                  </Button>
+                )}
                 {hasSelected
                   ? `${t("Selected")}${selectedRowKeys.length}${t("items")}`
                   : null}
               </Flex>
-              {planMapping[plan as keyof typeof planMapping] === 0 ?
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {planMapping[plan as keyof typeof planMapping] === 0 ? (
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
                   <Popconfirm
                     title=""
-                    description={t("Upgrade to a paid plan to unlock this feature")}
+                    description={t(
+                      "Upgrade to a paid plan to unlock this feature",
+                    )}
                     trigger="hover"
                     showCancel={false}
                     okText={t("Upgrade")}
@@ -396,30 +426,152 @@ const Index = () => {
                   >
                     <InfoCircleOutlined />
                   </Popconfirm>
-                  <Button
-                    disabled
-                  >
-                    {t("Create rule")}
-                  </Button>
+                  <Button disabled>{t("Create rule")}</Button>
                 </div>
-                :
+              ) : loading ? (
+                <Skeleton.Button active />
+              ) : (
                 <Button
                   type="primary"
                   onClick={() => handleIsModalOpen("Create rule", -1)}
                 >
                   {t("Create rule")}
                 </Button>
-              }
+              )}
             </Flex>
-            <Table
-              virtual={isMobile}
-              scroll={isMobile ? { x: 900 } : {}}
-              rowSelection={rowSelection}
-              columns={columns}
-              loading={deleteLoading || loading}
-              dataSource={dataSource}
-              style={{ width: "100%" }}
-            />
+            {isMobile ? (
+              <>
+                <Card
+                  title={
+                    <Checkbox
+                      checked={allCurrentPageSelected && !loading}
+                      indeterminate={
+                        someCurrentPageSelected && !allCurrentPageSelected
+                      }
+                      onChange={(e) =>
+                        setSelectedRowKeys(
+                          e.target.checked
+                            ? [
+                                ...currentPageKeys,
+                                ...selectedRowKeys.filter(
+                                  (key) => !currentPageKeys.includes(key),
+                                ),
+                              ]
+                            : [
+                                ...selectedRowKeys.filter(
+                                  (key) => !currentPageKeys.includes(key),
+                                ),
+                              ],
+                        )
+                      }
+                    >
+                      {t("Glossary")}
+                    </Checkbox>
+                  }
+                  loading={loading}
+                >
+                  {pagedData.map((item: any) => (
+                    <Card.Grid key={item.key} style={{ width: "100%" }}>
+                      <Space
+                        direction="vertical"
+                        size="middle"
+                        style={{ width: "100%" }}
+                      >
+                        <Flex justify="space-between">
+                          <Checkbox
+                            checked={selectedRowKeys.includes(item.key)}
+                            onChange={(e: any) => {
+                              console.log(e);
+                              setSelectedRowKeys(
+                                e.target.checked
+                                  ? [...selectedRowKeys, item.key]
+                                  : selectedRowKeys.filter(
+                                      (key) => key !== item.key,
+                                    ),
+                              );
+                            }}
+                          >
+                            {t("Text")}{" "}
+                          </Checkbox>
+                          <Text>{item.sourceText}</Text>
+                        </Flex>
+                        <Flex justify="space-between">
+                          <Text>{t("Translation text")}</Text>
+                          <Text>{item.targetText}</Text>
+                        </Flex>
+                        <Flex justify="space-between">
+                          <Text>{t("Apply for")}</Text>
+                          {item.language ? (
+                            <Text>{item.language}</Text>
+                          ) : (
+                            <Popover
+                              content={t(
+                                "This language has been deleted. Please edit again.",
+                              )}
+                            >
+                              <WarningOutlined
+                                style={{
+                                  color: "#F8B400",
+                                  fontSize: "18px",
+                                  width: "100%",
+                                }}
+                              />
+                            </Popover>
+                          )}
+                        </Flex>
+                        <Flex justify="space-between">
+                          <Text>{t("Case")}</Text>
+                          {item.type ? (
+                            <Text>{t("Case-sensitive")}</Text>
+                          ) : (
+                            <Text>{t("Case-insensitive")}</Text>
+                          )}
+                        </Flex>
+                        <Flex justify="space-between">
+                          <Text>{t("Status")}</Text>
+                          <Switch
+                            checked={item?.status}
+                            onClick={() => handleApplication(item.key)}
+                            loading={item.loading} // 使用每个项的 loading 状态
+                          />
+                        </Flex>
+                        <Button
+                          style={{ width: "100%" }}
+                          onClick={() =>
+                            handleIsModalOpen(t("Edit rules"), item.key)
+                          }
+                        >
+                          {t("Edit")}
+                        </Button>
+                      </Space>
+                    </Card.Grid>
+                  ))}
+                </Card>
+                <div
+                  style={{
+                    display: "flex",
+                    background: "#fff",
+                    padding: "12px 0",
+                    textAlign: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Pagination
+                    current={currentPage}
+                    pageSize={pageSize}
+                    total={dataSource.length}
+                    onChange={(page) => setCurrentPage(page)}
+                  />
+                </div>
+              </>
+            ) : (
+              <Table
+                rowSelection={rowSelection}
+                columns={columns}
+                loading={deleteLoading || loading}
+                dataSource={dataSource}
+              />
+            )}
           </div>
         )}
       </Space>
@@ -433,8 +585,13 @@ const Index = () => {
         server={server as string}
       />
       <TranslationWarnModal
-        title={t("The glossary limitations has been reached (Current restrictions: {{count}})", { count: planMapping[plan as keyof typeof planMapping] })}
-        content={t("Please upgrade to a higher plan to remove the current glossary limitations")}
+        title={t(
+          "The glossary limitations has been reached (Current restrictions: {{count}})",
+          { count: planMapping[plan as keyof typeof planMapping] },
+        )}
+        content={t(
+          "Please upgrade to a higher plan to remove the current glossary limitations",
+        )}
         action={() => {
           navigate("/app/pricing");
         }}
@@ -443,7 +600,7 @@ const Index = () => {
         setShow={setShowWarnModal}
       />
     </Page>
-  )
-}
+  );
+};
 
 export default Index;

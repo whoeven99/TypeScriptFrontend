@@ -15,8 +15,6 @@ import { createCache, extractStyle, StyleProvider } from "@ant-design/cssinjs";
 import { renderHeadToString } from 'remix-island';
 import { Head } from './root'
 
-const ABORT_DELAY = 10000;
-
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
@@ -109,7 +107,6 @@ export default async function handleRequest(
             <RemixServer
               context={remixContext}
               url={request.url}
-              abortDelay={ABORT_DELAY}
             />
           </ConfigProvider>
         </StyleProvider>
