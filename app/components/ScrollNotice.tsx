@@ -35,7 +35,7 @@ const ScrollNotice: React.FC<ScrollNoticeProps> = ({
         borderRadius: "5px",
         justifyContent: "center",
         alignItems: "center",
-        marginBottom: "10px",
+        marginBottom: "1px",
         WebkitBoxOrient: "vertical",
       }}
       className={className}
