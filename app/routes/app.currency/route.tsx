@@ -8,11 +8,14 @@ import {
   Table,
   Typography,
   Skeleton,
+  Card,
+  Checkbox,
+  Pagination,
 } from "antd";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { json } from "@remix-run/node";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./styles.css";
 import { ColumnsType } from "antd/es/table";
 import { TableRowSelection } from "antd/es/table/interface";
@@ -34,6 +37,8 @@ import CurrencyEditModal from "./components/currencyEditModal";
 import { setTableData } from "~/store/modules/currencyDataTable";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
+import { useNavigate } from "react-router-dom";
+
 const { Title, Text } = Typography;
 
 export interface CurrencyDataType {
@@ -55,9 +60,13 @@ export interface CurrencyType {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
+
+  const isMobile = request.headers.get("user-agent")?.includes("Mobile");
+
   console.log(`${shop} load currency`);
   return json({
     shop,
+    mobile: isMobile as boolean,
   });
 };
 
@@ -241,15 +250,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop } = useLoaderData<typeof loader>();
+  const { shop, mobile } = useLoaderData<typeof loader>();
   const userShop = `https://${shop}`;
   const [loading, setLoading] = useState<boolean>(true);
   const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>("");
   const [searchInput, setSearchInput] = useState("");
   const [currencyData, setCurrencyData] = useState<CurrencyType[]>([]);
-  const [currencyAutoRate, setCurrencyAutoRate] = useState([]);
+  const [currencyAutoRate, setCurrencyAutoRate] = useState<any>([]);
   const [defaultSymbol, setDefaultSymbol] = useState<string>("");
   const [deleteloading, setDeleteLoading] = useState(false);
+  const [deleteCode, setDeleteCode] = useState<any>("");
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [isAddCurrencyModalOpen, setIsAddCurrencyModalOpen] = useState(false);
   const [addCurrencies, setAddCurrencies] = useState<CurrencyType[]>([]);
@@ -257,16 +267,33 @@ const Index = () => {
   const [selectedRow, setSelectedRow] = useState<
     CurrencyDataType | undefined
   >();
-  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(mobile);
   const dataSource: CurrencyDataType[] = useSelector(
     (state: any) => state.currencyTableData.rows,
   );
   const [originalData, setOriginalData] = useState<
     CurrencyDataType[] | undefined
   >();
-  const [filteredData, setFilteredData] = useState<
-    CurrencyDataType[] | undefined
-  >(dataSource);
+  const [filteredData, setFilteredData] = useState<CurrencyDataType[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10; // 每页显示5条，可自定义
+  const pagedData = useMemo(
+    () =>
+      dataSource.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [dataSource, currentPage, pageSize],
+  );
+  const currentPageKeys = useMemo(
+    () => pagedData.map((item: any) => item.key),
+    [pagedData],
+  );
+  const allCurrentPageSelected = useMemo(
+    () => currentPageKeys.every((key) => selectedRowKeys.includes(key)),
+    [currentPageKeys, selectedRowKeys],
+  );
+  const someCurrentPageSelected = useMemo(
+    () => currentPageKeys.some((key) => selectedRowKeys.includes(key)),
+    [currentPageKeys, selectedRowKeys],
+  );
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
@@ -367,6 +394,7 @@ const Index = () => {
       shopify.toast.show(t("Delete successfully"));
       setDeleteLoading(false);
       setSelectedRowKeys([]);
+      setDeleteCode("");
       setOriginalData(newData);
       setFilteredData(newData);
     }
@@ -467,23 +495,23 @@ const Index = () => {
     },
   ];
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchInput(value);
+  // const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const value = e.target.value;
+  //   setSearchInput(value);
 
-    if (originalData) {
-      if (value) {
-        const filtered = originalData.filter(
-          (data) =>
-            data.currency.toLowerCase().includes(value.toLowerCase()) ||
-            data.currencyCode.toLowerCase().includes(value.toLowerCase()),
-        );
-        setFilteredData(filtered);
-      } else {
-        setFilteredData(originalData);
-      }
-    }
-  };
+  //   if (originalData) {
+  //     if (value) {
+  //       const filtered = originalData.filter(
+  //         (data) =>
+  //           data.currency.toLowerCase().includes(value.toLowerCase()) ||
+  //           data.currencyCode.toLowerCase().includes(value.toLowerCase()),
+  //       );
+  //       setFilteredData(filtered);
+  //     } else {
+  //       setFilteredData(originalData);
+  //     }
+  //   }
+  // };
 
   const handleEdit = (key: number) => {
     const row = dataSource.find((item) => item.key === key);
@@ -503,6 +531,7 @@ const Index = () => {
   const handleDelete = (key?: React.Key) => {
     const formData = new FormData();
     if (key) {
+      setDeleteCode(key);
       formData.append("deleteCurrencies", JSON.stringify([key]));
       deleteFetcher.submit(formData, {
         method: "post",
@@ -564,8 +593,7 @@ const Index = () => {
             {t("Add Currency")}
           </Button>
         </div>
-        <Flex gap="middle" vertical>
-          {/* <Flex align="center" gap="middle">
+        {/* <Flex align="center" gap="middle">
             <Text>
               {t("After setting, you can")}
               <Link url={userShop} target="_blank">
@@ -581,15 +609,141 @@ const Index = () => {
             onChange={handleSearch}
             style={{ marginBottom: 16 }}
           /> */}
+        {isMobile ? (
+          <>
+            <Card
+              title={
+                <Checkbox
+                  checked={allCurrentPageSelected && !loading}
+                  indeterminate={
+                    someCurrentPageSelected && !allCurrentPageSelected
+                  }
+                  onChange={(e) =>
+                    setSelectedRowKeys(
+                      e.target.checked
+                        ? [
+                            ...currentPageKeys,
+                            ...selectedRowKeys.filter(
+                              (key) => !currentPageKeys.includes(key),
+                            ),
+                          ]
+                        : [
+                            ...selectedRowKeys.filter(
+                              (key) => !currentPageKeys.includes(key),
+                            ),
+                          ],
+                    )
+                  }
+                >
+                  {t("Currency")}
+                </Checkbox>
+              }
+              loading={loading}
+            >
+              {pagedData.map((item: any) => (
+                <Card.Grid key={item.key} style={{ width: "100%" }}>
+                  <Space
+                    direction="vertical"
+                    size="middle"
+                    style={{ width: "100%" }}
+                  >
+                    <Checkbox
+                      checked={selectedRowKeys.includes(item.key)}
+                      onChange={(e: any) => {
+                        setSelectedRowKeys(
+                          e.target.checked
+                            ? [...selectedRowKeys, item.key]
+                            : selectedRowKeys.filter((key) => key !== item.key),
+                        );
+                      }}
+                    >
+                      {item.currency}({item.currencyCode})
+                    </Checkbox>
+                    <Flex justify="space-between">
+                      <Text>{t("Rounding")}</Text>
+                      {item.rounding === null ? (
+                        <Text></Text>
+                      ) : item.rounding === "" ? (
+                        <Text>{t("Disable")}</Text>
+                      ) : item.rounding === "0" ? (
+                        <Text>{t("No decimal")}</Text>
+                      ) : (
+                        <Text>{Number(item.rounding).toFixed(2)}</Text>
+                      )}
+                    </Flex>
+                    <Flex justify="space-between">
+                      <Text>{t("Exchange rate")}</Text>
+                      {item.exchangeRate === "Auto" ? (
+                        <div>
+                          <Text>{t("Auto")}</Text>
+                          {typeof currencyAutoRate.find(
+                            (item: any) =>
+                              item?.currencyCode == item.currencyCode,
+                          )?.rate === "number" && (
+                            <Text>
+                              ({defaultSymbol}1 ={" "}
+                              {currencyAutoRate
+                                .find(
+                                  (item: any) =>
+                                    item?.currencyCode == item.currencyCode,
+                                )
+                                ?.rate.toFixed(4)}{" "}
+                              {item.currencyCode})
+                            </Text>
+                          )}
+                        </div>
+                      ) : (
+                        <Text>
+                          {defaultSymbol}1 = {item.exchangeRate}{" "}
+                          {item.currencyCode}
+                        </Text>
+                      )}
+                    </Flex>
+                    <Button
+                      style={{ width: "100%" }}
+                      onClick={() => handleEdit(item.key)}
+                    >
+                      {t("Edit")}
+                    </Button>
+                    <Button
+                      style={{ width: "100%" }}
+                      loading={
+                        deleteFetcher.state === "submitting" &&
+                        deleteCode === item.key
+                      }
+                      onClick={() => handleDelete(item.key)}
+                    >
+                      {t("Delete")}
+                    </Button>
+                  </Space>
+                </Card.Grid>
+              ))}
+            </Card>
+            <div
+              style={{
+                display: "flex",
+                background: "#fff",
+                padding: "12px 0",
+                textAlign: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={dataSource.length}
+                onChange={(page) => setCurrentPage(page)}
+              />
+            </div>
+          </>
+        ) : (
           <Table
-            virtual={isMobile}
-            scroll={isMobile ? { x: 900 } : {}}
             rowSelection={rowSelection}
             columns={columns}
             dataSource={filteredData}
             loading={deleteloading || loading}
           />
-        </Flex>
+        )}
       </Space>
       <AddCurrencyModal
         isVisible={isAddCurrencyModalOpen}
