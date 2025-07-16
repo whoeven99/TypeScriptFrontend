@@ -9,8 +9,10 @@ import {
   Switch,
   Modal,
   Skeleton,
+  Card,
+  Checkbox,
 } from "antd";
-import { useEffect, useState, startTransition } from "react";
+import { useEffect, useState, startTransition, useMemo } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import "./styles.css";
@@ -93,10 +95,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
 
+  const isMobile = request.headers.get("user-agent")?.includes("Mobile");
+
   console.log(`${shop} load language`);
 
   return json({
     server: process.env.SERVER_URL,
+    mobile: isMobile as boolean,
     shop: shop,
   });
 };
@@ -322,7 +327,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
 
     case !!translation:
-      try {        
+      try {
         // 字符数未超限，调用翻译接口
         const data = await GetTranslate({
           shop,
@@ -405,7 +410,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, server } = useLoaderData<typeof loader>();
+  const { shop, mobile, server } = useLoaderData<typeof loader>();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { plan } = useSelector((state: any) => state.userConfig);
+  const dataSource: LanguagesDataType[] = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
   const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>(
     [],
   );
@@ -421,7 +433,7 @@ const Index = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [previewModalVisible, setPreviewModalVisible] =
     useState<boolean>(false);
-  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(mobile);
   const [dontPromptAgain, setDontPromptAgain] = useState(false);
   const [deleteConfirmModalVisible, setDeleteConfirmModalVisible] =
     useState(false);
@@ -434,21 +446,24 @@ const Index = () => {
   const [warnModalTitle, setWarnModalTitle] = useState<string>("");
   const [warnModalContent, setWarnModalContent] = useState<string>("");
   const [showWarnModal, setShowWarnModal] = useState(false);
-  const hasSelected = selectedRowKeys.length > 0;
+  const hasSelected = useMemo(
+    () => selectedRowKeys.length > 0,
+    [selectedRowKeys],
+  );
+  const someCurrentPageSelected = useMemo(
+    () => selectedRowKeys.some((key) => selectedRowKeys.includes(key)),
+    [selectedRowKeys],
+  );
+  const allCurrentPageSelected = useMemo(
+    () => dataSource.every((item: any) => selectedRowKeys.includes(item.key)),
+    [dataSource, selectedRowKeys],
+  );
 
-  const dispatch = useDispatch();
-  const { t } = useTranslation();
-  const navigate = useNavigate();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const addDataFetcher = useFetcher<any>();
   const publishFetcher = useFetcher<any>();
-
-  const { plan } = useSelector((state: any) => state.userConfig);
-  const dataSource: LanguagesDataType[] = useSelector(
-    (state: any) => state.languageTableData.rows,
-  );
 
   useEffect(() => {
     const formData = new FormData();
@@ -932,15 +947,105 @@ const Index = () => {
               </Space>
             )}
           </Flex>
-          <Table
-            virtual={isMobile}
-            scroll={isMobile ? { x: 900 } : {}}
-            rowSelection={rowSelection}
-            columns={columns}
-            dataSource={dataSource}
-            style={{ width: "100%" }}
-            loading={deleteloading || loading}
-          />
+          {isMobile ? (
+            <Card
+              title={
+                <Checkbox
+                  checked={allCurrentPageSelected && !loading}
+                  indeterminate={
+                    someCurrentPageSelected && !allCurrentPageSelected
+                  }
+                  onChange={(e: any) =>
+                    setSelectedRowKeys(
+                      e.target.checked
+                        ? dataSource.map((item) => item.key)
+                        : [],
+                    )
+                  }
+                >
+                  {t("Languages")}
+                </Checkbox>
+              }
+              loading={loading}
+            >
+              {dataSource.map((item: any) => (
+                <Card.Grid key={item.key} style={{ width: "100%" }}>
+                  <Space
+                    direction="vertical"
+                    size="middle"
+                    style={{ width: "100%" }}
+                  >
+                    <Checkbox
+                      checked={selectedRowKeys.includes(item.key)}
+                      onChange={(e: any) => {
+                        setSelectedRowKeys(
+                          e.target.checked
+                            ? [...selectedRowKeys, item.key]
+                            : selectedRowKeys.filter((key) => key !== item.key),
+                        );
+                      }}
+                    >
+                      {item.language}
+                    </Checkbox>
+                    <TranslatedIcon status={item.status} />
+                    <Flex justify="space-between">
+                      <Text>{t("Publish")}</Text>
+                      <Switch
+                        checked={item.published}
+                        onChange={(checked) =>
+                          handlePublishChange(item.locale, checked)
+                        }
+                      />
+                    </Flex>
+                    <Flex justify="space-between">
+                      <Text>{t("Auto translate")}</Text>
+                      <Switch
+                        checked={item.autoTranslate}
+                        onChange={(checked) =>
+                          handleAutoUpdateTranslationChange(
+                            item.locale,
+                            checked,
+                            item.status,
+                          )
+                        }
+                      />
+                    </Flex>
+                    <Button
+                      type="primary"
+                      style={{ width: "100%" }}
+                      onClick={() => {
+                        navigate("/app/translate", {
+                          state: {
+                            from: "/app/language",
+                            selectedLanguageCode: item.locale,
+                          },
+                        });
+                      }}
+                    >
+                      {t("Translate")}
+                    </Button>
+                    <Button
+                      style={{ width: "100%" }}
+                      onClick={() => {
+                        navigate("/app/manage_translation", {
+                          state: { key: item.locale },
+                        });
+                      }}
+                    >
+                      {t("Manage")}
+                    </Button>
+                  </Space>
+                </Card.Grid>
+              ))}
+            </Card>
+          ) : (
+            <Table
+              rowSelection={rowSelection}
+              columns={columns}
+              dataSource={dataSource}
+              loading={deleteloading || loading}
+            />
+          )}
         </div>
       </Space>
       <AddLanguageModal

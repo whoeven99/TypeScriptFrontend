@@ -33,7 +33,7 @@ const languageTableDataSlice = createSlice({
             key: state.rows.slice(-1)[0]?.key + 1 || 0,
           };
           // 将包含 key 的 newData 添加到 rows
-          state.rows.push(dataWithKey);
+          state.rows.unshift(dataWithKey);
         }
       });
     },
