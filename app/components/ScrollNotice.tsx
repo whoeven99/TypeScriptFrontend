@@ -26,7 +26,6 @@ const ScrollNotice: React.FC<ScrollNoticeProps> = ({
     <div
       ref={containerRef}
       style={{
-        height: `${height}px`,
         lineHeight: `${height}px`,
         position: "relative",
         backgroundColor,
@@ -35,7 +34,7 @@ const ScrollNotice: React.FC<ScrollNoticeProps> = ({
         borderRadius: "5px",
         justifyContent: "center",
         alignItems: "center",
-        marginBottom: "1px",
+        marginBottom: "20px",
         WebkitBoxOrient: "vertical",
       }}
       className={className}
