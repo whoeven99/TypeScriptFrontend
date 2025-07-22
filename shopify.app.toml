@@ -2,25 +2,9 @@
 
 client_id = "4b05c1caefa9e0761a0538b64159b627"
 name = "Ciwi.ai:FAT(Local)"
-handle = "ciwi_local"
-application_url = "https://562c9d663507.ngrok.app"
+handle = "ciwi-local"
+application_url = "https://eb75374781ed.ngrok.app"
 embedded = true
-
-[build]
-automatically_update_urls_on_dev = true
-dev_store_url = "ciwishop.myshopify.com"
-include_config_on_deploy = true
-
-[access_scopes]
-# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_content,read_legal_policies,read_markets,read_metaobjects,read_online_store_navigation,read_themes,read_translations,write_locales,write_markets,write_metaobjects,write_products,write_translations"
-
-[auth]
-redirect_urls = [
-  "https://562c9d663507.ngrok.app/auth/callback",
-  "https://562c9d663507.ngrok.app/auth/shopify/callback",
-  "https://562c9d663507.ngrok.app/api/auth/callback"
-]
 
 [webhooks]
 api_version = "2025-04"
@@ -34,5 +18,15 @@ api_version = "2025-04"
   uri = "/webhooks"
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_content,read_legal_policies,read_markets,read_metaobjects,read_online_store_navigation,read_themes,read_translations,write_locales,write_markets,write_metaobjects,write_products,write_translations"
+
+[auth]
+redirect_urls = ["https://eb75374781ed.ngrok.app/auth/callback", "https://eb75374781ed.ngrok.app/auth/shopify/callback", "https://eb75374781ed.ngrok.app/api/auth/callback"]
+
 [pos]
 embedded = false
+
+[build]
+automatically_update_urls_on_dev = true
