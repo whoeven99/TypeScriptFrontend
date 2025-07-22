@@ -230,6 +230,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       products,
     });
   } catch (error: any) {
+    console.error("Error load product:", error);
+    console.error("Error load product:", error?.body?.errors);
+    console.error("Error load product:", error?.body?.errors?.graphQLErrors);
     console.error("Error load product:", error?.errors);
     console.error("Error load product:", error?.errors?.graphQLErrors);
   }
