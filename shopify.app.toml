@@ -2,7 +2,7 @@
 
 client_id = "dec512b68e658e4f21588e3d4de0e748"
 name = "Ciwi.ai:FAT(Test)"
-handle = "ciwi_test"
+handle = "ciwi-test"
 application_url = "https://typescriptfrontend.onrender.com"
 embedded = true
 
@@ -15,9 +15,9 @@ scopes = "read_content,read_legal_policies,read_metaobjects,read_online_store_na
 
 [auth]
 redirect_urls = [
-  "https://typescriptfrontendprod.onrender.com/auth/callback",
-  "https://typescriptfrontendprod.onrender.com/auth/shopify/callback",
-  "https://typescriptfrontendprod.onrender.com/api/auth/callback"
+  "https://typescriptfrontend.onrender.com/auth/callback",
+  "https://typescriptfrontend.onrender.com/auth/shopify/callback",
+  "https://typescriptfrontend.onrender.com/api/auth/callback"
 ]
 
 [webhooks]
@@ -34,6 +34,3 @@ api_version = "2025-04"
 
 [pos]
 embedded = false
-
-[build]
-automatically_update_urls_on_dev = true
