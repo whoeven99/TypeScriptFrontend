@@ -12,6 +12,7 @@ import { Provider } from "react-redux";
 import store from "./store";
 import { useEffect } from "react";
 import { createHead } from "remix-island";
+
 import "./styles.css";
 
 export function ErrorBoundary() {
@@ -35,7 +36,7 @@ export function ErrorBoundary() {
       title: "Unauthorized",
       message:
         "Authentication is required and has failed or has not been provided.",
-      solution: `Please click the ${"Translate Language AI Adapt"} option in the app navigation bar again`,
+      solution: `Please  click the ${"Translate Language AI Adapt"} option in the app navigation bar again`,
     },
     "403": {
       title: "Forbidden",
