@@ -836,7 +836,6 @@ window.onload = async function () {
   const rtlLanguages = ['العربية', 'فارسی', 'اُردُو', '	עברית','ܣܘܪܝܝܐ','پښتو','دری','کوردی','ئۇيغۇرچە'];
   const isRtlLanguage = rtlLanguages.includes(currentSelectedLanguage);
   const data = await fetchSwitcherConfig(shop.value);
-
   if (productId) {
     const productIdValue = productId.value;
     const productImageData = await GetProductImageData({
@@ -844,8 +843,6 @@ window.onload = async function () {
       productId: productIdValue,
       languageCode: language,
     });
-
-    console.log("productImageData: ", productImageData);
     
     if (productImageData.response.length > 0) {
       const imageDomList = document.querySelectorAll("img");
@@ -1091,7 +1088,6 @@ window.onload = async function () {
       }
     }
   }
-
   if (switcher) {
     const selectorBox = document.getElementById("selector-box");
     const confirmButton = document.querySelector(
@@ -1131,6 +1127,10 @@ window.onload = async function () {
       translateFloatBtnIcon.style.bottom = "20px";
       translateFloatBtnIcon.style.left = "10px";
       selectorBox.style.left = "0";
+      if (isRtlLanguage) {
+        translateFloatBtn.style.top = "-80px";
+         selectorBox.style.top = translateFloatBtn.style.top;
+      }
     }
     if (data.selectorPosition === "bottom_left") {
       switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
@@ -1141,6 +1141,10 @@ window.onload = async function () {
       translateFloatBtnIcon.style.bottom = "20px";
       translateFloatBtnIcon.style.left = "10px";
       selectorBox.style.left = "0";
+      if (isRtlLanguage) {
+        translateFloatBtn.style.top = "-166px";
+        selectorBox.style.top = translateFloatBtn.style.top;
+      }
     }
     if (data.selectorPosition === "top_right") {
       switcher.style.top = data?.positionData.toString() + "%" || "10%";
