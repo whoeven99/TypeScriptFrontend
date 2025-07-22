@@ -760,8 +760,18 @@ class CiwiswitcherForm extends HTMLElement {
     const form = this.querySelector("form");
     localStorage.setItem("selectedLanguage", this.elements.languageInput.value);
     localStorage.setItem("selectedCurrency", this.elements.currencyInput.value);
+    var currentSelectedLanguage = document.querySelector('.selected-option[data-type="language"] .selected-text').textContent;
     // 提交表单
-    if (form) form.submit();
+    if (form) {
+      // 判断语言的iso_code，动态点击确定按钮的时候，修改dir的属性  
+      // 根据语言选择更新页面方向
+      if (['Arabic', 'Persian', 'Urdu', 'Hebrew'].includes(currentSelectedLanguage)) {
+        document.documentElement.setAttribute('dir', 'rtl');
+      } else {
+        document.documentElement.setAttribute('dir', 'ltr');
+      }
+      form.submit()
+    };
   }
 
   toggleSelector(event) {

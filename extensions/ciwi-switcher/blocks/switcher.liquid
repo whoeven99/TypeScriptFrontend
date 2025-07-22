@@ -1,5 +1,7 @@
+{% assign language_iso = localization.language.iso_code %}
 <link rel="stylesheet" href="{{ 'switcher.css' | asset_url }}">
 
+<div  dir="{% if language_iso == 'ar' or language_iso == 'fa' or language_iso == 'ur' or language_iso == 'he' %}rtl{% else %}ltr{% endif %}">
 <ciwiswitcher-form>
   {% form 'localization' %}
     <div
@@ -211,6 +213,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" async></script>
 <script src="{{ 'switcher.js' | asset_url }}" async></script>
+
+</div>
+
 
 {% schema %}
 {
