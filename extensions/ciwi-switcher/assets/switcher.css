@@ -53,6 +53,43 @@
   font: weight 600px;
 }
 
+/* 插件样式 */
+/* .translate-float-btn {
+  display: none;
+  width: 30px;
+  height: 140px;
+  position: absolute;
+  z-index: 1;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  transition: opacity 0.3s, transform 0.3s;
+  cursor: pointer;
+}
+
+.translate-float-btn-text {
+  display: none;
+  padding: 0 20px;
+  font-size: 14px;
+  line-height: 30px;
+  height: 30px;
+  font-weight: 700;
+  overflow: hidden;
+  transform: rotate(90deg);
+  transform-origin: right top;
+  position: absolute;
+  white-space: nowrap;
+  max-width: 400px;
+  user-select: none;
+}
+
+.translate-float-btn-icon {
+  border-radius: 3px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  position: relative;
+} */
+
 /* 确认按钮 */
 .ciwi_switcher_confirm_button {
   height: 40px;
