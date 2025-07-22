@@ -760,16 +760,12 @@ class CiwiswitcherForm extends HTMLElement {
     const form = this.querySelector("form");
     localStorage.setItem("selectedLanguage", this.elements.languageInput.value);
     localStorage.setItem("selectedCurrency", this.elements.currencyInput.value);
-    var currentSelectedLanguage = document.querySelector('.selected-option[data-type="language"] .selected-text').textContent;
+    
     // 提交表单
     if (form) {
       // 判断语言的iso_code，动态点击确定按钮的时候，修改dir的属性  
       // 根据语言选择更新页面方向
-      if (['Arabic', 'Persian', 'Urdu', 'Hebrew'].includes(currentSelectedLanguage)) {
-        document.documentElement.setAttribute('dir', 'rtl');
-      } else {
-        document.documentElement.setAttribute('dir', 'ltr');
-      }
+      
       form.submit()
     };
   }
@@ -823,7 +819,6 @@ class CiwiswitcherForm extends HTMLElement {
 
 // Define the custom element
 customElements.define("ciwiswitcher-form", CiwiswitcherForm);
-
 // Page load handling
 window.onload = async function () {
   const switcher = document.getElementById("ciwi-container");
@@ -832,7 +827,14 @@ window.onload = async function () {
   const languageInput = document.querySelector('input[name="language_code"]');
   const language = languageInput.value;
   const productId = document.querySelector('input[name="product_id"]');
-
+  const selectedLanguageText = document.querySelector('#translate-float-btn-text');
+  const translateFloatBtnIcon = document.querySelector("#translate-float-btn-icon");
+  const selectionBox = document.getElementById("selector-box");
+  const selectedTextElement = document.querySelector('.selected-option[data-type="language"] .selected-text');
+  const currentSelectedLanguage = selectedTextElement.textContent.trim();
+  // 记录当前语言是否为RTL语言
+  const rtlLanguages = ['العربية', 'فارسی', 'اُردُو', '	עברית','ܣܘܪܝܝܐ','پښتو','دری','کوردی','ئۇيغۇرچە'];
+  const isRtlLanguage = rtlLanguages.includes(currentSelectedLanguage);
   const data = await fetchSwitcherConfig(shop.value);
 
   if (productId) {
@@ -1043,6 +1045,17 @@ window.onload = async function () {
       });
     }
   }
+// 修改RTL和LTR的组件布局
+  if (selectedLanguageText && selectedTextElement) {
+    if (isRtlLanguage) {
+        selectedLanguageText.style.transform = 'rotate(90deg)';
+        selectedLanguageText.style.right = '0';
+        translateFloatBtnIcon.style.right = '10px';
+        selectionBox.style.right = '0';
+    }
+  }
+
+
 
   if (
     data.currencySelector ||
@@ -1157,6 +1170,14 @@ window.onload = async function () {
       switcher.style.width = "100px";
       translateFloatBtnText.style.backgroundColor = data.backgroundColor;
       translateFloatBtnText.style.display = "block";
+    }
+    if (data.selectorPosition === "top_left" || data.selectorPosition === "bottom_left") {
+      if (isRtlLanguage) {
+        selectedLanguageText.style.transform = 'rotate(-90deg)';
+        selectedLanguageText.style.right = '30px';
+        translateFloatBtnIcon.style.right = '10px';
+        translateFloatBtnIcon.style.bottom = '-90px';
+      }
     }
   }
 };
