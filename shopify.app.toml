@@ -2,7 +2,7 @@
 
 client_id = "dec512b68e658e4f21588e3d4de0e748"
 name = "Ciwi.ai:FAT(Test)"
-handle = "ciwi_test"
+handle = "ciwi-test"
 application_url = "https://typescriptfrontend.onrender.com"
 embedded = true
 
