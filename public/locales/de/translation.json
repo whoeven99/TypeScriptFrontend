@@ -428,6 +428,7 @@
   "Select at least one language pack": "Bitte wählen Sie mindestens ein Sprachpaket",
   "Select at least one translation item": "Bitte wählen Sie mindestens einen Übersetzungseintrag",
   "Translated successfully": "Übersetzt erfolgreich",
+  "You clicked too frequently. Please try again later.": "Sie haben zu häufig geklickt. Bitte versuchen Sie es später erneut.",
   "Some items saved failed": "Einige Elemente wurden nicht gespeichert",
   "OptionValue": "Optionenwert",
   "Sidebar Widget": "Seitenleisten-Widget",
