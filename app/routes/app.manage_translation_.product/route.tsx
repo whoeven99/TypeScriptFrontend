@@ -697,18 +697,21 @@ const Index = () => {
         item.optionValues.map((opt: any) => opt.id),
       );
     if (variants && Array.isArray(variants)) {
-      variantFetcher.submit(
-        {
-          variants: JSON.stringify({
-            data: variants,
-            searchTerm: searchTerm,
-          }),
-        },
-        {
-          method: "post",
-          action: "/app/manage_translation/product",
-        },
-      );
+      const timer = setTimeout(() => {
+        variantFetcher.submit(
+          {
+            variants: JSON.stringify({
+              data: variants,
+              searchTerm: searchTerm,
+            }),
+          },
+          {
+            method: "post",
+            action: "/app/manage_translation/product",
+          },
+        );
+      }, 2000);
+      return () => clearTimeout(timer);
     } else {
       setVariantsLoading(false);
     }
@@ -1666,7 +1669,7 @@ const Index = () => {
     return throttle((key: string) => {
       setSelectProductKey(key);
     }, 300);
-  }, [productsData, searchTerm]);
+  }, []);
 
   const clickNextTimestampsRef = useRef<number[]>([]); // 用于存储点击时间戳
   const clickBackTimestampsRef = useRef<number[]>([]); // 用于存储点击时间戳
