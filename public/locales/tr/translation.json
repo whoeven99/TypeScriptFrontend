@@ -416,6 +416,7 @@
     "Select at least one language pack": "En az bir dil paketini seçin",
     "Select at least one translation item": "En az bir çeviri öğesini seçin",
     "Translated successfully": "Çeviri başarıyla tamamlandı",
+    "You clicked too frequently. Please try again later.": "Çok sık tıkladınız. Lütfen daha sonra tekrar deneyin.",
     "Some items saved failed": "Bazı öğeler kaydedilmedi",
     "OptionValue": "Seçenek değeri",
     "Sidebar Widget": "Sidofält",
