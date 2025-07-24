@@ -1607,14 +1607,7 @@ const Index = () => {
   //   localStorage.setItem("translateLanguagePack", languagePack);
   // }
 
-  const handleMenuChange = (key: string) => {
-    if (confirmData.length > 0) {
-      shopify.saveBar.leaveConfirmation();
-    } else {
-      shopify.saveBar.hide("save-bar");
-      setSelectProductKey(key);
-    }
-  };
+  
   // 防抖函数
   const debounce = (func: Function, delay: number) => {
     let timer: NodeJS.Timeout;
@@ -1671,8 +1664,23 @@ const Index = () => {
     }, 500);
   }, [productsData.data.translatableResources.pageInfo.endCursor, searchTerm]); // ✅ 必须写依赖
 
+  const throttleMenuChange = useMemo(() => {
+    return throttle((key: string) => {
+      setSelectProductKey(key);
+    }, 300);
+  }, [productsData, searchTerm]);
+
   const clickNextTimestampsRef = useRef<number[]>([]); // 用于存储点击时间戳
   const clickBackTimestampsRef = useRef<number[]>([]); // 用于存储点击时间戳
+
+  const handleMenuChange = (key: string) => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      shopify.saveBar.hide("save-bar");
+      throttleMenuChange(key);
+    }
+  };
 
   const onPrevious = () => {
     if (confirmData.length > 0) {
