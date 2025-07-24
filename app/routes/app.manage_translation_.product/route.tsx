@@ -10,8 +10,9 @@ import {
   Table,
   theme,
   Typography,
+  message
 } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import {
   useActionData,
   useFetcher,
@@ -32,7 +33,7 @@ import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
+import { Modal, SaveBar, TitleBar,useAppBridge  } from "@shopify/app-bridge-react";
 import { MenuItem } from "../app.manage_translation/components/itemsScroll";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setUserConfig } from "~/store/modules/userConfig";
@@ -462,6 +463,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         accessToken: accessToken as string,
         confirmData,
       });
+
       return json({ data: data, confirmData: originalConfirmData });
     default:
       // 你可以在这里处理一个默认的情况，如果没有符合的条件
@@ -479,6 +481,7 @@ const Index = () => {
 
   const { searchTerm, products, server, shopName } =
     useLoaderData<typeof loader>();
+
   const actionData = useActionData<typeof action>();
 
   const isManualChangeRef = useRef(true);
@@ -632,6 +635,7 @@ const Index = () => {
     };
     handleResize();
     window.addEventListener("resize", handleResize);
+
     if (products) {
       setMenuData(exMenuData(products));
       setIsLoading(false);
@@ -679,7 +683,6 @@ const Index = () => {
     const data = transBeforeData({
       products: productsData,
     });
-    console.log(data);
     setProductData(data);
     setLoadingItems([]);
     setConfirmData([]);
@@ -1610,33 +1613,30 @@ const Index = () => {
       setSelectProductKey(key);
     }
   };
-
-  const onPrevious = () => {
-    if (confirmData.length > 0) {
-      shopify.saveBar.leaveConfirmation();
-    } else {
-      shopify.saveBar.hide("save-bar");
-      submit(
-        {
-          startCursor: JSON.stringify({
-            cursor:
-              productsData.data.translatableResources.pageInfo.startCursor,
-            searchTerm: searchTerm,
-          }),
-        },
-        {
-          method: "post",
-          action: `/app/manage_translation/product?language=${searchTerm}`,
-        },
-      ); // 提交表单请求
-    }
-  };
-
-  const onNext = () => {
-    if (confirmData.length > 0) {
-      shopify.saveBar.leaveConfirmation();
-    } else {
-      shopify.saveBar.hide("save-bar");
+  // 防抖函数
+  const debounce = (func: Function, delay: number) => {
+    let timer: NodeJS.Timeout;
+    return (...args: any[]) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        func(...args);
+      }, delay);
+    };
+  }
+  // 节流函数
+  const throttle = (func: Function, delay: number) => {
+    let lastTime = 0;
+    return (...args: any[]) => {
+      const now = Date.now();
+      if (now - lastTime >= delay) {
+        func(...args);
+        lastTime = now;
+      }
+    };
+  }
+  // 下一页请求函数
+  const throttleNextSubmit = useMemo(() => {
+    return throttle(async () => {
       submit(
         {
           endCursor: JSON.stringify({
@@ -1649,6 +1649,60 @@ const Index = () => {
           action: `/app/manage_translation/product?language=${searchTerm}`,
         },
       ); // 提交表单请求
+    }, 500)
+  }, [productData, searchTerm])
+  // 上一页请求函数
+  const throttleBackSubmit = useMemo(() => {
+    return throttle(() => {
+      submit(
+        {
+          startCursor: JSON.stringify({
+            cursor: productsData.data.translatableResources.pageInfo.startCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/product?language=${searchTerm}`,
+        }
+      );
+    }, 500);
+  }, [productsData.data.translatableResources.pageInfo.endCursor, searchTerm]); // ✅ 必须写依赖
+
+  const clickNextTimestampsRef = useRef<number[]>([]); // 用于存储点击时间戳
+  const clickBackTimestampsRef = useRef<number[]>([]); // 用于存储点击时间戳
+
+  const onPrevious = () => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      shopify.saveBar.hide("save-bar");
+      const now = Date.now();
+      clickBackTimestampsRef.current.push(now);
+      const recent = clickBackTimestampsRef.current.filter((ts) => now - ts < 2000);
+      clickBackTimestampsRef.current = recent;
+      if (recent.length >= 5) {
+        shopify.toast.show(t("You clicked too frequently. Please try again later."));
+        return;  
+      }
+      throttleBackSubmit();
+    }
+  };
+
+  const onNext = () => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      shopify.saveBar.hide("save-bar");
+      const now = Date.now();
+      clickNextTimestampsRef.current.push(now);
+      const recent = clickNextTimestampsRef.current.filter((ts) => now - ts < 2000);
+      clickNextTimestampsRef.current = recent; 
+      if (recent.length >= 5) {
+        shopify.toast.show(t("You clicked too frequently. Please try again later."));
+        return;
+      }
+      throttleNextSubmit();
     }
   };
 

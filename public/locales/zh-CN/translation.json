@@ -419,6 +419,7 @@
   "Select at least one language pack": "选择至少一个语言包",
   "Select at least one translation item": "选择至少一个翻译项",
   "Translated successfully": "翻译成功",
+  "You clicked too frequently. Please try again later.": "您点击过于频繁，请稍后再试",
   "Some items saved failed": "一些项目保存失败",
   "OptionValue": "选项值",
   "Sidebar Widget": "侧边栏小部件",

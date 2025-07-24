@@ -73,6 +73,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ data: shopLanguages });
       } catch (error) {
         console.error("Error manage_translation language:", error);
+        
       }
     case !!itemsCount:
       try {

@@ -415,6 +415,7 @@
     "Select at least one language pack": "少なくとも1つの言語パックを選択してください",
     "Select at least one translation item": "少なくとも1つの翻訳項目を選択してください",
     "Translated successfully": "翻訳が成功しました",
+    "You clicked too frequently. Please try again later.": "クリックが頻繁すぎます。後でもう一度試してください。",
     "Some items saved failed": "一部の項目が保存に失敗しました",
     "OptionValue": "オプション値",
     "Sidebar Widget": "サイドバーのウィジェット",

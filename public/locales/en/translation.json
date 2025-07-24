@@ -427,6 +427,7 @@
   "Select at least one language pack": "Select at least one language pack",
   "Select at least one translation item": "Select at least one translation item",
   "Translated successfully": "Translated successfully",
+  "You clicked too frequently. Please try again later.":"You clicked too frequently. Please try again later.",
   "Some items saved failed": "Some items saved failed",
   "OptionValue": "OptionValue",
   "Sidebar Widget": "Sidebar Widget",
