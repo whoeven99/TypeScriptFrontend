@@ -32,9 +32,5 @@ api_version = "2025-04"
   uri = "/webhooks"
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 
-[access_scopes]
-# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_content,read_legal_policies,read_markets,read_metaobjects,read_online_store_navigation,read_themes,read_translations,write_locales,write_markets,write_metaobjects,write_products,write_translations"
-
 [build]
 automatically_update_urls_on_dev = true
