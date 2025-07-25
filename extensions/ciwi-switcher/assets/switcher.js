@@ -144,8 +144,6 @@ async function fetchLanguageLocaleInfo(locale) {
 }
 
 async function initializeCurrency(data, shop,ciwiBlock) {
-  // console.log('ciwiBlock:', ciwiBlock);
-  
   let value = localStorage.getItem("selectedCurrency");
   let moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat");
   const selectedCurrency = data.find(
@@ -273,7 +271,7 @@ async function initializeCurrency(data, shop,ciwiBlock) {
 }
 
 // Function to update the display text
-function updateDisplayText(lang, cur) {
+function updateDisplayText(lang, cur,ciwiBlock) {
   let selectedLanguageText = "";
   let selectedCurrencyText = "";
   // 获取货币选择器中当前选中的值
@@ -566,7 +564,7 @@ function updateLocalization({ country, language }) {
       <input name="language_code" value="${language}">
     </form>
   `;
-  ciwiBlock.body.insertAdjacentHTML("beforeend", formHtml);
+  ciwiBlock.insertAdjacentHTML("beforeend", formHtml);
   ciwiBlock.querySelector('#'+formId).submit();
 }
 
@@ -1188,7 +1186,7 @@ window.onload = async function () {
     }
     if (data.languageSelector || data.currencySelector) {
       mainBox.style.backgroundColor = data.backgroundColor;
-      updateDisplayText(data.languageSelector, data.currencySelector);
+      updateDisplayText(data.languageSelector, data.currencySelector,ciwiBlock);
       mainBox.style.display = "flex";
     } else {
       switcher.style.width = "100px";
