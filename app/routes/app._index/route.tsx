@@ -159,7 +159,7 @@ const Index = () => {
       devStatus: t("In development"),
     },
   ];
-
+  
   return (
     <Page>
       <TitleBar title={t("Dashboard")} />
