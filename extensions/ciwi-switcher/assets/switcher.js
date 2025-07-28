@@ -579,7 +579,7 @@ class CiwiswitcherForm extends HTMLElement {
   connectedCallback() {
     this.elements = {
       ciwiBlock: document.querySelector(
-        '[data-block-handle="ciwi_I18n_Switcher"]',
+        '[id="shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220"]',
       ),
       ciwiContainer: this.querySelector("#ciwi-container"),
       selectorBox: this.querySelector("#selector-box"),
