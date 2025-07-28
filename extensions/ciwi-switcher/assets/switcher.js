@@ -836,7 +836,7 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
   const ciwiBlock = document.querySelector(
-    '[data-block-handle="ciwi_I18n_Switcher"]',
+    '[id="shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220"]',
   );
   if (!ciwiBlock) {
     return;
