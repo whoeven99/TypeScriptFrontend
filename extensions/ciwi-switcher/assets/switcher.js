@@ -581,7 +581,7 @@ class CiwiswitcherForm extends HTMLElement {
   }
   connectedCallback() {
     this.elements = {
-      ciwiBlock : document.querySelector('#shopify-block-AcE1VYlo0ejV0ZmhMU__13075167056008007436'),
+      ciwiBlock : document.querySelector('#shopify-block-AdHQwSXVWVGU1WDgzN__10786389038645483885'),
       ciwiContainer: this.querySelector("#ciwi-container"),
       selectorBox: this.querySelector("#selector-box"),
       languageInput: this.querySelector('input[name="language_code"]'),
@@ -836,7 +836,7 @@ class CiwiswitcherForm extends HTMLElement {
 customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
-  const ciwiBlock = document.querySelector('#shopify-block-AcE1VYlo0ejV0ZmhMU__13075167056008007436');
+  const ciwiBlock = document.querySelector('#shopify-block-AdHQwSXVWVGU1WDgzN__10786389038645483885');
   if (!ciwiBlock) {
     return;
   }
