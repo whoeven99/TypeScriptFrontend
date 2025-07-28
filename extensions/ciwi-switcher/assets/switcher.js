@@ -144,8 +144,6 @@ async function fetchLanguageLocaleInfo(locale) {
 }
 
 async function initializeCurrency(data, shop,ciwiBlock) {
-  console.log('initializeCurrency-aaaa');
-  console.log("ciwiBlock:", ciwiBlock);
   
   let value = localStorage.getItem("selectedCurrency");
   let moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat");
@@ -170,8 +168,6 @@ async function initializeCurrency(data, shop,ciwiBlock) {
   if (match) {
     moneyFormat = match[1];
   }
-  console.log(isValueInCurrencies,"selectedCurrency:", selectedCurrency);
-  console.log("isValueInCurrencies",isValueInCurrencies);
   
   if (isValueInCurrencies) {
     customSelector.style.display = "block";
@@ -185,9 +181,6 @@ async function initializeCurrency(data, shop,ciwiBlock) {
 
     // 更新价格显示
     const prices = document.querySelectorAll(".ciwi-money");
-    console.log("prices:",prices);
-    console.log(prices.length);
-    console.log('lalal');
     
     prices.forEach((price) => {
       const priceText = price.innerText;
@@ -788,14 +781,14 @@ class CiwiswitcherForm extends HTMLElement {
 
   toggleSelector(event) {
     event.preventDefault();
-    console.log("点击block");
+    console.log('点击block');
     const ciwiBlock = this.elements.ciwiBlock;
     if (!ciwiBlock) {
       console.error("ciwiBlock not found");
       return;
     }
-    console.log("toggleSelector:", ciwiBlock);
-
+    console.log('toggleSelector:', ciwiBlock);
+    
     const box = this.elements.ciwiBlock.querySelector("#selector-box");
     const isVisible = box.style.display !== "none";
     box.style.display = isVisible ? "none" : "block";
@@ -854,8 +847,6 @@ window.onload = async function () {
 
   const switcher = ciwiBlock.querySelector("#ciwi-container");
   const shop = ciwiBlock.querySelector("#queryCiwiId");
-  console.log("shop:", shop.value);
-  console.log('bb');
   
   const mainBox = ciwiBlock.querySelector("#main-box");
   const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
@@ -886,9 +877,10 @@ window.onload = async function () {
   ];
   const isRtlLanguage = rtlLanguages.includes(currentSelectedLanguage);
   const data = await fetchSwitcherConfig(shop.value);
-  console.log('11页面加载中...');
-  console.log(data,"data:", data);
   
+  console.log('加载中...');
+  
+
   if (productId) {
     const productIdValue = productId.value;
     const productImageData = await GetProductImageData({
@@ -951,7 +943,6 @@ window.onload = async function () {
       const languageCodes = Array.from(
         ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
       ).map((option) => option.dataset.value);
-      console.log("languageCodes:", languageCodes);
       
       const languageLocaleData = await fetchLanguageLocaleInfo(languageCodes);
       const languageOptions = ciwiBlock.querySelectorAll(
@@ -1067,7 +1058,6 @@ window.onload = async function () {
         return;
       }
       const IpData = await fetchUserCountryInfo(iptokenValue);
-      console.log("IP Data:", IpData  );
       
       if (IpData?.currency?.code) {
         localStorage.setItem("selectedCurrency", IpData.currency.code);
@@ -1140,7 +1130,6 @@ window.onload = async function () {
     currencySelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
     // 在页面加载时执行初始化
     const currencyData = await fetchCurrencies(shop.value);
-    console.log("currencyData:", currencyData);
     
     if (currencyData) {
       await initializeCurrency(currencyData, shop, ciwiBlock);

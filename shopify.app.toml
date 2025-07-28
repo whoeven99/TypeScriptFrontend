@@ -34,3 +34,8 @@ api_version = "2025-04"
 
 [pos]
 embedded = false
+
+[build]
+automatically_update_urls_on_dev = true
+include_config_on_deploy = true
+dev_store_url = "quickstart-0f992326.myshopify.com"
