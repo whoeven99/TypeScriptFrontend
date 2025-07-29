@@ -67,7 +67,7 @@ const Index = () => {
   const [switcherLoading, setSwitcherLoading] = useState(true);
   const blockUrl = useMemo(
     () =>
-      `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/switcher`,
+      `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/ciwi_I18n_Switcher`,
     [shop, ciwiSwitcherBlocksId],
   );
 
