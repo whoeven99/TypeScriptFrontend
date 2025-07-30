@@ -410,25 +410,42 @@ export default function App() {
   const languageFetcher = useFetcher<any>();
 
   useEffect(() => {
-    loadingFetcher.submit({ loading: JSON.stringify(true) }, {
-      method: "post",
-      action: "/app",
-    });
-    languageFetcher.submit({ languageInit: JSON.stringify(true) }, {
-      method: "post",
-      action: "/app",
-    });
-    planFetcher.submit({ plan: JSON.stringify(true) }, {
-      method: "post",
-      action: "/app",
-    });
+    loadingFetcher.submit(
+      { loading: JSON.stringify(true) },
+      {
+        method: "post",
+        action: "/app",
+      },
+    );
+    languageFetcher.submit(
+      { languageInit: JSON.stringify(true) },
+      {
+        method: "post",
+        action: "/app",
+      },
+    );
+    planFetcher.submit(
+      { plan: JSON.stringify(true) },
+      {
+        method: "post",
+        action: "/app",
+      },
+    );
     setIsClient(true);
   }, []);
 
   useEffect(() => {
     if (planFetcher.data && (!plan || !updateTime)) {
-      dispatch(setUserConfig({ plan: planFetcher.data?.plan?.userSubscriptionPlan || "" }));
-      dispatch(setUserConfig({ updateTime: planFetcher.data?.plan?.updateTime || "" }));
+      dispatch(
+        setUserConfig({
+          plan: planFetcher.data?.plan?.userSubscriptionPlan || "",
+        }),
+      );
+      dispatch(
+        setUserConfig({
+          updateTime: planFetcher.data?.plan?.currentPeriodEnd || "",
+        }),
+      );
     }
   }, [planFetcher.data]);
 
