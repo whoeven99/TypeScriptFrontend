@@ -1,6 +1,14 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { Link } from "@shopify/polaris";
-import { Card, Space, Button, Typography, Skeleton, ConfigProvider, Divider } from "antd";
+import {
+  Card,
+  Space,
+  Button,
+  Typography,
+  Skeleton,
+  ConfigProvider,
+  Divider,
+} from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -62,11 +70,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
       loading={loading}
     >
       <Title level={5}>{t("Step 1: Set up Currency Format")}</Title>
-      <Space
-        direction="vertical"
-        size="small"
-        style={{ display: "flex" }}
-      >
+      <Space direction="vertical" size="small" style={{ display: "flex" }}>
         <div
           style={{
             display: "flex",
@@ -74,7 +78,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             alignItems: "center",
           }}
         >
-          {step1Visible ?
+          {step1Visible ? (
             <Text
               strong
               style={{
@@ -86,7 +90,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             >
               {t("Uncompleted")}
             </Text>
-            :
+          ) : (
             <Text
               strong
               style={{
@@ -98,7 +102,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             >
               {t("Completed")}
             </Text>
-          }
+          )}
           <Link url={settingUrl} target="_blank">
             <Button type="primary" className="currency-action">
               {t("Setup")}
@@ -138,13 +142,12 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             // </Paragraph>
             <Paragraph
               copyable={{
-                text: `<span class="ciwi-money">${withMoneyValue}</span>`,
+                text: `<span class=ciwi-money>${withMoneyValue}</span>`,
               }}
             >
-              &lt;span class="ciwi-money"&gt;{withMoneyValue}
+              &lt;span class=ciwi-money&gt;{withMoneyValue}
               &lt;/span&gt;
             </Paragraph>
-
           ) : (
             <Skeleton active paragraph={{ rows: 0 }} />
           )}
@@ -155,10 +158,10 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
           {withoutMoneyValue ? (
             <Paragraph
               copyable={{
-                text: `<span class="ciwi-money">${withoutMoneyValue}</span>`,
+                text: `<span class=ciwi-money>${withoutMoneyValue}</span>`,
               }}
             >
-              &lt;span class="ciwi-money"&gt;{withoutMoneyValue}
+              &lt;span class=ciwi-money&gt;{withoutMoneyValue}
               &lt;/span&gt;
             </Paragraph>
           ) : (
@@ -168,13 +171,9 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
       </Space>
       <Divider />
       <Title level={5}>{t("Step 2: Enable switcher")}</Title>
-      <Space
-        direction="vertical"
-        size="small"
-        style={{ display: "flex" }}
-      >
+      <Space direction="vertical" size="small" style={{ display: "flex" }}>
         <div className="card-header">
-          {step2Visible ?
+          {step2Visible ? (
             <Text
               strong
               style={{
@@ -186,7 +185,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             >
               {t("Uncompleted")}
             </Text>
-            :
+          ) : (
             <Text
               strong
               style={{
@@ -198,7 +197,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             >
               {t("Completed")}
             </Text>
-          }
+          )}
         </div>
         <Text>
           {t("Please")}

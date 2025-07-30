@@ -135,6 +135,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           selectorPosition: "bottom_left",
           positionData: 10,
         };
+        console.log("initData", data);
+
         if (
           data.success &&
           typeof data.response === "object" &&
@@ -155,6 +157,20 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       } catch (error) {
         console.error("Error switcher loading:", error);
+        return {
+          shopName: shop,
+          includedFlag: true,
+          languageSelector: true,
+          currencySelector: true,
+          ipOpen: false,
+          fontColor: "#000000",
+          backgroundColor: "#ffffff",
+          buttonColor: "#ffffff",
+          buttonBackgroundColor: "#000000",
+          optionBorderColor: "#ccc",
+          selectorPosition: "bottom_left",
+          positionData: 10,
+        };
       }
     case !!shopInfo:
       try {
@@ -283,6 +299,7 @@ const Index = () => {
 
   useEffect(() => {
     if (fetcher.data) {
+      console.log("fetcher.data", fetcher.data);
       setOriginalData(fetcher.data);
       setIsIncludedFlag(fetcher.data.includedFlag);
       setLanguageSelector(fetcher.data.languageSelector);
@@ -670,7 +687,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleSave}
-          loading={editFetcher.state === "submitting" && ""}
+          loading={editFetcher.state === "submitting" ? "true" : undefined}
         ></button>
         <button onClick={handleCancel}></button>
       </SaveBar>
