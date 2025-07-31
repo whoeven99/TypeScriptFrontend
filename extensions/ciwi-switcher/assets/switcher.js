@@ -597,7 +597,7 @@ class CiwiswitcherForm extends HTMLElement {
   connectedCallback() {
     this.elements = {
       ciwiBlock: document.querySelector(
-        "#shopify-block-AcE1VYlo0ejV0ZmhMU__13075167056008007436",
+        "#shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220",
       ),
       ciwiContainer: this.querySelector("#ciwi-container"),
       selectorBox: this.querySelector("#selector-box"),
@@ -854,7 +854,7 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
   const ciwiBlock = document.querySelector(
-    "#shopify-block-AcE1VYlo0ejV0ZmhMU__13075167056008007436",
+    "#shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220",
   );
   if (!ciwiBlock) {
     console.log("ciwiBlock not found");
