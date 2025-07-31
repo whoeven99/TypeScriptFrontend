@@ -35,8 +35,4 @@ api_version = "2025-04"
   compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
 
 [pos]
-<<<<<<< HEAD
 embedded = false
-=======
-embedded = false
->>>>>>> 63c63940254360f75da4c52edba002a2653204f3
