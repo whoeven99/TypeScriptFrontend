@@ -148,10 +148,13 @@ async function initializeCurrency(data, shop, ciwiBlock) {
   let moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat");
 
   console.log("moneyFormat: ", moneyFormat);
-  
+
   const selectedCurrency = data.find(
     (currency) => currency?.currencyCode === value,
   );
+
+  console.log("data: ", data);
+  console.log("selectedCurrency: ", selectedCurrency);
 
   const isValueInCurrencies =
     selectedCurrency && !selectedCurrency.primaryStatus;
@@ -594,7 +597,7 @@ class CiwiswitcherForm extends HTMLElement {
   connectedCallback() {
     this.elements = {
       ciwiBlock: document.querySelector(
-        "#shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220",
+        "#shopify-block-AcE1VYlo0ejV0ZmhMU__13075167056008007436",
       ),
       ciwiContainer: this.querySelector("#ciwi-container"),
       selectorBox: this.querySelector("#selector-box"),
@@ -851,9 +854,10 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
   const ciwiBlock = document.querySelector(
-    "#shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220",
+    "#shopify-block-AcE1VYlo0ejV0ZmhMU__13075167056008007436",
   );
   if (!ciwiBlock) {
+    console.log("ciwiBlock not found");
     return;
   }
 
