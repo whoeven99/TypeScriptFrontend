@@ -8,6 +8,7 @@ import {
   Divider,
   Flex,
   Input,
+  Popover,
   Radio,
   RadioChangeEvent,
   Select,
@@ -735,9 +736,11 @@ const Index = () => {
                           }}
                         >
                           <Text>{item.label}</Text>
-                          {!isMobile && (
-                            <Text type="secondary">: {item.description}</Text>
-                          )}
+                          <Popover content={item.description}>
+                            {!isMobile && (
+                              <Text type="secondary">: {item.description}</Text>
+                            )}{" "}
+                          </Popover>
                         </div>
                         <Space
                           style={{

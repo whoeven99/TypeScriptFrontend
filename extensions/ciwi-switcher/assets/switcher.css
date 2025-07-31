@@ -238,7 +238,7 @@ a[href="https://translate.google.com"]
   height: 20px;
   object-fit: cover;
   border-radius: 2px;
-  border: 1px solid #ddd;
+  /* border: 1px solid #ddd; */
   min-width: 30px; /* 保持最小宽度 */
   opacity: 0; /* 初始状态完全透明 */
   transition: opacity 0.3s ease; /* 平滑过渡效果 */
@@ -248,6 +248,11 @@ a[href="https://translate.google.com"]
 .country-flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"])
 {
   opacity: 1;
+}
+
+/* 占位符图片完全隐藏 */
+.country-flag[src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"],.country-flag[src="undefined"] {
+  visibility: hidden; /* 直接隐藏占位符 */
 }
 
 .arrow-icon {

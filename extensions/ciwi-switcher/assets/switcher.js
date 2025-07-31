@@ -143,14 +143,19 @@ async function fetchLanguageLocaleInfo(locale) {
   }
 }
 
-async function initializeCurrency(data, shop,ciwiBlock) {
-  
+async function initializeCurrency(data, shop, ciwiBlock) {
   let value = localStorage.getItem("selectedCurrency");
-  let moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat");
+  let moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat").value;
+
+  console.log("moneyFormat: ", moneyFormat);
+
   const selectedCurrency = data.find(
     (currency) => currency?.currencyCode === value,
   );
-  
+
+  console.log("data: ", data);
+  console.log("selectedCurrency: ", selectedCurrency);
+
   const isValueInCurrencies =
     selectedCurrency && !selectedCurrency.primaryStatus;
 
@@ -162,13 +167,6 @@ async function initializeCurrency(data, shop,ciwiBlock) {
   const optionsList = customSelector?.querySelector(".options-list");
   const currencyInput = ciwiBlock.querySelector('input[name="currency_code"]');
 
-  const regex = /{{(.*?)}}/;
-  const match = moneyFormat.value.match(regex);
-
-  if (match) {
-    moneyFormat = match[1];
-  }
-  
   if (isValueInCurrencies) {
     customSelector.style.display = "block";
     let rate = selectedCurrency.exchangeRate;
@@ -181,7 +179,7 @@ async function initializeCurrency(data, shop,ciwiBlock) {
 
     // 更新价格显示
     const prices = document.querySelectorAll(".ciwi-money");
-    
+
     prices.forEach((price) => {
       const priceText = price.innerText;
       const transformedPrice = transform(
@@ -208,7 +206,7 @@ async function initializeCurrency(data, shop,ciwiBlock) {
         const optionItem = document.createElement("div");
         optionItem.className = `option-item ${currency.currencyCode === value ? "selected" : ""}`;
         optionItem.dataset.value = currency.currencyCode;
-        optionItem.dataset.type = "currency"; 
+        optionItem.dataset.type = "currency";
         optionItem.innerHTML = `
           <span class="option-text">${currency.currencyCode}</span> 
           <span class="currency-symbol">(${currency.symbol})</span>
@@ -321,18 +319,28 @@ function transform(
 ) {
   const formattedPrice = price.replace(/[^0-9,. ]/g, "").trim();
 
+  // console.log("formattedPrice: ", formattedPrice);
+
   if (!formattedPrice || exchangeRate == "Auto") {
     return price;
   }
 
   let number = convertToNumberFromMoneyFormat(moneyFormat, formattedPrice);
 
+  // console.log("1.number: ", number);
+
   // Remove commas or other unwanted characters
   number = (number * exchangeRate).toFixed(2);
 
+  // console.log("2.number: ", number);
+
   const transformedPrice = customRounding(number, rounding);
 
+  // console.log("3.transformedPrice: ", transformedPrice);
+
   number = detectNumberFormat(moneyFormat, transformedPrice, rounding);
+
+  // console.log("4.number: ", number);
 
   return `${symbol}${number} <span class="currency-code">${currencyCode}</span>`;
 }
@@ -340,39 +348,73 @@ function transform(
 function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
   let number = formattedPrice;
 
-  switch (moneyFormat) {
-    case "amount":
+  // console.log(moneyFormat);
+  // console.log(
+  //   "moneyFormat.includes('amount'): ",
+  //   moneyFormat.includes("amount"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_no_decimals'): ",
+  //   moneyFormat.includes("amount_no_decimals"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_with_comma_separator'): ",
+  //   moneyFormat.includes("amount_with_comma_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_no_decimals_with_comma_separator'): ",
+  //   moneyFormat.includes("amount_no_decimals_with_comma_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_with_apostrophe_separator'): ",
+  //   moneyFormat.includes("amount_with_apostrophe_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_no_decimals_with_space_separator'): ",
+  //   moneyFormat.includes("amount_no_decimals_with_space_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_with_space_separator'): ",
+  //   moneyFormat.includes("amount_with_space_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_with_period_and_space_separator'): ",
+  //   moneyFormat.includes("amount_with_period_and_space_separator"),
+  // );
+
+  switch (true) {
+    case moneyFormat.includes("amount"):
       number = number.replace(/,/g, "");
       return parseFloat(number).toFixed(2);
 
-    case "amount_no_decimals":
+    case moneyFormat.includes("amount_no_decimals"):
       return parseFloat(number.replace(/,/g, "")).toFixed(2);
 
-    case "amount_with_comma_separator":
+    case moneyFormat.includes("amount_with_comma_separator"):
       // 处理数字为 1.134,65 格式：首先替换逗号为点，小数点为逗号
       number = number.replace(/\./g, "").replace(",", ".");
       return parseFloat(number).toFixed(2);
 
-    case "amount_no_decimals_with_comma_separator":
+    case moneyFormat.includes("amount_no_decimals_with_comma_separator"):
       // 同上，去掉逗号，小数点没有
       return parseFloat(number.replace(/\./g, "").replace(",", "")).toFixed(2);
 
-    case "amount_with_apostrophe_separator":
+    case moneyFormat.includes("amount_with_apostrophe_separator"):
       // 处理 1'134.65 格式：去掉撇号
       number = number.replace(/'/g, "");
       return parseFloat(number).toFixed(2);
 
-    case "amount_no_decimals_with_space_separator":
+    case moneyFormat.includes("amount_no_decimals_with_space_separator"):
       // 处理 1 135 格式：去掉空格
       number = number.replace(/\s/g, "");
       return parseFloat(number).toFixed(2);
 
-    case "amount_with_space_separator":
+    case moneyFormat.includes("amount_with_space_separator"):
       // 处理 1 134,65 格式：去掉空格，小数点用逗号分隔
       number = number.replace(/\s/g, "").replace(",", ".");
       return parseFloat(number).toFixed(2);
 
-    case "amount_with_period_and_space_separator":
+    case moneyFormat.includes("amount_with_period_and_space_separator"):
       // 处理 1 134.65 格式：去掉空格，小数点是点
       number = number.replace(/\s/g, "");
       return parseFloat(number).toFixed(2);
@@ -581,7 +623,9 @@ class CiwiswitcherForm extends HTMLElement {
   }
   connectedCallback() {
     this.elements = {
-      ciwiBlock : document.querySelector('#shopify-block-AdHQwSXVWVGU1WDgzN__10786389038645483885'),
+      ciwiBlock: document.querySelector(
+        "#shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220",
+      ),
       ciwiContainer: this.querySelector("#ciwi-container"),
       selectorBox: this.querySelector("#selector-box"),
       languageInput: this.querySelector('input[name="language_code"]'),
@@ -779,14 +823,14 @@ class CiwiswitcherForm extends HTMLElement {
 
   toggleSelector(event) {
     event.preventDefault();
-    console.log('点击block');
+    console.log("点击block");
     const ciwiBlock = this.elements.ciwiBlock;
     if (!ciwiBlock) {
       console.error("ciwiBlock not found");
       return;
     }
-    console.log('toggleSelector:', ciwiBlock);
-    
+    console.log("toggleSelector:", ciwiBlock);
+
     const box = this.elements.ciwiBlock.querySelector("#selector-box");
     const isVisible = box.style.display !== "none";
     box.style.display = isVisible ? "none" : "block";
@@ -836,14 +880,17 @@ class CiwiswitcherForm extends HTMLElement {
 customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
-  const ciwiBlock = document.querySelector('#shopify-block-AdHQwSXVWVGU1WDgzN__10786389038645483885');
+  const ciwiBlock = document.querySelector(
+    "#shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220",
+  );
   if (!ciwiBlock) {
+    console.log("ciwiBlock not found");
     return;
   }
 
   const switcher = ciwiBlock.querySelector("#ciwi-container");
   const shop = ciwiBlock.querySelector("#queryCiwiId");
-  
+
   const mainBox = ciwiBlock.querySelector("#main-box");
   const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
   const language = languageInput.value;
@@ -873,9 +920,8 @@ window.onload = async function () {
   ];
   const isRtlLanguage = rtlLanguages.includes(currentSelectedLanguage);
   const data = await fetchSwitcherConfig(shop.value);
-  
-  console.log('加载中...');
-  
+
+  console.log("加载中...");
 
   if (productId) {
     const productIdValue = productId.value;
@@ -939,7 +985,7 @@ window.onload = async function () {
       const languageCodes = Array.from(
         ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
       ).map((option) => option.dataset.value);
-      
+
       const languageLocaleData = await fetchLanguageLocaleInfo(languageCodes);
       const languageOptions = ciwiBlock.querySelectorAll(
         ".option-item[data-type='language']",
@@ -1054,7 +1100,7 @@ window.onload = async function () {
         return;
       }
       const IpData = await fetchUserCountryInfo(iptokenValue);
-      
+
       if (IpData?.currency?.code) {
         localStorage.setItem("selectedCurrency", IpData.currency.code);
       }
@@ -1126,7 +1172,7 @@ window.onload = async function () {
     currencySelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
     // 在页面加载时执行初始化
     const currencyData = await fetchCurrencies(shop.value);
-    
+
     if (currencyData) {
       await initializeCurrency(currencyData, shop, ciwiBlock);
     }
