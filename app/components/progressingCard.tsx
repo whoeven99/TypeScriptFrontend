@@ -299,18 +299,18 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    alignItems: "center",
+                    alignItems: "stretch", // 改为 stretch 让子元素拉伸到相同高度
                     width: isMobile ? "100%" : "80%", // 确保占满容器宽度
                     textAlign: "center",
                     flexDirection: "column",
-                    height: isMobile ? "100%" : "69px",
+                    // 移除固定高度，让它根据内容自动调整
                   }}
                 >
                   <div
                     style={{
                       display: "flex",
                       width: "100%", // 确保占满容器宽度
-                      marginBottom: "auto",
+                      flex: 1, // 让这个区域占据剩余空间
                       gap: 30,
                     }}
                   >
@@ -351,7 +351,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                             : "80%", // 限制最大宽度
                         textAlign: "start",
                         display: "flex",
-                        alignItems: "center",
                       }}
                     >
                       {status === 1 && <Text>{t("progressing.finished")}</Text>}
@@ -450,9 +449,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    alignItems: "flex-end",
+                    alignItems: "stretch", // 改为 stretch 让子元素拉伸到相同高度
                     width: isMobile ? "100%" : "20%",
-                    // height: "82px",
+                    // 移除固定高度，让它根据按钮内容自动调整
                   }}
                 >
                   {status === 1 && (
@@ -501,6 +500,18 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         gap: 10,
                       }}
                     >
+                      <Button
+                        block
+                        onClick={() =>
+                          navigate("/app/manage_translation", {
+                            state: {
+                              key: target,
+                            },
+                          })
+                        }
+                      >
+                        {t("progressing.review")}
+                      </Button>
                       <Button
                         block
                         type="primary"
