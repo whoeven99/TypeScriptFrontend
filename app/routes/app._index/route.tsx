@@ -22,6 +22,7 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import ProgressingCard from "~/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
+import FreePlanCountdownCard from "~/components/freePlanCountdownCard";
 
 const { Title, Text } = Typography;
 
@@ -159,10 +160,11 @@ const Index = () => {
       devStatus: t("In development"),
     },
   ];
-  
+
   return (
     <Page>
       <TitleBar title={t("Dashboard")} />
+      {/* <FreePlanCountdownCard /> */}
       <ScrollNotice
         text={t(
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
