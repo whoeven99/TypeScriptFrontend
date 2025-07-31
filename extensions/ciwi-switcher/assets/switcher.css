@@ -250,6 +250,11 @@ a[href="https://translate.google.com"]
   opacity: 1;
 }
 
+/* 占位符图片完全隐藏 */
+.country-flag[src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"],.country-flag[src="undefined"] {
+  visibility: hidden; /* 直接隐藏占位符 */
+}
+
 .arrow-icon {
   font-size: 12px;
   transition: transform 0.2s;
