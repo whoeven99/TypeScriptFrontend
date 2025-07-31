@@ -145,7 +145,7 @@ async function fetchLanguageLocaleInfo(locale) {
 
 async function initializeCurrency(data, shop, ciwiBlock) {
   let value = localStorage.getItem("selectedCurrency");
-  let moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat");
+  let moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat").value;
 
   console.log("moneyFormat: ", moneyFormat);
 
@@ -166,13 +166,6 @@ async function initializeCurrency(data, shop, ciwiBlock) {
   const selectedOption = customSelector?.querySelector(".selected-option");
   const optionsList = customSelector?.querySelector(".options-list");
   const currencyInput = ciwiBlock.querySelector('input[name="currency_code"]');
-
-  const regex = /{{(.*?)}}/;
-  const match = moneyFormat.value.match(regex);
-
-  if (match) {
-    moneyFormat = match[1];
-  }
 
   if (isValueInCurrencies) {
     customSelector.style.display = "block";
@@ -326,7 +319,7 @@ function transform(
 ) {
   const formattedPrice = price.replace(/[^0-9,. ]/g, "").trim();
 
-  console.log("formattedPrice: ", formattedPrice);
+  // console.log("formattedPrice: ", formattedPrice);
 
   if (!formattedPrice || exchangeRate == "Auto") {
     return price;
@@ -334,20 +327,20 @@ function transform(
 
   let number = convertToNumberFromMoneyFormat(moneyFormat, formattedPrice);
 
-  console.log("1.number: ", number);
+  // console.log("1.number: ", number);
 
   // Remove commas or other unwanted characters
   number = (number * exchangeRate).toFixed(2);
 
-  console.log("2.number: ", number);
+  // console.log("2.number: ", number);
 
   const transformedPrice = customRounding(number, rounding);
 
-  console.log("3.transformedPrice: ", transformedPrice);
+  // console.log("3.transformedPrice: ", transformedPrice);
 
   number = detectNumberFormat(moneyFormat, transformedPrice, rounding);
 
-  console.log("4.number: ", number);
+  // console.log("4.number: ", number);
 
   return `${symbol}${number} <span class="currency-code">${currencyCode}</span>`;
 }
@@ -355,39 +348,73 @@ function transform(
 function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
   let number = formattedPrice;
 
-  switch (moneyFormat) {
-    case "amount":
+  // console.log(moneyFormat);
+  // console.log(
+  //   "moneyFormat.includes('amount'): ",
+  //   moneyFormat.includes("amount"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_no_decimals'): ",
+  //   moneyFormat.includes("amount_no_decimals"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_with_comma_separator'): ",
+  //   moneyFormat.includes("amount_with_comma_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_no_decimals_with_comma_separator'): ",
+  //   moneyFormat.includes("amount_no_decimals_with_comma_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_with_apostrophe_separator'): ",
+  //   moneyFormat.includes("amount_with_apostrophe_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_no_decimals_with_space_separator'): ",
+  //   moneyFormat.includes("amount_no_decimals_with_space_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_with_space_separator'): ",
+  //   moneyFormat.includes("amount_with_space_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_with_period_and_space_separator'): ",
+  //   moneyFormat.includes("amount_with_period_and_space_separator"),
+  // );
+
+  switch (true) {
+    case moneyFormat.includes("amount"):
       number = number.replace(/,/g, "");
       return parseFloat(number).toFixed(2);
 
-    case "amount_no_decimals":
+    case moneyFormat.includes("amount_no_decimals"):
       return parseFloat(number.replace(/,/g, "")).toFixed(2);
 
-    case "amount_with_comma_separator":
+    case moneyFormat.includes("amount_with_comma_separator"):
       // 处理数字为 1.134,65 格式：首先替换逗号为点，小数点为逗号
       number = number.replace(/\./g, "").replace(",", ".");
       return parseFloat(number).toFixed(2);
 
-    case "amount_no_decimals_with_comma_separator":
+    case moneyFormat.includes("amount_no_decimals_with_comma_separator"):
       // 同上，去掉逗号，小数点没有
       return parseFloat(number.replace(/\./g, "").replace(",", "")).toFixed(2);
 
-    case "amount_with_apostrophe_separator":
+    case moneyFormat.includes("amount_with_apostrophe_separator"):
       // 处理 1'134.65 格式：去掉撇号
       number = number.replace(/'/g, "");
       return parseFloat(number).toFixed(2);
 
-    case "amount_no_decimals_with_space_separator":
+    case moneyFormat.includes("amount_no_decimals_with_space_separator"):
       // 处理 1 135 格式：去掉空格
       number = number.replace(/\s/g, "");
       return parseFloat(number).toFixed(2);
 
-    case "amount_with_space_separator":
+    case moneyFormat.includes("amount_with_space_separator"):
       // 处理 1 134,65 格式：去掉空格，小数点用逗号分隔
       number = number.replace(/\s/g, "").replace(",", ".");
       return parseFloat(number).toFixed(2);
 
-    case "amount_with_period_and_space_separator":
+    case moneyFormat.includes("amount_with_period_and_space_separator"):
       // 处理 1 134.65 格式：去掉空格，小数点是点
       number = number.replace(/\s/g, "");
       return parseFloat(number).toFixed(2);
