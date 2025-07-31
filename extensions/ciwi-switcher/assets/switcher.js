@@ -146,9 +146,15 @@ async function fetchLanguageLocaleInfo(locale) {
 async function initializeCurrency(data, shop, ciwiBlock) {
   let value = localStorage.getItem("selectedCurrency");
   let moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat");
+
+  console.log("moneyFormat: ", moneyFormat);
+
   const selectedCurrency = data.find(
     (currency) => currency?.currencyCode === value,
   );
+
+  console.log("data: ", data);
+  console.log("selectedCurrency: ", selectedCurrency);
 
   const isValueInCurrencies =
     selectedCurrency && !selectedCurrency.primaryStatus;
@@ -320,18 +326,28 @@ function transform(
 ) {
   const formattedPrice = price.replace(/[^0-9,. ]/g, "").trim();
 
+  console.log("formattedPrice: ", formattedPrice);
+
   if (!formattedPrice || exchangeRate == "Auto") {
     return price;
   }
 
   let number = convertToNumberFromMoneyFormat(moneyFormat, formattedPrice);
 
+  console.log("1.number: ", number);
+
   // Remove commas or other unwanted characters
   number = (number * exchangeRate).toFixed(2);
 
+  console.log("2.number: ", number);
+
   const transformedPrice = customRounding(number, rounding);
 
+  console.log("3.transformedPrice: ", transformedPrice);
+
   number = detectNumberFormat(moneyFormat, transformedPrice, rounding);
+
+  console.log("4.number: ", number);
 
   return `${symbol}${number} <span class="currency-code">${currencyCode}</span>`;
 }
@@ -581,7 +597,7 @@ class CiwiswitcherForm extends HTMLElement {
   connectedCallback() {
     this.elements = {
       ciwiBlock: document.querySelector(
-        '[id="shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220"]',
+        "#shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220",
       ),
       ciwiContainer: this.querySelector("#ciwi-container"),
       selectorBox: this.querySelector("#selector-box"),
@@ -838,9 +854,10 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
   const ciwiBlock = document.querySelector(
-    '[id="shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220"]',
+    "#shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220",
   );
   if (!ciwiBlock) {
+    console.log("ciwiBlock not found");
     return;
   }
 

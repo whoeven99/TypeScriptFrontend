@@ -299,7 +299,6 @@ const Index = () => {
 
   useEffect(() => {
     if (fetcher.data) {
-      console.log("fetcher.data", fetcher.data);
       setOriginalData(fetcher.data);
       setIsIncludedFlag(fetcher.data.includedFlag);
       setLanguageSelector(fetcher.data.languageSelector);
