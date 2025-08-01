@@ -1084,6 +1084,14 @@ window.onload = async function () {
       }
     }
 
+    console.log("storedCountry:", storedCountry);
+    console.log("storedCurrency:", storedCurrency);
+    console.log("storedLanguage:", storedLanguage);
+
+    console.log("storedCountry:", !storedCountry);
+    console.log("storedCurrency:", !storedCurrency);
+    console.log("storedLanguage:", !storedLanguage);
+
     if (storedCountry && storedCurrency) {
       if (
         countryInput.value !== storedCountry &&
@@ -1123,22 +1131,25 @@ window.onload = async function () {
         );
       }
     }
-    // 判断是否在主题编辑器中
-    const isInThemeEditor = document.documentElement.classList.contains(
-      "shopify-design-mode",
-    );
-    console.log("isInThemeEditor:", isInThemeEditor);
 
-    if (
-      (countryInput.value !== country || languageInput.value !== language) &&
-      countryInput.value &&
-      languageInput.value &&
-      !isInThemeEditor
-    ) {
-      updateLocalization({
-        country: countryInput.value,
-        language: languageInput.value,
-      });
+    if (!storedCountry && !storedCurrency && !storedLanguage) {
+      // 判断是否在主题编辑器中
+      const isInThemeEditor = document.documentElement.classList.contains(
+        "shopify-design-mode",
+      );
+      console.log("isInThemeEditor:", isInThemeEditor);
+
+      if (
+        (countryInput.value !== country || languageInput.value !== language) &&
+        countryInput.value &&
+        languageInput.value &&
+        !isInThemeEditor
+      ) {
+        updateLocalization({
+          country: countryInput.value,
+          language: languageInput.value,
+        });
+      }
     }
   }
 
