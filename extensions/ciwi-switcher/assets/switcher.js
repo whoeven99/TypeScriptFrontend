@@ -1094,7 +1094,7 @@ window.onload = async function () {
       if (currencyInput.value !== storedCurrency) {
         currencyInput.value = storedCurrency;
       }
-    } else {
+    } else if (!storedCountry && !storedCurrency && !storedLanguage) {
       const userIp = await checkUserIp(shop.value);
       if (!userIp) {
         return;
