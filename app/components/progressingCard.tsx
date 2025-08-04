@@ -63,7 +63,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
     if (translateFetcher.data) {
       if (translateFetcher.data?.success) {
         setStatus(2);
-        setResourceType("COLLECTION");
+        setResourceType("SHOP");
       }
     }
   }, [translateFetcher.data]);
@@ -156,6 +156,15 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
 
   const calculateProgressByType = (resourceType: string): number => {
     switch (resourceType) {
+      case "PAYMENT_GATEWAY":
+        setItem("Metaobjects");
+        return 10;
+      case "SELLING_PLAN":
+        setItem("Metaobjects");
+        return 10;
+      case "SELLING_PLAN_GROUP":
+        setItem("Shop");
+        return 10;
       case "SHOP":
         setItem("Shop");
         return 10;
@@ -225,16 +234,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       case "ONLINE_STORE_THEME_APP_EMBED":
         setItem("Theme");
         return 95;
-      case "PAYMENT_GATEWAY":
-        setItem("Metaobjects");
-        return 98;
-      case "SELLING_PLAN":
-        setItem("Metaobjects");
-        return 99;
-      case "SELLING_PLAN_GROUP":
-        setItem("Shop");
-        return 99;
-
       default:
         return 0;
     }
