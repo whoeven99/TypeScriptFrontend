@@ -47,10 +47,10 @@ interface EditData {
 const initialLocalization = {
   languages: [
     {
-      iso_code: "zh",
-      name: "Chinese",
-      localeName: "简体中文",
-      flag: "/flags/CN.webp",
+      iso_code: "en",
+      name: "English",
+      localeName: "English",
+      flag: "/flags/GB.webp",
       selected: true,
     },
     {
@@ -947,7 +947,7 @@ const Index = () => {
           </div>
           <div className={styles.switcher_preview}>
             <Card loading={isLoading} style={{ height: "100%" }}>
-              <Title level={4}>{t("Preview")}</Title>
+              <Title level={5}>{t("Preview")}</Title>
               <div
                 style={{
                   position: "relative",
