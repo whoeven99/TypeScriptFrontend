@@ -100,7 +100,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         // setValue(userValue.data.userValue);
 
         // 设置下一次轮询
-        timeoutId = setTimeout(pollStatus, 10000);
+        timeoutId = setTimeout(pollStatus, 3000);
       };
 
       // 开始首次轮询

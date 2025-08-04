@@ -918,12 +918,12 @@ const Index = () => {
           <Text>{t("2. Fill in the translated data in the template")}</Text>
           <Text>
             {t(
-              "3. Contact customer service and import the corresponding files",
+              "3. Contact us to import the corresponding files",
             )}
           </Text>
           <Flex justify="center">
             <Button type="primary" onClick={() => setShowModal(false)}>
-              {t("Knew")}
+              {t("Got it")}
             </Button>
           </Flex>
         </Space>
