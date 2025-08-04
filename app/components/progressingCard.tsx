@@ -63,7 +63,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
     if (translateFetcher.data) {
       if (translateFetcher.data?.success) {
         setStatus(2);
-        setResourceType("COLLECTION");
+        setResourceType("SHOP");
       }
     }
   }, [translateFetcher.data]);
