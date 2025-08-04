@@ -157,10 +157,10 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   const calculateProgressByType = (resourceType: string): number => {
     switch (resourceType) {
       case "PAYMENT_GATEWAY":
-        setItem("Metaobjects");
+        setItem("Shop");
         return 10;
       case "SELLING_PLAN":
-        setItem("Metaobjects");
+        setItem("Shop");
         return 10;
       case "SELLING_PLAN_GROUP":
         setItem("Shop");
