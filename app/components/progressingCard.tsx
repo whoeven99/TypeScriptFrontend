@@ -156,87 +156,85 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
 
   const calculateProgressByType = (resourceType: string): number => {
     switch (resourceType) {
-      case "COLLECTION":
-        setItem("Collection");
-        return 20;
-      case "PACKING_SLIP_TEMPLATE":
-        setItem("Shipping");
-        return 30;
-      case "SHOP_POLICY":
-        setItem("Policies");
-        return 40;
-      case "EMAIL_TEMPLATE":
-        setItem("Shipping");
-        return 43;
-      case "MENU":
-        setItem("Navigation");
-        return 45;
-      case "LINK":
-        setItem("Navigation");
-        return 48;
-      case "DELIVERY_METHOD_DEFINITION":
-        setItem("Delivery");
-        return 50;
-      case "FILTER":
-        setItem("Filters");
-        return 52;
-      case "METAFIELD":
-        setItem("Store metadata");
-        return 54;
-      case "METAOBJECT":
-        setItem("Metaobjects");
-        return 56;
-      case "PAYMENT_GATEWAY":
-        setItem("Metaobjects");
-        return 58;
-      case "SELLING_PLAN":
-        setItem("Metaobjects");
-        return 60;
-      case "SELLING_PLAN_GROUP":
-        setItem("Shop");
-        return 62;
       case "SHOP":
         setItem("Shop");
-        return 65;
-      case "ARTICLE":
-        setItem("Article");
-        return 68;
-      case "BLOG":
-        setItem("Blog titles");
-        return 70;
+        return 10;
       case "PAGE":
         setItem("Pages");
-        return 72;
-      case "PRODUCT":
-        setItem("Products");
-        return 75;
-      case "PRODUCT_OPTION":
-        setItem("Products");
-        return 78;
-      case "PRODUCT_OPTION_VALUE":
-        setItem("Products");
-        return 80;
+        return 20;
       case "ONLINE_STORE_THEME":
         setItem("Theme");
-        return 82;
-      case "ONLINE_STORE_THEME_APP_EMBED":
-        setItem("Theme");
-        return 85;
+        return 35;
+      case "PRODUCT":
+        setItem("Products");
+        return 55;
+      case "PRODUCT_OPTION":
+        setItem("Products");
+        return 58;
+      case "PRODUCT_OPTION_VALUE":
+        setItem("Products");
+        return 60;
+      case "COLLECTION":
+        setItem("Collection");
+        return 62;
+      case "METAFIELD":
+        setItem("Store metadata");
+        return 68;
+      case "ARTICLE":
+        setItem("Article");
+        return 70;
+      case "BLOG":
+        setItem("Blog titles");
+        return 75;
+      case "MENU":
+        setItem("Navigation");
+        return 77;
+      case "LINK":
+        setItem("Navigation");
+        return 78;
+      case "FILTER":
+        setItem("Filters");
+        return 79;
+      case "METAOBJECT":
+        setItem("Metaobjects");
+        return 80;
       case "ONLINE_STORE_THEME_JSON_TEMPLATE":
         setItem("Theme");
-        return 88;
+        return 81;
       case "ONLINE_STORE_THEME_SECTION_GROUP":
         setItem("Theme");
-        return 90;
+        return 82;
       case "ONLINE_STORE_THEME_SETTINGS_CATEGORY":
         setItem("Theme");
-        return 92;
+        return 83;
       case "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS":
         setItem("Theme");
-        return 95;
-      case "ONLINE_STORE_THEME_LOCALE_CONTENT":
+        return 84;
+      case "PACKING_SLIP_TEMPLATE":
+        setItem("Shipping");
+        return 85;
+      case "DELIVERY_METHOD_DEFINITION":
+        setItem("Delivery");
+        return 86;
+      case "SHOP_POLICY":
+        setItem("Policies");
+        return 88;
+      case "EMAIL_TEMPLATE":
+        setItem("Shipping");
+        return 90;
+      case "ONLINE_STORE_THEME_APP_EMBED":
         setItem("Theme");
+        return 95;
+      case "PAYMENT_GATEWAY":
+        setItem("Metaobjects");
+        return 98;
+      case "SELLING_PLAN":
+        setItem("Metaobjects");
         return 99;
+      case "SELLING_PLAN_GROUP":
+        setItem("Shop");
+        return 99;
+
       default:
         return 0;
     }

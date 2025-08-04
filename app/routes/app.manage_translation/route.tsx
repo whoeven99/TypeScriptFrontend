@@ -1,6 +1,16 @@
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Page } from "@shopify/polaris";
-import { Space, Select, Typography, Button, Table, Card } from "antd";
+import { Icon, Page } from "@shopify/polaris";
+import {
+  Space,
+  Select,
+  Typography,
+  Button,
+  Table,
+  Card,
+  Popconfirm,
+  Flex,
+  Modal,
+} from "antd";
 import { useEffect, useMemo, useState } from "react";
 import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
@@ -26,6 +36,7 @@ import ScrollNotice from "~/components/ScrollNotice";
 import { setUserConfig } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
 import TranslationWarnModal from "~/components/translationWarnModal";
+import { InfoCircleOutlined } from "@ant-design/icons";
 
 const { Text, Title } = Typography;
 
@@ -73,7 +84,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ data: shopLanguages });
       } catch (error) {
         console.error("Error manage_translation language:", error);
-        
       }
     case !!itemsCount:
       try {
@@ -97,9 +107,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const navigate = useNavigate();
-
   const { searchTerm } = useLoaderData<typeof loader>();
+
+  const navigate = useNavigate();
+  const { plan } = useSelector((state: any) => state.userConfig);
+
   const [selectOptions, setSelectOptions] = useState<ManageSelectDataType[]>(
     [],
   );
@@ -109,7 +121,7 @@ const Index = () => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const location = useLocation();
-  const [showWarnModal, setShowWarnModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const { key } = useMemo(() => location.state || {}, [location.state]);
   const languageItemsData = useSelector(
     (state: any) => state.languageItemsData,
@@ -797,13 +809,32 @@ const Index = () => {
                 style={{ minWidth: "200px" }}
               />
             </div>
-            {/* <div
-              className="manage-header-right"
-            >
-              <Button>
-                {t("Sync")}
-              </Button>
-            </div> */}
+            <div className="manage-header-right">
+              {(typeof plan === "number" && plan <= 4) ||
+              typeof plan === "undefined" ? (
+                <Flex align="center" gap="middle">
+                  <Popconfirm
+                    title=""
+                    description={t(
+                      "Upgrade to a paid plan to unlock this feature",
+                    )}
+                    trigger="hover"
+                    showCancel={false}
+                    okText={t("Upgrade")}
+                    onConfirm={() => navigate("/app/pricing")}
+                  >
+                    <InfoCircleOutlined />
+                  </Popconfirm>
+                  <Button disabled>{t("Import")}</Button>
+                </Flex>
+              ) : (
+                <Button
+                  onClick={() => setShowModal(true)}
+                >
+                  {t("Import")}
+                </Button>
+              )}
+            </div>
           </div>
           <div className="manage-content-wrap">
             <div className="manage-content-left">
@@ -816,13 +847,11 @@ const Index = () => {
                   cardTitle={t("Products")}
                   dataSource={productsDataSource}
                   current={current}
-                  setShowWarnModal={setShowWarnModal}
                 />
                 <ManageTranslationsCard
                   cardTitle={t("Online Store")}
                   dataSource={onlineStoreDataSource}
                   current={current}
-                  setShowWarnModal={setShowWarnModal}
                 />
                 <Card>
                   <Space
@@ -845,7 +874,6 @@ const Index = () => {
                   cardTitle={t("Settings")}
                   dataSource={settingsDataSource}
                   current={current}
-                  setShowWarnModal={setShowWarnModal}
                 />
               </Space>
             </div>
@@ -853,16 +881,53 @@ const Index = () => {
           </div>
         </Space>
       )}
-      {/* <TranslationWarnModal
-        title={t("The Translation Editor has been limited due to your plan (Current plan: {{plan}})", { plan: planMapping[plan as keyof typeof planMapping] })}
-        content={t("Please upgrade to a higher plan to unlock the Translation Editor")}
-        action={() => {
-          navigate("/app/pricing");
+      <Modal
+        title={t("How to import translation data")}
+        open={showModal}
+        onCancel={() => setShowModal(false)}
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          top: "40%",
         }}
-        actionText={t("Upgrade")}
-        show={showWarnModal}
-        setShow={setShowWarnModal}
-      /> */}
+        footer={null}
+      >
+        <Space direction="vertical" size={"small"}>
+          <Text>{t("Import steps:")}</Text>
+          <Text>
+            {t("1. Click to download the product import template")}{" "}
+            <Button
+              type="link"
+              style={{
+                padding: "0",
+              }}
+              onClick={() => {
+                // 这里可以添加下载逻辑
+                const link = document.createElement("a");
+                link.href = "/Shop_translation.csv"; // 假设文件路径
+                link.download = "Shop_translation.csv";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+            >
+              Shop_translation.csv
+            </Button>
+          </Text>
+          <Text>{t("2. Fill in the translated data in the template")}</Text>
+          <Text>
+            {t(
+              "3. Contact customer service and import the corresponding files",
+            )}
+          </Text>
+          <Flex justify="center">
+            <Button type="primary" onClick={() => setShowModal(false)}>
+              {t("Knew")}
+            </Button>
+          </Flex>
+        </Space>
+      </Modal>
     </Page>
   );
 };

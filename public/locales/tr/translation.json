@@ -521,5 +521,15 @@
     "Minimalist": "Minimalist",
     "Storytelling": "Hikaye anlatımı",
     "Feature-first": "Özellik öncelikli",
-    "Call-to-action": "Harekete geçirici mesaj"
+    "Call-to-action": "Harekete geçirici mesaj",
+    "No Visible Switcher: ": "Görünmez seçici",
+    "The Private API has been limited due to your plan (Current plan: {{plan}})": "Özel API'ninizin sınırına ulaştınız (Mevcut plan: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Private API": "Lütfen daha yüksek bir plana yükseltin özel API'nizi kilitlemek için",
+    "Import": "İçe Aktar",
+    "How to import translation data": "Nasıl çeviri verilerini içe aktarılır",
+    "Import steps:": "İçe aktarma adımları:",
+    "1. Click to download the product import template": "1. Ürün içe aktarma şablonunu indirmek için tıklayın",
+    "2. Fill in the translated data in the template": "2. Şablon içine çevirilmiş verileri doldurun",
+    "3. Contact customer service and import the corresponding files": "3. Müşteri hizmetleriyle iletişime geçin ve ilgili dosyaları içe aktarın",
+    "Knew": "Bilinmekte"
 }

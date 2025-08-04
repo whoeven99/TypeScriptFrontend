@@ -8,6 +8,7 @@ import {
   Divider,
   Flex,
   Input,
+  Popconfirm,
   Popover,
   Radio,
   RadioChangeEvent,
@@ -30,11 +31,16 @@ import { setTableData } from "~/store/modules/languageTableData";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import PaymentModal from "~/components/paymentModal";
 import ScrollNotice from "~/components/ScrollNotice";
-import { ExclamationCircleOutlined } from "@ant-design/icons";
+import {
+  ExclamationCircleOutlined,
+  InfoCircleOutlined,
+} from "@ant-design/icons";
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { ArrowLeftIcon, PlusIcon } from "@shopify/polaris-icons";
 import axios from "axios";
+import { planMapping } from "../app.glossary/route";
+import TranslationWarnModal from "~/components/translationWarnModal";
 
 const { Title, Text } = Typography;
 
@@ -109,6 +115,7 @@ const Index = () => {
   const [target, setTarget] = useState("");
   const [languageCardWarnText, setLanguageCardWarnText] = useState<string>("");
   const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [showWarnModal, setShowWarnModal] = useState(false);
 
   const dispatch = useDispatch();
   const languageCardRef = useRef<HTMLDivElement>(null);
@@ -122,6 +129,8 @@ const Index = () => {
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
+
+  const { plan } = useSelector((state: any) => state.userConfig);
 
   useEffect(() => {
     const languageFormData = new FormData();
@@ -399,6 +408,14 @@ const Index = () => {
       // 如果出现任何错误，默认导航到 /app
       navigate("/app");
     }
+  };
+
+  const handleUsePrivateApi = () => {
+    if (plan <= 2 || !plan) {
+      setShowWarnModal(true);
+      return;
+    }
+    navigate("/app/apikeySetting");
   };
 
   const checkIfNeedPay = async () => {
@@ -685,12 +702,37 @@ const Index = () => {
                     <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
                       {t("translateSettings1.title")}
                     </Title>
-                    <Button
-                      icon={<Icon source={PlusIcon} />}
-                      onClick={() => navigate("/app/apikeySetting")}
-                    >
-                      {t("Use private api to translate")}
-                    </Button>
+                    {(typeof plan === "number" && plan <= 2) ||
+                    typeof plan === "undefined" ? (
+                      <Flex align="center" gap="middle">
+                        <Popconfirm
+                          title=""
+                          description={t(
+                            "Upgrade to a paid plan to unlock this feature",
+                          )}
+                          trigger="hover"
+                          showCancel={false}
+                          okText={t("Upgrade")}
+                          onConfirm={() => navigate("/app/pricing")}
+                        >
+                          <InfoCircleOutlined />
+                        </Popconfirm>
+                        <Button
+                          disabled
+                          icon={<Icon source={PlusIcon} />}
+                          onClick={() => handleUsePrivateApi()}
+                        >
+                          {t("Use private api to translate")}
+                        </Button>
+                      </Flex>
+                    ) : (
+                      <Button
+                        icon={<Icon source={PlusIcon} />}
+                        onClick={() => handleUsePrivateApi()}
+                      >
+                        {t("Use private api to translate")}
+                      </Button>
+                    )}
                   </Space>
                   {/* <div
                     style={{
@@ -1247,6 +1289,21 @@ const Index = () => {
         ) : (
           <NoLanguageSetCard />
         )}
+        <TranslationWarnModal
+          title={t(
+            "The Private API has been limited due to your plan (Current plan: {{plan}})",
+            { plan: "Free" },
+          )}
+          content={t(
+            "Please upgrade to a higher plan to unlock the Private API",
+          )}
+          action={() => {
+            navigate("/app/pricing");
+          }}
+          actionText={t("Upgrade")}
+          show={showWarnModal}
+          setShow={setShowWarnModal}
+        />
       </Space>
       {showPaymentModal && (
         <PaymentModal
