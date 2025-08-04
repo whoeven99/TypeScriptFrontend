@@ -521,5 +521,15 @@
     "Minimalist": "минималистичный",
     "Storytelling": "Повествование",
     "Feature-first": "Сначала особенности",
-    "Call-to-action": "Призыв к действию"
+    "Call-to-action": "Призыв к действию",
+    "No Visible Switcher: ": "Невидимый переключатель",
+    "The Private API has been limited due to your plan (Current plan: {{plan}})": "Приватний API обмежений через ваш план (Поточний план: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Private API": "Будь ласка, підвищіть свій план, щоб розблокувати приватний API",
+    "Import": "Імпорт",
+    "How to import translation data": "Як імпортувати дані перекладу",
+    "Import steps:": "Імпорт кроків:",
+    "1. Click to download the product import template": "1. Натисніть, щоб завантажити шаблон імпорту продуктів",
+    "2. Fill in the translated data in the template": "2. Заповніть перекладені дані в шаблон",
+    "3. Contact customer service and import the corresponding files": "3. Зв'яжіться з клієнтською службою та імпортуйте відповідні файли",
+    "Knew": "Знати"
 }

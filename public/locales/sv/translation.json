@@ -521,6 +521,16 @@
     "Minimalist": "Minimalistisk",
     "Storytelling": "Berättande",
     "Feature-first": "Funktion först",
-    "Call-to-action": "Uppmaning till handling"
+    "Call-to-action": "Uppmaning till handling",
+    "No Visible Switcher: ": "Ingen synlig väljare",
+    "The Private API has been limited due to your plan (Current plan: {{plan}})": "Privat API har begränsats på grund av ditt plan (Aktuellt plan: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Private API": "Uppgradera till ett högre plan för att låsa privat API",
+    "Import": "Importera",
+    "How to import translation data": "Hur importerar du översättningsdata",
+    "Import steps:": "Importsteg:",
+    "1. Click to download the product import template": "1. Klicka för att ladda ner produktimportmallen",
+    "2. Fill in the translated data in the template": "2. Fyll i översatta data i mallen",
+    "3. Contact customer service and import the corresponding files": "3. Kontakta kundsupport och importera motsvarande filer",
+    "Knew": "Känd"
 }   
   

@@ -304,6 +304,7 @@ export const SaveAndUpdateData = async ({
   optionBorderColor,
   selectorPosition,
   positionData,
+  isTransparent,
 }: {
   shopName: string;
   languageSelector: boolean;
@@ -317,6 +318,7 @@ export const SaveAndUpdateData = async ({
   optionBorderColor: string;
   selectorPosition: string;
   positionData: string;
+  isTransparent: boolean;
 }) => {
   try {
     const response = await axios({
@@ -335,6 +337,7 @@ export const SaveAndUpdateData = async ({
         optionBorderColor: optionBorderColor,
         selectorPosition: selectorPosition,
         positionData: positionData,
+        isTransparent: isTransparent,
       },
     });
 
@@ -648,7 +651,7 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
 
     if (response.data?.success) {
       const res = response.data?.response;
-      if (shop == "ciwishop.myshopify.com" && res.userSubscriptionPlan < 3) {
+      if (shop == "ciwishop.myshopify.com") {
         return {
           userSubscriptionPlan: 6,
           currentPeriodEnd: null,
