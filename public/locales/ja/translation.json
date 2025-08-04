@@ -520,6 +520,16 @@
     "Minimalist": "ミニマリスト",
     "Storytelling": "ストーリーテリング",
     "Feature-first": "特徴を最初に",
-    "Call-to-action": "行動喚起"
+    "Call-to-action": "行動喚起",
+    "No Visible Switcher: ": "表示しない",
+    "The Private API has been limited due to your plan (Current plan: {{plan}})": "プライベートAPIがプランによって制限されています（現在のプラン: {{plan}}）",
+    "Please upgrade to a higher plan to unlock the Private API": "より高いプランにアップグレードしてプライベートAPIをロック解除してください",
+    "Import": "インポート",
+    "How to import translation data": "翻訳データのインポート方法",
+    "Import steps:": "インポート手順:",
+    "1. Click to download the product import template": "1. 商品インポートテンプレートをダウンロードする",
+    "2. Fill in the translated data in the template": "2. テンプレートに翻訳データを入力する",
+    "3. Contact us to import the corresponding files": "3. 顧客サービスに連絡して対応するファイルをインポートする",
+    "Got it": "知っている"
 }   
   

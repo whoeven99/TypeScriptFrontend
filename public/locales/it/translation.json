@@ -519,6 +519,16 @@
     "Minimalist": "Minimalista",
     "Storytelling": "Narrazione",
     "Feature-first": "Funzionalità prima",
-    "Call-to-action": "Chiamata all'azione"
+    "Call-to-action": "Chiamata all'azione",
+    "No Visible Switcher: ": "Nessun selettore visibile",
+    "The Private API has been limited due to your plan (Current plan: {{plan}})": "L'API privata è stata limitata a causa del tuo piano (Piano corrente: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Private API": "Per favore, aggiorna al piano più alto per sbloccare l'API privata",
+    "Import": "Importa",
+    "How to import translation data": "Come importare i dati di traduzione",
+    "Import steps:": "Passaggi per importare:",
+    "1. Click to download the product import template": "1. Clicca per scaricare il modello di importazione dei prodotti",
+    "2. Fill in the translated data in the template": "2. Riempi i dati tradotti nel modello",
+    "3. Contact us to import the corresponding files": "3. Contatta il servizio clienti e importa i file corrispondenti",
+    "Got it": "Lo so"
 }
   

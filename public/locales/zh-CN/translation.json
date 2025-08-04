@@ -520,5 +520,15 @@
   "Minimalist": "极简 —— 精炼简洁、避免冗余",
   "Storytelling": "故事化 —— 情感连接，引导阅读",
   "Feature-first": "功能优先 —— 直接传达核心卖点",
-  "Call-to-action": "号召行动 —— 强调点击、购买、参与"
+  "Call-to-action": "号召行动 —— 强调点击、购买、参与",
+  "No Visible Switcher: ": "不显示切换器：",
+  "The Private API has been limited due to your plan (Current plan: {{plan}})": "由于您的计划，私有 API 已被限制（当前计划：{{plan}}）",
+  "Please upgrade to a higher plan to unlock the Private API": "请升级到更高计划以解锁私有 API",
+  "Import": "导入",
+  "How to import translation data": "如何导入翻译数据",
+  "Import steps:": "导入步骤：",
+  "1. Click to download the product import template": "1. 点击下载产品导入模板",
+  "2. Fill in the translated data in the template": "2. 在模板中填写翻译数据",
+  "3. Contact us to import the corresponding files": "3. 联系客户服务并导入相应文件",
+  "Got it": "知道了"
 }

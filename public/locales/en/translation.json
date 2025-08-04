@@ -520,5 +520,15 @@
   "Minimalist": "Minimalist",
   "Storytelling": "Storytelling",
   "Feature-first": "Feature-first",
-  "Call-to-action": "Call-to-action"
+  "Call-to-action": "Call-to-action",
+  "No Visible Switcher: ": "No Visible Switcher: ",
+  "The Private API has been limited due to your plan (Current plan: {{plan}})": "The Private API has been limited due to your plan (Current plan: {{plan}})",
+  "Please upgrade to a higher plan to unlock the Private API": "Please upgrade to a higher plan to unlock the Private API",
+  "Import": "Import",
+  "How to import translation data": "How to import translation data",
+  "Import steps:": "Import steps:",
+  "1. Click to download the product import template": "1. Click to download the product import template",
+  "2. Fill in the translated data in the template": "2. Fill in the translated data in the template",
+  "3. Contact us to import the corresponding files": "3. Contact us to import the corresponding files",
+  "Got it": "Got it"
 }

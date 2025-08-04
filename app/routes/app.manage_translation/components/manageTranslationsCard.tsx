@@ -18,7 +18,6 @@ interface SwitcherSettingCardProps {
   cardTitle: string;
   dataSource: any;
   current: string;
-  setShowWarnModal: (show: boolean) => void;
 }
 
 interface DataType {
@@ -34,7 +33,6 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   cardTitle,
   dataSource,
   current,
-  setShowWarnModal,
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();

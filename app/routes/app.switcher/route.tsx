@@ -41,15 +41,16 @@ interface EditData {
   optionBorderColor: string;
   selectorPosition: string;
   positionData: string;
+  isTransparent: boolean;
 }
 
 const initialLocalization = {
   languages: [
     {
-      iso_code: "zh",
-      name: "Chinese",
-      localeName: "简体中文",
-      flag: "/flags/CN.webp",
+      iso_code: "en",
+      name: "English",
+      localeName: "English",
+      flag: "/flags/GB.webp",
       selected: true,
     },
     {
@@ -215,6 +216,7 @@ const Index = () => {
   const [optionBorderColor, setOptionBorderColor] = useState("#ccc");
   const [selectorPosition, setSelectorPosition] = useState("top_left");
   const [positionData, setPositionData] = useState<string>("0");
+  const [isTransparent, setIsTransparent] = useState(false);
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
@@ -234,6 +236,7 @@ const Index = () => {
     optionBorderColor: "",
     selectorPosition: "",
     positionData: "0",
+    isTransparent: false,
   });
   const [isEdit, setIsEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -311,6 +314,7 @@ const Index = () => {
       setOptionBorderColor(fetcher.data.optionBorderColor);
       setSelectorPosition(fetcher.data.selectorPosition);
       setPositionData(fetcher.data.positionData);
+      setIsTransparent(fetcher.data.isTransparent);
       setEditData(fetcher.data);
       setIsLoading(false);
     }
@@ -476,6 +480,9 @@ const Index = () => {
     // 更新对应的状态
     Object.entries(updates).forEach(([key, value]) => {
       switch (key) {
+        case "isTransparent":
+          setIsTransparent(value as boolean);
+          break;
         case "includedFlag":
           setIsIncludedFlag(value as boolean);
           break;
@@ -707,37 +714,6 @@ const Index = () => {
           withMoneyValue={withMoneyValue}
           withoutMoneyValue={withoutMoneyValue}
         />
-        {/* <Card styles={{ body: { padding: "12px" } }}>
-          <Space
-            style={{
-              display: "flex",
-              flexDirection: "row-reverse",
-              alignItems: "center",
-            }}
-          >
-            <Button
-              disabled={!isEdit}
-              type="primary"
-              onClick={handleSave}
-              loading={editFetcher.state === "submitting"}
-              style={{
-                width: "100px",
-              }}
-            >
-              {t("Save")}
-            </Button>
-            <Button
-              disabled={!isEdit}
-              type="default"
-              onClick={handleCancel}
-              style={{
-                width: "100px",
-              }}
-            >
-              {t("Cancel")}
-            </Button>
-          </Space>
-        </Card> */}
         <div className={styles.switcher_container}>
           <div className={styles.switcher_editor}>
             <Space
@@ -746,6 +722,59 @@ const Index = () => {
               style={{ display: "flex" }}
             >
               <Card loading={isLoading}>
+                <Space
+                  direction="vertical"
+                  size="middle"
+                  style={{ display: "flex" }}
+                >
+                  <Flex justify="space-between">
+                    <Title level={5}>
+                      {t("Selector Auto IP position configuration:")}
+                    </Title>
+                    {(Number(plan) <= 3 || typeof plan === "undefined") && (
+                      <Popconfirm
+                        title=""
+                        description={t(
+                          "Upgrade to a paid plan to unlock this feature",
+                        )}
+                        trigger="hover"
+                        showCancel={false}
+                        okText={t("Upgrade")}
+                        onConfirm={() => navigate("/app/pricing")}
+                      >
+                        <InfoCircleOutlined
+                          style={{ paddingBottom: "0.5rem" }}
+                        />
+                      </Popconfirm>
+                    )}
+                  </Flex>
+
+                  <Flex justify="space-between">
+                    <Text>{t("Geolocation: ")}</Text>
+                    <Switch
+                      disabled={
+                        (typeof plan === "number" && plan <= 3) ||
+                        typeof plan === "undefined"
+                      }
+                      checked={isGeoLocationEnabled}
+                      onChange={handleIpOpenChange}
+                    />
+                  </Flex>
+                  {/* <Flex justify="space-between">
+                    <Text>{t("No Visible Switcher: ")}</Text>
+                    <Switch
+                      checked={isTransparent}
+                      onChange={() =>
+                        handleEditData({ isTransparent: !isTransparent })
+                      }
+                    />
+                  </Flex> */}
+                </Space>
+              </Card>
+              <Card
+                loading={isLoading}
+                style={{ display: isTransparent ? "none" : "block" }}
+              >
                 <Title level={5}>{t("Selector type configuration:")}</Title>
                 <Select
                   options={switcherOptions}
@@ -762,7 +791,10 @@ const Index = () => {
                   onChange={handleOptionChange}
                 />
               </Card>
-              <Card loading={isLoading}>
+              <Card
+                loading={isLoading}
+                style={{ display: isTransparent ? "none" : "block" }}
+              >
                 <Space
                   direction="vertical"
                   size="middle"
@@ -911,44 +943,11 @@ const Index = () => {
                   </div>
                 </Space>
               </Card>
-              <Card loading={isLoading}>
-                <Flex justify="space-between">
-                  <Title level={5}>
-                    {t("Selector Auto IP position configuration:")}
-                  </Title>
-                  <Popconfirm
-                    title=""
-                    description={t(
-                      "Upgrade to a paid plan to unlock this feature",
-                    )}
-                    trigger="hover"
-                    showCancel={false}
-                    okText={t("Upgrade")}
-                    onConfirm={() => navigate("/app/pricing")}
-                  >
-                    <InfoCircleOutlined style={{ paddingBottom: "0.5rem" }} />
-                  </Popconfirm>
-                </Flex>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text>Geolocation: </Text>
-                  <Switch
-                    disabled={!!planMapping[plan as keyof typeof planMapping]}
-                    checked={isGeoLocationEnabled}
-                    onChange={handleIpOpenChange}
-                  />
-                </div>
-              </Card>
             </Space>
           </div>
           <div className={styles.switcher_preview}>
-            <Card loading={isLoading}>
-              <Title level={4}>{t("Preview")}</Title>
+            <Card loading={isLoading} style={{ height: "100%" }}>
+              <Title level={5}>{t("Preview")}</Title>
               <div
                 style={{
                   position: "relative",
@@ -1258,7 +1257,7 @@ const Index = () => {
                       border: "1px solid rgb(217, 217, 217)",
                       cursor: "pointer",
                       userSelect: "none",
-                      display: "flex",
+                      display: isTransparent ? "none" : "flex",
                       alignItems: "center" /* 垂直居中 */,
                       justifyContent: isIncludedFlag ? "" : "center",
                       gap: "8px",

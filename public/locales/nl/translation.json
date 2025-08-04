@@ -520,7 +520,17 @@
     "Minimalist": "Minimalistisch",
     "Storytelling": "Verhalen vertellen",
     "Feature-first": "Functie eerst",
-    "Call-to-action": "Oproep tot actie"
+    "Call-to-action": "Oproep tot actie",
+    "No Visible Switcher: ": "Niet zichtbare switcher",
+    "The Private API has been limited due to your plan (Current plan: {{plan}})": "De Private API is beperkt vanwege uw plan (Huidig plan: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Private API": "Upgrade naar een hoger plan om de Private API te ontgrendelen",
+    "Import": "Importeren",
+    "How to import translation data": "Hoe importeer je vertalinggegevens",
+    "Import steps:": "Importeer stappen:",
+    "1. Click to download the product import template": "1. Klik om het productimporttemplate te downloaden",
+    "2. Fill in the translated data in the template": "2. Vul de vertaalde gegevens in het sjabloon in",
+    "3. Contact us to import the corresponding files": "3. Neem contact op met de klantenservice en importeer de corresponderende bestanden",
+    "Got it": "Ik weet het"
 }
   
   
