@@ -922,7 +922,13 @@ const Index = () => {
             )}
           </Text>
           <Flex justify="center">
-            <Button type="primary" onClick={() => setShowModal(false)}>
+            <Button
+              style={{
+                marginTop: "28px",
+              }}
+              type="primary"
+              onClick={() => setShowModal(false)}
+            >
               {t("Got it")}
             </Button>
           </Flex>
