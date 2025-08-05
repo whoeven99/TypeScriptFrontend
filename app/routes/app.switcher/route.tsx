@@ -760,7 +760,7 @@ const Index = () => {
                       onChange={handleIpOpenChange}
                     />
                   </Flex>
-                  {/* <Flex justify="space-between">
+                  <Flex justify="space-between">
                     <Text>{t("No Visible Switcher: ")}</Text>
                     <Switch
                       checked={isTransparent}
@@ -768,7 +768,7 @@ const Index = () => {
                         handleEditData({ isTransparent: !isTransparent })
                       }
                     />
-                  </Flex> */}
+                  </Flex>
                 </Space>
               </Card>
               <Card

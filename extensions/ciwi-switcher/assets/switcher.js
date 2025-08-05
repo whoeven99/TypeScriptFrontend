@@ -342,7 +342,20 @@ function transform(
 
   // console.log("4.number: ", number);
 
-  return `${symbol}${number} <span class="currency-code">${currencyCode}</span>`;
+  // 获取货币符号位置配置
+  const currencyConfig = window.currencyFormatConfig
+    ? window.currencyFormatConfig[currencyCode]
+    : null;
+  const symbolPosition = currencyConfig
+    ? currencyConfig.symbol_position
+    : "front";
+
+  // 根据符号位置返回不同格式
+  if (symbolPosition === "back") {
+    return `${number}${symbol} <span class="currency-code">${currencyCode}</span>`;
+  } else {
+    return `${symbol}${number} <span class="currency-code">${currencyCode}</span>`;
+  }
 }
 
 function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
@@ -923,118 +936,6 @@ window.onload = async function () {
 
   console.log("加载中...");
 
-  if (productId) {
-    const productIdValue = productId.value;
-    const productImageData = await GetProductImageData({
-      shopName: shop.value,
-      productId: productIdValue,
-      languageCode: language,
-    });
-
-    if (productImageData.response.length > 0) {
-      const imageDomList = ciwiBlock.querySelectorAll("img");
-
-      // 遍历所有img
-      imageDomList.forEach((img) => {
-        // 在response数组中查找匹配项
-        const match = productImageData.response.find((item) =>
-          img.src.includes(item.imageBeforeUrl.split("/files/")[2]),
-        );
-        if (match) {
-          // 如果imageAfterUrl或altBeforeTranslation存在，则替换
-          if (match.imageAfterUrl || match.altBeforeTranslation) {
-            if (match.imageAfterUrl) {
-              img.src = match?.imageAfterUrl;
-              img.srcset = match?.imageAfterUrl;
-            }
-            if (match.altBeforeTranslation) {
-              img.alt = match?.altBeforeTranslation;
-            }
-          }
-        }
-      });
-    }
-  }
-
-  if (
-    data.languageSelector ||
-    (!data.languageSelector && !data.currencySelector)
-  ) {
-    const languageSelector = ciwiBlock.querySelector(
-      "#language-switcher-container",
-    );
-    languageSelector.style.display = "block";
-    const languageSelectorHeader = ciwiBlock.querySelector(
-      ".selector-header[data-type='language']",
-    );
-    languageSelectorHeader.style.backgroundColor = data.backgroundColor;
-    languageSelectorHeader.style.border = `1px solid ${data.optionBorderColor}`;
-    const languageSelectorSelectedOption = ciwiBlock.querySelector(
-      ".options-container[data-type='language']",
-    );
-    languageSelectorSelectedOption.style.backgroundColor = data.backgroundColor;
-    languageSelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
-
-    const mainLanguageFlag = ciwiBlock.querySelector("#main-language-flag");
-    const translateFloatBtnIcon = ciwiBlock.querySelector(
-      "#translate-float-btn-icon",
-    );
-
-    if (data.includedFlag) {
-      //获取所有语言代码
-      const languageCodes = Array.from(
-        ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
-      ).map((option) => option.dataset.value);
-
-      const languageLocaleData = await fetchLanguageLocaleInfo(languageCodes);
-      const languageOptions = ciwiBlock.querySelectorAll(
-        ".option-item[data-type='language']",
-      );
-      languageOptions.forEach((option) => {
-        const langCode = option.dataset.value;
-        const countryCode = languageLocaleData[langCode]?.countries[0];
-        if (countryCode) {
-          // 创建并插入国旗图片
-          const flagImg = document.createElement("img");
-          flagImg.className = "country-flag";
-          flagImg.src = countryCode;
-          flagImg.alt = "";
-          // 将图片插入到选项的最前面
-          option.insertBefore(flagImg, option.firstChild);
-        }
-      });
-      // 为当前选中的语言添加国旗
-      const selectedOption = ciwiBlock.querySelector(
-        ".selector-header[data-type='language'] .selected-option",
-      );
-      if (selectedOption) {
-        const countryCode = languageLocaleData[language]?.countries[0];
-        const optionFlagImg = document.createElement("img");
-        optionFlagImg.className = "country-flag";
-        optionFlagImg.src = countryCode;
-        optionFlagImg.alt = "";
-        if (countryCode) {
-          selectedOption.insertBefore(optionFlagImg, selectedOption.firstChild);
-        }
-        if (
-          mainLanguageFlag &&
-          (data.languageSelector || data.currencySelector)
-        ) {
-          mainLanguageFlag.src = countryCode;
-          mainLanguageFlag.hidden = false;
-        }
-        if (
-          translateFloatBtnIcon &&
-          !data.languageSelector &&
-          !data.currencySelector
-        ) {
-          translateFloatBtnIcon.src = countryCode;
-          translateFloatBtnIcon.hidden = false;
-        }
-      }
-    }
-  }
-
   if (data.ipOpen) {
     const iptoken = ciwiBlock.querySelector('input[name="iptoken"]');
     const iptokenValue = iptoken.value;
@@ -1153,16 +1054,6 @@ window.onload = async function () {
     }
   }
 
-  // 修改RTL和LTR的组件布局
-  if (selectedLanguageText && selectedTextElement) {
-    if (isRtlLanguage) {
-      selectedLanguageText.style.transform = "rotate(90deg)";
-      selectedLanguageText.style.right = "0";
-      translateFloatBtnIcon.style.right = "10px";
-      selectionBox.style.right = "0";
-    }
-  }
-
   if (
     data.currencySelector ||
     (!data.languageSelector && !data.currencySelector)
@@ -1198,6 +1089,133 @@ window.onload = async function () {
       }
     }
   }
+
+  if (data.isTransparent) {
+    return;
+  }
+
+  if (productId) {
+    const productIdValue = productId.value;
+    const productImageData = await GetProductImageData({
+      shopName: shop.value,
+      productId: productIdValue,
+      languageCode: language,
+    });
+
+    if (productImageData.response.length > 0) {
+      const imageDomList = ciwiBlock.querySelectorAll("img");
+
+      // 遍历所有img
+      imageDomList.forEach((img) => {
+        // 在response数组中查找匹配项
+        const match = productImageData.response.find((item) =>
+          img.src.includes(item.imageBeforeUrl.split("/files/")[2]),
+        );
+        if (match) {
+          // 如果imageAfterUrl或altBeforeTranslation存在，则替换
+          if (match.imageAfterUrl || match.altBeforeTranslation) {
+            if (match.imageAfterUrl) {
+              img.src = match?.imageAfterUrl;
+              img.srcset = match?.imageAfterUrl;
+            }
+            if (match.altBeforeTranslation) {
+              img.alt = match?.altBeforeTranslation;
+            }
+          }
+        }
+      });
+    }
+  }
+
+  if (
+    data.languageSelector ||
+    (!data.languageSelector && !data.currencySelector)
+  ) {
+    const languageSelector = ciwiBlock.querySelector(
+      "#language-switcher-container",
+    );
+    languageSelector.style.display = "block";
+    const languageSelectorHeader = ciwiBlock.querySelector(
+      ".selector-header[data-type='language']",
+    );
+    languageSelectorHeader.style.backgroundColor = data.backgroundColor;
+    languageSelectorHeader.style.border = `1px solid ${data.optionBorderColor}`;
+    const languageSelectorSelectedOption = ciwiBlock.querySelector(
+      ".options-container[data-type='language']",
+    );
+    languageSelectorSelectedOption.style.backgroundColor = data.backgroundColor;
+    languageSelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
+
+    const mainLanguageFlag = ciwiBlock.querySelector("#main-language-flag");
+    const translateFloatBtnIcon = ciwiBlock.querySelector(
+      "#translate-float-btn-icon",
+    );
+
+    if (data.includedFlag) {
+      //获取所有语言代码
+      const languageCodes = Array.from(
+        ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
+      ).map((option) => option.dataset.value);
+
+      const languageLocaleData = await fetchLanguageLocaleInfo(languageCodes);
+      const languageOptions = ciwiBlock.querySelectorAll(
+        ".option-item[data-type='language']",
+      );
+      languageOptions.forEach((option) => {
+        const langCode = option.dataset.value;
+        const countryCode = languageLocaleData[langCode]?.countries[0];
+        if (countryCode) {
+          // 创建并插入国旗图片
+          const flagImg = document.createElement("img");
+          flagImg.className = "country-flag";
+          flagImg.src = countryCode;
+          flagImg.alt = "";
+          // 将图片插入到选项的最前面
+          option.insertBefore(flagImg, option.firstChild);
+        }
+      });
+      // 为当前选中的语言添加国旗
+      const selectedOption = ciwiBlock.querySelector(
+        ".selector-header[data-type='language'] .selected-option",
+      );
+      if (selectedOption) {
+        const countryCode = languageLocaleData[language]?.countries[0];
+        const optionFlagImg = document.createElement("img");
+        optionFlagImg.className = "country-flag";
+        optionFlagImg.src = countryCode;
+        optionFlagImg.alt = "";
+        if (countryCode) {
+          selectedOption.insertBefore(optionFlagImg, selectedOption.firstChild);
+        }
+        if (
+          mainLanguageFlag &&
+          (data.languageSelector || data.currencySelector)
+        ) {
+          mainLanguageFlag.src = countryCode;
+          mainLanguageFlag.hidden = false;
+        }
+        if (
+          translateFloatBtnIcon &&
+          !data.languageSelector &&
+          !data.currencySelector
+        ) {
+          translateFloatBtnIcon.src = countryCode;
+          translateFloatBtnIcon.hidden = false;
+        }
+      }
+    }
+  }
+
+  // 修改RTL和LTR的组件布局
+  if (selectedLanguageText && selectedTextElement) {
+    if (isRtlLanguage) {
+      selectedLanguageText.style.transform = "rotate(90deg)";
+      selectedLanguageText.style.right = "0";
+      translateFloatBtnIcon.style.right = "10px";
+      selectionBox.style.right = "0";
+    }
+  }
+
   if (switcher) {
     const selectorBox = ciwiBlock.querySelector("#selector-box");
     const confirmButton = ciwiBlock.querySelector(
