@@ -645,6 +645,7 @@ class CiwiswitcherForm extends HTMLElement {
       currencyInput: this.querySelector('input[name="currency_code"]'),
       countryInput: this.querySelector('input[name="country_code"]'),
       confirmButton: this.querySelector("#switcher-confirm"),
+      cancelButton: this.querySelector("#switcher-cancel"),
       mainBox: this.querySelector("#main-box"),
       translateFloatBtn: this.querySelector("#translate-float-btn"),
       translateFloatBtnText: this.querySelector("#translate-float-btn-text"),
@@ -685,6 +686,11 @@ class CiwiswitcherForm extends HTMLElement {
     this.elements.confirmButton?.addEventListener(
       "click",
       this.submitForm.bind(this),
+    );
+
+    this.elements.cancelButton?.addEventListener(
+      "click",
+      this.handleCancelClick.bind(this),
     );
 
     this.elements.mainBox?.addEventListener(
@@ -817,6 +823,15 @@ class CiwiswitcherForm extends HTMLElement {
       }
       this.rotateArrow("mainbox-arrow-icon", 0);
     }
+  }
+
+  handleCancelClick(event) {
+    event.preventDefault();
+    this.elements.languageSelector?.classList.remove("open");
+    this.elements.currencySelector?.classList.remove("open");
+    this.elements.selectorBox.style.display = "none";
+    this.elements.translateFloatBtn.style.display = "flex";
+    this.rotateArrow("mainbox-arrow-icon", 0);
   }
 
   submitForm(event) {
@@ -1221,6 +1236,9 @@ window.onload = async function () {
     const confirmButton = ciwiBlock.querySelector(
       ".ciwi_switcher_confirm_button",
     );
+    const cancelButton = ciwiBlock.querySelector(
+      ".ciwi_switcher_cancel_button",
+    );
     const translateFloatBtn = ciwiBlock.querySelector("#translate-float-btn");
     const translateFloatBtnText = ciwiBlock.querySelector(
       "#translate-float-btn-text",
@@ -1230,6 +1248,8 @@ window.onload = async function () {
     );
     confirmButton.style.backgroundColor = data.buttonBackgroundColor;
     confirmButton.style.color = data.buttonColor;
+    cancelButton.style.backgroundColor = data.buttonBackgroundColor;
+    cancelButton.style.color = data.buttonColor;
     selectorBox.style.backgroundColor = data.backgroundColor;
     switcher.style.color = data.fontColor;
     if (
@@ -1302,6 +1322,8 @@ window.onload = async function () {
         ciwiBlock,
       );
       mainBox.style.display = "flex";
+      mainBox.style.border = `1px solid ${data.optionBorderColor}`;
+      selectorBox.style.border = `1px solid ${data.optionBorderColor}`;
     } else {
       switcher.style.width = "100px";
       translateFloatBtnText.style.backgroundColor = data.backgroundColor;

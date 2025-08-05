@@ -142,6 +142,8 @@ a[href="https://translate.google.com"]
   display: flex; /* 启用 Flexbox 布局 */
   align-items: center; /* 垂直居中按钮 */
   width: 100%; /* 使容器占满父元素的宽度 */
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* 确认按钮 */
