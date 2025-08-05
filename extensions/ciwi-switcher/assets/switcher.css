@@ -45,6 +45,8 @@
   display: flex; /* 启用 Flexbox 布局 */
   align-items: center; /* 垂直居中按钮 */
   width: 100%; /* 使容器占满父元素的宽度 */
+  flex-direction: column;
+  gap: 8px;
 }
 
 .language_title,
@@ -91,7 +93,8 @@
 } */
 
 /* 确认按钮 */
-.ciwi_switcher_confirm_button {
+.ciwi_switcher_confirm_button,
+.ciwi_switcher_cancel_button {
   height: 40px;
   width: 100%;
   border-radius: 6px; /* 边框圆角 */
@@ -108,11 +111,13 @@
     transform 0.2s ease; /* 增加过渡效果 */
 }
 
-.ciwi_switcher_confirm_button:hover {
+.ciwi_switcher_confirm_button:hover,
+.ciwi_switcher_cancel_button:hover {
   background-color: #333;
 }
 
-.ciwi_switcher_confirm_button:active {
+.ciwi_switcher_confirm_button:active,
+.ciwi_switcher_cancel_button:active {
   transform: scale(0.98); /* 点击时的反馈效果，按钮缩小 */
 }
 

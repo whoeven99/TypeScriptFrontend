@@ -744,7 +744,7 @@ const Index = () => {
             style={{ width: "100px" }}
             type="primary"
           >
-            {t("Translate")}
+            {record?.status === 1 ? t("Update") : t("Translate")}
           </Button>
           <Button
             onClick={() => {

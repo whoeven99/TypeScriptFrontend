@@ -22,59 +22,48 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
   const navigate = useNavigate();
 
   return (
-    <ConfigProvider
-      theme={{
-        components: {
-          Card: {
-            headerBg: !switcherOpen ? "rgb(145, 208, 255)" : "rgb(255,184,0)",
-            bodyPadding: 16,
-          },
-        },
-      }}
+    <Card
+      title={
+        !switcherOpen
+          ? t("The switcher is currently enabled.")
+          : t("Enable language and currency switcher")
+      }
+      // extra={
+      //   <Button
+      //     icon={<RedoOutlined spin={loading} />}
+      //     type="link"
+      //     onClick={handleReload}
+      //   />
+      // }
     >
-      <Card
-        title={
-          !switcherOpen
-            ? t("The switcher is currently enabled.")
-            : t("Enable language and currency switcher")
-        }
-        // extra={
-        //   <Button
-        //     icon={<RedoOutlined spin={loading} />}
-        //     type="link"
-        //     onClick={handleReload}
-        //   />
-        // }
-      >
-        <Flex justify="space-between" align="center">
-          <Text>
-            {!switcherOpen
-              ? t(
-                  "Customers can switch languages and currencies when visiting the site. ",
-                )
-              : t(
-                  "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ",
-                )}
-          </Text>
-          <Button
-            onClick={() => {
-              if (!switcherOpen) {
-                // TODO: Disable App
-                window.open(blockUrl, "_blank");
-              } else {
-                // TODO: Setup App
-                localStorage.setItem("switcherCard", "true");
-                setTimeout(() => {
-                  navigate("/app/switcher");
-                }, 500);
-              }
-            }}
-          >
-            {!switcherOpen ? t("Disable App") : t("Setup App")}
-          </Button>
-        </Flex>
-      </Card>
-    </ConfigProvider>
+      <Flex justify="space-between" align="center">
+        <Text>
+          {!switcherOpen
+            ? t(
+                "Customers can switch languages and currencies when visiting the site. ",
+              )
+            : t(
+                "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ",
+              )}
+        </Text>
+        <Button
+          onClick={() => {
+            if (!switcherOpen) {
+              // TODO: Disable App
+              window.open(blockUrl, "_blank");
+            } else {
+              // TODO: Setup App
+              localStorage.setItem("switcherCard", "true");
+              setTimeout(() => {
+                navigate("/app/switcher");
+              }, 500);
+            }
+          }}
+        >
+          {!switcherOpen ? t("Disable App") : t("Setup App")}
+        </Button>
+      </Flex>
+    </Card>
   );
 };
 

@@ -1027,8 +1027,8 @@ const Index = () => {
                         selectorPosition === "top_right"
                           ? "40px"
                           : languageSelector === currencySelector
-                            ? "-170px"
-                            : "-120px", // 位于顶部
+                            ? "-221px"
+                            : "-171px", // 位于顶部
                       left: "50%", // 水平居中
                       transform: "translateX(-50%)", // 精确居中
                       height: "auto",
@@ -1040,7 +1040,7 @@ const Index = () => {
                       id="selector-box"
                       style={{
                         background: backgroundColor,
-                        border: "1px solid #ccc",
+                        border: `1px solid ${optionBorderColor}`,
                         padding: "15px",
                         borderRadius: "5px",
                         marginBottom: "5px",
@@ -1241,8 +1241,20 @@ const Index = () => {
                             backgroundColor: buttonBackgroundColor,
                             color: buttonColor,
                           }}
+                          onClick={handleSelectorClick}
                         >
                           Confirm
+                        </button>
+                        <button
+                          id="switcher-cancel"
+                          className={styles.ciwi_switcher_confirm_button}
+                          style={{
+                            backgroundColor: buttonBackgroundColor,
+                            color: buttonColor,
+                          }}
+                          onClick={handleSelectorClick}
+                        >
+                          Cancel
                         </button>
                       </div>
                     </div>
@@ -1254,7 +1266,7 @@ const Index = () => {
                       background: backgroundColor,
                       padding: "10px",
                       borderRadius: "5px",
-                      border: "1px solid rgb(217, 217, 217)",
+                      border: `1px solid ${optionBorderColor}`,
                       cursor: "pointer",
                       userSelect: "none",
                       display: isTransparent ? "none" : "flex",
