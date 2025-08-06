@@ -557,7 +557,11 @@ const Index = () => {
               }}
               loading={fetcher.state === "submitting"}
             >
-              {t("Translate")}
+              {languageData.find(
+                (item) => item.locale === selectedLanguageCode,
+              )?.status === 1
+                ? t("Update")
+                : t("Translate")}
             </Button>
           ) : (
             <Skeleton.Button active />

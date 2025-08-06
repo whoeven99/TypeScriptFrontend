@@ -645,6 +645,7 @@ class CiwiswitcherForm extends HTMLElement {
       currencyInput: this.querySelector('input[name="currency_code"]'),
       countryInput: this.querySelector('input[name="country_code"]'),
       confirmButton: this.querySelector("#switcher-confirm"),
+      cancelButton: this.querySelector("#switcher-cancel"),
       mainBox: this.querySelector("#main-box"),
       translateFloatBtn: this.querySelector("#translate-float-btn"),
       translateFloatBtnText: this.querySelector("#translate-float-btn-text"),
@@ -685,6 +686,11 @@ class CiwiswitcherForm extends HTMLElement {
     this.elements.confirmButton?.addEventListener(
       "click",
       this.submitForm.bind(this),
+    );
+
+    this.elements.cancelButton?.addEventListener(
+      "click",
+      this.handleCancelClick.bind(this),
     );
 
     this.elements.mainBox?.addEventListener(
@@ -737,7 +743,6 @@ class CiwiswitcherForm extends HTMLElement {
       ".selected-option .selected-text[data-type='currency']",
     );
     const selectedFlag = this.querySelector(".selected-option .country-flag");
-    const mainBoxFlag = this.querySelector("#main-language-flag");
     const option = event.currentTarget;
     const value = option.dataset.value;
     const text = option.querySelector(".option-text")?.textContent;
@@ -756,9 +761,6 @@ class CiwiswitcherForm extends HTMLElement {
       languageOptions?.forEach((opt) => opt.classList.remove("selected"));
       option.classList.add("selected");
       this.elements.languageInput.value = value;
-      if (mainBoxFlag) {
-        mainBoxFlag.src = flag;
-      }
     } else if (selectorType === "currency") {
       if (selectedCurrencyText) {
         selectedCurrencyText.textContent = text;
@@ -769,7 +771,47 @@ class CiwiswitcherForm extends HTMLElement {
       this.elements.currencyInput.value = value;
     }
 
+    // 重置箭头方向
+    this.rotateArrow("mainbox-arrow-icon", 0);
+
+    // 关闭所有选择器
+    this.closeAllSelectors();
+  }
+
+  handleOutsideClick(event) {
+    if (
+      this.elements.ciwiContainer &&
+      !this.elements.ciwiContainer.contains(event.target)
+    ) {
+      if (this.elements.selectorBox) {
+        this.elements.selectorBox.style.display = "none";
+        if (this.elements.translateFloatBtn.style.justifyContent) {
+          this.elements.translateFloatBtn.style.display = "flex";
+        }
+      }
+      this.rotateArrow("mainbox-arrow-icon", 0);
+    }
+  }
+
+  handleCancelClick(event) {
+    event.preventDefault();
+    this.elements.languageSelector?.classList.remove("open");
+    this.elements.currencySelector?.classList.remove("open");
+    this.elements.selectorBox.style.display = "none";
+    this.elements.translateFloatBtn.style.display = "flex";
+    this.rotateArrow("mainbox-arrow-icon", 0);
+  }
+
+  submitForm(event) {
+    event.preventDefault();
     // 更新 main-box 显示文本
+    const option = this.elements.languageSelector?.querySelector(".selected");
+    const flag = option.querySelector(".country-flag")?.src;
+    const mainBoxFlag = this.querySelector("#main-language-flag");
+
+    if (mainBoxFlag && flag) {
+      mainBoxFlag.src = flag;
+    }
     const displayText = this.elements.ciwiBlock.querySelector("#display-text");
     if (displayText) {
       const selectedLanguage =
@@ -797,30 +839,6 @@ class CiwiswitcherForm extends HTMLElement {
         displayText.textContent = selectedCurrency;
       }
     }
-    // 重置箭头方向
-    this.rotateArrow("mainbox-arrow-icon", 0);
-
-    // 关闭所有选择器
-    this.closeAllSelectors();
-  }
-
-  handleOutsideClick(event) {
-    if (
-      this.elements.ciwiContainer &&
-      !this.elements.ciwiContainer.contains(event.target)
-    ) {
-      if (this.elements.selectorBox) {
-        this.elements.selectorBox.style.display = "none";
-        if (this.elements.translateFloatBtn.style.justifyContent) {
-          this.elements.translateFloatBtn.style.display = "flex";
-        }
-      }
-      this.rotateArrow("mainbox-arrow-icon", 0);
-    }
-  }
-
-  submitForm(event) {
-    event.preventDefault();
     const form = this.querySelector("form");
     localStorage.setItem("selectedLanguage", this.elements.languageInput.value);
     localStorage.setItem("selectedCurrency", this.elements.currencyInput.value);
@@ -879,6 +897,7 @@ class CiwiswitcherForm extends HTMLElement {
     const arrow = this.elements.ciwiBlock.querySelector(elementId);
     if (arrow) {
       arrow.style.transform = `rotate(${degrees}deg)`;
+      arrow.style.transformOrigin = 'center center'; // 确保旋转中心点在图标中心
     }
   }
 
@@ -1221,6 +1240,9 @@ window.onload = async function () {
     const confirmButton = ciwiBlock.querySelector(
       ".ciwi_switcher_confirm_button",
     );
+    const cancelButton = ciwiBlock.querySelector(
+      ".ciwi_switcher_cancel_button",
+    );
     const translateFloatBtn = ciwiBlock.querySelector("#translate-float-btn");
     const translateFloatBtnText = ciwiBlock.querySelector(
       "#translate-float-btn-text",
@@ -1230,6 +1252,8 @@ window.onload = async function () {
     );
     confirmButton.style.backgroundColor = data.buttonBackgroundColor;
     confirmButton.style.color = data.buttonColor;
+    cancelButton.style.backgroundColor = data.buttonBackgroundColor;
+    cancelButton.style.color = data.buttonColor;
     selectorBox.style.backgroundColor = data.backgroundColor;
     switcher.style.color = data.fontColor;
     if (
@@ -1302,6 +1326,8 @@ window.onload = async function () {
         ciwiBlock,
       );
       mainBox.style.display = "flex";
+      mainBox.style.border = `1px solid ${data.optionBorderColor}`;
+      selectorBox.style.border = `1px solid ${data.optionBorderColor}`;
     } else {
       switcher.style.width = "100px";
       translateFloatBtnText.style.backgroundColor = data.backgroundColor;

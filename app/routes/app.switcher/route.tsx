@@ -220,7 +220,7 @@ const Index = () => {
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
-  const [mainBoxText, setMainBoxText] = useState("");
+  // const [mainBoxText, setMainBoxText] = useState("");
   const [localization, setLocalization] = useState(initialLocalization);
   const [originalData, setOriginalData] = useState<EditData>();
   const [editData, setEditData] = useState<EditData>({
@@ -238,6 +238,12 @@ const Index = () => {
     positionData: "0",
     isTransparent: false,
   });
+  const [selectedLanguage, setSelectedLanguage] = useState<any>(
+    localization.languages.find((language) => language.selected),
+  );
+  const [selectedCurrency, setSelectedCurrency] = useState<any>(
+    localization.currencies.find((currency) => currency.selected),
+  );
   const [isEdit, setIsEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showWarnModal, setShowWarnModal] = useState(false);
@@ -442,27 +448,27 @@ const Index = () => {
     }
   }, [editFetcher.data]);
 
-  useEffect(() => {
-    if (languageSelector && !currencySelector) {
-      setMainBoxText(
-        localization.languages.find((language) => language.selected)
-          ?.localeName as string,
-      );
-    } else if (!languageSelector && currencySelector) {
-      setMainBoxText(
-        localization.currencies.find((currency) => currency.selected)
-          ?.localeName as string,
-      );
-    } else if (languageSelector && currencySelector) {
-      setMainBoxText(
-        localization.languages.find((language) => language.selected)
-          ?.localeName +
-          " / " +
-          localization.currencies.find((currency) => currency.selected)
-            ?.localeName,
-      );
-    }
-  }, [languageSelector, currencySelector, localization]);
+  // useEffect(() => {
+  //   if (languageSelector && !currencySelector) {
+  //     setSelectedLanguage(
+  //       localization.languages.find((language) => language.selected)
+  //         ?.localeName as string,
+  //     );
+  //   } else if (!languageSelector && currencySelector) {
+  //     setSelectedCurrency(
+  //       localization.currencies.find((currency) => currency.selected)
+  //         ?.localeName as string,
+  //     );
+  //   } else if (languageSelector && currencySelector) {
+  //     setSelectedLanguage(
+  //       localization.languages.find((language) => language.selected)
+  //         ?.localeName +
+  //         " / " +
+  //         localization.currencies.find((currency) => currency.selected)
+  //           ?.localeName,
+  //     );
+  //   }
+  // }, [languageSelector, currencySelector]);
 
   useEffect(() => {
     if (
@@ -567,6 +573,19 @@ const Index = () => {
   };
 
   const handleSelectorClick = () => {
+    setIsSelectorOpen(!isSelectorOpen);
+    setIsLanguageOpen(false);
+    setIsCurrencyOpen(false);
+    setSelectedLanguage(
+      localization.languages.find((language) => language.selected),
+    );
+
+    setSelectedCurrency(
+      localization.currencies.find((currency) => currency.selected),
+    );
+  };
+
+  const handleCancelClick = () => {
     setIsSelectorOpen(!isSelectorOpen);
     setIsLanguageOpen(false);
     setIsCurrencyOpen(false);
@@ -1027,8 +1046,8 @@ const Index = () => {
                         selectorPosition === "top_right"
                           ? "40px"
                           : languageSelector === currencySelector
-                            ? "-170px"
-                            : "-120px", // 位于顶部
+                            ? "-221px"
+                            : "-171px", // 位于顶部
                       left: "50%", // 水平居中
                       transform: "translateX(-50%)", // 精确居中
                       height: "auto",
@@ -1040,7 +1059,7 @@ const Index = () => {
                       id="selector-box"
                       style={{
                         background: backgroundColor,
-                        border: "1px solid #ccc",
+                        border: `1px solid ${optionBorderColor}`,
                         padding: "15px",
                         borderRadius: "5px",
                         marginBottom: "5px",
@@ -1241,8 +1260,20 @@ const Index = () => {
                             backgroundColor: buttonBackgroundColor,
                             color: buttonColor,
                           }}
+                          onClick={handleSelectorClick}
                         >
                           Confirm
+                        </button>
+                        <button
+                          id="switcher-cancel"
+                          className={styles.ciwi_switcher_confirm_button}
+                          style={{
+                            backgroundColor: buttonBackgroundColor,
+                            color: buttonColor,
+                          }}
+                          onClick={handleCancelClick}
+                        >
+                          Cancel
                         </button>
                       </div>
                     </div>
@@ -1254,7 +1285,7 @@ const Index = () => {
                       background: backgroundColor,
                       padding: "10px",
                       borderRadius: "5px",
-                      border: "1px solid rgb(217, 217, 217)",
+                      border: `1px solid ${optionBorderColor}`,
                       cursor: "pointer",
                       userSelect: "none",
                       display: isTransparent ? "none" : "flex",
@@ -1268,18 +1299,21 @@ const Index = () => {
                     {isIncludedFlag && (
                       <img
                         className={styles.country_flag}
-                        src={
-                          localization.languages.find(
-                            (language) => language.selected,
-                          )?.flag
-                        }
+                        src={selectedLanguage?.flag}
                         alt=""
                         width="25%"
                         height="25%"
                       />
                     )}
                     <span id="display-text" className={styles.main_box_text}>
-                      {mainBoxText}
+                      {(languageSelector && currencySelector) ||
+                      (!languageSelector && !currencySelector)
+                        ? selectedLanguage?.localeName +
+                          " / " +
+                          selectedCurrency?.localeName
+                        : languageSelector
+                          ? selectedLanguage?.localeName
+                          : selectedCurrency?.localeName}
                     </span>
                     <img
                       id="mainbox-arrow-icon"
