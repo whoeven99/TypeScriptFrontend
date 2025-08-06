@@ -742,8 +742,15 @@ class CiwiswitcherForm extends HTMLElement {
     const selectedCurrencyText = this.querySelector(
       ".selected-option .selected-text[data-type='currency']",
     );
-    const selectedFlag = this.querySelector(".selected-option .option-country-flag");
+    const selectedCurrencySymbol = this.querySelector(
+      ".selected-option .currency-symbol",
+    );
+    const selectedFlag = this.querySelector(
+      ".selected-option .option-country-flag",
+    );
     const option = event.currentTarget;
+    console.log("option", option);
+
     const value = option.dataset.value;
     const text = option.querySelector(".option-text")?.textContent;
     const flag = option.querySelector(".option-country-flag")?.src;
@@ -762,6 +769,10 @@ class CiwiswitcherForm extends HTMLElement {
       option.classList.add("selected");
       this.elements.languageInput.value = value;
     } else if (selectorType === "currency") {
+      const symbol = option.querySelector(".currency-symbol")?.textContent;
+      if (selectedCurrencySymbol) {
+        selectedCurrencySymbol.textContent = symbol;
+      }
       if (selectedCurrencyText) {
         selectedCurrencyText.textContent = text;
       }
@@ -897,7 +908,7 @@ class CiwiswitcherForm extends HTMLElement {
     const arrow = this.elements.ciwiBlock.querySelector(elementId);
     if (arrow) {
       arrow.style.transform = `rotate(${degrees}deg)`;
-      arrow.style.transformOrigin = 'center center'; // 确保旋转中心点在图标中心
+      arrow.style.transformOrigin = "center center"; // 确保旋转中心点在图标中心
     }
   }
 
