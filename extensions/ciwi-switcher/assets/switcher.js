@@ -743,7 +743,6 @@ class CiwiswitcherForm extends HTMLElement {
       ".selected-option .selected-text[data-type='currency']",
     );
     const selectedFlag = this.querySelector(".selected-option .country-flag");
-    const mainBoxFlag = this.querySelector("#main-language-flag");
     const option = event.currentTarget;
     const value = option.dataset.value;
     const text = option.querySelector(".option-text")?.textContent;
@@ -762,9 +761,6 @@ class CiwiswitcherForm extends HTMLElement {
       languageOptions?.forEach((opt) => opt.classList.remove("selected"));
       option.classList.add("selected");
       this.elements.languageInput.value = value;
-      if (mainBoxFlag) {
-        mainBoxFlag.src = flag;
-      }
     } else if (selectorType === "currency") {
       if (selectedCurrencyText) {
         selectedCurrencyText.textContent = text;
@@ -775,34 +771,6 @@ class CiwiswitcherForm extends HTMLElement {
       this.elements.currencyInput.value = value;
     }
 
-    // 更新 main-box 显示文本
-    const displayText = this.elements.ciwiBlock.querySelector("#display-text");
-    if (displayText) {
-      const selectedLanguage =
-        this.elements.languageSelector?.querySelector(".selected-text")
-          ?.textContent || "";
-      const selectedCurrency =
-        this.elements.currencySelector?.querySelector(".selected-text")
-          ?.textContent || "";
-
-      const languageSelectorContainer = this.elements.ciwiBlock.querySelector(
-        "#language-switcher-container",
-      );
-      const currencySelectorContainer = this.elements.ciwiBlock.querySelector(
-        "#currency-switcher-container",
-      );
-
-      if (
-        languageSelectorContainer.style.display === "block" &&
-        currencySelectorContainer.style.display === "block"
-      ) {
-        displayText.textContent = `${selectedLanguage} / ${selectedCurrency}`;
-      } else if (languageSelectorContainer.style.display === "block") {
-        displayText.textContent = selectedLanguage;
-      } else if (currencySelectorContainer.style.display === "block") {
-        displayText.textContent = selectedCurrency;
-      }
-    }
     // 重置箭头方向
     this.rotateArrow("mainbox-arrow-icon", 0);
 
@@ -836,6 +804,41 @@ class CiwiswitcherForm extends HTMLElement {
 
   submitForm(event) {
     event.preventDefault();
+    // 更新 main-box 显示文本
+    const option = this.elements.languageSelector?.querySelector(".selected");
+    const flag = option.querySelector(".country-flag")?.src;
+    const mainBoxFlag = this.querySelector("#main-language-flag");
+
+    if (mainBoxFlag && flag) {
+      mainBoxFlag.src = flag;
+    }
+    const displayText = this.elements.ciwiBlock.querySelector("#display-text");
+    if (displayText) {
+      const selectedLanguage =
+        this.elements.languageSelector?.querySelector(".selected-text")
+          ?.textContent || "";
+      const selectedCurrency =
+        this.elements.currencySelector?.querySelector(".selected-text")
+          ?.textContent || "";
+
+      const languageSelectorContainer = this.elements.ciwiBlock.querySelector(
+        "#language-switcher-container",
+      );
+      const currencySelectorContainer = this.elements.ciwiBlock.querySelector(
+        "#currency-switcher-container",
+      );
+
+      if (
+        languageSelectorContainer.style.display === "block" &&
+        currencySelectorContainer.style.display === "block"
+      ) {
+        displayText.textContent = `${selectedLanguage} / ${selectedCurrency}`;
+      } else if (languageSelectorContainer.style.display === "block") {
+        displayText.textContent = selectedLanguage;
+      } else if (currencySelectorContainer.style.display === "block") {
+        displayText.textContent = selectedCurrency;
+      }
+    }
     const form = this.querySelector("form");
     localStorage.setItem("selectedLanguage", this.elements.languageInput.value);
     localStorage.setItem("selectedCurrency", this.elements.currencyInput.value);
@@ -894,6 +897,7 @@ class CiwiswitcherForm extends HTMLElement {
     const arrow = this.elements.ciwiBlock.querySelector(elementId);
     if (arrow) {
       arrow.style.transform = `rotate(${degrees}deg)`;
+      arrow.style.transformOrigin = 'center center'; // 确保旋转中心点在图标中心
     }
   }
 

@@ -94,7 +94,7 @@
         <div
           id="main-box"
           class="ciwi_main_box"
-          style="display: none;"
+          style="display: none; text-align: center; justify-content: center;"
         >
           <img
             id="main-language-flag"
@@ -104,12 +104,12 @@
             height="20px"
             src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
             onerror="this.style.display='none'"
-            style="margin-right: 8px;"
+            style="margin-right: 8px; flex-shrink: 0;"
           >
           <span
             id="display-text"
             class="main_box_text"
-            style="margin-right: 8px;"
+            style="text-align: center; flex: 1;"
           >
             {{- localization.language.endonym_name | capitalize -}}
           </span>
@@ -120,7 +120,6 @@
             alt="Arrow Icon"
             width="20"
             height="20"
-            style="display: inline-block; vertical-align: middle;"
           >
         </div>
         <div
