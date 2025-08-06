@@ -1271,7 +1271,7 @@ const Index = () => {
                             backgroundColor: buttonBackgroundColor,
                             color: buttonColor,
                           }}
-                          onClick={handleSelectorClick}
+                          onClick={handleCancelClick}
                         >
                           Cancel
                         </button>
