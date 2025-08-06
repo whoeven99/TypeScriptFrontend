@@ -16,8 +16,10 @@
   user-select: none;
   display: flex;
   align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
   gap: 8px;
   height: 40px; /* 明确设置高度 */
+  text-align: center; /* 文本居中 */
 }
 
 .main_box_text {
@@ -31,14 +33,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: center; /* 文本居中 */
+  flex: 1; /* 让文本占据剩余空间 */
 }
 
 .mainarrow_icon {
   position: absolute;
-  right: 0; /* 改用右侧固定距离 */
+  right: 10px; /* 改用右侧固定距离 */
   transition: transform 0.3s ease; /* 平滑过渡 */
   width: 25% !important;
   height: 25% !important;
+  transform-origin: center center; /* 设置旋转中心点为图标中心 */
 }
 
 .button_wrapper {
@@ -239,6 +244,8 @@ a[href="https://translate.google.com"]
 }
 
 .country-flag {
+  position: absolute;
+  left: 10px;
   width: 30px;
   height: 20px;
   object-fit: cover;
