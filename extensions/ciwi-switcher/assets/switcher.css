@@ -1,5 +1,5 @@
 .ciwi_container {
-  width: 200px;
+  min-width: 100px;
   right: auto;
   top: auto;
   position: fixed; /* 改为相对屏幕的位置 */
@@ -8,7 +8,17 @@
   z-index: 9999;
 }
 
+.selector_box {
+  position: absolute;
+  background: #fff;
+  padding: 10px;
+  border-radius: 5px;
+  display: none;
+  width: 100%;
+}
+
 .ciwi_main_box {
+  min-width: 150px;
   position: relative;
   padding: 10px;
   border-radius: 5px;
@@ -26,13 +36,11 @@
   display: inline-block;
   line-height: 20px; /* 与图片高度一致 */
   vertical-align: middle;
-  margin: 0;
   padding: 0;
   font-size: 14px; /* 明确设置字体大小 */
-  max-width: 100px;
-  overflow: hidden;
+  /* overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: nowrap; */
   text-align: center; /* 文本居中 */
   flex: 1; /* 让文本占据剩余空间 */
 }
@@ -41,7 +49,7 @@
   position: absolute;
   right: 10px; /* 改用右侧固定距离 */
   transition: transform 0.3s ease; /* 平滑过渡 */
-  width: 25% !important;
+  width: 10% !important;
   height: 25% !important;
   transform-origin: center center; /* 设置旋转中心点为图标中心 */
 }
@@ -231,6 +239,7 @@ a[href="https://translate.google.com"]
 }
 
 .selected-text {
+  font-size: 14px;
   max-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -256,8 +265,24 @@ a[href="https://translate.google.com"]
   transition: opacity 0.3s ease; /* 平滑过渡效果 */
 }
 
+.option-country-flag {
+  width: 30px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid #ddd;
+  min-width: 30px; /* 保持最小宽度 */
+  opacity: 0; /* 初始状态完全透明 */
+  transition: opacity 0.3s ease; /* 平滑过渡效果 */
+}
+
 /* 当图片加载完成时显示 */
 .country-flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"])
+{
+  opacity: 1;
+}
+
+.option-country-flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"])
 {
   opacity: 1;
 }
@@ -295,6 +320,7 @@ a[href="https://translate.google.com"]
 }
 
 .option-item {
+  font-size: 14px;
   display: flex;
   align-items: center;
   gap: 8px;

@@ -110,6 +110,7 @@ a[href="https://translate.google.com"]
 }
 
 .main_box {
+  display: flex;
   position: relative;
   background: #fff;
   padding: 10px;
@@ -119,7 +120,6 @@ a[href="https://translate.google.com"]
   user-select: none;
   display: flex;
   align-items: center; /* 垂直居中 */
-  gap: 8px;
   height: 40px; /* 明确设置高度 */
 }
 
@@ -127,7 +127,7 @@ a[href="https://translate.google.com"]
   display: inline-block;
   line-height: 20px; /* 与图片高度一致 */
   vertical-align: middle;
-  margin: 0;
+  margin: 0 20px;
   padding: 0;
   font-size: 14px; /* 明确设置字体大小 */
 }
@@ -228,7 +228,6 @@ a[href="https://translate.google.com"]
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
   border-radius: 4px;
   cursor: pointer;
   margin-bottom: 10px;
@@ -239,6 +238,11 @@ a[href="https://translate.google.com"]
   display: flex;
   align-items: center;
   gap: 8px;
+  margin: 0 10px;
+}
+
+.selected_text {
+  margin-right: 25px;
 }
 
 .country_flag {
