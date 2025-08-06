@@ -742,11 +742,11 @@ class CiwiswitcherForm extends HTMLElement {
     const selectedCurrencyText = this.querySelector(
       ".selected-option .selected-text[data-type='currency']",
     );
-    const selectedFlag = this.querySelector(".selected-option .country-flag");
+    const selectedFlag = this.querySelector(".selected-option .option-country-flag");
     const option = event.currentTarget;
     const value = option.dataset.value;
     const text = option.querySelector(".option-text")?.textContent;
-    const flag = option.querySelector(".country-flag")?.src;
+    const flag = option.querySelector(".option-country-flag")?.src;
     const selectorType = option.closest(".custom-selector")?.dataset.type; // 获取选择器类型
 
     if (selectorType === "language") {
@@ -806,7 +806,7 @@ class CiwiswitcherForm extends HTMLElement {
     event.preventDefault();
     // 更新 main-box 显示文本
     const option = this.elements.languageSelector?.querySelector(".selected");
-    const flag = option.querySelector(".country-flag")?.src;
+    const flag = option.querySelector(".option-country-flag")?.src;
     const mainBoxFlag = this.querySelector("#main-language-flag");
 
     if (mainBoxFlag && flag) {
@@ -1186,7 +1186,7 @@ window.onload = async function () {
         if (countryCode) {
           // 创建并插入国旗图片
           const flagImg = document.createElement("img");
-          flagImg.className = "country-flag";
+          flagImg.className = "option-country-flag";
           flagImg.src = countryCode;
           flagImg.alt = "";
           // 将图片插入到选项的最前面
@@ -1200,7 +1200,7 @@ window.onload = async function () {
       if (selectedOption) {
         const countryCode = languageLocaleData[language]?.countries[0];
         const optionFlagImg = document.createElement("img");
-        optionFlagImg.className = "country-flag";
+        optionFlagImg.className = "option-country-flag";
         optionFlagImg.src = countryCode;
         optionFlagImg.alt = "";
         if (countryCode) {
@@ -1221,6 +1221,10 @@ window.onload = async function () {
           translateFloatBtnIcon.src = countryCode;
           translateFloatBtnIcon.hidden = false;
         }
+      }
+      const mainBoxText = ciwiBlock.querySelector(".main_box_text");
+      if (mainBoxText) {
+        mainBoxText.style.margin = "0 20px 0px 35px";
       }
     }
   }
