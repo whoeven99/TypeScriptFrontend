@@ -1015,21 +1015,15 @@ const Index = () => {
                 </div>
                 <div
                   style={{
-                    width: "200px",
                     position: "relative",
                     top:
                       selectorPosition === "top_left" ||
                       selectorPosition === "top_right"
-                        ? ((Number(positionData) * 82) / 100).toString() + "%"
+                        ? ((Number(positionData) * 81) / 100).toString() + "%"
                         : (
-                            ((100 - Number(positionData)) * 82) /
+                            ((100 - Number(positionData)) * 81) /
                             100
                           ).toString() + "%",
-                    left:
-                      selectorPosition === "top_left" ||
-                      selectorPosition === "bottom_left"
-                        ? "0"
-                        : "calc(100% - 200px)",
                     height: "auto",
                     display: "block",
                     zIndex: "1000",
@@ -1039,290 +1033,297 @@ const Index = () => {
                   <div
                     id="ciwi-container"
                     style={{
-                      width: "200px",
+                      minWidth: "100px",
                       position: "absolute", // 改为绝对定位
                       top:
                         selectorPosition === "top_left" ||
-                        selectorPosition === "top_right"
-                          ? "40px"
-                          : languageSelector === currencySelector
-                            ? "-221px"
-                            : "-171px", // 位于顶部
-                      left: "50%", // 水平居中
-                      transform: "translateX(-50%)", // 精确居中
+                        selectorPosition === "top_right" ||
+                        languageSelector === currencySelector
+                          ? "-221px"
+                          : "-171px", // 位于顶部
+                      left:
+                        selectorPosition === "top_left" ||
+                        selectorPosition === "bottom_left"
+                          ? "0"
+                          : "auto",
+                      right:
+                        selectorPosition === "top_right" ||
+                        selectorPosition === "bottom_right"
+                          ? "0"
+                          : "auto",
+                      transform: "none", // 移除transform，使用left/right定位
                       height: "auto",
-                      display: isSelectorOpen ? "block" : "none",
+                      display: isTransparent ? "none" : "block",
                       zIndex: "2",
                     }}
                   >
-                    <div
-                      id="selector-box"
-                      style={{
-                        background: backgroundColor,
-                        border: `1px solid ${optionBorderColor}`,
-                        padding: "15px",
-                        borderRadius: "5px",
-                        marginBottom: "5px",
-                        width: "100%",
-                      }}
-                    >
+                    {isSelectorOpen && (
                       <div
+                        id="selector-box"
                         style={{
-                          display: `${languageSelector || (!languageSelector && !currencySelector) ? "block" : "none"}`,
-                          marginBottom: "10px",
+                          background: backgroundColor,
+                          border: `1px solid ${optionBorderColor}`,
+                          padding: "15px",
+                          borderRadius: "5px",
+                          marginBottom: "5px",
+                          width: "100%",
                         }}
                       >
                         <div
-                          className={styles.custom_selector}
-                          data-type="language"
-                          onClick={handleLanguageClick}
+                          style={{
+                            display: `${languageSelector || (!languageSelector && !currencySelector) ? "block" : "none"}`,
+                            marginBottom: "10px",
+                          }}
                         >
                           <div
-                            className={styles.selector_header}
+                            className={styles.custom_selector}
                             data-type="language"
-                            style={{
-                              backgroundColor: backgroundColor,
-                              border: `1px solid ${optionBorderColor}`,
-                            }}
+                            onClick={handleLanguageClick}
                           >
                             <div
-                              className={styles.selected_option}
+                              className={styles.selector_header}
                               data-type="language"
-                            >
-                              {isIncludedFlag && (
-                                <img
-                                  className={styles.country_flag}
-                                  src={
-                                    localization.languages.find(
-                                      (language) => language.selected,
-                                    )?.flag
-                                  }
-                                  alt=""
-                                  width="25%"
-                                  height="25%"
-                                />
-                              )}
-                              <span
-                                className={styles.selected_text}
-                                data-type="language"
-                              >
-                                {
-                                  localization.languages.find(
-                                    (language) => language.selected,
-                                  )?.localeName
-                                }
-                              </span>
-                            </div>
-                            <img
-                              id="currency-arrow-icon"
-                              className={styles.arrow_icon}
-                              src="/arrow.svg"
-                              alt="Arrow Icon"
-                              width="25%"
-                              height="25%"
-                            />
-                          </div>
-                          <div
-                            className={styles.options_container}
-                            data-type="language"
-                            style={{
-                              display: isLanguageOpen ? "block" : "none",
-                              backgroundColor: backgroundColor,
-                              zIndex: "2000",
-                            }}
-                          >
-                            <div
-                              className={styles.options_list}
-                              style={{
-                                border: `1px solid ${optionBorderColor}`,
-                              }}
-                            >
-                              {localization.languages.map((language) => (
-                                <div
-                                  className={styles.option_item}
-                                  data-value={language.iso_code}
-                                  data-type="language"
-                                  onClick={() =>
-                                    handleOptionClick(language.iso_code)
-                                  }
-                                  key={language.iso_code}
-                                >
-                                  {isIncludedFlag && (
-                                    <img
-                                      className={styles.country_flag}
-                                      src={language.flag}
-                                      alt=""
-                                      width="25%"
-                                      height="25%"
-                                    />
-                                  )}
-                                  <span className={styles.option_text}>
-                                    {language.localeName}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          display: `${currencySelector || (!languageSelector && !currencySelector) ? "block" : "none"}`,
-                          marginBottom: "10px",
-                        }}
-                      >
-                        <div
-                          className={styles.custom_selector}
-                          data-type="currency"
-                          onClick={handleCurrencyClick}
-                        >
-                          <div
-                            className={styles.selector_header}
-                            data-type="currency"
-                            style={{
-                              backgroundColor: backgroundColor,
-                              border: `1px solid ${optionBorderColor}`,
-                            }}
-                          >
-                            <div
-                              className={styles.selected_option}
-                              data-type="currency"
-                            >
-                              <span
-                                className={styles.selected_text}
-                                data-type="currency"
-                              >
-                                {
-                                  localization.currencies.find(
-                                    (currency) => currency.selected,
-                                  )?.localeName
-                                }
-                                (
-                                {
-                                  localization.currencies.find(
-                                    (currency) => currency.selected,
-                                  )?.symbol
-                                }
-                                )
-                              </span>
-                            </div>
-                            <img
-                              id="currency-arrow-icon"
-                              className={styles.arrow_icon}
-                              src="/arrow.svg"
-                              alt="Arrow Icon"
-                              width="25%"
-                              height="25%"
-                            />
-                          </div>
-
-                          <div
-                            className={styles.options_container}
-                            data-type="currency"
-                            style={{
-                              display: isCurrencyOpen ? "block" : "none",
-                            }}
-                          >
-                            <div
-                              className={styles.options_list}
                               style={{
                                 backgroundColor: backgroundColor,
                                 border: `1px solid ${optionBorderColor}`,
                               }}
                             >
-                              {localization.currencies.map((currency) => (
-                                <div
-                                  className={styles.option_item}
-                                  data-value={currency.iso_code}
-                                  data-type="currency"
-                                  key={currency.iso_code}
-                                  onClick={() =>
-                                    handleOptionClick(currency.iso_code)
-                                  }
+                              <div
+                                className={styles.selected_option}
+                                data-type="language"
+                              >
+                                {isIncludedFlag && (
+                                  <img
+                                    className={styles.country_flag}
+                                    src={
+                                      localization.languages.find(
+                                        (language) => language.selected,
+                                      )?.flag
+                                    }
+                                    alt=""
+                                    width="25%"
+                                    height="25%"
+                                  />
+                                )}
+                                <span
+                                  className={styles.selected_text}
+                                  data-type="language"
                                 >
-                                  <span className={styles.option_text}>
-                                    {currency.localeName}
-                                  </span>
-                                  <span className={styles.currency_code}>
-                                    ({currency.symbol})
-                                  </span>
-                                </div>
-                              ))}
+                                  {
+                                    localization.languages.find(
+                                      (language) => language.selected,
+                                    )?.localeName
+                                  }
+                                </span>
+                              </div>
+                              <img
+                                id="currency-arrow-icon"
+                                className={styles.arrow_icon}
+                                src="/arrow.svg"
+                                alt="Arrow Icon"
+                                width="25%"
+                                height="25%"
+                              />
+                            </div>
+                            <div
+                              className={styles.options_container}
+                              data-type="language"
+                              style={{
+                                display: isLanguageOpen ? "block" : "none",
+                                backgroundColor: backgroundColor,
+                                zIndex: "2000",
+                              }}
+                            >
+                              <div
+                                className={styles.options_list}
+                                style={{
+                                  border: `1px solid ${optionBorderColor}`,
+                                }}
+                              >
+                                {localization.languages.map((language) => (
+                                  <div
+                                    className={styles.option_item}
+                                    data-value={language.iso_code}
+                                    data-type="language"
+                                    onClick={() =>
+                                      handleOptionClick(language.iso_code)
+                                    }
+                                    key={language.iso_code}
+                                  >
+                                    {isIncludedFlag && (
+                                      <img
+                                        className={styles.country_flag}
+                                        src={language.flag}
+                                        alt=""
+                                        width="25%"
+                                        height="25%"
+                                      />
+                                    )}
+                                    <span className={styles.option_text}>
+                                      {language.localeName}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <div className={styles.button_wrapper}>
-                        <button
-                          id="switcher-confirm"
-                          className={styles.ciwi_switcher_confirm_button}
+                        <div
                           style={{
-                            backgroundColor: buttonBackgroundColor,
-                            color: buttonColor,
+                            display: `${currencySelector || (!languageSelector && !currencySelector) ? "block" : "none"}`,
+                            marginBottom: "10px",
                           }}
-                          onClick={handleSelectorClick}
                         >
-                          Confirm
-                        </button>
-                        <button
-                          id="switcher-cancel"
-                          className={styles.ciwi_switcher_confirm_button}
-                          style={{
-                            backgroundColor: buttonBackgroundColor,
-                            color: buttonColor,
-                          }}
-                          onClick={handleCancelClick}
-                        >
-                          Cancel
-                        </button>
+                          <div
+                            className={styles.custom_selector}
+                            data-type="currency"
+                            onClick={handleCurrencyClick}
+                          >
+                            <div
+                              className={styles.selector_header}
+                              data-type="currency"
+                              style={{
+                                backgroundColor: backgroundColor,
+                                border: `1px solid ${optionBorderColor}`,
+                              }}
+                            >
+                              <div
+                                className={styles.selected_option}
+                                data-type="currency"
+                              >
+                                <span
+                                  className={styles.selected_text}
+                                  data-type="currency"
+                                >
+                                  {
+                                    localization.currencies.find(
+                                      (currency) => currency.selected,
+                                    )?.localeName
+                                  }
+                                  (
+                                  {
+                                    localization.currencies.find(
+                                      (currency) => currency.selected,
+                                    )?.symbol
+                                  }
+                                  )
+                                </span>
+                              </div>
+                              <img
+                                id="currency-arrow-icon"
+                                className={styles.arrow_icon}
+                                src="/arrow.svg"
+                                alt="Arrow Icon"
+                                width="25%"
+                                height="25%"
+                              />
+                            </div>
+
+                            <div
+                              className={styles.options_container}
+                              data-type="currency"
+                              style={{
+                                display: isCurrencyOpen ? "block" : "none",
+                              }}
+                            >
+                              <div
+                                className={styles.options_list}
+                                style={{
+                                  backgroundColor: backgroundColor,
+                                  border: `1px solid ${optionBorderColor}`,
+                                }}
+                              >
+                                {localization.currencies.map((currency) => (
+                                  <div
+                                    className={styles.option_item}
+                                    data-value={currency.iso_code}
+                                    data-type="currency"
+                                    key={currency.iso_code}
+                                    onClick={() =>
+                                      handleOptionClick(currency.iso_code)
+                                    }
+                                  >
+                                    <span className={styles.option_text}>
+                                      {currency.localeName}
+                                    </span>
+                                    <span className={styles.currency_code}>
+                                      ({currency.symbol})
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className={styles.button_wrapper}>
+                          <button
+                            id="switcher-confirm"
+                            className={styles.ciwi_switcher_confirm_button}
+                            style={{
+                              backgroundColor: buttonBackgroundColor,
+                              color: buttonColor,
+                            }}
+                            onClick={handleSelectorClick}
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            id="switcher-cancel"
+                            className={styles.ciwi_switcher_confirm_button}
+                            style={{
+                              backgroundColor: buttonBackgroundColor,
+                              color: buttonColor,
+                            }}
+                            onClick={handleCancelClick}
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div
-                    id="main-box"
-                    style={{
-                      position: "relative",
-                      background: backgroundColor,
-                      padding: "10px",
-                      borderRadius: "5px",
-                      border: `1px solid ${optionBorderColor}`,
-                      cursor: "pointer",
-                      userSelect: "none",
-                      display: isTransparent ? "none" : "flex",
-                      alignItems: "center" /* 垂直居中 */,
-                      justifyContent: isIncludedFlag ? "" : "center",
-                      gap: "8px",
-                      height: "40px" /* 明确设置高度 */,
-                    }}
-                    onClick={handleSelectorClick}
-                  >
-                    {isIncludedFlag && (
+                    )}
+                    <div
+                      id="main-box"
+                      className={styles.main_box}
+                      style={{
+                        marginTop: isSelectorOpen
+                          ? "0px"
+                          : languageSelector === currencySelector
+                            ? "225px"
+                            : "175px",
+                        background: backgroundColor,
+                        border: `1px solid ${optionBorderColor}`,
+                        justifyContent: isIncludedFlag ? "" : "center",
+                      }}
+                      onClick={handleSelectorClick}
+                    >
+                      {isIncludedFlag && (
+                        <img
+                          className={styles.country_flag}
+                          src={selectedLanguage?.flag}
+                          alt=""
+                          width="25%"
+                          height="25%"
+                        />
+                      )}
+                      <span id="display-text" className={styles.main_box_text}>
+                        {(languageSelector && currencySelector) ||
+                        (!languageSelector && !currencySelector)
+                          ? selectedLanguage?.localeName +
+                            " / " +
+                            selectedCurrency?.localeName
+                          : languageSelector
+                            ? selectedLanguage?.localeName
+                            : selectedCurrency?.localeName}
+                      </span>
                       <img
-                        className={styles.country_flag}
-                        src={selectedLanguage?.flag}
-                        alt=""
-                        width="25%"
+                        id="mainbox-arrow-icon"
+                        className={styles.mainarrow_icon}
+                        src="/arrow.svg"
+                        alt="Arrow Icon"
+                        width="15%"
                         height="25%"
                       />
-                    )}
-                    <span id="display-text" className={styles.main_box_text}>
-                      {(languageSelector && currencySelector) ||
-                      (!languageSelector && !currencySelector)
-                        ? selectedLanguage?.localeName +
-                          " / " +
-                          selectedCurrency?.localeName
-                        : languageSelector
-                          ? selectedLanguage?.localeName
-                          : selectedCurrency?.localeName}
-                    </span>
-                    <img
-                      id="mainbox-arrow-icon"
-                      className={styles.mainarrow_icon}
-                      src="/arrow.svg"
-                      alt="Arrow Icon"
-                      width="25%"
-                      height="25%"
-                    />
+                    </div>
                   </div>
                 </div>
               </div>

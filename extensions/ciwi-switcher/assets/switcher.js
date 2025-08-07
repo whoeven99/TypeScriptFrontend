@@ -742,11 +742,18 @@ class CiwiswitcherForm extends HTMLElement {
     const selectedCurrencyText = this.querySelector(
       ".selected-option .selected-text[data-type='currency']",
     );
-    const selectedFlag = this.querySelector(".selected-option .country-flag");
+    const selectedCurrencySymbol = this.querySelector(
+      ".selected-option .currency-symbol",
+    );
+    const selectedFlag = this.querySelector(
+      ".selected-option .option-country-flag",
+    );
     const option = event.currentTarget;
+    console.log("option", option);
+
     const value = option.dataset.value;
     const text = option.querySelector(".option-text")?.textContent;
-    const flag = option.querySelector(".country-flag")?.src;
+    const flag = option.querySelector(".option-country-flag")?.src;
     const selectorType = option.closest(".custom-selector")?.dataset.type; // 获取选择器类型
 
     if (selectorType === "language") {
@@ -762,6 +769,10 @@ class CiwiswitcherForm extends HTMLElement {
       option.classList.add("selected");
       this.elements.languageInput.value = value;
     } else if (selectorType === "currency") {
+      const symbol = option.querySelector(".currency-symbol")?.textContent;
+      if (selectedCurrencySymbol) {
+        selectedCurrencySymbol.textContent = symbol;
+      }
       if (selectedCurrencyText) {
         selectedCurrencyText.textContent = text;
       }
@@ -806,7 +817,7 @@ class CiwiswitcherForm extends HTMLElement {
     event.preventDefault();
     // 更新 main-box 显示文本
     const option = this.elements.languageSelector?.querySelector(".selected");
-    const flag = option.querySelector(".country-flag")?.src;
+    const flag = option.querySelector(".option-country-flag")?.src;
     const mainBoxFlag = this.querySelector("#main-language-flag");
 
     if (mainBoxFlag && flag) {
@@ -897,7 +908,7 @@ class CiwiswitcherForm extends HTMLElement {
     const arrow = this.elements.ciwiBlock.querySelector(elementId);
     if (arrow) {
       arrow.style.transform = `rotate(${degrees}deg)`;
-      arrow.style.transformOrigin = 'center center'; // 确保旋转中心点在图标中心
+      arrow.style.transformOrigin = "center center"; // 确保旋转中心点在图标中心
     }
   }
 
@@ -1186,7 +1197,7 @@ window.onload = async function () {
         if (countryCode) {
           // 创建并插入国旗图片
           const flagImg = document.createElement("img");
-          flagImg.className = "country-flag";
+          flagImg.className = "option-country-flag";
           flagImg.src = countryCode;
           flagImg.alt = "";
           // 将图片插入到选项的最前面
@@ -1200,7 +1211,7 @@ window.onload = async function () {
       if (selectedOption) {
         const countryCode = languageLocaleData[language]?.countries[0];
         const optionFlagImg = document.createElement("img");
-        optionFlagImg.className = "country-flag";
+        optionFlagImg.className = "option-country-flag";
         optionFlagImg.src = countryCode;
         optionFlagImg.alt = "";
         if (countryCode) {
@@ -1221,6 +1232,10 @@ window.onload = async function () {
           translateFloatBtnIcon.src = countryCode;
           translateFloatBtnIcon.hidden = false;
         }
+      }
+      const mainBoxText = ciwiBlock.querySelector(".main_box_text");
+      if (mainBoxText) {
+        mainBoxText.style.margin = "0 20px 0px 35px";
       }
     }
   }
@@ -1329,9 +1344,15 @@ window.onload = async function () {
       mainBox.style.border = `1px solid ${data.optionBorderColor}`;
       selectorBox.style.border = `1px solid ${data.optionBorderColor}`;
     } else {
-      switcher.style.width = "100px";
+      switcher.style.width = "200px";
+      if (
+        data.selectorPosition === "top_right" ||
+        data.selectorPosition === "bottom_right"
+      ) {
+        translateFloatBtn.style.right = "35%";
+      }
       translateFloatBtnText.style.backgroundColor = data.backgroundColor;
-      translateFloatBtnText.style.display = "block";
+      translateFloatBtn.style.display = "flex";
     }
     if (
       data.selectorPosition === "top_left" ||
