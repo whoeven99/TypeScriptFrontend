@@ -1344,9 +1344,15 @@ window.onload = async function () {
       mainBox.style.border = `1px solid ${data.optionBorderColor}`;
       selectorBox.style.border = `1px solid ${data.optionBorderColor}`;
     } else {
-      switcher.style.width = "100px";
+      switcher.style.width = "200px";
+      if (
+        data.selectorPosition === "top_right" ||
+        data.selectorPosition === "bottom_right"
+      ) {
+        translateFloatBtn.style.right = "35%";
+      }
       translateFloatBtnText.style.backgroundColor = data.backgroundColor;
-      translateFloatBtnText.style.display = "block";
+      translateFloatBtn.style.display = "flex";
     }
     if (
       data.selectorPosition === "top_left" ||
