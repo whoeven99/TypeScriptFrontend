@@ -796,11 +796,14 @@ class CiwiswitcherForm extends HTMLElement {
     ) {
       if (this.elements.selectorBox) {
         this.elements.selectorBox.style.display = "none";
-        if (this.elements.translateFloatBtn.style.justifyContent) {
+        if (
+          this.elements.translateFloatBtn.style.justifyContent &&
+          this.elements.mainBox.style.display === "none"
+        ) {
           this.elements.translateFloatBtn.style.display = "flex";
         }
       }
-      this.rotateArrow("mainbox-arrow-icon", 0);
+      this.rotateArrow("#mainbox-arrow-icon", 0);
     }
   }
 
@@ -871,14 +874,17 @@ class CiwiswitcherForm extends HTMLElement {
       console.error("ciwiBlock not found");
       return;
     }
-    console.log("toggleSelector:", ciwiBlock);
 
-    const box = this.elements.ciwiBlock.querySelector("#selector-box");
-    const isVisible = box.style.display !== "none";
-    box.style.display = isVisible ? "none" : "block";
-    this.elements.translateFloatBtn.style.display = isVisible
-      ? "block"
-      : "none";
+    const isVisible = this.elements.selectorBox.style.display !== "none";
+    this.elements.selectorBox.style.display = isVisible ? "none" : "block";
+    if (
+      this.elements.translateFloatBtn.style.justifyContent &&
+      this.elements.mainBox.style.display === "none"
+    ) {
+      this.elements.translateFloatBtn.style.display = isVisible
+        ? "flex"
+        : "none";
+    }
     // // 移动端适配
     // if (window.innerWidth <= 768) {
     //   const mainBox = ciwiBlock.querySelector("main-box");
