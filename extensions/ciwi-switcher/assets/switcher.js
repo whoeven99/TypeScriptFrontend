@@ -781,10 +781,6 @@ class CiwiswitcherForm extends HTMLElement {
       option.classList.add("selected");
       this.elements.currencyInput.value = value;
     }
-
-    // 重置箭头方向
-    this.rotateArrow("mainbox-arrow-icon", 0);
-
     // 关闭所有选择器
     this.closeAllSelectors();
   }
@@ -795,6 +791,8 @@ class CiwiswitcherForm extends HTMLElement {
       !this.elements.ciwiContainer.contains(event.target)
     ) {
       if (this.elements.selectorBox) {
+        this.elements.languageSelector?.classList.remove("open");
+        this.elements.currencySelector?.classList.remove("open");
         this.elements.selectorBox.style.display = "none";
         if (
           this.elements.translateFloatBtn.style.justifyContent &&
@@ -812,8 +810,13 @@ class CiwiswitcherForm extends HTMLElement {
     this.elements.languageSelector?.classList.remove("open");
     this.elements.currencySelector?.classList.remove("open");
     this.elements.selectorBox.style.display = "none";
-    this.elements.translateFloatBtn.style.display = "flex";
-    this.rotateArrow("mainbox-arrow-icon", 0);
+    if (
+      this.elements.translateFloatBtn.style.justifyContent &&
+      this.elements.mainBox.style.display === "none"
+    ) {
+      this.elements.translateFloatBtn.style.display = "flex";
+    }
+    this.rotateArrow("#mainbox-arrow-icon", 0);
   }
 
   submitForm(event) {
