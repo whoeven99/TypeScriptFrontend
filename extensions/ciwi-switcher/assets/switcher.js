@@ -327,20 +327,20 @@ function transform(
 
   let number = convertToNumberFromMoneyFormat(moneyFormat, formattedPrice);
 
-  console.log("1.number: ", number);
+  // console.log("1.number: ", number);
 
   // Remove commas or other unwanted characters
   number = (number * exchangeRate).toFixed(2);
 
-  console.log("2.number: ", number);
+  // console.log("2.number: ", number);
 
   const transformedPrice = customRounding(number, rounding);
 
-  console.log("3.transformedPrice: ", transformedPrice);
+  // console.log("3.transformedPrice: ", transformedPrice);
 
   number = detectNumberFormat(moneyFormat, transformedPrice, rounding);
 
-  console.log("4.number: ", number);
+  // console.log("4.number: ", number);
 
   // 获取货币符号位置配置
   const currencyConfig = window.currencyFormatConfig
@@ -361,39 +361,39 @@ function transform(
 function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
   let number = formattedPrice;
 
-  console.log(moneyFormat);
-  console.log(
-    "moneyFormat.includes('amount'): ",
-    moneyFormat.includes("amount"),
-  );
-  console.log(
-    "moneyFormat.includes('amount_no_decimals'): ",
-    moneyFormat.includes("amount_no_decimals"),
-  );
-  console.log(
-    "moneyFormat.includes('amount_with_comma_separator'): ",
-    moneyFormat.includes("amount_with_comma_separator"),
-  );
-  console.log(
-    "moneyFormat.includes('amount_no_decimals_with_comma_separator'): ",
-    moneyFormat.includes("amount_no_decimals_with_comma_separator"),
-  );
-  console.log(
-    "moneyFormat.includes('amount_with_apostrophe_separator'): ",
-    moneyFormat.includes("amount_with_apostrophe_separator"),
-  );
-  console.log(
-    "moneyFormat.includes('amount_no_decimals_with_space_separator'): ",
-    moneyFormat.includes("amount_no_decimals_with_space_separator"),
-  );
-  console.log(
-    "moneyFormat.includes('amount_with_space_separator'): ",
-    moneyFormat.includes("amount_with_space_separator"),
-  );
-  console.log(
-    "moneyFormat.includes('amount_with_period_and_space_separator'): ",
-    moneyFormat.includes("amount_with_period_and_space_separator"),
-  );
+  // console.log(moneyFormat);
+  // console.log(
+  //   "moneyFormat.includes('amount'): ",
+  //   moneyFormat.includes("amount"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_no_decimals'): ",
+  //   moneyFormat.includes("amount_no_decimals"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_with_comma_separator'): ",
+  //   moneyFormat.includes("amount_with_comma_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_no_decimals_with_comma_separator'): ",
+  //   moneyFormat.includes("amount_no_decimals_with_comma_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_with_apostrophe_separator'): ",
+  //   moneyFormat.includes("amount_with_apostrophe_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_no_decimals_with_space_separator'): ",
+  //   moneyFormat.includes("amount_no_decimals_with_space_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_with_space_separator'): ",
+  //   moneyFormat.includes("amount_with_space_separator"),
+  // );
+  // console.log(
+  //   "moneyFormat.includes('amount_with_period_and_space_separator'): ",
+  //   moneyFormat.includes("amount_with_period_and_space_separator"),
+  // );
 
   switch (true) {
     case moneyFormat.includes("amount_with_comma_separator"):
