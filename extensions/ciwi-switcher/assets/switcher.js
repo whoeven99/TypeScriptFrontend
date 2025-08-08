@@ -319,7 +319,7 @@ function transform(
 ) {
   const formattedPrice = price.replace(/[^0-9,. ]/g, "").trim();
 
-  // console.log("formattedPrice: ", formattedPrice);
+  console.log("formattedPrice: ", formattedPrice);
 
   if (!formattedPrice || exchangeRate == "Auto") {
     return price;
@@ -327,20 +327,20 @@ function transform(
 
   let number = convertToNumberFromMoneyFormat(moneyFormat, formattedPrice);
 
-  // console.log("1.number: ", number);
+  console.log("1.number: ", number);
 
   // Remove commas or other unwanted characters
   number = (number * exchangeRate).toFixed(2);
 
-  // console.log("2.number: ", number);
+  console.log("2.number: ", number);
 
   const transformedPrice = customRounding(number, rounding);
 
-  // console.log("3.transformedPrice: ", transformedPrice);
+  console.log("3.transformedPrice: ", transformedPrice);
 
   number = detectNumberFormat(moneyFormat, transformedPrice, rounding);
 
-  // console.log("4.number: ", number);
+  console.log("4.number: ", number);
 
   // 获取货币符号位置配置
   const currencyConfig = window.currencyFormatConfig
@@ -361,48 +361,41 @@ function transform(
 function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
   let number = formattedPrice;
 
-  // console.log(moneyFormat);
-  // console.log(
-  //   "moneyFormat.includes('amount'): ",
-  //   moneyFormat.includes("amount"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_no_decimals'): ",
-  //   moneyFormat.includes("amount_no_decimals"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_with_comma_separator'): ",
-  //   moneyFormat.includes("amount_with_comma_separator"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_no_decimals_with_comma_separator'): ",
-  //   moneyFormat.includes("amount_no_decimals_with_comma_separator"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_with_apostrophe_separator'): ",
-  //   moneyFormat.includes("amount_with_apostrophe_separator"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_no_decimals_with_space_separator'): ",
-  //   moneyFormat.includes("amount_no_decimals_with_space_separator"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_with_space_separator'): ",
-  //   moneyFormat.includes("amount_with_space_separator"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_with_period_and_space_separator'): ",
-  //   moneyFormat.includes("amount_with_period_and_space_separator"),
-  // );
+  console.log(moneyFormat);
+  console.log(
+    "moneyFormat.includes('amount'): ",
+    moneyFormat.includes("amount"),
+  );
+  console.log(
+    "moneyFormat.includes('amount_no_decimals'): ",
+    moneyFormat.includes("amount_no_decimals"),
+  );
+  console.log(
+    "moneyFormat.includes('amount_with_comma_separator'): ",
+    moneyFormat.includes("amount_with_comma_separator"),
+  );
+  console.log(
+    "moneyFormat.includes('amount_no_decimals_with_comma_separator'): ",
+    moneyFormat.includes("amount_no_decimals_with_comma_separator"),
+  );
+  console.log(
+    "moneyFormat.includes('amount_with_apostrophe_separator'): ",
+    moneyFormat.includes("amount_with_apostrophe_separator"),
+  );
+  console.log(
+    "moneyFormat.includes('amount_no_decimals_with_space_separator'): ",
+    moneyFormat.includes("amount_no_decimals_with_space_separator"),
+  );
+  console.log(
+    "moneyFormat.includes('amount_with_space_separator'): ",
+    moneyFormat.includes("amount_with_space_separator"),
+  );
+  console.log(
+    "moneyFormat.includes('amount_with_period_and_space_separator'): ",
+    moneyFormat.includes("amount_with_period_and_space_separator"),
+  );
 
   switch (true) {
-    case moneyFormat.includes("amount"):
-      number = number.replace(/,/g, "");
-      return parseFloat(number).toFixed(2);
-
-    case moneyFormat.includes("amount_no_decimals"):
-      return parseFloat(number.replace(/,/g, "")).toFixed(2);
-
     case moneyFormat.includes("amount_with_comma_separator"):
       // 处理数字为 1.134,65 格式：首先替换逗号为点，小数点为逗号
       number = number.replace(/\./g, "").replace(",", ".");
@@ -430,6 +423,13 @@ function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
     case moneyFormat.includes("amount_with_period_and_space_separator"):
       // 处理 1 134.65 格式：去掉空格，小数点是点
       number = number.replace(/\s/g, "");
+      return parseFloat(number).toFixed(2);
+
+    case moneyFormat.includes("amount_no_decimals"):
+      return parseFloat(number.replace(/,/g, "")).toFixed(2);
+      
+    case moneyFormat.includes("amount"):
+      number = number.replace(/,/g, "");
       return parseFloat(number).toFixed(2);
 
     default:
@@ -1044,53 +1044,69 @@ window.onload = async function () {
       }
     } else {
       const userIp = await checkUserIp(shop.value);
-      if (!userIp) {
-        return;
-      }
-      const IpData = await fetchUserCountryInfo(iptokenValue);
+      if (userIp) {
+        const IpData = await fetchUserCountryInfo(iptokenValue);
 
-      if (IpData?.currency?.code) {
-        localStorage.setItem("selectedCurrency", IpData.currency.code);
-      }
-
-      if (
-        IpData?.country_code &&
-        availableCountries.includes(IpData.country_code)
-      ) {
-        if (countryInput.value !== IpData.country_code) {
-          countryInput.value = IpData.country_code;
+        if (IpData?.currency?.code) {
+          localStorage.setItem("selectedCurrency", IpData.currency.code);
         }
-        localStorage.setItem("selectedCountry", countryInput.value);
-        console.log(
-          "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
+
+        if (
+          IpData?.country_code &&
+          availableCountries.includes(IpData.country_code)
+        ) {
+          if (countryInput.value !== IpData.country_code) {
+            countryInput.value = IpData.country_code;
+          }
+          localStorage.setItem("selectedCountry", countryInput.value);
+          console.log(
+            "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
+          );
+        } else {
+          localStorage.setItem("selectedCountry", false);
+          console.log(
+            "该商店不包含您目前所在市场(The store does not include the market you are currently in)",
+          );
+        }
+        const isInThemeEditor = document.documentElement.classList.contains(
+          "shopify-design-mode",
         );
-      } else {
-        localStorage.setItem("selectedCountry", false);
-        console.log(
-          "该商店不包含您目前所在市场(The store does not include the market you are currently in)",
-        );
+        console.log("isInThemeEditor:", isInThemeEditor);
+
+        if (
+          (countryInput.value !== country ||
+            languageInput.value !== language) &&
+          countryInput.value &&
+          languageInput.value &&
+          !isInThemeEditor
+        ) {
+          updateLocalization({
+            country: countryInput.value,
+            language: languageInput.value,
+          });
+        }
       }
     }
 
-    if (!storedCountry && !storedCurrency && !storedLanguage) {
-      // 判断是否在主题编辑器中
-      const isInThemeEditor = document.documentElement.classList.contains(
-        "shopify-design-mode",
-      );
-      console.log("isInThemeEditor:", isInThemeEditor);
+    // if (!storedCountry && !storedCurrency && !storedLanguage) {
+    //   // 判断是否在主题编辑器中
+    //   const isInThemeEditor = document.documentElement.classList.contains(
+    //     "shopify-design-mode",
+    //   );
+    //   console.log("isInThemeEditor:", isInThemeEditor);
 
-      if (
-        (countryInput.value !== country || languageInput.value !== language) &&
-        countryInput.value &&
-        languageInput.value &&
-        !isInThemeEditor
-      ) {
-        updateLocalization({
-          country: countryInput.value,
-          language: languageInput.value,
-        });
-      }
-    }
+    //   if (
+    //     (countryInput.value !== country || languageInput.value !== language) &&
+    //     countryInput.value &&
+    //     languageInput.value &&
+    //     !isInThemeEditor
+    //   ) {
+    //     updateLocalization({
+    //       country: countryInput.value,
+    //       language: languageInput.value,
+    //     });
+    //   }
+    // }
   }
 
   if (
