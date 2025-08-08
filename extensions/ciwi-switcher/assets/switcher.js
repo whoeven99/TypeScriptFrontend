@@ -812,7 +812,12 @@ class CiwiswitcherForm extends HTMLElement {
     this.elements.languageSelector?.classList.remove("open");
     this.elements.currencySelector?.classList.remove("open");
     this.elements.selectorBox.style.display = "none";
-    this.elements.translateFloatBtn.style.display = "flex";
+    if (
+      this.elements.translateFloatBtn.style.justifyContent &&
+      this.elements.mainBox.style.display === "none"
+    ) {
+      this.elements.translateFloatBtn.style.display = "flex";
+    }
     this.rotateArrow("mainbox-arrow-icon", 0);
   }
 
