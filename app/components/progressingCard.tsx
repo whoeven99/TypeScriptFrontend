@@ -38,6 +38,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   const statusFetcher = useFetcher<any>();
   // const itemsFetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
+  const stopTranslateFetcher = useFetcher<any>();
 
   useEffect(() => {
     fetcher.submit(
@@ -126,7 +127,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   }, [fetcher.data]);
 
   useEffect(() => {
-    if (statusFetcher.data?.data) {
+    if (
+      statusFetcher.data?.data &&
+      status !== 2 &&
+      stopTranslateFetcher.state !== "submitting"
+    ) {
       const statusValue = statusFetcher.data?.data[0].status;
       setStatus(statusValue);
       if (statusValue === 2) {
@@ -137,6 +142,14 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       }
     }
   }, [statusFetcher.data]);
+
+  useEffect(() => {
+    if (stopTranslateFetcher.data?.data?.success) {
+      setStatus(7);
+      setResourceType("");
+      setTranslateStatus(1);
+    }
+  }, [stopTranslateFetcher.data]);
 
   // useEffect(() => {
   //     if (typeof itemsFetcher.data?.data[0]?.totalNumber === 'number' && typeof itemsFetcher.data?.data[0]?.translatedNumber === 'number') {
@@ -238,6 +251,18 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       default:
         return 0;
     }
+  };
+
+  const handleStopTranslate = () => {
+    stopTranslateFetcher.submit(
+      {
+        stopTranslate: JSON.stringify({ source, target }),
+      },
+      {
+        method: "post",
+        action: "/app",
+      },
+    );
   };
 
   const handleReTranslate = () => {
@@ -411,6 +436,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                       {status === 6 && (
                         <Text>🎉{t("progressing.hasPayed")}</Text>
                       )}
+                      {status === 7 && (
+                        <Text>{t("progressing.reTranslateText")}</Text>
+                      )}
                     </div>
 
                     {/* 右侧部分 */}
@@ -489,6 +517,16 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                       </Button>
                     </div>
                   )}
+                  {status === 2 && (
+                    <Button
+                      block
+                      onClick={handleStopTranslate}
+                      loading={stopTranslateFetcher.state === "submitting"}
+                      style={{ marginTop: "auto" }}
+                    >
+                      {t("progressing.stopTranslate")}
+                    </Button>
+                  )}
                   {status === 3 && (
                     <div
                       style={{
@@ -565,12 +603,37 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   {status === 6 && (
                     <Button
                       block
-                      type="primary"
                       onClick={handleReTranslate}
                       loading={translateFetcher.state === "submitting"}
                     >
-                      {t("progressing.reTranslate")}
+                      {t("progressing.continueTranslate")}
                     </Button>
+                  )}
+                  {status === 7 && (
+                    <div
+                      style={{
+                        width: "100%", // 限制最大宽度
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 10,
+                      }}
+                    >
+                      <Button block onClick={() => navigate("/app/translate")}>
+                        {t("progressing.reTranslate")}
+                      </Button>
+                      <Button
+                        block
+                        onClick={() =>
+                          navigate("/app/manage_translation", {
+                            state: {
+                              key: target,
+                            },
+                          })
+                        }
+                      >
+                        {t("progressing.review")}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>

@@ -20,6 +20,46 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const StopTranslatingTask = async ({
+  shopName,
+  source,
+  target,
+  accessToken,
+}: {
+  shopName: string;
+  source: string;
+  target: string;
+  accessToken: string;
+}) => {
+  console.log(`${shopName} StopTranslatingTask: `, {
+    shopName,
+    source,
+    target,
+    accessToken,
+  });
+
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/translate/stopTranslatingTask?shopName=${shopName}`,
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: {
+        source: source,
+        target: target,
+        accessToken: accessToken,
+      },
+    });
+
+    console.log(`${shopName} StopTranslatingTask: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shopName} StopTranslatingTask error:`, error);
+  }
+};
+
 export const UpdateProductImageAltData = async ({
   server,
   shopName,
@@ -38,7 +78,7 @@ export const UpdateProductImageAltData = async ({
   languageCode: string;
 }) => {
   try {
-    console.log("UpdateProductImageAltData: ", {
+    console.log(`${shopName} UpdateProductImageAltData: `, {
       shopName,
       productId,
       imageUrl,
