@@ -128,14 +128,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
 
   useEffect(() => {
     if (statusFetcher.data?.data) {
-      const statusValue = statusFetcher.data?.data[0].status;
+      const statusValue = statusFetcher.data?.data[0]?.status;
       setStatus(statusValue);
-      if (statusValue === 2) {
-        setResourceType(statusFetcher.data?.data[0].resourceType || "");
-      } else {
-        setResourceType("");
-        // 状态不为 2 时，轮询会自动停止
-      }
+      setResourceType(statusFetcher.data?.data[0]?.resourceType || "");
     }
   }, [statusFetcher.data]);
 
