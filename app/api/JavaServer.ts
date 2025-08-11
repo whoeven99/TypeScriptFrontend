@@ -1051,7 +1051,7 @@ export const GetTranslate = async ({
   shop: string;
   accessToken: string;
   source: string;
-  target: string;
+  target: string[];
   translateSettings1: string;
   translateSettings2: string[];
   translateSettings3: string[];
@@ -1059,7 +1059,7 @@ export const GetTranslate = async ({
   translateSettings5: boolean;
 }) => {
   try {
-    console.log("GetTranslateData: ", {
+    console.log(`${shop} GetTranslateData: `, {
       shopName: shop,
       accessToken: accessToken,
       source: source,

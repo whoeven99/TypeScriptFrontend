@@ -73,7 +73,9 @@ const Index = () => {
   const { shop, server } = useLoaderData<typeof loader>();
   const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
   const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
-  const [selectedLanguageCode, setSelectedLanguageCode] = useState<string>("");
+  const [selectedLanguageCode, setSelectedLanguageCode] = useState<string[]>(
+    [],
+  );
   const [translateSettings1, setTranslateSettings1] = useState<string>("2");
   const [translateSettings2, setTranslateSettings2] = useState<string[]>(["1"]);
   const [translateSettings3, setTranslateSettings3] = useState<string[]>([
@@ -112,7 +114,7 @@ const Index = () => {
   const [customApikeyData, setCustomApikeyData] = useState<boolean>(false);
   const [needPay, setNeedPay] = useState<boolean>(false);
   const [source, setSource] = useState("");
-  const [target, setTarget] = useState("");
+  const [target, setTarget] = useState<string[]>([]);
   const [languageCardWarnText, setLanguageCardWarnText] = useState<string>("");
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showWarnModal, setShowWarnModal] = useState(false);
@@ -384,14 +386,14 @@ const Index = () => {
     },
   ];
 
-  const onChange = (e: RadioChangeEvent) => {
+  const onChange = (e: string[]) => {
     if (languageCardRef.current) {
       languageCardRef.current.style.border = "1px solid #f0f0f0";
     }
     if (languageCardWarnText) {
       setLanguageCardWarnText("");
     }
-    setSelectedLanguageCode(e.target.value);
+    setSelectedLanguageCode(e);
   };
 
   const handleNavigate = () => {
@@ -436,13 +438,13 @@ const Index = () => {
       );
       return;
     }
-    const selectedItem = dataSource.find(
-      (item: LanguagesDataType) => item.locale === selectedLanguageCode,
+    const selectedItems = dataSource.find((item: LanguagesDataType) =>
+      selectedLanguageCode.includes(item.locale),
     );
     const selectedTranslatingItem = dataSource.find(
       (item: LanguagesDataType) => item.status === 2,
     );
-    if (selectedItem && !selectedTranslatingItem) {
+    if (selectedItems && !selectedTranslatingItem) {
       setSource(languageSetting?.primaryLanguageCode);
       setTarget(selectedLanguageCode);
       const response = await axios({
@@ -557,9 +559,12 @@ const Index = () => {
               }}
               loading={fetcher.state === "submitting"}
             >
-              {languageData.find(
-                (item) => item.locale === selectedLanguageCode,
-              )?.status === 1
+              {selectedLanguageCode.length > 0 &&
+              selectedLanguageCode.every(
+                (item) =>
+                  languageData.find((lang) => lang.locale === item)?.status ===
+                  1,
+              )
                 ? t("Update")
                 : t("Translate")}
             </Button>
@@ -601,7 +606,7 @@ const Index = () => {
                 width: "100%",
               }}
             >
-              <Radio.Group
+              <Checkbox.Group
                 value={selectedLanguageCode}
                 onChange={onChange}
                 style={{ width: "100%" }}
@@ -616,7 +621,7 @@ const Index = () => {
                   }}
                 >
                   {languageData.map((lang) => (
-                    <Radio
+                    <Checkbox
                       key={lang.locale}
                       value={lang.locale}
                       style={{
@@ -650,10 +655,10 @@ const Index = () => {
                         />
                         <span>{lang.name}</span>
                       </div>
-                    </Radio>
+                    </Checkbox>
                   ))}
                 </div>
-              </Radio.Group>
+              </Checkbox.Group>
               <Text
                 type="danger"
                 style={{ display: "block", marginTop: "12px" }}
@@ -890,7 +895,7 @@ const Index = () => {
                       width: "100%",
                     }}
                     onChange={(e) => handleTranslateSettings3Change(e)}
-                  ></Checkbox.Group>
+                  />
                 </Space>
                 <Space
                   direction="vertical"

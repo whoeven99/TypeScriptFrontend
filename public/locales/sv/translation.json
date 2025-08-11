@@ -251,7 +251,7 @@
     "devplanCard2.title": "lägger till översättningsförlopp",
     "devplanCard3.title": "optimerar växlarens stil, stöder visning i sidfoten",
     "devplanCard4.title": "förbättrar översättningshastigheten, lägger till snabböversättningsläge",
-    "Your translation task exceeds the free limit and you need to purchase additional credits": "Din översättningsuppgift överskrider gratisbegränsningen och du behöver köpa ytterligare krediter",
+    "Not enough translation credits. Purchase more to continue": "Din översättningsuppgift överskrider gratisbegränsningen och du behöver köpa ytterligare krediter",
     "Translation tasks": "Översättningsuppgifter",
     "Estimated number of words to translate: ": "Uppskattat antal ord att översätta: ",
     "Calculation failed": "Beräkning misslyckades",

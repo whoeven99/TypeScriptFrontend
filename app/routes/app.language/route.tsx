@@ -737,7 +737,7 @@ const Index = () => {
               navigate("/app/translate", {
                 state: {
                   from: "/app/language",
-                  selectedLanguageCode: record.locale,
+                  selectedLanguageCode: [record.locale],
                 },
               })
             }
@@ -1017,7 +1017,7 @@ const Index = () => {
                         navigate("/app/translate", {
                           state: {
                             from: "/app/language",
-                            selectedLanguageCode: item.locale,
+                            selectedLanguageCode: [item.locale],
                           },
                         });
                       }}
@@ -1103,7 +1103,7 @@ const Index = () => {
                 navigate("/app/translate", {
                   state: {
                     from: "/app/language",
-                    selectedLanguageCode: noFirstTranslationLocale,
+                    selectedLanguageCode: [noFirstTranslationLocale],
                   },
                 })
               }

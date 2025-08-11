@@ -272,7 +272,7 @@
   "devplanCard2.title": "Fügt Übersetzungsfortschritt hinzu",
   "devplanCard3.title": "Optimiert den Switcher-Stil, unterstützt die Anzeige im Footer",
   "devplanCard4.title": "Verbessert die Übersetzungsgeschwindigkeit, fügt einen schnellen Übersetzungsmodus hinzu",
-  "Your translation task exceeds the free limit and you need to purchase additional credits": "Ihre Übersetzungsaufgabe überschreitet den kostenlosen Grenzwert und Sie müssen zusätzliche Credits kaufen",
+  "Not enough translation credits. Purchase more to continue": "Ihre Übersetzungsaufgabe überschreitet den kostenlosen Grenzwert und Sie müssen zusätzliche Credits kaufen",
   "Translation tasks": "Übersetzungsaufgaben",
   "Estimated number of words to translate: ": "Geschätzte Anzahl der zu übersetzenden Wörter: ",
   "Calculation failed": "Berechnung fehlgeschlagen",

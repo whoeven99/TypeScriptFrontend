@@ -260,7 +260,7 @@
     "devplanCard2.title": "번역 진행 상황 추가",
     "devplanCard3.title": "스위처 스타일 최적화, 푸터에 표시 지원",
     "devplanCard4.title": "번역 속도 향상, 빠른 번역 모드 추가",
-    "Your translation task exceeds the free limit and you need to purchase additional credits": "번역 작업이 무료 한도를 초과하고 추가 크레딧을 구매해야 합니다.",
+    "Not enough translation credits. Purchase more to continue": "번역 작업이 무료 제한을 초과했습니다. 추가 크레딧을 구매하여 계속하세요.",
     "Translation tasks": "번역 작업",
     "Estimated number of words to translate: ": "번역할 필요가 있는 단어 수:",
     "Calculation failed": "계산 실패",

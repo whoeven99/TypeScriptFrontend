@@ -149,7 +149,7 @@
     "devplanCard2.title": "çeviri ilerleme durumunu ekler",
     "devplanCard3.title": "değiştirici stilini optimize eder, alt bilgide görüntülemeyi destekler",
     "devplanCard4.title": "çeviri hızını iyileştirir, hızlı çeviri modu ekler",
-    "Your translation task exceeds the free limit and you need to purchase additional credits": "Çeviri göreviniz ücretsiz limiti aşıyor ve ek kredi satın almanız gerekiyor",
+    "Not enough translation credits. Purchase more to continue": "Çeviri kredileriniz eksik. Daha fazla kredi satın alarak devam edin.",
     "Translation tasks": "Çeviri görevleri",
     "Estimated number of words to translate: ": "Çevrilecek tahmini kelime sayısı: ",
     "Calculation failed": "Hesaplama başarısız",
