@@ -129,7 +129,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   useEffect(() => {
     if (
       statusFetcher.data?.data &&
-      status !== 2 &&
       stopTranslateFetcher.state !== "submitting"
     ) {
       const statusValue = statusFetcher.data?.data[0].status;
