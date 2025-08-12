@@ -533,15 +533,17 @@ const Index = () => {
 
   useEffect(() => {
     if (statusFetcher.data?.data) {
-      const items = statusFetcher.data?.data.map((item: any) => {
-        if (item?.status === 2) {
-          return item;
-        } else {
-          dispatch(
-            setStatusState({ target: item.target, status: item.status }),
-          );
-        }
-      });
+      const items = statusFetcher.data?.data?.translatesDOResult.map(
+        (item: any) => {
+          if (item?.status === 2) {
+            return item;
+          } else {
+            dispatch(
+              setStatusState({ target: item.target, status: item.status }),
+            );
+          }
+        },
+      );
       if (items[0] !== undefined && items[0].status === 2) {
         // 加入10秒的延时
         const delayTimeout = setTimeout(() => {

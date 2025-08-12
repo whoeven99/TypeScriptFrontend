@@ -25,8 +25,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   // });
   const [value, setValue] = useState<string>("");
   const [source, setSource] = useState<string>("");
-  const [target, setTarget] = useState<string>("");
+  const [target, setTarget] = useState<string[]>([]);
   const [resourceType, setResourceType] = useState<string>("");
+  const [index, setIndex] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0);
   const [status, setStatus] = useState<number>(0);
   const [translateStatus, setTranslateStatus] = useState<number>(1);
@@ -81,7 +82,48 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           "statusData",
           JSON.stringify({
             source: source,
-            target: [target],
+            target: [target[index]],
+          }),
+        );
+
+        statusFetcher.submit(statusformData, {
+          method: "post",
+          action: "/app",
+        });
+
+        async function getUserValue() {
+          const userValue = await GetUserValue({ shop: shop, server });
+          setValue(userValue?.response?.value || "");
+          setTranslateStatus(userValue?.response?.status || 2);
+        }
+
+        getUserValue();
+
+        // setValue(userValue.data.userValue);
+
+        // 设置下一次轮询
+        timeoutId = setTimeout(pollStatus, 3000);
+      };
+
+      // 开始首次轮询
+      pollStatus();
+
+      // 清理函数
+      return () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+      };
+    } else if (target[index + 1]) {
+      setIndex(index + 1);
+      const pollStatus = () => {
+        // 状态查询请求
+        const statusformData = new FormData();
+        statusformData.append(
+          "statusData",
+          JSON.stringify({
+            source: source,
+            target: [target[index + 1]],
           }),
         );
 
@@ -118,10 +160,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
 
   useEffect(() => {
     if (fetcher.data?.translatingLanguage) {
-      setSource(fetcher.data?.translatingLanguage.source);
-      setTarget(fetcher.data?.translatingLanguage.target);
-      setResourceType(fetcher.data?.translatingLanguage.resourceType);
-      setStatus(fetcher.data?.translatingLanguage.status);
+      setSource(fetcher.data?.translatingLanguage[0]?.source);
+      setTarget(
+        fetcher.data?.translatingLanguage.map((item: any) => item.target),
+      );
+      setResourceType(fetcher.data?.translatingLanguage[0]?.resourceType);
+      setStatus(fetcher.data?.translatingLanguage[0]?.status);
+      setIndex(0);
       setLoading(false);
     }
   }, [fetcher.data]);
@@ -131,10 +176,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       statusFetcher.data?.data &&
       stopTranslateFetcher.state !== "submitting"
     ) {
-      const statusValue = statusFetcher.data?.data[0].status;
+      const statusValue =
+        statusFetcher.data?.data?.translatesDOResult[0].status;
       setStatus(statusValue);
       if (statusValue === 2) {
-        setResourceType(statusFetcher.data?.data[0].resourceType || "");
+        setResourceType(
+          statusFetcher.data?.data?.translatesDOResult[0].resourceType || "",
+        );
       } else {
         setResourceType("");
         // 状态不为 2 时，轮询会自动停止
@@ -255,7 +303,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   const handleStopTranslate = () => {
     stopTranslateFetcher.submit(
       {
-        stopTranslate: JSON.stringify({ source, target }),
+        stopTranslate: JSON.stringify({ source, target: target[index] }),
       },
       {
         method: "post",
@@ -269,7 +317,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       {
         translation: JSON.stringify({
           primaryLanguage: source,
-          selectedLanguage: target,
+          selectedLanguage: target[index],
           translateSettings1: "1",
           translateSettings2: "1",
           translateSettings3: [
@@ -360,7 +408,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {target}
+                        {target[index]}
                       </Text>
                     </div>
 
@@ -493,7 +541,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         onClick={() =>
                           navigate("/app/manage_translation", {
                             state: {
-                              key: target,
+                              key: target[index],
                             },
                           })
                         }
@@ -505,7 +553,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         type="primary"
                         onClick={() =>
                           navigate("/app/language", {
-                            state: { publishLanguageCode: target },
+                            state: { publishLanguageCode: target[index] },
                           })
                         }
                         style={{
@@ -540,7 +588,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         onClick={() =>
                           navigate("/app/manage_translation", {
                             state: {
-                              key: target,
+                              key: target[index],
                             },
                           })
                         }
@@ -625,7 +673,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         onClick={() =>
                           navigate("/app/manage_translation", {
                             state: {
-                              key: target,
+                              key: target[index],
                             },
                           })
                         }

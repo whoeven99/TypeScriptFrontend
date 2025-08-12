@@ -13,6 +13,9 @@ import {
   Popover,
   Badge,
   Modal,
+  Flex,
+  Switch,
+  Table,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
@@ -32,6 +35,7 @@ import { mutationAppSubscriptionCreate } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
 import axios from "axios";
+import { tableData } from "./tableData";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -136,6 +140,7 @@ const Index = () => {
   const { shop, server } = useLoaderData<typeof loader>();
   const [currentCredits, setCurrentCredits] = useState(0);
   const [maxCredits, setMaxCredits] = useState(0);
+  const [yearly, setYearly] = useState(false);
   const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [updateTime, setUpdateTime] = useState<any>(null);
@@ -513,6 +518,34 @@ const Index = () => {
     },
   ];
 
+  const columns = [
+    {
+      title: "Features",
+      dataIndex: "features",
+      key: "features",
+    },
+    {
+      title: "Free",
+      dataIndex: "free",
+      key: "free",
+    },
+    {
+      title: "Basic",
+      dataIndex: "basic",
+      key: "basic",
+    },
+    {
+      title: "Pro",
+      dataIndex: "pro",
+      key: "pro",
+    },
+    {
+      title: "Premium",
+      dataIndex: "premium",
+      key: "premium",
+    },
+  ];
+
   // const modelOptions = [
   //   {
   //     label: "OpenAI/GPT-4",
@@ -758,11 +791,10 @@ const Index = () => {
             </Space>
           </Card>
         )}
-        <Card
+        {/* <Card
           style={{ textAlign: "center" }}
           loading={isLoading || selectedPlan === null}
         >
-          {/* 价格选项 */}
           <Space direction="vertical" size="small" style={{ width: "100%" }}>
             <div
               style={{
@@ -855,20 +887,12 @@ const Index = () => {
                 </Col>
               ))}
             </Row>
-            {/* 购买区域 */}
             <Text type="secondary" style={{ margin: "16px 0 8px 0" }}>
               {t("Total pay")}: $
               {selectedOption
                 ? selectedOption.price.currentPrice.toFixed(2)
                 : "0.00"}
             </Text>
-            {/* <Space>
-              <Button
-                size="large"
-                onClick={() => setCreditsCalculatorOpen(true)}
-              >
-                {t("Credits Calculator")}
-              </Button> */}
             <Button
               type="primary"
               size="large"
@@ -878,88 +902,114 @@ const Index = () => {
             >
               {t("Buy now")}
             </Button>
-            {/* </Space> */}
           </Space>
-        </Card>
-        <div style={{ maxWidth: "1500px", margin: "0 auto" }}>
-          <Row gutter={[16, 16]}>
-            {plans.map((plan, index) => (
-              <Col
-                key={plan.title}
-                xs={24}
-                sm={24}
-                md={12}
-                lg={6}
+        </Card> */}
+        <Space
+          direction="vertical"
+          size="small"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Title level={3} style={{ fontWeight: 700 }}>
+            {t("Choose the right plan for you")}
+          </Title>
+          <Flex align="center" justify="space-between">
+            <Space align="center" size="small">
+              <Switch checked={yearly} onChange={() => setYearly(!yearly)} />
+              <Text>{t("Yearly")}</Text>
+            </Space>
+            <div className="yearly_save">
+              <Text strong>{t("Save 25%")}</Text>
+            </div>
+          </Flex>
+          <Card styles={{ body: { padding: 12 } }}>
+            <Flex align="center" justify="space-between" gap={10}>
+              <Text>{t("Start your trial and unlock")}</Text>
+              <div className="free_trial">
+                <Text strong>{t("500 free credits")}</Text>
+              </div>
+            </Flex>
+          </Card>
+        </Space>
+        <Row gutter={[16, 16]}>
+          {plans.map((plan, index) => (
+            <Col
+              key={plan.title}
+              xs={24}
+              sm={24}
+              md={12}
+              lg={6}
+              style={{
+                display: "flex",
+                width: "100%",
+              }}
+            >
+              <Badge.Ribbon
+                text={t("pricing.recommended")}
+                color="#1890ff"
                 style={{
-                  display: "flex",
-                  width: "100%",
+                  display:
+                    plan.isRecommended && selectedPlan <= 2 && selectedPlan
+                      ? "block"
+                      : "none",
+                  right: -8,
                 }}
               >
-                <Badge.Ribbon
-                  text={t("pricing.recommended")}
-                  color="#1890ff"
+                <Card
+                  hoverable
                   style={{
-                    display:
-                      plan.isRecommended && selectedPlan <= 2 && selectedPlan
-                        ? "block"
-                        : "none",
-                    right: -8,
+                    flex: 1,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    position: "relative",
+                    borderColor: plan.disabled
+                      ? "#007F61"
+                      : plan.isRecommended && selectedPlan <= 2 && selectedPlan
+                        ? "#1890ff"
+                        : undefined,
+                    minWidth: "220px",
                   }}
-                >
-                  <Card
-                    hoverable
-                    style={{
+                  styles={{
+                    body: {
                       flex: 1,
-                      height: "100%",
                       display: "flex",
                       flexDirection: "column",
-                      position: "relative",
-                      borderColor: plan.disabled
-                        ? "#007F61"
-                        : plan.isRecommended &&
-                            selectedPlan <= 2 &&
-                            selectedPlan
-                          ? "#1890ff"
-                          : undefined,
-                      minWidth: "220px",
-                    }}
-                    styles={{
-                      body: {
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        padding: "16px",
-                      },
-                    }}
-                    loading={!selectedPlan}
+                      padding: "16px",
+                    },
+                  }}
+                  loading={!selectedPlan}
+                >
+                  <Title level={5}>{plan.title}</Title>
+                  <div style={{ margin: "12px 0" }}>
+                    <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
+                      ${plan.price}
+                    </Text>
+                    <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
+                  </div>
+                  <Paragraph type="secondary" style={{ fontSize: "13px" }}>
+                    {plan.subtitle}
+                  </Paragraph>
+
+                  <Button
+                    type={
+                      plan.isRecommended && selectedPlan <= 2 && selectedPlan
+                        ? "primary"
+                        : "default"
+                    }
+                    block
+                    disabled={plan.disabled}
+                    style={{ marginBottom: "20px" }}
+                    onClick={() => handlePayForPlan(plan)}
+                    loading={buyButtonLoading}
                   >
-                    <Title level={5}>{plan.title}</Title>
-                    <div style={{ margin: "12px 0" }}>
-                      <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
-                        ${plan.price}
-                      </Text>
-                      <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
-                    </div>
-                    <Paragraph type="secondary" style={{ fontSize: "13px" }}>
-                      {plan.subtitle}
-                    </Paragraph>
+                    {plan.buttonText}
+                  </Button>
 
-                    <Button
-                      type={
-                        plan.isRecommended && selectedPlan <= 2 && selectedPlan
-                          ? "primary"
-                          : "default"
-                      }
-                      block
-                      disabled={plan.disabled}
-                      style={{ marginBottom: "20px" }}
-                      onClick={() => handlePayForPlan(plan)}
-                      loading={buyButtonLoading}
-                    >
-                      {plan.buttonText}
-                    </Button>
-
-                    {/* {
+                  {/* {
                       plan.title === "Premium" && !hasOpenFreePlan && (
                         <Button
                           type="primary"
@@ -973,33 +1023,57 @@ const Index = () => {
                       )
                     } */}
 
-                    <div style={{ flex: 1 }}>
-                      {plan.features.map((feature, idx) => (
-                        <div
-                          key={idx}
+                  <div style={{ flex: 1 }}>
+                    {plan.features.map((feature, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          marginBottom: "8px",
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: "6px",
+                        }}
+                      >
+                        <CheckOutlined
                           style={{
-                            marginBottom: "8px",
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: "6px",
+                            color: "#52c41a",
+                            fontSize: "12px",
                           }}
-                        >
-                          <CheckOutlined
-                            style={{
-                              color: "#52c41a",
-                              fontSize: "12px",
-                            }}
-                          />
-                          <Text style={{ fontSize: "13px" }}>{feature}</Text>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                </Badge.Ribbon>
-              </Col>
-            ))}
-          </Row>
-        </div>
+                        />
+                        <Text style={{ fontSize: "13px" }}>{feature}</Text>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </Badge.Ribbon>
+            </Col>
+          ))}
+        </Row>
+        <Space
+          direction="vertical"
+          size="small"
+          style={{
+            display: "flex",
+          }}
+        >
+          <Title
+            level={3}
+            style={{
+              fontWeight: 700,
+              textAlign: "center",
+            }}
+          >
+            {t("Compare plans")}
+          </Title>
+          <Table
+            dataSource={tableData}
+            columns={columns}
+            pagination={false}
+            // style={{
+            //   width: "100%",
+            // }}
+          />
+        </Space>
       </Space>
       {/* <Modal
         title={t("Try Premium Plan")}
