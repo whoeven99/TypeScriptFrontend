@@ -395,7 +395,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shopName: shop,
           accessToken: accessToken as string,
           source: stopTranslate.source,
-          target: stopTranslate.target,
+          // target: stopTranslate.target,
         });
         return json({ data });
       } catch (error) {

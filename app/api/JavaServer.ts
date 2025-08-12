@@ -23,18 +23,18 @@ interface GroupedDeleteData {
 export const StopTranslatingTask = async ({
   shopName,
   source,
-  target,
+  // target,
   accessToken,
 }: {
   shopName: string;
   source: string;
-  target: string;
+  // target: string;
   accessToken: string;
 }) => {
   console.log(`${shopName} StopTranslatingTask: `, {
     shopName,
     source,
-    target,
+    // target,
     accessToken,
   });
 
@@ -47,7 +47,7 @@ export const StopTranslatingTask = async ({
       },
       data: {
         source: source,
-        target: target,
+        // target: target,
         accessToken: accessToken,
       },
     });
@@ -1071,7 +1071,7 @@ export const GetTranslate = async ({
       isCover: translateSettings5,
     });
     const response = await axios({
-      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`,
+      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : `translate/clickTranslation?shopName=${shop}`}`,
       method: "PUT",
       data: {
         shopName: shop,
