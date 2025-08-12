@@ -263,7 +263,7 @@
     "devplanCard2.title": "добавляет прогресс перевода",
     "devplanCard3.title": "оптимизирует стиль переключателя, поддерживает отображение в футере",
     "devplanCard4.title": "улучшает скорость перевода, добавляя режим быстрого перевода",
-    "Your translation task exceeds the free limit and you need to purchase additional credits": "Ваша задача перевода превышает бесплатный лимит, необходимо приобрести дополнительные кредиты",
+    "Not enough translation credits. Purchase more to continue": "Ваш перевод превышает бесплатный лимит, необходимо приобрести дополнительные кредиты",
     "Translation tasks": "Задачи перевода",
     "Estimated number of words to translate: ": "Предполагаемое количество слов для перевода: ",
     "Calculation failed": "Ошибка расчета",

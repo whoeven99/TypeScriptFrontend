@@ -1,4 +1,13 @@
-import { Button, Card, Col, Divider, Modal, Row, Space, Typography } from "antd";
+import {
+  Button,
+  Card,
+  Col,
+  Divider,
+  Modal,
+  Row,
+  Space,
+  Typography,
+} from "antd";
 import { useEffect, useMemo, useState } from "react";
 import PaymentOptionSelect from "./paymentOptionSelect";
 import { useFetcher } from "@remix-run/react";
@@ -13,7 +22,7 @@ interface PaymentModalProps {
   visible: boolean;
   setVisible: (visible: boolean) => void;
   source: string;
-  target: string;
+  target: string[];
   model: any;
   translateSettings3: string[];
   needPay: boolean;
@@ -31,7 +40,16 @@ export interface OptionType {
   };
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source, target, model, translateSettings3, needPay, handleTranslate }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({
+  visible,
+  setVisible,
+  source,
+  target,
+  model,
+  translateSettings3,
+  needPay,
+  handleTranslate,
+}) => {
   const [selectedOption, setSelectedOption] = useState<OptionType>();
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [credits, setCredits] = useState<number | undefined>(undefined);
@@ -43,90 +61,131 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
 
-  const { plan } = useSelector((state: any) => state.userConfig)
+  const { plan } = useSelector((state: any) => state.userConfig);
 
-  const options: OptionType[] = useMemo(() => [
-    {
-      key: "option-1",
-      name: "500K",
-      Credits: 500000,
-      price: {
-        currentPrice: plan === 6 ? 1.99 : (plan === 5 ? 2.99 : (plan === 4 ? 3.59 : 3.99)),
-        comparedPrice: 3.99,
-        currencyCode: "USD",
+  const options: OptionType[] = useMemo(
+    () => [
+      {
+        key: "option-1",
+        name: "500K",
+        Credits: 500000,
+        price: {
+          currentPrice:
+            plan === 6 ? 1.99 : plan === 5 ? 2.99 : plan === 4 ? 3.59 : 3.99,
+          comparedPrice: 3.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-2",
-      name: "1M",
-      Credits: 1000000,
-      price: {
-        currentPrice: plan === 6 ? 3.99 : (plan === 5 ? 5.99 : (plan === 4 ? 7.19 : 7.99)),
-        comparedPrice: 7.99,
-        currencyCode: "USD",
+      {
+        key: "option-2",
+        name: "1M",
+        Credits: 1000000,
+        price: {
+          currentPrice:
+            plan === 6 ? 3.99 : plan === 5 ? 5.99 : plan === 4 ? 7.19 : 7.99,
+          comparedPrice: 7.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-3",
-      name: "2M",
-      Credits: 2000000,
-      price: {
-        currentPrice: plan === 6 ? 7.99 : (plan === 5 ? 11.99 : (plan === 4 ? 14.39 : 15.99)),
-        comparedPrice: 15.99,
-        currencyCode: "USD",
+      {
+        key: "option-3",
+        name: "2M",
+        Credits: 2000000,
+        price: {
+          currentPrice:
+            plan === 6 ? 7.99 : plan === 5 ? 11.99 : plan === 4 ? 14.39 : 15.99,
+          comparedPrice: 15.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-4",
-      name: "3M",
-      Credits: 3000000,
-      price: {
-        currentPrice: plan === 6 ? 11.99 : (plan === 5 ? 17.99 : (plan === 4 ? 21.79 : 23.99)),
-        comparedPrice: 23.99,
-        currencyCode: "USD",
+      {
+        key: "option-4",
+        name: "3M",
+        Credits: 3000000,
+        price: {
+          currentPrice:
+            plan === 6
+              ? 11.99
+              : plan === 5
+                ? 17.99
+                : plan === 4
+                  ? 21.79
+                  : 23.99,
+          comparedPrice: 23.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-5",
-      name: "5M",
-      Credits: 5000000,
-      price: {
-        currentPrice: plan === 6 ? 19.99 : (plan === 5 ? 29.99 : (plan === 4 ? 35.99 : 39.99)),
-        comparedPrice: 39.99,
-        currencyCode: "USD",
+      {
+        key: "option-5",
+        name: "5M",
+        Credits: 5000000,
+        price: {
+          currentPrice:
+            plan === 6
+              ? 19.99
+              : plan === 5
+                ? 29.99
+                : plan === 4
+                  ? 35.99
+                  : 39.99,
+          comparedPrice: 39.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-6",
-      name: "10M",
-      Credits: 10000000,
-      price: {
-        currentPrice: plan === 6 ? 39.99 : (plan === 5 ? 59.99 : (plan === 4 ? 71.99 : 79.99)),
-        comparedPrice: 79.99,
-        currencyCode: "USD",
+      {
+        key: "option-6",
+        name: "10M",
+        Credits: 10000000,
+        price: {
+          currentPrice:
+            plan === 6
+              ? 39.99
+              : plan === 5
+                ? 59.99
+                : plan === 4
+                  ? 71.99
+                  : 79.99,
+          comparedPrice: 79.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-7",
-      name: "20M",
-      Credits: 20000000,
-      price: {
-        currentPrice: plan === 6 ? 79.99 : (plan === 5 ? 119.99 : (plan === 4 ? 143.99 : 159.99)),
-        comparedPrice: 159.99,
-        currencyCode: "USD",
+      {
+        key: "option-7",
+        name: "20M",
+        Credits: 20000000,
+        price: {
+          currentPrice:
+            plan === 6
+              ? 79.99
+              : plan === 5
+                ? 119.99
+                : plan === 4
+                  ? 143.99
+                  : 159.99,
+          comparedPrice: 159.99,
+          currencyCode: "USD",
+        },
       },
-    },
-    {
-      key: "option-8",
-      name: "30M",
-      Credits: 30000000,
-      price: {
-        currentPrice: plan === 6 ? 119.99 : (plan === 5 ? 179.99 : (plan === 4 ? 215.99 : 239.99)),
-        comparedPrice: 239.99,
-        currencyCode: "USD",
+      {
+        key: "option-8",
+        name: "30M",
+        Credits: 30000000,
+        price: {
+          currentPrice:
+            plan === 6
+              ? 119.99
+              : plan === 5
+                ? 179.99
+                : plan === 4
+                  ? 215.99
+                  : 239.99,
+          comparedPrice: 239.99,
+          currencyCode: "USD",
+        },
       },
-    },
-  ], [plan]);
+    ],
+    [plan],
+  );
 
   useEffect(() => {
     if (credits && !selectedOption) {
@@ -141,53 +200,67 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
 
   useEffect(() => {
     if (visible) {
-      fetcher.submit({
-        credits: JSON.stringify({
-          source: source || "en",
-          target: target || "zh-CN",
-        }),
-      }, {
-        method: "post",
-        action: "/app",
-      });
+      fetcher.submit(
+        {
+          credits: JSON.stringify({
+            source: source || "en",
+            target: target || "zh-CN",
+          }),
+        },
+        {
+          method: "post",
+          action: "/app",
+        },
+      );
     }
   }, [visible]);
 
   useEffect(() => {
     if (fetcher.data) {
       if (fetcher.data.data.success) {
-        const { id, translationId, shopName, ...rest } = fetcher.data.data.response;
+        const { id, translationId, shopName, ...rest } =
+          fetcher.data.data.response;
         let credits = 0;
-        Object.entries(rest).filter((([key, value]) => translateSettings3.includes(key as string)))
+        Object.entries(rest)
+          .filter(([key, value]) => translateSettings3.includes(key as string))
           .forEach(([key, value]) => {
             if (value !== null) {
               credits += value as number;
             } else {
-              recalculateFetcher.submit({
-                recalculate: JSON.stringify(true),
-              }, {
-                method: "post",
-                action: "/app",
-              });
+              recalculateFetcher.submit(
+                {
+                  recalculate: JSON.stringify(true),
+                },
+                {
+                  method: "post",
+                  action: "/app",
+                },
+              );
             }
           });
         if (credits === 0) {
-          recalculateFetcher.submit({
-            recalculate: JSON.stringify(true),
-          }, {
-            method: "post",
-            action: "/app",
-          });
+          recalculateFetcher.submit(
+            {
+              recalculate: JSON.stringify(true),
+            },
+            {
+              method: "post",
+              action: "/app",
+            },
+          );
         } else {
           setCredits(credits);
         }
       } else {
-        recalculateFetcher.submit({
-          recalculate: JSON.stringify(true),
-        }, {
-          method: "post",
-          action: "/app",
-        });
+        recalculateFetcher.submit(
+          {
+            recalculate: JSON.stringify(true),
+          },
+          {
+            method: "post",
+            action: "/app",
+          },
+        );
       }
     }
   }, [fetcher.data]);
@@ -195,9 +268,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
   useEffect(() => {
     if (recalculateFetcher.data) {
       if (recalculateFetcher.data.data.success) {
-        const { id, translationId, shopName, ...rest } = recalculateFetcher.data.data.response;
+        const { id, translationId, shopName, ...rest } =
+          recalculateFetcher.data.data.response;
         let credits = 0;
-        Object.entries(rest).filter((([key, value]) => translateSettings3.includes(key as string)))
+        Object.entries(rest)
+          .filter(([key, value]) => translateSettings3.includes(key as string))
           .forEach(([key, value]) => {
             if (value !== null) {
               credits += value as number;
@@ -205,7 +280,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
               setCredits(-1);
               return;
             }
-          })
+          });
         setCredits(credits);
       } else {
         setCredits(-1);
@@ -280,11 +355,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-end"
+            alignItems: "flex-end",
           }}
         >
           <div key="support-section">
-            <Text strong key="cost-question">{t("Cost questions: ")}</Text>
+            <Text strong key="cost-question">
+              {t("Cost questions: ")}
+            </Text>
             <Button
               key="contact-support"
               type="link"
@@ -294,7 +371,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
               {t("Contact support")}
             </Button>
           </div>
-          {needPay ?
+          {needPay ? (
             <Button
               key="buy-now"
               type="primary"
@@ -302,25 +379,28 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
               disabled={buyButtonLoading}
               loading={buyButtonLoading}
               style={{
-                height: 'auto',
-                paddingTop: '4px',
-                paddingBottom: '4px'
+                height: "auto",
+                paddingTop: "4px",
+                paddingBottom: "4px",
               }}
             >
-              <div key="button-content" style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center'
-              }}>
-                <Text key="price" strong style={{ color: 'inherit' }}>
+              <div
+                key="button-content"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <Text key="price" strong style={{ color: "inherit" }}>
                   ${selectedOption?.price.currentPrice ?? 0}
                 </Text>
-                <Text key="buy-text" style={{ color: 'inherit' }}>
+                <Text key="buy-text" style={{ color: "inherit" }}>
                   {t("Buy now")}
                 </Text>
               </div>
             </Button>
-            :
+          ) : (
             <Button
               type="primary"
               loading={buyButtonLoading}
@@ -328,16 +408,22 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
               onClick={() => {
                 setBuyButtonLoading(true);
                 handleTranslate();
-              }}>
+              }}
+            >
               {t("Translate")}
             </Button>
-          }
-        </div>
-
+          )}
+        </div>,
       ]}
     >
-      <Title level={4} style={{ textAlign: "center", marginTop: "20px" }}>{needPay ? t("Your translation task exceeds the free limit and you need to purchase additional credits") : t("Translation task is about to start")}</Title>
-      <Card>
+      <Title level={4} style={{ textAlign: "center", marginTop: "20px" }}>
+        {needPay
+          ? t(
+              "Not enough translation credits. Purchase more to continue",
+            )
+          : t("Translation task is about to start")}
+      </Title>
+      {/* <Card>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           <Title level={5}>{t("Translation tasks")}</Title>
           <Title level={5} style={{ marginTop: "0px" }}>{t("Credits to be consumed")}</Title>
@@ -371,9 +457,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
           </div>
           <Text strong> {credits === undefined ? <Text strong>{t("Calculating...")}</Text> : credits >= 0 ? <Text strong>{Number((credits * multiple1 * multiple2).toFixed(0)).toLocaleString()}</Text> : <Text strong>{t("Calculation failed")}</Text>}</Text>
         </div>
-      </Card>
-      {needPay
-        &&
+      </Card> */}
+      {needPay && (
         <>
           <Divider />
           <Title level={5}>{t("Buy credits")}</Title>
@@ -381,20 +466,20 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
             <Space direction="vertical">
               <div
                 style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',  // 允许自动换行
-                  gap: '16px',
-                  width: '100%'
+                  display: "flex",
+                  flexWrap: "wrap", // 允许自动换行
+                  gap: "16px",
+                  width: "100%",
                 }}
               >
                 {options.map((option: any) => (
                   <div
                     key={option.name}
                     style={{
-                      flex: '0 1 auto',  // 允许缩小但不放大
+                      flex: "0 1 auto", // 允许缩小但不放大
                       // minWidth: '200px',  // 设置最小宽度
-                      display: 'flex',
-                      justifyContent: 'center'
+                      display: "flex",
+                      justifyContent: "center",
                     }}
                   >
                     <PaymentOptionSelect
@@ -410,10 +495,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible, source
           <Divider />
           <div className="total_payment">
             <Text style={{ marginRight: "5px" }}>{t("Total Payment:")}</Text>
-            <Text strong>${selectedOption?.price.currentPrice ? selectedOption?.price.currentPrice : 0}</Text>
+            <Text strong>
+              $
+              {selectedOption?.price.currentPrice
+                ? selectedOption?.price.currentPrice
+                : 0}
+            </Text>
           </div>
         </>
-      }
+      )}
     </Modal>
   );
 };

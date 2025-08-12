@@ -275,7 +275,7 @@
   "devplanCard2.title": "Adds translation progress",
   "devplanCard3.title": "Optimizes the switcher style, supporting display in the footer",
   "devplanCard4.title": "Improves translation speed, adding a fast translation mode",
-  "Your translation task exceeds the free limit and you need to purchase additional credits": "Your translation task exceeds the free limit and you need to purchase additional credits",
+  "Not enough translation credits. Purchase more to continue": "Not enough translation credits. Purchase more to continue",
   "Translation tasks": "Translation tasks",
   "Estimated number of words to translate: ": "Estimated number of words to translate:",
   "Calculation failed": "Calculation failed",
