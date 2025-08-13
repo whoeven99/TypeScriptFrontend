@@ -531,5 +531,6 @@
     "1. Click to download the product import template": "1. 제품 가져오기 템플릿을 클릭하여 다운로드하세요",
     "2. Fill in the translated data in the template": "2. 템플릿에 번역된 데이터를 입력하세요",
     "3. Contact us to import the corresponding files": "3. 고객 서비스에 문의하여 해당 파일을 가져오세요",
-    "Got it": "알고 있어요"
+    "Got it": "알고 있어요",
+    "You can select up to 5 languages at once.": "한 번에 최대 5개의 언어를 선택할 수 있습니다."
 }
