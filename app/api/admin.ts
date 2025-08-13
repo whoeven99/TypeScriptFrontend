@@ -1844,7 +1844,7 @@ export const mutationAppSubscriptionCreate = async ({
   shop: string;
   accessToken: string;
   name: string;
-  yearly: boolean;
+  yearly?: boolean;
   price: {
     amount: number;
     currencyCode: string;
@@ -1898,9 +1898,7 @@ export const mutationAppSubscriptionCreate = async ({
             {
               plan: {
                 appRecurringPricingDetails: {
-                  interval: yearly
-                    ? "ANNUAL"
-                    : "EVERY_30_DAYS",
+                  interval: yearly ? "ANNUAL" : "EVERY_30_DAYS",
                   price: {
                     amount: price.amount,
                     currencyCode: price.currencyCode,
