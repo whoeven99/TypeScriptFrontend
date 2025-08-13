@@ -1898,7 +1898,6 @@ export const mutationAppSubscriptionCreate = async ({
             {
               plan: {
                 appRecurringPricingDetails: {
-                  interval: yearly ? "ANNUAL" : "EVERY_30_DAYS",
                   price: {
                     amount: price.amount,
                     currencyCode: price.currencyCode,
