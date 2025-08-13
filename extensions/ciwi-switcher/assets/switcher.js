@@ -637,7 +637,7 @@ class CiwiswitcherForm extends HTMLElement {
   connectedCallback() {
     this.elements = {
       ciwiBlock: document.querySelector(
-        "#shopify-block-AdHQwSXVWVGU1WDgzN__10786389038645483885",
+        "#shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220",
       ),
       ciwiContainer: this.querySelector("#ciwi-container"),
       selectorBox: this.querySelector("#selector-box"),
