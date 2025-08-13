@@ -9,7 +9,7 @@ export const tableData = [
     type: "boolean",
   },
   {
-    key: 0,
+    key: 1,
     features: "testFeatures",
     free: "testFree",
     basic: "testBasic",
@@ -18,7 +18,7 @@ export const tableData = [
     type: "text",
   },
   {
-    key: 0,
+    key: 2,
     features: "testFeatures",
     free: "100",
     basic: "500",

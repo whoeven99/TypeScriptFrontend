@@ -54,12 +54,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  const { admin } = adminAuthResult;
 
   const formData = await request.formData();
   const words = JSON.parse(formData.get("words") as string);
   const planInfo = JSON.parse(formData.get("planInfo") as string);
   const payForPlan = JSON.parse(formData.get("payForPlan") as string);
-  const freeTrial = JSON.parse(formData.get("freeTrial") as string);
+  // const freeTrial = JSON.parse(formData.get("freeTrial") as string);
   switch (true) {
     case !!words:
       try {
@@ -79,7 +80,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return data;
       } catch (error) {
         console.error("Error planInfo action:", error);
-        return "1";
+        return "2";
       }
     case !!payForPlan:
       try {
@@ -92,55 +93,78 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const returnUrl = new URL(
             `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
           );
-          // if (payForPlan.title === "Free") {
+          if (payForPlan.title === "Free") {
+            const response = await admin.graphql(
+              `#graphql
+              mutation AppSubscriptionCancel($id: ID!, $prorate: Boolean) {
+                appSubscriptionCancel(id: $id, prorate: $prorate) {
+                  userErrors {
+                    field
+                    message
+                  }
+                  appSubscription {
+                    id
+                    status
+                  }
+                }
+              }`,
+              {
+                variables: {
+                  id: process.env.APP_SUBSCRIPTION_ID,
+                },
+              },
+            );
 
-          // } else {
-          const res = await mutationAppSubscriptionCreate({
-            shop,
-            accessToken: accessToken as string,
-            name: payForPlan.title,
-            yearly: payForPlan.yearly,
-            price: {
-              amount: payForPlan.yearly
-                ? payForPlan.price + 0.01 * 9 - 0.01
-                : payForPlan.price,
-              currencyCode: "USD",
-            },
-            trialDays: 5,
-            returnUrl,
-            test:
-              process.env.NODE_ENV === "development" ||
-              process.env.NODE_ENV === "test",
-          });
-          return {
-            ...res,
-            appSubscription: {
-              ...res.appSubscription,
+            const data = await response.json();
+
+            return data;
+          } else {
+            const res = await mutationAppSubscriptionCreate({
+              shop,
+              accessToken: accessToken as string,
+              name: payForPlan.title,
+              yearly: payForPlan.yearly,
               price: {
-                amount: payForPlan.price,
+                amount: payForPlan.yearly
+                  ? payForPlan.yearlyPrice
+                  : payForPlan.monthlyPrice,
                 currencyCode: "USD",
               },
-            },
-          };
-          // }
+              trialDays: 5,
+              returnUrl,
+              test:
+                process.env.NODE_ENV === "development" ||
+                process.env.NODE_ENV === "test",
+            });
+            return {
+              ...res,
+              appSubscription: {
+                ...res.appSubscription,
+                price: {
+                  amount: payForPlan.price,
+                  currencyCode: "USD",
+                },
+              },
+            };
+          }
         }
       } catch (error) {
         console.error("Error payForPlan action:", error);
       }
-    case !!freeTrial:
-      try {
-        const data = await StartFreePlan({ shop });
-        console.log("freeTrial: ", data);
-        return data;
-      } catch (error) {
-        console.error("Error freeTrial action:", error);
-        return {
-          success: false,
-          errorCode: 0,
-          errorMsg: "Error freeTrial",
-          response: null,
-        };
-      }
+    // case !!freeTrial:
+    //   try {
+    //     const data = await StartFreePlan({ shop });
+    //     console.log("freeTrial: ", data);
+    //     return data;
+    //   } catch (error) {
+    //     console.error("Error freeTrial action:", error);
+    //     return {
+    //       success: false,
+    //       errorCode: 0,
+    //       errorMsg: "Error freeTrial",
+    //       response: null,
+    //     };
+    //   }
   }
   return null;
 };
@@ -158,7 +182,7 @@ const Index = () => {
   // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
   // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
-  const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
+  // const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
   const isQuotaExceeded = useMemo(
     () => currentCredits >= maxCredits && maxCredits > 0,
     [currentCredits, maxCredits],
@@ -171,7 +195,7 @@ const Index = () => {
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
-  const freeTrialFetcher = useFetcher<any>();
+  // const freeTrialFetcher = useFetcher<any>();
 
   useEffect(() => {
     wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
@@ -185,17 +209,17 @@ const Index = () => {
       setUpdateTime(userConfig.updateTime);
     }
     setIsLoading(false);
-    const getPlan = async () => {
-      try {
-        const response = await axios.post(
-          `${server}/userTrials/isOpenFreePlan?shopName=${shop}`,
-        );
-        setHasOpenFreePlan(response.data.response || false);
-      } catch (error) {
-        console.error("Error getPlan:", error);
-      }
-    };
-    getPlan();
+    // const getPlan = async () => {
+    //   try {
+    //     const response = await axios.post(
+    //       `${server}/userTrials/isOpenFreePlan?shopName=${shop}`,
+    //     );
+    //     setHasOpenFreePlan(response.data.response || false);
+    //   } catch (error) {
+    //     console.error("Error getPlan:", error);
+    //   }
+    // };
+    // getPlan();
   }, []);
 
   useEffect(() => {
@@ -265,195 +289,196 @@ const Index = () => {
     }
   }, [payFetcher.data, payForPlanFetcher.data]);
 
-  useEffect(() => {
-    if (freeTrialFetcher.data) {
-      if (freeTrialFetcher.data.success) {
-        // setFreeTrialModalOpen(false);
-        // setFreeTrialButtonLoading(false);
-        setSelectedPlan(7);
-        dispatch(
-          setUserConfig({
-            plan: "7",
-            updateTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
-              .toLocaleDateString("zh-CN", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-              })
-              .replace(/\//g, "-"),
-          }),
-        );
-        setUpdateTime(
-          new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
-            .toLocaleDateString("zh-CN", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-            })
-            .replace(/\//g, "-"),
-        );
-        setHasOpenFreePlan(true);
-        shopify.toast.show("Free trial started successfully");
-      } else {
-        shopify.toast.show("Free trial failed");
-        // setFreeTrialButtonLoading(false);
-      }
-    }
-  }, [freeTrialFetcher.data]);
+  // useEffect(() => {
+  //   if (freeTrialFetcher.data) {
+  //     if (freeTrialFetcher.data.success) {
+  //       // setFreeTrialModalOpen(false);
+  //       // setFreeTrialButtonLoading(false);
+  //       setSelectedPlan(7);
+  //       dispatch(
+  //         setUserConfig({
+  //           plan: "7",
+  //           updateTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+  //             .toLocaleDateString("zh-CN", {
+  //               year: "numeric",
+  //               month: "2-digit",
+  //               day: "2-digit",
+  //             })
+  //             .replace(/\//g, "-"),
+  //         }),
+  //       );
+  //       setUpdateTime(
+  //         new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+  //           .toLocaleDateString("zh-CN", {
+  //             year: "numeric",
+  //             month: "2-digit",
+  //             day: "2-digit",
+  //           })
+  //           .replace(/\//g, "-"),
+  //       );
+  //       setHasOpenFreePlan(true);
+  //       shopify.toast.show("Free trial started successfully");
+  //     } else {
+  //       shopify.toast.show("Free trial failed");
+  //       // setFreeTrialButtonLoading(false);
+  //     }
+  //   }
+  // }, [freeTrialFetcher.data]);
 
-  const creditOptions: OptionType[] = useMemo(
-    () => [
-      {
-        key: "option-1",
-        name: "500K",
-        Credits: 500000,
-        price: {
-          currentPrice:
-            selectedPlan === 6
-              ? 1.99
-              : selectedPlan === 5
-                ? 2.99
-                : selectedPlan === 4
-                  ? 3.59
-                  : 3.99,
-          comparedPrice: 3.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-2",
-        name: "1M",
-        Credits: 1000000,
-        price: {
-          currentPrice:
-            selectedPlan === 6
-              ? 3.99
-              : selectedPlan === 5
-                ? 5.99
-                : selectedPlan === 4
-                  ? 7.19
-                  : 7.99,
-          comparedPrice: 7.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-3",
-        name: "2M",
-        Credits: 2000000,
-        price: {
-          currentPrice:
-            selectedPlan === 6
-              ? 7.99
-              : selectedPlan === 5
-                ? 11.99
-                : selectedPlan === 4
-                  ? 14.39
-                  : 15.99,
-          comparedPrice: 15.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-4",
-        name: "3M",
-        Credits: 3000000,
-        price: {
-          currentPrice:
-            selectedPlan === 6
-              ? 11.99
-              : selectedPlan === 5
-                ? 17.99
-                : selectedPlan === 4
-                  ? 21.79
-                  : 23.99,
-          comparedPrice: 23.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-5",
-        name: "5M",
-        Credits: 5000000,
-        price: {
-          currentPrice:
-            selectedPlan === 6
-              ? 19.99
-              : selectedPlan === 5
-                ? 29.99
-                : selectedPlan === 4
-                  ? 35.99
-                  : 39.99,
-          comparedPrice: 39.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-6",
-        name: "10M",
-        Credits: 10000000,
-        price: {
-          currentPrice:
-            selectedPlan === 6
-              ? 39.99
-              : selectedPlan === 5
-                ? 59.99
-                : selectedPlan === 4
-                  ? 71.99
-                  : 79.99,
-          comparedPrice: 79.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-7",
-        name: "20M",
-        Credits: 20000000,
-        price: {
-          currentPrice:
-            selectedPlan === 6
-              ? 79.99
-              : selectedPlan === 5
-                ? 119.99
-                : selectedPlan === 4
-                  ? 143.99
-                  : 159.99,
-          comparedPrice: 159.99,
-          currencyCode: "USD",
-        },
-      },
-      {
-        key: "option-8",
-        name: "30M",
-        Credits: 30000000,
-        price: {
-          currentPrice:
-            selectedPlan === 6
-              ? 119.99
-              : selectedPlan === 5
-                ? 179.99
-                : selectedPlan === 4
-                  ? 215.99
-                  : 239.99,
-          comparedPrice: 239.99,
-          currencyCode: "USD",
-        },
-      },
-    ],
-    [selectedPlan],
-  );
+  // const creditOptions: OptionType[] = useMemo(
+  //   () => [
+  //     {
+  //       key: "option-1",
+  //       name: "500K",
+  //       Credits: 500000,
+  //       price: {
+  //         currentPrice:
+  //           selectedPlan === 6
+  //             ? 1.99
+  //             : selectedPlan === 5
+  //               ? 2.99
+  //               : selectedPlan === 4
+  //                 ? 3.59
+  //                 : 3.99,
+  //         comparedPrice: 3.99,
+  //         currencyCode: "USD",
+  //       },
+  //     },
+  //     {
+  //       key: "option-2",
+  //       name: "1M",
+  //       Credits: 1000000,
+  //       price: {
+  //         currentPrice:
+  //           selectedPlan === 6
+  //             ? 3.99
+  //             : selectedPlan === 5
+  //               ? 5.99
+  //               : selectedPlan === 4
+  //                 ? 7.19
+  //                 : 7.99,
+  //         comparedPrice: 7.99,
+  //         currencyCode: "USD",
+  //       },
+  //     },
+  //     {
+  //       key: "option-3",
+  //       name: "2M",
+  //       Credits: 2000000,
+  //       price: {
+  //         currentPrice:
+  //           selectedPlan === 6
+  //             ? 7.99
+  //             : selectedPlan === 5
+  //               ? 11.99
+  //               : selectedPlan === 4
+  //                 ? 14.39
+  //                 : 15.99,
+  //         comparedPrice: 15.99,
+  //         currencyCode: "USD",
+  //       },
+  //     },
+  //     {
+  //       key: "option-4",
+  //       name: "3M",
+  //       Credits: 3000000,
+  //       price: {
+  //         currentPrice:
+  //           selectedPlan === 6
+  //             ? 11.99
+  //             : selectedPlan === 5
+  //               ? 17.99
+  //               : selectedPlan === 4
+  //                 ? 21.79
+  //                 : 23.99,
+  //         comparedPrice: 23.99,
+  //         currencyCode: "USD",
+  //       },
+  //     },
+  //     {
+  //       key: "option-5",
+  //       name: "5M",
+  //       Credits: 5000000,
+  //       price: {
+  //         currentPrice:
+  //           selectedPlan === 6
+  //             ? 19.99
+  //             : selectedPlan === 5
+  //               ? 29.99
+  //               : selectedPlan === 4
+  //                 ? 35.99
+  //                 : 39.99,
+  //         comparedPrice: 39.99,
+  //         currencyCode: "USD",
+  //       },
+  //     },
+  //     {
+  //       key: "option-6",
+  //       name: "10M",
+  //       Credits: 10000000,
+  //       price: {
+  //         currentPrice:
+  //           selectedPlan === 6
+  //             ? 39.99
+  //             : selectedPlan === 5
+  //               ? 59.99
+  //               : selectedPlan === 4
+  //                 ? 71.99
+  //                 : 79.99,
+  //         comparedPrice: 79.99,
+  //         currencyCode: "USD",
+  //       },
+  //     },
+  //     {
+  //       key: "option-7",
+  //       name: "20M",
+  //       Credits: 20000000,
+  //       price: {
+  //         currentPrice:
+  //           selectedPlan === 6
+  //             ? 79.99
+  //             : selectedPlan === 5
+  //               ? 119.99
+  //               : selectedPlan === 4
+  //                 ? 143.99
+  //                 : 159.99,
+  //         comparedPrice: 159.99,
+  //         currencyCode: "USD",
+  //       },
+  //     },
+  //     {
+  //       key: "option-8",
+  //       name: "30M",
+  //       Credits: 30000000,
+  //       price: {
+  //         currentPrice:
+  //           selectedPlan === 6
+  //             ? 119.99
+  //             : selectedPlan === 5
+  //               ? 179.99
+  //               : selectedPlan === 4
+  //                 ? 215.99
+  //                 : 239.99,
+  //         comparedPrice: 239.99,
+  //         currencyCode: "USD",
+  //       },
+  //     },
+  //   ],
+  //   [selectedPlan],
+  // );
 
   const plans = [
     {
-      title: "Starter",
-      price: 1.99,
+      title: "Free",
+      yearlyPrice: 0,
+      monthlyPrice: 0,
       subtitle: t("pricing.for_individuals"),
       buttonText:
-        selectedPlan === 3
+        selectedPlan === 1 || selectedPlan === 2
           ? t("pricing.current_plan")
           : t("pricing.get_start"),
       buttonType: "default",
-      disabled: selectedPlan === 3,
+      disabled: selectedPlan === 1 || selectedPlan === 2,
       features: [
         t("starter_features1"),
         t("starter_features2"),
@@ -462,7 +487,8 @@ const Index = () => {
     },
     {
       title: "Basic",
-      price: 7.99,
+      monthlyPrice: 7.99,
+      yearlyPrice: 76.68,
       subtitle: t("pricing.for_small_teams"),
       buttonText:
         selectedPlan === 4 ? t("pricing.current_plan") : t("pricing.get_start"),
@@ -484,7 +510,8 @@ const Index = () => {
     },
     {
       title: "Pro",
-      price: 19.99,
+      monthlyPrice: 19.99,
+      yearlyPrice: 191.88,
       subtitle: t("pricing.for_growing"),
       buttonText:
         selectedPlan === 5 ? t("pricing.current_plan") : t("pricing.get_start"),
@@ -506,7 +533,8 @@ const Index = () => {
     },
     {
       title: "Premium",
-      price: 39.99,
+      monthlyPrice: 39.99,
+      yearlyPrice: 383.88,
       subtitle: t("pricing.for_large_teams"),
       buttonText:
         selectedPlan === 6 ? t("pricing.current_plan") : t("pricing.get_start"),
@@ -712,16 +740,16 @@ const Index = () => {
     );
   };
 
-  const handleFreeTrial = async () => {
-    // setFreeTrialButtonLoading(true);
-    freeTrialFetcher.submit(
-      { freeTrial: JSON.stringify(true) },
-      { method: "POST" },
-    );
-    // const data = await StartFreePlan({ shop, server: server as string });
-    // console.log("freeTrial: ", data);
-    // return data;
-  };
+  // const handleFreeTrial = async () => {
+  //   // setFreeTrialButtonLoading(true);
+  //   freeTrialFetcher.submit(
+  //     { freeTrial: JSON.stringify(true) },
+  //     { method: "POST" },
+  //   );
+  //   // const data = await StartFreePlan({ shop, server: server as string });
+  //   // console.log("freeTrial: ", data);
+  //   // return data;
+  // };
 
   return (
     <Page>
@@ -818,7 +846,7 @@ const Index = () => {
             showIcon
           />
         )}
-        {!hasOpenFreePlan && (
+        {/* {!hasOpenFreePlan && (
           <Card styles={{ body: { padding: "12px" } }}>
             <Space
               style={{
@@ -841,7 +869,7 @@ const Index = () => {
               </Button>
             </Space>
           </Card>
-        )}
+        )} */}
         {/* <Card
           style={{ textAlign: "center" }}
           loading={isLoading || selectedPlan === null}
@@ -973,7 +1001,7 @@ const Index = () => {
               <Text>{t("Yearly")}</Text>
             </Space>
             <div className="yearly_save">
-              <Text strong>{t("Save 25%")}</Text>
+              <Text strong>{t("Save 20%")}</Text>
             </div>
           </Flex>
           <Card styles={{ body: { padding: 12 } }}>
@@ -1037,12 +1065,7 @@ const Index = () => {
                   <Title level={5}>{plan.title}</Title>
                   <div style={{ margin: "12px 0" }}>
                     <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
-                      $
-                      {!plan.price
-                        ? 0
-                        : yearly
-                          ? (plan.price + 0.01) * 9 - 0.01
-                          : plan.price}
+                      ${yearly ? plan.yearlyPrice : plan.monthlyPrice}
                     </Text>
                     <Text style={{ fontSize: "14px" }}>
                       {yearly ? t("/year") : t("/month")}
