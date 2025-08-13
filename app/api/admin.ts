@@ -61,7 +61,7 @@ export const queryShopLanguages = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -106,7 +106,7 @@ export const queryShop = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -150,7 +150,7 @@ export const queryTheme = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -191,7 +191,7 @@ export const queryTheme = async ({
 //     }`;
 
 //     const response = await axios({
-//       url: `https://${shop}/admin/api/2024-10/graphql.json`,
+//       url: `https://${shop}/admin/api/2025-04/graphql.json`,
 //       method: "POST",
 //       headers: {
 //         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -222,7 +222,7 @@ export const queryProductsCount = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -255,7 +255,7 @@ export const queryAllProducts = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -322,7 +322,7 @@ export const queryNextProducts = async ({
     }`;
 
     const optionResponse = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -405,7 +405,7 @@ export const queryPreviousProducts = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -457,7 +457,7 @@ export const queryNextCollections = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -509,7 +509,7 @@ export const queryPreviousCollections = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -554,7 +554,7 @@ export const queryNextArticles = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -599,7 +599,7 @@ export const queryPreviousArticles = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -642,7 +642,7 @@ export const queryNextBlogs = async ({
       }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -685,7 +685,7 @@ export const queryPreviousBlogs = async ({
       }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -728,7 +728,7 @@ export const queryNextPages = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -771,7 +771,7 @@ export const queryPreviousPages = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -825,7 +825,7 @@ export const queryNextNavigations = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -879,7 +879,7 @@ export const queryPreviousNavigations = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -923,7 +923,7 @@ export const queryNextShopMetafields = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -966,7 +966,7 @@ export const queryPreviousShopMetafields = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -999,7 +999,7 @@ export const queryAllProductMetafields = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -1047,7 +1047,7 @@ export const queryNextProductMetafields = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -1095,7 +1095,7 @@ export const queryPreviousProductMetafields = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -1150,7 +1150,7 @@ export const queryNextTransType = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -1205,7 +1205,7 @@ export const queryPreviousTransType = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -1269,7 +1269,7 @@ export const queryNextNestTransType = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -1332,7 +1332,7 @@ export const queryPreviousNestTransType = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -1395,7 +1395,7 @@ export const queryPreviousNestTransType = async ({
 //     }`;
 
 //     const response = await axios({
-//       url: `https://${shop}/admin/api/2024-10/graphql.json`,
+//       url: `https://${shop}/admin/api/2025-04/graphql.json`,
 //       method: "POST",
 //       headers: {
 //         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -1424,7 +1424,7 @@ export const queryAllLanguages = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -1459,7 +1459,7 @@ export const queryPrimaryMarket = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -1496,7 +1496,7 @@ export const queryOrders = async ({
   }`;
   try {
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -1548,7 +1548,7 @@ export const mutationShopLocaleEnable = async ({
       while (retryCount < maxRetries) {
         try {
           shopifyResponse = await axios({
-            url: `https://${shop}/admin/api/2024-10/graphql.json`,
+            url: `https://${shop}/admin/api/2025-04/graphql.json`,
             method: "POST",
             headers: {
               "X-Shopify-Access-Token": accessToken,
@@ -1628,7 +1628,7 @@ export const mutationShopLocaleDisable = async ({
 
     // 执行 API 请求
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken,
@@ -1699,7 +1699,7 @@ export const mutationShopLocalePublish = async ({
 
     // 执行 API 请求
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken,
@@ -1748,7 +1748,7 @@ export const mutationShopLocaleUnpublish = async ({
 
       // 执行 API 请求
       const response = await axios({
-        url: `https://${shop}/admin/api/2024-10/graphql.json`,
+        url: `https://${shop}/admin/api/2025-04/graphql.json`,
         method: "POST",
         headers: {
           "X-Shopify-Access-Token": accessToken,
@@ -1775,7 +1775,7 @@ export const mutationAppPurchaseOneTimeCreate = async ({
 }: {
   shop: string;
   accessToken: string;
-  name: String;
+  name: string;
   price: {
     amount: number;
     currencyCode: string;
@@ -1786,7 +1786,7 @@ export const mutationAppPurchaseOneTimeCreate = async ({
   try {
     // 执行 API 请求
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken,
@@ -1844,7 +1844,7 @@ export const mutationAppSubscriptionCreate = async ({
   shop: string;
   accessToken: string;
   name: string;
-  yearly: boolean;
+  yearly?: boolean;
   price: {
     amount: number;
     currencyCode: string;
@@ -1858,7 +1858,7 @@ export const mutationAppSubscriptionCreate = async ({
   try {
     // 执行 API 请求
     const response = await axios({
-      url: `https://${shop}/admin/api/2024-10/graphql.json`,
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken,
@@ -1898,9 +1898,6 @@ export const mutationAppSubscriptionCreate = async ({
             {
               plan: {
                 appRecurringPricingDetails: {
-                  interval: yearly
-                    ? "ANNUAL"
-                    : "EVERY_30_DAYS",
                   price: {
                     amount: price.amount,
                     currencyCode: price.currencyCode,

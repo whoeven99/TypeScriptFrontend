@@ -317,7 +317,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       {
         translation: JSON.stringify({
           primaryLanguage: source,
-          selectedLanguage: target[index],
+          selectedLanguage: target,
           translateSettings1: "1",
           translateSettings2: "1",
           translateSettings3: [
@@ -652,6 +652,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                       block
                       onClick={handleReTranslate}
                       loading={translateFetcher.state === "submitting"}
+                      style={{ marginTop: "auto" }}
                     >
                       {t("progressing.continueTranslate")}
                     </Button>

@@ -393,6 +393,10 @@ const Index = () => {
     if (languageCardWarnText) {
       setLanguageCardWarnText("");
     }
+    if (e.length > 5) {
+      shopify.toast.show(t("You can select up to 5 languages at once."));
+      return;
+    }
     setSelectedLanguageCode(e);
   };
 
