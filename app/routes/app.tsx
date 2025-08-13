@@ -246,48 +246,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
 
         if (
-          shopLocalesIndex.includes(data.response[0]?.target) &&
-          (data.response[0]?.status !== 1 ||
+          shopLocalesIndex.includes(data.response?.target) &&
+          (data.response?.status !== 1 ||
             !shopLanguagesWithoutPrimaryIndex.find(
-              (item) => item.locale === data.response[0]?.target,
+              (item) => item.locale === data.response?.target,
             )?.published)
         ) {
           return {
-            translatingLanguage:
-              data.response.length > 0
-                ? data.response.map((item: any) => ({
-                    source: item?.source || shopPrimaryLanguage[0].locale,
-                    target: item?.target || "",
-                    status: item?.status || 0,
-                    resourceType: item?.resourceType || "",
-                  }))
-                : [
-                    {
-                      source: shopPrimaryLanguage[0].locale,
-                      target: "",
-                      status: 0,
-                      resourceType: "",
-                    },
-                  ],
+            translatingLanguage: {
+              source: data.response?.source || shopPrimaryLanguage[0].locale,
+              target: data.response?.target || "",
+              status: data.response?.status || 0,
+              resourceType: data.response?.resourceType || "",
+            },
           };
         } else {
           return {
-            translatingLanguage:
-              data.response.length > 0
-                ? data.response.map((item: any) => ({
-                    source: item?.source || shopPrimaryLanguage[0].locale,
-                    target: item?.target || "",
-                    status: item?.status || 0,
-                    resourceType: item?.resourceType || "",
-                  }))
-                : [
-                    {
-                      source: shopPrimaryLanguage[0].locale,
-                      target: "",
-                      status: 0,
-                      resourceType: "",
-                    },
-                  ],
+            translatingLanguage: {
+              source: data.response?.source || shopPrimaryLanguage[0].locale,
+              target: "",
+              status: 0,
+              resourceType: "",
+            },
           };
         }
       } catch (error) {

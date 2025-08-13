@@ -16,6 +16,7 @@ import {
   Flex,
   Switch,
   Table,
+  Collapse,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
@@ -36,6 +37,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
 import axios from "axios";
 import { tableData } from "./tableData";
+import { collapseData } from "./collapseData";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -90,15 +92,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const returnUrl = new URL(
             `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
           );
+          // if (payForPlan.title === "Free") {
+
+          // } else {
           const res = await mutationAppSubscriptionCreate({
             shop,
             accessToken: accessToken as string,
             name: payForPlan.title,
+            yearly: payForPlan.yearly,
             price: {
-              amount: payForPlan.price,
+              amount: payForPlan.yearly
+                ? payForPlan.price + 0.01 * 9 - 0.01
+                : payForPlan.price,
               currencyCode: "USD",
             },
-            trialDays: 0,
+            trialDays: 5,
             returnUrl,
             test:
               process.env.NODE_ENV === "development" ||
@@ -114,6 +122,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               },
             },
           };
+          // }
         }
       } catch (error) {
         console.error("Error payForPlan action:", error);
@@ -437,10 +446,12 @@ const Index = () => {
   const plans = [
     {
       title: "Starter",
-      price: "1.99",
+      price: 1.99,
       subtitle: t("pricing.for_individuals"),
       buttonText:
-        selectedPlan === 3 ? t("pricing.current_plan") : t("pricing.get_start"),
+        selectedPlan === 3
+          ? t("pricing.current_plan")
+          : t("pricing.get_start"),
       buttonType: "default",
       disabled: selectedPlan === 3,
       features: [
@@ -451,7 +462,7 @@ const Index = () => {
     },
     {
       title: "Basic",
-      price: "7.99",
+      price: 7.99,
       subtitle: t("pricing.for_small_teams"),
       buttonText:
         selectedPlan === 4 ? t("pricing.current_plan") : t("pricing.get_start"),
@@ -473,7 +484,7 @@ const Index = () => {
     },
     {
       title: "Pro",
-      price: "19.99",
+      price: 19.99,
       subtitle: t("pricing.for_growing"),
       buttonText:
         selectedPlan === 5 ? t("pricing.current_plan") : t("pricing.get_start"),
@@ -495,7 +506,7 @@ const Index = () => {
     },
     {
       title: "Premium",
-      price: "39.99",
+      price: 39.99,
       subtitle: t("pricing.for_large_teams"),
       buttonText:
         selectedPlan === 6 ? t("pricing.current_plan") : t("pricing.get_start"),
@@ -528,21 +539,61 @@ const Index = () => {
       title: "Free",
       dataIndex: "free",
       key: "free",
+      render: (_: any, record: any) => {
+        switch (true) {
+          case record.type === "credits":
+            return <Text>{record.free}</Text>;
+          case record.type === "boolean":
+            return <Text>{record.free ? "√" : "×"}</Text>;
+          default:
+            return <Text>{record.free}</Text>;
+        }
+      },
     },
     {
       title: "Basic",
       dataIndex: "basic",
       key: "basic",
+      render: (_: any, record: any) => {
+        switch (true) {
+          case record.type === "credits":
+            return <Text>{record.free}</Text>;
+          case record.type === "boolean":
+            return <Text>{record.free ? "√" : "×"}</Text>;
+          default:
+            return <Text>{record.free}</Text>;
+        }
+      },
     },
     {
       title: "Pro",
       dataIndex: "pro",
       key: "pro",
+      render: (_: any, record: any) => {
+        switch (true) {
+          case record.type === "credits":
+            return <Text>{record.free}</Text>;
+          case record.type === "boolean":
+            return <Text>{record.free ? "√" : "×"}</Text>;
+          default:
+            return <Text>{record.free}</Text>;
+        }
+      },
     },
     {
       title: "Premium",
       dataIndex: "premium",
       key: "premium",
+      render: (_: any, record: any) => {
+        switch (true) {
+          case record.type === "credits":
+            return <Text>{record.free}</Text>;
+          case record.type === "boolean":
+            return <Text>{record.free ? "√" : "×"}</Text>;
+          default:
+            return <Text>{record.free}</Text>;
+        }
+      },
     },
   ];
 
@@ -656,7 +707,7 @@ const Index = () => {
   const handlePayForPlan = (plan: any) => {
     setBuyButtonLoading(true);
     payForPlanFetcher.submit(
-      { payForPlan: JSON.stringify(plan) },
+      { payForPlan: JSON.stringify({ ...plan, yearly }) },
       { method: "POST" },
     );
   };
@@ -680,7 +731,7 @@ const Index = () => {
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+      <Space direction="vertical" size="large" style={{ display: "flex" }}>
         {/* 积分余额显示 */}
         <Card loading={isLoading}>
           <Space direction="vertical" size="small" style={{ width: "100%" }}>
@@ -986,9 +1037,16 @@ const Index = () => {
                   <Title level={5}>{plan.title}</Title>
                   <div style={{ margin: "12px 0" }}>
                     <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
-                      ${plan.price}
+                      $
+                      {!plan.price
+                        ? 0
+                        : yearly
+                          ? (plan.price + 0.01) * 9 - 0.01
+                          : plan.price}
                     </Text>
-                    <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
+                    <Text style={{ fontSize: "14px" }}>
+                      {yearly ? t("/year") : t("/month")}
+                    </Text>
                   </div>
                   <Paragraph type="secondary" style={{ fontSize: "13px" }}>
                     {plan.subtitle}
@@ -1074,6 +1132,21 @@ const Index = () => {
             // }}
           />
         </Space>
+        <Row>
+          <Col span={6}>
+            <Space direction="vertical" size="small">
+              <Title level={3} style={{ fontWeight: 700 }}>
+                {t("FAQs")}
+              </Title>
+              <Text type="secondary">
+                {t("Everything you need to know about pricing and billing.")}
+              </Text>
+            </Space>
+          </Col>
+          <Col span={18}>
+            <Collapse items={collapseData} />
+          </Col>
+        </Row>
       </Space>
       {/* <Modal
         title={t("Try Premium Plan")}
