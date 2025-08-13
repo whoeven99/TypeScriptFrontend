@@ -12,7 +12,6 @@ import {
   Skeleton,
   Popover,
   Badge,
-  Modal,
   Flex,
   Switch,
   Table,
@@ -22,11 +21,7 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import ScrollNotice from "~/components/ScrollNotice";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  GetUserSubscriptionPlan,
-  GetUserWords,
-  StartFreePlan,
-} from "~/api/JavaServer";
+import { GetUserSubscriptionPlan, GetUserWords } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
@@ -35,7 +30,6 @@ import "./style.css";
 import { mutationAppSubscriptionCreate } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
-import axios from "axios";
 import { tableData } from "./tableData";
 import { collapseData } from "./collapseData";
 
@@ -93,61 +87,61 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const returnUrl = new URL(
             `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
           );
-          if (payForPlan.title === "Free") {
-            const response = await admin.graphql(
-              `#graphql
-              mutation AppSubscriptionCancel($id: ID!, $prorate: Boolean) {
-                appSubscriptionCancel(id: $id, prorate: $prorate) {
-                  userErrors {
-                    field
-                    message
-                  }
-                  appSubscription {
-                    id
-                    status
-                  }
-                }
-              }`,
-              {
-                variables: {
-                  id: process.env.APP_SUBSCRIPTION_ID,
-                },
-              },
-            );
+          // if (payForPlan.title === "Free") {
+          //   const response = await admin.graphql(
+          //     `#graphql
+          //     mutation AppSubscriptionCancel($id: ID!, $prorate: Boolean) {
+          //       appSubscriptionCancel(id: $id, prorate: $prorate) {
+          //         userErrors {
+          //           field
+          //           message
+          //         }
+          //         appSubscription {
+          //           id
+          //           status
+          //         }
+          //       }
+          //     }`,
+          //     {
+          //       variables: {
+          //         id: process.env.APP_SUBSCRIPTION_ID,
+          //       },
+          //     },
+          //   );
 
-            const data = await response.json();
+          //   const data = await response.json();
 
-            return data;
-          } else {
-            const res = await mutationAppSubscriptionCreate({
-              shop,
-              accessToken: accessToken as string,
-              name: payForPlan.title,
-              yearly: payForPlan.yearly,
+          //   return data;
+          // } else {
+          const res = await mutationAppSubscriptionCreate({
+            shop,
+            accessToken: accessToken as string,
+            name: payForPlan.title,
+            yearly: payForPlan.yearly,
+            price: {
+              amount: payForPlan.yearly
+                ? payForPlan.yearlyPrice
+                : payForPlan.monthlyPrice,
+              currencyCode: "USD",
+            },
+            trialDays: 5,
+            returnUrl,
+            test:
+              process.env.NODE_ENV === "development" ||
+              process.env.NODE_ENV === "test",
+          });
+          return {
+            ...res,
+            appSubscription: {
+              ...res.appSubscription,
               price: {
-                amount: payForPlan.yearly
-                  ? payForPlan.yearlyPrice
-                  : payForPlan.monthlyPrice,
+                amount: payForPlan.price,
                 currencyCode: "USD",
               },
-              trialDays: 5,
-              returnUrl,
-              test:
-                process.env.NODE_ENV === "development" ||
-                process.env.NODE_ENV === "test",
-            });
-            return {
-              ...res,
-              appSubscription: {
-                ...res.appSubscription,
-                price: {
-                  amount: payForPlan.price,
-                  currencyCode: "USD",
-                },
-              },
-            };
-          }
+            },
+          };
         }
+        // }
       } catch (error) {
         console.error("Error payForPlan action:", error);
       }
@@ -178,6 +172,7 @@ const Index = () => {
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [updateTime, setUpdateTime] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
   const [buyButtonLoading, setBuyButtonLoading] = useState(false);
   // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
   // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
@@ -781,6 +776,12 @@ const Index = () => {
                 >
                   <QuestionCircleOutlined />
                 </Popover>
+                <Button
+                  type="primary"
+                  onClick={() => setAddCreditsModalOpen(true)}
+                >
+                  {t("Add credits")}
+                </Button>
               </div>
               {selectedPlan && (
                 <div>
