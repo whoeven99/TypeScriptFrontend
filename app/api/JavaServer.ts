@@ -23,18 +23,18 @@ interface GroupedDeleteData {
 export const StopTranslatingTask = async ({
   shopName,
   source,
-  target,
+  // target,
   accessToken,
 }: {
   shopName: string;
   source: string;
-  target: string;
+  // target: string;
   accessToken: string;
 }) => {
   console.log(`${shopName} StopTranslatingTask: `, {
     shopName,
     source,
-    target,
+    // target,
     accessToken,
   });
 
@@ -47,7 +47,7 @@ export const StopTranslatingTask = async ({
       },
       data: {
         source: source,
-        target: target,
+        // target: target,
         accessToken: accessToken,
       },
     });
@@ -532,7 +532,7 @@ export const GetTranslateDOByShopNameAndSource = async ({
         source: source,
       },
     });
-    console.log("GetTranslateDOByShopNameAndSource: ", response.data);
+    console.log(`${shop} GetTranslateDOByShopNameAndSource: `, response.data);
     return response.data;
   } catch (error) {
     console.error("Error GetTranslateDOByShopNameAndSource:", error);
@@ -1051,7 +1051,7 @@ export const GetTranslate = async ({
   shop: string;
   accessToken: string;
   source: string;
-  target: string;
+  target: string[];
   translateSettings1: string;
   translateSettings2: string[];
   translateSettings3: string[];
@@ -1059,7 +1059,7 @@ export const GetTranslate = async ({
   translateSettings5: boolean;
 }) => {
   try {
-    console.log("GetTranslateData: ", {
+    console.log(`${shop} GetTranslateData: `, {
       shopName: shop,
       accessToken: accessToken,
       source: source,
@@ -1071,7 +1071,7 @@ export const GetTranslate = async ({
       isCover: translateSettings5,
     });
     const response = await axios({
-      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`,
+      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : `translate/clickTranslation?shopName=${shop}`}`,
       method: "PUT",
       data: {
         shopName: shop,

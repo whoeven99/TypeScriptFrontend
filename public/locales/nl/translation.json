@@ -260,7 +260,7 @@
     "devplanCard2.title": "Voeg vertaling voortgang toe",
     "devplanCard3.title": "Optimaliseer de switcher-stijl, ondersteuning voor weergave in de voettekst",
     "devplanCard4.title": "Verhoog de vertaling snelheid, voeg een snelle vertaling modus toe",
-    "Your translation task exceeds the free limit and you need to purchase additional credits": "Uw vertalingstask overschrijdt de gratis limiet en u moet extra credits kopen",
+    "Not enough translation credits. Purchase more to continue": "Uw vertalingstask overschrijdt de gratis limiet en u moet extra credits kopen",
     "Translation tasks": "Vertalingstaken",
     "Estimated number of words to translate: ": "Geschatte aantal woorden om te vertalen:",
     "Calculation failed": "Berekening mislukt",

@@ -1343,7 +1343,7 @@ export const queryPreviousNestTransType = async ({
     const res = response.data.data.translatableResources;
     return res;
   } catch (error) {
-    console.error(`Error fetching ${resourceType} translation data:`, error);
+    console.error(`Error queryPreviousNestTransType:`, error);
   }
 };
 
@@ -1436,7 +1436,7 @@ export const queryAllLanguages = async ({
 
     return res;
   } catch (error) {
-    console.error("Error fetching all languages:", error);
+    console.error("Error queryAllLanguages:", error);
   }
 };
 
@@ -1472,7 +1472,7 @@ export const queryPrimaryMarket = async ({
 
     return res;
   } catch (error) {
-    console.error("Error fetching all markets:", error);
+    console.error("Error queryPrimaryMarket:", error);
   }
 };
 
@@ -1507,7 +1507,7 @@ export const queryOrders = async ({
     const res = response.data.node;
     return res;
   } catch (error) {
-    console.error("Error fetching orders:", error);
+    console.error("Error queryOrders:", error);
   }
 };
 
@@ -1601,7 +1601,7 @@ export const mutationShopLocaleEnable = async ({
       shopLanguages,
     };
   } catch (error) {
-    console.error("Error mutating shop languages:", error);
+    console.error("Error mutationShopLocaleEnable:", error);
   }
 };
 
@@ -1650,7 +1650,7 @@ export const mutationShopLocaleDisable = async ({
     const res = response.data.data.shopLocaleDisable.locale;
     return res || language.locale;
   } catch (error) {
-    console.error("Error mutating shop languages:", error);
+    console.error("Error mutationShopLocaleDisable:", error);
   }
 };
 
@@ -1712,7 +1712,7 @@ export const mutationShopLocalePublish = async ({
 
     return res;
   } catch (error) {
-    console.error("Error publish shopLanguage:", error);
+    console.error("Error mutationShopLocalePublish:", error);
   }
 };
 
@@ -1760,7 +1760,7 @@ export const mutationShopLocaleUnpublish = async ({
       return res;
     }
   } catch (error) {
-    console.error("Error unpublish shopLanguage:", error);
+    console.error("Error mutationShopLocaleUnpublish:", error);
   }
 };
 
@@ -1826,7 +1826,7 @@ export const mutationAppPurchaseOneTimeCreate = async ({
     const res = response.data;
     return res;
   } catch (error) {
-    console.error("Payment failed:", error);
+    console.error("Error mutationAppPurchaseOneTimeCreate:", error);
   }
 };
 
@@ -1836,13 +1836,15 @@ export const mutationAppSubscriptionCreate = async ({
   accessToken,
   name,
   price,
+  yearly,
   test,
   trialDays,
   returnUrl,
 }: {
   shop: string;
   accessToken: string;
-  name: String;
+  name: string;
+  yearly: boolean;
   price: {
     amount: number;
     currencyCode: string;
@@ -1851,6 +1853,8 @@ export const mutationAppSubscriptionCreate = async ({
   trialDays: number;
   returnUrl: URL;
 }) => {
+  console.log("mutationAppSubscriptionCreate is coming");
+
   try {
     // 执行 API 请求
     const response = await axios({
@@ -1894,6 +1898,9 @@ export const mutationAppSubscriptionCreate = async ({
             {
               plan: {
                 appRecurringPricingDetails: {
+                  interval: yearly
+                    ? "ANNUAL"
+                    : "EVERY_30_DAYS",
                   price: {
                     amount: price.amount,
                     currencyCode: price.currencyCode,
@@ -1911,6 +1918,6 @@ export const mutationAppSubscriptionCreate = async ({
     const res = response.data.data.appSubscriptionCreate;
     return res;
   } catch (error) {
-    console.error("Payment failed:", error);
+    console.error("Error mutationAppSubscriptionCreate:", error);
   }
 };

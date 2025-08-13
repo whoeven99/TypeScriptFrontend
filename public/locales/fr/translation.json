@@ -260,7 +260,7 @@
     "devplanCard2.title": "Ajoute le progrès de la traduction",
     "devplanCard3.title": "Optimise le style du sélecteur, supporte l'affichage dans le pied de page",
     "devplanCard4.title": "Améliore la vitesse de traduction, ajoute un mode de traduction rapide",
-    "Your translation task exceeds the free limit and you need to purchase additional credits": "Votre tâche de traduction dépasse la limite gratuite et vous devez acheter des crédits supplémentaires",
+    "Not enough translation credits. Purchase more to continue": "Votre tâche de traduction dépasse la limite gratuite et vous devez acheter des crédits supplémentaires",
     "Translation tasks": "Tâches de traduction",
     "Estimated number of words to translate: ": "Nombre estimé de mots à traduire : ",
     "Calculation failed": "Calcul incorrect",
