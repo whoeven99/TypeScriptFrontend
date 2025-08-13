@@ -933,7 +933,7 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
   const ciwiBlock = document.querySelector(
-    "#shopify-block-AdHQwSXVWVGU1WDgzN__10786389038645483885",
+    "#shopify-block-AZnlHVkxkZDMwNDg2Q__13411448604249213220",
   );
   if (!ciwiBlock) {
     console.log("ciwiBlock not found");
