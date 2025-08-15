@@ -178,7 +178,7 @@ async function initializeCurrency(data, shop, ciwiBlock) {
     }
 
     // 更新价格显示
-    const prices = document.querySelectorAll(".ciwi-money");
+    const prices = document.querySelectorAll("span.ciwi-money");
 
     prices.forEach((price) => {
       const priceText = price.innerText;
