@@ -766,11 +766,11 @@ export const GetUserSubscriptionPlan = async ({
   server,
 }: {
   shop: string;
-  server: string;
+  server?: string;
 }) => {
   try {
     const response = await axios({
-      url: `${server}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
+      url: `${server || process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
       method: "GET",
     });
 
@@ -780,7 +780,7 @@ export const GetUserSubscriptionPlan = async ({
       const res = response.data?.response;
       if (shop == "ciwishop.myshopify.com") {
         return {
-          userSubscriptionPlan: 2,
+          userSubscriptionPlan: 6,
           currentPeriodEnd: null,
         };
       }
@@ -989,11 +989,11 @@ export const GetUserWords = async ({
   server,
 }: {
   shop: string;
-  server: string;
+  server?: string;
 }) => {
   try {
     const response = await axios({
-      url: `${server}/shopify/getUserLimitChars?shopName=${shop}`,
+      url: `${server || process.env.SERVER_URL}/shopify/getUserLimitChars?shopName=${shop}`,
       method: "GET",
     });
     console.log("GetUserWords: ", response.data);
