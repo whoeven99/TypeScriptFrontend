@@ -507,7 +507,7 @@ export const SavePrivateKey = async ({
   try {    
     const response = await axios({
       url: `${process.env.SERVER_URL}/private/translate/configPrivateModel?shopName=${shop}`,
-      method: "PUT",
+      method: "POST",
       data: {
         shopName: shop,
         apiKey,
@@ -581,23 +581,9 @@ export const GetTranslateDOByShopNameAndSource = async ({
 export const VerifyAPIkey = async (
   {
     shopName,
-    accessToken,
-    target,
-    source,
-    isCover,
-    translateSettings1,
-    translateSettings2,
-    translateSettings3
   }:
   {
     shopName:string,
-    accessToken?:string,
-    target:string[],
-    source:string,
-    isCover:boolean,
-    translateSettings1:Number,
-    translateSettings2:string,
-    translateSettings3:string[]
   }
 )=>{
   try{
@@ -606,19 +592,31 @@ export const VerifyAPIkey = async (
       method:"PUT",
       data:{
         shopName,
-        accessToken,
-        target,
-        source,
-        isCover,
-        translateSettings1,
-        translateSettings2,
-        translateSettings3
       }
     })
     return response.data;
   }
   catch(error){
     throw error;
+  }
+}
+
+export const TranslationInterface = async ({shop,apiName,sourceText,targetCode}:{shop:string,apiName:Number,sourceText:string,targetCode:string})=>{
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/private/translate/testPrivateModel?shopName=${shop}`,
+      method: "POST",
+      data: {
+        apiName,
+        sourceText,
+        targetCode
+      },
+    });
+    console.log("testApiKeyRes",response);
+    
+    return response.data;
+  } catch (error) {
+    console.error("Error GetUserInitTokenByShopName:", error);
   }
 }
 

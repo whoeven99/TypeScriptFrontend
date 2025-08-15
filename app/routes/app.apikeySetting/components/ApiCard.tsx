@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Card, Text, Button, InlineGrid, Box, Checkbox } from '@shopify/polaris';
 import {Skeleton} from 'antd'
+import { useTranslation } from "react-i18next";
+
 interface ApiCardProps {
   title: string;
   apiStatus: boolean;
@@ -11,6 +13,7 @@ interface ApiCardProps {
 }
 
 export default function ApiCard({ title, apiStatus, limit, onConfigure,onTestApi,isLoading }: ApiCardProps) {
+  const { t } = useTranslation();
   return (
     <Card>
       <Box padding="400">
@@ -31,23 +34,23 @@ export default function ApiCard({ title, apiStatus, limit, onConfigure,onTestApi
           ) : (
             <>
               <Text as="p" variant="bodyMd">
-                API 状态：
+                {t('openai.as')}
                 <Text as="span" tone={apiStatus ? 'success' : 'critical'}>
-                  {apiStatus ? '已生效' : '未启用'}
+                  {apiStatus ? t('openai.Effective') : t('openai.ne')}
                 </Text>
               </Text>
               <Text as="p" variant="bodyMd" tone="subdued">
-                额度：{limit}
+                {t('openai.Amount')}{limit}
               </Text> 
             </>
           )}
         </Box>
 
         <Box paddingBlockStart="300">
-          <Button onClick={onConfigure}>配置</Button>
+          <Button onClick={onConfigure}>{t('openai.Configuration')}</Button>
         </Box>
         <Box paddingBlockStart="300">
-          <Button onClick={onTestApi}>测试接口</Button>
+          <Button onClick={onTestApi}>{t('openai.tit')}</Button>
         </Box>
       </Box>
     </Card>

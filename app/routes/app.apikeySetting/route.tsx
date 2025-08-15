@@ -1,5 +1,5 @@
 import { TitleBar } from "@shopify/app-bridge-react";
-import { Icon, Page,InlineGrid,Modal,TextField,Box,Text as PolarisText,Link as PolarisLink,Select,FormLayout,InlineStack    } from "@shopify/polaris";
+import { Icon, Page, InlineGrid, Modal, TextField, Box, Text as PolarisText, Link as PolarisLink, Select, FormLayout, InlineStack } from "@shopify/polaris";
 import { Button, Card, Input, message, Skeleton, Space, Typography } from "antd";
 import { json, Link, useFetcher, useNavigate } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,7 @@ import {
 import { SessionService } from "~/utils/session.server";
 import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { DeleteUserData, GetUserData, SavePrivateKey,VerifyAPIkey } from "~/api/JavaServer";
+import { DeleteUserData, GetUserData, SavePrivateKey, VerifyAPIkey, TranslationInterface } from "~/api/JavaServer";
 import { useEffect, useState, useRef } from "react";
 import styles from './styles.module.css';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
@@ -38,9 +38,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  console.log("adminAuthResult.session",adminAuthResult.session);
-  
-  const { shop,accessToken } = adminAuthResult.session;
+  console.log("adminAuthResult.session", adminAuthResult.session);
+
+  const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
@@ -52,55 +52,55 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!loading:
         try {
           // 获取所有 API 的配置
-          const apiNames = [0, 1, 2, 3]; // 对应 google, openai, deepl, deepseek
-          const results = await Promise.all(
-            apiNames.map((apiName) =>
-              GetUserData({
-                shop,
-                apiName,
-              })
-            )
+          const { opportunity,apiName } = loading;
+          if (opportunity === 'init') {
+            const apiNames = [0, 1]; // 对应 google, openai, deepl, deepseek
+            const result = await Promise.all(
+              apiNames.map((apiName) =>
+                GetUserData({
+                  shop,
+                  apiName,
+                })
+              )
             );
-            return json({ data: results });
+            return json({ data: result });
+          } else if(opportunity==='testTranslate') {
+            const result =await GetUserData({
+              shop, 
+              apiName,
+            })
+            return json({ data: [result] });
+          }
         } catch (error) {
           console.error("Error apiKeySetting loading:", error);
           return json({ data: [], error: 'Failed to load data' });
         }
       case !!updateUserAPIKey:
         try {
-          const { apiKey, count,modelVersion,keywords,apiName,apiStatus,isSelected } = updateUserAPIKey;
+          const { apiKey, count, modelVersion, keywords, apiName, apiStatus, isSelected } = updateUserAPIKey;
           const countNum = Number(count);
           if (isNaN(countNum) || countNum < 0) {
             return json({ success: false, error: "Invalid quota value" }, { status: 400 });
           }
-          const data = await SavePrivateKey({ shop, apiKey, count,modelVersion,keywords,apiName,apiStatus,isSelected, });
+          const data = await SavePrivateKey({ shop, apiKey, count, modelVersion, keywords, apiName, apiStatus, isSelected, });
           return json({ data });
         } catch (error) {
           console.error("Error apiKeySetting action:", error);
         }
       case !!testUserAPIKey:
-        try{
-          const {content,apikey} = testUserAPIKey;
-          // const data = await TestUserApiKey({content,apikey});
-          const p = new Promise((resolve,reject)=>{
-            setTimeout(() => {
-              resolve('翻译成功');
-            }, 3000);
-          })
-          p.then((val)=>{
-            console.log(val);
-          })
-          shopify.toast.show('翻译完成');
+        try {
+          const { content, apiName, targetCode } = testUserAPIKey;
+          const data = await TranslationInterface({ shop, apiName, sourceText: content, targetCode });
+          return json({ data });
         }
-        catch(error){
-          shopify.toast.show('翻译失败');
+        catch (error) {
           console.error("Error apiKeySetting action:", error);
         }
       case !!checkUserAPIKey:
-        try{
-          const {apikey,apiName} = checkUserAPIKey;
-          const data = await VerifyAPIkey({shopName:shop,accessToken:accessToken,target:['sr'],source: "en",isCover:false,translateSettings1:apiName,translateSettings2:'1',translateSettings3:["products"]});
-          const p = new Promise((resolve,reject)=>{
+        try {
+          const { apikey, apiName } = checkUserAPIKey;
+          const data = await VerifyAPIkey({ shopName: shop });
+          const p = new Promise((resolve, reject) => {
             setTimeout(() => {
               resolve('apikey有效');
             }, 3000);
@@ -108,7 +108,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const result = await p; // 等待 Promise 完成
           return json({ success: true, message: result }); // 返回校验结果
         }
-        catch(error){
+        catch (error) {
           console.error("Error apiKeySetting action:", error);
         }
       case !!deleteUserAPIKey:
@@ -131,8 +131,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const [apiKeyError, setApiKeyError] = useState(false);
-  const [countError, setCountError] = useState(false); 
-  const [keywordsError, setkeywordsError] = useState(false); 
+  const [countError, setCountError] = useState(false);
+  const [keywordsError, setkeywordsError] = useState(false);
   const [apiKeyErrorMsg, setApiKeyErrorMsg] = useState<string>(" The API key format is incorrect");
   const [tempApiKey, setTempApiKey] = useState<string>(""); // 模态框临时 API 密钥
   const [tempLimit, setTempLimit] = useState<string>(""); // 模态框临时额度
@@ -148,19 +148,21 @@ const Index = () => {
   const [content, setContent] = useState("");
   const [translation, setTranslation] = useState("");
   const [apiChoice, setApiChoice] = useState("");
-  const [isLoading, setIsLoading] = useState<boolean>(true); 
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const handleTestModalClose = () => setActive(false);
 
-  
+  const { t } = useTranslation();
+
+
   interface ServiceConfig {
     apiKey: string;
     limit: string;
     keywords: string;
     modelVersion?: string;
-    apiStatus:boolean;
+    apiStatus: boolean;
     usedToken: number;
   }
-  const apiConfigs:{ id: ServiceId; title: string}[]  = [
+  const apiConfigs: { id: ServiceId; title: string }[] = [
     {
       id: 'google',
       title: 'Google Cloud Translate',
@@ -178,19 +180,19 @@ const Index = () => {
     //   title: 'DeepSeek Translate',
     // },
   ];
-  const initialConfigs: Record<ServiceId, ServiceConfig>  = {
+  const initialConfigs: Record<ServiceId, ServiceConfig> = {
     google: {
       apiKey: '',
-      limit: '未生效', 
-      keywords: '' ,
+      limit: t('openai.ne'),
+      keywords: '',
       apiStatus: false,
       usedToken: 0,
     },
     openai: {
       apiKey: '',
-      limit: '未生效',
-      keywords: 'Translate the following content into {language} .Only output the final correct translation', 
-      modelVersion: 'gpt-4o' ,
+      limit: t('openai.ne'),
+      keywords: 'Translate the following content into {language} .Only output the final correct translation',
+      modelVersion: 'gpt-4o',
       apiStatus: false,
       usedToken: 0,
     },
@@ -213,41 +215,48 @@ const Index = () => {
     { label: 'GPT-4o', value: 'gpt-4o' },
     { label: 'GPT-4.1', value: 'gpt-4.1' },
   ];
-  const apiNames = {'google':{apiName:0},'openai':{apiName:1},'deepl':{apiName:2},'deepseek':{apiName:3}}
-  const { t } = useTranslation();
+  const googleTranslatorLanguage = [
+    { label: 'English', value: 'en' },
+    { label: '简体中文', value: 'zh-CN' },
+  ];
+  const apiNames = { 'google': { apiName: 0 }, 'openai': { apiName: 1 }, 'deepl': { apiName: 2 }, 'deepseek': { apiName: 3 } }
   const navigate = useNavigate();
   const [apis, setApis] = useState(apiConfigs);
   const [userApiConfigs, setUserApiConfigs] = useState<Record<ServiceId, ServiceConfig>>(initialConfigs);
   const [activeModal, setActiveModal] = useState<ServiceId>('google'); //当前操作的模型
   const [modalOpen, setModalOpen] = useState(false);
   const [tempModelVersion, setTempModelVersion] = useState<string>('');
+  const [tempTargetLanguage, setTempTargetLanguage] = useState<string>('en');
 
   const handleConfigure = (id: ServiceId) => {
     if (isLoading) {
-      shopify.toast.show(t('数据正在加载，请稍后重试'), { duration: 3000 });
+      shopify.toast.show(t('openai.di'), { duration: 3000 });
       return;
     }
     // 打开配置模态框
     setActiveModal(id);
     setModalOpen(true);
     setTempApiKey(userApiConfigs[id].apiKey);
-    setTempLimit(userApiConfigs[id].limit === '未生效' ? '' : userApiConfigs[id].limit);
-    console.log(userApiConfigs[id]);
-    
+    setTempLimit(userApiConfigs[id].limit === t('openai.ne') ? '' : userApiConfigs[id].limit);
+
     setTempModelVersion(userApiConfigs[id].modelVersion || 'gpt-4o');
-    setTempKeyWords(userApiConfigs[id].keywords || 'Translate the following content into {language} .Only output the final correct translation')
+    id === 'openai' ?
+      setTempKeyWords(userApiConfigs[id].keywords || 'Translate the following content into {language} .Only output the final correct translation')
+      :
+      setTempKeyWords('');
   };
   const handleClose = () => {
-    setActiveModal('google');
     setModalOpen(false);
     setApiKeyError(false);
     setCountError(false);
   };
-  const handleTestApi = (id: ServiceId)=>{
+  const handleTestApi = (id: ServiceId) => {
     if (!userApiConfigs[id].apiKey) {
-      shopify.toast.show("请先配置API Key");
+      shopify.toast.show(t('openai.pc'));
       return;
     }
+    setTranslation('');
+    setActiveModal(id);
     setActive(true);
     setContent('');
     setTempApiKey(userApiConfigs[id].apiKey);
@@ -255,20 +264,18 @@ const Index = () => {
   const handleTranslate = () => {
     // 测试api翻译接口逻辑
     if (!content) {
-      shopify.toast.show('输入测试内容')
+      shopify.toast.show(t('openai.et'))
     }
     testApiKeyfetcher.submit({
-      testUserAPIKey: JSON.stringify({ 
+      testUserAPIKey: JSON.stringify({
         content,
-        apikey:tempApiKey
-       }),
+        apiName: apiNames[activeModal].apiName,
+        targetCode: tempTargetLanguage
+      }),
     }, {
       method: "POST",
       action: "/app/apikeySetting",
     })
-  };
-  const handleChangeStats=(val:boolean)=>{
-    
   };
   // 弹窗确认函数
   const handleConfirm = () => {
@@ -294,75 +301,97 @@ const Index = () => {
     }
     setkeywordsError(false);
     // apikey校验是否有效
-    checkAPIKeyfetcher.submit({
-      checkUserAPIKey:JSON.stringify({
-        apikey:tempApiKey,
-        apiName:apiNames[activeModal].apiName,
-      })
-    },{
-      method:"POST",
-      action:"/app/apikeySetting"
-    })
+    // checkAPIKeyfetcher.submit({
+    //   checkUserAPIKey:JSON.stringify({
+    //     apikey:tempApiKey,
+    //     apiName:apiNames[activeModal].apiName,
+    //   })
+    // },{
+    //   method:"POST",
+    //   action:"/app/apikeySetting"
+    // })
+    updateUserAPIKeyfetcher.submit({
+      updateUserAPIKey: JSON.stringify({
+        apiName: apiNames[activeModal].apiName,
+        apiStatus: true,
+        isSelected: false,
+        apiKey: tempApiKey,
+        count: tempLimit,
+        keywords: tempKeyWords,
+        ...(activeModal === 'openai' && { modelVersion: tempModelVersion }),
+      }),
+    }, {
+      method: "POST",
+      action: "/app/apikeySetting",
+    });
   };
-  useEffect(()=>{
-    if (checkAPIKeyfetcher.data) {
-    if (checkAPIKeyfetcher.data.success) {
-      // 校验成功，触发更新请求
-      shopify.toast.show(t('API 密钥校验成功'), { duration: 3000 });
-      updateUserAPIKeyfetcher.submit({
-        updateUserAPIKey: JSON.stringify({ 
-          apiName: apiNames[activeModal].apiName,
-          apiStatus: true,
-          isSelected: false,
-          apiKey: tempApiKey,
-          count: tempLimit,
-          keywords: tempKeyWords,
-          ...(activeModal === 'openai' && { modelVersion: tempModelVersion }),
-        }),
-      }, {
-        method: "POST",
-        action: "/app/apikeySetting",
-      });
-    } else {
-      // 校验失败，显示错误
-      setApiKeyError(true);
-      setApiKeyErrorMsg(t('API 密钥无效'));
-      shopify.toast.show(t('API 密钥校验失败'), { duration: 3000 });
-    }
-  }
-  },[checkAPIKeyfetcher.data])
+  // useEffect(()=>{
+  //   if (checkAPIKeyfetcher.data) {
+  //   if (checkAPIKeyfetcher.data.success) {
+  //     // 校验成功，触发更新请求
+  //     shopify.toast.show(t('openai.ak'), { duration: 3000 });
+  //     updateUserAPIKeyfetcher.submit({
+  //       updateUserAPIKey: JSON.stringify({ 
+  //         apiName: apiNames[activeModal].apiName,
+  //         apiStatus: true,
+  //         isSelected: false,
+  //         apiKey: tempApiKey,
+  //         count: tempLimit,
+  //         keywords: tempKeyWords,
+  //         ...(activeModal === 'openai' && { modelVersion: tempModelVersion }),
+  //       }),
+  //     }, {
+  //       method: "POST",
+  //       action: "/app/apikeySetting",
+  //     });
+  //   } else {
+  //     // 校验失败，显示错误
+  //     setApiKeyError(true);
+  //     setApiKeyErrorMsg(t('openai.iak '));
+  //     shopify.toast.show(t('openai.akv'), { duration: 3000 });
+  //   }
+  // }
+  // },[checkAPIKeyfetcher.data])
   useEffect(() => {
     loadingfetcher.submit({
-      loading: JSON.stringify(true),
+      loading: JSON.stringify({
+        opportunity: "init"
+      }),
     }, {
       method: "POST",
       action: "/app/apikeySetting",
     });
   }, []);
 
-  useEffect(() => {    
+  useEffect(() => {
     if (loadingfetcher.state === 'idle' && loadingfetcher.data) {
       setIsLoading(false);
+      if (loadingfetcher.data.error) {
+        console.error('Loading fetcher error:', loadingfetcher.data.error);
+        shopify.toast.show(t('openai.di'), { duration: 3000 });
+        return;
+      }
       if (loadingfetcher.data.data && Array.isArray(loadingfetcher.data.data)) {
         // const apiNameToId : Record<number, ServiceId> = { 0: 'google', 1: 'openai', 2: 'deepl', 3: 'deepseek' };
-        const apiNameToId : Record<number, ServiceId> = { 0: 'google', 1: 'openai'};
+        const apiNameToId: Record<number, ServiceId> = { 0: 'google', 1: 'openai' };
         // 更新 userApiConfigs
         setUserApiConfigs((prevConfigs) => {
           const newConfigs = { ...prevConfigs };
-          loadingfetcher.data.data.forEach((response: any) => {
+          const responses = Array.isArray(loadingfetcher.data.data) ? loadingfetcher.data.data : [loadingfetcher.data.data];
+          responses.forEach((response: any) => {
             if (response?.success) {
               const serviceId = apiNameToId[response.response.apiName];
               if (serviceId) {
                 newConfigs[serviceId] = {
                   ...prevConfigs[serviceId],
                   apiKey: response.response.apiKey || '',
-                  limit: response.response.tokenLimit ? String(response.response.tokenLimit) : '未生效',
+                  limit: response.response.tokenLimit ? String(response.response.tokenLimit) : t('openai.ne'),
                   keywords: response.response.promptWord || prevConfigs[serviceId].keywords,
                   ...(serviceId === 'openai' && {
                     modelVersion: response.response.apiModel || prevConfigs[serviceId].modelVersion,
                   }),
                   usedToken: response.response.usedToken || 0,
-                  apiStatus:response.response.apiStatus || false,
+                  apiStatus: response.response.apiStatus || false,
                 };
               }
             }
@@ -370,10 +399,10 @@ const Index = () => {
           return newConfigs;
         });
       }
-    }else if (loadingfetcher.state === 'loading' || loadingfetcher.state === 'submitting') {
+    } else if (loadingfetcher.state === 'loading' || loadingfetcher.state === 'submitting') {
       setIsLoading(true);
     }
-  }, [loadingfetcher.data,loadingfetcher.state]);
+  }, [loadingfetcher.data, loadingfetcher.state]);
 
   useEffect(() => {
     if (updateUserAPIKeyfetcher.data) {
@@ -388,23 +417,21 @@ const Index = () => {
             ...(activeModal === 'openai' && {
               modelVersion: updateUserAPIKeyfetcher.data.data.response.apiModel || 'gpt-4o',
             }),
-            keywords:updateUserAPIKeyfetcher.data.data.response.promptWord || prevConfigs[activeModal].keywords,
+            keywords: updateUserAPIKeyfetcher.data.data.response.promptWord || prevConfigs[activeModal].keywords,
             usedToken: updateUserAPIKeyfetcher.data.data.response.usedToken || prevConfigs[activeModal].usedToken,
-            apiStatus:updateUserAPIKeyfetcher.data.data.response.apiStatus || prevConfigs[activeModal].apiStatus,
+            apiStatus: updateUserAPIKeyfetcher.data.data.response.apiStatus || prevConfigs[activeModal].apiStatus,
           },
         }));
         handleClose();
-        shopify.toast.show(t("配置成功"));
-        handleChangeStats(true)
+        shopify.toast.show(t("openai.cs"));
       } else {
-        handleChangeStats(false)
         setUserApiConfigs((prevConfigs) => ({
           ...prevConfigs,
           [activeModal]: {
             ...prevConfigs[activeModal],
             apiKey: '',
-            limit: '未生效',
-            keywords:'',
+            limit: t('openai.ne'),
+            keywords: '',
           },
         }));
         setApiKeyError(true);
@@ -412,6 +439,27 @@ const Index = () => {
       }
     }
   }, [updateUserAPIKeyfetcher.data]);
+
+  useEffect(() => {
+    if (testApiKeyfetcher.data) {
+      if (testApiKeyfetcher.data.data.success) {
+        setTranslation(testApiKeyfetcher.data.data.response)
+        shopify.toast.show(t('openai.tcm'));
+        // 翻译成功后，重新请求用户数据以刷新 usedToken
+        loadingfetcher.submit({
+          loading: JSON.stringify({
+            opportunity: "testTranslate",
+            apiName:apiNames[activeModal].apiName
+          }),
+        }, {
+          method: "POST",
+          action: "/app/apikeySetting",
+        });
+      } else {
+        shopify.toast.show(t('openai.tf'));
+      }
+    }
+  }, [testApiKeyfetcher.data])
 
   // useEffect(() => {
   //   if (deleteUserAPIKeyfetcher?.data) {
@@ -475,8 +523,8 @@ const Index = () => {
           <Text style={{ marginLeft: "8px" }}>{t("How to translate with api key? Please refer to")}</Text><Link to="https://ciwi.bogdatech.com/help/uncategorized/how-to-use-your-own-key-for-translation/" target="_blank" rel="noreferrer">{t("the Private API Translation Model User Manual")}</Link>
         </div> */}
 
-          {/* <Skeleton.Button active style={{ height: "176px" }} block /> */}
-        
+        {/* <Skeleton.Button active style={{ height: "176px" }} block /> */}
+
         {/* <div style={{ marginLeft: "8px" }} >
           <Text >{t("When using this feature, we only consume the quota of the corresponding interface and will not charge any additional fees. To avoid exceeding the third-party API quota limits and incurring charges, please set the quota limits carefully.")}</Text>
         </div> */}
@@ -487,9 +535,9 @@ const Index = () => {
               title={api.title}
               isLoading={isLoading}
               apiStatus={userApiConfigs[api.id].apiStatus}
-              limit={userApiConfigs[api.id].limit!=='未生效'?`${userApiConfigs[api.id].usedToken}/${userApiConfigs[api.id].limit}`:'未生效' }
+              limit={userApiConfigs[api.id].limit !== t('openai.ne') ? `${userApiConfigs[api.id].usedToken}/${userApiConfigs[api.id].limit}` : t('openai.ne')}
               onConfigure={() => handleConfigure(api.id)}
-              onTestApi={()=>handleTestApi(api.id)}
+              onTestApi={() => handleTestApi(api.id)}
             />
           ))}
         </InlineGrid>
@@ -497,24 +545,24 @@ const Index = () => {
         <Modal
           open={modalOpen}
           onClose={handleClose}
-          title="配置 API"
+          title={t('openai.ca')}
           primaryAction={{
-            content: '确认',
+            content: t('openai.confirm'),
             onAction: handleConfirm,
-            loading: updateUserAPIKeyfetcher.state === "submitting",
+            loading: updateUserAPIKeyfetcher.state === "submitting" || checkAPIKeyfetcher.state === 'submitting',
           }}
         >
           <Modal.Section>
             {activeModal === 'openai' && (
-                <Box paddingBlockEnd="300">
-                  <Select
-                    label="ChatGPT 版本"
-                    options={chatGptVersions}
-                    onChange={(val) => setTempModelVersion(val)}
-                    value={tempModelVersion}
-                  />
-                </Box>
-              )}
+              <Box paddingBlockEnd="300">
+                <Select
+                  label={t('openai.cv')}
+                  options={chatGptVersions}
+                  onChange={(val) => setTempModelVersion(val)}
+                  value={tempModelVersion}
+                />
+              </Box>
+            )}
             <TextField
               label={
                 <>
@@ -522,47 +570,47 @@ const Index = () => {
                   <PolarisText as="span" tone="subdued">
                     &nbsp;&nbsp;note：
                     <PolarisLink url="https://ciwi.bogdatech.com/help/uncategorized/how-to-use-your-own-key-for-translation/" target="_blank">
-                      如何获取 API KEY？
+                      {t('openai.hd')}
                     </PolarisLink>
                   </PolarisText>
                 </>
               }
               value={tempApiKey}
-              placeholder={t("Please enter API Key")}
+              placeholder={t("openai.pe")}
               onChange={(val) => setTempApiKey(val)}
               autoComplete="off"
             />
-              <div style={{
-                visibility:  apiKeyError ? 'visible' : 'hidden',
-                marginBottom: '4px'
-              }}>
-                <Text type="danger">
-                  <ExclamationCircleOutlined style={{ marginRight: "4px" }} />
-                  {apiKeyErrorMsg}
-                </Text>
-              </div>
+            <div style={{
+              visibility: apiKeyError ? 'visible' : 'hidden',
+              marginBottom: '4px'
+            }}>
+              <Text type="danger">
+                <ExclamationCircleOutlined style={{ marginRight: "4px" }} />
+                {apiKeyErrorMsg}
+              </Text>
+            </div>
             <Box>
               <TextField
-                label="额度设置"
+                label={t("openai.ls")}
                 type="number"
-                placeholder={t("Please set limit")}
+                placeholder={t("openai.ps")}
                 value={tempLimit}
                 onChange={(val) => setTempLimit(val)}
-                autoComplete="off" 
+                autoComplete="off"
               />
             </Box>
-              <div style={{
-                visibility: countError ? 'visible' : 'hidden',
-              }}>
-                <Text type="danger">
-                  <ExclamationCircleOutlined style={{ marginRight: "4px" }} />
-                  {t('Quota must be a positive number')}
-                </Text>
-              </div>
-              
+            <div style={{
+              visibility: countError ? 'visible' : 'hidden',
+            }}>
+              <Text type="danger">
+                <ExclamationCircleOutlined style={{ marginRight: "4px" }} />
+                {t('Quota must be a positive number')}
+              </Text>
+            </div>
+
             {(activeModal === "openai") && (
               <TextField
-                label="提示词设置"
+                label={t('openai.pw')}
                 value={tempKeyWords}
                 onChange={setTempKeyWords}
                 multiline={4}
@@ -570,50 +618,60 @@ const Index = () => {
               />
             )}
             <div style={{
-                visibility:  keywordsError ? 'visible' : 'hidden',
-                marginBottom: '4px'
+              visibility: keywordsError ? 'visible' : 'hidden',
+              marginBottom: '4px'
             }}>
               <Text type="danger">
                 <ExclamationCircleOutlined style={{ marginRight: "4px" }} />
-                <span>填写提示词</span>
+                <span>{t('openai.fi')}</span>
               </Text>
-            </div>  
+            </div>
           </Modal.Section>
         </Modal>
         <Modal
           open={active}
           onClose={handleTestModalClose}
-          title="测试API(测试会消耗对应的额度)"
+          title={t('openai.ta')}
           primaryAction={{
-            content: "翻译",
+            content: t('openai.Translate'),
             onAction: handleTranslate,
-            loading:testApiKeyfetcher.state === 'submitting'
+            loading: testApiKeyfetcher.state === 'submitting'
           }}
           secondaryActions={[
             {
-              content: "取消",
+              content: t('openai.Cancel'),
               onAction: handleTestModalClose,
             },
           ]}
         >
-          <Modal.Section> 
+          <Modal.Section>
             <InlineStack align="center" blockAlign="center">
               <FormLayout>
                 <Box width="500px">
+                  {activeModal === 'google' && (
+                    <Box paddingBlockEnd="300">
+                      <Select
+                        label={t('openai.stl')}
+                        options={googleTranslatorLanguage}
+                        onChange={(val) => setTempTargetLanguage(val)}
+                        value={tempTargetLanguage}
+                      />
+                    </Box>
+                  )}
                   <TextField
-                    label="测试内容"
+                    label={t('openai.tc')}
                     value={content}
                     onChange={setContent}
                     autoComplete="off"
-                    placeholder="请输入内容"
+                    placeholder={t('openai.pec')}
                     multiline={4} // 4 行高度
                   />
                   <TextField
-                    label="翻译结果"
+                    label={t('openai.tr')}
                     value={translation}
                     onChange={setTranslation}
                     readOnly
-                    placeholder="翻译结果将显示在这里"
+                    placeholder={t('openai.trw')}
                     autoComplete="off"
                     multiline={4} // 4 行高度
                   />
@@ -622,7 +680,7 @@ const Index = () => {
                     value={tempApiKey}
                     // onChange={setApiChoice}
                     autoComplete="off"
-                    placeholder="选择API"
+                    placeholder={t('openai.sa')}
                   />
                 </Box>
               </FormLayout>
