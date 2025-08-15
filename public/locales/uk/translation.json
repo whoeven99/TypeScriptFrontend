@@ -527,7 +527,7 @@
     "Call-to-action": "Заклик до дії",
     "No Visible Switcher: ": "Невидимий перемикач",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "Приватний API обмежений через ваш план (Поточний план: {{plan}})",
-    "Please upgrade to a higher plan to unlock the Private API": "Будь ласка, підвищіть свій план, щоб розблокувати приватний API",
+    "This feature is available only with the paid plan.": "Будь ласка, підвищіть свій план, щоб розблокувати приватний API",
     "Import": "Імпорт",
     "How to import translation data": "Як імпортувати дані перекладу",
     "Import steps:": "Імпорт кроків:",

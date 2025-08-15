@@ -525,7 +525,7 @@
     "Call-to-action": "행동 유도",
     "No Visible Switcher: ": "보이지 않는 스위처",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "프라이버시 API가 플랜에 따라 제한되었습니다 (현재 플랜: {{plan}})",
-    "Please upgrade to a higher plan to unlock the Private API": "더 높은 플랜으로 업그레이드하여 프라이버시 API를 잠금 해제하세요",
+    "This feature is available only with the paid plan.": "더 높은 플랜으로 업그레이드하여 프라이버시 API를 잠금 해제하세요",
     "Import": "가져오기",
     "How to import translation data": "번역 데이터를 가져오는 방법",
     "Import steps:": "가져오기 단계:",

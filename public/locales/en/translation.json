@@ -561,7 +561,7 @@
   "Call-to-action": "Call-to-action",
   "No Visible Switcher: ": "No Visible Switcher: ",
   "The Private API has been limited due to your plan (Current plan: {{plan}})": "The Private API has been limited due to your plan (Current plan: {{plan}})",
-  "Please upgrade to a higher plan to unlock the Private API": "Please upgrade to a higher plan to unlock the Private API",
+  "This feature is available only with the paid plan.": "This feature is available only with the paid plan.",
   "Import": "Import",
   "How to import translation data": "How to import translation data",
   "Import steps:": "Import steps:",
@@ -570,5 +570,8 @@
   "3. Contact us to import the corresponding files": "3. Contact us to import the corresponding files",
   "Got it": "Got it",
   "Update": "Update",
-  "You can select up to 5 languages at once.": "You can select up to 5 languages at once."
+  "You can select up to 5 languages at once.": "You can select up to 5 languages at once.",
+  "support": "support",
+  "Upgrade to a paid plan to unlock this feature": "Upgrade to a paid plan to unlock this feature",
+  "Blogs and articles": "Blogs and articles"
 }

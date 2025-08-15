@@ -526,7 +526,7 @@
     "Call-to-action": "Appel à l'action",
     "No Visible Switcher: ": "Pas de sélecteur visible",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "L'API privée a été limitée en raison de votre plan (Plan actuel: {{plan}})",
-    "Please upgrade to a higher plan to unlock the Private API": "Veuillez mettre à niveau vers un plan plus élevé pour déverrouiller l'API privée",
+    "This feature is available only with the paid plan.": "Veuillez mettre à niveau vers un plan plus élevé pour déverrouiller l'API privée",
     "Import": "Importer",
     "How to import translation data": "Comment importer des données de traduction",
     "Import steps:": "Étapes pour importer:",

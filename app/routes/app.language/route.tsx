@@ -1072,14 +1072,24 @@ const Index = () => {
           "Are you sure to delete this language? After deletion, the translation data will be deleted together",
         )}
       />
-      <TranslationWarnModal
+      <Modal
         title={t("The 20 language limit has been reached")}
-        content={t(
-          "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.",
-        )}
-        show={showWarnModal}
-        setShow={setShowWarnModal}
-      />
+        open={showWarnModal}
+        onCancel={() => setShowWarnModal(false)}
+        centered
+        width={700}
+        footer={
+          <Button type="primary" onClick={() => setShowWarnModal(false)}>
+            {t("OK")}
+          </Button>
+        }
+      >
+        <Text>
+          {t(
+            "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.",
+          )}
+        </Text>
+      </Modal>
       <PublishModal
         isVisible={isPublishModalOpen}
         setIsModalOpen={setIsPublishModalOpen}

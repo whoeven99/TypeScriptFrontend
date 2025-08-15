@@ -527,7 +527,7 @@
     "Call-to-action": "Harekete geçirici mesaj",
     "No Visible Switcher: ": "Görünmez seçici",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "Özel API'ninizin sınırına ulaştınız (Mevcut plan: {{plan}})",
-    "Please upgrade to a higher plan to unlock the Private API": "Lütfen daha yüksek bir plana yükseltin özel API'nizi kilitlemek için",
+    "This feature is available only with the paid plan.": "Lütfen daha yüksek bir plana yükseltin özel API'nizi kilitlemek için",
     "Import": "İçe Aktar",
     "How to import translation data": "Nasıl çeviri verilerini içe aktarılır",
     "Import steps:": "İçe aktarma adımları:",
