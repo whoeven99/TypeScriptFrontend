@@ -212,7 +212,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (customApikeyData) {
       try {
-        const apiNames = [0, 1, 2, 3]; // 对应 google, openai, deepl, deepseek
+        const apiNames = [0, 1]; // 对应 google, openai, deepl, deepseek
         const results = await Promise.all(
           apiNames.map((apiName) =>
             GetUserData({
