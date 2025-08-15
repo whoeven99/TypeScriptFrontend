@@ -471,14 +471,11 @@ export const DeleteUserData = async ({ shop }: { shop: string }) => {
 };
 
 //获取用户私人API Key
-export const GetUserData = async ({ shop }: { shop: string }) => {
+export const GetUserData = async ({ shop,apiName }: { shop: string,apiName:Number }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/private/getUserData`,
+      url: `${process.env.SERVER_URL}/private/translate/getUserPrivateData?shopName=${shop}&apiName=${apiName}`,
       method: "POST",
-      data: {
-        shopName: shop,
-      },
     });
     console.log("GetUserData: ", response.data);
     return response.data;
@@ -488,32 +485,74 @@ export const GetUserData = async ({ shop }: { shop: string }) => {
 };
 
 //更新用户私人API Key
-export const SaveGoogleKey = async ({
+export const SavePrivateKey = async ({
   shop,
   apiKey,
   count,
+  modelVersion,
+  keywords,
+  apiName,
+  apiStatus,
+  isSelected
 }: {
   shop: string;
   apiKey: string;
-  count: number;
+  count: string; // 前端传递字符串
+  modelVersion?: string; // 可选，仅 OpenAI 需要
+  keywords:string[],
+  apiName:Number,
+  apiStatus:boolean,
+  isSelected:boolean
 }) => {
-  try {
+  try {    
     const response = await axios({
-      url: `${process.env.SERVER_URL}/privateKey/saveGoogleKey`,
-      method: "PUT",
+      url: `${process.env.SERVER_URL}/private/translate/configPrivateModel?shopName=${shop}`,
+      method: "POST",
       data: {
         shopName: shop,
-        model: "google",
-        secret: apiKey,
-        amount: count,
+        apiKey,
+        tokenLimit: Number(count), // 转换为数字
+        promptWord:keywords,
+        ...(modelVersion && { apiModel:modelVersion }), // 仅当 modelVersion 存在时包含
+        apiName,
+        apiStatus,
+        isSelected
       },
     });
-    console.log("SaveGoogleKey: ", response.data);
+    console.log(`SavePrivateKey [${apiName}]: `, response);
     return response.data;
-  } catch (error) {
-    console.error("Error SaveGoogleKey:", error);
+  } catch (error) { 
+    // console.error(`Error SavePrivateKey [${model}]:`, error);
+    throw error; // 抛出错误以便前端捕获
   }
 };
+
+// export const SaveGoogleKey = async ({
+//   shop,
+//   apiKey,
+//   count,
+// }: {
+//   shop: string;
+//   apiKey: string;
+//   count: number;
+// }) => {
+//   try {
+//     const response = await axios({
+//       url: `${process.env.SERVER_URL}/privateKey/saveGoogleKey`,
+//       method: "PUT",
+//       data: {
+//         shopName: shop,
+//         model: "google",
+//         secret: apiKey,
+//         amount: count,
+//       },
+//     });
+//     console.log("SaveGoogleKey: ", response.data);
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error SaveGoogleKey:", error);
+//   }
+// };
 
 //获取最新翻译状态
 export const GetTranslateDOByShopNameAndSource = async ({
@@ -538,6 +577,48 @@ export const GetTranslateDOByShopNameAndSource = async ({
     console.error("Error GetTranslateDOByShopNameAndSource:", error);
   }
 };
+
+export const VerifyAPIkey = async (
+  {
+    shopName,
+  }:
+  {
+    shopName:string,
+  }
+)=>{
+  try{
+    const response = await axios({
+      url:`${process.env.SERVER_URL}/privateKey/translate?shopName=${shopName}`,
+      method:"PUT",
+      data:{
+        shopName,
+      }
+    })
+    return response.data;
+  }
+  catch(error){
+    throw error;
+  }
+}
+
+export const TranslationInterface = async ({shop,apiName,sourceText,targetCode}:{shop:string,apiName:Number,sourceText:string,targetCode:string})=>{
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/private/translate/testPrivateModel?shopName=${shop}`,
+      method: "POST",
+      data: {
+        apiName,
+        sourceText,
+        targetCode
+      },
+    });
+    console.log("testApiKeyRes",response);
+    
+    return response.data;
+  } catch (error) {
+    console.error("Error GetUserInitTokenByShopName:", error);
+  }
+}
 
 export const GetUserInitTokenByShopName = async ({
   shop,
@@ -680,10 +761,16 @@ export const AddDefaultLanguagePack = async ({ shop }: { shop: string }) => {
 };
 
 //获取用户计划
-export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
+export const GetUserSubscriptionPlan = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server?: string;
+}) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
+      url: `${server || process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
       method: "GET",
     });
 
@@ -897,10 +984,16 @@ export const GetItemsInSqlByShopName = async ({
 };
 
 //获取用户的额度字符数 和 已使用的字符
-export const GetUserWords = async ({ shop }: { shop: string }) => {
+export const GetUserWords = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server?: string;
+}) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getUserLimitChars?shopName=${shop}`,
+      url: `${server || process.env.SERVER_URL}/shopify/getUserLimitChars?shopName=${shop}`,
       method: "GET",
     });
     console.log("GetUserWords: ", response.data);
@@ -1071,7 +1164,7 @@ export const GetTranslate = async ({
       isCover: translateSettings5,
     });
     const response = await axios({
-      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : `translate/clickTranslation?shopName=${shop}`}`,
+      url: `${process.env.SERVER_URL}/${(translateSettings1 === "8" || translateSettings1=== "9") ? `privateKey/translate?shopName=${shop}` : `translate/clickTranslation?shopName=${shop}`}`,
       method: "PUT",
       data: {
         shopName: shop,
@@ -1080,7 +1173,7 @@ export const GetTranslate = async ({
         target: target,
         isCover: translateSettings5,
         customKey: customKey,
-        translateSettings1: translateSettings1,
+        translateSettings1: (translateSettings1==='8'||translateSettings1==='9')?(translateSettings1==='8'?'0':'1'):translateSettings1,
         translateSettings2: translateSettings2.toString(),
         translateSettings3: translateSettings3,
       },

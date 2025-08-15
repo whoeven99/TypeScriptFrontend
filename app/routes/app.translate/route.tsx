@@ -477,6 +477,10 @@ const Index = () => {
   };
 
   const handleTranslate = async () => {
+    if ((translateSettings1==='8'||translateSettings1==='9')&&selectedLanguageCode.length>=2) {
+      shopify.toast.show('选择私有key进行翻译，只能选择一种目标语言');
+      return;
+    }
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
     console.log(customKey);
     const formData = new FormData();
@@ -496,10 +500,10 @@ const Index = () => {
       method: "post",
       action: "/app/language",
     });
-    // localStorage.setItem(
-    //   "translateSettings4",
-    //   JSON.stringify(translateSettings4),
-    // );
+    localStorage.setItem(
+      "translateSettings4",
+      JSON.stringify(translateSettings4),
+    );
   };
 
   const handleTranslateSettings2Change = (value: string[]) => {
