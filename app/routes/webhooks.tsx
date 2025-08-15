@@ -50,7 +50,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           new Response(null, { status: 200 });
           let credits = 0;
           let price = 0;
-          const plan = await GetUserSubscriptionPlan({ shop });
+          const plan = await GetUserSubscriptionPlan({
+            shop,
+            server: process.env.SERVER_URL as string,
+          });
           switch (payload?.app_purchase_one_time.name) {
             case "500K Credits":
               credits = 500000;

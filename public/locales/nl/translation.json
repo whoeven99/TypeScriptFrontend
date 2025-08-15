@@ -526,7 +526,7 @@
     "Call-to-action": "Oproep tot actie",
     "No Visible Switcher: ": "Niet zichtbare switcher",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "De Private API is beperkt vanwege uw plan (Huidig plan: {{plan}})",
-    "Please upgrade to a higher plan to unlock the Private API": "Upgrade naar een hoger plan om de Private API te ontgrendelen",
+    "This feature is available only with the paid plan.": "Upgrade naar een hoger plan om de Private API te ontgrendelen",
     "Import": "Importeren",
     "How to import translation data": "Hoe importeer je vertalinggegevens",
     "Import steps:": "Importeer stappen:",
@@ -534,7 +534,10 @@
     "2. Fill in the translated data in the template": "2. Vul de vertaalde gegevens in het sjabloon in",
     "3. Contact us to import the corresponding files": "3. Neem contact op met de klantenservice en importeer de corresponderende bestanden",
     "Got it": "Ik weet het",
-    "You can select up to 5 languages at once.": "U kunt maximaal 5 talen tegelijk selecteren."
+    "You can select up to 5 languages at once.": "U kunt maximaal 5 talen tegelijk selecteren.",
+    "support": "Ondersteuning",
+    "Upgrade to a paid plan to unlock this feature": "Upgrade naar een betaald plan om deze functie te ontgrendelen",
+    "Blogs and articles": "Blogs en artikelen"
 }
   
   

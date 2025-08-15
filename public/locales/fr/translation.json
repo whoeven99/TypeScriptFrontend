@@ -526,7 +526,7 @@
     "Call-to-action": "Appel à l'action",
     "No Visible Switcher: ": "Pas de sélecteur visible",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "L'API privée a été limitée en raison de votre plan (Plan actuel: {{plan}})",
-    "Please upgrade to a higher plan to unlock the Private API": "Veuillez mettre à niveau vers un plan plus élevé pour déverrouiller l'API privée",
+    "This feature is available only with the paid plan.": "Veuillez mettre à niveau vers un plan plus élevé pour déverrouiller l'API privée",
     "Import": "Importer",
     "How to import translation data": "Comment importer des données de traduction",
     "Import steps:": "Étapes pour importer:",
@@ -534,6 +534,10 @@
     "2. Fill in the translated data in the template": "2. Remplir les données traduites dans le modèle",
     "3. Contact us to import the corresponding files": "3. Contacter le service client et importer les fichiers correspondants",
     "Got it": "Je sais",
-    "You can select up to 5 languages at once.": "Vous pouvez sélectionner jusqu'à 5 langues à la fois."
+    "You can select up to 5 languages at once.": "Vous pouvez sélectionner jusqu'à 5 langues à la fois.",
+    "support": "Support",
+    "Upgrade to a paid plan to unlock this feature": "Mettez à niveau vers un plan plus élevé pour déverrouiller cette fonctionnalité",
+    "Blogs and articles": "Blogs et articles"
+
 }
   

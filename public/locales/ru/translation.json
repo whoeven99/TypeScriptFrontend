@@ -527,7 +527,7 @@
     "Call-to-action": "Призыв к действию",
     "No Visible Switcher: ": "Невидимый переключатель",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "Приватний API обмежений через ваш план (Поточний план: {{plan}})",
-    "Please upgrade to a higher plan to unlock the Private API": "Будь ласка, підвищіть свій план, щоб розблокувати приватний API",
+    "This feature is available only with the paid plan.": "Будь ласка, підвищіть свій план, щоб розблокувати приватний API",
     "Import": "Імпорт",
     "How to import translation data": "Як імпортувати дані перекладу",
     "Import steps:": "Імпорт кроків:",
@@ -535,5 +535,8 @@
     "2. Fill in the translated data in the template": "2. Заповніть перекладені дані в шаблон",
     "3. Contact us to import the corresponding files": "3. Зв'яжіться з клієнтською службою та імпортуйте відповідні файли",
     "Got it": "Знати",
-    "You can select up to 5 languages at once.": "Ви можете вибрати до 5 мов одночасно."
+    "You can select up to 5 languages at once.": "Ви можете вибрати до 5 мов одночасно.",
+    "support": "Підтримка",
+    "Upgrade to a paid plan to unlock this feature": "Оновіть до платного плану, щоб розблокувати цю функцію",
+    "Blogs and articles": "Блоги та статті"
 }

@@ -527,7 +527,7 @@
     "Call-to-action": "Harekete geçirici mesaj",
     "No Visible Switcher: ": "Görünmez seçici",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "Özel API'ninizin sınırına ulaştınız (Mevcut plan: {{plan}})",
-    "Please upgrade to a higher plan to unlock the Private API": "Lütfen daha yüksek bir plana yükseltin özel API'nizi kilitlemek için",
+    "This feature is available only with the paid plan.": "Lütfen daha yüksek bir plana yükseltin özel API'nizi kilitlemek için",
     "Import": "İçe Aktar",
     "How to import translation data": "Nasıl çeviri verilerini içe aktarılır",
     "Import steps:": "İçe aktarma adımları:",
@@ -535,5 +535,8 @@
     "2. Fill in the translated data in the template": "2. Şablon içine çevirilmiş verileri doldurun",
     "3. Contact us to import the corresponding files": "3. Müşteri hizmetleriyle iletişime geçin ve ilgili dosyaları içe aktarın",
     "Got it": "Bilinmekte",
-    "You can select up to 5 languages at once.": "Birden fazla dil seçebilirsiniz."
+    "You can select up to 5 languages at once.": "Birden fazla dil seçebilirsiniz.",
+    "support": "Destek",
+    "Upgrade to a paid plan to unlock this feature": "Bu özelliği kullanmak için ücretsiz planınızı yükseltin",
+    "Blogs and articles": "Bloglar ve makaleler"
 }

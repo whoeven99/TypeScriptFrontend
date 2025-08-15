@@ -526,7 +526,7 @@
   "Call-to-action": "号召行动 —— 强调点击、购买、参与",
   "No Visible Switcher: ": "不显示切换器：",
   "The Private API has been limited due to your plan (Current plan: {{plan}})": "由于您的计划，私有 API 已被限制（当前计划：{{plan}}）",
-  "Please upgrade to a higher plan to unlock the Private API": "请升级到更高计划以解锁私有 API",
+  "This feature is available only with the paid plan.": "请升级到更高计划以解锁私有 API",
   "Import": "导入",
   "How to import translation data": "如何导入翻译数据",
   "Import steps:": "导入步骤：",
@@ -535,5 +535,8 @@
   "3. Contact us to import the corresponding files": "3. 联系客户服务并导入相应文件",
   "Got it": "知道了",
   "Update": "更新",
-  "You can select up to 5 languages at once.": "您可以一次选择最多5种语言。"
+  "You can select up to 5 languages at once.": "您可以一次选择最多5种语言。",
+  "support": "支持",
+  "Upgrade to a paid plan to unlock this feature": "升级到付费计划以解锁此功能",
+  "Blogs and articles": "博客和文章"
 }
