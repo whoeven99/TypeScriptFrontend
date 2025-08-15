@@ -570,5 +570,8 @@
         "tit": "Test arayüzü",
         "tf": "Çeviri başarısız oldu, lütfen API anahtarının geçerliliğini kontrol edin",
         "tcm": "Çeviri tamamlandı"
-    }
+    },
+    "support": "Destek",
+    "Upgrade to a paid plan to unlock this feature": "Bu özelliği kullanmak için ücretsiz planınızı yükseltin",
+    "Blogs and articles": "Bloglar ve makaleler"
 }

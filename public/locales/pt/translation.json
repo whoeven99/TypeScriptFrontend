@@ -569,5 +569,8 @@
         "tit": "Interface de teste",
         "tf": "A tradução falhou, verifique a validade da chave API",
         "tcm": "Tradução concluída"
-    }
+    },
+    "support": "Suporte",
+    "Upgrade to a paid plan to unlock this feature": "Atualize para um plano pago para desbloquear esta funcionalidade",
+    "Blogs and articles": "Blogs e artigos"
 }

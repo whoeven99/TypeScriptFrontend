@@ -568,5 +568,8 @@
         "tit": "테스트 인터페이스",
         "tf": "번역에 실패했습니다. API 키의 유효성을 확인하세요.",
         "tcm": "번역 완료"
-    }
+    },
+    "support": "지원",
+    "Upgrade to a paid plan to unlock this feature": "이 기능을 사용하려면 유료 플랜으로 업그레이드하세요",
+    "Blogs and articles": "블로그와 기사"
 }

@@ -569,5 +569,8 @@
     "tit": "測試接口",
     "tf":"翻譯失敗，請檢視API金鑰的有效性",
     "tcm":"翻譯完成"
-  }
+  },
+  "support": "支援",
+    "Upgrade to a paid plan to unlock this feature": "升級到付費計劃以解鎖此功能",
+    "Blogs and articles": "部落格和文章"
 }

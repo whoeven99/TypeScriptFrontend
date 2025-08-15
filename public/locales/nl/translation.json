@@ -569,5 +569,8 @@
         "tit": "Testinterface",
         "tf": "Vertaling mislukt, controleer de geldigheid van de API-sleutel",
         "tcm": "Vertaling voltooid"
-    }
+    },
+    "support": "Ondersteuning",
+    "Upgrade to a paid plan to unlock this feature": "Upgrade naar een betaald plan om deze functie te ontgrendelen",
+    "Blogs and articles": "Blogs en artikelen"
 }

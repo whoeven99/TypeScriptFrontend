@@ -569,5 +569,8 @@
         "tit": "テストインターフェース",
         "tf": "翻訳に失敗しました。APIキーの有効性を確認してください。",
         "tcm": "翻訳完了"
-    }
+    },
+    "support": "サポート",
+    "Upgrade to a paid plan to unlock this feature": "この機能を使用するには、有料プランにアップグレードしてください",
+    "Blogs and articles": "ブログと記事"
 }

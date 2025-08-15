@@ -570,5 +570,8 @@
     "tit": "测试接口",
     "tf":"翻译失败，请检查API密钥的有效性",
     "tcm":"翻译完成"
-  }
+  },
+  "support": "支持",
+  "Upgrade to a paid plan to unlock this feature": "升级到付费计划以解锁此功能",
+  "Blogs and articles": "博客和文章"
 }
