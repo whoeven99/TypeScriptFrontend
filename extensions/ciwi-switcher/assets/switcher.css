@@ -1,5 +1,5 @@
 .ciwi_container {
-  width: 200px;
+  min-width: 100px;
   right: auto;
   top: auto;
   position: fixed; /* 改为相对屏幕的位置 */
@@ -8,7 +8,16 @@
   z-index: 9999;
 }
 
+.selector_box {
+  position: absolute;
+  background: #fff;
+  padding: 10px;
+  border-radius: 5px;
+  width: 100%;
+}
+
 .ciwi_main_box {
+  min-width: 150px;
   position: relative;
   padding: 10px;
   border-radius: 5px;
@@ -16,35 +25,40 @@
   user-select: none;
   display: flex;
   align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
   gap: 8px;
   height: 40px; /* 明确设置高度 */
+  text-align: center; /* 文本居中 */
 }
 
 .main_box_text {
   display: inline-block;
   line-height: 20px; /* 与图片高度一致 */
   vertical-align: middle;
-  margin: 0;
   padding: 0;
   font-size: 14px; /* 明确设置字体大小 */
-  max-width: 100px;
-  overflow: hidden;
+  /* overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: nowrap; */
+  text-align: center; /* 文本居中 */
+  flex: 1; /* 让文本占据剩余空间 */
 }
 
 .mainarrow_icon {
   position: absolute;
-  right: 0; /* 改用右侧固定距离 */
+  right: 10px; /* 改用右侧固定距离 */
   transition: transform 0.3s ease; /* 平滑过渡 */
-  width: 25% !important;
+  width: 10% !important;
   height: 25% !important;
+  transform-origin: center center; /* 设置旋转中心点为图标中心 */
 }
 
 .button_wrapper {
   display: flex; /* 启用 Flexbox 布局 */
   align-items: center; /* 垂直居中按钮 */
   width: 100%; /* 使容器占满父元素的宽度 */
+  flex-direction: column;
+  gap: 8px;
 }
 
 .language_title,
@@ -91,7 +105,8 @@
 } */
 
 /* 确认按钮 */
-.ciwi_switcher_confirm_button {
+.ciwi_switcher_confirm_button,
+.ciwi_switcher_cancel_button {
   height: 40px;
   width: 100%;
   border-radius: 6px; /* 边框圆角 */
@@ -108,11 +123,13 @@
     transform 0.2s ease; /* 增加过渡效果 */
 }
 
-.ciwi_switcher_confirm_button:hover {
+.ciwi_switcher_confirm_button:hover,
+.ciwi_switcher_cancel_button:hover {
   background-color: #333;
 }
 
-.ciwi_switcher_confirm_button:active {
+.ciwi_switcher_confirm_button:active,
+.ciwi_switcher_cancel_button:active {
   transform: scale(0.98); /* 点击时的反馈效果，按钮缩小 */
 }
 
@@ -221,6 +238,7 @@ a[href="https://translate.google.com"]
 }
 
 .selected-text {
+  font-size: 14px;
   max-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -234,11 +252,24 @@ a[href="https://translate.google.com"]
 }
 
 .country-flag {
+  position: absolute;
+  left: 10px;
   width: 30px;
   height: 20px;
   object-fit: cover;
   border-radius: 2px;
   /* border: 1px solid #ddd; */
+  min-width: 30px; /* 保持最小宽度 */
+  opacity: 0; /* 初始状态完全透明 */
+  transition: opacity 0.3s ease; /* 平滑过渡效果 */
+}
+
+.option-country-flag {
+  width: 30px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid #ddd;
   min-width: 30px; /* 保持最小宽度 */
   opacity: 0; /* 初始状态完全透明 */
   transition: opacity 0.3s ease; /* 平滑过渡效果 */
@@ -250,9 +281,9 @@ a[href="https://translate.google.com"]
   opacity: 1;
 }
 
-/* 占位符图片完全隐藏 */
-.country-flag[src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"],.country-flag[src="undefined"] {
-  visibility: hidden; /* 直接隐藏占位符 */
+.option-country-flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"])
+{
+  opacity: 1;
 }
 
 .arrow-icon {
@@ -288,6 +319,7 @@ a[href="https://translate.google.com"]
 }
 
 .option-item {
+  font-size: 14px;
   display: flex;
   align-items: center;
   gap: 8px;

@@ -25,8 +25,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   // });
   const [value, setValue] = useState<string>("");
   const [source, setSource] = useState<string>("");
-  const [target, setTarget] = useState<string>("");
+  const [target, setTarget] = useState<string[]>([]);
   const [resourceType, setResourceType] = useState<string>("");
+  const [index, setIndex] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0);
   const [status, setStatus] = useState<number>(0);
   const [translateStatus, setTranslateStatus] = useState<number>(1);
@@ -38,6 +39,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   const statusFetcher = useFetcher<any>();
   // const itemsFetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
+  const stopTranslateFetcher = useFetcher<any>();
 
   useEffect(() => {
     fetcher.submit(
@@ -63,7 +65,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
     if (translateFetcher.data) {
       if (translateFetcher.data?.success) {
         setStatus(2);
-        setResourceType("COLLECTION");
+        setResourceType("SHOP");
       }
     }
   }, [translateFetcher.data]);
@@ -80,7 +82,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           "statusData",
           JSON.stringify({
             source: source,
-            target: [target],
+            target: [target[index]],
           }),
         );
 
@@ -100,7 +102,48 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         // setValue(userValue.data.userValue);
 
         // 设置下一次轮询
-        timeoutId = setTimeout(pollStatus, 10000);
+        timeoutId = setTimeout(pollStatus, 3000);
+      };
+
+      // 开始首次轮询
+      pollStatus();
+
+      // 清理函数
+      return () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+      };
+    } else if (target[index + 1]) {
+      setIndex(index + 1);
+      const pollStatus = () => {
+        // 状态查询请求
+        const statusformData = new FormData();
+        statusformData.append(
+          "statusData",
+          JSON.stringify({
+            source: source,
+            target: [target[index + 1]],
+          }),
+        );
+
+        statusFetcher.submit(statusformData, {
+          method: "post",
+          action: "/app",
+        });
+
+        async function getUserValue() {
+          const userValue = await GetUserValue({ shop: shop, server });
+          setValue(userValue?.response?.value || "");
+          setTranslateStatus(userValue?.response?.status || 2);
+        }
+
+        getUserValue();
+
+        // setValue(userValue.data.userValue);
+
+        // 设置下一次轮询
+        timeoutId = setTimeout(pollStatus, 3000);
       };
 
       // 开始首次轮询
@@ -117,26 +160,43 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
 
   useEffect(() => {
     if (fetcher.data?.translatingLanguage) {
-      setSource(fetcher.data?.translatingLanguage.source);
-      setTarget(fetcher.data?.translatingLanguage.target);
-      setResourceType(fetcher.data?.translatingLanguage.resourceType);
-      setStatus(fetcher.data?.translatingLanguage.status);
+      setSource(fetcher.data?.translatingLanguage[0]?.source);
+      setTarget(
+        fetcher.data?.translatingLanguage.map((item: any) => item.target),
+      );
+      setResourceType(fetcher.data?.translatingLanguage[0]?.resourceType);
+      setStatus(fetcher.data?.translatingLanguage[0]?.status);
+      setIndex(0);
       setLoading(false);
     }
   }, [fetcher.data]);
 
   useEffect(() => {
-    if (statusFetcher.data?.data) {
-      const statusValue = statusFetcher.data?.data[0].status;
+    if (
+      statusFetcher.data?.data &&
+      stopTranslateFetcher.state !== "submitting"
+    ) {
+      const statusValue =
+        statusFetcher.data?.data?.translatesDOResult[0].status;
       setStatus(statusValue);
       if (statusValue === 2) {
-        setResourceType(statusFetcher.data?.data[0].resourceType || "");
+        setResourceType(
+          statusFetcher.data?.data?.translatesDOResult[0].resourceType || "",
+        );
       } else {
         setResourceType("");
         // 状态不为 2 时，轮询会自动停止
       }
     }
   }, [statusFetcher.data]);
+
+  useEffect(() => {
+    if (stopTranslateFetcher.data?.data?.success) {
+      setStatus(7);
+      setResourceType("");
+      setTranslateStatus(1);
+    }
+  }, [stopTranslateFetcher.data]);
 
   // useEffect(() => {
   //     if (typeof itemsFetcher.data?.data[0]?.totalNumber === 'number' && typeof itemsFetcher.data?.data[0]?.translatedNumber === 'number') {
@@ -156,90 +216,100 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
 
   const calculateProgressByType = (resourceType: string): number => {
     switch (resourceType) {
-      case "COLLECTION":
-        setItem("Collection");
-        return 20;
-      case "PACKING_SLIP_TEMPLATE":
-        setItem("Shipping");
-        return 30;
-      case "SHOP_POLICY":
-        setItem("Policies");
-        return 40;
-      case "EMAIL_TEMPLATE":
-        setItem("Shipping");
-        return 43;
-      case "MENU":
-        setItem("Navigation");
-        return 45;
-      case "LINK":
-        setItem("Navigation");
-        return 48;
-      case "DELIVERY_METHOD_DEFINITION":
-        setItem("Delivery");
-        return 50;
-      case "FILTER":
-        setItem("Filters");
-        return 52;
-      case "METAFIELD":
-        setItem("Store metadata");
-        return 54;
-      case "METAOBJECT":
-        setItem("Metaobjects");
-        return 56;
-      case "PAYMENT_GATEWAY":
-        setItem("Metaobjects");
-        return 58;
-      case "SELLING_PLAN":
-        setItem("Metaobjects");
-        return 60;
-      case "SELLING_PLAN_GROUP":
-        setItem("Shop");
-        return 62;
       case "SHOP":
         setItem("Shop");
-        return 65;
-      case "ARTICLE":
-        setItem("Article");
-        return 68;
-      case "BLOG":
-        setItem("Blog titles");
-        return 70;
+        return 10;
       case "PAGE":
         setItem("Pages");
-        return 72;
-      case "PRODUCT":
-        setItem("Products");
-        return 75;
-      case "PRODUCT_OPTION":
-        setItem("Products");
-        return 78;
-      case "PRODUCT_OPTION_VALUE":
-        setItem("Products");
-        return 80;
+        return 20;
       case "ONLINE_STORE_THEME":
         setItem("Theme");
-        return 82;
-      case "ONLINE_STORE_THEME_APP_EMBED":
-        setItem("Theme");
-        return 85;
+        return 35;
+      case "PRODUCT":
+        setItem("Products");
+        return 55;
+      case "PRODUCT_OPTION":
+        setItem("Products");
+        return 58;
+      case "PRODUCT_OPTION_VALUE":
+        setItem("Products");
+        return 60;
+      case "COLLECTION":
+        setItem("Collection");
+        return 62;
+      case "METAFIELD":
+        setItem("Store metadata");
+        return 68;
+      case "ARTICLE":
+        setItem("Article");
+        return 70;
+      case "BLOG":
+        setItem("Blog titles");
+        return 75;
+      case "MENU":
+        setItem("Navigation");
+        return 77;
+      case "LINK":
+        setItem("Navigation");
+        return 78;
+      case "FILTER":
+        setItem("Filters");
+        return 79;
+      case "METAOBJECT":
+        setItem("Metaobjects");
+        return 80;
       case "ONLINE_STORE_THEME_JSON_TEMPLATE":
         setItem("Theme");
-        return 88;
+        return 81;
       case "ONLINE_STORE_THEME_SECTION_GROUP":
         setItem("Theme");
-        return 90;
+        return 82;
       case "ONLINE_STORE_THEME_SETTINGS_CATEGORY":
         setItem("Theme");
-        return 92;
+        return 83;
       case "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS":
         setItem("Theme");
-        return 95;
-      case "ONLINE_STORE_THEME_LOCALE_CONTENT":
+        return 84;
+      case "PACKING_SLIP_TEMPLATE":
+        setItem("Shipping");
+        return 85;
+      case "DELIVERY_METHOD_DEFINITION":
+        setItem("Delivery");
+        return 86;
+      case "SHOP_POLICY":
+        setItem("Policies");
+        return 88;
+      case "EMAIL_TEMPLATE":
+        setItem("Shipping");
+        return 90;
+      case "ONLINE_STORE_THEME_APP_EMBED":
         setItem("Theme");
+        return 95;
+      case "PAYMENT_GATEWAY":
+        setItem("Metaobjects");
+        return 98;
+      case "SELLING_PLAN":
+        setItem("Metaobjects");
         return 99;
+      case "SELLING_PLAN_GROUP":
+        setItem("Shop");
+        return 99;
+
       default:
         return 0;
     }
+  };
+
+  const handleStopTranslate = () => {
+    stopTranslateFetcher.submit(
+      {
+        stopTranslate: JSON.stringify({ source, target: target[index] }),
+      },
+      {
+        method: "post",
+        action: "/app",
+      },
+    );
   };
 
   const handleReTranslate = () => {
@@ -338,7 +408,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {target}
+                        {target[index]}
                       </Text>
                     </div>
 
@@ -413,6 +483,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                       {status === 6 && (
                         <Text>🎉{t("progressing.hasPayed")}</Text>
                       )}
+                      {status === 7 && (
+                        <Text>{t("progressing.reTranslateText")}</Text>
+                      )}
                     </div>
 
                     {/* 右侧部分 */}
@@ -468,7 +541,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         onClick={() =>
                           navigate("/app/manage_translation", {
                             state: {
-                              key: target,
+                              key: target[index],
                             },
                           })
                         }
@@ -480,7 +553,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         type="primary"
                         onClick={() =>
                           navigate("/app/language", {
-                            state: { publishLanguageCode: target },
+                            state: { publishLanguageCode: target[index] },
                           })
                         }
                         style={{
@@ -490,6 +563,16 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         {t("progressing.publish")}
                       </Button>
                     </div>
+                  )}
+                  {status === 2 && (
+                    <Button
+                      block
+                      onClick={handleStopTranslate}
+                      loading={stopTranslateFetcher.state === "submitting"}
+                      style={{ marginTop: "auto" }}
+                    >
+                      {t("progressing.stopTranslate")}
+                    </Button>
                   )}
                   {status === 3 && (
                     <div
@@ -505,7 +588,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         onClick={() =>
                           navigate("/app/manage_translation", {
                             state: {
-                              key: target,
+                              key: target[index],
                             },
                           })
                         }
@@ -567,12 +650,38 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   {status === 6 && (
                     <Button
                       block
-                      type="primary"
                       onClick={handleReTranslate}
                       loading={translateFetcher.state === "submitting"}
+                      style={{ marginTop: "auto" }}
                     >
-                      {t("progressing.reTranslate")}
+                      {t("progressing.continueTranslate")}
                     </Button>
+                  )}
+                  {status === 7 && (
+                    <div
+                      style={{
+                        width: "100%", // 限制最大宽度
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 10,
+                      }}
+                    >
+                      <Button block onClick={() => navigate("/app/translate")}>
+                        {t("progressing.reTranslate")}
+                      </Button>
+                      <Button
+                        block
+                        onClick={() =>
+                          navigate("/app/manage_translation", {
+                            state: {
+                              key: target[index],
+                            },
+                          })
+                        }
+                      >
+                        {t("progressing.review")}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>

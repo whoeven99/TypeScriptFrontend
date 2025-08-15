@@ -533,15 +533,17 @@ const Index = () => {
 
   useEffect(() => {
     if (statusFetcher.data?.data) {
-      const items = statusFetcher.data?.data.map((item: any) => {
-        if (item?.status === 2) {
-          return item;
-        } else {
-          dispatch(
-            setStatusState({ target: item.target, status: item.status }),
-          );
-        }
-      });
+      const items = statusFetcher.data?.data?.translatesDOResult.map(
+        (item: any) => {
+          if (item?.status === 2) {
+            return item;
+          } else {
+            dispatch(
+              setStatusState({ target: item.target, status: item.status }),
+            );
+          }
+        },
+      );
       if (items[0] !== undefined && items[0].status === 2) {
         // 加入10秒的延时
         const delayTimeout = setTimeout(() => {
@@ -737,14 +739,14 @@ const Index = () => {
               navigate("/app/translate", {
                 state: {
                   from: "/app/language",
-                  selectedLanguageCode: record.locale,
+                  selectedLanguageCode: [record.locale],
                 },
               })
             }
             style={{ width: "100px" }}
             type="primary"
           >
-            {t("Translate")}
+            {record?.status === 1 ? t("Update") : t("Translate")}
           </Button>
           <Button
             onClick={() => {
@@ -1017,7 +1019,7 @@ const Index = () => {
                         navigate("/app/translate", {
                           state: {
                             from: "/app/language",
-                            selectedLanguageCode: item.locale,
+                            selectedLanguageCode: [item.locale],
                           },
                         });
                       }}
@@ -1103,7 +1105,7 @@ const Index = () => {
                 navigate("/app/translate", {
                   state: {
                     from: "/app/language",
-                    selectedLanguageCode: noFirstTranslationLocale,
+                    selectedLanguageCode: [noFirstTranslationLocale],
                   },
                 })
               }

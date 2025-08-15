@@ -20,6 +20,46 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const StopTranslatingTask = async ({
+  shopName,
+  source,
+  // target,
+  accessToken,
+}: {
+  shopName: string;
+  source: string;
+  // target: string;
+  accessToken: string;
+}) => {
+  console.log(`${shopName} StopTranslatingTask: `, {
+    shopName,
+    source,
+    // target,
+    accessToken,
+  });
+
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/translate/stopTranslatingTask?shopName=${shopName}`,
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: {
+        source: source,
+        // target: target,
+        accessToken: accessToken,
+      },
+    });
+
+    console.log(`${shopName} StopTranslatingTask: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shopName} StopTranslatingTask error:`, error);
+  }
+};
+
 export const UpdateProductImageAltData = async ({
   server,
   shopName,
@@ -38,7 +78,7 @@ export const UpdateProductImageAltData = async ({
   languageCode: string;
 }) => {
   try {
-    console.log("UpdateProductImageAltData: ", {
+    console.log(`${shopName} UpdateProductImageAltData: `, {
       shopName,
       productId,
       imageUrl,
@@ -304,6 +344,7 @@ export const SaveAndUpdateData = async ({
   optionBorderColor,
   selectorPosition,
   positionData,
+  isTransparent,
 }: {
   shopName: string;
   languageSelector: boolean;
@@ -317,6 +358,7 @@ export const SaveAndUpdateData = async ({
   optionBorderColor: string;
   selectorPosition: string;
   positionData: string;
+  isTransparent: boolean;
 }) => {
   try {
     const response = await axios({
@@ -335,6 +377,7 @@ export const SaveAndUpdateData = async ({
         optionBorderColor: optionBorderColor,
         selectorPosition: selectorPosition,
         positionData: positionData,
+        isTransparent: isTransparent,
       },
     });
 
@@ -706,7 +749,7 @@ export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
 
     if (response.data?.success) {
       const res = response.data?.response;
-      if (shop == "ciwishop.myshopify.com" && res.userSubscriptionPlan < 3) {
+      if (shop == "ciwishop.myshopify.com") {
         return {
           userSubscriptionPlan: 6,
           currentPeriodEnd: null,
@@ -999,6 +1042,12 @@ export const GetLanguageStatus = async ({
   target: string[];
 }) => {
   try {
+    console.log(`${shop} GetLanguageStatus Input: `, {
+      shopName: shop,
+      source: source,
+      target: target,
+    });
+
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/readTranslateDOByArray`,
       method: "Post",
@@ -1060,7 +1109,7 @@ export const GetTranslate = async ({
   shop: string;
   accessToken: string;
   source: string;
-  target: string;
+  target: string[];
   translateSettings1: string;
   translateSettings2: string[];
   translateSettings3: string[];
@@ -1068,7 +1117,7 @@ export const GetTranslate = async ({
   translateSettings5: boolean;
 }) => {
   try {
-    console.log("GetTranslateData: ", {
+    console.log(`${shop} GetTranslateData: `, {
       shopName: shop,
       accessToken: accessToken,
       source: source,
@@ -1080,7 +1129,7 @@ export const GetTranslate = async ({
       isCover: translateSettings5,
     });
     const response = await axios({
-      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : "translate/clickTranslation"}`,
+      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : `translate/clickTranslation?shopName=${shop}`}`,
       method: "PUT",
       data: {
         shopName: shop,

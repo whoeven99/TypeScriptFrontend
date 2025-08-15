@@ -168,7 +168,10 @@
     "progressing.privateApiKeyAmountLimit":"De private API-Schlüsselgrenze wurde erreicht. Bitte klicken Sie auf die Schaltfläche rechts, um die Grenze zurückzusetzen und den Übersetzungsprozess neu zu starten.",
     "progressing.apikeySetting":"Grenze zurücksetzen",
     "progressing.hasPayed":"Ihre Übersetzungscredits wurden hinzugefügt. Bitte fahren Sie mit der Übersetzung fort.",
-    "progressing.reTranslate":"Verder vertalen",
+    "progressing.stopTranslate":"Vertaling stoppen",
+    "progressing.continueTranslate":"Verder vertalen",
+    "progressing.reTranslate":"Nieuwe vertaling starten",
+    "progressing.reTranslateText":"De huidige vertaling werd handmatig gestopt.",
     "contact.title":"Contacteer ons",
     "contact.description":"Als u vragen of hulp nodig hebt, klik op de knop hieronder om ons te contacteren.",
     "contact.contactButton":"Contacteer ons",
@@ -257,7 +260,7 @@
     "devplanCard2.title": "Voeg vertaling voortgang toe",
     "devplanCard3.title": "Optimaliseer de switcher-stijl, ondersteuning voor weergave in de voettekst",
     "devplanCard4.title": "Verhoog de vertaling snelheid, voeg een snelle vertaling modus toe",
-    "Your translation task exceeds the free limit and you need to purchase additional credits": "Uw vertalingstask overschrijdt de gratis limiet en u moet extra credits kopen",
+    "Not enough translation credits. Purchase more to continue": "Uw vertalingstask overschrijdt de gratis limiet en u moet extra credits kopen",
     "Translation tasks": "Vertalingstaken",
     "Estimated number of words to translate: ": "Geschatte aantal woorden om te vertalen:",
     "Calculation failed": "Berekening mislukt",
@@ -520,7 +523,18 @@
     "Minimalist": "Minimalistisch",
     "Storytelling": "Verhalen vertellen",
     "Feature-first": "Functie eerst",
-    "Call-to-action": "Oproep tot actie"
+    "Call-to-action": "Oproep tot actie",
+    "No Visible Switcher: ": "Niet zichtbare switcher",
+    "The Private API has been limited due to your plan (Current plan: {{plan}})": "De Private API is beperkt vanwege uw plan (Huidig plan: {{plan}})",
+    "Please upgrade to a higher plan to unlock the Private API": "Upgrade naar een hoger plan om de Private API te ontgrendelen",
+    "Import": "Importeren",
+    "How to import translation data": "Hoe importeer je vertalinggegevens",
+    "Import steps:": "Importeer stappen:",
+    "1. Click to download the product import template": "1. Klik om het productimporttemplate te downloaden",
+    "2. Fill in the translated data in the template": "2. Vul de vertaalde gegevens in het sjabloon in",
+    "3. Contact us to import the corresponding files": "3. Neem contact op met de klantenservice en importeer de corresponderende bestanden",
+    "Got it": "Ik weet het",
+    "You can select up to 5 languages at once.": "U kunt maximaal 5 talen tegelijk selecteren."
 }
   
   

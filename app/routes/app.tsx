@@ -34,6 +34,7 @@ import {
   GetUserInitTokenByShopName,
   GetTranslateDOByShopNameAndSource,
   GetUserData,
+  StopTranslatingTask,
 } from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -80,6 +81,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const rate = JSON.parse(formData.get("rate") as string);
     const credits = JSON.parse(formData.get("credits") as string);
     const recalculate = JSON.parse(formData.get("recalculate") as string);
+    const stopTranslate = JSON.parse(formData.get("stopTranslate") as string);
 
     if (loading) {
       try {
@@ -244,28 +246,48 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
 
         if (
-          shopLocalesIndex.includes(data.response?.target) &&
-          (data.response?.status !== 1 ||
+          shopLocalesIndex.includes(data.response[0]?.target) &&
+          (data.response[0]?.status !== 1 ||
             !shopLanguagesWithoutPrimaryIndex.find(
-              (item) => item.locale === data.response?.target,
+              (item) => item.locale === data.response[0]?.target,
             )?.published)
         ) {
           return {
-            translatingLanguage: {
-              source: data.response?.source || shopPrimaryLanguage[0].locale,
-              target: data.response?.target || "",
-              status: data.response?.status || 0,
-              resourceType: data.response?.resourceType || "",
-            },
+            translatingLanguage:
+              data.response.length > 0
+                ? data.response.map((item: any) => ({
+                    source: item?.source || shopPrimaryLanguage[0].locale,
+                    target: item?.target || "",
+                    status: item?.status || 0,
+                    resourceType: item?.resourceType || "",
+                  }))
+                : [
+                    {
+                      source: shopPrimaryLanguage[0].locale,
+                      target: "",
+                      status: 0,
+                      resourceType: "",
+                    },
+                  ],
           };
         } else {
           return {
-            translatingLanguage: {
-              source: data.response?.source || shopPrimaryLanguage[0].locale,
-              target: "",
-              status: 0,
-              resourceType: "",
-            },
+            translatingLanguage:
+              data.response.length > 0
+                ? data.response.map((item: any) => ({
+                    source: item?.source || shopPrimaryLanguage[0].locale,
+                    target: item?.target || "",
+                    status: item?.status || 0,
+                    resourceType: item?.resourceType || "",
+                  }))
+                : [
+                    {
+                      source: shopPrimaryLanguage[0].locale,
+                      target: "",
+                      status: 0,
+                      resourceType: "",
+                    },
+                  ],
           };
         }
       } catch (error) {
@@ -382,6 +404,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           data: {
             success: false,
             message: "Error recalculate app",
+          },
+        });
+      }
+    }
+
+    if (stopTranslate) {
+      try {
+        const data = await StopTranslatingTask({
+          shopName: shop,
+          accessToken: accessToken as string,
+          source: stopTranslate.source,
+          // target: stopTranslate.target,
+        });
+        return json({ data });
+      } catch (error) {
+        console.error("Error stopTranslate app:", error);
+        return json({
+          data: {
+            success: false,
+            message: "Error stopTranslate app",
           },
         });
       }
