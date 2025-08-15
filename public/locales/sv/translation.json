@@ -527,7 +527,7 @@
     "Call-to-action": "Uppmaning till handling",
     "No Visible Switcher: ": "Ingen synlig väljare",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "Privat API har begränsats på grund av ditt plan (Aktuellt plan: {{plan}})",
-    "Please upgrade to a higher plan to unlock the Private API": "Uppgradera till ett högre plan för att låsa privat API",
+    "This feature is available only with the paid plan.": "Uppgradera till ett högre plan för att låsa privat API",
     "Import": "Importera",
     "How to import translation data": "Hur importerar du översättningsdata",
     "Import steps:": "Importsteg:",
@@ -535,6 +535,9 @@
     "2. Fill in the translated data in the template": "2. Fyll i översatta data i mallen",
     "3. Contact us to import the corresponding files": "3. Kontakta kundsupport och importera motsvarande filer",
     "Got it": "Känd",
-    "You can select up to 5 languages at once.": "Du kan välja upp till 5 språk samtidigt."
+    "You can select up to 5 languages at once.": "Du kan välja upp till 5 språk samtidigt.",
+    "support": "Support",
+    "Upgrade to a paid plan to unlock this feature": "Uppgradera till ett högre plan för att låsa detta funktion",
+    "Blogs and articles": "Blogg och artiklar"
 }   
   

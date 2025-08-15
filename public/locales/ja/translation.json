@@ -526,7 +526,7 @@
     "Call-to-action": "行動喚起",
     "No Visible Switcher: ": "表示しない",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "プライベートAPIがプランによって制限されています（現在のプラン: {{plan}}）",
-    "Please upgrade to a higher plan to unlock the Private API": "より高いプランにアップグレードしてプライベートAPIをロック解除してください",
+    "This feature is available only with the paid plan.": "より高いプランにアップグレードしてプライベートAPIをロック解除してください",
     "Import": "インポート",
     "How to import translation data": "翻訳データのインポート方法",
     "Import steps:": "インポート手順:",
@@ -534,6 +534,9 @@
     "2. Fill in the translated data in the template": "2. テンプレートに翻訳データを入力する",
     "3. Contact us to import the corresponding files": "3. 顧客サービスに連絡して対応するファイルをインポートする",
     "Got it": "知っている",
-    "You can select up to 5 languages at once.": "一度に最大5つの言語を選択できます。"
+    "You can select up to 5 languages at once.": "一度に最大5つの言語を選択できます。",
+    "support": "サポート",
+    "Upgrade to a paid plan to unlock this feature": "この機能を使用するには、有料プランにアップグレードしてください",
+    "Blogs and articles": "ブログと記事"
 }   
   
