@@ -526,6 +526,7 @@ export const SavePrivateKey = async ({
     throw error; // 抛出错误以便前端捕获
   }
 };
+
 // export const SaveGoogleKey = async ({
 //   shop,
 //   apiKey,
@@ -552,6 +553,30 @@ export const SavePrivateKey = async ({
 //     console.error("Error SaveGoogleKey:", error);
 //   }
 // };
+
+//获取最新翻译状态
+export const GetTranslateDOByShopNameAndSource = async ({
+  shop,
+  source,
+}: {
+  shop: string;
+  source: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/translate/getTranslateDOByShopNameAndSource`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        source: source,
+      },
+    });
+    console.log(`${shop} GetTranslateDOByShopNameAndSource: `, response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error GetTranslateDOByShopNameAndSource:", error);
+  }
+};
 
 export const VerifyAPIkey = async (
   {
