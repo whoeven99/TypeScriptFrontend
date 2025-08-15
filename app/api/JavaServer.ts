@@ -1161,7 +1161,7 @@ export const GetTranslate = async ({
         target: target,
         isCover: translateSettings5,
         customKey: customKey,
-        translateSettings1: translateSettings1,
+        translateSettings1: (translateSettings1==='8'||translateSettings1==='9')?(translateSettings1==='8'?'0':'1'):translateSettings1,
         translateSettings2: translateSettings2.toString(),
         translateSettings3: translateSettings3,
       },
