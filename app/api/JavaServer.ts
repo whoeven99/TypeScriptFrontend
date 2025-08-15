@@ -428,14 +428,11 @@ export const DeleteUserData = async ({ shop }: { shop: string }) => {
 };
 
 //获取用户私人API Key
-export const GetUserData = async ({ shop }: { shop: string }) => {
+export const GetUserData = async ({ shop,apiName }: { shop: string,apiName:Number }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/private/getUserData`,
+      url: `${process.env.SERVER_URL}/private/translate/getUserPrivateData?shopName=${shop}&apiName=${apiName}`,
       method: "POST",
-      data: {
-        shopName: shop,
-      },
     });
     console.log("GetUserData: ", response.data);
     return response.data;
@@ -445,56 +442,117 @@ export const GetUserData = async ({ shop }: { shop: string }) => {
 };
 
 //更新用户私人API Key
-export const SaveGoogleKey = async ({
+export const SavePrivateKey = async ({
   shop,
   apiKey,
   count,
+  modelVersion,
+  keywords,
+  apiName,
+  apiStatus,
+  isSelected
 }: {
   shop: string;
   apiKey: string;
-  count: number;
+  count: string; // 前端传递字符串
+  modelVersion?: string; // 可选，仅 OpenAI 需要
+  keywords:string[],
+  apiName:Number,
+  apiStatus:boolean,
+  isSelected:boolean
 }) => {
-  try {
+  try {    
     const response = await axios({
-      url: `${process.env.SERVER_URL}/privateKey/saveGoogleKey`,
-      method: "PUT",
-      data: {
-        shopName: shop,
-        model: "google",
-        secret: apiKey,
-        amount: count,
-      },
-    });
-    console.log("SaveGoogleKey: ", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error SaveGoogleKey:", error);
-  }
-};
-
-//获取最新翻译状态
-export const GetTranslateDOByShopNameAndSource = async ({
-  shop,
-  source,
-}: {
-  shop: string;
-  source: string;
-}) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/getTranslateDOByShopNameAndSource`,
+      url: `${process.env.SERVER_URL}/private/translate/configPrivateModel?shopName=${shop}`,
       method: "POST",
       data: {
         shopName: shop,
-        source: source,
+        apiKey,
+        tokenLimit: Number(count), // 转换为数字
+        promptWord:keywords,
+        ...(modelVersion && { apiModel:modelVersion }), // 仅当 modelVersion 存在时包含
+        apiName,
+        apiStatus,
+        isSelected
       },
     });
-    console.log("GetTranslateDOByShopNameAndSource: ", response.data);
+    console.log(`SavePrivateKey [${apiName}]: `, response);
     return response.data;
-  } catch (error) {
-    console.error("Error GetTranslateDOByShopNameAndSource:", error);
+  } catch (error) { 
+    // console.error(`Error SavePrivateKey [${model}]:`, error);
+    throw error; // 抛出错误以便前端捕获
   }
 };
+// export const SaveGoogleKey = async ({
+//   shop,
+//   apiKey,
+//   count,
+// }: {
+//   shop: string;
+//   apiKey: string;
+//   count: number;
+// }) => {
+//   try {
+//     const response = await axios({
+//       url: `${process.env.SERVER_URL}/privateKey/saveGoogleKey`,
+//       method: "PUT",
+//       data: {
+//         shopName: shop,
+//         model: "google",
+//         secret: apiKey,
+//         amount: count,
+//       },
+//     });
+//     console.log("SaveGoogleKey: ", response.data);
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error SaveGoogleKey:", error);
+//   }
+// };
+
+export const VerifyAPIkey = async (
+  {
+    shopName,
+    accessToken,
+    target,
+    source,
+    isCover,
+    translateSettings1,
+    translateSettings2,
+    translateSettings3
+  }:
+  {
+    shopName:string,
+    accessToken?:string,
+    target:string[],
+    source:string,
+    isCover:boolean,
+    translateSettings1:Number,
+    translateSettings2:string,
+    translateSettings3:string[]
+  }
+)=>{
+  try{
+    const response = await axios({
+      url:`${process.env.SERVER_URL}/privateKey/translate?shopName=${shopName}`,
+      method:"PUT",
+      data:{
+        shopName,
+        accessToken,
+        target,
+        source,
+        isCover,
+        translateSettings1,
+        translateSettings2,
+        translateSettings3
+      }
+    })
+    return response.data;
+  }
+  catch(error){
+    throw error;
+  }
+}
 
 export const GetUserInitTokenByShopName = async ({
   shop,
