@@ -527,7 +527,7 @@
     "Call-to-action": "Uppmaning till handling",
     "No Visible Switcher: ": "Ingen synlig väljare",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "Privat API har begränsats på grund av ditt plan (Aktuellt plan: {{plan}})",
-    "Please upgrade to a higher plan to unlock the Private API": "Uppgradera till ett högre plan för att låsa privat API",
+    "This feature is available only with the paid plan.": "Uppgradera till ett högre plan för att låsa privat API",
     "Import": "Importera",
     "How to import translation data": "Hur importerar du översättningsdata",
     "Import steps:": "Importsteg:",
@@ -570,5 +570,8 @@
         "tit": "Testgränssnitt",
         "tf": "Översättningen misslyckades, kontrollera API-nyckelns giltighet",
         "tcm": "Översättningen är klar"
-    }
+    },
+    "support": "Support",
+    "Upgrade to a paid plan to unlock this feature": "Uppgradera till ett högre plan för att låsa detta funktion",
+    "Blogs and articles": "Blogg och artiklar"
 }

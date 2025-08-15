@@ -178,7 +178,7 @@ async function initializeCurrency(data, shop, ciwiBlock) {
     }
 
     // 更新价格显示
-    const prices = document.querySelectorAll(".ciwi-money");
+    const prices = document.querySelectorAll("span.ciwi-money");
 
     prices.forEach((price) => {
       const priceText = price.innerText;
@@ -427,7 +427,7 @@ function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
 
     case moneyFormat.includes("amount_no_decimals"):
       return parseFloat(number.replace(/,/g, "")).toFixed(2);
-      
+
     case moneyFormat.includes("amount"):
       number = number.replace(/,/g, "");
       return parseFloat(number).toFixed(2);
@@ -637,7 +637,7 @@ class CiwiswitcherForm extends HTMLElement {
   connectedCallback() {
     this.elements = {
       ciwiBlock: document.querySelector(
-        "#shopify-block-AcE1VYlo0ejV0ZmhMU__13075167056008007436",
+        `#shopify-block-${this.querySelector('input[name="block_id"]')?.value}`,
       ),
       ciwiContainer: this.querySelector("#ciwi-container"),
       selectorBox: this.querySelector("#selector-box"),
@@ -932,9 +932,9 @@ class CiwiswitcherForm extends HTMLElement {
 customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
-  const ciwiBlock = document.querySelector(
-    "#shopify-block-AcE1VYlo0ejV0ZmhMU__13075167056008007436",
-  );
+  const blockId = document.querySelector('input[name="block_id"]');
+  console.log("blockId", blockId);
+  const ciwiBlock = document.querySelector(`#shopify-block-${blockId.value}`);
   if (!ciwiBlock) {
     console.log("ciwiBlock not found");
     return;
@@ -977,6 +977,8 @@ window.onload = async function () {
 
   if (data.ipOpen) {
     const iptoken = ciwiBlock.querySelector('input[name="iptoken"]');
+    console.log("iptoken", iptoken);
+    
     const iptokenValue = iptoken.value;
     if (iptokenValue) iptoken.remove();
     const storedLanguage = localStorage.getItem("selectedLanguage");

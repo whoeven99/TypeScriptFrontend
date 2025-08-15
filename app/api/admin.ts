@@ -1850,7 +1850,7 @@ export const mutationAppSubscriptionCreate = async ({
     currencyCode: string;
   };
   test?: boolean;
-  trialDays: number;
+  trialDays?: number;
   returnUrl: URL;
 }) => {
   console.log("mutationAppSubscriptionCreate is coming");
@@ -1907,12 +1907,16 @@ export const mutationAppSubscriptionCreate = async ({
             },
           ],
           replacementBehavior: "APPLY_IMMEDIATELY",
-          trialDays: trialDays,
+          trialDays: trialDays ? trialDays : 0,
           test: test || false,
         },
       },
     });
+
     const res = response.data.data.appSubscriptionCreate;
+
+    console.log("mutationAppSubscriptionCreate: ", res);
+
     return res;
   } catch (error) {
     console.error("Error mutationAppSubscriptionCreate:", error);

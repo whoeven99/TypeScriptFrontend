@@ -525,7 +525,7 @@
     "Call-to-action": "Chiamata all'azione",
     "No Visible Switcher: ": "Nessun selettore visibile",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "L'API privata è stata limitata a causa del tuo piano (Piano corrente: {{plan}})",
-    "Please upgrade to a higher plan to unlock the Private API": "Per favore, aggiorna al piano più alto per sbloccare l'API privata",
+    "This feature is available only with the paid plan.": "Per favore, aggiorna al piano più alto per sbloccare l'API privata",
     "Import": "Importa",
     "How to import translation data": "Come importare i dati di traduzione",
     "Import steps:": "Passaggi per importare:",
@@ -534,6 +534,9 @@
     "3. Contact us to import the corresponding files": "3. Contatta il servizio clienti e importa i file corrispondenti",
     "Got it": "Lo so",
     "You can select up to 5 languages at once.": "Puoi selezionare fino a 5 lingue contemporaneamente.",
+    "support": "Supporto",
+    "Upgrade to a paid plan to unlock this feature": "Aggiorna al piano più alto per sbloccare questa funzionalità",
+    "Blogs and articles": "Blogs e articoli",
     "openai": {
         "di": "Caricamento dati, riprova più tardi",
         "ne": "Non efficace",

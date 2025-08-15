@@ -761,10 +761,16 @@ export const AddDefaultLanguagePack = async ({ shop }: { shop: string }) => {
 };
 
 //获取用户计划
-export const GetUserSubscriptionPlan = async ({ shop }: { shop: string }) => {
+export const GetUserSubscriptionPlan = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server?: string;
+}) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
+      url: `${server || process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
       method: "GET",
     });
 
@@ -978,10 +984,16 @@ export const GetItemsInSqlByShopName = async ({
 };
 
 //获取用户的额度字符数 和 已使用的字符
-export const GetUserWords = async ({ shop }: { shop: string }) => {
+export const GetUserWords = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server?: string;
+}) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getUserLimitChars?shopName=${shop}`,
+      url: `${server || process.env.SERVER_URL}/shopify/getUserLimitChars?shopName=${shop}`,
       method: "GET",
     });
     console.log("GetUserWords: ", response.data);

@@ -526,7 +526,7 @@
     "Call-to-action": "Chamada para ação",
     "No Visible Switcher: ": "Não visível",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "A API privada foi limitada devido ao seu plano (Plano atual: {{plan}})",
-    "Please upgrade to a higher plan to unlock the Private API": "Por favor, atualize para um plano mais alto para desbloquear a API privada",
+    "This feature is available only with the paid plan.": "Por favor, atualize para um plano mais alto para desbloquear a API privada",
     "Import": "Importar",
     "How to import translation data": "Como importar dados de tradução",
     "Import steps:": "Passos de importação:",
@@ -569,5 +569,8 @@
         "tit": "Interface de teste",
         "tf": "A tradução falhou, verifique a validade da chave API",
         "tcm": "Tradução concluída"
-    }
+    },
+    "support": "Suporte",
+    "Upgrade to a paid plan to unlock this feature": "Atualize para um plano pago para desbloquear esta funcionalidade",
+    "Blogs and articles": "Blogs e artigos"
 }

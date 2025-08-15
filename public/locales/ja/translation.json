@@ -526,7 +526,7 @@
     "Call-to-action": "行動喚起",
     "No Visible Switcher: ": "表示しない",
     "The Private API has been limited due to your plan (Current plan: {{plan}})": "プライベートAPIがプランによって制限されています（現在のプラン: {{plan}}）",
-    "Please upgrade to a higher plan to unlock the Private API": "より高いプランにアップグレードしてプライベートAPIをロック解除してください",
+    "This feature is available only with the paid plan.": "より高いプランにアップグレードしてプライベートAPIをロック解除してください",
     "Import": "インポート",
     "How to import translation data": "翻訳データのインポート方法",
     "Import steps:": "インポート手順:",
@@ -569,5 +569,8 @@
         "tit": "テストインターフェース",
         "tf": "翻訳に失敗しました。APIキーの有効性を確認してください。",
         "tcm": "翻訳完了"
-    }
+    },
+    "support": "サポート",
+    "Upgrade to a paid plan to unlock this feature": "この機能を使用するには、有料プランにアップグレードしてください",
+    "Blogs and articles": "ブログと記事"
 }

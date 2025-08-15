@@ -1,7 +1,6 @@
 import type {
   ActionFunctionArgs,
   HeadersFunction,
-  LoaderFunctionArgs,
 } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import {
@@ -197,7 +196,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (plan) {
       try {
-        const planData = await GetUserSubscriptionPlan({ shop });
+        const planData = await GetUserSubscriptionPlan({
+          shop,
+          server: process.env.SERVER_URL as string,
+        });
         return json({ plan: planData });
       } catch (error) {
         console.error("Error plan app:", error);
@@ -304,7 +306,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (userData) {
       try {
-        const words = await GetUserWords({ shop });
+        const words = await GetUserWords({
+          shop,
+          server: process.env.SERVER_URL as string,
+        });
         const data = {
           chars: words?.chars || 0,
           totalChars: words?.totalChars || 0,
