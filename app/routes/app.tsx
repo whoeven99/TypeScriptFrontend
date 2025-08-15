@@ -212,11 +212,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (customApikeyData) {
       try {
-        const customApikeyData = await GetUserData({
-          shop,
-        });
+        const apiNames = [0, 1, 2, 3]; // 对应 google, openai, deepl, deepseek
+        const results = await Promise.all(
+          apiNames.map((apiName) =>
+            GetUserData({
+              shop,
+              apiName,
+            })
+          )
+        );
         return json({
-          customApikeyData: customApikeyData?.response?.googleKey,
+          customApikeyData: results
         });
       } catch (error) {
         console.error("Error customApikeyData app:", error);

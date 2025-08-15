@@ -59,6 +59,18 @@ interface LanguageSettingType {
   primaryLanguageCode: string;
 }
 
+interface apiKeyConfiguration {
+  apiKey: string,
+  apiModel: string,
+  apiName : Number,
+  apiStatus: boolean,
+  isSelected: boolean,
+  promptWord: string,
+  shopName: string,
+  tokenLimit: Number,
+  usedToken: Number
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
@@ -111,7 +123,7 @@ const Index = () => {
   const [model, setModel] = useState<any>("");
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [customApikeyData, setCustomApikeyData] = useState<boolean>(false);
+  const [customApikeyData, setCustomApikeyData] = useState<apiKeyConfiguration[]>();
   const [needPay, setNeedPay] = useState<boolean>(false);
   const [source, setSource] = useState("");
   const [target, setTarget] = useState<string[]>([]);
@@ -133,6 +145,11 @@ const Index = () => {
   );
 
   const { plan } = useSelector((state: any) => state.userConfig);
+  
+  function checkApiKeyConfiguration(customApikeyData: apiKeyConfiguration[], apiName: 0 | 1): apiKeyConfiguration | null {
+    const matchedItem = customApikeyData.find(item => item.apiName === apiName);
+    return matchedItem || null;
+  }
 
   useEffect(() => {
     const languageFormData = new FormData();
@@ -173,8 +190,27 @@ const Index = () => {
   }, [loadingLanguageFetcher.data]);
 
   useEffect(() => {
-    if (customApiKeyFetcher.data) {
-      setCustomApikeyData(customApiKeyFetcher.data.customApikeyData);
+    if (customApiKeyFetcher.data && customApiKeyFetcher.data.customApikeyData) {
+      // 过滤 success 为 true 且 response 中有非空 apiKey 的条目
+      const filteredData = customApiKeyFetcher.data.customApikeyData
+        .filter((item:any) => 
+          item.success && 
+          item.response && 
+          item.response.apiKey && 
+          item.response.apiKey.trim() !== ''
+        )
+        .map((item:any) => ({
+          apiKey: item.response.apiKey,
+          apiModel: item.response.apiModel,
+          apiName: item.response.apiName,
+          apiStatus: item.response.apiStatus,
+          isSelected: item.response.isSelected,
+          promptWord: item.response.promptWord,
+          shopName: item.response.shopName,
+          tokenLimit: item.response.tokenLimit,
+          usedToken: item.response.usedToken
+        }));
+      setCustomApikeyData(filteredData);
     }
   }, [customApiKeyFetcher.data]);
 
@@ -814,7 +850,7 @@ const Index = () => {
                       </div>
                     </Flex>
                   ))}
-                  {customApikeyData && (
+                  {customApikeyData && checkApiKeyConfiguration(customApikeyData,0) && (
                     <Badge.Ribbon
                       text={t("Private")}
                       color="red"
@@ -853,6 +889,50 @@ const Index = () => {
                             }}
                           >
                             <Text>{t("Google Translation")}</Text>
+                          </div>
+                        </div>
+                      </div>
+                    </Badge.Ribbon>
+                  )}
+                  {customApikeyData && checkApiKeyConfiguration(customApikeyData,1) && (
+                    <Badge.Ribbon
+                      text={t("Private")}
+                      color="red"
+                      style={{ top: -2, right: -8 }}
+                    >
+                      <div
+                        key={9}
+                        style={{
+                          display: "flex", // 关键
+                          width: "100%",
+                          marginRight: 0,
+                          padding: "8px 12px",
+                          border: "1px solid #f0f0f0",
+                          borderRadius: "4px",
+                          alignItems: "center",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => setTranslateSettings1("9")}
+                      >
+                        <Radio
+                          key={9}
+                          value={"9"}
+                          checked={translateSettings1 === "9"}
+                        />
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            width: "100%",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "50%",
+                            }}
+                          >
+                            <Text>openai</Text>
                           </div>
                         </div>
                       </div>

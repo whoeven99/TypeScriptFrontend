@@ -343,8 +343,6 @@ const Index = () => {
   useEffect(() => {    
     if (loadingfetcher.state === 'idle' && loadingfetcher.data) {
       setIsLoading(false);
-      console.log(loadingfetcher.data.data);
-      
       if (loadingfetcher.data.data && Array.isArray(loadingfetcher.data.data)) {
         // const apiNameToId : Record<number, ServiceId> = { 0: 'google', 1: 'openai', 2: 'deepl', 3: 'deepseek' };
         const apiNameToId : Record<number, ServiceId> = { 0: 'google', 1: 'openai'};

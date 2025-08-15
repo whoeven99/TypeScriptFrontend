@@ -507,7 +507,7 @@ export const SavePrivateKey = async ({
   try {    
     const response = await axios({
       url: `${process.env.SERVER_URL}/private/translate/configPrivateModel?shopName=${shop}`,
-      method: "POST",
+      method: "PUT",
       data: {
         shopName: shop,
         apiKey,
@@ -1129,7 +1129,7 @@ export const GetTranslate = async ({
       isCover: translateSettings5,
     });
     const response = await axios({
-      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" ? "privateKey/translate" : `translate/clickTranslation?shopName=${shop}`}`,
+      url: `${process.env.SERVER_URL}/${(translateSettings1 === "8" || translateSettings1=== "9") ? `privateKey/translate?shopName=${shop}` : `translate/clickTranslation?shopName=${shop}`}`,
       method: "PUT",
       data: {
         shopName: shop,
