@@ -183,19 +183,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const moneyFormat = shopLoad?.currencyFormats?.moneyFormat;
         const moneyWithCurrencyFormat =
           shopLoad?.currencyFormats?.moneyWithCurrencyFormat;
-        // if (shopLoad) {
-        //   return {
-        //     success: true,
-        //     errorCode: 0,
-        //     errorMsg: "",
-        //     response: {
-        //       defaultCurrencyCode:
-        //         shopLoad?.currencyFormats?.defaultCurrencyCode,
-        //       moneyFormat,
-        //       moneyWithCurrencyFormat,
-        //     },
-        //   };
-        // } else {
+        if (shopLoad) {
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response: {
+              defaultCurrencyCode:
+                shopLoad?.currencyFormats?.defaultCurrencyCode,
+              moneyFormat,
+              moneyWithCurrencyFormat,
+            },
+          };
+        } else {
           return {
             success: false,
             errorCode: 1,
@@ -206,7 +206,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               moneyWithCurrencyFormat: "",
             },
           };
-        // }
+        }
       } catch (error) {
         console.error("Error switcher shopInfo:", error);
       }
