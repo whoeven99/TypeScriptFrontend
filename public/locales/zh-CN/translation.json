@@ -567,7 +567,7 @@
     "as": "API 状态：",
     "Amount": "额度：",
     "Configuration": "配置",
-    "tit": "测试接口",
+    "tit": "测试API",
     "tf":"翻译失败，请检查API密钥的有效性",
     "tcm":"翻译完成"
   },

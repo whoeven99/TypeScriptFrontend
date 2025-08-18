@@ -87,9 +87,9 @@
     "sa":"Select API",
     "Effective":"Effective",
     "as":"API Status:",
-    "Amount":"Amount:",
+    "Amount":"Amount: ",
     "Configuration":"Configuration",
-    "tit":"Test interface",
+    "tit":"Test API",
     "tf":"Translation failed, please check the validity of the API key",
     "tcm":"Translation completed"
   },

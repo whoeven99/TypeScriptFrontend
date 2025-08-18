@@ -567,7 +567,7 @@
         "as": "API-status:",
         "Amount": "Kvot:",
         "Configuration": "Konfiguration",
-        "tit": "Testgränssnitt",
+        "tit": "Test API",
         "tf": "Översättningen misslyckades, kontrollera API-nyckelns giltighet",
         "tcm": "Översättningen är klar"
     },
