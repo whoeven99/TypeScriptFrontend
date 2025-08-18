@@ -234,6 +234,10 @@ const Index = () => {
     setActiveModal(id);
     setActive(true);
     setContent('');
+    id === 'openai' ?
+      setTempKeyWords(userApiConfigs[id].keywords || 'Translate the following content into {language} .Only output the final correct translation')
+      :
+      setTempKeyWords('');
   }
   const handleTranslate = () => {
     // 测试api翻译接口逻辑
