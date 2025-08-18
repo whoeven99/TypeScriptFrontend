@@ -89,6 +89,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     formData.get("updateCurrencies") as string,
   );
 
+  console.log(`${shop} init: `, init);
+  console.log(`${shop} loading: `, loading);
+  console.log(`${shop} theme: `, theme);
+  console.log(`${shop} rateData: `, rateData);
+  console.log(`${shop} updateDefaultCurrency: `, updateDefaultCurrency);
+  console.log(`${shop} addCurrencies: `, addCurrencies);
+  console.log(`${shop} deleteCurrencies: `, deleteCurrencies);
+  console.log(`${shop} updateCurrencies: `, updateCurrencies);
+
   switch (true) {
     case !!init:
       try {
