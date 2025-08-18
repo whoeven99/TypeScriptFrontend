@@ -564,11 +564,13 @@
         "sa": "Selecione API",
         "Effective": "Efetivo",
         "as": "Status da API:",
-        "Amount": "Cota:",
+        "Amount": "Configuração de cota:",
         "Configuration": "Configuração",
         "tit": "API de teste",
         "tf": "A tradução falhou, verifique a validade da chave API",
-        "tcm": "Tradução concluída"
+        "tcm": "Tradução concluída",
+        "mv": "Versão do modelo",
+        "ip": "Prompt de entrada"
     },
     "support": "Suporte",
     "Upgrade to a paid plan to unlock this feature": "Atualize para um plano pago para desbloquear esta funcionalidade",

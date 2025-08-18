@@ -564,11 +564,13 @@
         "sa": "API を選択",
         "Effective": "有効",
         "as": "API ステータス：",
-        "Amount": "クォータ：",
+        "Amount": "クォータ設定：",
         "Configuration": "設定",
         "tit": "APIのテスト",
         "tf": "翻訳に失敗しました。APIキーの有効性を確認してください。",
-        "tcm": "翻訳完了"
+        "tcm": "翻訳完了",
+        "mv": "モデルバージョン",
+        "ip": "入力プロンプト"
     },
     "support": "サポート",
     "Upgrade to a paid plan to unlock this feature": "この機能を使用するには、有料プランにアップグレードしてください",

@@ -564,13 +564,15 @@
     "sa": "選擇 API",
     "Effective": "已生效",
     "as": "API 狀態：",
-    "Amount": "額度：",
+    "Amount": "額度配置：",
     "Configuration": "配置",
     "tit": "測試API",
-    "tf":"翻譯失敗，請檢視API金鑰的有效性",
-    "tcm":"翻譯完成"
+    "tf": "翻譯失敗，請檢視API金鑰的有效性",
+    "tcm": "翻譯完成",
+    "mv": "模型版本",
+    "ip":"輸入提示詞"
   },
   "support": "支援",
-    "Upgrade to a paid plan to unlock this feature": "升級到付費計劃以解鎖此功能",
-    "Blogs and articles": "部落格和文章"
+  "Upgrade to a paid plan to unlock this feature": "升級到付費計劃以解鎖此功能",
+  "Blogs and articles": "部落格和文章"
 }

@@ -87,8 +87,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       case !!testUserAPIKey:
         try {
-          const { content, apiName, targetCode } = testUserAPIKey;
-          const data = await TranslationInterface({ shop, apiName, sourceText: content, targetCode });
+          const { content, apiName, targetCode,prompt } = testUserAPIKey;
+          console.log('testUserAPIKey',testUserAPIKey);
+          
+          const data = await TranslationInterface({ shop, apiName, sourceText: content, targetCode,prompt });
           return json({ data });
         }
         catch (error) {
@@ -220,12 +222,13 @@ const Index = () => {
     setModalOpen(false);
     setApiKeyError(false);
     setCountError(false);
+    setTempApiKey('')
   };
   const handleTestApi = (id: ServiceId) => {
-    // if (!userApiConfigs[id].apiKey) {
-    //   shopify.toast.show(t('openai.pc'));
-    //   return;
-    // }
+    if (isLoading) {
+      shopify.toast.show(t('openai.di'), { duration: 3000 });
+      return;
+    }
     setTranslation('');
     setActiveModal(id);
     setActive(true);
@@ -240,7 +243,8 @@ const Index = () => {
       testUserAPIKey: JSON.stringify({
         content,
         apiName: apiNames[activeModal].apiName,
-        targetCode: tempTargetLanguage
+        targetCode: tempTargetLanguage,
+        prompt:tempKeyWords
       }),
     }, {
       method: "POST",
@@ -289,6 +293,8 @@ const Index = () => {
   useEffect(() => {
     if (loadingfetcher.state === 'idle' && loadingfetcher.data) {
       setIsLoading(false);
+      console.log(loadingfetcher.data.data);
+      
       if (loadingfetcher.data.error) {
         console.error('Loading fetcher error:', loadingfetcher.data.error);
         shopify.toast.show(t('openai.di'), { duration: 3000 });
@@ -511,7 +517,7 @@ const Index = () => {
                 onChange={(val) => setTempLimit(val)}
                 autoComplete="off"
               />
-              <div style={{ marginTop: '10px',fontWeight:500 }}>
+              <div style={{ marginTop: '10px', fontWeight: 500 }}>
                 {t('openai.tips:测试会消耗对应的额度')}
               </div>
             </Box>
@@ -574,6 +580,16 @@ const Index = () => {
                       />
                     </Box>
                   )}
+                  {activeModal === 'openai' && (
+                    <TextField
+                      label={t('openai.pw')}
+                      value={tempKeyWords}
+                      onChange={setTempKeyWords}
+                      autoComplete="off"
+                      placeholder={t('openai.ip')}
+                      multiline={4} // 4 行高度
+                    />
+                  )}
                   <div style={{ height: "20px" }}></div>
                   <TextField
                     label={t('openai.tc')}
@@ -584,23 +600,13 @@ const Index = () => {
                     multiline={4} // 4 行高度
                   />
                   <div style={{ height: "20px" }}></div>
-                  {/* <TextField
-                    label={t('openai.tr')}
-                    value={translation}
-                    onChange={setTranslation}
-                    readOnly
-                    placeholder={t('openai.trw')}
-                    autoComplete="off"
-                    multiline={4} // 4 行高度
-                  /> */}
                   <label>{t('openai.tr')}</label>
-                  <input
-                    type="text"
+                  <textarea
                     value={translation}
                     onChange={(e) => setTranslation(e.target.value)}
                     autoComplete="off"
                     // placeholder={t('openai.trw')}
-                    style={{ width: '100%', height: '100px', resize: 'vertical',textAlign: 'left', userSelect: 'none',top:0 }} // 禁用选中
+                    style={{ width: '100%', height: '100px', resize: 'vertical', padding:"10px", userSelect: 'none', top: 0 }} // 禁用选中
                     readOnly // 只读
                     onFocus={(e) => e.target.blur()}
                   />

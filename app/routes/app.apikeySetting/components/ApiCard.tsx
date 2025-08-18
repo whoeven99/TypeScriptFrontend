@@ -36,15 +36,17 @@ export default function ApiCard({ title, apiStatus, limit, onConfigure, onTestAp
             <>
               {modelVersion &&
                 <Text as="p" variant="bodyMd" tone="subdued">
-                  模型版本:{modelVersion}
+                  {t('openai.mv')}{modelVersion}
                 </Text> 
               }
+              <div style={{height:"5px"}}></div>
               <Text as="p" variant="bodyMd">
                 {t('openai.as')}
                 <Text as="span" tone={apiStatus ? 'success' : 'critical'}>
                   {apiStatus ? t('openai.Effective') : t('openai.ne')}
                 </Text>
               </Text>
+              <div style={{height:"5px"}}></div>
               <Text as="p" variant="bodyMd" tone="subdued">
                 {t('openai.Amount')}{formatNumber(limit)}
               </Text>

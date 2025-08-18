@@ -567,10 +567,12 @@
         "sa": "Sélectionner l'API",
         "Effective": "Effectif",
         "as": "Statut de l'API :",
-        "Amount": "Quota :",
+        "Amount": "Configuration des quotas:",
         "Configuration": "Configuration",
         "tit": "API de test",
         "tf": "La traduction a échoué, veuillez vérifier la validité de la clé API",
-        "tcm": "Traduction terminée"
+        "tcm": "Traduction terminée",
+        "mv": "Version du modèle",
+        "ip": "Invite de saisie"
     }
 }

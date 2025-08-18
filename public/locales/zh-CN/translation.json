@@ -568,8 +568,10 @@
     "Amount": "额度配置：",
     "Configuration": "配置",
     "tit": "测试API",
-    "tf":"翻译失败，请检查API密钥的有效性",
-    "tcm":"翻译完成"
+    "tf": "翻译失败，请检查API密钥的有效性",
+    "tcm": "翻译完成",
+    "mv": "模型版本",
+    "ip":"输入提示词"
   },
   "support": "支持",
   "Upgrade to a paid plan to unlock this feature": "升级到付费计划以解锁此功能",

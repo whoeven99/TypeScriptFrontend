@@ -567,10 +567,12 @@
         "sa": "Seleccionar API",
         "Effective": "Efectivo",
         "as": "Estado de la API:",
-        "Amount": "Cuota:",
+        "Amount": "Configuración de cuota",
         "Configuration": "Configuración",
         "tit": "API de prueba",
         "tf": "Error en la traducción, verifique la validez de la clave API",
-        "tcm": "Traducción completada"
+        "tcm": "Traducción completada",
+        "mv": "Versión del modelo",
+        "ip": "Indicación de entrada"
     }
 }

@@ -563,11 +563,13 @@
         "sa": "API 선택",
         "Effective": "유효함",
         "as": "API 상태:",
-        "Amount": "쿼터:",
+        "Amount": "할당량 설정:",
         "Configuration": "설정",
         "tit": "API 테스트",
         "tf": "번역에 실패했습니다. API 키의 유효성을 확인하세요.",
-        "tcm": "번역 완료"
+        "tcm": "번역 완료",
+        "mv": "모델 버전",
+        "ip": "입력 프롬프트"
     },
     "support": "지원",
     "Upgrade to a paid plan to unlock this feature": "이 기능을 사용하려면 유료 플랜으로 업그레이드하세요",

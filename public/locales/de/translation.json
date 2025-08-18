@@ -565,11 +565,13 @@
     "sa": "API auswählen",
     "Effective": "Wirksam",
     "as": "API-Status:",
-    "Amount": "Kontingent:",
+    "Amount": "Kontingentkonfiguration:",
     "Configuration": "Konfiguration",
     "tit": "Testen der API",
     "tf": "Übersetzung fehlgeschlagen, bitte überprüfen Sie die Gültigkeit des API-Schlüssels",
-    "tcm": "Übersetzung abgeschlossen"
+    "tcm": "Übersetzung abgeschlossen",
+    "mv":"Modellversion",
+    "ip":"Eingabeaufforderung"
   },
   "support": "Kundensupport",
   "Upgrade to a paid plan to unlock this feature": "Aktualisieren Sie auf einen höheren Plan, um diese Funktion zu entschlüsseln",

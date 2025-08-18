@@ -63,7 +63,6 @@ interface LanguageSettingType {
 }
 
 interface apiKeyConfiguration {
-  apiKey: string;
   apiModel: string;
   apiName: Number;
   apiStatus: boolean;
@@ -204,12 +203,9 @@ const Index = () => {
         .filter(
           (item: any) =>
             item.success &&
-            item.response &&
-            item.response.apiKey &&
-            item.response.apiKey.trim() !== "",
+            item.response
         )
         .map((item: any) => ({
-          apiKey: item.response.apiKey,
           apiModel: item.response.apiModel,
           apiName: item.response.apiName,
           apiStatus: item.response.apiStatus,
@@ -906,7 +902,7 @@ const Index = () => {
                                 width: "50%",
                               }}
                             >
-                              <Text>{t("Google Translation")}</Text>
+                              <Text>{t("Google Translate")}</Text>
                             </div>
                           </div>
                         </div>
