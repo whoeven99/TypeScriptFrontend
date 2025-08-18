@@ -496,7 +496,7 @@ export const SavePrivateKey = async ({
   isSelected
 }: {
   shop: string;
-  apiKey: string;
+  apiKey?: string;
   count: string; // 前端传递字符串
   modelVersion?: string; // 可选，仅 OpenAI 需要
   keywords:string[],

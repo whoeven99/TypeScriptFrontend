@@ -9,10 +9,11 @@ interface ApiCardProps {
   limit: string;
   onConfigure?: () => void;
   onTestApi?: () => void;
-  isLoading: boolean
+  isLoading: boolean,
+  modelVersion: string
 }
 
-export default function ApiCard({ title, apiStatus, limit, onConfigure, onTestApi, isLoading }: ApiCardProps) {
+export default function ApiCard({ title, apiStatus, limit, onConfigure, onTestApi, isLoading, modelVersion }: ApiCardProps) {
   const { t } = useTranslation();
   // 格式化千分位函数
   const formatNumber = (num: string) => {
@@ -26,13 +27,18 @@ export default function ApiCard({ title, apiStatus, limit, onConfigure, onTestAp
     <Card>
       <Box padding="400">
         <Text variant="headingSm" as="h3">
-          <span style={{color:"#000000e0",fontWeight:600,fontSize:'16px',marginBottom:"20px",lineHeight:'24px',display:'block'}}>{title}</span>
+          <span style={{ color: "#000000e0", fontWeight: 600, fontSize: '16px', marginBottom: "20px", lineHeight: '24px', display: 'block' }}>{title}</span>
         </Text>
         <Box paddingBlockStart="200">
           {isLoading ? (
             <Skeleton active paragraph={{ rows: 2 }} />
           ) : (
             <>
+              {modelVersion &&
+                <Text as="p" variant="bodyMd" tone="subdued">
+                  模型版本:{modelVersion}
+                </Text> 
+              }
               <Text as="p" variant="bodyMd">
                 {t('openai.as')}
                 <Text as="span" tone={apiStatus ? 'success' : 'critical'}>
@@ -42,11 +48,15 @@ export default function ApiCard({ title, apiStatus, limit, onConfigure, onTestAp
               <Text as="p" variant="bodyMd" tone="subdued">
                 {t('openai.Amount')}{formatNumber(limit)}
               </Text>
+              {
+                !modelVersion && <div style={{height:"20px"}}></div>
+              } 
+                
             </>
           )}
         </Box>
 
-        <div style={{display:'flex',gap:"10px"}}>
+        <div style={{ display: 'flex', gap: "10px",justifyContent:'end' }}>
           <Box paddingBlockStart="300">
             <Button variant="primary" onClick={onConfigure}>{t('openai.Configuration')}</Button>
           </Box>

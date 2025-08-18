@@ -553,7 +553,7 @@
         "ps": "Por favor, defina o limite",
         "pw": "Configuração de palavras-chave de prompt",
         "fi": "Preencha a palavra-chave de prompt",
-        "ta": "Testar API (o teste consumirá a cota correspondente)",
+        "ta": "Testar API",
         "Translate": "Traduzir",
         "Cancel": "Cancelar",
         "stl": "Selecione o idioma de destino",
