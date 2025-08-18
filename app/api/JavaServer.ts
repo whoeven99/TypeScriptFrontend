@@ -20,6 +20,48 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const GetProgressData = async ({
+  shopName,
+  server,
+  target,
+}: {
+  shopName: string;
+  server: string;
+  target: string;
+}) => {
+  // console.log(`${shopName} StopTranslatingTask: `, {
+  //   shopName,
+  //   source,
+  //   // target,
+  //   accessToken,
+  // });
+
+  try {
+    const response = await axios({
+      url: `${server}/translate/getProgressData?shopName=${shopName}&target=${target}`,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log(`${shopName} GetProgressData: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shopName} GetProgressData error:`, error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMessage: "",
+      response: {
+        RemainingQuantity: 0,
+        TotalQuantity: 0,
+      },
+    };
+  }
+};
+
 export const StopTranslatingTask = async ({
   shopName,
   source,
@@ -471,7 +513,13 @@ export const DeleteUserData = async ({ shop }: { shop: string }) => {
 };
 
 //获取用户私人API Key
-export const GetUserData = async ({ shop,apiName }: { shop: string,apiName:Number }) => {
+export const GetUserData = async ({
+  shop,
+  apiName,
+}: {
+  shop: string;
+  apiName: Number;
+}) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/private/translate/getUserPrivateData?shopName=${shop}&apiName=${apiName}`,
@@ -493,18 +541,18 @@ export const SavePrivateKey = async ({
   keywords,
   apiName,
   apiStatus,
-  isSelected
+  isSelected,
 }: {
   shop: string;
   apiKey: string;
   count: string; // 前端传递字符串
   modelVersion?: string; // 可选，仅 OpenAI 需要
-  keywords:string[],
-  apiName:Number,
-  apiStatus:boolean,
-  isSelected:boolean
+  keywords: string[];
+  apiName: Number;
+  apiStatus: boolean;
+  isSelected: boolean;
 }) => {
-  try {    
+  try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/private/translate/configPrivateModel?shopName=${shop}`,
       method: "POST",
@@ -512,16 +560,16 @@ export const SavePrivateKey = async ({
         shopName: shop,
         apiKey,
         tokenLimit: Number(count), // 转换为数字
-        promptWord:keywords,
-        ...(modelVersion && { apiModel:modelVersion }), // 仅当 modelVersion 存在时包含
+        promptWord: keywords,
+        ...(modelVersion && { apiModel: modelVersion }), // 仅当 modelVersion 存在时包含
         apiName,
         apiStatus,
-        isSelected
+        isSelected,
       },
     });
     console.log(`SavePrivateKey [${apiName}]: `, response);
     return response.data;
-  } catch (error) { 
+  } catch (error) {
     // console.error(`Error SavePrivateKey [${model}]:`, error);
     throw error; // 抛出错误以便前端捕获
   }
@@ -578,30 +626,32 @@ export const GetTranslateDOByShopNameAndSource = async ({
   }
 };
 
-export const VerifyAPIkey = async (
-  {
-    shopName,
-  }:
-  {
-    shopName:string,
-  }
-)=>{
-  try{
+export const VerifyAPIkey = async ({ shopName }: { shopName: string }) => {
+  try {
     const response = await axios({
-      url:`${process.env.SERVER_URL}/privateKey/translate?shopName=${shopName}`,
-      method:"PUT",
-      data:{
+      url: `${process.env.SERVER_URL}/privateKey/translate?shopName=${shopName}`,
+      method: "PUT",
+      data: {
         shopName,
-      }
-    })
+      },
+    });
     return response.data;
-  }
-  catch(error){
+  } catch (error) {
     throw error;
   }
-}
+};
 
-export const TranslationInterface = async ({shop,apiName,sourceText,targetCode}:{shop:string,apiName:Number,sourceText:string,targetCode:string})=>{
+export const TranslationInterface = async ({
+  shop,
+  apiName,
+  sourceText,
+  targetCode,
+}: {
+  shop: string;
+  apiName: Number;
+  sourceText: string;
+  targetCode: string;
+}) => {
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/private/translate/testPrivateModel?shopName=${shop}`,
@@ -609,16 +659,16 @@ export const TranslationInterface = async ({shop,apiName,sourceText,targetCode}:
       data: {
         apiName,
         sourceText,
-        targetCode
+        targetCode,
       },
     });
-    console.log("testApiKeyRes",response);
-    
+    console.log("testApiKeyRes", response);
+
     return response.data;
   } catch (error) {
     console.error("Error GetUserInitTokenByShopName:", error);
   }
-}
+};
 
 export const GetUserInitTokenByShopName = async ({
   shop,
@@ -1164,7 +1214,7 @@ export const GetTranslate = async ({
       isCover: translateSettings5,
     });
     const response = await axios({
-      url: `${process.env.SERVER_URL}/${(translateSettings1 === "8" || translateSettings1=== "9") ? `privateKey/translate?shopName=${shop}` : `translate/clickTranslation?shopName=${shop}`}`,
+      url: `${process.env.SERVER_URL}/${translateSettings1 === "8" || translateSettings1 === "9" ? `privateKey/translate?shopName=${shop}` : `translate/clickTranslation?shopName=${shop}`}`,
       method: "PUT",
       data: {
         shopName: shop,
@@ -1173,7 +1223,12 @@ export const GetTranslate = async ({
         target: target,
         isCover: translateSettings5,
         customKey: customKey,
-        translateSettings1: (translateSettings1==='8'||translateSettings1==='9')?(translateSettings1==='8'?'0':'1'):translateSettings1,
+        translateSettings1:
+          translateSettings1 === "8" || translateSettings1 === "9"
+            ? translateSettings1 === "8"
+              ? "0"
+              : "1"
+            : translateSettings1,
         translateSettings2: translateSettings2.toString(),
         translateSettings3: translateSettings3,
       },

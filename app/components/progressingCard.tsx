@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { PhoneOutlined } from "@ant-design/icons";
 import { handleContactSupport } from "~/routes/app._index/route";
-import { GetUserValue } from "~/api/JavaServer";
+import { GetProgressData, GetUserValue } from "~/api/JavaServer";
 
 const { Text, Title } = Typography;
 
@@ -73,6 +73,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
+    console.log(status);
+    console.log(target[index + 1]);
+
     // 当状态为 2 时，开始轮询
     if (status === 2) {
       const pollStatus = () => {
@@ -91,12 +94,32 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           action: "/app",
         });
 
+        async function getProgressData() {
+          const progressData = await GetProgressData({
+            shopName: shop,
+            server,
+            target: target[index],
+          });
+
+          const progress = (
+            ((progressData?.response?.TotalQuantity -
+              progressData?.response?.RemainingQuantity) /
+              progressData?.response?.TotalQuantity) *
+            100
+          ).toFixed(2);
+
+          if (typeof progress == "string" || typeof progress == "number") {
+            setProgress(parseFloat(progress));
+          }
+        }
+
         async function getUserValue() {
           const userValue = await GetUserValue({ shop: shop, server });
           setValue(userValue?.response?.value || "");
           setTranslateStatus(userValue?.response?.status || 2);
         }
 
+        getProgressData();
         getUserValue();
 
         // setValue(userValue.data.userValue);
@@ -132,12 +155,39 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           action: "/app",
         });
 
+        async function getProgressData() {
+          const progressData = await GetProgressData({
+            shopName: shop,
+            server,
+            target: target[index],
+          });
+
+          if (
+            !progressData?.response?.TotalQuantity &&
+            !progressData?.response?.RemainingQuantity
+          ) {
+            return;
+          }
+
+          const progress = (
+            ((progressData?.response?.TotalQuantity -
+              progressData?.response?.RemainingQuantity) /
+              progressData?.response?.TotalQuantity) *
+            100
+          ).toFixed(2);
+
+          if (typeof progress == "string" || typeof progress == "number") {
+            setProgress(parseFloat(progress));
+          }
+        }
+
         async function getUserValue() {
           const userValue = await GetUserValue({ shop: shop, server });
           setValue(userValue?.response?.value || "");
           setTranslateStatus(userValue?.response?.status || 2);
         }
 
+        getProgressData();
         getUserValue();
 
         // setValue(userValue.data.userValue);
@@ -172,10 +222,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   }, [fetcher.data]);
 
   useEffect(() => {
-    if (
-      statusFetcher.data?.data &&
-      stopTranslateFetcher.state !== "submitting"
-    ) {
+    if (statusFetcher.data?.data) {
       const statusValue =
         statusFetcher.data?.data?.translatesDOResult[0].status;
       setStatus(statusValue);
@@ -207,98 +254,98 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   //     }
   // }, [itemsFetcher.data]);
 
-  useEffect(() => {
-    if (resourceType) {
-      const progress = calculateProgressByType(resourceType);
-      setProgress(progress);
-    }
-  }, [resourceType]);
+  // useEffect(() => {
+  //   if (resourceType) {
+  //     const progress = calculateProgressByType(resourceType);
+  //     setProgress(progress);
+  //   }
+  // }, [resourceType]);
 
-  const calculateProgressByType = (resourceType: string): number => {
-    switch (resourceType) {
-      case "SHOP":
-        setItem("Shop");
-        return 10;
-      case "PAGE":
-        setItem("Pages");
-        return 20;
-      case "ONLINE_STORE_THEME":
-        setItem("Theme");
-        return 35;
-      case "PRODUCT":
-        setItem("Products");
-        return 55;
-      case "PRODUCT_OPTION":
-        setItem("Products");
-        return 58;
-      case "PRODUCT_OPTION_VALUE":
-        setItem("Products");
-        return 60;
-      case "COLLECTION":
-        setItem("Collection");
-        return 62;
-      case "METAFIELD":
-        setItem("Store metadata");
-        return 68;
-      case "ARTICLE":
-        setItem("Article");
-        return 70;
-      case "BLOG":
-        setItem("Blog titles");
-        return 75;
-      case "MENU":
-        setItem("Navigation");
-        return 77;
-      case "LINK":
-        setItem("Navigation");
-        return 78;
-      case "FILTER":
-        setItem("Filters");
-        return 79;
-      case "METAOBJECT":
-        setItem("Metaobjects");
-        return 80;
-      case "ONLINE_STORE_THEME_JSON_TEMPLATE":
-        setItem("Theme");
-        return 81;
-      case "ONLINE_STORE_THEME_SECTION_GROUP":
-        setItem("Theme");
-        return 82;
-      case "ONLINE_STORE_THEME_SETTINGS_CATEGORY":
-        setItem("Theme");
-        return 83;
-      case "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS":
-        setItem("Theme");
-        return 84;
-      case "PACKING_SLIP_TEMPLATE":
-        setItem("Shipping");
-        return 85;
-      case "DELIVERY_METHOD_DEFINITION":
-        setItem("Delivery");
-        return 86;
-      case "SHOP_POLICY":
-        setItem("Policies");
-        return 88;
-      case "EMAIL_TEMPLATE":
-        setItem("Shipping");
-        return 90;
-      case "ONLINE_STORE_THEME_APP_EMBED":
-        setItem("Theme");
-        return 95;
-      case "PAYMENT_GATEWAY":
-        setItem("Metaobjects");
-        return 98;
-      case "SELLING_PLAN":
-        setItem("Metaobjects");
-        return 99;
-      case "SELLING_PLAN_GROUP":
-        setItem("Shop");
-        return 99;
+  // const calculateProgressByType = (resourceType: string): number => {
+  //   switch (resourceType) {
+  //     case "SHOP":
+  //       setItem("Shop");
+  //       return 10;
+  //     case "PAGE":
+  //       setItem("Pages");
+  //       return 20;
+  //     case "ONLINE_STORE_THEME":
+  //       setItem("Theme");
+  //       return 35;
+  //     case "PRODUCT":
+  //       setItem("Products");
+  //       return 55;
+  //     case "PRODUCT_OPTION":
+  //       setItem("Products");
+  //       return 58;
+  //     case "PRODUCT_OPTION_VALUE":
+  //       setItem("Products");
+  //       return 60;
+  //     case "COLLECTION":
+  //       setItem("Collection");
+  //       return 62;
+  //     case "METAFIELD":
+  //       setItem("Store metadata");
+  //       return 68;
+  //     case "ARTICLE":
+  //       setItem("Article");
+  //       return 70;
+  //     case "BLOG":
+  //       setItem("Blog titles");
+  //       return 75;
+  //     case "MENU":
+  //       setItem("Navigation");
+  //       return 77;
+  //     case "LINK":
+  //       setItem("Navigation");
+  //       return 78;
+  //     case "FILTER":
+  //       setItem("Filters");
+  //       return 79;
+  //     case "METAOBJECT":
+  //       setItem("Metaobjects");
+  //       return 80;
+  //     case "ONLINE_STORE_THEME_JSON_TEMPLATE":
+  //       setItem("Theme");
+  //       return 81;
+  //     case "ONLINE_STORE_THEME_SECTION_GROUP":
+  //       setItem("Theme");
+  //       return 82;
+  //     case "ONLINE_STORE_THEME_SETTINGS_CATEGORY":
+  //       setItem("Theme");
+  //       return 83;
+  //     case "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS":
+  //       setItem("Theme");
+  //       return 84;
+  //     case "PACKING_SLIP_TEMPLATE":
+  //       setItem("Shipping");
+  //       return 85;
+  //     case "DELIVERY_METHOD_DEFINITION":
+  //       setItem("Delivery");
+  //       return 86;
+  //     case "SHOP_POLICY":
+  //       setItem("Policies");
+  //       return 88;
+  //     case "EMAIL_TEMPLATE":
+  //       setItem("Shipping");
+  //       return 90;
+  //     case "ONLINE_STORE_THEME_APP_EMBED":
+  //       setItem("Theme");
+  //       return 95;
+  //     case "PAYMENT_GATEWAY":
+  //       setItem("Metaobjects");
+  //       return 98;
+  //     case "SELLING_PLAN":
+  //       setItem("Metaobjects");
+  //       return 99;
+  //     case "SELLING_PLAN_GROUP":
+  //       setItem("Shop");
+  //       return 99;
 
-      default:
-        return 0;
-    }
-  };
+  //     default:
+  //       return 0;
+  //   }
+  // };
 
   const handleStopTranslate = () => {
     stopTranslateFetcher.submit(

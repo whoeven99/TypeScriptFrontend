@@ -40,7 +40,10 @@ import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { ArrowLeftIcon, PlusIcon } from "@shopify/polaris-icons";
 import axios from "axios";
+import styles from "./styles.module.css";
 import defaultStyles from "../styles/defaultStyles.module.css";
+import TranslateIcon from "~/components/translateIcon";
+import EasyTranslateIcon from "~/components/easyTranslateIcon";
 
 const { Title, Text } = Typography;
 
@@ -669,8 +672,7 @@ const Index = () => {
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns:
-                      "repeat(auto-fill, minmax(300px, 1fr))",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(289px, 1fr)",
                     gap: "16px",
                     width: "100%",
                   }}
@@ -679,20 +681,20 @@ const Index = () => {
                     <Checkbox
                       key={lang.locale}
                       value={lang.locale}
-                      style={{
-                        width: "100%",
-                        marginRight: 0,
-                        padding: "8px 12px",
-                        border: "1px solid #f0f0f0",
-                        borderRadius: "4px",
-                        alignItems: "center",
-                      }}
+                      className={
+                        styles.languageCheckbox +
+                        " " +
+                        (selectedLanguageCode.includes(lang.locale)
+                          ? styles.languageCheckboxChecked
+                          : "")
+                      }
                     >
                       <div
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          justifyContent: "space-between",
+                          justifyContent: "center",
+                          gap: "8px",
                           width: "100%",
                         }}
                       >
@@ -705,10 +707,10 @@ const Index = () => {
                             justifyContent: "center",
                             border: "1px solid #888",
                             borderRadius: "2px",
-                            marginRight: "8px",
                           }}
                         />
                         <span>{lang.name}</span>
+                        <EasyTranslateIcon status={lang.status} />
                       </div>
                     </Checkbox>
                   ))}
