@@ -519,7 +519,7 @@ const Index = () => {
                 autoComplete="off"
               />
               <div style={{ marginTop: '10px', fontWeight: 500 }}>
-                {t('openai.tip')}
+                {t('openai.tips')}
               </div>
             </Box>
             <div style={{
