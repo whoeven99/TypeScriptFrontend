@@ -155,7 +155,7 @@
     "progressing.title": "Tareas de traducción: ",
     "progressing.target": "Idioma objetivo: ",
     "progressing.init": "Inicializando tarea de traducción...",
-    "progressing.progressingWithSpace": "Traduciendo {{item}} módulo: ",
+    "progressing.progressingWithSpace": "Traduciendo {{item}} módulo({{hasTranslated}}/{{totalNumber}}): ",
     "progressing.progressingWriting": "Escribiendo {{item}} módulo",
     "progressing.finished": "La traducción ha sido completada. El contenido traducido necesita ser publicado antes de que surta efecto.",
     "progressing.buyCredits": "Comprar créditos",

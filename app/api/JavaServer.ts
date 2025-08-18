@@ -725,6 +725,9 @@ export const InitializationDetection = async ({ shop }: { shop: string }) => {
       url: `${process.env.SERVER_URL}/user/InitializationDetection?shopName=${shop}`,
       method: "GET",
     });
+
+    console.log(`${shop} InitializationDetection: `, response.data);
+
     const res = response.data.response;
     return res;
   } catch (error) {
