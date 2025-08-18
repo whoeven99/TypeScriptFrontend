@@ -222,7 +222,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           )
         );
         return json({
-          customApikeyData: customApikeyData?.response?.googleKey,
+          customApikeyData: results
         });
       } catch (error) {
         console.error("Error customApikeyData app:", error);
