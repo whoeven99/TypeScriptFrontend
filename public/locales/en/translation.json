@@ -194,7 +194,7 @@
   "progressing.title":"Translation Tasks: ",
   "progressing.target":"Target:",
   "progressing.init":"Initializing translation task...",
-  "progressing.progressingWithSpace":"Translating {{item}} Module: ",
+  "progressing.progressingWithSpace":"Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWriting":"Writing {{item}} Module",
   "progressing.finished":"Your translation is ready. Publish it to apply the changes.",
   "progressing.buyCredits":"Buy credits",

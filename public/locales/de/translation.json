@@ -155,7 +155,7 @@
   "progressing.title": "Übersetzungsaufgaben: ",
   "progressing.target": "Zielsprache: ",
   "progressing.init": "Übersetzungsaufgabe wird initialisiert...",
-  "progressing.progressingWithSpace": "Übersetzen Sie {{item}} Modul: ",
+  "progressing.progressingWithSpace": "Übersetzen Sie {{item}} Modul({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWriting": "Schreiben Sie {{item}} Modul",
   "progressing.finished": "Die Übersetzung wurde abgeschlossen. Der übersetzte Inhalt muss vor der Wirkung veröffentlicht werden.",
   "progressing.buyCredits": "Credits kaufen",
