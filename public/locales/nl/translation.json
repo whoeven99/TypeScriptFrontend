@@ -566,7 +566,7 @@
         "as": "API-status:",
         "Amount": "Quota:",
         "Configuration": "Configuratie",
-        "tit": "Testinterface",
+        "tit": "Test API",
         "tf": "Vertaling mislukt, controleer de geldigheid van de API-sleutel",
         "tcm": "Vertaling voltooid"
     },

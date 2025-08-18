@@ -165,7 +165,7 @@ const Index = () => {
   const apiConfigs: { id: ServiceId; title: string }[] = [
     {
       id: 'google',
-      title: 'Google Cloud Translate',
+      title: 'Google Translation',
     },
     {
       id: 'openai',
@@ -532,7 +532,7 @@ const Index = () => {
           {apis.map(api => (
             <ApiCard
               key={api.id}
-              title={api.title}
+              title={api.id === 'openai' ? api.title+`（${userApiConfigs[api.id].modelVersion?.replace('gpt','GPT')}）` : api.title}
               isLoading={isLoading}
               apiStatus={userApiConfigs[api.id].apiStatus}
               limit={userApiConfigs[api.id].limit !== t('openai.ne') ? `${userApiConfigs[api.id].usedToken}/${userApiConfigs[api.id].limit}` : t('openai.ne')}

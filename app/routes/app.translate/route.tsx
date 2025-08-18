@@ -150,7 +150,6 @@ const Index = () => {
     const matchedItem = customApikeyData.find(item => item.apiName === apiName);
     return matchedItem || null;
   }
-
   useEffect(() => {
     const languageFormData = new FormData();
     languageFormData.append("languageData", JSON.stringify(true));
@@ -210,6 +209,8 @@ const Index = () => {
           tokenLimit: item.response.tokenLimit,
           usedToken: item.response.usedToken
         }));
+      console.log("filteredData",filteredData);
+      
       setCustomApikeyData(filteredData);
     }
   }, [customApiKeyFetcher.data]);
@@ -936,7 +937,7 @@ const Index = () => {
                               width: "50%",
                             }}
                           >
-                            <Text>openai</Text>
+                            <Text>{`Open AI/ChatGPT(${checkApiKeyConfiguration(customApikeyData,1)?.apiModel.replace('gpt','GPT')})`}</Text>
                           </div>
                         </div>
                       </div>

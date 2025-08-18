@@ -569,7 +569,7 @@
         "as": "Statut de l'API :",
         "Amount": "Quota :",
         "Configuration": "Configuration",
-        "tit": "Interface de test",
+        "tit": "API de test",
         "tf": "La traduction a échoué, veuillez vérifier la validité de la clé API",
         "tcm": "Traduction terminée"
     }
