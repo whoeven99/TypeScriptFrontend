@@ -54,6 +54,18 @@ interface LanguageDataType {
   published: boolean;
 }
 
+interface apiKeyConfiguration {
+  apiKey: string,
+  apiModel: string,
+  apiName : Number,
+  apiStatus: boolean,
+  isSelected: boolean,
+  promptWord: string,
+  shopName: string,
+  tokenLimit: Number,
+  usedToken: Number
+}
+
 interface LanguageSettingType {
   primaryLanguage: string;
   primaryLanguageCode: string;
@@ -111,7 +123,7 @@ const Index = () => {
   const [model, setModel] = useState<any>("");
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [customApikeyData, setCustomApikeyData] = useState<boolean>(false);
+  const [customApikeyData, setCustomApikeyData] = useState<apiKeyConfiguration[]>();
   const [needPay, setNeedPay] = useState<boolean>(false);
   const [source, setSource] = useState("");
   const [target, setTarget] = useState<string[]>([]);
