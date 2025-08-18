@@ -155,7 +155,7 @@
   "progressing.title": "翻译任务：",
   "progressing.target": "目标语言：",
   "progressing.init": "正在初始化翻译任务...",
-  "progressing.progressingWithSpace": "正在翻译{{item}}模块: ",
+  "progressing.progressingWithSpace": "正在翻译{{item}}模块({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWriting": "正在写入{{item}}模块",
   "progressing.finished": "翻译已完成。翻译内容需要发布后才能生效。",
   "progressing.buyCredits": "购买积分",

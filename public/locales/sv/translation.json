@@ -157,7 +157,7 @@
     "progressing.title": "Översättningsuppgifter: ",
     "progressing.target": "Målspråk: ",
     "progressing.init": "Översättningsuppgiften initialiseras...",
-    "progressing.progressingWithSpace": "Översätter {{item}} modul: ",
+    "progressing.progressingWithSpace": "Översätter {{item}} modul({{hasTranslated}}/{{totalNumber}}): ",
     "progressing.progressingWriting": "Skriver {{item}} modul",
     "progressing.finished": "Översättningen är klar. Översättningen måste publiceras innan den träder i kraft.",
     "progressing.buyCredits": "Köp krediter",

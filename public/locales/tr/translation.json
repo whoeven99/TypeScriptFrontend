@@ -201,7 +201,7 @@
     "progressing.title": "Çeviri görevleri: ",
     "progressing.target": "Hedef dil:",
     "progressing.init": "Çeviri görevini başlatıyoruz...",
-    "progressing.progressingWithSpace": "{{item}} modülü çevriliyor: ",
+    "progressing.progressingWithSpace": "{{item}} modülü çevriliyor({{hasTranslated}}/{{totalNumber}}): ",
     "progressing.progressingWriting": "{{item}} modülü yazılıyor",
     "progressing.finished": "Çeviri tamamlandı. Çevrilen içeriğin etkili olması için yayınlanması gerekiyor.",
     "progressing.buyCredits": "Kredi satın al",

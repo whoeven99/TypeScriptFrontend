@@ -155,7 +155,7 @@
     "progressing.title": "Vertaalopdrachten: ",
     "progressing.target": "Doeltaal: ",
     "progressing.init": "De vertalingstask wordt geïnitialiseerd...",
-    "progressing.progressingWithSpace": "Vertalen {{item}} module: ",
+    "progressing.progressingWithSpace": "Vertalen {{item}} module({{hasTranslated}}/{{totalNumber}}): ",
     "progressing.progressingWriting": "Schrijven {{item}} module",
     "progressing.finished": "De vertaling is voltooid. De vertaalde inhoud moet worden gepubliceerd voordat deze in werking treedt.",
     "progressing.buyCredits": "Credits kopen",

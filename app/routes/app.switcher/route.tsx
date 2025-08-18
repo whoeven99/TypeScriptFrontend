@@ -180,14 +180,33 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop,
           accessToken: accessToken as string,
         });
-        const moneyFormat = shopLoad.currencyFormats.moneyFormat;
+        const moneyFormat = shopLoad?.currencyFormats?.moneyFormat;
         const moneyWithCurrencyFormat =
-          shopLoad.currencyFormats.moneyWithCurrencyFormat;
-        return {
-          defaultCurrencyCode: shopLoad.currencyFormats.defaultCurrencyCode,
-          moneyFormat,
-          moneyWithCurrencyFormat,
-        };
+          shopLoad?.currencyFormats?.moneyWithCurrencyFormat;
+        if (shopLoad) {
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response: {
+              defaultCurrencyCode:
+                shopLoad?.currencyFormats?.defaultCurrencyCode,
+              moneyFormat,
+              moneyWithCurrencyFormat,
+            },
+          };
+        } else {
+          return {
+            success: false,
+            errorCode: 1,
+            errorMsg: "",
+            response: {
+              defaultCurrencyCode: "",
+              moneyFormat: "",
+              moneyWithCurrencyFormat: "",
+            },
+          };
+        }
       } catch (error) {
         console.error("Error switcher shopInfo:", error);
       }
@@ -376,64 +395,68 @@ const Index = () => {
 
   useEffect(() => {
     if (shopFetcher.data) {
-      const parser = new DOMParser();
-      const moneyFormatHtmlData = parser.parseFromString(
-        shopFetcher.data.moneyFormat,
-        "text/html",
-      ).documentElement.textContent;
-      const moneyWithCurrencyFormatHtmlData = parser.parseFromString(
-        shopFetcher.data.moneyWithCurrencyFormat,
-        "text/html",
-      ).documentElement.textContent;
-      if (moneyFormatHtmlData && moneyWithCurrencyFormatHtmlData) {
+      if (shopFetcher.data.success) {
         const parser = new DOMParser();
-        const moneyWithMoneyDoc = parser.parseFromString(
-          moneyWithCurrencyFormatHtmlData,
+        const moneyFormatHtmlData = parser.parseFromString(
+          shopFetcher.data.response.moneyFormat,
           "text/html",
-        );
-        const moneyWithoutMoneyDoc = parser.parseFromString(
-          moneyFormatHtmlData,
+        ).documentElement.textContent;
+        const moneyWithCurrencyFormatHtmlData = parser.parseFromString(
+          shopFetcher.data.response.moneyWithCurrencyFormat,
           "text/html",
-        );
+        ).documentElement.textContent;
+        if (moneyFormatHtmlData && moneyWithCurrencyFormatHtmlData) {
+          const parser = new DOMParser();
+          const moneyWithMoneyDoc = parser.parseFromString(
+            moneyWithCurrencyFormatHtmlData,
+            "text/html",
+          );
+          const moneyWithoutMoneyDoc = parser.parseFromString(
+            moneyFormatHtmlData,
+            "text/html",
+          );
 
-        const moneyWithMoneyElement =
-          moneyWithMoneyDoc.querySelector(".ciwi-money");
-        const moneyWithoutMoneyElement =
-          moneyWithoutMoneyDoc.querySelector(".ciwi-money");
-        if (moneyWithMoneyElement && moneyWithoutMoneyElement) {
-          setCurrencyFormatConfigCardOpen(false);
-          localStorage.setItem("currencyFormatConfigCardOpen", "false");
-        } else {
-          setCurrencyFormatConfigCardOpen(true);
-          localStorage.setItem("currencyFormatConfigCardOpen", "true");
+          const moneyWithMoneyElement =
+            moneyWithMoneyDoc.querySelector(".ciwi-money");
+          const moneyWithoutMoneyElement =
+            moneyWithoutMoneyDoc.querySelector(".ciwi-money");
+          if (moneyWithMoneyElement && moneyWithoutMoneyElement) {
+            setCurrencyFormatConfigCardOpen(false);
+            localStorage.setItem("currencyFormatConfigCardOpen", "false");
+          } else {
+            setCurrencyFormatConfigCardOpen(true);
+            localStorage.setItem("currencyFormatConfigCardOpen", "true");
+          }
+
+          const spansWithMoney = moneyWithMoneyDoc.querySelectorAll("span");
+
+          if (spansWithMoney.length) {
+            spansWithMoney.forEach((span) => {
+              if (span.textContent && span.textContent.trim()) {
+                setWithMoneyValue(span.textContent.trim());
+              }
+            });
+          } else {
+            setWithMoneyValue(moneyWithCurrencyFormatHtmlData);
+          }
+
+          const spansWithoutMoney =
+            moneyWithoutMoneyDoc.querySelectorAll("span");
+
+          if (spansWithoutMoney.length) {
+            spansWithoutMoney.forEach((span) => {
+              if (span.textContent && span.textContent.trim()) {
+                setWithoutMoneyValue(span.textContent.trim());
+              }
+            });
+          } else {
+            setWithoutMoneyValue(moneyFormatHtmlData);
+          }
         }
 
-        const spansWithMoney = moneyWithMoneyDoc.querySelectorAll("span");
-
-        if (spansWithMoney.length) {
-          spansWithMoney.forEach((span) => {
-            if (span.textContent && span.textContent.trim()) {
-              setWithMoneyValue(span.textContent.trim());
-            }
-          });
-        } else {
-          setWithMoneyValue(moneyWithCurrencyFormatHtmlData);
-        }
-
-        const spansWithoutMoney = moneyWithoutMoneyDoc.querySelectorAll("span");
-
-        if (spansWithoutMoney.length) {
-          spansWithoutMoney.forEach((span) => {
-            if (span.textContent && span.textContent.trim()) {
-              setWithoutMoneyValue(span.textContent.trim());
-            }
-          });
-        } else {
-          setWithoutMoneyValue(moneyFormatHtmlData);
-        }
+        setDefaultCurrencyCode(shopFetcher.data.response.defaultCurrencyCode);
       }
-
-      setDefaultCurrencyCode(shopFetcher.data.defaultCurrencyCode);
+    } else {
     }
   }, [shopFetcher.data]);
 

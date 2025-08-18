@@ -155,7 +155,7 @@
   "progressing.title": "翻譯任務：",
   "progressing.target": "目標語言：",
   "progressing.init": "初始化翻譯任務...",
-  "progressing.progressingWithSpace": "正在翻譯{{item}}模組: ",
+  "progressing.progressingWithSpace": "正在翻譯{{item}}模組({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWriting": "寫入{{item}}模組",
   "progressing.finished": "翻譯已完成。翻譯內容需要發布後才能生效。",
   "progressing.buyCredits": "購買積分",
