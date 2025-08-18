@@ -155,7 +155,7 @@
     "progressing.title": "Tareas de traducción: ",
     "progressing.target": "Idioma objetivo: ",
     "progressing.init": "Inicializando tarea de traducción...",
-    "progressing.progressingWithSpace": "Traduciendo {{item}} módulo: ",
+    "progressing.progressingWithSpace": "Traduciendo {{item}} módulo({{hasTranslated}}/{{totalNumber}}): ",
     "progressing.progressingWriting": "Escribiendo {{item}} módulo",
     "progressing.finished": "La traducción ha sido completada. El contenido traducido necesita ser publicado antes de que surta efecto.",
     "progressing.buyCredits": "Comprar créditos",
@@ -556,7 +556,7 @@
         "ps": "Por favor, establezca el límite",
         "pw": "Configuración de palabras clave",
         "fi": "Ingrese la palabra clave",
-        "ta": "Probar API (la prueba consumirá la cuota correspondiente)",
+        "ta": "Probar API",
         "Translate": "Traducir",
         "Cancel": "Cancelar",
         "stl": "Seleccione el idioma de destino",
@@ -567,10 +567,13 @@
         "sa": "Seleccionar API",
         "Effective": "Efectivo",
         "as": "Estado de la API:",
-        "Amount": "Cuota:",
+        "Amount": "Configuración de cuota",
         "Configuration": "Configuración",
         "tit": "API de prueba",
         "tf": "Error en la traducción, verifique la validez de la clave API",
-        "tcm": "Traducción completada"
+        "tcm": "Traducción completada",
+        "mv": "Versión del modelo: ",
+        "ip": "Indicación de entrada",
+        "tips": "Consejos: Las pruebas consumirán la cuota correspondiente"
     }
 }

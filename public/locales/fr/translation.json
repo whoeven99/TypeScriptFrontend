@@ -155,7 +155,7 @@
     "progressing.title": "Tâches de traduction: ",
     "progressing.target": "Langue cible: ",
     "progressing.init": "Initialisation de la tâche de traduction...",
-    "progressing.progressingWithSpace": "Traduction {{item}} module: ",
+    "progressing.progressingWithSpace": "Traduction {{item}} module({{hasTranslated}}/{{totalNumber}}): ",
     "progressing.progressingWriting": "Écriture {{item}} module",
     "progressing.finished": "La traduction a été terminée. Le contenu traduit doit être publié avant qu'il prenne effet.",
     "progressing.buyCredits": "Acheter des crédits",
@@ -556,7 +556,7 @@
         "ps": "Veuillez définir la limite",
         "pw": "Paramètres du mot-clé de l'invite",
         "fi": "Remplissez le mot-clé de l'invite",
-        "ta": "Tester l'API (le test consommera le quota correspondant)",
+        "ta": "Tester l'API",
         "Translate": "Traduire",
         "Cancel": "Annuler",
         "stl": "Sélectionnez la langue cible",
@@ -567,10 +567,13 @@
         "sa": "Sélectionner l'API",
         "Effective": "Effectif",
         "as": "Statut de l'API :",
-        "Amount": "Quota :",
+        "Amount": "Configuration des quotas:",
         "Configuration": "Configuration",
         "tit": "API de test",
         "tf": "La traduction a échoué, veuillez vérifier la validité de la clé API",
-        "tcm": "Traduction terminée"
+        "tcm": "Traduction terminée",
+        "mv": "Version du modèle: ",
+        "ip": "Invite de saisie",
+        "tips": "Conseils : Les tests consommeront le quota correspondant"
     }
 }

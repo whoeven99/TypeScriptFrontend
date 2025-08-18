@@ -155,7 +155,7 @@
   "progressing.title": "翻譯任務：",
   "progressing.target": "目標語言：",
   "progressing.init": "初始化翻譯任務...",
-  "progressing.progressingWithSpace": "正在翻譯{{item}}模組: ",
+  "progressing.progressingWithSpace": "正在翻譯{{item}}模組({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWriting": "寫入{{item}}模組",
   "progressing.finished": "翻譯已完成。翻譯內容需要發布後才能生效。",
   "progressing.buyCredits": "購買積分",
@@ -553,7 +553,7 @@
     "ps": "請設定限額",
     "pw": "提示詞設定",
     "fi": "填寫提示詞",
-    "ta": "測試 API（測試會消耗相應額度）",
+    "ta": "測試 API",
     "Translate": "翻譯",
     "Cancel": "取消",
     "stl": "選擇目標語言",
@@ -564,13 +564,16 @@
     "sa": "選擇 API",
     "Effective": "已生效",
     "as": "API 狀態：",
-    "Amount": "額度：",
+    "Amount": "額度配置：",
     "Configuration": "配置",
     "tit": "測試API",
-    "tf":"翻譯失敗，請檢視API金鑰的有效性",
-    "tcm":"翻譯完成"
+    "tf": "翻譯失敗，請檢視API金鑰的有效性",
+    "tcm": "翻譯完成",
+    "mv": "模型版本：",
+    "ip":"輸入提示詞",
+    "tips":"提示：測試會消耗對應配額"
   },
   "support": "支援",
-    "Upgrade to a paid plan to unlock this feature": "升級到付費計劃以解鎖此功能",
-    "Blogs and articles": "部落格和文章"
+  "Upgrade to a paid plan to unlock this feature": "升級到付費計劃以解鎖此功能",
+  "Blogs and articles": "部落格和文章"
 }

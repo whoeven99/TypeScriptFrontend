@@ -121,6 +121,7 @@ export const queryShop = async ({
     return res;
   } catch (error) {
     console.error("Error fetching shop:", error);
+    return null;
   }
 };
 

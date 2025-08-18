@@ -11,3 +11,20 @@
   border-color: #168c6d;
   color: #168c6d;
 }
+
+.languageCheckbox {
+  width: 100%;
+  margin-right: 0;
+  padding: 8px 12px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+  align-items: center;
+}
+
+.languageCheckbox:hover {
+  border-color: #168c6d;
+}
+
+.languageCheckboxChecked {
+  border-color: #168c6d;
+}
