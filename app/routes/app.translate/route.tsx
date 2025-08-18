@@ -937,7 +937,7 @@ const Index = () => {
                               width: "50%",
                             }}
                           >
-                            <Text>{`Open AI(${checkApiKeyConfiguration(customApikeyData,1)?.apiModel.replace('gpt','GPT')})`}</Text>
+                            <Text>{`Open AI/ChatGPT(${checkApiKeyConfiguration(customApikeyData,1)?.apiModel.replace('gpt','GPT')})`}</Text>
                           </div>
                         </div>
                       </div>

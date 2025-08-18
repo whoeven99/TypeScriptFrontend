@@ -165,7 +165,7 @@ const Index = () => {
   const apiConfigs: { id: ServiceId; title: string }[] = [
     {
       id: 'google',
-      title: 'Google Translate',
+      title: 'Google Translation',
     },
     {
       id: 'openai',
