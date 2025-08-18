@@ -569,8 +569,9 @@
         "tit": "Test API",
         "tf": "Vertaling mislukt, controleer de geldigheid van de API-sleutel",
         "tcm": "Vertaling voltooid",
-        "mv": "Modelversie",
-        "ip": "Invoerprompt"
+        "mv": "Modelversie: ",
+        "ip": "Invoerprompt",
+        "tips": "Tips: Het testen verbruikt het overeenkomstige quotum"
     },
     "support": "Ondersteuning",
     "Upgrade to a paid plan to unlock this feature": "Upgrade naar een betaald plan om deze functie te ontgrendelen",

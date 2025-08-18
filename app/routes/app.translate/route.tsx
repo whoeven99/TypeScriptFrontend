@@ -902,7 +902,7 @@ const Index = () => {
                                 width: "50%",
                               }}
                             >
-                              <Text>{t("Google Translate")}</Text>
+                              <Text>{t("Google Translation")}</Text>
                             </div>
                           </div>
                         </div>

@@ -223,6 +223,7 @@ const Index = () => {
     setApiKeyError(false);
     setCountError(false);
     setTempApiKey('')
+    setkeywordsError(false)
   };
   const handleTestApi = (id: ServiceId) => {
     if (isLoading) {
@@ -518,7 +519,7 @@ const Index = () => {
                 autoComplete="off"
               />
               <div style={{ marginTop: '10px', fontWeight: 500 }}>
-                {t('openai.tips:测试会消耗对应的额度')}
+                {t('openai.tip')}
               </div>
             </Box>
             <div style={{

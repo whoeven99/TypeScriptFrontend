@@ -92,8 +92,9 @@
     "tit":"Test API",
     "tf":"Translation failed, please check the validity of the API key",
     "tcm":"Translation completed",
-    "mv":"Model Version",
-    "ip":"Input Prompt"
+    "mv":"Model Version: ",
+    "ip":"Input Prompt",
+    "tips": "Tips: Testing will consume the corresponding quota"
   },
   "No languages to translate.": "No languages selected for translation.",
   "Your store currently has no languages requiring translation. Please try adding a language.": "No languages need translation right now. Add one to get started!",
@@ -262,7 +263,7 @@
   "ChatGPT 4.1": "ChatGPT 4.1",
   "DeepL": "DeepL",
   "DeepSeek": "DeepSeek",
-  "Google Translation": "Google Translation",
+  "Google Translation": "Google Translate",
   "translateSettings1.description1": "Specialized in European and American languages, English, French, Italian, German, Spanish, and similar languages with high fluency and accuracy.",
   "translateSettings1.description2": "Balanced translation for European and American languages. Focused on Western language translation with no strict adherence to style.",
   "translateSettings1.description3": "Specialized in Asian languages, Chinese, Japanese, Korean, and other major Asian languages.",

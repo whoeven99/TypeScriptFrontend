@@ -572,7 +572,8 @@
         "tit": "API de test",
         "tf": "La traduction a échoué, veuillez vérifier la validité de la clé API",
         "tcm": "Traduction terminée",
-        "mv": "Version du modèle",
-        "ip": "Invite de saisie"
+        "mv": "Version du modèle: ",
+        "ip": "Invite de saisie",
+        "tips": "Conseils : Les tests consommeront le quota correspondant"
     }
 }
