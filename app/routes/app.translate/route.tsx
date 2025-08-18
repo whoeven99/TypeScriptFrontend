@@ -60,15 +60,15 @@ interface LanguageSettingType {
 }
 
 interface apiKeyConfiguration {
-  apiKey: string,
-  apiModel: string,
-  apiName : Number,
-  apiStatus: boolean,
-  isSelected: boolean,
-  promptWord: string,
-  shopName: string,
-  tokenLimit: Number,
-  usedToken: Number
+  apiKey: string;
+  apiModel: string;
+  apiName: Number;
+  apiStatus: boolean;
+  isSelected: boolean;
+  promptWord: string;
+  shopName: string;
+  tokenLimit: Number;
+  usedToken: Number;
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -123,7 +123,8 @@ const Index = () => {
   const [model, setModel] = useState<any>("");
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [customApikeyData, setCustomApikeyData] = useState<apiKeyConfiguration[]>();
+  const [customApikeyData, setCustomApikeyData] =
+    useState<apiKeyConfiguration[]>();
   const [needPay, setNeedPay] = useState<boolean>(false);
   const [source, setSource] = useState("");
   const [target, setTarget] = useState<string[]>([]);
@@ -145,9 +146,14 @@ const Index = () => {
   );
 
   const { plan } = useSelector((state: any) => state.userConfig);
-  
-  function checkApiKeyConfiguration(customApikeyData: apiKeyConfiguration[], apiName: 0 | 1): apiKeyConfiguration | null {
-    const matchedItem = customApikeyData.find(item => item.apiName === apiName);
+
+  function checkApiKeyConfiguration(
+    customApikeyData: apiKeyConfiguration[],
+    apiName: 0 | 1,
+  ): apiKeyConfiguration | null {
+    const matchedItem = customApikeyData.find(
+      (item) => item.apiName === apiName,
+    );
     return matchedItem || null;
   }
   useEffect(() => {
@@ -192,13 +198,14 @@ const Index = () => {
     if (customApiKeyFetcher.data && customApiKeyFetcher.data.customApikeyData) {
       // 过滤 success 为 true 且 response 中有非空 apiKey 的条目
       const filteredData = customApiKeyFetcher.data.customApikeyData
-        .filter((item:any) => 
-          item.success && 
-          item.response && 
-          item.response.apiKey && 
-          item.response.apiKey.trim() !== ''
+        .filter(
+          (item: any) =>
+            item.success &&
+            item.response &&
+            item.response.apiKey &&
+            item.response.apiKey.trim() !== "",
         )
-        .map((item:any) => ({
+        .map((item: any) => ({
           apiKey: item.response.apiKey,
           apiModel: item.response.apiModel,
           apiName: item.response.apiName,
@@ -207,10 +214,10 @@ const Index = () => {
           promptWord: item.response.promptWord,
           shopName: item.response.shopName,
           tokenLimit: item.response.tokenLimit,
-          usedToken: item.response.usedToken
+          usedToken: item.response.usedToken,
         }));
-      console.log("filteredData",filteredData);
-      
+      console.log("filteredData", filteredData);
+
       setCustomApikeyData(filteredData);
     }
   }, [customApiKeyFetcher.data]);
@@ -514,8 +521,11 @@ const Index = () => {
   };
 
   const handleTranslate = async () => {
-    if ((translateSettings1==='8'||translateSettings1==='9')&&selectedLanguageCode.length>=2) {
-      shopify.toast.show('选择私有key进行翻译，只能选择一种目标语言');
+    if (
+      (translateSettings1 === "8" || translateSettings1 === "9") &&
+      selectedLanguageCode.length >= 2
+    ) {
+      shopify.toast.show("选择私有key进行翻译，只能选择一种目标语言");
       return;
     }
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
@@ -618,32 +628,32 @@ const Index = () => {
           )}
         </div>
         <Divider style={{ margin: "0" }} />
-        <div style={{ paddingLeft: "8px" }}>
-          <Text>{t("Your store's default language:")}</Text>{" "}
-          {languageSetting && (
-            <Text strong>
-              {languageSetting?.primaryLanguage ? (
-                languageSetting?.primaryLanguage
-              ) : (
-                <Skeleton active paragraph={{ rows: 0 }} />
-              )}
-            </Text>
-          )}
-        </div>
+
         {loadingLanguage ? (
           <Skeleton.Button active style={{ height: 600 }} block />
         ) : languageData.length != 0 ? (
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+            <Title
+              style={{
+                margin: "0",
+                fontSize: "1.25rem",
+                fontWeight: 700,
+                paddingLeft: "8px",
+              }}
+            >
+              {t("translateSettings.title1")}
+            </Title>
             <div style={{ paddingLeft: "8px" }}>
-              <Title
-                style={{
-                  margin: "0",
-                  fontSize: "1.25rem",
-                  fontWeight: 700,
-                }}
-              >
-                {t("translateSettings.title1")}
-              </Title>
+              <Text>{t("Your store's default language:")}</Text>{" "}
+              {languageSetting && (
+                <Text strong>
+                  {languageSetting?.primaryLanguage ? (
+                    languageSetting?.primaryLanguage
+                  ) : (
+                    <Skeleton active paragraph={{ rows: 0 }} />
+                  )}
+                </Text>
+              )}
             </div>
             <Card
               ref={languageCardRef}
@@ -855,94 +865,96 @@ const Index = () => {
                       </div>
                     </Flex>
                   ))}
-                  {customApikeyData && checkApiKeyConfiguration(customApikeyData,0) && (
-                    <Badge.Ribbon
-                      text={t("Private")}
-                      color="red"
-                      style={{ top: -2, right: -8 }}
-                    >
-                      <div
-                        key={8}
-                        style={{
-                          display: "flex", // 关键
-                          width: "100%",
-                          marginRight: 0,
-                          padding: "8px 12px",
-                          border: "1px solid #f0f0f0",
-                          borderRadius: "4px",
-                          alignItems: "center",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => setTranslateSettings1("8")}
+                  {customApikeyData &&
+                    checkApiKeyConfiguration(customApikeyData, 0) && (
+                      <Badge.Ribbon
+                        text={t("Private")}
+                        color="red"
+                        style={{ top: -2, right: -8 }}
                       >
-                        <Radio
+                        <div
                           key={8}
-                          value={"8"}
-                          checked={translateSettings1 === "8"}
-                        />
-                        <div
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
+                            display: "flex", // 关键
                             width: "100%",
+                            marginRight: 0,
+                            padding: "8px 12px",
+                            border: "1px solid #f0f0f0",
+                            borderRadius: "4px",
+                            alignItems: "center",
+                            cursor: "pointer",
                           }}
+                          onClick={() => setTranslateSettings1("8")}
                         >
+                          <Radio
+                            key={8}
+                            value={"8"}
+                            checked={translateSettings1 === "8"}
+                          />
                           <div
                             style={{
-                              width: "50%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              width: "100%",
                             }}
                           >
-                            <Text>{t("Google Translation")}</Text>
+                            <div
+                              style={{
+                                width: "50%",
+                              }}
+                            >
+                              <Text>{t("Google Translation")}</Text>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </Badge.Ribbon>
-                  )}
-                  {customApikeyData && checkApiKeyConfiguration(customApikeyData,1) && (
-                    <Badge.Ribbon
-                      text={t("Private")}
-                      color="red"
-                      style={{ top: -2, right: -8 }}
-                    >
-                      <div
-                        key={9}
-                        style={{
-                          display: "flex", // 关键
-                          width: "100%",
-                          marginRight: 0,
-                          padding: "8px 12px",
-                          border: "1px solid #f0f0f0",
-                          borderRadius: "4px",
-                          alignItems: "center",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => setTranslateSettings1("9")}
+                      </Badge.Ribbon>
+                    )}
+                  {customApikeyData &&
+                    checkApiKeyConfiguration(customApikeyData, 1) && (
+                      <Badge.Ribbon
+                        text={t("Private")}
+                        color="red"
+                        style={{ top: -2, right: -8 }}
                       >
-                        <Radio
-                          key={9}
-                          value={"9"}
-                          checked={translateSettings1 === "9"}
-                        />
                         <div
+                          key={9}
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
+                            display: "flex", // 关键
                             width: "100%",
+                            marginRight: 0,
+                            padding: "8px 12px",
+                            border: "1px solid #f0f0f0",
+                            borderRadius: "4px",
+                            alignItems: "center",
+                            cursor: "pointer",
                           }}
+                          onClick={() => setTranslateSettings1("9")}
                         >
+                          <Radio
+                            key={9}
+                            value={"9"}
+                            checked={translateSettings1 === "9"}
+                          />
                           <div
                             style={{
-                              width: "50%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              width: "100%",
                             }}
                           >
-                            <Text>{`Open AI/ChatGPT(${checkApiKeyConfiguration(customApikeyData,1)?.apiModel.replace('gpt','GPT')})`}</Text>
+                            <div
+                              style={{
+                                width: "50%",
+                              }}
+                            >
+                              <Text>{`Open AI/ChatGPT(${checkApiKeyConfiguration(customApikeyData, 1)?.apiModel.replace("gpt", "GPT")})`}</Text>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </Badge.Ribbon>
-                  )}
+                      </Badge.Ribbon>
+                    )}
                   {/* </div> */}
                 </Space>
                 <Space
