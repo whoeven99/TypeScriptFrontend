@@ -567,7 +567,7 @@
         "as": "API durumu:",
         "Amount": "Kota:",
         "Configuration": "Yapılandırma",
-        "tit": "Test arayüzü",
+        "tit": "Test API",
         "tf": "Çeviri başarısız oldu, lütfen API anahtarının geçerliliğini kontrol edin",
         "tcm": "Çeviri tamamlandı"
     },

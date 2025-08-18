@@ -569,7 +569,7 @@
         "as": "Estado de la API:",
         "Amount": "Cuota:",
         "Configuration": "Configuración",
-        "tit": "Interfaz de prueba",
+        "tit": "API de prueba",
         "tf": "Error en la traducción, verifique la validez de la clave API",
         "tcm": "Traducción completada"
     }

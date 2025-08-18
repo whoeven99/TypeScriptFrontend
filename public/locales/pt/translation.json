@@ -566,7 +566,7 @@
         "as": "Status da API:",
         "Amount": "Cota:",
         "Configuration": "Configuração",
-        "tit": "Interface de teste",
+        "tit": "API de teste",
         "tf": "A tradução falhou, verifique a validade da chave API",
         "tcm": "Tradução concluída"
     },
