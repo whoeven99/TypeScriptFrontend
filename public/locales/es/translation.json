@@ -572,7 +572,8 @@
         "tit": "API de prueba",
         "tf": "Error en la traducción, verifique la validez de la clave API",
         "tcm": "Traducción completada",
-        "mv": "Versión del modelo",
-        "ip": "Indicación de entrada"
+        "mv": "Versión del modelo: ",
+        "ip": "Indicación de entrada",
+        "tips": "Consejos: Las pruebas consumirán la cuota correspondiente"
     }
 }

@@ -570,8 +570,9 @@
     "tit": "Testen der API",
     "tf": "Übersetzung fehlgeschlagen, bitte überprüfen Sie die Gültigkeit des API-Schlüssels",
     "tcm": "Übersetzung abgeschlossen",
-    "mv":"Modellversion",
-    "ip":"Eingabeaufforderung"
+    "mv":"Modellversion: ",
+    "ip":"Eingabeaufforderung",
+    "tips":"Tipps: Tests verbrauchen das entsprechende Kontingent"
   },
   "support": "Kundensupport",
   "Upgrade to a paid plan to unlock this feature": "Aktualisieren Sie auf einen höheren Plan, um diese Funktion zu entschlüsseln",

@@ -571,7 +571,8 @@
         "tit": "API di test",
         "tf": "Traduzione fallita, verificare la validità della chiave API",
         "tcm": "Traduzione completata",
-        "mv": "Versione del modello",
-        "ip": "Prompt di input"
+        "mv": "Versione del modello: ",
+        "ip": "Prompt di input",
+        "tips": "Suggerimenti: I test consumeranno la quota corrispondente"
     }
 }

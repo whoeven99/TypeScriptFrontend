@@ -569,8 +569,9 @@
         "tit": "API de teste",
         "tf": "A tradução falhou, verifique a validade da chave API",
         "tcm": "Tradução concluída",
-        "mv": "Versão do modelo",
-        "ip": "Prompt de entrada"
+        "mv": "Versão do modelo: ",
+        "ip": "Prompt de entrada",
+        "tips": "Dicas: Os testes irão consumir a cota correspondente"
     },
     "support": "Suporte",
     "Upgrade to a paid plan to unlock this feature": "Atualize para um plano pago para desbloquear esta funcionalidade",

@@ -570,8 +570,9 @@
         "tit": "Test API",
         "tf": "Çeviri başarısız oldu, lütfen API anahtarının geçerliliğini kontrol edin",
         "tcm": "Çeviri tamamlandı",
-        "mv": "Model sürümü",
-        "ip": "Girdi istemi"
+        "mv": "Model sürümü: ",
+        "ip": "Girdi istemi",
+        "tips": "İpuçları: Testler ilgili kotayı tüketecektir"
     },
     "support": "Destek",
     "Upgrade to a paid plan to unlock this feature": "Bu özelliği kullanmak için ücretsiz planınızı yükseltin",
