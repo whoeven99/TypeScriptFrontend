@@ -576,5 +576,10 @@
     },
     "support": "Підтримка",
     "Upgrade to a paid plan to unlock this feature": "Оновіть до платного плану, щоб розблокувати цю функцію",
-    "Blogs and articles": "Блоги та статті"
+    "Blogs and articles": "Блоги та статті",
+    "translateSettings.title3": "Налаштування мови",
+    "Check all": "Вибрати всі мови",
+    "No available glossary found": "Не знайдено доступних словників",
+    "Advance Setting": "Розширені налаштування",
+    "Brand-First Sentence Structure": "Структура першої речення бренду"
 }

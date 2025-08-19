@@ -17,6 +17,7 @@ import {
   Select,
   Skeleton,
   Space,
+  Switch,
   Typography,
 } from "antd";
 import { useTranslation } from "react-i18next";
@@ -46,6 +47,7 @@ import styles from "./styles.module.css";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import TranslateIcon from "~/components/translateIcon";
 import EasyTranslateIcon from "~/components/easyTranslateIcon";
+import { GetGlossaryByShopName } from "~/api/JavaServer";
 
 const { Title, Text } = Typography;
 
@@ -126,6 +128,8 @@ const Index = () => {
     option5: "",
   });
   const [translateSettings5, setTranslateSettings5] = useState<boolean>(false);
+  const [glossaryOpen, setGlossaryOpen] = useState<boolean>(false);
+  const [brandWordOpen, setBrandWordOpen] = useState<boolean>(false);
   const [model, setModel] = useState<any>("");
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -136,6 +140,7 @@ const Index = () => {
   const [target, setTarget] = useState<string[]>([]);
   const [languageCardWarnText, setLanguageCardWarnText] = useState<string>("");
   const [rotate, setRotate] = useState<boolean>(false);
+  const [loadingArray, setLoadingArray] = useState<string[]>([]);
 
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showWarnModal, setShowWarnModal] = useState(false);
@@ -206,11 +211,7 @@ const Index = () => {
     if (customApiKeyFetcher.data && customApiKeyFetcher.data.customApikeyData) {
       // 过滤 success 为 true 且 response 中有非空 apiKey 的条目
       const filteredData = customApiKeyFetcher.data.customApikeyData
-        .filter(
-          (item: any) =>
-            item.success &&
-            item.response
-        )
+        .filter((item: any) => item.success && item.response)
         .map((item: any) => ({
           apiModel: item.response.apiModel,
           apiName: item.response.apiName,
@@ -571,6 +572,28 @@ const Index = () => {
     }
   };
 
+  const handleAdvanceSettingChange = async (type: "glossary" | "brand") => {
+    setLoadingArray([...loadingArray, type]);
+    const data = await GetGlossaryByShopName({
+      shop,
+      server: server as string,
+    });
+    console.log(data);
+    if (data?.success) {
+      if (data.response.length > 0 && type == "glossary") {
+        setGlossaryOpen(!glossaryOpen);
+      } else if (data.response.length > 0 && type == "brand") {
+        setBrandWordOpen(!brandWordOpen);
+      } else if (data.response.length == 0) {
+        shopify.toast.show(t("No available glossary found"));
+      }
+    } else {
+      shopify.toast.show(t("No available glossary found"));
+    }
+    const newArray = loadingArray.filter((item) => item == type);
+    setLoadingArray(newArray);
+  };
+
   return (
     <Page>
       <ScrollNotice
@@ -781,7 +804,7 @@ const Index = () => {
                       translateSettings3Options.length
                     }
                   >
-                    Check all
+                    {t("Check all")}
                   </Checkbox>
                   <Divider style={{ margin: "0" }} />
                   <Checkbox.Group
@@ -1444,8 +1467,8 @@ const Index = () => {
                 </Space>
               </Space>
             </Card>
-            {/* <Card
-              title={t("translateSettings.title4")}
+            <Card
+              title={t("Advance Setting")}
               extra={
                 <Button type="text" onClick={() => setRotate(!rotate)}>
                   <CaretDownOutlined rotate={rotate ? 180 : 0} />
@@ -1461,33 +1484,32 @@ const Index = () => {
                 },
               }}
             >
-              <Space
-                direction="vertical"
-                size="large"
-                style={{ display: "flex" }}
-              >
+              {rotate && (
                 <Space
                   direction="vertical"
-                  size={16}
-                  style={{ display: "flex" }}
+                  size="large"
+                  style={{ display: "flex", width: "100%" }}
                 >
-                  <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                    {t("translateSettings2.title")}
-                  </Title>
-                  <Checkbox.Group
-                    value={translateSettings2}
-                    options={translateSettings2Options}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(200px, 1fr))",
-                      width: "100%",
-                    }}
-                    onChange={(e) => handleTranslateSettings2Change(e)}
-                  />
+                  <Flex gap={8} align="center" justify="space-between">
+                    <Text>{t("Glossary")}</Text>
+                    <Switch
+                      checked={glossaryOpen}
+                      loading={loadingArray.includes("glossary")}
+                      onClick={() => handleAdvanceSettingChange("glossary")}
+                    />
+                  </Flex>
+                  <Flex gap={8} align="center" justify="space-between">
+                    <Text>{t("Brand-First Sentence Structure")}</Text>
+
+                    <Switch
+                      checked={brandWordOpen}
+                      loading={loadingArray.includes("brand")}
+                      onClick={() => handleAdvanceSettingChange("brand")}
+                    />
+                  </Flex>
                 </Space>
-              </Space> 
-            </Card> */}
+              )}
+            </Card>
           </Space>
         ) : (
           <NoLanguageSetCard />
