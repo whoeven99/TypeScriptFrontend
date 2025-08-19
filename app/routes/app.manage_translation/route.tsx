@@ -35,8 +35,8 @@ import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
 import { setUserConfig } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
-import TranslationWarnModal from "~/components/translationWarnModal";
 import { InfoCircleOutlined } from "@ant-design/icons";
+import defaultStyles from "../styles/defaultStyles.module.css";
 
 const { Text, Title } = Typography;
 
@@ -122,6 +122,8 @@ const Index = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const [showModal, setShowModal] = useState(false);
+  const [showWarnModal, setShowWarnModal] = useState(false);
+
   const { key } = useMemo(() => location.state || {}, [location.state]);
   const languageItemsData = useSelector(
     (state: any) => state.languageItemsData,
@@ -178,6 +180,113 @@ const Index = () => {
   ];
   const onlineStoreDataSource: TableDataType[] = [
     {
+      key: "shop",
+      title: t("Shop"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) => item?.language === current && item?.type === "SHOP",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) => item?.language === current && item?.type === "SHOP",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "shop",
+    },
+    {
+      key: "theme",
+      title: t("Theme"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "ONLINE_STORE_THEME",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "ONLINE_STORE_THEME",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "theme",
+    },
+    {
+      key: "pages",
+      title: t("Pages"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) => item?.language === current && item?.type === "PAGE",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) => item?.language === current && item?.type === "PAGE",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "page",
+    },
+    // {
+    //   key: "filters",
+    //   title: t("Filters"),
+    //   allTranslatedItems:
+    //     languageItemsData.find(
+    //       (item: any) => item?.language === current && item?.type === "FILTER",
+    //     )?.translatedNumber ?? undefined,
+    //   allItems:
+    //     languageItemsData.find(
+    //       (item: any) => item?.language === current && item?.type === "FILTER",
+    //     )?.totalNumber ?? undefined,
+    //   sync_status: false,
+    //   navigation: "filter",
+    // },
+    {
+      key: "metaobjects",
+      title: t("Metaobjects"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "METAOBJECT",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "METAOBJECT",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "metaobject",
+    },
+    // {
+    //   key: "navigation",
+    //   title: t("Navigation"),
+    //   allTranslatedItems:
+    //     languageItemsData.find(
+    //       (item: any) => item?.language === current && item?.type === "LINK",
+    //     )?.translatedNumber ?? undefined,
+    //   allItems:
+    //     languageItemsData.find(
+    //       (item: any) => item?.language === current && item?.type === "LINK",
+    //     )?.totalNumber ?? undefined,
+    //   sync_status: false,
+    //   navigation: "navigation",
+    // },
+    {
+      key: "store_metadata",
+      title: t("Store metadata"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "METAFIELD",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "METAFIELD",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "metafield",
+    },
+  ];
+
+  const blogAndArticleDataSource = [
+    {
       key: "articles",
       title: t("Articles"),
       allTranslatedItems:
@@ -205,63 +314,39 @@ const Index = () => {
       sync_status: false,
       navigation: "blog",
     },
+  ];
+
+  const imageDataSource = [
     {
-      key: "pages",
-      title: t("Pages"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "PAGE",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "PAGE",
-        )?.totalNumber ?? undefined,
+      key: "product_images",
+      title: t("Product images"),
       sync_status: false,
-      navigation: "page",
+      navigation: "productImage",
     },
     {
-      key: "filters",
-      title: t("Filters"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "FILTER",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "FILTER",
-        )?.totalNumber ?? undefined,
+      key: "product_image_alt",
+      title: t("Product image alt text"),
       sync_status: false,
-      navigation: "filter",
+      navigation: "productImageAlt",
     },
+  ];
+
+  const settingsDataSource: TableDataType[] = [
     {
-      key: "metaobjects",
-      title: t("Metaobjects"),
+      key: "policies",
+      title: t("Policies"),
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "METAOBJECT",
+            item?.language === current && item?.type === "SHOP_POLICY",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "METAOBJECT",
+            item?.language === current && item?.type === "SHOP_POLICY",
         )?.totalNumber ?? undefined,
       sync_status: false,
-      navigation: "metaobject",
-    },
-    {
-      key: "navigation",
-      title: t("Navigation"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "LINK",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "LINK",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "navigation",
+      navigation: "policy",
     },
     {
       key: "email",
@@ -280,83 +365,23 @@ const Index = () => {
       navigation: "email",
     },
     {
-      key: "policies",
-      title: t("Policies"),
+      key: "shipping",
+      title: t("Shipping"),
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "SHOP_POLICY",
+            item?.language === current &&
+            item?.type === "PACKING_SLIP_TEMPLATE",
         )?.translatedNumber ?? undefined,
       allItems:
         languageItemsData.find(
           (item: any) =>
-            item?.language === current && item?.type === "SHOP_POLICY",
+            item?.language === current &&
+            item?.type === "PACKING_SLIP_TEMPLATE",
         )?.totalNumber ?? undefined,
       sync_status: false,
-      navigation: "policy",
+      navigation: "shipping",
     },
-    {
-      key: "shop",
-      title: t("Shop"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "SHOP",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "SHOP",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "shop",
-    },
-    {
-      key: "store_metadata",
-      title: t("Store metadata"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === current && item?.type === "METAFIELD",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === current && item?.type === "METAFIELD",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "metafield",
-    },
-    {
-      key: "theme",
-      title: t("Theme"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === current && item?.type === "ONLINE_STORE_THEME",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === current && item?.type === "ONLINE_STORE_THEME",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "theme",
-    },
-  ];
-  const imageDataSource = [
-    {
-      key: "product_images",
-      title: t("Product images"),
-      sync_status: false,
-      navigation: "productImage",
-    },
-    {
-      key: "product_image_alt",
-      title: t("Product image alt text"),
-      sync_status: false,
-      navigation: "productImageAlt",
-    },
-  ];
-  const settingsDataSource: TableDataType[] = [
     {
       key: "delivery",
       title: t("Delivery"),
@@ -374,24 +399,6 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "delivery",
-    },
-    {
-      key: "shipping",
-      title: t("Shipping"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === current &&
-            item?.type === "PACKING_SLIP_TEMPLATE",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === current &&
-            item?.type === "PACKING_SLIP_TEMPLATE",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "shipping",
     },
   ];
 
@@ -818,7 +825,7 @@ const Index = () => {
                   <Popconfirm
                     title=""
                     description={t(
-                      "Upgrade to a paid plan to unlock this feature",
+                      "This feature is available only with the paid plan.",
                     )}
                     trigger="hover"
                     showCancel={false}
@@ -827,12 +834,15 @@ const Index = () => {
                   >
                     <InfoCircleOutlined />
                   </Popconfirm>
-                  <Button disabled>{t("Import")}</Button>
+                  <Button
+                    className={defaultStyles.Button_disable}
+                    onClick={() => setShowWarnModal(true)}
+                  >
+                    {t("Import")}
+                  </Button>
                 </Flex>
               ) : (
-                <Button
-                  onClick={() => setShowModal(true)}
-                >
+                <Button onClick={() => setShowModal(true)}>
                   {t("Import")}
                 </Button>
               )}
@@ -853,6 +863,11 @@ const Index = () => {
                 <ManageTranslationsCard
                   cardTitle={t("Online Store")}
                   dataSource={onlineStoreDataSource}
+                  current={current}
+                />
+                <ManageTranslationsCard
+                  cardTitle={t("Blogs and articles")}
+                  dataSource={blogAndArticleDataSource}
                   current={current}
                 />
                 <Card>
@@ -887,12 +902,7 @@ const Index = () => {
         title={t("How to import translation data")}
         open={showModal}
         onCancel={() => setShowModal(false)}
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          top: "40%",
-        }}
+        centered
         footer={null}
       >
         <Space direction="vertical" size={"small"}>
@@ -918,11 +928,7 @@ const Index = () => {
             </Button>
           </Text>
           <Text>{t("2. Fill in the translated data in the template")}</Text>
-          <Text>
-            {t(
-              "3. Contact us to import the corresponding files",
-            )}
-          </Text>
+          <Text>{t("3. Contact us to import the corresponding files")}</Text>
           <Flex justify="center">
             <Button
               style={{
@@ -935,6 +941,20 @@ const Index = () => {
             </Button>
           </Flex>
         </Space>
+      </Modal>
+      <Modal
+        title={t("Feature Unavailable")}
+        open={showWarnModal}
+        onCancel={() => setShowWarnModal(false)}
+        centered
+        width={700}
+        footer={
+          <Button type="primary" onClick={() => navigate("/app/pricing")}>
+            {t("Upgrade")}
+          </Button>
+        }
+      >
+        <Text>{t("This feature is available only with the paid plan.")}</Text>
       </Modal>
     </Page>
   );

@@ -8,6 +8,7 @@ import {
   Card,
   Checkbox,
   Flex,
+  Modal,
   Pagination,
   Popconfirm,
   Popover,
@@ -35,7 +36,8 @@ import { InfoCircleOutlined, WarningOutlined } from "@ant-design/icons";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
-import TranslationWarnModal from "~/components/translationWarnModal";
+import defaultStyles from "../styles/defaultStyles.module.css";
+
 const { Title, Text } = Typography;
 
 export interface GLossaryDataType {
@@ -137,7 +139,7 @@ const Index = () => {
   const [title, setTitle] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
-  const [isMobile, setIsMobile] = useState<boolean>(true);
+  const [isMobile, setIsMobile] = useState<boolean>(mobile);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [shopLocales, setShopLocales] = useState<ShopLocalesType[]>([]);
   const [isGlossaryModalOpen, setIsGlossaryModalOpen] =
@@ -426,7 +428,12 @@ const Index = () => {
                   >
                     <InfoCircleOutlined />
                   </Popconfirm>
-                  <Button disabled>{t("Create rule")}</Button>
+                  <Button
+                    className={defaultStyles.Button_disable}
+                    onClick={() => setShowWarnModal(true)}
+                  >
+                    {t("Create rule")}
+                  </Button>
                 </div>
               ) : loading ? (
                 <Skeleton.Button active />
@@ -583,21 +590,20 @@ const Index = () => {
         shop={shop}
         server={server as string}
       />
-      <TranslationWarnModal
-        title={t(
-          "The glossary limitations has been reached (Current restrictions: {{count}})",
-          { count: planMapping[plan as keyof typeof planMapping] },
-        )}
-        content={t(
-          "Please upgrade to a higher plan to remove the current glossary limitations",
-        )}
-        action={() => {
-          navigate("/app/pricing");
-        }}
-        actionText={t("Upgrade")}
-        show={showWarnModal}
-        setShow={setShowWarnModal}
-      />
+      <Modal
+        title={t("Feature Unavailable")}
+        open={showWarnModal}
+        onCancel={() => setShowWarnModal(false)}
+        centered
+        width={700}
+        footer={
+          <Button type="primary" onClick={() => navigate("/app/pricing")}>
+            {t("Upgrade")}
+          </Button>
+        }
+      >
+        <Text>{t("This feature is available only with the paid plan.")}</Text>
+      </Modal>
     </Page>
   );
 };

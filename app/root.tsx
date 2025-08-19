@@ -6,6 +6,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useFetcher,
   useRouteError,
 } from "@remix-run/react";
 import { Provider } from "react-redux";
@@ -134,6 +135,8 @@ export function ErrorBoundary() {
 }
 
 export default function App() {
+  const fetcher = useFetcher<any>();
+
   // 从 loader 数据中获取国际化语言代码
   useEffect(() => {
     // GTM 初始化脚本
@@ -163,6 +166,25 @@ export default function App() {
       });
     `;
     document.head.appendChild(gtagScript);
+  }, []);
+
+  useEffect(() => {
+    const callback = async (metrics: any) => {
+      const data = JSON.stringify(metrics);
+      fetcher.submit(
+        {
+          metrics: data,
+        },
+        {
+          method: "POST",
+          action: "/web-vitals-metrics",
+        },
+      );
+    };
+    // 确保 shopify 对象存在再调用
+    if (typeof shopify !== "undefined" && shopify?.webVitals?.onReport) {
+      shopify?.webVitals?.onReport(callback);
+    }
   }, []);
 
   return (
