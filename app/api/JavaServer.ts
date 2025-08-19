@@ -20,6 +20,33 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const IsOpenFreePlan = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/userTrials/isOpenFreePlan?shopName=${shop}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} IsOpenFreePlan: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} IsOpenFreePlan error:`, error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMessage: "",
+      response: false,
+    };
+  }
+};
+
 export const GetProgressData = async ({
   shopName,
   server,
@@ -29,13 +56,6 @@ export const GetProgressData = async ({
   server: string;
   target: string;
 }) => {
-  // console.log(`${shopName} StopTranslatingTask: `, {
-  //   shopName,
-  //   source,
-  //   // target,
-  //   accessToken,
-  // });
-
   try {
     const response = await axios({
       url: `${server}/translate/getProgressData?shopName=${shopName}&target=${target}`,

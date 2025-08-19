@@ -12,7 +12,12 @@ import {
   Skeleton,
   Popover,
   Badge,
+  Flex,
+  Switch,
+  Table,
+  Collapse,
   Modal,
+  CollapseProps,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
@@ -21,7 +26,7 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
   GetUserSubscriptionPlan,
   GetUserWords,
-  StartFreePlan,
+  IsOpenFreePlan,
 } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useFetcher, useLoaderData } from "@remix-run/react";
@@ -31,7 +36,6 @@ import "./style.css";
 import { mutationAppSubscriptionCreate } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
-import axios from "axios";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -48,37 +52,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  const { admin } = adminAuthResult;
 
   const formData = await request.formData();
-  const words = JSON.parse(formData.get("words") as string);
-  const planInfo = JSON.parse(formData.get("planInfo") as string);
   const payForPlan = JSON.parse(formData.get("payForPlan") as string);
-  const freeTrial = JSON.parse(formData.get("freeTrial") as string);
+  // const freeTrial = JSON.parse(formData.get("freeTrial") as string);
   switch (true) {
-    case !!words:
-      try {
-        const data = await GetUserWords({
-          shop,
-        });
-        return data;
-      } catch (error) {
-        console.error("Error loading action:", error);
-        return null;
-      }
-    case !!planInfo:
-      try {
-        const data = await GetUserSubscriptionPlan({
-          shop,
-        });
-        return data;
-      } catch (error) {
-        console.error("Error planInfo action:", error);
-        return "1";
-      }
     case !!payForPlan:
       try {
         const data = await GetUserSubscriptionPlan({
           shop,
+          server: process.env.SERVER_URL as string,
         });
         if (data === payForPlan.title) {
           return data;
@@ -90,11 +74,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             shop,
             accessToken: accessToken as string,
             name: payForPlan.title,
+            yearly: payForPlan.yearly,
             price: {
-              amount: payForPlan.price,
+              amount: payForPlan.yearly
+                ? payForPlan.yearlyPrice
+                : payForPlan.monthlyPrice,
               currencyCode: "USD",
             },
-            trialDays: 5,
+            trialDays: payForPlan.trialDays,
             returnUrl,
             test:
               process.env.NODE_ENV === "development" ||
@@ -105,28 +92,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             appSubscription: {
               ...res.appSubscription,
               price: {
-                amount: payForPlan.price,
+                amount: payForPlan.yearly
+                  ? payForPlan.yearlyPrice
+                  : payForPlan.monthlyPrice,
                 currencyCode: "USD",
               },
             },
           };
         }
+        // }
       } catch (error) {
         console.error("Error payForPlan action:", error);
-      }
-    case !!freeTrial:
-      try {
-        const data = await StartFreePlan({ shop });
-        console.log("freeTrial: ", data);
-        return data;
-      } catch (error) {
-        console.error("Error freeTrial action:", error);
-        return {
-          success: false,
-          errorCode: 0,
-          errorMsg: "Error freeTrial",
-          response: null,
-        };
       }
   }
   return null;
@@ -136,15 +112,18 @@ const Index = () => {
   const { shop, server } = useLoaderData<typeof loader>();
   const [currentCredits, setCurrentCredits] = useState(0);
   const [maxCredits, setMaxCredits] = useState(0);
+  const [yearly, setYearly] = useState(false);
   const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [updateTime, setUpdateTime] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
+  const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
   const [buyButtonLoading, setBuyButtonLoading] = useState(false);
   // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
   // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
-  const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
+  const [hasOpenFreePlan, setHasOpenFreePlan] = useState(false);
   const isQuotaExceeded = useMemo(
     () => currentCredits >= maxCredits && maxCredits > 0,
     [currentCredits, maxCredits],
@@ -152,62 +131,67 @@ const Index = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const userConfig = useSelector((state: any) => state.userConfig);
-  const wordsfetcher = useFetcher<any>();
-  const planfetcher = useFetcher<any>();
+  const planCancelFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
-  const freeTrialFetcher = useFetcher<any>();
+  // const freeTrialFetcher = useFetcher<any>();
 
   useEffect(() => {
-    wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
+    // wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
     if (!userConfig.plan || !userConfig.updateTime) {
-      planfetcher.submit(
-        { planInfo: JSON.stringify(true) },
-        { method: "POST" },
-      );
+      // planfetcher.submit(
+      //   { planInfo: JSON.stringify(true) },
+      //   { method: "POST" },
+      // );
+      const getPlan = async () => {
+        const data = await GetUserSubscriptionPlan({
+          shop,
+          server: server as string,
+        });
+        setSelectedPlan(data.userSubscriptionPlan);
+        dispatch(setUserConfig({ plan: data.userSubscriptionPlan }));
+        if (data.currentPeriodEnd) {
+          const date = new Date(data.currentPeriodEnd)
+            .toLocaleDateString("zh-CN", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            })
+            .replace(/\//g, "-");
+          setUpdateTime(date);
+          dispatch(setUserConfig({ updateTime: date }));
+        }
+      };
+      getPlan();
+      const getWords = async () => {
+        const data = await GetUserWords({
+          shop,
+          server: server as string,
+        });
+        setCurrentCredits(data.chars);
+        setMaxCredits(data.totalChars);
+      };
+      getWords();
     } else {
       setSelectedPlan(userConfig.plan);
       setUpdateTime(userConfig.updateTime);
     }
+    // const checkFreeUsed = async () => {
+    //   try {
+    //     const response = await IsOpenFreePlan({
+    //       shop,
+    //       server: server as string,
+    //     });
+
+    //     setHasOpenFreePlan(response.data.response || false);
+    //   } catch (error) {
+    //     console.error("Error getPlan:", error);
+    //   }
+    // };
+    // checkFreeUsed();
     setIsLoading(false);
-    const getPlan = async () => {
-      try {
-        const response = await axios.post(
-          `${server}/userTrials/isOpenFreePlan?shopName=${shop}`,
-        );
-        setHasOpenFreePlan(response.data.response || false);
-      } catch (error) {
-        console.error("Error getPlan:", error);
-      }
-    };
-    getPlan();
   }, []);
-
-  useEffect(() => {
-    if (wordsfetcher.data) {
-      setCurrentCredits(wordsfetcher.data.chars);
-      setMaxCredits(wordsfetcher.data.totalChars);
-    }
-  }, [wordsfetcher.data]);
-
-  useEffect(() => {
-    if (planfetcher.data) {
-      setSelectedPlan(planfetcher.data.userSubscriptionPlan);
-      dispatch(setUserConfig({ plan: planfetcher.data.userSubscriptionPlan }));
-      if (planfetcher.data.currentPeriodEnd) {
-        const date = new Date(planfetcher.data.currentPeriodEnd)
-          .toLocaleDateString("zh-CN", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-          })
-          .replace(/\//g, "-");
-        setUpdateTime(date);
-        dispatch(setUserConfig({ updateTime: date }));
-      }
-    }
-  }, [planfetcher.data]);
 
   useEffect(() => {
     if (payFetcher.data || payForPlanFetcher.data) {
@@ -250,42 +234,6 @@ const Index = () => {
       }
     }
   }, [payFetcher.data, payForPlanFetcher.data]);
-
-  useEffect(() => {
-    if (freeTrialFetcher.data) {
-      if (freeTrialFetcher.data.success) {
-        // setFreeTrialModalOpen(false);
-        // setFreeTrialButtonLoading(false);
-        setSelectedPlan(7);
-        dispatch(
-          setUserConfig({
-            plan: "7",
-            updateTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
-              .toLocaleDateString("zh-CN", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-              })
-              .replace(/\//g, "-"),
-          }),
-        );
-        setUpdateTime(
-          new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
-            .toLocaleDateString("zh-CN", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-            })
-            .replace(/\//g, "-"),
-        );
-        setHasOpenFreePlan(true);
-        shopify.toast.show("Free trial started successfully");
-      } else {
-        shopify.toast.show("Free trial failed");
-        // setFreeTrialButtonLoading(false);
-      }
-    }
-  }, [freeTrialFetcher.data]);
 
   const creditOptions: OptionType[] = useMemo(
     () => [
@@ -429,179 +377,391 @@ const Index = () => {
     [selectedPlan],
   );
 
-  const plans = [
+  const plans = useMemo(
+    () => [
+      {
+        title: "Free",
+        yearlyPrice: 0,
+        monthlyPrice: 0,
+        subtitle: t("pricing.for_individuals"),
+        buttonText:
+          selectedPlan === 1 || selectedPlan === 2
+            ? t("pricing.current_plan")
+            : t("pricing.get_start"),
+        buttonType: "default",
+        disabled: selectedPlan === 1 || selectedPlan === 2,
+        features: [
+          t("starter_features1"),
+          t("starter_features2"),
+          t("starter_features3"),
+        ],
+      },
+      {
+        title: "Basic",
+        monthlyPrice: 7.99,
+        yearlyPrice: 76.68,
+        subtitle: t("pricing.for_small_teams"),
+        buttonText:
+          selectedPlan === 4
+            ? t("pricing.current_plan")
+            : t("pricing.get_start"),
+        buttonType: "default",
+        disabled: selectedPlan === 4,
+        features: [
+          t("{{credits}} credits/month", { credits: "1,500,000" }),
+          t("Glossary ({{count}} entries)", { count: 10 }),
+          t("basic_features1"),
+          t("basic_features2"),
+          t("basic_features3"),
+          t("basic_features4"),
+          t("basic_features5"),
+          t("basic_features6"),
+          t("basic_features7"),
+          t("basic_features8"),
+          t("basic_features9"),
+        ],
+      },
+      {
+        title: "Pro",
+        monthlyPrice: 19.99,
+        yearlyPrice: 191.88,
+        subtitle: t("pricing.for_growing"),
+        buttonText:
+          selectedPlan === 5
+            ? t("pricing.current_plan")
+            : t("pricing.get_start"),
+        buttonType: "default",
+        disabled: selectedPlan === 5,
+        features: [
+          t("all in Basic Plan"),
+          t("{{credits}} credits/month", { credits: "3,000,000" }),
+          t("Glossary ({{count}} entries)", { count: 50 }),
+          t("pro_features1"),
+          t("pro_features2"),
+          t("pro_features3"),
+          t("pro_features4"),
+          t("pro_features5"),
+          t("pro_features6"),
+          t("pro_features7"),
+          t("pro_features8"),
+        ],
+      },
+      {
+        title: "Premium",
+        monthlyPrice: 39.99,
+        yearlyPrice: 383.88,
+        subtitle: t("pricing.for_large_teams"),
+        buttonText:
+          selectedPlan === 6
+            ? t("pricing.current_plan")
+            : t("pricing.get_start"),
+        disabled: selectedPlan === 6,
+        isRecommended: true,
+        features: [
+          t("all in Pro Plan"),
+          t("{{credits}} credits/month", { credits: "8,000,000" }),
+          t("Glossary ({{count}} entries)", { count: 100 }),
+          t("premium_features1"),
+          t("premium_features2"),
+          t("premium_features3"),
+          t("premium_features4"),
+          t("premium_features5"),
+          t("premium_features6"),
+          t("premium_features7"),
+          t("premium_features8"),
+          t("premium_features9"),
+        ],
+      },
+    ],
+    [],
+  );
+
+  const tableData = useMemo(
+    () => [
+      {
+        key: 0,
+        features: "Monthly Payment",
+        free: "0",
+        basic: "7.99",
+        pro: "19.99",
+        premium: "39.99",
+        type: "text",
+      },
+      {
+        key: 1,
+        features: t("Annual payment discount"),
+        free: "",
+        basic: "20%",
+        pro: "20%",
+        premium: "20%",
+        type: "text",
+      },
+      {
+        key: 2,
+        features: t("Monthly payment after discount"),
+        free: "",
+        basic: "6.39",
+        pro: "15.99",
+        premium: "31.99",
+        type: "text",
+      },
+      {
+        key: 3,
+        features: t("Annual payment after discount"),
+        free: "",
+        basic: "76.68",
+        pro: "191.88",
+        premium: "383.88",
+        type: "text",
+      },
+      {
+        key: 4,
+        features: t("Monthly points gift"),
+        free: "0",
+        basic: "1,500,000 credits/month",
+        pro: "3,000,000 credits/month",
+        premium: "8,000,000 credits/month",
+        type: "text",
+      },
+      {
+        key: 5,
+        features: t("Glossary"),
+        free: "",
+        basic: "10",
+        pro: "50",
+        premium: "100",
+        type: "text",
+      },
+      {
+        key: 6,
+        features: t("Points purchase discount"),
+        free: "0%",
+        basic: "10%",
+        pro: "25%",
+        premium: "50%",
+        type: "text",
+      },
+      {
+        key: 7,
+        features: t("Automatic translation updates"),
+        free: "",
+        basic: t("support"),
+        pro: t("support"),
+        premium: t("support"),
+        type: "text",
+      },
+      {
+        key: 8,
+        features: t("Manual Editor"),
+        free: t("support"),
+        basic: t("support"),
+        pro: t("support"),
+        premium: t("support"),
+        type: "text",
+      },
+      {
+        key: 9,
+        features: t("Automatic IP switching"),
+        free: "",
+        basic: t("support"),
+        pro: t("support"),
+        premium: t("support"),
+        type: "text",
+      },
+      {
+        key: 10,
+        features: t("IP call limit"),
+        free: "",
+        basic: "10,000",
+        pro: "25,000",
+        premium: "50,000",
+        type: "text",
+      },
+      {
+        key: 11,
+        features: t("Third-party app translation"),
+        free: "",
+        basic: t("support"),
+        pro: t("support"),
+        premium: t("support"),
+        type: "text",
+      },
+      {
+        key: 12,
+        features: t("Image Translation"),
+        free: "",
+        basic: t("support"),
+        pro: t("support"),
+        premium: t("support"),
+        type: "text",
+      },
+      {
+        key: 13,
+        features: t("Private API support"),
+        free: t("support"),
+        basic: t("support"),
+        pro: t("support"),
+        premium: t("support"),
+        type: "text",
+      },
+      {
+        key: 14,
+        features: t("Private API call limits"),
+        free: "30,000",
+        basic: "300,000",
+        pro: "800,000",
+        premium: "3,000,000",
+        type: "text",
+      },
+      {
+        key: 15,
+        features: t("Manual support"),
+        free: "",
+        basic: t("support"),
+        pro: t("support"),
+        premium: "1v1support",
+        type: "text",
+      },
+    ],
+    [],
+  );
+
+  const collapseData: CollapseProps["items"] = useMemo(
+    () => [
+      {
+        key: 0,
+        label: t("How does the 5-day free trial work?"),
+        children: t(
+          "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.",
+        ),
+      },
+      {
+        key: 1,
+        label: t("Can I get a discount on my plan?"),
+        children: t(
+          "Yes. You'll save 20% when you choose yearly billing. Discount applies automatically at checkout.",
+        ),
+      },
+      {
+        key: 2,
+        label: t("Can I get a refund?"),
+        children: t(
+          "No. We do not offer refunds. You can cancel anytime to stop future billing, and your plan will remain active until the end of the billing period.",
+        ),
+      },
+      {
+        key: 3,
+        label: t("What happens when I run out of credits?"),
+        children: t(
+          "You'll need to purchase extra credits to keep creating content. You won't lose access to features, only to credit-based actions.",
+        ),
+      },
+      {
+        key: 4,
+        label: t("Do unused credits carry over?"),
+        children: t(
+          "Plan credits reset at the end of each billing cycle. But if you cancel or downgrade, any unused credits stay active for 3 more months.",
+        ),
+      },
+      {
+        key: 5,
+        label: t("Do extra credits affect my plan or features?"),
+        children: t(
+          "No. Plan credits come with your subscription and reset monthly. Extra credits are only used when plan credits run out, and they never expire. They don't unlock new features or raise limits.",
+        ),
+      },
+      {
+        key: 6,
+        label: t("What happens if I upgrade my plan?"),
+        children: t(
+          "You get your new plan's credits and features right away. Any remaining credits from your previous plan won't carry over.",
+        ),
+      },
+      {
+        key: 7,
+        label: t("Will I lose credits if I cancel or downgrade?"),
+        children: t(
+          "No. Your unused credits stay available for 3 months. But you'll only have access to the features included in your new (lower) plan.",
+        ),
+      },
+      {
+        key: 8,
+        label: t("How many credits do actions use?"),
+        children: t(
+          "We calculate usage at 1 credit per word. However, if AI model is used, the consumption of prompt tokens also needs to be included—each request requires approximately an additional 80 credits. If you would like to know the estimated cost of a translation task, please feel free to contact customer support.",
+        ),
+      },
+    ],
+    [],
+  );
+
+  const columns = [
     {
-      title: "Starter",
-      price: "1.99",
-      subtitle: t("pricing.for_individuals"),
-      buttonText:
-        selectedPlan === 3 ? t("pricing.current_plan") : t("pricing.get_start"),
-      buttonType: "default",
-      disabled: selectedPlan === 3,
-      features: [
-        t("starter_features1"),
-        t("starter_features2"),
-        t("starter_features3"),
-      ],
+      title: "Features",
+      dataIndex: "features",
+      key: "features",
+    },
+    {
+      title: "Free",
+      dataIndex: "free",
+      key: "free",
+      render: (_: any, record: any) => {
+        switch (true) {
+          case record.type === "credits":
+            return <Text>{record.free}</Text>;
+          case record.type === "boolean":
+            return <Text>{record.free ? "√" : "×"}</Text>;
+          default:
+            return <Text>{record.free}</Text>;
+        }
+      },
     },
     {
       title: "Basic",
-      price: "7.99",
-      subtitle: t("pricing.for_small_teams"),
-      buttonText:
-        selectedPlan === 4 ? t("pricing.current_plan") : t("pricing.get_start"),
-      buttonType: "default",
-      disabled: selectedPlan === 4,
-      features: [
-        t("{{credits}} credits/month", { credits: "1,500,000" }),
-        t("Glossary ({{count}} entries)", { count: 10 }),
-        t("basic_features1"),
-        t("basic_features2"),
-        t("basic_features3"),
-        t("basic_features4"),
-        t("basic_features5"),
-        t("basic_features6"),
-        t("basic_features7"),
-        t("basic_features8"),
-        t("basic_features9"),
-      ],
+      dataIndex: "basic",
+      key: "basic",
+      render: (_: any, record: any) => {
+        switch (true) {
+          case record.type === "credits":
+            return <Text>{record.basic}</Text>;
+          case record.type === "boolean":
+            return <Text>{record.basic ? "√" : "×"}</Text>;
+          default:
+            return <Text>{record.basic}</Text>;
+        }
+      },
     },
     {
       title: "Pro",
-      price: "19.99",
-      subtitle: t("pricing.for_growing"),
-      buttonText:
-        selectedPlan === 5 ? t("pricing.current_plan") : t("pricing.get_start"),
-      buttonType: "default",
-      disabled: selectedPlan === 5,
-      features: [
-        t("all in Basic Plan"),
-        t("{{credits}} credits/month", { credits: "3,000,000" }),
-        t("Glossary ({{count}} entries)", { count: 50 }),
-        t("pro_features1"),
-        t("pro_features2"),
-        t("pro_features3"),
-        t("pro_features4"),
-        t("pro_features5"),
-        t("pro_features6"),
-        t("pro_features7"),
-        t("pro_features8"),
-      ],
+      dataIndex: "pro",
+      key: "pro",
+      render: (_: any, record: any) => {
+        switch (true) {
+          case record.type === "credits":
+            return <Text>{record.pro}</Text>;
+          case record.type === "boolean":
+            return <Text>{record.pro ? "√" : "×"}</Text>;
+          default:
+            return <Text>{record.pro}</Text>;
+        }
+      },
     },
     {
       title: "Premium",
-      price: "39.99",
-      subtitle: t("pricing.for_large_teams"),
-      buttonText:
-        selectedPlan === 6 ? t("pricing.current_plan") : t("pricing.get_start"),
-      disabled: selectedPlan === 6,
-      isRecommended: true,
-      features: [
-        t("all in Pro Plan"),
-        t("{{credits}} credits/month", { credits: "8,000,000" }),
-        t("Glossary ({{count}} entries)", { count: 100 }),
-        t("premium_features1"),
-        t("premium_features2"),
-        t("premium_features3"),
-        t("premium_features4"),
-        t("premium_features5"),
-        t("premium_features6"),
-        t("premium_features7"),
-        t("premium_features8"),
-        t("premium_features9"),
-      ],
+      dataIndex: "premium",
+      key: "premium",
+      render: (_: any, record: any) => {
+        switch (true) {
+          case record.type === "credits":
+            return <Text>{record.premium}</Text>;
+          case record.type === "boolean":
+            return <Text>{record.premium ? "√" : "×"}</Text>;
+          default:
+            return <Text>{record.premium}</Text>;
+        }
+      },
     },
   ];
-
-  // const modelOptions = [
-  //   {
-  //     label: "OpenAI/GPT-4",
-  //     value: "1",
-  //   },
-  //   {
-  //     label: "Google/Gemini-1.5",
-  //     value: "2",
-  //   },
-  //   {
-  //     label: "DeepL/DeepL-translator",
-  //     value: "3",
-  //   },
-  //   {
-  //     label: "Qwen/Qwen-Max",
-  //     value: "4",
-  //   },
-  //   {
-  //     label: "DeepSeek-ai/DeepSeek-V3",
-  //     value: "5",
-  //   },
-  //   {
-  //     label: "Meta/Llama-3",
-  //     value: "6",
-  //   },
-  //   {
-  //     label: "Google/Google translate",
-  //     value: "7",
-  //   },
-  // ];
-
-  // const translateItemOptions = [
-  //   {
-  //     label: t("Products"),
-  //     value: "products",
-  //   },
-  //   {
-  //     label: t("Collections"),
-  //     value: "collection",
-  //   },
-  //   {
-  //     label: t("Articles"),
-  //     value: "article",
-  //   },
-  //   {
-  //     label: t("Blog titles"),
-  //     value: "blog_titles",
-  //   },
-  //   {
-  //     label: t("Pages"),
-  //     value: "pages",
-  //   },
-  //   {
-  //     label: t("Filters"),
-  //     value: "filters",
-  //   },
-  //   {
-  //     label: t("Metaobjects"),
-  //     value: "metaobjects",
-  //   },
-  //   {
-  //     label: t("Store metadata"),
-  //     value: "metadata",
-  //   },
-  //   {
-  //     label: t("Email"),
-  //     value: "notifications",
-  //   },
-  //   {
-  //     label: t("Navigation"),
-  //     value: "navigation",
-  //   },
-  //   {
-  //     label: t("Shop"),
-  //     value: "shop",
-  //   },
-  //   {
-  //     label: t("Theme"),
-  //     value: "theme",
-  //   },
-  //   {
-  //     label: t("Delivery"),
-  //     value: "delivery",
-  //   },
-  //   {
-  //     label: t("Shipping"),
-  //     value: "shipping",
-  //   },
-  // ];
 
   const handlePay = () => {
     setBuyButtonLoading(true);
@@ -620,24 +780,26 @@ const Index = () => {
     });
   };
 
+  const handleCancelPlan = () => {};
+
   const handlePayForPlan = (plan: any) => {
     setBuyButtonLoading(true);
     payForPlanFetcher.submit(
-      { payForPlan: JSON.stringify(plan) },
+      { payForPlan: JSON.stringify({ ...plan, yearly }) },
       { method: "POST" },
     );
   };
 
-  const handleFreeTrial = async () => {
-    // setFreeTrialButtonLoading(true);
-    freeTrialFetcher.submit(
-      { freeTrial: JSON.stringify(true) },
-      { method: "POST" },
-    );
-    // const data = await StartFreePlan({ shop, server: server as string });
-    // console.log("freeTrial: ", data);
-    // return data;
-  };
+  // const handleFreeTrial = async () => {
+  //   // setFreeTrialButtonLoading(true);
+  //   freeTrialFetcher.submit(
+  //     { freeTrial: JSON.stringify(true) },
+  //     { method: "POST" },
+  //   );
+  //   // const data = await StartFreePlan({ shop, server: server as string });
+  //   // console.log("freeTrial: ", data);
+  //   // return data;
+  // };
 
   return (
     <Page>
@@ -647,7 +809,7 @@ const Index = () => {
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+      <Space direction="vertical" size="large" style={{ display: "flex" }}>
         {/* 积分余额显示 */}
         <Card loading={isLoading}>
           <Space direction="vertical" size="small" style={{ width: "100%" }}>
@@ -658,8 +820,8 @@ const Index = () => {
                 justifyContent: "space-between",
               }}
             >
-              <div style={{ display: "flex", alignItems: "baseline" }}>
-                <Title level={4} style={{ marginRight: 10, marginBottom: 0 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                <Title level={4} style={{ marginBottom: 0 }}>
                   {t("Your translation quota")}
                 </Title>
                 <Popover
@@ -669,6 +831,12 @@ const Index = () => {
                 >
                   <QuestionCircleOutlined />
                 </Popover>
+                <Button
+                  type="primary"
+                  onClick={() => setAddCreditsModalOpen(true)}
+                >
+                  {t("Add credits")}
+                </Button>
               </div>
               {selectedPlan && (
                 <div>
@@ -734,7 +902,7 @@ const Index = () => {
             showIcon
           />
         )}
-        {!hasOpenFreePlan && (
+        {/* {!hasOpenFreePlan && (
           <Card styles={{ body: { padding: "12px" } }}>
             <Space
               style={{
@@ -757,209 +925,143 @@ const Index = () => {
               </Button>
             </Space>
           </Card>
-        )}
-        <Card
+        )} */}
+        {/* <Card
           style={{ textAlign: "center" }}
           loading={isLoading || selectedPlan === null}
         >
-          {/* 价格选项 */}
-          <Space direction="vertical" size="small" style={{ width: "100%" }}>
-            <div
+
+        </Card> */}
+        <Space
+          direction="vertical"
+          size="small"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Title level={3} style={{ fontWeight: 700 }}>
+            {t("Choose the right plan for you")}
+          </Title>
+          <Flex align="center" justify="space-between">
+            <Space align="center" size="small">
+              <Switch checked={yearly} onChange={() => setYearly(!yearly)} />
+              <Text>{t("Yearly")}</Text>
+            </Space>
+            <div className="yearly_save">
+              <Text strong>{t("Save 20%")}</Text>
+            </div>
+          </Flex>
+          <Card styles={{ body: { padding: 12 } }}>
+            <Flex align="center" justify="space-between" gap={10}>
+              <Text>{t("Start your trial and unlock")}</Text>
+              <div className="free_trial">
+                <Text strong>{t("500 free credits")}</Text>
+              </div>
+            </Flex>
+          </Card>
+        </Space>
+        <Row gutter={[16, 16]}>
+          {plans.map((plan, index) => (
+            <Col
+              key={plan.title}
+              xs={24}
+              sm={24}
+              md={12}
+              lg={6}
               style={{
-                textAlign: "left",
                 display: "flex",
-                alignItems: "flex-end",
-                marginBottom: 10,
+                width: "100%",
               }}
             >
-              <Title level={4} style={{ marginBottom: 0, marginRight: 10 }}>
-                {t("Buy Credits")}
-              </Title>
-              <Text style={{ fontWeight: "bold" }}>
-                {selectedPlan === 6
-                  ? t("discountText.premium")
-                  : selectedPlan === 5
-                    ? t("discountText.pro")
-                    : selectedPlan === 4
-                      ? t("discountText.basic")
-                      : t("discountText.free")}
-              </Text>
-            </div>
-            <Row gutter={[16, 16]}>
-              {creditOptions.map((option) => (
-                <Col key={option.key} xs={12} sm={12} md={6} lg={6} xl={6}>
-                  <Card
-                    hoverable
-                    style={{
-                      textAlign: "center",
-                      borderColor:
-                        JSON.stringify(selectedOption) ===
-                        JSON.stringify(option)
-                          ? "#007F61"
-                          : undefined,
-                      borderWidth:
-                        JSON.stringify(selectedOption) ===
-                        JSON.stringify(option)
-                          ? "2px"
-                          : "1px",
-                      cursor: "pointer",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      height: "150px",
-                    }}
-                    onClick={() => setSelectedOption(option)}
-                  >
-                    <Text
-                      style={{
-                        fontSize: "16px",
-                        fontWeight: 500,
-                        display: "block",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      {option.Credits.toLocaleString()} {t("Credits")}
-                    </Text>
-                    {selectedPlan === 6 ||
-                    selectedPlan === 5 ||
-                    selectedPlan === 4 ? (
-                      <>
-                        <Title
-                          level={3}
-                          style={{
-                            margin: 0,
-                            color: "#007F61",
-                            fontWeight: 700,
-                          }}
-                        >
-                          ${option.price.currentPrice.toFixed(2)}
-                        </Title>
-                        <Text
-                          delete
-                          type="secondary"
-                          style={{ fontSize: "14px" }}
-                        >
-                          ${option.price.comparedPrice.toFixed(2)}
-                        </Text>
-                      </>
-                    ) : (
-                      <Title
-                        level={3}
-                        style={{ margin: 0, color: "#007F61", fontWeight: 700 }}
-                      >
-                        ${option.price.currentPrice.toFixed(2)}
-                      </Title>
-                    )}
-                  </Card>
-                </Col>
-              ))}
-            </Row>
-            {/* 购买区域 */}
-            <Text type="secondary" style={{ margin: "16px 0 8px 0" }}>
-              {t("Total pay")}: $
-              {selectedOption
-                ? selectedOption.price.currentPrice.toFixed(2)
-                : "0.00"}
-            </Text>
-            {/* <Space>
-              <Button
-                size="large"
-                onClick={() => setCreditsCalculatorOpen(true)}
-              >
-                {t("Credits Calculator")}
-              </Button> */}
-            <Button
-              type="primary"
-              size="large"
-              disabled={!selectedOption}
-              loading={buyButtonLoading}
-              onClick={handlePay}
-            >
-              {t("Buy now")}
-            </Button>
-            {/* </Space> */}
-          </Space>
-        </Card>
-        <div style={{ maxWidth: "1500px", margin: "0 auto" }}>
-          <Row gutter={[16, 16]}>
-            {plans.map((plan, index) => (
-              <Col
-                key={plan.title}
-                xs={24}
-                sm={24}
-                md={12}
-                lg={6}
+              <Badge.Ribbon
+                text={t("pricing.recommended")}
+                color="#1890ff"
                 style={{
-                  display: "flex",
-                  width: "100%",
+                  display:
+                    plan.isRecommended && selectedPlan <= 2 && selectedPlan
+                      ? "block"
+                      : "none",
+                  right: -8,
                 }}
               >
-                <Badge.Ribbon
-                  text={t("pricing.recommended")}
-                  color="#1890ff"
+                <Card
+                  hoverable
                   style={{
-                    display:
-                      plan.isRecommended && selectedPlan <= 2 && selectedPlan
-                        ? "block"
-                        : "none",
-                    right: -8,
+                    flex: 1,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    position: "relative",
+                    borderColor: plan.disabled
+                      ? "#007F61"
+                      : plan.isRecommended && selectedPlan <= 2 && selectedPlan
+                        ? "#1890ff"
+                        : undefined,
+                    minWidth: "220px",
                   }}
-                >
-                  <Card
-                    hoverable
-                    style={{
+                  styles={{
+                    body: {
                       flex: 1,
-                      height: "100%",
                       display: "flex",
                       flexDirection: "column",
-                      position: "relative",
-                      borderColor: plan.disabled
-                        ? "#007F61"
-                        : plan.isRecommended &&
-                            selectedPlan <= 2 &&
-                            selectedPlan
-                          ? "#1890ff"
-                          : undefined,
-                      minWidth: "220px",
-                    }}
-                    styles={{
-                      body: {
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        padding: "16px",
-                      },
-                    }}
-                    loading={!selectedPlan}
+                      padding: "16px",
+                    },
+                  }}
+                  loading={!selectedPlan}
+                >
+                  <Title level={5}>{plan.title}</Title>
+                  <div style={{ margin: "12px 0" }}>
+                    <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
+                      ${yearly ? plan.yearlyPrice : plan.monthlyPrice}
+                    </Text>
+                    <Text style={{ fontSize: "14px" }}>
+                      {yearly ? t("/year") : t("/month")}
+                    </Text>
+                  </div>
+                  <Paragraph type="secondary" style={{ fontSize: "13px" }}>
+                    {plan.subtitle}
+                  </Paragraph>
+
+                  <Button
+                    type={
+                      plan.isRecommended && selectedPlan <= 2 && selectedPlan
+                        ? "primary"
+                        : "default"
+                    }
+                    block
+                    disabled={plan.disabled}
+                    style={{ marginBottom: "20px" }}
+                    onClick={
+                      plan.monthlyPrice
+                        ? () => handlePayForPlan(plan)
+                        : () => setCancelPlanWarnModal(true)
+                    }
+                    loading={buyButtonLoading}
                   >
-                    <Title level={5}>{plan.title}</Title>
-                    <div style={{ margin: "12px 0" }}>
-                      <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
-                        ${plan.price}
-                      </Text>
-                      <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
-                    </div>
-                    <Paragraph type="secondary" style={{ fontSize: "13px" }}>
-                      {plan.subtitle}
-                    </Paragraph>
+                    {plan.buttonText}
+                  </Button>
+                  <Button
+                    type={
+                      plan.isRecommended && selectedPlan <= 2 && selectedPlan
+                        ? "primary"
+                        : "default"
+                    }
+                    block
+                    disabled={plan.disabled}
+                    style={{ marginBottom: "20px" }}
+                    onClick={
+                      plan.monthlyPrice
+                        ? () => handlePayForPlan(plan)
+                        : () => setCancelPlanWarnModal(true)
+                    }
+                    loading={buyButtonLoading}
+                  >
+                    {"free Trial"}
+                  </Button>
 
-                    <Button
-                      type={
-                        plan.isRecommended && selectedPlan <= 2 && selectedPlan
-                          ? "primary"
-                          : "default"
-                      }
-                      block
-                      disabled={plan.disabled}
-                      style={{ marginBottom: "20px" }}
-                      onClick={() => handlePayForPlan(plan)}
-                      loading={buyButtonLoading}
-                    >
-                      {plan.buttonText}
-                    </Button>
-
-                    {/* {
+                  {/* {
                       plan.title === "Premium" && !hasOpenFreePlan && (
                         <Button
                           type="primary"
@@ -973,53 +1075,210 @@ const Index = () => {
                       )
                     } */}
 
-                    <div style={{ flex: 1 }}>
-                      {plan.features.map((feature, idx) => (
-                        <div
-                          key={idx}
+                  <div style={{ flex: 1 }}>
+                    {plan.features.map((feature, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          marginBottom: "8px",
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: "6px",
+                        }}
+                      >
+                        <CheckOutlined
                           style={{
-                            marginBottom: "8px",
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: "6px",
+                            color: "#52c41a",
+                            fontSize: "12px",
                           }}
-                        >
-                          <CheckOutlined
-                            style={{
-                              color: "#52c41a",
-                              fontSize: "12px",
-                            }}
-                          />
-                          <Text style={{ fontSize: "13px" }}>{feature}</Text>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                </Badge.Ribbon>
+                        />
+                        <Text style={{ fontSize: "13px" }}>{feature}</Text>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </Badge.Ribbon>
+            </Col>
+          ))}
+        </Row>
+        <Space
+          direction="vertical"
+          size="small"
+          style={{
+            display: "flex",
+          }}
+        >
+          <Title
+            level={3}
+            style={{
+              fontWeight: 700,
+              textAlign: "center",
+            }}
+          >
+            {t("Compare plans")}
+          </Title>
+          <Table
+            dataSource={tableData}
+            columns={columns}
+            pagination={false}
+            // style={{
+            //   width: "100%",
+            // }}
+          />
+        </Space>
+        <Row>
+          <Col span={6}>
+            <Space direction="vertical" size="small">
+              <Title level={3} style={{ fontWeight: 700 }}>
+                {t("FAQs")}
+              </Title>
+              <Text type="secondary">
+                {t("Everything you need to know about pricing and billing.")}
+              </Text>
+            </Space>
+          </Col>
+          <Col span={18}>
+            <Collapse items={collapseData} />
+          </Col>
+        </Row>
+      </Space>
+      <Modal
+        title={t("Get extra credits that never expire")}
+        open={addCreditsModalOpen}
+        width={900}
+        centered
+        onCancel={() => setAddCreditsModalOpen(false)}
+        footer={null}
+      >
+        <Space direction="vertical" size="small" style={{ width: "100%" }}>
+          <div
+            style={{
+              textAlign: "left",
+              display: "flex",
+              alignItems: "flex-end",
+              marginBottom: 10,
+            }}
+          >
+            <Title level={4} style={{ marginBottom: 0, marginRight: 10 }}>
+              {t("Buy Credits")}
+            </Title>
+            <Text style={{ fontWeight: "bold" }}>
+              {selectedPlan === 6
+                ? t("discountText.premium")
+                : selectedPlan === 5
+                  ? t("discountText.pro")
+                  : selectedPlan === 4
+                    ? t("discountText.basic")
+                    : t("discountText.free")}
+            </Text>
+          </div>
+          <Row gutter={[16, 16]}>
+            {creditOptions.map((option) => (
+              <Col key={option.key} xs={12} sm={12} md={6} lg={6} xl={6}>
+                <Card
+                  hoverable
+                  style={{
+                    textAlign: "center",
+                    borderColor:
+                      JSON.stringify(selectedOption) === JSON.stringify(option)
+                        ? "#007F61"
+                        : undefined,
+                    borderWidth:
+                      JSON.stringify(selectedOption) === JSON.stringify(option)
+                        ? "2px"
+                        : "1px",
+                    cursor: "pointer",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "150px",
+                  }}
+                  onClick={() => setSelectedOption(option)}
+                >
+                  <Text
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: 500,
+                      display: "block",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    {option.Credits.toLocaleString()} {t("Credits")}
+                  </Text>
+                  {selectedPlan === 6 ||
+                  selectedPlan === 5 ||
+                  selectedPlan === 4 ? (
+                    <>
+                      <Title
+                        level={3}
+                        style={{
+                          margin: 0,
+                          color: "#007F61",
+                          fontWeight: 700,
+                        }}
+                      >
+                        ${option.price.currentPrice.toFixed(2)}
+                      </Title>
+                      <Text
+                        delete
+                        type="secondary"
+                        style={{ fontSize: "14px" }}
+                      >
+                        ${option.price.comparedPrice.toFixed(2)}
+                      </Text>
+                    </>
+                  ) : (
+                    <Title
+                      level={3}
+                      style={{ margin: 0, color: "#007F61", fontWeight: 700 }}
+                    >
+                      ${option.price.currentPrice.toFixed(2)}
+                    </Title>
+                  )}
+                </Card>
               </Col>
             ))}
           </Row>
-        </div>
-      </Space>
-      {/* <Modal
-        title={t("Try Premium Plan")}
-        open={freeTrialModalOpen}
-        style={{ top: "40%" }}
+          <Flex align="center" justify="center">
+            <Space direction="vertical" align="center">
+              <Text type="secondary" style={{ margin: "16px 0 8px 0" }}>
+                {t("Total pay")}: $
+                {selectedOption
+                  ? selectedOption.price.currentPrice.toFixed(2)
+                  : "0.00"}
+              </Text>
+              <Button
+                type="primary"
+                size="large"
+                disabled={!selectedOption}
+                loading={buyButtonLoading}
+                onClick={handlePay}
+              >
+                {t("Buy now")}
+              </Button>
+            </Space>
+          </Flex>
+        </Space>
+      </Modal>
+      <Modal
+        title={t("Get extra credits that never expire")}
+        open={cancelPlanWarnModal}
+        centered
+        onCancel={() => setCancelPlanWarnModal(false)}
         footer={
-          <Space>
-            <Button onClick={() => setFreeTrialModalOpen(false)}>
+          <Flex align="end" justify="end" gap={10}>
+            <Button onClick={() => setCancelPlanWarnModal(false)}>
               {t("Cancel")}
             </Button>
-            <Button type="primary" loading={freeTrialButtonLoading} onClick={handleFreeTrial}>
+            <Button type="primary" onClick={handleCancelPlan}>
               {t("Confirm")}
             </Button>
-          </Space>
+          </Flex>
         }
       >
-        <Text>
-          {t("Click to Confirm and try all the features of Premium Plan for free for 5 days except credit discount, which will be automatically locked after 5 days")}
-        </Text>
-      </Modal> */}
+        <Text></Text>
+      </Modal>
       {/* <Modal open={creditsCalculatorOpen} onCancel={() => setCreditsCalculatorOpen(false)}>
         <Title level={4}>{t("Credits Calculator")}</Title>
         <Form>
