@@ -63,11 +63,11 @@ export const AddCharsByShopNameAfterSubscribe = async ({
       },
     });
 
-    console.log(`${shop} IsOpenFreePlan: `, response.data);
+    console.log(`${shop} AddCharsByShopNameAfterSubscribe: `, response.data);
 
     return response.data;
   } catch (error) {
-    console.error(`${shop} IsOpenFreePlan error:`, error);
+    console.error(`${shop} AddCharsByShopNameAfterSubscribe error:`, error);
     return {
       success: false,
       errorCode: 0,
