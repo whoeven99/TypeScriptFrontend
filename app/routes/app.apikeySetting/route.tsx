@@ -621,7 +621,19 @@ const Index = () => {
                     onChange={(e) => setTranslation(e.target.value)}
                     autoComplete="off"
                     // placeholder={t('openai.trw')}
-                    style={{ width: '100%', height: '100px', resize: 'none', padding: "10px", userSelect: 'none', top: 0, borderRadius: "10px" }} // 禁用选中
+                    style={{ 
+                      width: '100%', 
+                      height: '100px', 
+                      resize: 'none', 
+                      padding: "10px", 
+                      userSelect: 'none', 
+                      top: 0, 
+                      backgroundColor: '#F9FAFB', 
+                      fontFamily: 'var(--p-surface)', 
+                      borderRadius: "10px",
+                      border: '1px solid #DFE3E8',
+                      // color: '#2E3338',
+                    }} // 禁用选中
                     readOnly // 只读
                     onFocus={(e) => e.target.blur()}
                   />
