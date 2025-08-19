@@ -9,6 +9,7 @@ import {
   Divider,
   Flex,
   Input,
+  Modal,
   Popconfirm,
   Popover,
   Radio,
@@ -43,8 +44,7 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import { ArrowLeftIcon, PlusIcon } from "@shopify/polaris-icons";
 import axios from "axios";
 import styles from "./styles.module.css";
-import { planMapping } from "../app.glossary/route";
-import TranslationWarnModal from "~/components/translationWarnModal";
+import defaultStyles from "../styles/defaultStyles.module.css";
 import TranslateIcon from "~/components/translateIcon";
 import EasyTranslateIcon from "~/components/easyTranslateIcon";
 import { GetGlossaryByShopName } from "~/api/JavaServer";
@@ -61,17 +61,6 @@ interface LanguageDataType {
   published: boolean;
 }
 
-interface apiKeyConfiguration {
-  apiModel: string;
-  apiName: Number;
-  apiStatus: boolean;
-  isSelected: boolean;
-  promptWord: string;
-  shopName: string;
-  tokenLimit: Number;
-  usedToken: Number;
-}
-
 interface LanguageSettingType {
   primaryLanguage: string;
   primaryLanguageCode: string;
@@ -86,11 +75,6 @@ interface apiKeyConfiguration {
   shopName: string;
   tokenLimit: Number;
   usedToken: Number;
-}
-
-interface LanguageSettingType {
-  primaryLanguage: string;
-  primaryLanguageCode: string;
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -934,7 +918,7 @@ const Index = () => {
                         <Popconfirm
                           title=""
                           description={t(
-                            "Upgrade to a paid plan to unlock this feature",
+                            "This feature is available only with the paid plan.",
                           )}
                           trigger="hover"
                           showCancel={false}
@@ -944,7 +928,7 @@ const Index = () => {
                           <InfoCircleOutlined />
                         </Popconfirm>
                         <Button
-                          disabled
+                          className={defaultStyles.Button_disable}
                           icon={<Icon source={PlusIcon} />}
                           onClick={() => handleUsePrivateApi()}
                         >
@@ -1602,21 +1586,20 @@ const Index = () => {
         ) : (
           <NoLanguageSetCard />
         )}
-        <TranslationWarnModal
-          title={t(
-            "The Private API has been limited due to your plan (Current plan: {{plan}})",
-            { plan: "Free" },
-          )}
-          content={t(
-            "Please upgrade to a higher plan to unlock the Private API",
-          )}
-          action={() => {
-            navigate("/app/pricing");
-          }}
-          actionText={t("Upgrade")}
-          show={showWarnModal}
-          setShow={setShowWarnModal}
-        />
+        <Modal
+          title={t("Feature Unavailable")}
+          open={showWarnModal}
+          onCancel={() => setShowWarnModal(false)}
+          centered
+          width={700}
+          footer={
+            <Button type="primary" onClick={() => navigate("/app/pricing")}>
+              {t("Upgrade")}
+            </Button>
+          }
+        >
+          <Text>{t("This feature is available only with the paid plan.")}</Text>
+        </Modal>
       </Space>
       {showPaymentModal && (
         <PaymentModal
