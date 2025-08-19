@@ -505,6 +505,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   width: "100%", // 确保占满容器宽度
                   textAlign: "center",
                   gap: 10,
+                  minHeight: "75px",
                 }}
               >
                 <div

@@ -20,7 +20,9 @@ const EasyTranslateIcon: React.FC<EasyTranslateIconProps> = ({ status }) => {
     setIsError(status === -1);
     setIsTranslated(status === 1);
     setIsTranslating(status === 2);
-    setIsPartlyTranslated(status === 3 || status === 5 || status === 6);
+    setIsPartlyTranslated(
+      status === 3 || status === 5 || status === 6 || status === 7,
+    );
     setIsTranslateException(status === 4);
   }, [status]);
 

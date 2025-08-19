@@ -20,7 +20,7 @@ import {
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import {
   DeleteGlossaryInfo,
-  GetGlossaryByShopName,
+  GetGlossaryByShopNameLoading,
   InsertGlossaryInfo,
   UpdateTargetTextById,
 } from "~/api/JavaServer";
@@ -88,7 +88,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     switch (true) {
       case !!loading:
         try {
-          const data = await GetGlossaryByShopName({
+          const data = await GetGlossaryByShopNameLoading({
             shop,
             accessToken: accessToken as string,
           });

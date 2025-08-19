@@ -646,13 +646,13 @@ export const TranslationInterface = async ({
   apiName,
   sourceText,
   targetCode,
-  prompt
+  prompt,
 }: {
   shop: string;
   apiName: Number;
   sourceText: string;
   targetCode?: string;
-  prompt?:string
+  prompt?: string;
 }) => {
   try {
     const response = await axios({
@@ -662,7 +662,7 @@ export const TranslationInterface = async ({
         apiName,
         sourceText,
         targetCode,
-        prompt
+        prompt,
       },
     });
     console.log("testApiKeyRes", response.data);
@@ -1865,11 +1865,31 @@ export const SendPurchaseSuccessEmail = async ({
     const res = response.data;
     console.log("SendPurchaseSuccessEmail: ", res);
   } catch (error) {
-    console.error("Error fetching add chars:", error);
+    console.error("Error SendPurchaseSuccessEmail:", error);
   }
 };
 
+//增加用户字符数
 export const GetGlossaryByShopName = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/glossary/getGlossaryByShopName?shopName=${shop}`,
+      method: "GET",
+    });
+    console.log("GetGlossaryByShopName: ", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error GetGlossaryByShopName:", error);
+  }
+};
+
+export const GetGlossaryByShopNameLoading = async ({
   shop,
   accessToken,
 }: {

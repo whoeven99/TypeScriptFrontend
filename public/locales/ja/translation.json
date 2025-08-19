@@ -575,5 +575,12 @@
     },
     "support": "サポート",
     "Upgrade to a paid plan to unlock this feature": "この機能を使用するには、有料プランにアップグレードしてください",
-    "Blogs and articles": "ブログと記事"
+    "Blogs and articles": "ブログと記事",
+    "translateSettings.title3": "音声設定",
+    "Check all": "すべて選択",
+    "No available glossary found": "利用可能なグローサリーが見つかりませんでした",
+    "Advance Setting": "高度な設定",
+    "Brand-First Sentence Structure": "ブランド優先の最初の文構造",
+    "You don’t have any glossary active right now": "現在はアクティブなグローサリーがありません"
+
 }

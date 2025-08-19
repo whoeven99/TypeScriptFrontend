@@ -752,10 +752,12 @@ const Index = () => {
     {
       title: t("Images data"),
       dataIndex: "title",
+      width: "60%",
       key: "title",
     },
     {
       title: t("Action"),
+      width: "40%",
       render: (_: any, record: any) => {
         return (
           <Button

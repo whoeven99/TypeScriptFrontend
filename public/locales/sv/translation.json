@@ -576,5 +576,11 @@
     },
     "support": "Support",
     "Upgrade to a paid plan to unlock this feature": "Uppgradera till ett högre plan för att låsa detta funktion",
-    "Blogs and articles": "Blogg och artiklar"
+    "Blogs and articles": "Blogg och artiklar",
+    "translateSettings.title3": "Språkinställningar",
+    "Check all": "Markera alla",
+    "No available glossary found": "Ingen tillgänglig glossarie hittades",
+    "Advance Setting": "Avancerade inställningar",
+    "Brand-First Sentence Structure": "Marktförhållande för första satsstruktur",
+    "You don’t have any glossary active right now": "Du har inte några aktiva glossarer just nu"
 }
