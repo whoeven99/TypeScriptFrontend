@@ -13,41 +13,48 @@ const TranslatedIcon: React.FC<TranslatedIconProps> = ({ status, value }) => {
   const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [isPartlyTranslated, setIsPartlyTranslated] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
-  const [isTranslateException, setIsTranslateException] = useState<boolean>(false);
+  const [isTranslateException, setIsTranslateException] =
+    useState<boolean>(false);
   const { t } = useTranslation();
 
   useEffect(() => {
     setIsError(status === -1);
     setIsTranslated(status === 1);
     setIsTranslating(status === 2);
-    setIsPartlyTranslated(status === 3 || status === 5 || status === 6);
+    setIsPartlyTranslated(
+      status === 3 || status === 5 || status === 6 || status === 7,
+    );
     setIsTranslateException(status === 4);
   }, [status]);
 
   // 异常状态的提示内容
   const exceptionContent = (
-    <p style={{ 
-      maxWidth: "300px", 
-      margin: 0,
-      color: "#ff4d4f",
-      fontSize: "14px",
-      lineHeight: "1.5"
-    }}>
-      {t("Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.")}
+    <p
+      style={{
+        maxWidth: "300px",
+        margin: 0,
+        color: "#ff4d4f",
+        fontSize: "14px",
+        lineHeight: "1.5",
+      }}
+    >
+      {t(
+        "Some content of the store does not comply with OpenAI's translation policy, please contact us for manual support.",
+      )}
     </p>
   );
 
   const iconContent = (
     <div
       className={`icon-container ${
-        isError 
-          ? "error" 
-          : isTranslated 
-            ? "translated" 
-            : isTranslating 
-              ? "translating" 
-              : isPartlyTranslated 
-                ? "partly_translated" 
+        isError
+          ? "error"
+          : isTranslated
+            ? "translated"
+            : isTranslating
+              ? "translating"
+              : isPartlyTranslated
+                ? "partly_translated"
                 : isTranslateException
                   ? "translate_exception"
                   : "untranslated"
@@ -55,14 +62,14 @@ const TranslatedIcon: React.FC<TranslatedIconProps> = ({ status, value }) => {
     >
       <div
         className={`circle ${
-          isError 
-            ? "error" 
-            : isTranslated 
-              ? "translated" 
-              : isTranslating 
-                ? "translating" 
-                : isPartlyTranslated 
-                  ? "partly_translated" 
+          isError
+            ? "error"
+            : isTranslated
+              ? "translated"
+              : isTranslating
+                ? "translating"
+                : isPartlyTranslated
+                  ? "partly_translated"
                   : isTranslateException
                     ? "translate_exception"
                     : "untranslated"
@@ -82,24 +89,22 @@ const TranslatedIcon: React.FC<TranslatedIconProps> = ({ status, value }) => {
                   : t("Untranslated")}
       </span>
       {value !== undefined && (
-        <div className="value-display">
-          Value: {value}
-        </div>
+        <div className="value-display">Value: {value}</div>
       )}
     </div>
   );
 
   return isTranslateException ? (
-    <Popover 
+    <Popover
       content={exceptionContent}
       title={t("Translation Exception")}
       placement="top"
       trigger="hover"
       overlayStyle={{ maxWidth: 350 }}
-      overlayInnerStyle={{ 
+      overlayInnerStyle={{
         padding: "12px",
         backgroundColor: "#fff1f0",
-        border: "1px solid #ffccc7"
+        border: "1px solid #ffccc7",
       }}
     >
       {iconContent}
