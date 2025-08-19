@@ -268,7 +268,10 @@ const Index = () => {
 
   useEffect(() => {
     if (planCancelFetcher.data) {
-      console.log("planCancelFetcher.data: ", planCancelFetcher.data);
+      setSelectedPlan(2);
+      dispatch(setUserConfig({ plan: "2" }));
+      setUpdateTime("");
+      dispatch(setUserConfig({ updateTime: "" }));
       setCancelPlanWarnModal(false);
     }
   }, [planCancelFetcher.data]);
@@ -964,16 +967,18 @@ const Index = () => {
               <Text strong>{t("Save 20%")}</Text>
             </div>
           </Flex>
-          <Card styles={{ body: { padding: 12 } }}>
-            <Flex align="center" justify="space-between" gap={10}>
-              <Text>{t("Start your trial and unlock")}</Text>
-              <div className="free_trial">
-                <Text strong>
-                  {t("{{amount}} free credits", { amount: "200,000" })}
-                </Text>
-              </div>
-            </Flex>
-          </Card>
+          {!hasOpenFreePlan && (
+            <Card styles={{ body: { padding: 12 } }}>
+              <Flex align="center" justify="space-between" gap={10}>
+                <Text>{t("Start your trial and unlock")}</Text>
+                <div className="free_trial">
+                  <Text strong>
+                    {t("{{amount}} free credits", { amount: "200,000" })}
+                  </Text>
+                </div>
+              </Flex>
+            </Card>
+          )}
         </Space>
         <Row gutter={[16, 16]}>
           <Col
@@ -1399,7 +1404,7 @@ const Index = () => {
       >
         <Text>
           {t(
-            "Moving to the free plan will turn off key features. Are you sure you want to switch?"
+            "Moving to the free plan will turn off key features. Are you sure you want to switch?",
           )}
         </Text>
       </Modal>

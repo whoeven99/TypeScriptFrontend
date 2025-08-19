@@ -626,5 +626,9 @@
   "No. Your unused credits stay available for 3 months. But you'll only have access to the features included in your new (lower) plan.": "否。您未使用的积分将继续有效 3 个月。但是，您只能访问新计划（较低）中包含的功能。",
   "How many credits do actions use?": "操作使用多少积分？",
   "We calculate usage at 1 credit per word. However, if AI model is used, the consumption of prompt tokens also needs to be included—each request requires approximately an additional 80 credits. If you would like to know the estimated cost of a translation task, please feel free to contact customer support.": "我们根据每个单词计算 1 积分。但是，如果使用 AI 模型，则需要包括提示令牌的消耗—每个请求大约需要额外 80 积分。如果您想知道翻译任务的估计成本，请随时联系客户支持。",
+  "Cancel paid plan?": "取消付费计划？",
+  "Moving to the free plan will turn off key features. Are you sure you want to switch?": "切换到免费计划将关闭关键功能。您确定要切换吗？",
+  "Keep paid plan": "保留付费计划",
+  "Switch to free plan": "切换到免费计划",
   "1v1 support": "1v1 支持"
 }
