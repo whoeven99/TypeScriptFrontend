@@ -20,6 +20,63 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const GetLatestActiveSubscribeId = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/orders/getLatestActiveSubscribeId?shopName=${shop}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} GetLatestActiveSubscribeId: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} GetLatestActiveSubscribeId error:`, error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMessage: "",
+      response: "",
+    };
+  }
+};
+
+export const AddCharsByShopNameAfterSubscribe = async ({
+  shop,
+  appSubscription,
+}: {
+  shop: string;
+  appSubscription: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/translationCounter/addCharsByShopNameAfterSubscribe?shopName=${shop}`,
+      method: "POST",
+      data: {
+        subGid: appSubscription, //订阅计划的id
+      },
+    });
+
+    console.log(`${shop} IsOpenFreePlan: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} IsOpenFreePlan error:`, error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMessage: "",
+      response: false,
+    };
+  }
+};
+
 export const IsOpenFreePlan = async ({
   shop,
   server,
