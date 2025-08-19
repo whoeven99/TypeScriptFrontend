@@ -76,8 +76,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!updateUserAPIKey:
         try {
           const { apiKey, count, modelVersion, keywords, apiName, apiStatus, isSelected } = updateUserAPIKey;
-          console.log("updateUserAPIKey",updateUserAPIKey);
-          
+          console.log("updateUserAPIKey", updateUserAPIKey);
+
           const countNum = Number(count);
           if (isNaN(countNum) || countNum < 0) {
             return json({ success: false, error: "Invalid quota value" }, { status: 400 });
@@ -89,10 +89,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
       case !!testUserAPIKey:
         try {
-          const { content, apiName, targetCode,prompt } = testUserAPIKey;
-          console.log('testUserAPIKey',testUserAPIKey);
-          
-          const data = await TranslationInterface({ shop, apiName, sourceText: content, targetCode,prompt });
+          const { content, apiName, targetCode, prompt } = testUserAPIKey;
+          console.log('testUserAPIKey', testUserAPIKey);
+
+          const data = await TranslationInterface({ shop, apiName, sourceText: content, targetCode, prompt });
           return json({ data });
         }
         catch (error) {
@@ -195,6 +195,12 @@ const Index = () => {
   const googleTranslatorLanguage = [
     { label: 'English', value: 'en' },
     { label: '简体中文', value: 'zh-CN' },
+    { label: 'Español', value: 'es' },           // Spanish
+    { label: 'Français', value: 'fr' },          // French
+    { label: 'Deutsch', value: 'de' },           // German
+    { label: 'Italiano', value: 'it' },          // Italian
+    { label: '繁體中文', value: 'zh-TW' },        // Traditional Chinese
+    { label: 'Português', value: 'pt-PT' },       // Portuguese
   ];
   const apiNames = { 'google': { apiName: 0 }, 'openai': { apiName: 1 }, 'deepl': { apiName: 2 }, 'deepseek': { apiName: 3 } }
   const navigate = useNavigate();
@@ -255,7 +261,7 @@ const Index = () => {
         content,
         apiName: apiNames[activeModal].apiName,
         targetCode: tempTargetLanguage,
-        prompt:tempKeyWords
+        prompt: tempKeyWords
       }),
     }, {
       method: "POST",
@@ -280,7 +286,7 @@ const Index = () => {
         apiName: apiNames[activeModal].apiName,
         apiStatus: true,
         isSelected: false,
-        apiKey: (tempApiKey.includes('****')||tempApiKey==='')?null:tempApiKey,
+        apiKey: (tempApiKey.includes('****') || tempApiKey === '') ? null : tempApiKey,
         count: tempLimit,
         keywords: tempKeyWords,
         ...(activeModal === 'openai' && { modelVersion: tempModelVersion }),
@@ -492,7 +498,7 @@ const Index = () => {
         >
           <Modal.Section>
             {activeModal === 'openai' && (
-              <Box paddingBlockEnd="300">
+              <Box paddingBlockEnd="600">
                 <Select
                   label={t('openai.cv')}
                   options={chatGptVersions}
@@ -519,7 +525,7 @@ const Index = () => {
             </div>
             <Box>
               <TextField
-                label={t("openai.ls")}
+                label={activeModal === "google" ? t("openai.ls") : t("openai.lsgpt")}
                 type="number"
                 placeholder={t("openai.ps")}
                 value={tempLimit}
@@ -615,7 +621,7 @@ const Index = () => {
                     onChange={(e) => setTranslation(e.target.value)}
                     autoComplete="off"
                     // placeholder={t('openai.trw')}
-                    style={{ width: '100%', height: '100px', resize: 'vertical', padding:"10px", userSelect: 'none', top: 0 }} // 禁用选中
+                    style={{ width: '100%', height: '100px', resize: 'none', padding: "10px", userSelect: 'none', top: 0, borderRadius: "10px" }} // 禁用选中
                     readOnly // 只读
                     onFocus={(e) => e.target.blur()}
                   />
