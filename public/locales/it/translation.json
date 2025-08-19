@@ -555,7 +555,7 @@
         "ps": "Per favore, imposta il limite",
         "pw": "Impostazioni parole chiave del prompt",
         "fi": "Inserisci la parola chiave del prompt",
-        "ta": "Test API (il test consumerà la quota corrispondente)",
+        "ta": "Test API",
         "Translate": "Traduci",
         "Cancel": "Annulla",
         "stl": "Seleziona lingua di destinazione",
@@ -566,10 +566,13 @@
         "sa": "Seleziona API",
         "Effective": "Efficace",
         "as": "Stato API:",
-        "Amount": "Quota:",
+        "Amount": "Configurazione delle quote:",
         "Configuration": "Configurazione",
         "tit": "API di test",
         "tf": "Traduzione fallita, verificare la validità della chiave API",
-        "tcm": "Traduzione completata"
+        "tcm": "Traduzione completata",
+        "mv": "Versione del modello: ",
+        "ip": "Prompt di input",
+        "tips": "Suggerimenti: I test consumeranno la quota corrispondente"
     }
 }

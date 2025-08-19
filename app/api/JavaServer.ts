@@ -544,7 +544,7 @@ export const SavePrivateKey = async ({
   isSelected,
 }: {
   shop: string;
-  apiKey: string;
+  apiKey?: string;
   count: string; // 前端传递字符串
   modelVersion?: string; // 可选，仅 OpenAI 需要
   keywords: string[];
@@ -646,11 +646,13 @@ export const TranslationInterface = async ({
   apiName,
   sourceText,
   targetCode,
+  prompt
 }: {
   shop: string;
   apiName: Number;
   sourceText: string;
-  targetCode: string;
+  targetCode?: string;
+  prompt?:string
 }) => {
   try {
     const response = await axios({
@@ -660,9 +662,10 @@ export const TranslationInterface = async ({
         apiName,
         sourceText,
         targetCode,
+        prompt
       },
     });
-    console.log("testApiKeyRes", response);
+    console.log("testApiKeyRes", response.data);
 
     return response.data;
   } catch (error) {
