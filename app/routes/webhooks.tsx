@@ -3,6 +3,7 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import {
   AddCharsByShopName,
+  AddCharsByShopNameAfterSubscribe,
   AddSubscriptionQuotaRecord,
   CleanData,
   DeleteData,
@@ -217,7 +218,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           status: payload?.app_subscription.status,
         });
         if (payload?.app_subscription.status === "ACTIVE") {
-          const addChars = await AddCharsByShopName({ shop, amount: credits });
+          const addChars = await AddCharsByShopNameAfterSubscribe({
+            shop,
+            appSubscription: payload?.app_subscription.admin_graphql_api_id,
+          });
           if (addChars?.success) {
             AddSubscriptionQuotaRecord({
               subscriptionId: payload?.app_subscription.admin_graphql_api_id,
@@ -228,6 +232,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               id: payload?.app_subscription.admin_graphql_api_id,
               shopName: shop,
             });
+          }
+          if (payload?.app_subscription.status === "CANCELLED") {
+            UpdateUserPlan({ shop, plan: 2 });
           }
         }
       } catch (error) {

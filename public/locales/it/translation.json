@@ -575,5 +575,11 @@
         "mv": "Versione del modello: ",
         "ip": "Prompt di input",
         "tips": "Suggerimenti: I test consumeranno la quota corrispondente"
-    }
+    },
+    "translateSettings.title3": "Impostazioni tonalità",
+    "Check all": "Seleziona tutto",
+    "No available glossary found": "Nessun glossario disponibile trovato",
+    "Advance Setting": "Impostazioni avanzate",
+    "Brand-First Sentence Structure": "Struttura della prima frase del marchio",
+    "You don’t have any glossary active right now": "Non hai nessun glossario attivo in questo momento"
 }

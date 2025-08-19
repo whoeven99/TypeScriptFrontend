@@ -575,5 +575,11 @@
     },
     "support": "지원",
     "Upgrade to a paid plan to unlock this feature": "이 기능을 사용하려면 유료 플랜으로 업그레이드하세요",
-    "Blogs and articles": "블로그와 기사"
+    "Blogs and articles": "블로그와 기사",
+    "translateSettings.title3": "음성 설정",
+    "Check all": "모든 음성 선택",
+    "No available glossary found": "사용 가능한 용어집이 없습니다",
+    "Advance Setting": "고급 설정",
+    "Brand-First Sentence Structure": "브랜드 우선 문장 구조",
+    "You don’t have any glossary active right now": "현재 활성화된 용어집이 없습니다"
 }
