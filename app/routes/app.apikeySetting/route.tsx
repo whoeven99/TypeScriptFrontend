@@ -76,6 +76,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!updateUserAPIKey:
         try {
           const { apiKey, count, modelVersion, keywords, apiName, apiStatus, isSelected } = updateUserAPIKey;
+          console.log("updateUserAPIKey",updateUserAPIKey);
+          
           const countNum = Number(count);
           if (isNaN(countNum) || countNum < 0) {
             return json({ success: false, error: "Invalid quota value" }, { status: 400 });
@@ -217,13 +219,16 @@ const Index = () => {
       setTempKeyWords(userApiConfigs[id].keywords || 'Translate the following content into {language} .Only output the final correct translation')
       :
       setTempKeyWords('');
+    if (userApiConfigs[id].apiStatus) {
+      setTempApiKey('******************************');
+    }
   };
   const handleClose = () => {
     setModalOpen(false);
     setApiKeyError(false);
     setCountError(false);
-    setTempApiKey('')
-    setkeywordsError(false)
+    setTempApiKey('');
+    setkeywordsError(false);
   };
   const handleTestApi = (id: ServiceId) => {
     if (isLoading) {
@@ -243,6 +248,7 @@ const Index = () => {
     // 测试api翻译接口逻辑
     if (!content) {
       shopify.toast.show(t('openai.et'))
+      return;
     }
     testApiKeyfetcher.submit({
       testUserAPIKey: JSON.stringify({
@@ -274,7 +280,7 @@ const Index = () => {
         apiName: apiNames[activeModal].apiName,
         apiStatus: true,
         isSelected: false,
-        apiKey: tempApiKey,
+        apiKey: (tempApiKey.includes('****')||tempApiKey==='')?null:tempApiKey,
         count: tempLimit,
         keywords: tempKeyWords,
         ...(activeModal === 'openai' && { modelVersion: tempModelVersion }),
@@ -298,8 +304,6 @@ const Index = () => {
   useEffect(() => {
     if (loadingfetcher.state === 'idle' && loadingfetcher.data) {
       setIsLoading(false);
-      console.log(loadingfetcher.data.data);
-      
       if (loadingfetcher.data.error) {
         console.error('Loading fetcher error:', loadingfetcher.data.error);
         shopify.toast.show(t('openai.di'), { duration: 3000 });
