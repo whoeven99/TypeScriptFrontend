@@ -215,8 +215,6 @@ const Index = () => {
           tokenLimit: item.response.tokenLimit,
           usedToken: item.response.usedToken,
         }));
-      console.log("filteredData", filteredData);
-
       setCustomApikeyData(filteredData);
     }
   }, [customApiKeyFetcher.data]);
