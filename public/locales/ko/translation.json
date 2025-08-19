@@ -579,5 +579,6 @@
     "Check all": "모든 음성 선택",
     "No available glossary found": "사용 가능한 용어집이 없습니다",
     "Advance Setting": "고급 설정",
-    "Brand-First Sentence Structure": "브랜드 우선 문장 구조"
+    "Brand-First Sentence Structure": "브랜드 우선 문장 구조",
+    "You don’t have any glossary active right now": "현재 활성화된 용어집이 없습니다"
 }

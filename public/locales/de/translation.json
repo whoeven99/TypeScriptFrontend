@@ -581,5 +581,7 @@
   "Check all": "Alle überprüfen",
   "No available glossary found": "Keine verfügbaren Glossare gefunden",
   "Advance Setting": "Erweiterte Einstellungen",
-  "Brand-First Sentence Structure": "Marktwert erster Satzstruktur"
+  "Brand-First Sentence Structure": "Marktwert erster Satzstruktur",
+  "You don’t have any glossary active right now": "Sie haben derzeit keinen aktiven Glossar"
+
 }
