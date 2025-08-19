@@ -94,7 +94,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               amount: payForPlan.price,
               currencyCode: "USD",
             },
-            trialDays: 0,
+            trialDays: 5,
             returnUrl,
             test:
               process.env.NODE_ENV === "development" ||
