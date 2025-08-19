@@ -127,8 +127,6 @@ const Index = () => {
     "theme",
     "delivery",
     "shipping",
-    "handle",
-    "policies",
   ]);
   const [translateSettings4, setTranslateSettings4] = useState<{
     option1: string;
@@ -432,7 +430,7 @@ const Index = () => {
       value: "shipping",
     },
     {
-      label: "handle",
+      label: "Handle(URL)",
       value: "handle",
     },
   ];
@@ -1588,7 +1586,7 @@ const Index = () => {
                       onClick={() => handleAdvanceSettingChange("glossary")}
                     />
                   </Flex>
-                  <Flex gap={8} align="center" justify="space-between">
+                  {/* <Flex gap={8} align="center" justify="space-between">
                     <Text>{t("Brand-First Sentence Structure")}</Text>
 
                     <Switch
@@ -1596,7 +1594,7 @@ const Index = () => {
                       loading={loadingArray.includes("brand")}
                       onClick={() => handleAdvanceSettingChange("brand")}
                     />
-                  </Flex>
+                  </Flex> */}
                 </Space>
               )}
             </Card>
