@@ -571,22 +571,49 @@ const Index = () => {
   };
 
   const handleAdvanceSettingChange = async (type: "glossary" | "brand") => {
+    if (loadingArray.some((item) => ["glossary", "brand"].includes(item)))
+      return;
+
     setLoadingArray([...loadingArray, type]);
+
+    let error;
+
     const data = await GetGlossaryByShopName({
       shop,
       server: server as string,
     });
+
     console.log(data);
+
     if (data?.success) {
-      if (data.response.length > 0 && type == "glossary") {
-        setGlossaryOpen(!glossaryOpen);
-      } else if (data.response.length > 0 && type == "brand") {
-        setBrandWordOpen(!brandWordOpen);
-      } else if (data.response.length == 0) {
-        shopify.toast.show(t("No available glossary found"));
+      if (data.response.length == 0) {
+        error = 2;
+      } else if (data.response.every((item: any) => item?.status == 0)) {
+        error = 3;
       }
+      // if (data.response.length > 0 && type == "glossary") {
+      //   setGlossaryOpen(!glossaryOpen);
+      // } else if (data.response.length > 0 && type == "brand") {
+      //   setBrandWordOpen(!brandWordOpen);
+      // } else if (data.response.length == 0) {
+      //   shopify.toast.show(t("No available glossary found"));
+      // }
     } else {
-      shopify.toast.show(t("No available glossary found"));
+      error = 1;
+    }
+    switch (true) {
+      case error == 1 || error == 2:
+        shopify.toast.show(t("No available glossary found"));
+        break;
+      case error == 3:
+        shopify.toast.show(t("You don’t have any glossary active right now"));
+        break;
+      default:
+        if (type == "glossary") {
+          setGlossaryOpen(!glossaryOpen);
+        } else if (type == "brand") {
+          setBrandWordOpen(!brandWordOpen);
+        }
     }
     const newArray = loadingArray.filter((item) => item == type);
     setLoadingArray(newArray);
@@ -775,7 +802,11 @@ const Index = () => {
                 marginBottom: "16px",
               }}
             >
-              <Space direction="vertical" size="large">
+              <Space
+                direction="vertical"
+                size="large"
+                style={{ display: "flex" }}
+              >
                 <Space
                   direction="vertical"
                   size={16}

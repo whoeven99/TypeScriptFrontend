@@ -580,6 +580,7 @@
     "Check all": "すべて選択",
     "No available glossary found": "利用可能なグローサリーが見つかりませんでした",
     "Advance Setting": "高度な設定",
-    "Brand-First Sentence Structure": "ブランド優先の最初の文構造"
+    "Brand-First Sentence Structure": "ブランド優先の最初の文構造",
+    "You don’t have any glossary active right now": "現在はアクティブなグローサリーがありません"
 
 }
