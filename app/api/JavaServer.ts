@@ -396,6 +396,9 @@ export const SendSubscribeSuccessEmail = async ({
         shopName: shopName,
       },
     });
+
+    console.log(`${shopName} SendSubscribeSuccessEmail: `, response.data);
+
     return response.data;
   } catch (error) {
     console.error("Error SendSubscribeSuccessEmail:", error);
@@ -534,6 +537,9 @@ export const UpdateStatus = async ({ shop }: { shop: string }) => {
         shopName: shop,
       },
     });
+    
+    console.log(`${shop} UpdateStatus: `, response.data);
+
   } catch (error) {
     console.error("Error UpdateStatus:", error);
   }
@@ -556,6 +562,9 @@ export const UpdateUserPlan = async ({
         planId: plan,
       },
     });
+
+    console.log(`${shop} UpdateUserPlan: `, response.data);
+
     return response.data;
   } catch (error) {
     console.error("Error UpdateUserPlan:", error);

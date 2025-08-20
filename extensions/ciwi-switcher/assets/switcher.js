@@ -152,8 +152,6 @@ async function initializeCurrency(data, shop, ciwiBlock) {
   const selectedCurrency = data.find(
     (currency) => currency?.currencyCode === value,
   );
-
-  console.log("data: ", data);
   console.log("selectedCurrency: ", selectedCurrency);
 
   const isValueInCurrencies =

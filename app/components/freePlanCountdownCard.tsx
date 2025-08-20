@@ -13,10 +13,7 @@ const FreePlanCountdownCard = () => {
   });
   const [showBanner, setShowBanner] = useState(true);
   const navigate = useNavigate();
-
-  console.log("plan", plan);
-  console.log("updateTime", updateTime);
-
+  
   useEffect(() => {
     if (plan !== 5 || !updateTime) {
       return;

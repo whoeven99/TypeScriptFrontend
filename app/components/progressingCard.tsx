@@ -78,9 +78,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
-    console.log(status);
-    console.log(target[index + 1]);
-
     // 当状态为 2 时，开始轮询
     if (status === 2) {
       const pollStatus = () => {
@@ -156,10 +153,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         }
       };
     } else if (target[index + 1]) {
-      console.log(target[index + 1]);
       setIndex(index + 1);
-      console.log(target[index + 1]);
-
       const pollStatus = () => {
         // 状态查询请求
         const statusformData = new FormData();
@@ -257,19 +251,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
 
   useEffect(() => {
     if (statusFetcher.data?.data) {
-      console.log("statusResponse", statusFetcher.data?.data);
       const statusValue =
         statusFetcher.data?.data?.translatesDOResult[0].status;
       setStatus(statusValue);
-      console.log(statusValue);
-      console.log(
-        statusFetcher.data?.data?.translatesDOResult[0].resourceType == "SHOP",
-      );
-      console.log(
-        statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-          "PRODUCT",
-      );
-
       if (statusValue === 2) {
         switch (true) {
           case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
@@ -417,14 +401,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       setTranslateStatus(1);
     }
   }, [stopTranslateFetcher.data]);
-
-  useEffect(() => {
-    console.log(item);
-  }, [item]);
-
-  useEffect(() => {
-    console.log(progressNumber);
-  }, [progressNumber]);
 
   // useEffect(() => {
   //     if (typeof itemsFetcher.data?.data[0]?.totalNumber === 'number' && typeof itemsFetcher.data?.data[0]?.translatedNumber === 'number') {
