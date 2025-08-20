@@ -105,7 +105,7 @@ const Index = () => {
     "filters",
     "metaobjects",
     "metadata",
-    "notifications",
+    // "notifications",
     "navigation",
     "shop",
     "theme",
@@ -385,10 +385,10 @@ const Index = () => {
       label: t("Store metadata"),
       value: "metadata",
     },
-    {
-      label: t("Email"),
-      value: "notifications",
-    },
+    // {
+    //   label: t("Email"),
+    //   value: "notifications",
+    // },
     {
       label: t("Policies"),
       value: "policies",
@@ -439,10 +439,10 @@ const Index = () => {
     if (languageCardWarnText) {
       setLanguageCardWarnText("");
     }
-    if (e.length > 5) {
-      shopify.toast.show(t("You can select up to 5 languages at once."));
-      return;
-    }
+    // if (e.length > 5) {
+    //   shopify.toast.show(t("You can select up to 5 languages at once."));
+    //   return;
+    // }
     setSelectedLanguageCode(e);
   };
 

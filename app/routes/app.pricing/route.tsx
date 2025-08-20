@@ -140,141 +140,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { shop, server } = useLoaderData<typeof loader>();
-  const [currentCredits, setCurrentCredits] = useState(0);
-  const [maxCredits, setMaxCredits] = useState(0);
-  const [yearly, setYearly] = useState(false);
-  const [selectedOption, setSelectedOption] = useState<OptionType | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
-  const [updateTime, setUpdateTime] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
-  const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
-  const [buyButtonLoading, setBuyButtonLoading] = useState(false);
-  // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
-  // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
-  // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
-  const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
-  const isQuotaExceeded = useMemo(
-    () => currentCredits >= maxCredits && maxCredits > 0,
-    [currentCredits, maxCredits],
-  );
-  const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const userConfig = useSelector((state: any) => state.userConfig);
-  const planCancelFetcher = useFetcher<any>();
-  const payFetcher = useFetcher<any>();
-  const orderFetcher = useFetcher<any>();
-  const payForPlanFetcher = useFetcher<any>();
-  // const freeTrialFetcher = useFetcher<any>();
-
-  useEffect(() => {
-    // wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
-    if (!userConfig.plan || !userConfig.updateTime) {
-      // planfetcher.submit(
-      //   { planInfo: JSON.stringify(true) },
-      //   { method: "POST" },
-      // );
-      const getPlan = async () => {
-        const data = await GetUserSubscriptionPlan({
-          shop,
-          server: server as string,
-        });
-        setSelectedPlan(data.userSubscriptionPlan);
-        dispatch(setUserConfig({ plan: data.userSubscriptionPlan }));
-        if (data.currentPeriodEnd) {
-          const date = new Date(data.currentPeriodEnd)
-            .toLocaleDateString("zh-CN", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-            })
-            .replace(/\//g, "-");
-          setUpdateTime(date);
-          dispatch(setUserConfig({ updateTime: date }));
-        }
-      };
-      getPlan();
-      const getWords = async () => {
-        const data = await GetUserWords({
-          shop,
-          server: server as string,
-        });
-        setCurrentCredits(data.chars);
-        setMaxCredits(data.totalChars);
-      };
-      getWords();
-    } else {
-      setSelectedPlan(userConfig.plan);
-      setUpdateTime(userConfig.updateTime);
-    }
-    const checkFreeUsed = async () => {
-      try {
-        const response = await IsOpenFreePlan({
-          shop,
-          server: server as string,
-        });
-
-        setHasOpenFreePlan(response.response || false);
-      } catch (error) {
-        console.error("Error getPlan:", error);
-      }
-    };
-    checkFreeUsed();
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    if (payFetcher.data || payForPlanFetcher.data) {
-      if (
-        (payFetcher.data?.data?.data?.appPurchaseOneTimeCreate
-          ?.appPurchaseOneTime &&
-          payFetcher.data?.data?.data?.appPurchaseOneTimeCreate
-            ?.confirmationUrl) ||
-        (payForPlanFetcher.data?.appSubscription &&
-          payForPlanFetcher.data?.confirmationUrl)
-      ) {
-        const order =
-          payFetcher.data?.data?.data?.appPurchaseOneTimeCreate
-            ?.appPurchaseOneTime || payForPlanFetcher.data?.appSubscription;
-        const confirmationUrl =
-          payFetcher.data?.data?.data?.appPurchaseOneTimeCreate
-            ?.confirmationUrl || payForPlanFetcher.data?.confirmationUrl;
-        const orderInfo = {
-          id: order.id,
-          amount: order.price.amount,
-          name: order.name,
-          createdAt: order.createdAt,
-          status: order.status,
-          confirmationUrl: confirmationUrl,
-        };
-        const formData = new FormData();
-        formData.append("orderInfo", JSON.stringify(orderInfo));
-        orderFetcher.submit(formData, {
-          method: "post",
-          action: "/app",
-        });
-        open(confirmationUrl, "_top");
-      }
-      if (
-        payFetcher.data?.data?.data?.appPurchaseOneTimeCreate?.userErrors
-          ?.length ||
-        payForPlanFetcher.data?.userErrors?.length
-      ) {
-        setBuyButtonLoading(false);
-      }
-    }
-  }, [payFetcher.data, payForPlanFetcher.data]);
-
-  useEffect(() => {
-    if (planCancelFetcher.data) {
-      setSelectedPlan(2);
-      dispatch(setUserConfig({ plan: "2" }));
-      setUpdateTime("");
-      dispatch(setUserConfig({ updateTime: "" }));
-      setCancelPlanWarnModal(false);
-    }
-  }, [planCancelFetcher.data]);
-
   const creditOptions: OptionType[] = useMemo(
     () => [
       {
@@ -416,13 +282,146 @@ const Index = () => {
     ],
     [selectedPlan],
   );
+  const [currentCredits, setCurrentCredits] = useState(0);
+  const [maxCredits, setMaxCredits] = useState(0);
+  const [yearly, setYearly] = useState(true);
+  const [selectedOptionKey, setSelectedOption] = useState<string>("option-1");
+  const [updateTime, setUpdateTime] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
+  const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
+  const [buyButtonLoading, setBuyButtonLoading] = useState(false);
+  // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
+  // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
+  // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
+  const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
+  const isQuotaExceeded = useMemo(
+    () => currentCredits >= maxCredits && maxCredits > 0,
+    [currentCredits, maxCredits],
+  );
+  const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const userConfig = useSelector((state: any) => state.userConfig);
+  const planCancelFetcher = useFetcher<any>();
+  const payFetcher = useFetcher<any>();
+  const orderFetcher = useFetcher<any>();
+  const payForPlanFetcher = useFetcher<any>();
+  // const freeTrialFetcher = useFetcher<any>();
+
+  useEffect(() => {
+    // wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
+    if (!userConfig.plan || !userConfig.updateTime) {
+      // planfetcher.submit(
+      //   { planInfo: JSON.stringify(true) },
+      //   { method: "POST" },
+      // );
+      const getPlan = async () => {
+        const data = await GetUserSubscriptionPlan({
+          shop,
+          server: server as string,
+        });
+        setSelectedPlan(data.userSubscriptionPlan);
+        dispatch(setUserConfig({ plan: data.userSubscriptionPlan }));
+        if (data.currentPeriodEnd) {
+          const date = new Date(data.currentPeriodEnd)
+            .toLocaleDateString("zh-CN", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            })
+            .replace(/\//g, "-");
+          setUpdateTime(date);
+          dispatch(setUserConfig({ updateTime: date }));
+        }
+      };
+      getPlan();
+      const getWords = async () => {
+        const data = await GetUserWords({
+          shop,
+          server: server as string,
+        });
+        setCurrentCredits(data.chars);
+        setMaxCredits(data.totalChars);
+      };
+      getWords();
+    } else {
+      setSelectedPlan(userConfig.plan);
+      setUpdateTime(userConfig.updateTime);
+    }
+    const checkFreeUsed = async () => {
+      try {
+        const response = await IsOpenFreePlan({
+          shop,
+          server: server as string,
+        });
+
+        setHasOpenFreePlan(response.response || false);
+      } catch (error) {
+        console.error("Error getPlan:", error);
+      }
+    };
+    checkFreeUsed();
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (payFetcher.data || payForPlanFetcher.data) {
+      if (
+        (payFetcher.data?.data?.data?.appPurchaseOneTimeCreate
+          ?.appPurchaseOneTime &&
+          payFetcher.data?.data?.data?.appPurchaseOneTimeCreate
+            ?.confirmationUrl) ||
+        (payForPlanFetcher.data?.appSubscription &&
+          payForPlanFetcher.data?.confirmationUrl)
+      ) {
+        const order =
+          payFetcher.data?.data?.data?.appPurchaseOneTimeCreate
+            ?.appPurchaseOneTime || payForPlanFetcher.data?.appSubscription;
+        const confirmationUrl =
+          payFetcher.data?.data?.data?.appPurchaseOneTimeCreate
+            ?.confirmationUrl || payForPlanFetcher.data?.confirmationUrl;
+        const orderInfo = {
+          id: order.id,
+          amount: order.price.amount,
+          name: order.name,
+          createdAt: order.createdAt,
+          status: order.status,
+          confirmationUrl: confirmationUrl,
+        };
+        const formData = new FormData();
+        formData.append("orderInfo", JSON.stringify(orderInfo));
+        orderFetcher.submit(formData, {
+          method: "post",
+          action: "/app",
+        });
+        open(confirmationUrl, "_top");
+      }
+      if (
+        payFetcher.data?.data?.data?.appPurchaseOneTimeCreate?.userErrors
+          ?.length ||
+        payForPlanFetcher.data?.userErrors?.length
+      ) {
+        setBuyButtonLoading(false);
+      }
+    }
+  }, [payFetcher.data, payForPlanFetcher.data]);
+
+  useEffect(() => {
+    if (planCancelFetcher.data) {
+      setSelectedPlan(2);
+      dispatch(setUserConfig({ plan: "2" }));
+      setUpdateTime("");
+      dispatch(setUserConfig({ updateTime: "" }));
+      setCancelPlanWarnModal(false);
+    }
+  }, [planCancelFetcher.data]);
 
   const plans = useMemo(
     () => [
       {
         title: "Basic",
         monthlyPrice: 7.99,
-        yearlyPrice: 76.68,
+        yearlyPrice: 6.39,
         subtitle: t("pricing.for_small_teams"),
         buttonText:
           selectedPlan === 4
@@ -447,7 +446,7 @@ const Index = () => {
       {
         title: "Pro",
         monthlyPrice: 19.99,
-        yearlyPrice: 191.88,
+        yearlyPrice: 15.99,
         subtitle: t("pricing.for_growing"),
         buttonText:
           selectedPlan === 5
@@ -472,7 +471,7 @@ const Index = () => {
       {
         title: "Premium",
         monthlyPrice: 39.99,
-        yearlyPrice: 383.88,
+        yearlyPrice: 31.99,
         subtitle: t("pricing.for_large_teams"),
         buttonText:
           selectedPlan === 6
@@ -788,6 +787,10 @@ const Index = () => {
 
   const handlePay = () => {
     setBuyButtonLoading(true);
+    const selectedOption = creditOptions.find(
+      (item) => item.key === selectedOptionKey,
+    );
+
     const payInfo = {
       name: selectedOption?.name,
       price: {
@@ -1018,9 +1021,7 @@ const Index = () => {
               <Title level={5}>Free</Title>
               <div style={{ margin: "12px 0" }}>
                 <Text style={{ fontSize: "28px", fontWeight: "bold" }}>$0</Text>
-                <Text style={{ fontSize: "14px" }}>
-                  {yearly ? t("/year") : t("/month")}
-                </Text>
+                <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
               </div>
               <Paragraph type="secondary" style={{ fontSize: "13px" }}>
                 {t("pricing.for_individuals")}
@@ -1151,9 +1152,7 @@ const Index = () => {
                     <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
                       ${yearly ? plan.yearlyPrice : plan.monthlyPrice}
                     </Text>
-                    <Text style={{ fontSize: "14px" }}>
-                      {yearly ? t("/year") : t("/month")}
-                    </Text>
+                    <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
                   </div>
                   <Paragraph type="secondary" style={{ fontSize: "13px" }}>
                     {plan.subtitle}
@@ -1263,7 +1262,7 @@ const Index = () => {
         </Row>
       </Space>
       <Modal
-        title={t("Get extra credits that never expire")}
+        title={t("Buy Credits")}
         open={addCreditsModalOpen}
         width={900}
         centered
@@ -1279,9 +1278,9 @@ const Index = () => {
               marginBottom: 10,
             }}
           >
-            <Title level={4} style={{ marginBottom: 0, marginRight: 10 }}>
+            {/* <Title level={4} style={{ marginBottom: 0, marginRight: 10 }}>
               {t("Buy Credits")}
-            </Title>
+            </Title> */}
             <Text style={{ fontWeight: "bold" }}>
               {selectedPlan === 6
                 ? t("discountText.premium")
@@ -1300,11 +1299,13 @@ const Index = () => {
                   style={{
                     textAlign: "center",
                     borderColor:
-                      JSON.stringify(selectedOption) === JSON.stringify(option)
+                      JSON.stringify(selectedOptionKey) ===
+                      JSON.stringify(option.key)
                         ? "#007F61"
                         : undefined,
                     borderWidth:
-                      JSON.stringify(selectedOption) === JSON.stringify(option)
+                      JSON.stringify(selectedOptionKey) ===
+                      JSON.stringify(option.key)
                         ? "2px"
                         : "1px",
                     cursor: "pointer",
@@ -1314,7 +1315,7 @@ const Index = () => {
                     alignItems: "center",
                     height: "150px",
                   }}
-                  onClick={() => setSelectedOption(option)}
+                  onClick={() => setSelectedOption(option.key)}
                 >
                   <Text
                     style={{
@@ -1364,14 +1365,16 @@ const Index = () => {
             <Space direction="vertical" align="center">
               <Text type="secondary" style={{ margin: "16px 0 8px 0" }}>
                 {t("Total pay")}: $
-                {selectedOption
-                  ? selectedOption.price.currentPrice.toFixed(2)
+                {selectedOptionKey
+                  ? creditOptions
+                      .find((item) => item.key === selectedOptionKey)
+                      ?.price.currentPrice.toFixed(2)
                   : "0.00"}
               </Text>
               <Button
                 type="primary"
                 size="large"
-                disabled={!selectedOption}
+                disabled={!selectedOptionKey}
                 loading={buyButtonLoading}
                 onClick={handlePay}
               >
@@ -1388,15 +1391,17 @@ const Index = () => {
         onCancel={() => setCancelPlanWarnModal(false)}
         footer={
           <Flex align="end" justify="end" gap={10}>
-            <Button onClick={() => setCancelPlanWarnModal(false)}>
-              {t("Keep paid plan")}
-            </Button>
             <Button
               loading={planCancelFetcher.state == "submitting"}
-              type="primary"
               onClick={handleCancelPlan}
             >
               {t("Switch to free plan")}
+            </Button>
+            <Button
+              type="primary"
+              onClick={() => setCancelPlanWarnModal(false)}
+            >
+              {t("Keep paid plan")}
             </Button>
           </Flex>
         }
