@@ -72,7 +72,8 @@
     "cv":"ChatGPT version",
     "hd":"How do I get an API key?",
     "pe":"Please enter API Key",
-    "ls":"Limit setting",
+    "ls":"Usage Limit (Characters)",
+    "lsgpt":"Usage Limit (Tokens)",
     "ps":"Please set limit",
     "pw":"Prompt word settings",
     "fi":"Fill in the prompt word",
@@ -629,5 +630,6 @@
   "Moving to the free plan will turn off key features. Are you sure you want to switch?": "Moving to the free plan will turn off key features. Are you sure you want to switch?",
   "Keep paid plan": "Keep paid plan",
   "Switch to free plan": "Switch to free plan",
-  "1v1 support": "1v1 support"
+  "1v1 support": "1v1 support",
+  "Compare plans": "Compare plans"
 }

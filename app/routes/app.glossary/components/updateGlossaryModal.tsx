@@ -167,7 +167,6 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       setRangeCodeErrorMsg("");
       const item = dataSource.find((item: any) => item.key === id);
       let data;
-      console.log(item);
       if (item) {
         data = await UpdateTargetTextById({
           shop: shop,
@@ -208,7 +207,6 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
               })?.name || "All Languages",
           };
         }
-        console.log(res);
         dispatch(updateGLossaryTableData(res));
         shopify.toast.show("Saved successfully");
         setConfirmButtonDisable(false);

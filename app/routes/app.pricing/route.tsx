@@ -58,7 +58,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const payForPlan = JSON.parse(formData.get("payForPlan") as string);
   const cancelId = JSON.parse(formData.get("cancelId") as string);
-  console.log("cancelId: ", cancelId);
   switch (true) {
     case !!payForPlan:
       try {
@@ -154,7 +153,7 @@ const Index = () => {
   // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
   // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
-  const [hasOpenFreePlan, setHasOpenFreePlan] = useState(false);
+  const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
   const isQuotaExceeded = useMemo(
     () => currentCredits >= maxCredits && maxCredits > 0,
     [currentCredits, maxCredits],
@@ -268,7 +267,10 @@ const Index = () => {
 
   useEffect(() => {
     if (planCancelFetcher.data) {
-      console.log("planCancelFetcher.data: ", planCancelFetcher.data);
+      setSelectedPlan(2);
+      dispatch(setUserConfig({ plan: "2" }));
+      setUpdateTime("");
+      dispatch(setUserConfig({ updateTime: "" }));
       setCancelPlanWarnModal(false);
     }
   }, [planCancelFetcher.data]);
@@ -718,7 +720,7 @@ const Index = () => {
 
   const columns = [
     {
-      title: "Features",
+      title: t("Features"),
       dataIndex: "features",
       key: "features",
     },
@@ -964,16 +966,18 @@ const Index = () => {
               <Text strong>{t("Save 20%")}</Text>
             </div>
           </Flex>
-          <Card styles={{ body: { padding: 12 } }}>
-            <Flex align="center" justify="space-between" gap={10}>
-              <Text>{t("Start your trial and unlock")}</Text>
-              <div className="free_trial">
-                <Text strong>
-                  {t("{{amount}} free credits", { amount: "200,000" })}
-                </Text>
-              </div>
-            </Flex>
-          </Card>
+          {!hasOpenFreePlan && (
+            <Card styles={{ body: { padding: 12 } }}>
+              <Flex align="center" justify="space-between" gap={10}>
+                <Text>{t("Start your trial and unlock")}</Text>
+                <div className="free_trial">
+                  <Text strong>
+                    {t("{{amount}} free credits", { amount: "200,000" })}
+                  </Text>
+                </div>
+              </Flex>
+            </Card>
+          )}
         </Space>
         <Row gutter={[16, 16]}>
           <Col
@@ -1173,7 +1177,7 @@ const Index = () => {
                       onClick={() => handlePayForPlan({ plan, trialDays: 5 })}
                       loading={buyButtonLoading}
                     >
-                      {"Free trial"}
+                      {t("Free trial")}
                     </Button>
                   )}
 
@@ -1399,7 +1403,7 @@ const Index = () => {
       >
         <Text>
           {t(
-            "Moving to the free plan will turn off key features. Are you sure you want to switch?"
+            "Moving to the free plan will turn off key features. Are you sure you want to switch?",
           )}
         </Text>
       </Modal>

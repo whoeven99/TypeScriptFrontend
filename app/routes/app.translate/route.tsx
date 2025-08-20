@@ -531,7 +531,6 @@ const Index = () => {
       return;
     }
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
-    console.log(customKey);
     const formData = new FormData();
     formData.append(
       "translation",
@@ -580,8 +579,6 @@ const Index = () => {
       shop,
       server: server as string,
     });
-
-    console.log(data);
 
     if (data?.success) {
       if (data.response.length == 0) {

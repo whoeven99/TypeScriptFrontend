@@ -128,7 +128,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { shop, server, mobile } = useLoaderData<typeof loader>();
-  console.log(shop, server, mobile);
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
