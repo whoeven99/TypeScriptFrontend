@@ -550,8 +550,14 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                               {translateStatus === 2
                                 ? t("progressing.progressingWithSpace", {
                                     item: t(item),
-                                    hasTranslated: progressNumber.hasTranslated,
-                                    totalNumber: progressNumber.totalNumber,
+                                    hasTranslated:
+                                      progressNumber.hasTranslated > 0
+                                        ? progressNumber.hasTranslated
+                                        : 0,
+                                    totalNumber:
+                                      progressNumber.totalNumber > 0
+                                        ? progressNumber.totalNumber
+                                        : 0,
                                   })
                                 : t("progressing.progressingWriting", {
                                     item: t(item),
