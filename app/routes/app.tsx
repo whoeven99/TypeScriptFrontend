@@ -182,11 +182,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           // shopLanguageCodesWithoutPrimary: shopLocalesIndex,
         };
 
-        console.log("languageData: ", {
-          data,
-          languageSetting,
-        });
-
         return json({ data, languageSetting, shop });
       } catch (error) {
         console.error("Error languageData app:", error);

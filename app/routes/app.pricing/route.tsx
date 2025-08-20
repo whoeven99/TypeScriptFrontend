@@ -58,7 +58,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const payForPlan = JSON.parse(formData.get("payForPlan") as string);
   const cancelId = JSON.parse(formData.get("cancelId") as string);
-  console.log("cancelId: ", cancelId);
   switch (true) {
     case !!payForPlan:
       try {
@@ -154,7 +153,7 @@ const Index = () => {
   // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
   // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
-  const [hasOpenFreePlan, setHasOpenFreePlan] = useState(false);
+  const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
   const isQuotaExceeded = useMemo(
     () => currentCredits >= maxCredits && maxCredits > 0,
     [currentCredits, maxCredits],
@@ -721,7 +720,7 @@ const Index = () => {
 
   const columns = [
     {
-      title: "Features",
+      title: t("Features"),
       dataIndex: "features",
       key: "features",
     },
@@ -1178,7 +1177,7 @@ const Index = () => {
                       onClick={() => handlePayForPlan({ plan, trialDays: 5 })}
                       loading={buyButtonLoading}
                     >
-                      {"Free trial"}
+                      {t("Free trial")}
                     </Button>
                   )}
 
