@@ -628,11 +628,11 @@ const Index = () => {
                       padding: "10px", 
                       userSelect: 'none', 
                       top: 0, 
-                      backgroundColor: '#F9FAFB', 
-                      fontFamily: 'var(--p-surface)', 
+                      backgroundColor: 'rgba(253, 253, 253, 1)', 
+                      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "San Francisco", "Segoe UI", Roboto, "Helvetica Neue", sans-serif', 
                       borderRadius: "10px",
-                      border: '1px solid #DFE3E8',
-                      // color: '#2E3338',
+                      border: '1px solid rgba(138, 138, 138, 1)',
+                      color: 'rgba(48, 48, 48, 1)',
                     }} // 禁用选中
                     readOnly // 只读
                     onFocus={(e) => e.target.blur()}
