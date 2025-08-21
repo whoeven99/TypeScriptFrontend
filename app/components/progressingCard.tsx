@@ -57,6 +57,40 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         action: "/app",
       },
     );
+    async function getProgressData() {
+      const progressData = await GetProgressData({
+        shopName: shop,
+        server,
+        target: target[index],
+      });
+
+      if (
+        !progressData?.response?.TotalQuantity &&
+        !progressData?.response?.RemainingQuantity
+      ) {
+        return;
+      }
+
+      const progress = (
+        ((progressData?.response?.TotalQuantity -
+          progressData?.response?.RemainingQuantity) /
+          progressData?.response?.TotalQuantity) *
+        100
+      ).toFixed(2);
+      setProgressNumber({
+        hasTranslated:
+          progressData?.response?.TotalQuantity -
+          progressData?.response?.RemainingQuantity,
+        totalNumber: progressData?.response?.TotalQuantity,
+      });
+
+      if (typeof progress == "string" || typeof progress == "number") {
+        setProgress(parseFloat(progress));
+      }
+    }
+
+    getProgressData();
+
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
