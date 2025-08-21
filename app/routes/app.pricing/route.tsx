@@ -924,9 +924,9 @@ const Index = () => {
                   }}
                 />
               ) : (
-                <Skeleton active paragraph={{ rows: 1 }} title={false} />
+              <Skeleton active paragraph={{ rows: 1 }} title={false} />
               )}
-              {updateTime && maxCredits && (
+              {updateTime && (
                 <Text>
                   {t("This bill was issued on {{date}}", { date: updateTime })}
                 </Text>
