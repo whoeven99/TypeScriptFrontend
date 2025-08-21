@@ -37,6 +37,7 @@ import { Page, Select } from "@shopify/polaris";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setUserConfig } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
+import { S } from "node_modules/vite/dist/node/types.d-aGj9QkWt";
 
 const { Text } = Typography;
 
@@ -60,18 +61,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   console.log(`${shop} load manage_translation_theme`);
 
   try {
-    const themes = await queryNextTransType({
-      shop,
-      accessToken: accessToken as string,
-      resourceType: "ONLINE_STORE_THEME",
-      endCursor: "",
-      locale: searchTerm || "",
-    });
     return json({
       server: process.env.SERVER_URL,
       shopName: shop,
       searchTerm,
-      themes,
     });
   } catch (error) {
     console.error("Error load theme:", error);
@@ -80,54 +73,85 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
+  console.log("url: ", url);
+
   const searchTerm = url.searchParams.get("language");
 
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  const { admin } = adminAuthResult;
 
   try {
     const formData = await request.formData();
-    const startCursor: string = JSON.parse(
-      formData.get("startCursor") as string,
-    );
-    const endCursor: string = JSON.parse(formData.get("endCursor") as string);
+    const loading: string = JSON.parse(formData.get("loading") as string);
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
     switch (true) {
-      case !!startCursor:
-        const previousThemes = await queryPreviousTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "METAFIELD",
-          startCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
-        return json({ previousThemes: previousThemes });
-      case !!endCursor:
-        const nextThemes = await queryNextTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "METAFIELD",
-          endCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
+      case !!loading:
+        console.log("searchTerm: ", searchTerm);
+        try {
+          const response = await admin.graphql(
+            `#graphql
+            query {     
+              translatableResources(resourceType: ONLINE_STORE_THEME, first: 1) {
+                nodes {
+                  resourceId
+                  translatableContent {
+                    digest
+                    key
+                    locale
+                    type
+                    value
+                  }
+                  translations(locale: "${searchTerm}") {
+                    value
+                    key
+                  }
+                }
+              }
+            }`,
+          );
 
-        return json({ nextThemes: nextThemes });
+          const data = await response.json();
+
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response: data?.data?.translatableResources?.nodes || [],
+          };
+        } catch (error) {
+          console.log("Error manage theme loading:", error);
+          return {
+            success: false,
+            errorCode: 0,
+            errorMsg: "",
+            response: [],
+          };
+        }
       case !!confirmData:
-        const data = await updateManageTranslation({
-          shop,
-          accessToken: accessToken as string,
-          confirmData,
-        });
-        return json({ data: data, confirmData });
+        try {
+          const data = await updateManageTranslation({
+            shop,
+            accessToken: accessToken as string,
+            confirmData,
+          });
+          return json({ data: data, confirmData });
+        } catch (error) {
+          console.log("Error manage theme confirmData:", error);
+          return {
+            data: [],
+            confirmData,
+          };
+        }
+
       default:
         // 你可以在这里处理一个默认的情况，如果没有符合的条件
         return json({ success: false, message: "Invalid data" });
     }
   } catch (error) {
     console.error("Error action theme:", error);
-    throw new Response("Error action theme", { status: 500 });
   }
 };
 
@@ -139,8 +163,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, themes, server, shopName } =
-    useLoaderData<typeof loader>();
+  const { searchTerm, server, shopName } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
@@ -152,6 +175,7 @@ const Index = () => {
   // const [isVisible, setIsVisible] = useState<
   //   boolean | number | { language: string } | { item: string }
   // >(false);
+  const [themes, setThemes] = useState<any>([]);
   const [resourceData, setResourceData] = useState<any>([]);
   const [filteredResourceData, setFilteredResourceData] = useState<any>([]);
   const [searchInput, setSearchInput] = useState("");
@@ -169,10 +193,10 @@ const Index = () => {
     { label: t("Articles"), value: "article" },
     { label: t("Blog titles"), value: "blog" },
     { label: t("Pages"), value: "page" },
-    { label: t("Filters"), value: "filter" },
+    // { label: t("Filters"), value: "filter" },
     { label: t("Metaobjects"), value: "metaobject" },
-    { label: t("Navigation"), value: "navigation" },
-    { label: t("Email"), value: "email" },
+    // { label: t("Navigation"), value: "navigation" },
+    // { label: t("Email"), value: "email" },
     { label: t("Policies"), value: "policy" },
     { label: t("Product images"), value: "productImage" },
     { label: t("Product image alt text"), value: "productImageAlt" },
@@ -188,6 +212,8 @@ const Index = () => {
   const [selectedItem, setSelectedItem] = useState<string>("theme");
   const [isMobile, setIsMobile] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+
+  const themeFetcher = useFetcher<any>();
 
   useEffect(() => {
     if (languageTableData.length === 0) {
@@ -212,6 +238,24 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    themeFetcher.submit(
+      {
+        loading: JSON.stringify(true),
+      },
+      {
+        method: "POST",
+        action: `/app/manage_translation/theme?language=${searchTerm}`,
+      },
+    );
+  }, []);
+
+  useEffect(() => {
+    if (themeFetcher.data?.success) {
+      setThemes(themeFetcher.data.response);
+    }
+  }, [themeFetcher.data]);
+
+  useEffect(() => {
     loadingItemsRef.current = loadingItems;
   }, [loadingItems]);
 
@@ -229,13 +273,16 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
-    if (themes && isManualChangeRef.current) {
+    console.log("themes: ", themes);
+    console.log(isManualChangeRef.current);
+    if (themes.length && isManualChangeRef.current) {
       const data = generateMenuItemsArray(themes);
+      console.log("data: ", data);
       setResourceData(data);
       setFilteredResourceData(data);
       isManualChangeRef.current = false;
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, [themes]);
 
   useEffect(() => {
@@ -384,15 +431,14 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: themes.nodes[0]?.resourceId,
-          locale: themes.nodes[0]?.translatableContent[0]?.locale,
+          resourceId: themes[0]?.resourceId,
+          locale: themes[0]?.translatableContent[0]?.locale,
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest:
-            themes.nodes[0]?.translatableContent.find(
-              (item: any) => item.key === key,
-            )?.digest ||
-            themes.nodes[0]?.translatableContent[0]?.digest ||
+            themes[0]?.translatableContent.find((item: any) => item.key === key)
+              ?.digest ||
+            themes[0]?.translatableContent[0]?.digest ||
             "",
           target: searchTerm || "",
         };
@@ -402,22 +448,20 @@ const Index = () => {
   };
 
   const generateMenuItemsArray = (items: any) => {
-    return items.nodes[0]?.translatableContent.flatMap(
-      (item: any, index: number) => {
-        // 创建当前项的对象
-        const currentItem = {
-          key: `${item.key}`, // 使用 key 生成唯一的 key
-          resource: item.key,
-          default_language: item.value, // 默认语言为 item 的标题
-          translated:
-            items.nodes[0]?.translations.find(
-              (translation: any) => translation.key === item.key,
-            )?.value || "", // 翻译字段初始化为空字符串
-          type: item.type,
-        };
-        return [currentItem];
-      },
-    );
+    return items[0]?.translatableContent.flatMap((item: any, index: number) => {
+      // 创建当前项的对象
+      const currentItem = {
+        key: `${item.key}`, // 使用 key 生成唯一的 key
+        resource: item.key,
+        default_language: item.value, // 默认语言为 item 的标题
+        translated:
+          items[0]?.translations.find(
+            (translation: any) => translation.key === item.key,
+          )?.value || "", // 翻译字段初始化为空字符串
+        type: item.type,
+      };
+      return [currentItem];
+    });
   };
 
   const handleTranslate = async (
@@ -432,7 +476,7 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: shopName,
-      source: themes.nodes
+      source: themes
         .find((item: any) => item?.resourceId === key)
         ?.translatableContent.find((item: any) => item.key === key)?.locale,
       target: searchTerm || "",
@@ -459,6 +503,15 @@ const Index = () => {
     } else {
       shopify.saveBar.hide("save-bar");
       setIsLoading(true);
+      themeFetcher.submit(
+        {
+          loading: JSON.stringify(true),
+        },
+        {
+          method: "POST",
+          action: `/app/manage_translation/theme?language=${language}`,
+        },
+      );
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
       navigate(`/app/manage_translation/theme?language=${language}`);
@@ -487,6 +540,10 @@ const Index = () => {
     );
     setFilteredResourceData(filteredData);
   };
+
+  useEffect(() => {
+    console.log(confirmData);
+  }, [confirmData]);
 
   const handleConfirm = () => {
     const formData = new FormData();
@@ -592,7 +649,7 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : themes.nodes.length ? (
+        ) : themes.length ? (
           <Content
             style={{
               paddingLeft: isMobile ? "16px" : "0",
