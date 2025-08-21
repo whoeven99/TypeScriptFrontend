@@ -1,7 +1,4 @@
-import type {
-  ActionFunctionArgs,
-  HeadersFunction,
-} from "@remix-run/node";
+import type { ActionFunctionArgs, HeadersFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import {
   Link,
@@ -215,11 +212,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             GetUserData({
               shop,
               apiName,
-            })
-          )
+            }),
+          ),
         );
         return json({
-          customApikeyData: results
+          customApikeyData: results,
         });
       } catch (error) {
         console.error("Error customApikeyData app:", error);
@@ -489,11 +486,16 @@ export default function App() {
           plan: planFetcher.data?.plan?.userSubscriptionPlan || "",
         }),
       );
-      dispatch(
-        setUserConfig({
-          updateTime: planFetcher.data?.plan?.currentPeriodEnd || "",
-        }),
-      );
+      if (planFetcher.data?.plan?.currentPeriodEnd) {
+        const date = new Date(planFetcher.data?.plan?.currentPeriodEnd)
+          .toLocaleDateString("zh-CN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          })
+          .replace(/\//g, "-");
+        dispatch(setUserConfig({ updateTime: date }));
+      }
     }
   }, [planFetcher.data]);
 
