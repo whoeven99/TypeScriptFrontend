@@ -1162,7 +1162,7 @@ export const queryNextTransType = async ({
     const res = response.data.data.translatableResources;
     return res;
   } catch (error) {
-    console.error(`Error fetching ${resourceType} translation data:`, error);
+    console.error(`Error fetching ${resourceType} queryNextTransType:`, error);
   }
 };
 
@@ -1218,7 +1218,7 @@ export const queryPreviousTransType = async ({
 
     return res;
   } catch (error) {
-    console.error(`Error fetching ${resourceType} translation data:`, error);
+    console.error(`Error fetching ${resourceType} queryPreviousTransType:`, error);
   }
 };
 
@@ -1282,7 +1282,7 @@ export const queryNextNestTransType = async ({
 
     return res;
   } catch (error) {
-    console.error(`Error fetching ${resourceType} translation data:`, error);
+    console.error(`Error fetching ${resourceType} queryNextNestTransType:`, error);
   }
 };
 
@@ -1344,7 +1344,7 @@ export const queryPreviousNestTransType = async ({
     const res = response.data.data.translatableResources;
     return res;
   } catch (error) {
-    console.error(`Error queryPreviousNestTransType:`, error);
+    console.error(`Error fetching ${resourceType} queryPreviousNestTransType:`, error);
   }
 };
 
