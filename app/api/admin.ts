@@ -1344,7 +1344,7 @@ export const queryPreviousNestTransType = async ({
     const res = response.data.data.translatableResources;
     return res;
   } catch (error) {
-    console.error(`Error queryPreviousNestTransType:`, error);
+    console.error(`Error fetching ${resourceType} translation data:`, error);
   }
 };
 
