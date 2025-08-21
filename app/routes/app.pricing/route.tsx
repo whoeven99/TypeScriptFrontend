@@ -78,7 +78,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             yearly: payForPlan.yearly,
             price: {
               amount: payForPlan.yearly
-                ? payForPlan.yearlyPrice
+                ? payForPlan.yearlyPrice * 12
                 : payForPlan.monthlyPrice,
               currencyCode: "USD",
             },
@@ -924,13 +924,15 @@ const Index = () => {
                   }}
                 />
               ) : (
-              <Skeleton active paragraph={{ rows: 1 }} title={false} />
+                <Skeleton active paragraph={{ rows: 1 }} title={false} />
               )}
-              {updateTime && (
-                <Text>
-                  {t("This bill was issued on {{date}}", { date: updateTime })}
-                </Text>
-              )}
+              <Text
+                style={{
+                  display: updateTime && maxCredits ? "block" : "none",
+                }}
+              >
+                {t("This bill was issued on {{date}}", { date: updateTime })}
+              </Text>
             </div>
             <Progress
               percent={Math.round((currentCredits / maxCredits) * 100)}
