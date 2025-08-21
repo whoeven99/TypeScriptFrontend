@@ -1218,7 +1218,10 @@ export const queryPreviousTransType = async ({
 
     return res;
   } catch (error) {
-    console.error(`Error fetching ${resourceType} queryPreviousTransType:`, error);
+    console.error(
+      `Error fetching ${resourceType} queryPreviousTransType:`,
+      error,
+    );
   }
 };
 
@@ -1282,7 +1285,10 @@ export const queryNextNestTransType = async ({
 
     return res;
   } catch (error) {
-    console.error(`Error fetching ${resourceType} queryNextNestTransType:`, error);
+    console.error(
+      `Error fetching ${resourceType} queryNextNestTransType:`,
+      error,
+    );
   }
 };
 
@@ -1344,7 +1350,10 @@ export const queryPreviousNestTransType = async ({
     const res = response.data.data.translatableResources;
     return res;
   } catch (error) {
-    console.error(`Error fetching ${resourceType} queryPreviousNestTransType:`, error);
+    console.error(
+      `Error fetching ${resourceType} queryPreviousNestTransType:`,
+      error,
+    );
   }
 };
 
@@ -1899,6 +1908,7 @@ export const mutationAppSubscriptionCreate = async ({
             {
               plan: {
                 appRecurringPricingDetails: {
+                  interval: yearly ? "ANNUAL" : "EVERY_30_DAYS",
                   price: {
                     amount: price.amount,
                     currencyCode: price.currencyCode,
