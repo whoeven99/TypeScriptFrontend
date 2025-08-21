@@ -28,7 +28,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     throw new Response();
   }
 
-  console.log(`${shop} ${topic}`);
+  console.log(`${shop} ${topic} webhooks: ${payload}`);
 
   // The topics handled here should be declared in the shopify.app.toml.
   // More info: https://shopify.dev/docs/apps/build/cli-for-apps/app-configuration
@@ -230,9 +230,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               shopName: shop,
             });
           }
-          if (payload?.app_subscription.status === "CANCELLED") {
-            UpdateUserPlan({ shop, plan: 2 });
-          }
+        }
+        if (payload?.app_subscription.status === "CANCELLED") {
+          UpdateUserPlan({ shop, plan: 2 });
         }
       } catch (error) {
         console.error("Error APP_SUBSCRIPTIONS_UPDATE:", error);
