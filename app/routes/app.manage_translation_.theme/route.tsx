@@ -75,7 +75,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
   } catch (error) {
     console.error("Error load theme:", error);
-    throw new Response("Error load theme", { status: 500 });
   }
 };
 
