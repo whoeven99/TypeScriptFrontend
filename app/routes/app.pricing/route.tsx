@@ -335,19 +335,19 @@ const Index = () => {
         }
       };
       getPlan();
-      const getWords = async () => {
-        const data = await GetUserWords({
-          shop,
-          server: server as string,
-        });
-        setCurrentCredits(data.chars);
-        setMaxCredits(data.totalChars);
-      };
-      getWords();
     } else {
       setSelectedPlan(userConfig.plan);
       setUpdateTime(userConfig.updateTime);
     }
+    const getWords = async () => {
+      const data = await GetUserWords({
+        shop,
+        server: server as string,
+      });
+      setCurrentCredits(data.chars);
+      setMaxCredits(data.totalChars);
+    };
+    getWords();
     const checkFreeUsed = async () => {
       try {
         const response = await IsOpenFreePlan({
