@@ -923,7 +923,7 @@ export const GetUserSubscriptionPlan = async ({
       if (shop == "ciwishop.myshopify.com") {
         return {
           userSubscriptionPlan: 6,
-          currentPeriodEnd: null,
+          currentPeriodEnd: "2025-09-17T06:24:28Z",
         };
       }
       return res;
