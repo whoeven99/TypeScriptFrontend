@@ -1885,7 +1885,7 @@ export const InsertOrUpdateOrder = async ({
     });
 
     const response = await axios({
-      url: `${process.env.SERVER_URL}/orders/insertOrUpdateOrder`,
+      url: `${process.env.SERVER_URL}/orders/insertOrUpdateOrder?shopName=${shop}`,
       method: "POST",
       data: {
         shopName: shop,
