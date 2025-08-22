@@ -1459,12 +1459,9 @@ export const queryPrimaryMarket = async ({
 }) => {
   try {
     const query = `{
-      primaryMarket {
-        webPresences(first: 10) {
-          nodes {
-            id
-          }
-        }
+      backupRegion {
+        id
+        name
       }
     }`;
 
@@ -1478,7 +1475,7 @@ export const queryPrimaryMarket = async ({
       data: JSON.stringify({ query }),
     });
 
-    const res = response.data.data.primaryMarket.webPresences.nodes;
+    const res = [response.data.data.backupRegion.id];
 
     return res;
   } catch (error) {

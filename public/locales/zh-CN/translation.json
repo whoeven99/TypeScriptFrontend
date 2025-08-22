@@ -631,5 +631,6 @@
   "Keep paid plan": "保留付费计划",
   "Switch to free plan": "切换到免费计划",
   "1v1 support": "1v1 支持",
-  "Compare plans": "比较计划"
+  "Compare plans": "比较计划",
+  "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> 每年计费"
 }
