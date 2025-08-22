@@ -109,6 +109,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
+
   const formData = await request.formData();
   const startCursor: any = JSON.parse(formData.get("startCursor") as string);
   const endCursor: any = JSON.parse(formData.get("endCursor") as string);
@@ -199,25 +202,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.error("Error action startCursor product:", error);
       }
     case !!endCursor:
-      console.log("endCursor:", endCursor);
-
       try {
         const response = await admin.graphql(
           `#graphql
-            query {     
-              products(first: 20 ) {
+            query products {     
+              products(first: 20 ,after: "${endCursor.cursor}") {
                 nodes {
                   id
                   title
-                  # metafields(first: 20){
-                  #   edges{
-                  #     node{
-                  #       id
-                  #     }
-                  #   }
-                  # }
                   options(first: 20) {
-                    # id
                     optionValues {
                       id
                     }
@@ -266,7 +259,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         });
       }
-
     case !!productId:
       try {
         const response = await admin.graphql(
@@ -281,7 +273,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                     type
                     value
                   }
-                  translations(locale: "${startCursor?.searchTerm || " "}") {
+                  translations(locale: "${searchTerm}") {
                     value
                     key
                   }
@@ -295,7 +287,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                         type
                         value
                       }
-                      translations(locale: "${startCursor?.searchTerm || " "}") {
+                      translations(locale: "${searchTerm}") {
                         key
                         value
                       }
@@ -311,7 +303,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                         type
                         value
                       }
-                      translations(locale: "${startCursor?.searchTerm || " "}") {
+                      translations(locale: "${searchTerm}") {
                         key
                         value
                       }
@@ -535,6 +527,8 @@ const Index = () => {
   const [selectedItem, setSelectedItem] = useState<string>("product");
   // const [selectedModel, setSelectedModel] = useState<string>("1");
   // const [selectedLanguagePack, setSelectedLanguagePack] = useState<string>("en");
+  const [hasPrevious, setHasPrevious] = useState<boolean>(false);
+  const [hasNext, setHasNext] = useState<boolean>(false);
   const [startCursor, setStartCursor] = useState<string>("");
   const [endCursor, setEndCursor] = useState<string>("");
   const [isMobile, setIsMobile] = useState<boolean>(false);
@@ -577,7 +571,6 @@ const Index = () => {
 
   useEffect(() => {
     if (fetcher.data) {
-      console.log(fetcher.data);
       if (fetcher.data.success) {
         const menuData = fetcher.data.response.data.map((item: any) => {
           return {
@@ -587,6 +580,8 @@ const Index = () => {
         });
         setMenuData(menuData);
         setSelectProductKey(fetcher.data.response.data[0]?.id);
+        setHasPrevious(fetcher.data.response.pageInfo.hasPreviousPage);
+        setHasNext(fetcher.data.response.pageInfo.hasNextPage);
         setStartCursor(fetcher.data.response.pageInfo.startCursor);
         setEndCursor(fetcher.data.response.pageInfo.endCursor);
         setProductsData(fetcher.data.response.data);
@@ -598,7 +593,6 @@ const Index = () => {
   useEffect(() => {
     if (productFetcher.data) {
       if (productFetcher.data.success) {
-        console.log(productFetcher.data);
         setProductBaseData(
           [
             {
@@ -629,6 +623,14 @@ const Index = () => {
               key: "body_html",
               index: 4,
               resource: t("Description"),
+              locale:
+                productFetcher.data.response?.translatableContent?.find(
+                  (item: any) => item.key == "body_html",
+                )?.locale || "",
+              digest:
+                productFetcher.data.response?.translatableContent?.find(
+                  (item: any) => item.key == "body_html",
+                )?.digest || "",
               type:
                 productFetcher.data.response?.translatableContent?.find(
                   (item: any) => item.key == "body_html",
@@ -645,6 +647,14 @@ const Index = () => {
               key: "product_type",
               index: 4,
               resource: t("ProductType"),
+              locale:
+                productFetcher.data.response?.translatableContent?.find(
+                  (item: any) => item.key == "product_type",
+                )?.locale || "",
+              digest:
+                productFetcher.data.response?.translatableContent?.find(
+                  (item: any) => item.key == "product_type",
+                )?.digest || "",
               type:
                 productFetcher.data.response?.translatableContent?.find(
                   (item: any) => item.key == "product_type",
@@ -665,6 +675,14 @@ const Index = () => {
               key: "handle",
               index: 4,
               resource: t("URL handle"),
+              locale:
+                productFetcher.data.response?.translatableContent?.find(
+                  (item: any) => item.key == "handle",
+                )?.locale || "",
+              digest:
+                productFetcher.data.response?.translatableContent?.find(
+                  (item: any) => item.key == "handle",
+                )?.digest || "",
               type:
                 productFetcher.data.response?.translatableContent?.find(
                   (item: any) => item.key == "handle",
@@ -674,7 +692,7 @@ const Index = () => {
                   (item: any) => item.key == "handle",
                 )?.value || "",
               translated:
-                productFetcher.data.response?.translation?.find(
+                productFetcher.data.response?.translations?.find(
                   (item: any) => item.key == "handle",
                 )?.value || "",
             },
@@ -682,6 +700,14 @@ const Index = () => {
               key: "meta_title",
               index: 4,
               resource: t("Meta title"),
+              locale:
+                productFetcher.data.response?.translatableContent?.find(
+                  (item: any) => item.key == "meta_title",
+                )?.locale || "",
+              digest:
+                productFetcher.data.response?.translatableContent?.find(
+                  (item: any) => item.key == "meta_title",
+                )?.digest || "",
               type:
                 productFetcher.data.response?.translatableContent?.find(
                   (item: any) => item.key == "meta_title",
@@ -691,7 +717,7 @@ const Index = () => {
                   (item: any) => item.key == "meta_title",
                 )?.value || "",
               translated:
-                productFetcher.data.response?.translation?.find(
+                productFetcher.data.response?.translations?.find(
                   (item: any) => item.key == "meta_title",
                 )?.value || "",
             },
@@ -699,6 +725,14 @@ const Index = () => {
               key: "meta_description",
               index: 4,
               resource: t("Meta description"),
+              locale:
+                productFetcher.data.response?.translatableContent?.find(
+                  (item: any) => item.key == "meta_description",
+                )?.locale || "",
+              digest:
+                productFetcher.data.response?.translatableContent?.find(
+                  (item: any) => item.key == "meta_description",
+                )?.digest || "",
               type:
                 productFetcher.data.response?.translatableContent?.find(
                   (item: any) => item.key == "meta_description",
@@ -708,12 +742,48 @@ const Index = () => {
                   (item: any) => item.key == "meta_description",
                 )?.value || "",
               translated:
-                productFetcher.data.response?.translation?.find(
+                productFetcher.data.response?.translations?.find(
                   (item: any) => item.key == "meta_description",
                 )?.value || "",
             },
           ].filter((item) => item.default_language),
         );
+        const optionsData = productFetcher.data.response?.options?.nodes?.map(
+          (option: any, index: number) => {
+            if (option?.translatableContent[0]?.value === "Title") {
+              return null;
+            }
+            return {
+              resourceId: option?.resourceId,
+              key: `${option?.translatableContent[0]?.key}_${index}`,
+              index: index,
+              locale: option?.translatableContent[0]?.locale,
+              digest: option?.translatableContent[0]?.digest,
+              resource: t(option?.translatableContent[0]?.value),
+              type: option?.translatableContent[0]?.type,
+              default_language: option?.translatableContent[0]?.value,
+              translated: option?.translations[0]?.value,
+            };
+          },
+        );
+        if (optionsData) setOptionsData(optionsData);
+        const metafieldsData =
+          productFetcher.data.response?.metafields?.nodes?.map(
+            (metafield: any, index: number) => {
+              return {
+                resourceId: metafield?.resourceId,
+                key: `${metafield?.translatableContent[0]?.key}_${index}`,
+                index: index,
+                locale: metafield?.translatableContent[0]?.locale,
+                digest: metafield?.translatableContent[0]?.digest,
+                resource: t(metafield?.translatableContent[0]?.key),
+                type: metafield?.translatableContent[0]?.type,
+                default_language: metafield?.translatableContent[0]?.value,
+                translated: metafield?.translations[0]?.value,
+              };
+            },
+          );
+        if (metafieldsData) setMetafieldsData(metafieldsData);
       }
     }
   }, [productFetcher.data]);
@@ -791,38 +861,6 @@ const Index = () => {
   }, [selectProductKey, productsData]);
 
   // useEffect(() => {
-  //   const optionsData = productData?.options.map(
-  //     (option: any, index: number) => {
-  //       if (option?.name === "Title") {
-  //         return null;
-  //       }
-  //       return {
-  //         key: option.key,
-  //         index: index,
-  //         resource: t(option?.name),
-  //         type: option?.type,
-  //         default_language: option?.translatableContent,
-  //         translated: option.translation,
-  //       };
-  //     },
-  //   );
-  //   if (optionsData) setOptionsData(optionsData);
-  //   const metafieldsData = productData?.metafields.map(
-  //     (metafield: any, index: number) => {
-  //       return {
-  //         key: metafield.key,
-  //         index: index,
-  //         resource: t(metafield?.name),
-  //         type: metafield?.type,
-  //         default_language: metafield?.translatableContent,
-  //         translated: metafield?.translation,
-  //       };
-  //     },
-  //   );
-  //   if (metafieldsData) setMetafieldsData(metafieldsData);
-  // }, [productData]);
-
-  // useEffect(() => {
   //   if (actionData && "nextProducts" in actionData) {
   //     // 在这里处理 nextProducts
   //     setMenuData(exMenuData(actionData.nextProducts));
@@ -842,90 +880,19 @@ const Index = () => {
   //   }
   // }, [actionData]);
 
-  // useEffect(() => {
-  //   if (confirmFetcher.data && confirmFetcher.data.data) {
-  //     const successfulItem = confirmFetcher.data.data.filter(
-  //       (item: any) => item.success === true,
-  //     );
-  //     const errorItem = confirmFetcher.data.data.filter(
-  //       (item: any) => item.success === false,
-  //     );
-
-  //     successfulItem.forEach((item: any) => {
-  //       if (item.data.resourceId.split("/")[3] === "Product") {
-  //         const index = productsData.data.translatableResources.nodes.findIndex(
-  //           (option: any) => option.resourceId === item.data.resourceId,
-  //         );
-  //         if (index !== -1) {
-  //           const product = productsData.data.translatableResources.nodes[
-  //             index
-  //           ].translations.find((option: any) => option.key === item.data.key);
-  //           if (product) {
-  //             product.value = item.data.value;
-  //           } else {
-  //             productsData.data.translatableResources.nodes[
-  //               index
-  //             ].translations.push({
-  //               key: item.data.key,
-  //               value: item.data.value,
-  //             });
-  //           }
-  //         }
-  //       } else if (item.data.resourceId.split("/")[3] === "ProductOption") {
-  //         const index = productsData.data.translatableResources.nodes.findIndex(
-  //           (productOption: any) =>
-  //             productOption.options.nodes.some(
-  //               (option: any) => option.resourceId === item.data.resourceId,
-  //             ),
-  //         );
-  //         if (index !== -1) {
-  //           const productOption = productsData.data.translatableResources.nodes[
-  //             index
-  //           ].options.nodes.find(
-  //             (option: any) => option.resourceId === item.data.resourceId,
-  //           );
-  //           if (productOption.translations.length > 0) {
-  //             productOption.translations[0].value = item.data.value;
-  //           } else {
-  //             productOption.translations.push({
-  //               key: item.data.key,
-  //               value: item.data.value,
-  //             });
-  //           }
-  //         }
-  //       } else if (item.data.resourceId.split("/")[3] === "Metafield") {
-  //         const index = productsData.data.translatableResources.nodes.findIndex(
-  //           (productMetafield: any) =>
-  //             productMetafield.metafields.nodes.some(
-  //               (option: any) => option.resourceId === item.data.resourceId,
-  //             ),
-  //         );
-  //         if (index !== -1) {
-  //           const productMetafield =
-  //             productsData.data.translatableResources.nodes[
-  //               index
-  //             ].metafields.nodes.find(
-  //               (option: any) => option.resourceId === item.data.resourceId,
-  //             );
-  //           if (productMetafield.translations.length > 0) {
-  //             productMetafield.translations[0].value = item.data.value;
-  //           } else {
-  //             productMetafield.translations.push({
-  //               key: item.data.key,
-  //               value: item.data.value,
-  //             });
-  //           }
-  //         }
-  //       }
-  //     });
-  //     if (errorItem.length == 0) {
-  //       shopify.toast.show(t("Saved successfully"));
-  //     } else {
-  //       shopify.toast.show(t("Some items saved failed"));
-  //     }
-  //     setConfirmData([]);
-  //   }
-  // }, [confirmFetcher.data]);
+  useEffect(() => {
+    if (confirmFetcher.data && confirmFetcher.data.data) {
+      const errorItem = confirmFetcher.data.data.filter(
+        (item: any) => item.success === false,
+      );
+      if (errorItem.length == 0) {
+        shopify.toast.show(t("Saved successfully"));
+      } else {
+        shopify.toast.show(t("Some items saved failed"));
+      }
+      setConfirmData([]);
+    }
+  }, [confirmFetcher.data]);
 
   useEffect(() => {
     if (languageFetcher.data) {
@@ -1016,7 +983,7 @@ const Index = () => {
             record={record}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
-            handleInputChange={handleProductInputChange}
+            handleInputChange={handleProductBaseInputChange}
             isRtl={searchTerm === "ar"}
           />
         );
@@ -1034,7 +1001,7 @@ const Index = () => {
                 record?.key || "",
                 record?.type || "",
                 record?.default_language || "",
-                handleProductInputChange,
+                handleProductBaseInputChange,
               );
             }}
             loading={loadingItems.includes(record?.key || "")}
@@ -1073,7 +1040,7 @@ const Index = () => {
             record={record}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
-            handleInputChange={handleProductInputChange}
+            handleInputChange={handleProductSeoInputChange}
             isRtl={searchTerm === "ar"}
           />
         );
@@ -1091,7 +1058,7 @@ const Index = () => {
                 record?.key || "",
                 record?.type || "",
                 record?.default_language || "",
-                handleProductInputChange,
+                handleProductSeoInputChange,
               );
             }}
             loading={loadingItems.includes(record?.key || "")}
@@ -1103,193 +1070,193 @@ const Index = () => {
     },
   ];
 
-  // const optionsColumns = [
-  //   {
-  //     title: t("Product Options"),
-  //     dataIndex: "resource",
-  //     key: "resource",
-  //     width: "10%",
-  //   },
-  //   {
-  //     title: t("Default Language"),
-  //     dataIndex: "default_language",
-  //     key: "default_language",
-  //     width: "40%",
-  //     render: (_: any, record: TableDataType) => {
-  //       if (record) {
-  //         return <ManageTableInput record={record} />;
-  //       } else {
-  //         return null;
-  //       }
-  //     },
-  //   },
-  //   {
-  //     title: t("Translated"),
-  //     dataIndex: "translated",
-  //     key: "translated",
-  //     width: "40%",
-  //     render: (_: any, record: TableDataType) => {
-  //       return (
-  //         <ManageTableInput
-  //           record={record}
-  //           translatedValues={translatedValues}
-  //           setTranslatedValues={setTranslatedValues}
-  //           handleInputChange={handleInputChange}
-  //           index={1}
-  //           isRtl={searchTerm === "ar"}
-  //         />
-  //       );
-  //     },
-  //   },
-  //   {
-  //     title: t("Translate"),
-  //     width: "10%",
-  //     render: (_: any, record: TableDataType) => {
-  //       return (
-  //         <Button
-  //           onClick={() => {
-  //             handleTranslate(
-  //               "PRODUCT_OPTION",
-  //               record?.key || "",
-  //               record?.type || "",
-  //               record?.default_language || "",
-  //               Number(1 + "" + record?.index),
-  //             );
-  //           }}
-  //           loading={loadingItems.includes(record?.key || "")}
-  //         >
-  //           {t("Translate")}
-  //         </Button>
-  //       );
-  //     },
-  //   },
-  // ];
+  const optionsColumns = [
+    {
+      title: t("Product Options"),
+      dataIndex: "resource",
+      key: "resource",
+      width: "10%",
+    },
+    {
+      title: t("Default Language"),
+      dataIndex: "default_language",
+      key: "default_language",
+      width: "40%",
+      render: (_: any, record: TableDataType) => {
+        if (record) {
+          return <ManageTableInput record={record} />;
+        } else {
+          return null;
+        }
+      },
+    },
+    {
+      title: t("Translated"),
+      dataIndex: "translated",
+      key: "translated",
+      width: "40%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <ManageTableInput
+            record={record}
+            translatedValues={translatedValues}
+            setTranslatedValues={setTranslatedValues}
+            handleInputChange={handleOptionsInputChange}
+            index={1}
+            isRtl={searchTerm === "ar"}
+          />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            onClick={() => {
+              handleTranslate(
+                "PRODUCT_OPTION",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+                handleOptionsInputChange,
+              );
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
+        );
+      },
+    },
+  ];
 
-  // const metafieldsColumns = [
-  //   {
-  //     title: t("Metafield"),
-  //     dataIndex: "resource",
-  //     key: "resource",
-  //     width: "10%",
-  //   },
-  //   {
-  //     title: t("Default Language"),
-  //     dataIndex: "default_language",
-  //     key: "default_language",
-  //     width: "40%",
-  //     render: (_: any, record: TableDataType) => {
-  //       if (record) {
-  //         return <ManageTableInput record={record} />;
-  //       } else {
-  //         return null;
-  //       }
-  //     },
-  //   },
-  //   {
-  //     title: t("Translated"),
-  //     dataIndex: "translated",
-  //     key: "translated",
-  //     width: "40%",
-  //     render: (_: any, record: TableDataType) => {
-  //       return (
-  //         <ManageTableInput
-  //           record={record}
-  //           translatedValues={translatedValues}
-  //           setTranslatedValues={setTranslatedValues}
-  //           handleInputChange={handleInputChange}
-  //           index={2}
-  //           isRtl={searchTerm === "ar"}
-  //         />
-  //       );
-  //     },
-  //   },
-  //   {
-  //     title: t("Translate"),
-  //     width: "10%",
-  //     render: (_: any, record: TableDataType) => {
-  //       return (
-  //         <Button
-  //           onClick={() => {
-  //             handleTranslate(
-  //               "METAFIELD",
-  //               record?.key || "",
-  //               record?.type || "",
-  //               record?.default_language || "",
-  //               Number(2 + "" + record?.index),
-  //             );
-  //           }}
-  //           loading={loadingItems.includes(record?.key || "")}
-  //         >
-  //           {t("Translate")}
-  //         </Button>
-  //       );
-  //     },
-  //   },
-  // ];
+  const metafieldsColumns = [
+    {
+      title: t("Metafield"),
+      dataIndex: "resource",
+      key: "resource",
+      width: "10%",
+    },
+    {
+      title: t("Default Language"),
+      dataIndex: "default_language",
+      key: "default_language",
+      width: "40%",
+      render: (_: any, record: TableDataType) => {
+        if (record) {
+          return <ManageTableInput record={record} />;
+        } else {
+          return null;
+        }
+      },
+    },
+    {
+      title: t("Translated"),
+      dataIndex: "translated",
+      key: "translated",
+      width: "40%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <ManageTableInput
+            record={record}
+            translatedValues={translatedValues}
+            setTranslatedValues={setTranslatedValues}
+            handleInputChange={handleMetafieldsInputChange}
+            index={2}
+            isRtl={searchTerm === "ar"}
+          />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            onClick={() => {
+              handleTranslate(
+                "METAFIELD",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+                handleMetafieldsInputChange,
+              );
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
+        );
+      },
+    },
+  ];
 
-  // const variantsColumns = [
-  //   {
-  //     title: t("OptionValue"),
-  //     dataIndex: "resource",
-  //     key: "resource",
-  //     width: "10%",
-  //   },
-  //   {
-  //     title: t("Default Language"),
-  //     dataIndex: "default_language",
-  //     key: "default_language",
-  //     width: "40%",
-  //     render: (_: any, record: TableDataType) => {
-  //       if (record) {
-  //         return <ManageTableInput record={record} />;
-  //       } else {
-  //         return null;
-  //       }
-  //     },
-  //   },
-  //   {
-  //     title: "Translated",
-  //     dataIndex: "translated",
-  //     key: "translated",
-  //     width: "40%",
-  //     render: (_: any, record: TableDataType) => {
-  //       return (
-  //         <ManageTableInput
-  //           record={record}
-  //           translatedValues={translatedValues}
-  //           setTranslatedValues={setTranslatedValues}
-  //           handleInputChange={handleInputChange}
-  //           index={3}
-  //           isRtl={searchTerm === "ar"}
-  //         />
-  //       );
-  //     },
-  //   },
-  //   {
-  //     title: t("Translate"),
-  //     width: "10%",
-  //     render: (_: any, record: TableDataType) => {
-  //       return (
-  //         <Button
-  //           onClick={() => {
-  //             handleTranslate(
-  //               "PRODUCT_OPTION_VALUE",
-  //               record?.key || "",
-  //               record?.type || "",
-  //               record?.default_language || "",
-  //               Number(3 + "" + record?.index),
-  //             );
-  //           }}
-  //           loading={loadingItems.includes(record?.key || "")}
-  //         >
-  //           {t("Translate")}
-  //         </Button>
-  //       );
-  //     },
-  //   },
-  // ];
+  const variantsColumns = [
+    {
+      title: t("OptionValue"),
+      dataIndex: "resource",
+      key: "resource",
+      width: "10%",
+    },
+    {
+      title: t("Default Language"),
+      dataIndex: "default_language",
+      key: "default_language",
+      width: "40%",
+      render: (_: any, record: TableDataType) => {
+        if (record) {
+          return <ManageTableInput record={record} />;
+        } else {
+          return null;
+        }
+      },
+    },
+    {
+      title: "Translated",
+      dataIndex: "translated",
+      key: "translated",
+      width: "40%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <ManageTableInput
+            record={record}
+            translatedValues={translatedValues}
+            setTranslatedValues={setTranslatedValues}
+            handleInputChange={handleVariantsInputChange}
+            index={3}
+            isRtl={searchTerm === "ar"}
+          />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            onClick={() => {
+              handleTranslate(
+                "PRODUCT_OPTION_VALUE",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+                handleVariantsInputChange,
+              );
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
+        );
+      },
+    },
+  ];
 
-  const handleProductInputChange = (key: string, value: string) => {
+  const handleProductBaseInputChange = (key: string, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
@@ -1307,17 +1274,14 @@ const Index = () => {
         };
         return updatedConfirmData;
       } else {
-        console.log("productBaseData: ", productBaseData);
-
         const newItem = {
           resourceId: selectProductKey,
-          locale: productBaseData?.find(
-            (item: any) => item?.resourceId === selectProductKey,
-          )?.locale,
+          locale: productBaseData?.find((item: any) => item?.key === key)
+            ?.locale,
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest: productBaseData?.find(
-            (item: any) => item?.resourceId === selectProductKey,
+            (item: any) => item?.key === key,
           )?.digest,
           target: searchTerm || "",
         };
@@ -1327,98 +1291,145 @@ const Index = () => {
     });
   };
 
-  // const handleInputChange = (key: string, value: string, index?: number) => {
-  //   setTranslatedValues((prev) => ({
-  //     ...prev,
-  //     [key]: value, // 更新对应的 key
-  //   }));
-  //   setConfirmData((prevData) => {
-  //     const existingItemIndex = prevData.findIndex(
-  //       (item) => item.resourceId === key || item.key === key,
-  //     );
-  //     if (existingItemIndex !== -1) {
-  //       // 如果 key 存在，更新其对应的 value
-  //       const updatedConfirmData = [...prevData];
-  //       updatedConfirmData[existingItemIndex] = {
-  //         ...updatedConfirmData[existingItemIndex],
-  //         value: value,
-  //       };
-  //       return updatedConfirmData;
-  //     } else {
-  //       if (index && index.toString()[0] === "3") {
-  //         const newItem = {
-  //           resourceId: key,
-  //           locale: variantsData[0]?.locale,
-  //           key: "name",
-  //           value: value, // 初始为空字符串
-  //           translatableContentDigest: variantsData?.find(
-  //             (item: any) => item?.key === key,
-  //           )?.digest,
-  //           target: searchTerm || "",
-  //         };
-  //         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
-  //       } else if (index && index.toString()[0] === "2") {
-  //         const count: number = Number(index.toString().slice(1));
-  //         const newItem = {
-  //           resourceId: productsData.data.translatableResources.nodes.find(
-  //             (item: any) => item?.resourceId === selectProductKey,
-  //           )?.metafields.nodes[count]?.resourceId,
-  //           locale: productsData.data.translatableResources.nodes.find(
-  //             (item: any) => item?.resourceId === selectProductKey,
-  //           )?.metafields.nodes[count]?.translatableContent[0]?.locale,
-  //           key: "value",
-  //           value: value, // 初始为空字符串
-  //           translatableContentDigest:
-  //             productsData.data.translatableResources.nodes
-  //               .find((item: any) => item?.resourceId === selectProductKey)
-  //               ?.metafields.nodes.find((item: any) => item.resourceId === key)
-  //               ?.translatableContent[0]?.digest,
-  //           target: searchTerm || "",
-  //         };
-  //         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
-  //       } else if (index && index.toString()[0] === "1") {
-  //         const count: number = Number(index.toString().slice(1));
-  //         const newItem = {
-  //           resourceId: productsData.data.translatableResources.nodes.find(
-  //             (item: any) => item?.resourceId === selectProductKey,
-  //           )?.options.nodes[count]?.resourceId,
-  //           locale: productsData.data.translatableResources.nodes.find(
-  //             (item: any) => item?.resourceId === selectProductKey,
-  //           )?.options.nodes[count]?.translatableContent[0]?.locale,
-  //           key: "name",
-  //           value: value, // 初始为空字符串
-  //           translatableContentDigest:
-  //             productsData.data.translatableResources.nodes
-  //               .find((item: any) => item?.resourceId === selectProductKey)
-  //               ?.options.nodes.find((item: any) => item.resourceId === key)
-  //               ?.translatableContent[0]?.digest,
-  //           target: searchTerm || "",
-  //         };
-  //         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
-  //       } else {
-  //         const newItem = {
-  //           resourceId: productsData.data.translatableResources.nodes.find(
-  //             (item: any) => item?.resourceId === selectProductKey,
-  //           )?.resourceId,
-  //           locale: productsData.data.translatableResources.nodes
-  //             .find((item: any) => item?.resourceId === selectProductKey)
-  //             ?.translatableContent.find((item: any) => item.key === key)
-  //             ?.locale,
-  //           key: key,
-  //           value: value, // 初始为空字符串
-  //           translatableContentDigest:
-  //             productsData.data.translatableResources.nodes
-  //               .find((item: any) => item?.resourceId === selectProductKey)
-  //               ?.translatableContent.find((item: any) => item.key === key)
-  //               ?.digest,
-  //           target: searchTerm || "",
-  //         };
+  const handleProductSeoInputChange = (key: string, value: string) => {
+    setTranslatedValues((prev) => ({
+      ...prev,
+      [key]: value, // 更新对应的 key
+    }));
+    setConfirmData((prevData) => {
+      const existingItemIndex = prevData.findIndex(
+        (item) => item.resourceId === key || item.key === key,
+      );
+      if (existingItemIndex !== -1) {
+        // 如果 key 存在，更新其对应的 value
+        const updatedConfirmData = [...prevData];
+        updatedConfirmData[existingItemIndex] = {
+          ...updatedConfirmData[existingItemIndex],
+          value: value,
+        };
+        return updatedConfirmData;
+      } else {
+        const newItem = {
+          resourceId: selectProductKey,
+          locale: productSeoData?.find((item: any) => item?.key === key)
+            ?.locale,
+          key: key,
+          value: value, // 初始为空字符串
+          translatableContentDigest: productSeoData?.find(
+            (item: any) => item?.key === key,
+          )?.digest,
+          target: searchTerm || "",
+        };
 
-  //         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
-  //       }
-  //     }
-  //   });
-  // };
+        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+      }
+    });
+  };
+
+  const handleOptionsInputChange = (key: string, value: string) => {
+    setTranslatedValues((prev) => ({
+      ...prev,
+      [key]: value, // 更新对应的 key
+    }));
+    setConfirmData((prevData) => {
+      const existingItemIndex = prevData.findIndex(
+        (item) => item.resourceId === key || item.key === key,
+      );
+      if (existingItemIndex !== -1) {
+        // 如果 key 存在，更新其对应的 value
+        const updatedConfirmData = [...prevData];
+        updatedConfirmData[existingItemIndex] = {
+          ...updatedConfirmData[existingItemIndex],
+          value: value,
+        };
+        return updatedConfirmData;
+      } else {
+        const newItem = {
+          resourceId: optionsData?.find((item: any) => item?.key === key)
+            ?.resourceId,
+          locale: optionsData?.find((item: any) => item?.key === key)?.locale,
+          key: key,
+          value: value, // 初始为空字符串
+          translatableContentDigest: optionsData?.find(
+            (item: any) => item?.key === key,
+          )?.digest,
+          target: searchTerm || "",
+        };
+
+        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+      }
+    });
+  };
+
+  const handleMetafieldsInputChange = (key: string, value: string) => {
+    setTranslatedValues((prev) => ({
+      ...prev,
+      [key]: value, // 更新对应的 key
+    }));
+    setConfirmData((prevData) => {
+      const existingItemIndex = prevData.findIndex(
+        (item) => item.resourceId === key || item.key === key,
+      );
+      if (existingItemIndex !== -1) {
+        // 如果 key 存在，更新其对应的 value
+        const updatedConfirmData = [...prevData];
+        updatedConfirmData[existingItemIndex] = {
+          ...updatedConfirmData[existingItemIndex],
+          value: value,
+        };
+        return updatedConfirmData;
+      } else {
+        const newItem = {
+          resourceId: metafieldsData?.find((item: any) => item?.key === key)
+            ?.resourceId,
+          locale: metafieldsData?.find((item: any) => item?.key === key)
+            ?.locale,
+          key: key,
+          value: value, // 初始为空字符串
+          translatableContentDigest: metafieldsData?.find(
+            (item: any) => item?.key === key,
+          )?.digest,
+          target: searchTerm || "",
+        };
+
+        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+      }
+    });
+  };
+
+  const handleVariantsInputChange = (key: string, value: string) => {
+    setTranslatedValues((prev) => ({
+      ...prev,
+      [key]: value, // 更新对应的 key
+    }));
+    setConfirmData((prevData) => {
+      const existingItemIndex = prevData.findIndex(
+        (item) => item.resourceId === key || item.key === key,
+      );
+      if (existingItemIndex !== -1) {
+        // 如果 key 存在，更新其对应的 value
+        const updatedConfirmData = [...prevData];
+        updatedConfirmData[existingItemIndex] = {
+          ...updatedConfirmData[existingItemIndex],
+          value: value,
+        };
+        return updatedConfirmData;
+      } else {
+        const newItem = {
+          resourceId: variantsData?.find((item: any) => item?.key === key)?.key,
+          locale: variantsData?.find((item: any) => item?.key === key)?.locale,
+          key: variantsData?.find((item: any) => item?.key === key)?.resource,
+          value: value, // 初始为空字符串
+          translatableContentDigest: variantsData?.find(
+            (item: any) => item?.key === key,
+          )?.digest,
+          target: searchTerm || "",
+        };
+
+        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+      }
+    });
+  };
 
   const handleTranslate = async (
     resourceType: string,
@@ -1433,9 +1444,7 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     console.log({
       shopName: shopName,
-      source: productsData.data.translatableResources.nodes
-        .find((item: any) => item?.resourceId === selectProductKey)
-        ?.translatableContent.find((item: any) => item.key === key)?.locale,
+      source: productBaseData[0]?.locale,
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -1446,9 +1455,7 @@ const Index = () => {
 
     const data = await SingleTextTranslate({
       shopName: shopName,
-      source: productsData.data.translatableResources.nodes
-        .find((item: any) => item?.resourceId === selectProductKey)
-        ?.translatableContent.find((item: any) => item.key === key)?.locale,
+      source: productBaseData[0]?.locale,
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -1473,6 +1480,18 @@ const Index = () => {
     } else {
       shopify.saveBar.hide("save-bar");
       setIsLoading(true);
+      fetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: "",
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/product?language=${searchTerm}`,
+        },
+      );
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
       navigate(`/app/manage_translation/product?language=${language}`);
@@ -1501,16 +1520,6 @@ const Index = () => {
   //   localStorage.setItem("translateLanguagePack", languagePack);
   // }
 
-  // 防抖函数
-  const debounce = (func: Function, delay: number) => {
-    let timer: NodeJS.Timeout;
-    return (...args: any[]) => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        func(...args);
-      }, delay);
-    };
-  };
   // 节流函数
   const throttle = (func: Function, delay: number) => {
     let lastTime = 0;
@@ -1522,41 +1531,44 @@ const Index = () => {
       }
     };
   };
+
   // 下一页请求函数
-  // const throttleNextSubmit = useMemo(() => {
-  //   return throttle(async () => {
-  //     submit(
-  //       {
-  //         endCursor: JSON.stringify({
-  //           cursor: productsData.data.translatableResources.pageInfo.endCursor,
-  //           searchTerm: searchTerm,
-  //         }),
-  //       },
-  //       {
-  //         method: "post",
-  //         action: `/app/manage_translation/product?language=${searchTerm}`,
-  //       },
-  //     ); // 提交表单请求
-  //   }, 500);
-  // }, [productData, searchTerm]);
+  const throttleNextSubmit = useMemo(() => {
+    console.log(productsData);
+
+    return throttle(async () => {
+      fetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: endCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/product?language=${searchTerm}`,
+        },
+      ); // 提交表单请求
+    }, 500);
+  }, [productsData, searchTerm]);
+
   // 上一页请求函数
-  // const throttleBackSubmit = useMemo(() => {
-  //   return throttle(() => {
-  //     submit(
-  //       {
-  //         startCursor: JSON.stringify({
-  //           cursor:
-  //             productsData.data.translatableResources.pageInfo.startCursor,
-  //           searchTerm: searchTerm,
-  //         }),
-  //       },
-  //       {
-  //         method: "post",
-  //         action: `/app/manage_translation/product?language=${searchTerm}`,
-  //       },
-  //     );
-  //   }, 500);
-  // }, [productsData.data.translatableResources.pageInfo.endCursor, searchTerm]); // ✅ 必须写依赖
+  const throttleBackSubmit = useMemo(() => {
+    return throttle(() => {
+      fetcher.submit(
+        {
+          startCursor: JSON.stringify({
+            cursor: startCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/product?language=${searchTerm}`,
+        },
+      );
+    }, 500);
+  }, [productsData, searchTerm]); // ✅ 必须写依赖
 
   const throttleMenuChange = useMemo(() => {
     return throttle((key: string) => {
@@ -1593,7 +1605,7 @@ const Index = () => {
         );
         return;
       }
-      // throttleBackSubmit();
+      throttleBackSubmit();
     }
   };
 
@@ -1614,7 +1626,7 @@ const Index = () => {
         );
         return;
       }
-      // throttleNextSubmit();
+      throttleNextSubmit();
     }
   };
 
@@ -1739,58 +1751,6 @@ const Index = () => {
     setConfirmData([]);
   };
 
-  // const handleLeaveItem = (
-  //   key: string | boolean | { language: string } | { item: string },
-  // ) => {
-  //   setIsVisible(false);
-  //   if (typeof key === "string" && key !== "previous" && key !== "next") {
-  //     setSelectProductKey(key);
-  //   } else if (key === "previous") {
-  //     // 向前翻页
-  //     submit(
-  //       {
-  //         startCursor: JSON.stringify({
-  //           cursor:
-  //             productsData.data.translatableResources.pageInfo.startCursor,
-  //           searchTerm: searchTerm,
-  //         }),
-  //       },
-  //       {
-  //         method: "post",
-  //         action: `/app/manage_translation/product?language=${searchTerm}`,
-  //       },
-  //     ); // 提交表单请求
-  //   } else if (key === "next") {
-  //     // 向后翻页
-  //     submit(
-  //       {
-  //         endCursor: JSON.stringify({
-  //           cursor: productsData.data.translatableResources.pageInfo.endCursor,
-  //           searchTerm: searchTerm,
-  //         }),
-  //       },
-  //       {
-  //         method: "post",
-  //         action: `/app/manage_translation/product?language=${searchTerm}`,
-  //       },
-  //     ); // 提交表单请求
-  //   } else if (typeof key === "object" && "language" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedLanguage(key.language);
-  //     navigate(`/app/manage_translation/product?language=${key.language}`);
-  //   } else if (typeof key === "object" && "item" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedItem(key.item);
-  //     navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
-  //   } else {
-  //     navigate(`/app/manage_translation?language=${searchTerm}`, {
-  //       state: { key: searchTerm },
-  //     }); // 跳转到 /app/manage_translation
-  //   }
-  // };
-
   const onCancel = () => {
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
@@ -1895,9 +1855,9 @@ const Index = () => {
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     <Pagination
-                      hasPrevious={!!startCursor}
+                      hasPrevious={hasPrevious}
                       onPrevious={onPrevious}
-                      hasNext={!!endCursor}
+                      hasNext={hasNext}
                       onNext={onNext}
                     />
                   </div>
@@ -1984,7 +1944,7 @@ const Index = () => {
                                 fontSize: "16px",
                               }}
                             >
-                              {t(item.resource)}
+                              {t(item?.resource)}
                             </Text>
                             <div
                               style={{
@@ -2007,7 +1967,7 @@ const Index = () => {
                               <ManageTableInput
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
-                                // handleInputChange={handleInputChange}
+                                handleInputChange={handleProductBaseInputChange}
                                 isRtl={searchTerm === "ar"}
                                 record={item}
                               />
@@ -2025,7 +1985,7 @@ const Index = () => {
                                     item?.key || "",
                                     item?.type || "",
                                     item?.default_language || "",
-                                    handleProductInputChange,
+                                    handleProductBaseInputChange,
                                   );
                                 }}
                                 loading={loadingItems.includes(item?.key || "")}
@@ -2059,7 +2019,7 @@ const Index = () => {
                                 fontSize: "16px",
                               }}
                             >
-                              {t(item.resource)}
+                              {t(item?.resource)}
                             </Text>
                             <div
                               style={{
@@ -2082,7 +2042,7 @@ const Index = () => {
                               <ManageTableInput
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
-                                // handleInputChange={handleInputChange}
+                                handleInputChange={handleProductSeoInputChange}
                                 isRtl={searchTerm === "ar"}
                                 record={item}
                               />
@@ -2100,7 +2060,7 @@ const Index = () => {
                                     item?.key || "",
                                     item?.type || "",
                                     item?.default_language || "",
-                                    handleProductInputChange,
+                                    handleProductSeoInputChange,
                                   );
                                 }}
                                 loading={loadingItems.includes(item?.key || "")}
@@ -2118,7 +2078,7 @@ const Index = () => {
                       })}
                     </Space>
                   </Card>
-                  {/*{Array.isArray(optionsData) &&
+                  {Array.isArray(optionsData) &&
                     optionsData[0] !== undefined && (
                       <Card title={t("Product Options")}>
                         <Space direction="vertical" style={{ width: "100%" }}>
@@ -2136,7 +2096,7 @@ const Index = () => {
                                     fontSize: "16px",
                                   }}
                                 >
-                                  {t(item.resource)}
+                                  {t(item?.resource)}
                                 </Text>
                                 <div
                                   style={{
@@ -2159,7 +2119,7 @@ const Index = () => {
                                   <ManageTableInput
                                     translatedValues={translatedValues}
                                     setTranslatedValues={setTranslatedValues}
-                                    handleInputChange={handleInputChange}
+                                    handleInputChange={handleOptionsInputChange}
                                     isRtl={searchTerm === "ar"}
                                     record={item}
                                   />
@@ -2177,7 +2137,7 @@ const Index = () => {
                                         item?.key || "",
                                         item?.type || "",
                                         item?.default_language || "",
-                                        Number(1 + "" + item?.index),
+                                        handleOptionsInputChange,
                                       );
                                     }}
                                     loading={loadingItems.includes(
@@ -2216,7 +2176,7 @@ const Index = () => {
                                     fontSize: "16px",
                                   }}
                                 >
-                                  {t(item.resource)}
+                                  {t(item?.resource)}
                                 </Text>
                                 <div
                                   style={{
@@ -2239,7 +2199,9 @@ const Index = () => {
                                   <ManageTableInput
                                     translatedValues={translatedValues}
                                     setTranslatedValues={setTranslatedValues}
-                                    handleInputChange={handleInputChange}
+                                    handleInputChange={
+                                      handleMetafieldsInputChange
+                                    }
                                     isRtl={searchTerm === "ar"}
                                     record={item}
                                   />
@@ -2257,7 +2219,7 @@ const Index = () => {
                                         item?.key || "",
                                         item?.type || "",
                                         item?.default_language || "",
-                                        Number(2 + "" + item?.index),
+                                        handleMetafieldsInputChange,
                                       );
                                     }}
                                     loading={loadingItems.includes(
@@ -2296,7 +2258,7 @@ const Index = () => {
                                     fontSize: "16px",
                                   }}
                                 >
-                                  {t(item.resource)}
+                                  {t(item?.resource)}
                                 </Text>
                                 <div
                                   style={{
@@ -2319,7 +2281,9 @@ const Index = () => {
                                   <ManageTableInput
                                     translatedValues={translatedValues}
                                     setTranslatedValues={setTranslatedValues}
-                                    handleInputChange={handleInputChange}
+                                    handleInputChange={
+                                      handleVariantsInputChange
+                                    }
                                     isRtl={searchTerm === "ar"}
                                     record={item}
                                   />
@@ -2337,7 +2301,7 @@ const Index = () => {
                                         item?.key || "",
                                         item?.type || "",
                                         item?.default_language || "",
-                                        Number(3 + "" + item?.index),
+                                        handleVariantsInputChange,
                                       );
                                     }}
                                     loading={loadingItems.includes(
@@ -2357,13 +2321,10 @@ const Index = () => {
                           })}
                         </Space>
                       </Card>
-                    )} */}
+                    )}
                   <Menu
                     mode="inline"
-                    defaultSelectedKeys={[
-                      productsData.data.translatableResources.nodes[0]
-                        ?.resourceId,
-                    ]}
+                    defaultSelectedKeys={[productsData[0]?.id]}
                     style={{
                       flex: 1,
                       overflowY: "auto",
@@ -2375,9 +2336,9 @@ const Index = () => {
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     <Pagination
-                      hasPrevious={!!startCursor}
+                      hasPrevious={hasPrevious}
                       onPrevious={onPrevious}
-                      hasNext={!!endCursor}
+                      hasNext={hasNext}
                       onNext={onNext}
                     />
                   </div>
@@ -2455,7 +2416,7 @@ const Index = () => {
                     dataSource={productSeoData}
                     pagination={false}
                   />
-                  {/*{Array.isArray(optionsData) &&
+                  {Array.isArray(optionsData) &&
                     optionsData[0] !== undefined && (
                       <Table
                         columns={optionsColumns}
@@ -2482,7 +2443,7 @@ const Index = () => {
                         dataSource={variantsData}
                         pagination={false}
                       />
-                    )} */}
+                    )}
                 </Space>
               )}
             </Content>
