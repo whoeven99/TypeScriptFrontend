@@ -537,9 +537,8 @@ export const UpdateStatus = async ({ shop }: { shop: string }) => {
         shopName: shop,
       },
     });
-    
-    console.log(`${shop} UpdateStatus: `, response.data);
 
+    console.log(`${shop} UpdateStatus: `, response.data);
   } catch (error) {
     console.error("Error UpdateStatus:", error);
   }
@@ -1429,6 +1428,7 @@ export const updateManageTranslation = async ({
 
               return {
                 success: response.data.success,
+                errorCode: response.data.errorCode,
                 errorMsg: response.data.errorMsg,
                 data: {
                   resourceId: item.resourceId,
