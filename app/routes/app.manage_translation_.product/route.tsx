@@ -1852,6 +1852,7 @@ const Index = () => {
                 </div>
               </Sider>
             )}
+
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
@@ -2331,6 +2332,17 @@ const Index = () => {
                     />
                   </div>
                 </Space>
+              ) : !productBaseData.length ? (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100%",
+                  }}
+                >
+                  <Spin />
+                </div>
               ) : (
                 <Space
                   direction="vertical"
