@@ -409,8 +409,6 @@ const Index = () => {
 
   const { searchTerm, server, shopName } = useLoaderData<typeof loader>();
 
-  const actionData = useActionData<typeof action>();
-
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
@@ -607,6 +605,14 @@ const Index = () => {
               key: "title",
               index: 4,
               resource: t("Title"),
+              locale:
+                productFetcher.data.response?.translatableContent?.find(
+                  (item: any) => item.key == "title",
+                )?.locale || "",
+              digest:
+                productFetcher.data.response?.translatableContent?.find(
+                  (item: any) => item.key == "title",
+                )?.digest || "",
               type:
                 productFetcher.data.response?.translatableContent?.find(
                   (item: any) => item.key == "title",
@@ -1010,7 +1016,7 @@ const Index = () => {
             record={record}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
-            handleInputChange={handleInputChange}
+            handleInputChange={handleProductInputChange}
             isRtl={searchTerm === "ar"}
           />
         );
@@ -1022,14 +1028,15 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           <Button
-            // onClick={() => {
-            //   handleTranslate(
-            //     "PRODUCT",
-            //     record?.key || "",
-            //     record?.type || "",
-            //     record?.default_language || "",
-            //   );
-            // }}
+            onClick={() => {
+              handleTranslate(
+                "PRODUCT",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+                handleProductInputChange,
+              );
+            }}
             loading={loadingItems.includes(record?.key || "")}
           >
             {t("Translate")}
@@ -1066,7 +1073,7 @@ const Index = () => {
             record={record}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
-            // handleInputChange={handleInputChange}
+            handleInputChange={handleProductInputChange}
             isRtl={searchTerm === "ar"}
           />
         );
@@ -1078,14 +1085,15 @@ const Index = () => {
       render: (_: any, record: TableDataType) => {
         return (
           <Button
-            // onClick={() => {
-            //   handleTranslate(
-            //     "PRODUCT",
-            //     record?.key || "",
-            //     record?.type || "",
-            //     record?.default_language || "",
-            //   );
-            // }}
+            onClick={() => {
+              handleTranslate(
+                "PRODUCT",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+                handleProductInputChange,
+              );
+            }}
             loading={loadingItems.includes(record?.key || "")}
           >
             {t("Translate")}
@@ -1281,19 +1289,7 @@ const Index = () => {
   //   },
   // ];
 
-  const exMenuData = (products: any) => {
-    const data = products.data.translatableResources.nodes.map(
-      (product: any) => ({
-        key: product?.resourceId,
-        label: product?.translatableContent.find(
-          (item: any) => item.key === "title",
-        ).value,
-      }),
-    );
-    return data;
-  };
-
-  const handleInputChange = (key: string, value: string, index?: number) => {
+  const handleProductInputChange = (key: string, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
@@ -1311,283 +1307,165 @@ const Index = () => {
         };
         return updatedConfirmData;
       } else {
-        if (index && index.toString()[0] === "3") {
-          const newItem = {
-            resourceId: key,
-            locale: variantsData[0]?.locale,
-            key: "name",
-            value: value, // 初始为空字符串
-            translatableContentDigest: variantsData?.find(
-              (item: any) => item?.key === key,
-            )?.digest,
-            target: searchTerm || "",
-          };
-          return [...prevData, newItem]; // 将新数据添加到 confirmData 中
-        } else if (index && index.toString()[0] === "2") {
-          const count: number = Number(index.toString().slice(1));
-          const newItem = {
-            resourceId: productsData.data.translatableResources.nodes.find(
-              (item: any) => item?.resourceId === selectProductKey,
-            )?.metafields.nodes[count]?.resourceId,
-            locale: productsData.data.translatableResources.nodes.find(
-              (item: any) => item?.resourceId === selectProductKey,
-            )?.metafields.nodes[count]?.translatableContent[0]?.locale,
-            key: "value",
-            value: value, // 初始为空字符串
-            translatableContentDigest:
-              productsData.data.translatableResources.nodes
-                .find((item: any) => item?.resourceId === selectProductKey)
-                ?.metafields.nodes.find((item: any) => item.resourceId === key)
-                ?.translatableContent[0]?.digest,
-            target: searchTerm || "",
-          };
-          return [...prevData, newItem]; // 将新数据添加到 confirmData 中
-        } else if (index && index.toString()[0] === "1") {
-          const count: number = Number(index.toString().slice(1));
-          const newItem = {
-            resourceId: productsData.data.translatableResources.nodes.find(
-              (item: any) => item?.resourceId === selectProductKey,
-            )?.options.nodes[count]?.resourceId,
-            locale: productsData.data.translatableResources.nodes.find(
-              (item: any) => item?.resourceId === selectProductKey,
-            )?.options.nodes[count]?.translatableContent[0]?.locale,
-            key: "name",
-            value: value, // 初始为空字符串
-            translatableContentDigest:
-              productsData.data.translatableResources.nodes
-                .find((item: any) => item?.resourceId === selectProductKey)
-                ?.options.nodes.find((item: any) => item.resourceId === key)
-                ?.translatableContent[0]?.digest,
-            target: searchTerm || "",
-          };
-          return [...prevData, newItem]; // 将新数据添加到 confirmData 中
-        } else {
-          const newItem = {
-            resourceId: productsData.data.translatableResources.nodes.find(
-              (item: any) => item?.resourceId === selectProductKey,
-            )?.resourceId,
-            locale: productsData.data.translatableResources.nodes
-              .find((item: any) => item?.resourceId === selectProductKey)
-              ?.translatableContent.find((item: any) => item.key === key)
-              ?.locale,
-            key: key,
-            value: value, // 初始为空字符串
-            translatableContentDigest:
-              productsData.data.translatableResources.nodes
-                .find((item: any) => item?.resourceId === selectProductKey)
-                ?.translatableContent.find((item: any) => item.key === key)
-                ?.digest,
-            target: searchTerm || "",
-          };
+        console.log("productBaseData: ", productBaseData);
 
-          return [...prevData, newItem]; // 将新数据添加到 confirmData 中
-        }
+        const newItem = {
+          resourceId: selectProductKey,
+          locale: productBaseData?.find(
+            (item: any) => item?.resourceId === selectProductKey,
+          )?.locale,
+          key: key,
+          value: value, // 初始为空字符串
+          translatableContentDigest: productBaseData?.find(
+            (item: any) => item?.resourceId === selectProductKey,
+          )?.digest,
+          target: searchTerm || "",
+        };
+
+        return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       }
     });
   };
 
-  const transBeforeData = ({ products }: { products: any }) => {
-    let data: any = {
-      key: "",
-      title: {
-        value: "",
-        type: "",
-      },
-      descriptionHtml: {
-        value: "",
-        type: "",
-      },
-      seo: {
-        description: {
-          value: "",
-          type: "",
-        },
-        title: {
-          value: "",
-          type: "",
-        },
-      },
-      handle: {
-        value: "",
-        type: "",
-      },
-      productType: {
-        value: "",
-        type: "",
-      },
-      options: [
-        {
-          key: "",
-          name: "",
-          type: "",
-          translatableContent: "",
-          translation: "",
-        },
-      ],
-      metafields: [
-        {
-          key: "",
-          name: "",
-          type: "",
-          translatableContent: "",
-          translation: "",
-        },
-      ],
-      translations: {
-        handle: "",
-        key: "",
-        descriptionHtml: "",
-        seo: {
-          description: "",
-          title: "",
-        },
-        productType: "",
-        title: "",
-      },
-    };
-    const product = products.data.translatableResources.nodes.find(
-      (product: any) => product?.resourceId === selectProductKey,
-    );
-    const productOption = product.options;
-    const productMetafield = product.metafields;
-    data.key = product?.resourceId;
-    data.title = {
-      value: product?.translatableContent.find(
-        (item: any) => item.key === "title",
-      )?.value,
-      type: product?.translatableContent.find(
-        (item: any) => item.key === "title",
-      )?.type,
-    };
-    data.descriptionHtml = {
-      value: product?.translatableContent.find(
-        (item: any) => item.key === "body_html",
-      )?.value,
-      type: product?.translatableContent.find(
-        (item: any) => item.key === "body_html",
-      )?.type,
-    };
-    data.productType = {
-      value: product?.translatableContent.find(
-        (item: any) => item.key === "product_type",
-      )?.value,
-      type: product?.translatableContent.find(
-        (item: any) => item.key === "product_type",
-      )?.type,
-    };
-    data.handle = {
-      value: product?.translatableContent.find(
-        (item: any) => item.key === "handle",
-      )?.value,
-      type: product?.translatableContent.find(
-        (item: any) => item.key === "handle",
-      )?.type,
-    };
-    data.seo.title = {
-      value: product?.translatableContent.find(
-        (item: any) => item.key === "meta_title",
-      )?.value,
-      type: product?.translatableContent.find(
-        (item: any) => item.key === "meta_title",
-      )?.type,
-    };
-    data.seo.description = {
-      value: product?.translatableContent.find(
-        (item: any) => item.key === "meta_description",
-      )?.value,
-      type: product?.translatableContent.find(
-        (item: any) => item.key === "meta_description",
-      )?.type,
-    };
-    data.translations.key = product?.resourceId;
-    data.translations.title = product?.translations.find(
-      (item: any) => item.key === "title",
-    )?.value;
-    data.translations.descriptionHtml = product?.translations.find(
-      (item: any) => item.key === "body_html",
-    )?.value;
-    data.translations.productType = product?.translations.find(
-      (item: any) => item.key === "product_type",
-    )?.value;
-    data.translations.handle = product?.translations.find(
-      (item: any) => item.key === "handle",
-    )?.value;
-    data.translations.seo.title = product?.translations.find(
-      (item: any) => item.key === "meta_title",
-    )?.value;
-    data.translations.seo.description = product?.translations.find(
-      (item: any) => item.key === "meta_description",
-    )?.value;
-    data.options =
-      productOption?.nodes.map((item: any) => {
-        return {
-          key: item?.resourceId,
-          name: item?.translatableContent[0]?.key,
-          type: item?.translatableContent[0]?.type,
-          translatableContent: item?.translatableContent[0]?.value,
-          translation: item?.translations[0]?.value,
-        };
-      }) || [];
-    data.metafields =
-      productMetafield?.nodes.map((item: any) => {
-        return {
-          key: item?.resourceId,
-          name: item?.translatableContent[0]?.key,
-          type: item?.translatableContent[0]?.type,
-          translatableContent: item?.translatableContent[0]?.value,
-          translation: item?.translations[0]?.value,
-        };
-      }) || [];
+  // const handleInputChange = (key: string, value: string, index?: number) => {
+  //   setTranslatedValues((prev) => ({
+  //     ...prev,
+  //     [key]: value, // 更新对应的 key
+  //   }));
+  //   setConfirmData((prevData) => {
+  //     const existingItemIndex = prevData.findIndex(
+  //       (item) => item.resourceId === key || item.key === key,
+  //     );
+  //     if (existingItemIndex !== -1) {
+  //       // 如果 key 存在，更新其对应的 value
+  //       const updatedConfirmData = [...prevData];
+  //       updatedConfirmData[existingItemIndex] = {
+  //         ...updatedConfirmData[existingItemIndex],
+  //         value: value,
+  //       };
+  //       return updatedConfirmData;
+  //     } else {
+  //       if (index && index.toString()[0] === "3") {
+  //         const newItem = {
+  //           resourceId: key,
+  //           locale: variantsData[0]?.locale,
+  //           key: "name",
+  //           value: value, // 初始为空字符串
+  //           translatableContentDigest: variantsData?.find(
+  //             (item: any) => item?.key === key,
+  //           )?.digest,
+  //           target: searchTerm || "",
+  //         };
+  //         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+  //       } else if (index && index.toString()[0] === "2") {
+  //         const count: number = Number(index.toString().slice(1));
+  //         const newItem = {
+  //           resourceId: productsData.data.translatableResources.nodes.find(
+  //             (item: any) => item?.resourceId === selectProductKey,
+  //           )?.metafields.nodes[count]?.resourceId,
+  //           locale: productsData.data.translatableResources.nodes.find(
+  //             (item: any) => item?.resourceId === selectProductKey,
+  //           )?.metafields.nodes[count]?.translatableContent[0]?.locale,
+  //           key: "value",
+  //           value: value, // 初始为空字符串
+  //           translatableContentDigest:
+  //             productsData.data.translatableResources.nodes
+  //               .find((item: any) => item?.resourceId === selectProductKey)
+  //               ?.metafields.nodes.find((item: any) => item.resourceId === key)
+  //               ?.translatableContent[0]?.digest,
+  //           target: searchTerm || "",
+  //         };
+  //         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+  //       } else if (index && index.toString()[0] === "1") {
+  //         const count: number = Number(index.toString().slice(1));
+  //         const newItem = {
+  //           resourceId: productsData.data.translatableResources.nodes.find(
+  //             (item: any) => item?.resourceId === selectProductKey,
+  //           )?.options.nodes[count]?.resourceId,
+  //           locale: productsData.data.translatableResources.nodes.find(
+  //             (item: any) => item?.resourceId === selectProductKey,
+  //           )?.options.nodes[count]?.translatableContent[0]?.locale,
+  //           key: "name",
+  //           value: value, // 初始为空字符串
+  //           translatableContentDigest:
+  //             productsData.data.translatableResources.nodes
+  //               .find((item: any) => item?.resourceId === selectProductKey)
+  //               ?.options.nodes.find((item: any) => item.resourceId === key)
+  //               ?.translatableContent[0]?.digest,
+  //           target: searchTerm || "",
+  //         };
+  //         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+  //       } else {
+  //         const newItem = {
+  //           resourceId: productsData.data.translatableResources.nodes.find(
+  //             (item: any) => item?.resourceId === selectProductKey,
+  //           )?.resourceId,
+  //           locale: productsData.data.translatableResources.nodes
+  //             .find((item: any) => item?.resourceId === selectProductKey)
+  //             ?.translatableContent.find((item: any) => item.key === key)
+  //             ?.locale,
+  //           key: key,
+  //           value: value, // 初始为空字符串
+  //           translatableContentDigest:
+  //             productsData.data.translatableResources.nodes
+  //               .find((item: any) => item?.resourceId === selectProductKey)
+  //               ?.translatableContent.find((item: any) => item.key === key)
+  //               ?.digest,
+  //           target: searchTerm || "",
+  //         };
 
-    return data;
-  };
-
-  // const handleTranslate = async (
-  //   resourceType: string,
-  //   key: string,
-  //   type: string,
-  //   context: string,
-  //   index?: number,
-  // ) => {
-  //   if (!key || !type || !context) {
-  //     return;
-  //   }
-  //   setLoadingItems((prev) => [...prev, key]);
-  //   console.log({
-  //     shopName: shopName,
-  //     source: productsData.data.translatableResources.nodes
-  //       .find((item: any) => item?.resourceId === selectProductKey)
-  //       ?.translatableContent.find((item: any) => item.key === key)?.locale,
-  //     target: searchTerm || "",
-  //     resourceType: resourceType,
-  //     context: context,
-  //     key: key,
-  //     type: type,
-  //     server: server || "",
-  //   });
-
-  //   const data = await SingleTextTranslate({
-  //     shopName: shopName,
-  //     source: productsData.data.translatableResources.nodes
-  //       .find((item: any) => item?.resourceId === selectProductKey)
-  //       ?.translatableContent.find((item: any) => item.key === key)?.locale,
-  //     target: searchTerm || "",
-  //     resourceType: resourceType,
-  //     context: context,
-  //     key: key,
-  //     type: type,
-  //     server: server || "",
-  //   });
-  //   if (data?.success) {
-  //     if (loadingItemsRef.current.includes(key)) {
-  //       handleInputChange(key, data.response, index);
-  //       shopify.toast.show(t("Translated successfully"));
+  //         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
+  //       }
   //     }
-  //   } else {
-  //     shopify.toast.show(data.errorMsg);
-  //   }
-  //   setLoadingItems((prev) => prev.filter((item) => item !== key));
+  //   });
   // };
+
+  const handleTranslate = async (
+    resourceType: string,
+    key: string,
+    type: string,
+    context: string,
+    handleInputChange: (key: string, value: string) => void,
+  ) => {
+    if (!key || !type || !context) {
+      return;
+    }
+    setLoadingItems((prev) => [...prev, key]);
+    console.log({
+      shopName: shopName,
+      source: productsData.data.translatableResources.nodes
+        .find((item: any) => item?.resourceId === selectProductKey)
+        ?.translatableContent.find((item: any) => item.key === key)?.locale,
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
+
+    const data = await SingleTextTranslate({
+      shopName: shopName,
+      source: productsData.data.translatableResources.nodes
+        .find((item: any) => item?.resourceId === selectProductKey)
+        ?.translatableContent.find((item: any) => item.key === key)?.locale,
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: context,
+      key: key,
+      type: type,
+      server: server || "",
+    });
+    if (data?.success) {
+      if (loadingItemsRef.current.includes(key)) {
+        handleInputChange(key, data.response);
+        shopify.toast.show(t("Translated successfully"));
+      }
+    } else {
+      shopify.toast.show(data.errorMsg);
+    }
+    setLoadingItems((prev) => prev.filter((item) => item !== key));
+  };
 
   const handleLanguageChange = (language: string) => {
     if (confirmData.length > 0) {
@@ -1751,10 +1629,113 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("save-bar");
-    const data = transBeforeData({
-      products: productsData,
-    });
-    // setProductData(data);
+    setProductBaseData(
+      [
+        {
+          key: "title",
+          index: 4,
+          resource: t("Title"),
+          type:
+            productFetcher.data.response?.translatableContent?.find(
+              (item: any) => item.key == "title",
+            )?.type || "",
+          default_language:
+            productFetcher.data.response?.translatableContent?.find(
+              (item: any) => item.key == "title",
+            )?.value || "",
+          translated: productFetcher.data.response?.translations?.find(
+            (item: any) => item.key == "title",
+          )?.value,
+        },
+        {
+          key: "body_html",
+          index: 4,
+          resource: t("Description"),
+          type:
+            productFetcher.data.response?.translatableContent?.find(
+              (item: any) => item.key == "body_html",
+            )?.type || "",
+          default_language:
+            productFetcher.data.response?.translatableContent?.find(
+              (item: any) => item.key == "body_html",
+            )?.value || "",
+          translated: productFetcher.data.response?.translations?.find(
+            (item: any) => item.key == "body_html",
+          )?.value,
+        },
+        {
+          key: "product_type",
+          index: 4,
+          resource: t("ProductType"),
+          type:
+            productFetcher.data.response?.translatableContent?.find(
+              (item: any) => item.key == "product_type",
+            )?.type || "",
+          default_language:
+            productFetcher.data.response?.translatableContent?.find(
+              (item: any) => item.key == "product_type",
+            )?.value || "",
+          translated: productFetcher.data.response?.translations?.find(
+            (item: any) => item.key == "product_type",
+          )?.value,
+        },
+      ].filter((item) => item.default_language),
+    );
+    setProductSeoData(
+      [
+        {
+          key: "handle",
+          index: 4,
+          resource: t("URL handle"),
+          type:
+            productFetcher.data.response?.translatableContent?.find(
+              (item: any) => item.key == "handle",
+            )?.type || "",
+          default_language:
+            productFetcher.data.response?.translatableContent?.find(
+              (item: any) => item.key == "handle",
+            )?.value || "",
+          translated:
+            productFetcher.data.response?.translation?.find(
+              (item: any) => item.key == "handle",
+            )?.value || "",
+        },
+        {
+          key: "meta_title",
+          index: 4,
+          resource: t("Meta title"),
+          type:
+            productFetcher.data.response?.translatableContent?.find(
+              (item: any) => item.key == "meta_title",
+            )?.type || "",
+          default_language:
+            productFetcher.data.response?.translatableContent?.find(
+              (item: any) => item.key == "meta_title",
+            )?.value || "",
+          translated:
+            productFetcher.data.response?.translation?.find(
+              (item: any) => item.key == "meta_title",
+            )?.value || "",
+        },
+        {
+          key: "meta_description",
+          index: 4,
+          resource: t("Meta description"),
+          type:
+            productFetcher.data.response?.translatableContent?.find(
+              (item: any) => item.key == "meta_description",
+            )?.type || "",
+          default_language:
+            productFetcher.data.response?.translatableContent?.find(
+              (item: any) => item.key == "meta_description",
+            )?.value || "",
+          translated:
+            productFetcher.data.response?.translation?.find(
+              (item: any) => item.key == "meta_description",
+            )?.value || "",
+        },
+      ].filter((item) => item.default_language),
+    );
     setConfirmData([]);
   };
 
@@ -2038,14 +2019,15 @@ const Index = () => {
                               }}
                             >
                               <Button
-                                // onClick={() => {
-                                //   handleTranslate(
-                                //     "PRODUCT",
-                                //     item?.key || "",
-                                //     item?.type || "",
-                                //     item?.default_language || "",
-                                //   );
-                                // }}
+                                onClick={() => {
+                                  handleTranslate(
+                                    "PRODUCT",
+                                    item?.key || "",
+                                    item?.type || "",
+                                    item?.default_language || "",
+                                    handleProductInputChange,
+                                  );
+                                }}
                                 loading={loadingItems.includes(item?.key || "")}
                               >
                                 {t("Translate")}
@@ -2112,14 +2094,15 @@ const Index = () => {
                               }}
                             >
                               <Button
-                                // onClick={() => {
-                                //   handleTranslate(
-                                //     "PRODUCT",
-                                //     item?.key || "",
-                                //     item?.type || "",
-                                //     item?.default_language || "",
-                                //   );
-                                // }}
+                                onClick={() => {
+                                  handleTranslate(
+                                    "PRODUCT",
+                                    item?.key || "",
+                                    item?.type || "",
+                                    item?.default_language || "",
+                                    handleProductInputChange,
+                                  );
+                                }}
                                 loading={loadingItems.includes(item?.key || "")}
                               >
                                 {t("Translate")}
@@ -2467,7 +2450,7 @@ const Index = () => {
                     dataSource={productBaseData}
                     pagination={false}
                   />
-                   <Table
+                  <Table
                     columns={productSeoDataColumns}
                     dataSource={productSeoData}
                     pagination={false}
