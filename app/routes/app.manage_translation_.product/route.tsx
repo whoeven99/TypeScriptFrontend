@@ -125,88 +125,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         const response = await admin.graphql(
           `#graphql
-            query {     
-              translatableResources(resourceType: PRODUCT, last: 20, before: "${startCursor?.cursor}") {
-                nodes {
-                  resourceId
-                  translatableContent {
-                    digest
-                    key
-                    locale
-                    type
-                    value
-                  }
-                  translations(locale: "${startCursor?.searchTerm || " "}") {
-                    value
-                    key
-                  }
-                  options: nestedTranslatableResources(first: 10, resourceType: PRODUCT_OPTION) {
-                    nodes {
-                      resourceId
-                      translatableContent {
-                        digest
-                        key
-                        locale
-                        type
-                        value
-                      }
-                      translations(locale: "${startCursor?.searchTerm || " "}") {
-                        key
-                        value
-                      }
-                    }
-                  }
-                  metafields: nestedTranslatableResources(first: 10, resourceType: METAFIELD) {
-                    nodes {
-                      resourceId
-                      translatableContent {
-                        digest
-                        key
-                        locale
-                        type
-                        value
-                      }
-                      translations(locale: "${startCursor?.searchTerm || " "}") {
-                        key
-                        value
-                      }
-                    }
-                  }
-                }
-                pageInfo {
-                  endCursor
-                  hasNextPage
-                  hasPreviousPage
-                  startCursor
-                }
-              }
-              products(first: 20) {
-                nodes {
-                  id
-                  options(first: 10) {
-                    optionValues {
-                      id
-                    }
-                  }
-                }
-              }
-          }`,
-        );
-
-        const previousProducts = await response.json();
-
-        return json({
-          previousProducts: previousProducts,
-        });
-      } catch (error) {
-        console.error("Error action startCursor product:", error);
-      }
-    case !!endCursor:
-      try {
-        const response = await admin.graphql(
-          `#graphql
-            query products {     
-              products(first: 20 ,after: "${endCursor.cursor}") {
+            query products($startCursor: String) {     
+              products(last: 20 ,before: $startCursor) {
                 nodes {
                   id
                   title
@@ -224,6 +144,74 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
           }`,
+          {
+            variables: {
+              startCursor: startCursor.cursor ? startCursor.cursor : undefined,
+            },
+          },
+        );
+
+        const data = await response.json();
+
+        return json({
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            data: data.data?.products?.nodes || [],
+            pageInfo: data.data?.products?.pageInfo || {
+              endCursor: "",
+              hasNextPage: false,
+              hasPreviousPage: false,
+              startCursor: "",
+            },
+          },
+        });
+      } catch (error) {
+        console.error("Error action startCursor product:", error);
+        return json({
+          success: false,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            data: [],
+            pageInfo: {
+              endCursor: "",
+              hasNextPage: false,
+              hasPreviousPage: false,
+              startCursor: "",
+            },
+          },
+        });
+      }
+    case !!endCursor:
+      try {
+        const response = await admin.graphql(
+          `#graphql
+            query products($endCursor: String) {     
+              products(first: 20 ,after: $endCursor) {
+                nodes {
+                  id
+                  title
+                  options(first: 20) {
+                    optionValues {
+                      id
+                    }
+                  }
+                }
+                pageInfo{
+                  endCursor
+                  startCursor
+                  hasNextPage
+                  hasPreviousPage
+                }
+              }
+          }`,
+          {
+            variables: {
+              endCursor: endCursor.cursor ? endCursor.cursor : undefined,
+            },
+          },
         );
 
         const data = await response.json();
