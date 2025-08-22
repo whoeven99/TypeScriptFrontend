@@ -1027,7 +1027,7 @@ const Index = () => {
               loading={!selectedPlan}
             >
               <Title level={5}>Free</Title>
-              <div style={{ margin: "12px 0 46px 0" }}>
+              <div style={{ margin: yearly ? "12px 0 46px 0" : "12px  0" }}>
                 <Text style={{ fontSize: "28px", fontWeight: "bold" }}>$0</Text>
                 <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
               </div>
@@ -1163,10 +1163,12 @@ const Index = () => {
                   {/* <Paragraph type="secondary" style={{ fontSize: "13px" }}>
                     {plan.subtitle}
                   </Paragraph> */}
-                  <div
-                    dangerouslySetInnerHTML={{ __html: plan.subtitle }}
-                    style={{ marginBottom: "12px" }}
-                  />
+                  {yearly && (
+                    <div
+                      dangerouslySetInnerHTML={{ __html: plan.subtitle }}
+                      style={{ marginBottom: "12px" }}
+                    />
+                  )}
                   <Button
                     type="default"
                     block
