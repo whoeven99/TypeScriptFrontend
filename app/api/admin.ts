@@ -1459,12 +1459,9 @@ export const queryPrimaryMarket = async ({
 }) => {
   try {
     const query = `{
-      primaryMarket {
-        webPresences(first: 10) {
-          nodes {
-            id
-          }
-        }
+      backupRegion {
+        id
+        name
       }
     }`;
 
@@ -1478,7 +1475,7 @@ export const queryPrimaryMarket = async ({
       data: JSON.stringify({ query }),
     });
 
-    const res = response.data.data.primaryMarket.webPresences.nodes;
+    const res = [response.data.data.backupRegion.id];
 
     return res;
   } catch (error) {
@@ -1860,7 +1857,7 @@ export const mutationAppSubscriptionCreate = async ({
     currencyCode: string;
   };
   test?: boolean;
-  trialDays?: number;
+  trialDays: number;
   returnUrl: URL;
 }) => {
   console.log("mutationAppSubscriptionCreate is coming");
@@ -1918,16 +1915,12 @@ export const mutationAppSubscriptionCreate = async ({
             },
           ],
           replacementBehavior: "APPLY_IMMEDIATELY",
-          trialDays: trialDays ? trialDays : 0,
+          trialDays: trialDays,
           test: test || false,
         },
       },
     });
-
     const res = response.data.data.appSubscriptionCreate;
-
-    console.log("mutationAppSubscriptionCreate: ", res);
-
     return res;
   } catch (error) {
     console.error("Error mutationAppSubscriptionCreate:", error);

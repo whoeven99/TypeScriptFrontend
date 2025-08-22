@@ -168,6 +168,7 @@ const Index = () => {
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
+  const themeFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
@@ -213,8 +214,6 @@ const Index = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const themeFetcher = useFetcher<any>();
-
   useEffect(() => {
     if (languageTableData.length === 0) {
       languageFetcher.submit(
@@ -227,17 +226,6 @@ const Index = () => {
         },
       );
     }
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  useEffect(() => {
     themeFetcher.submit(
       {
         loading: JSON.stringify(true),
@@ -247,6 +235,14 @@ const Index = () => {
         action: `/app/manage_translation/theme?language=${searchTerm}`,
       },
     );
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   useEffect(() => {
