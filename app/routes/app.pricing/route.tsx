@@ -422,7 +422,9 @@ const Index = () => {
         title: "Basic",
         monthlyPrice: 7.99,
         yearlyPrice: 6.39,
-        subtitle: t("pricing.for_small_teams"),
+        subtitle: t("<strong>${{amount}}</strong> billed once a year", {
+          amount: 76.68,
+        }),
         buttonText:
           selectedPlan === 4
             ? t("pricing.current_plan")
@@ -447,7 +449,9 @@ const Index = () => {
         title: "Pro",
         monthlyPrice: 19.99,
         yearlyPrice: 15.99,
-        subtitle: t("pricing.for_growing"),
+        subtitle: t("<strong>${{amount}}</strong> billed once a year", {
+          amount: 191.88,
+        }),
         buttonText:
           selectedPlan === 5
             ? t("pricing.current_plan")
@@ -472,7 +476,9 @@ const Index = () => {
         title: "Premium",
         monthlyPrice: 39.99,
         yearlyPrice: 31.99,
-        subtitle: t("pricing.for_large_teams"),
+        subtitle: t("<strong>${{amount}}</strong> billed once a year", {
+          amount: 383.88,
+        }),
         buttonText:
           selectedPlan === 6
             ? t("pricing.current_plan")
@@ -1021,13 +1027,11 @@ const Index = () => {
               loading={!selectedPlan}
             >
               <Title level={5}>Free</Title>
-              <div style={{ margin: "12px 0" }}>
+              <div style={{ margin: "12px 0 46px 0" }}>
                 <Text style={{ fontSize: "28px", fontWeight: "bold" }}>$0</Text>
                 <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
               </div>
-              <Paragraph type="secondary" style={{ fontSize: "13px" }}>
-                {t("pricing.for_individuals")}
-              </Paragraph>
+
               <Button
                 type="default"
                 block
@@ -1156,9 +1160,13 @@ const Index = () => {
                     </Text>
                     <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
                   </div>
-                  <Paragraph type="secondary" style={{ fontSize: "13px" }}>
+                  {/* <Paragraph type="secondary" style={{ fontSize: "13px" }}>
                     {plan.subtitle}
-                  </Paragraph>
+                  </Paragraph> */}
+                  <div
+                    dangerouslySetInnerHTML={{ __html: plan.subtitle }}
+                    style={{ marginBottom: "12px" }}
+                  />
                   <Button
                     type="default"
                     block

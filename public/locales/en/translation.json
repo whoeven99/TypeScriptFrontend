@@ -630,5 +630,6 @@
   "Keep paid plan": "Keep paid plan",
   "Switch to free plan": "Switch to free plan",
   "1v1 support": "1v1 support",
-  "Compare plans": "Compare plans"
+  "Compare plans": "Compare plans",
+  "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> billed once a year"
 }

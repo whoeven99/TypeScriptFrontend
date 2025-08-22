@@ -1522,8 +1522,6 @@ const Index = () => {
 
   // 下一页请求函数
   const throttleNextSubmit = useMemo(() => {
-    console.log(productsData);
-
     return throttle(async () => {
       fetcher.submit(
         {
