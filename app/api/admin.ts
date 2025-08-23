@@ -1460,8 +1460,11 @@ export const queryPrimaryMarket = async ({
   try {
     const query = `{
       primaryMarket {
-        name
-        id
+        webPresences(first: 10) {
+          nodes {
+            id
+          }
+        }
       }
     }`;
 
@@ -1475,11 +1478,11 @@ export const queryPrimaryMarket = async ({
       data: JSON.stringify({ query }),
     });
 
-    const res = response.data.data.primaryMarket.id;
+    const res = response.data.data.primaryMarket.webPresences.nodes;
 
     return res;
   } catch (error) {
-    console.error("Error queryPrimaryMarket:", error);
+    console.error("Error fetching all markets:", error);
   }
 };
 
