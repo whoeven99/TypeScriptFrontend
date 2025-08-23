@@ -1459,14 +1459,14 @@ export const queryPrimaryMarket = async ({
 }) => {
   try {
     const query = `{
-      backupRegion {
-        id
+      primaryMarket {
         name
+        id
       }
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2025-04/graphql.json`,
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -1475,7 +1475,7 @@ export const queryPrimaryMarket = async ({
       data: JSON.stringify({ query }),
     });
 
-    const res = [response.data.data.backupRegion.id];
+    const res = response.data.data.primaryMarket.id;
 
     return res;
   } catch (error) {
@@ -1714,8 +1714,9 @@ export const mutationShopLocalePublish = async ({
       },
       data: JSON.stringify({ query: confirmMutation }),
     });
+    console.log("mutationShopLocalePublish:", response.data);
 
-    const res = response.data.data.shopLocaleUpdate.shopLocale;
+    const res = response.data?.data?.shopLocaleUpdate?.shopLocale;
 
     return res;
   } catch (error) {
