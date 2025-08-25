@@ -233,10 +233,10 @@ const Index = () => {
   );
   const [selectedItem, setSelectedItem] = useState<string>("page");
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    pagesData?.pageInfo.hasPreviousPage || false,
+    pagesData?.pageInfo?.hasPreviousPage || false,
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    pagesData?.pageInfo.hasNextPage || false,
+    pagesData?.pageInfo?.hasNextPage || false,
   );
   const [isMobile, setIsMobile] = useState(false);
 
@@ -320,7 +320,7 @@ const Index = () => {
           type: pageData?.title.type,
         },
         {
-          key: "body",
+          key: "body_html",
           resource: t("Description"),
           default_language: pageData?.body.value,
           translated: pageData?.translations?.body,
@@ -593,6 +593,20 @@ const Index = () => {
             ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",
         };
+        // const newItem = {
+        //   resourceId: pagesData.nodes.find(
+        //     (item: any) => item?.resourceId === selectPageKey,
+        //   )?.resourceId,
+        //   locale: pagesData.nodes
+        //     .find((item: any) => item?.resourceId === selectPageKey)
+        //     ?.translatableContent.find((item: any) => item.key === key)?.locale,
+        //   key: key,
+        //   value: value, // 初始为空字符串
+        //   translatableContentDigest: pagesData.nodes
+        //     .find((item: any) => item?.resourceId === selectPageKey)
+        //     ?.translatableContent.find((item: any) => item.key === key)?.digest,
+        //   target: searchTerm || "",
+        // };
 
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       }
@@ -805,7 +819,7 @@ const Index = () => {
     const data = transBeforeData({
       pages: pagesData,
     });
-    setPagesData(data);
+    setPageData(data);
     setConfirmData([]);
   };
 
