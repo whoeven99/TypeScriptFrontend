@@ -397,7 +397,7 @@ export const SendSubscribeSuccessEmail = async ({
 
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/orders/sendSubscribeSuccessEmail`,
+      url: `${process.env.SERVER_URL}/orders/sendSubscribeSuccessEmail?shopName=${shopName}`,
       method: "POST",
       data: {
         id: id,
