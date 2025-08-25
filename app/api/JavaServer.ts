@@ -400,7 +400,7 @@ export const SendSubscribeSuccessEmail = async ({
       url: `${process.env.SERVER_URL}/orders/sendSubscribeSuccessEmail?shopName=${shopName}`,
       method: "POST",
       data: {
-        id: id,
+        subGid: id,
         shopName: shopName,
         feeType: feeType,
       },
