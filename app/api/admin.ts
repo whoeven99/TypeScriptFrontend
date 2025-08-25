@@ -1478,11 +1478,16 @@ export const queryPrimaryMarket = async ({
       data: JSON.stringify({ query }),
     });
 
-    const res = response.data.data.primaryMarket.webPresences.nodes;
+    const res = response.data?.data?.primaryMarket?.webPresences?.nodes;
 
-    return res;
+    console.log(
+      `${shop} queryPrimaryMarket: `,
+      response.data?.data?.primaryMarket?.webPresences?.nodes,
+    );
+
+    return res || [];
   } catch (error) {
-    console.error("Error fetching all markets:", error);
+    console.error("Error queryPrimaryMarket:", error);
   }
 };
 
@@ -1717,8 +1722,9 @@ export const mutationShopLocalePublish = async ({
       },
       data: JSON.stringify({ query: confirmMutation }),
     });
+    console.log(`${shop} mutationShopLocalePublish:`, response.data);
 
-    const res = response.data.data.shopLocaleUpdate.shopLocale;
+    const res = response.data?.data?.shopLocaleUpdate?.shopLocale;
 
     return res;
   } catch (error) {

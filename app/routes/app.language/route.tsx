@@ -169,7 +169,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
         return json({
           success: true,
-          data: { primaryMarket: response },
+          errorCode: 0,
+          errorMsg: "",
+          response,
         });
       } catch (error) {
         console.error("Error primaryMarket language:", error);
@@ -195,22 +197,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             }`,
         );
 
-        const marketsData = await response.json();
+        const data = await response.json();
 
-        console.log(
-          `${shop} marketsData: `,
-          marketsData.data?.webPresences?.nodes,
-        );
+        console.log(`${shop} marketsData: `, data.data?.webPresences?.nodes);
 
         return json({
           success: true,
-          data: { markets: marketsData.data?.webPresences?.nodes },
+          errorCode: 0,
+          errorMsg: "",
+          response: data.data?.webPresences?.nodes,
         });
       } catch (error) {
         console.error("Error webPresences language:", error);
         return {
           success: false,
-          data: { markets: [] },
+          errorCode: 0,
+          errorMsg: "",
+          dresponse: [],
         };
       }
 
@@ -268,7 +271,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         if (results.every((item) => item.status === "fulfilled")) {
           return json({
             success: true,
-            data: {
+            errorCode: 0,
+            errorMsg: "",
+            response: {
               webPresences: results,
               publishedCode: webPresencesUpdate[0].publishedCode,
             },
@@ -276,7 +281,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         } else {
           return json({
             success: false,
-            data: {
+            errorCode: 0,
+            errorMsg: "",
+            response: {
               webPresences: results,
               publishedCode: webPresencesUpdate[0].publishedCode,
             },
@@ -354,11 +361,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           publishInfo: publishInfo,
         });
         return {
-          data: response,
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response,
         };
       } catch (error) {
         console.error("Error publishInfo language:", error);
-        return json({ error: "Error publishInfo language" }, { status: 500 });
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: [],
+        };
       }
 
     case !!unPublishInfo:
@@ -1072,24 +1087,14 @@ const Index = () => {
           "Are you sure to delete this language? After deletion, the translation data will be deleted together",
         )}
       />
-      <Modal
+      <TranslationWarnModal
         title={t("The 20 language limit has been reached")}
-        open={showWarnModal}
-        onCancel={() => setShowWarnModal(false)}
-        centered
-        width={700}
-        footer={
-          <Button type="primary" onClick={() => setShowWarnModal(false)}>
-            {t("OK")}
-          </Button>
-        }
-      >
-        <Text>
-          {t(
-            "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.",
-          )}
-        </Text>
-      </Modal>
+        content={t(
+          "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.",
+        )}
+        show={showWarnModal}
+        setShow={setShowWarnModal}
+      />
       <PublishModal
         isVisible={isPublishModalOpen}
         setIsModalOpen={setIsPublishModalOpen}
