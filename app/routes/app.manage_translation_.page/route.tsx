@@ -305,6 +305,8 @@ const Index = () => {
     setConfirmData([]);
     setTranslatedValues({});
     setLoadingItems([]);
+    setHasPrevious(pagesData.pageInfo.hasPreviousPage);
+    setHasNext(pagesData.pageInfo.hasNextPage);
   }, [selectPageKey, pagesData]);
 
   useEffect(() => {
