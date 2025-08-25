@@ -257,17 +257,14 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   ];
 
   const updatedLocales = useMemo(() => {
-    console.log("primaryLanguage: ", primaryLanguage);
-    console.log("languageLocaleInfo: ", languageLocaleInfo);
-
     if (primaryLanguage && languageLocaleInfo) {
       return regions.map((region) => ({
         ...region,
         countries: region.countries
           .map((lang) => ({
             ...lang,
-            name: `${lang.name}(${languageLocaleInfo?.response[lang.isoCode]?.Local})`,
-            flag: languageLocaleInfo?.response[lang.isoCode]?.countries[0],
+            name: `${lang.name}(${languageLocaleInfo[lang.isoCode]?.Local})`,
+            flag: languageLocaleInfo[lang.isoCode]?.countries[0],
           }))
           .filter((lang) => lang.isoCode !== primaryLanguage?.locale),
       }));
@@ -310,28 +307,28 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   }, [selectedLanguagesIscode]);
 
   useEffect(() => {
-    if (addFetcher.data && addFetcher.data?.success) {
-      const data = addFetcher.data.response?.shopLanguages.map(
-        (lang: any, i: any) => ({
+    if (addFetcher.data) {
+      if (addFetcher.data?.success) {
+        const data = addFetcher.data.response?.map((lang: any, i: any) => ({
           language: lang.name,
           localeName:
-            languageLocaleInfo[addFetcher.data.shopLanguages[i].locale].Local,
+            languageLocaleInfo[addFetcher.data.response[i].locale].Local,
           locale: lang.locale,
           status: 0,
           auto_update_translation: false,
           published: lang.published,
           loading: false,
-        }),
-      );
-      dispatch(updateTableData(data));
-      shopify.toast.show(t("Add success"));
-      setAllSelectedKeys([]);
-      setFilteredLanguages(updatedLocales);
-      setIsModalOpen(false);
-      setConfirmButtonDisable(false);
-    } else if (addFetcher.data && !addFetcher.data?.success) {
-      shopify.toast.show(t("Add failed"));
-      setConfirmButtonDisable(false);
+        }));
+        dispatch(updateTableData(data));
+        shopify.toast.show(t("Add success"));
+        setAllSelectedKeys([]);
+        setFilteredLanguages(updatedLocales);
+        setIsModalOpen(false);
+        setConfirmButtonDisable(false);
+      } else if (addFetcher.data && !addFetcher.data?.success) {
+        shopify.toast.show(t("Add failed"));
+        setConfirmButtonDisable(false);
+      }
     }
   }, [addFetcher.data]);
 

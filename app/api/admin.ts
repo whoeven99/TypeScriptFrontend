@@ -1605,7 +1605,7 @@ export const mutationShopLocaleEnable = async ({
         shopifyResponse.data?.data?.shopLocaleEnable?.shopLocale
       ) {
         console.log(
-          "shopLocaleEnable: ",
+          `${shop} shopLocaleEnable: `,
           shopifyResponse.data.data.shopLocaleEnable,
         );
         shopLanguages.push(
@@ -1614,21 +1614,12 @@ export const mutationShopLocaleEnable = async ({
       } else {
         success = false;
       }
-    }
-    return {
-      success,
-      errorCode: 0,
-      errorMsg: "",
-      response: shopLanguages,
-    };
+    }    
+
+    return shopLanguages;
   } catch (error) {
     console.error("Error mutationShopLocaleEnable:", error);
-    return {
-      success: false,
-      errorCode: 0,
-      errorMsg: "",
-      response: [],
-    };
+    return [];
   }
 };
 

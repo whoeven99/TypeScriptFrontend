@@ -204,7 +204,6 @@ const Index = () => {
   useEffect(() => {
     if (loadingLanguageFetcher.data) {
       if (loadingLanguageFetcher.data.success) {
-        console.log(loadingLanguageFetcher.data.response);
         const shopLanguages = loadingLanguageFetcher.data.response;
         const shopPrimaryLanguage = shopLanguages?.filter(
           (language: any) => language?.primary,
@@ -215,12 +214,6 @@ const Index = () => {
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
           (item: any) => item?.locale,
         );
-        console.log("shopPrimaryLanguage: ", shopPrimaryLanguage);
-        console.log(
-          "shopLanguagesWithoutPrimaryIndex: ",
-          shopLanguagesWithoutPrimaryIndex,
-        );
-        console.log("shopLocalesIndex: ", shopLocalesIndex);
         setLanguageSetting({
           primaryLanguage: shopPrimaryLanguage[0]?.name || "",
           primaryLanguageCode: shopPrimaryLanguage[0]?.locale || "",
@@ -242,11 +235,11 @@ const Index = () => {
           setLanguageData(
             data.map((item: any) => ({
               ...item, // 展开原对象
-              ["src"]: languageLocaleInfo
-                ? languageLocaleInfo[item?.locale]?.countries
+              ["src"]: languageLocaleInfo?.response
+                ? languageLocaleInfo?.response[item?.locale]?.countries
                 : [], // 插入新字段
-              ["localeName"]: languageLocaleInfo
-                ? languageLocaleInfo[item?.locale]?.Local
+              ["localeName"]: languageLocaleInfo?.response
+                ? languageLocaleInfo?.response[item?.locale]?.Local
                 : "", // 插入新字段
             })),
           );

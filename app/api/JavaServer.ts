@@ -383,9 +383,11 @@ export const SingleTextTranslate = async ({
 export const SendSubscribeSuccessEmail = async ({
   id,
   shopName,
+  feeType,
 }: {
   id: string;
   shopName: string;
+  feeType: number;
 }) => {
   try {
     const response = await axios({
@@ -394,6 +396,7 @@ export const SendSubscribeSuccessEmail = async ({
       data: {
         id: id,
         shopName: shopName,
+        feeType: feeType,
       },
     });
 
@@ -706,12 +709,7 @@ export const GetTranslateDOByShopNameAndSource = async ({
         },
       });
       console.log(`${shop} GetTranslateDOByShopNameAndSource: `, response.data);
-      return {
-        success: false,
-        errorCode: 0,
-        errorMsg: "",
-        response: response.data,
-      };
+      return response.data;
     } else {
       console.warn(`${shop} source disappear`);
       return {
@@ -1241,6 +1239,12 @@ export const GetLanguageList = async ({
     return response.data;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMsg: "",
+      response: [],
+    };
   }
 };
 

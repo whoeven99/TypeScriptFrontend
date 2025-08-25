@@ -229,6 +229,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source: shopPrimaryLanguage[0]?.locale,
         });
 
+        console.log(
+          "GetTranslateDOByShopNameAndSource: ",
+          translatingData.response,
+        );
+
         const data = translatingData.response.filter(
           (translatingDataItem: any) =>
             shopLocalesIndex.includes(translatingDataItem?.target) &&
