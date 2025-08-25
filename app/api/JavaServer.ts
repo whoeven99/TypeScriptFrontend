@@ -652,7 +652,7 @@ export const SavePrivateKey = async ({
         isSelected,
       },
     });
-    console.log(`SavePrivateKey [${apiName}]: `, response);
+    console.log(`SavePrivateKey [${apiName}]: `, response.data);
     return response.data;
   } catch (error) {
     // console.error(`Error SavePrivateKey [${model}]:`, error);
