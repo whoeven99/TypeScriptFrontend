@@ -383,9 +383,11 @@ export const SingleTextTranslate = async ({
 export const SendSubscribeSuccessEmail = async ({
   id,
   shopName,
+  feeType,
 }: {
   id: string;
   shopName: string;
+  feeType: number;
 }) => {
   try {
     const response = await axios({
@@ -394,6 +396,7 @@ export const SendSubscribeSuccessEmail = async ({
       data: {
         id: id,
         shopName: shopName,
+        feeType: feeType,
       },
     });
 
