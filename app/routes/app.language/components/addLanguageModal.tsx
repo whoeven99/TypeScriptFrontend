@@ -311,16 +311,18 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
 
   useEffect(() => {
     if (addFetcher.data && addFetcher.data?.success) {
-      const data = addFetcher.data.shopLanguages.map((lang: any, i: any) => ({
-        language: lang.name,
-        localeName:
-          languageLocaleInfo[addFetcher.data.shopLanguages[i].locale].Local,
-        locale: lang.locale,
-        status: 0,
-        auto_update_translation: false,
-        published: lang.published,
-        loading: false,
-      }));
+      const data = addFetcher.data.response?.shopLanguages.map(
+        (lang: any, i: any) => ({
+          language: lang.name,
+          localeName:
+            languageLocaleInfo[addFetcher.data.shopLanguages[i].locale].Local,
+          locale: lang.locale,
+          status: 0,
+          auto_update_translation: false,
+          published: lang.published,
+          loading: false,
+        }),
+      );
       dispatch(updateTableData(data));
       shopify.toast.show(t("Add success"));
       setAllSelectedKeys([]);

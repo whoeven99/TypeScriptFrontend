@@ -283,32 +283,45 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.error("Error webPresencesUpdate language:", error);
       }
 
-    // case !!addData:
-    //   try {
-    //     let allLanguages: AllLanguagesType[] = await queryAllLanguages({
-    //       shop,
-    //       accessToken: accessToken as string,
-    //     });
-    //     allLanguages = allLanguages.map((language, index) => ({
-    //       ...language,
-    //       key: index,
-    //     }));
+    case !!addData:
+      try {
+        let allLanguages: AllLanguagesType[] = await queryAllLanguages({
+          shop,
+          accessToken: accessToken as string,
+        });
+        allLanguages = allLanguages.map((language, index) => ({
+          ...language,
+          key: index,
+        }));
 
-    //     const allCountryCode = allLanguages.map((item) => item.isoCode);
-    //     const languageLocaleInfo = await GetLanguageLocaleInfo({
-    //       locale: allCountryCode,
-    //     });
-    //     return json({
-    //       success: true,
-    //       data: {
-    //         allLanguages: allLanguages,
-    //         languageLocaleInfo: languageLocaleInfo,
-    //       },
-    //     });
-    //   } catch (error) {
-    //     console.error("Error addData language:", error);
-    //     return json({ error: "Error addData language" }, { status: 500 });
-    //   }
+        const allCountryCode = allLanguages.map((item) => item.isoCode);
+        const languageLocaleInfo = await GetLanguageLocaleInfo({
+          server: process.env.SERVER_URL as string,
+          locale: allCountryCode,
+        });
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            allLanguages: allLanguages,
+            languageLocaleInfo: languageLocaleInfo?.success
+              ? languageLocaleInfo?.response
+              : [],
+          },
+        };
+      } catch (error) {
+        console.error("Error addData language:", error);
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            allLanguages: [],
+            languageLocaleInfo: [],
+          },
+        };
+      }
 
     case !!addLanguages:
       try {

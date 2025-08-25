@@ -1445,11 +1445,12 @@ export const queryAllLanguages = async ({
       },
       data: JSON.stringify({ query }),
     });
-    const res = response.data.data.availableLocales;
+    const res = response.data?.data?.availableLocales;
 
     return res;
   } catch (error) {
     console.error("Error queryAllLanguages:", error);
+    return [];
   }
 };
 
