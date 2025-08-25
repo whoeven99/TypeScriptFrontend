@@ -389,6 +389,12 @@ export const SendSubscribeSuccessEmail = async ({
   shopName: string;
   feeType: number;
 }) => {
+  console.log(`${shopName} SendSubscribeSuccessEmail Input: `, {
+    id,
+    shopName,
+    feeType,
+  });
+
   try {
     const response = await axios({
       url: `${process.env.SERVER_URL}/orders/sendSubscribeSuccessEmail`,
