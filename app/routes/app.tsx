@@ -312,10 +312,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           target: statusData.target,
         });
         console.log("GetLanguageStatus: ", data);
-        return json({ data });
+        return data;
       } catch (error) {
         console.error("Error statusData app:", error);
-        return json({ error: "Error statusData app" }, { status: 500 });
+        return {
+          success: false,
+          errorCode: 0,
+          errorMsg: "",
+          response: [],
+        };
       }
     }
 

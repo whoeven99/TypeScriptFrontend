@@ -1203,9 +1203,20 @@ export const GetLanguageLocaleInfo = async ({
       },
       {},
     );
-    return res;
+    return {
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: res,
+    };
   } catch (error) {
     console.error("Error occurred in the languageData:", error);
+    return {
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: undefined,
+    };
   }
 };
 
@@ -1261,10 +1272,19 @@ export const GetLanguageStatus = async ({
         },
       ],
     });
-    const res = response.data.response;
+
+    console.log(`${shop} GetLanguageStatus: `, response.data);
+
+    const res = response.data;
     return res;
   } catch (error) {
-    console.error("Error occurred in the languageStatus:", error);
+    console.error("Error GetLanguageStatus:", error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMsg: "",
+      response: [],
+    };
   }
 };
 

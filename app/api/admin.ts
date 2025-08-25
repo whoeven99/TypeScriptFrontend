@@ -1616,10 +1616,18 @@ export const mutationShopLocaleEnable = async ({
     }
     return {
       success,
-      shopLanguages,
+      errorCode: 0,
+      errorMsg: "",
+      response: shopLanguages,
     };
   } catch (error) {
     console.error("Error mutationShopLocaleEnable:", error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMsg: "",
+      response: [],
+    };
   }
 };
 
