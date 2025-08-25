@@ -389,9 +389,15 @@ export const SendSubscribeSuccessEmail = async ({
   shopName: string;
   feeType: number;
 }) => {
+  console.log(`${shopName} SendSubscribeSuccessEmail Input: `, {
+    id,
+    shopName,
+    feeType,
+  });
+
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/orders/sendSubscribeSuccessEmail`,
+      url: `${process.env.SERVER_URL}/orders/sendSubscribeSuccessEmail?shopName=${shopName}`,
       method: "POST",
       data: {
         id: id,
@@ -699,18 +705,34 @@ export const GetTranslateDOByShopNameAndSource = async ({
   source: string;
 }) => {
   try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/getTranslateDOByShopNameAndSource`,
-      method: "POST",
-      data: {
-        shopName: shop,
-        source: source,
-      },
-    });
-    console.log(`${shop} GetTranslateDOByShopNameAndSource: `, response.data);
-    return response.data;
+    if (source) {
+      const response = await axios({
+        url: `${process.env.SERVER_URL}/translate/getTranslateDOByShopNameAndSource`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          source: source,
+        },
+      });
+      console.log(`${shop} GetTranslateDOByShopNameAndSource: `, response.data);
+      return response.data;
+    } else {
+      console.warn(`${shop} source disappear`);
+      return {
+        success: false,
+        errorCode: 0,
+        errorMsg: "",
+        response: [],
+      };
+    }
   } catch (error) {
     console.error("Error GetTranslateDOByShopNameAndSource:", error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMsg: "",
+      response: [],
+    };
   }
 };
 
@@ -996,8 +1018,7 @@ export const InsertTargets = async ({
   source: string;
   targets: string[];
 }) => {
-  console.log(`${shop} source: `, source);
-  console.log(`${shop} targets: `, targets);
+  console.log(`${shop} InsertTargets source: `, source, `, targets: `, targets);
   // 创建异步任务
   try {
     await axios({
@@ -1150,8 +1171,10 @@ export const GetUserWords = async ({
 
 //获取本地化信息
 export const GetLanguageLocaleInfo = async ({
+  server,
   locale,
 }: {
+  server: string;
   locale: string[];
 }) => {
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
@@ -1159,7 +1182,7 @@ export const GetLanguageLocaleInfo = async ({
 
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getImageInfo`,
+      url: `${server}/shopify/getImageInfo`,
       method: "POST",
       data: updatedLocales,
     });
@@ -1184,29 +1207,50 @@ export const GetLanguageLocaleInfo = async ({
       },
       {},
     );
-    return res;
+    return {
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: res,
+    };
   } catch (error) {
     console.error("Error occurred in the languageData:", error);
+    return {
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: undefined,
+    };
   }
 };
 
 //查询语言状态
 export const GetLanguageList = async ({
   shop,
+  server,
   source,
 }: {
   shop: string;
+  server: string;
   source: string;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}&&source=${source}`,
+      url: `${server}/translate/readInfoByShopName?shopName=${shop}&&source=${source}`,
       method: "GET",
     });
-    const res = response.data.response;
-    return res;
+
+    console.log(`${shop} GetLanguageList: `, response.data);
+
+    return response.data;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMsg: "",
+      response: [],
+    };
   }
 };
 
@@ -1238,10 +1282,19 @@ export const GetLanguageStatus = async ({
         },
       ],
     });
-    const res = response.data.response;
+
+    console.log(`${shop} GetLanguageStatus: `, response.data);
+
+    const res = response.data;
     return res;
   } catch (error) {
-    console.error("Error occurred in the languageStatus:", error);
+    console.error("Error GetLanguageStatus:", error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMsg: "",
+      response: [],
+    };
   }
 };
 
