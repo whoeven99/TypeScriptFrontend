@@ -45,9 +45,9 @@ import { ArrowLeftIcon, PlusIcon } from "@shopify/polaris-icons";
 import axios from "axios";
 import styles from "./styles.module.css";
 import defaultStyles from "../styles/defaultStyles.module.css";
-import TranslateIcon from "~/components/translateIcon";
 import EasyTranslateIcon from "~/components/easyTranslateIcon";
 import { GetGlossaryByShopName } from "~/api/JavaServer";
+import { GAtranslate } from "~/api/Gamaidian";
 
 const { Title, Text } = Typography;
 
@@ -523,6 +523,7 @@ const Index = () => {
   };
 
   const handleTranslate = async () => {
+    await GAtranslate();
     if (
       (translateSettings1 === "8" || translateSettings1 === "9") &&
       selectedLanguageCode.length >= 2
@@ -622,6 +623,11 @@ const Index = () => {
         )}
       />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <Button
+          onClick={async () => {
+            await GAtranslate();
+          }}
+        ></Button>
         <Affix offsetTop={0}>
           <div
             style={{

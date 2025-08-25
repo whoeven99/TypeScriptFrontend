@@ -1478,9 +1478,14 @@ export const queryPrimaryMarket = async ({
       data: JSON.stringify({ query }),
     });
 
-    const res = response.data.data.primaryMarket.webPresences.nodes;
+    const res = response.data?.data?.primaryMarket?.webPresences?.nodes;
 
-    return res;
+    console.log(
+      `${shop} queryPrimaryMarket: `,
+      response.data?.data?.primaryMarket?.webPresences?.nodes,
+    );
+
+    return res || [];
   } catch (error) {
     console.error("Error fetching all markets:", error);
   }
@@ -1717,7 +1722,7 @@ export const mutationShopLocalePublish = async ({
       },
       data: JSON.stringify({ query: confirmMutation }),
     });
-    console.log("mutationShopLocalePublish:", response.data);
+    console.log(`${shop} mutationShopLocalePublish:`, response.data);
 
     const res = response.data?.data?.shopLocaleUpdate?.shopLocale;
 

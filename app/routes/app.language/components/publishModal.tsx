@@ -70,20 +70,18 @@ const PublishModal: React.FC<PublishModalProps> = ({
   useEffect(() => {
     if (primaryMarketFetcher.data?.success) {
       setPrimaryMarketId(
-        primaryMarketFetcher.data.data.primaryMarket.map(
-          (item: any) => item.id,
-        ),
+        primaryMarketFetcher.data.response?.map((item: any) => item.id),
       );
     }
   }, [primaryMarketFetcher.data]);
 
   useEffect(() => {
     if (webPresencesFetcher.data?.success) {
-      webPresencesFetcher.data.data.markets.forEach((market: any) => {
+      webPresencesFetcher.data.response?.forEach((market: any) => {
         if (market?.id && market?.domain) {
           setMarkets((prevMarkets) => {
             // 判断 key 是否已存在
-            if (prevMarkets.some((m) => m.key === market?.id)) {
+            if (prevMarkets.some((m) => m?.key === market?.id)) {
               return prevMarkets; // 已存在则不添加
             }
             return [
@@ -108,7 +106,8 @@ const PublishModal: React.FC<PublishModalProps> = ({
         {
           publishInfo: JSON.stringify({
             locale:
-              webPresencesUpdateFetcher.data.data.publishedCode || languageCode,
+              webPresencesUpdateFetcher.data.response.publishedCode ||
+              languageCode,
             shopLocale: {
               marketWebPresenceIds: primaryMarketId,
               published: true,
@@ -125,35 +124,23 @@ const PublishModal: React.FC<PublishModalProps> = ({
 
   useEffect(() => {
     if (publishFetcher.data) {
-      if (publishFetcher.data?.data?.published) {
-        const response = publishFetcher.data.data;
+      if (publishFetcher.data.success) {
+        const response = publishFetcher.data.response;
         dispatch(
-          setPublishLoadingState({ locale: response.locale, loading: false }),
+          setPublishLoadingState({ locale: response?.locale, loading: false }),
         );
         dispatch(
           setPublishState({
-            locale: response.locale,
-            published: response.published,
+            locale: response?.locale,
+            published: response?.published,
           }),
         );
         shopify.toast.show(
-          t("{{ locale }} is published", { locale: response.name }),
+          t("{{ locale }} is published", { locale: response?.name || "" }),
         );
         setIsModalOpen(false);
       } else {
-        const response = publishFetcher.data.data;
-        dispatch(
-          setPublishLoadingState({ locale: response.locale, loading: false }),
-        );
-        dispatch(
-          setPublishState({
-            locale: response.locale,
-            published: response.published,
-          }),
-        );
-        shopify.toast.show(
-          t("{{ locale }} is unPublished", { locale: response.name }),
-        );
+        shopify.toast.show(t("Publish failed"));
       }
       setPublishedLoading(false);
     }
@@ -252,7 +239,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
             type="primary"
             disabled={
               dataSource.every((item) => !item.published) ||
-              primaryMarketFetcher.data.data.primaryMarket.id?.length === 0
+              primaryMarketFetcher.data?.response.length === 0
             }
             loading={publishedLoading}
             onClick={handlePublish}
