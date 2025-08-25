@@ -400,7 +400,7 @@ export const SendSubscribeSuccessEmail = async ({
       url: `${process.env.SERVER_URL}/orders/sendSubscribeSuccessEmail?shopName=${shopName}`,
       method: "POST",
       data: {
-        id: id,
+        subGid: id,
         shopName: shopName,
         feeType: feeType,
       },
@@ -1171,10 +1171,8 @@ export const GetUserWords = async ({
 
 //获取本地化信息
 export const GetLanguageLocaleInfo = async ({
-  server,
   locale,
 }: {
-  server: string;
   locale: string[];
 }) => {
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
@@ -1182,7 +1180,7 @@ export const GetLanguageLocaleInfo = async ({
 
   try {
     const response = await axios({
-      url: `${server}/shopify/getImageInfo`,
+      url: `${process.env.SERVER_URL}/shopify/getImageInfo`,
       method: "POST",
       data: updatedLocales,
     });
@@ -1207,50 +1205,29 @@ export const GetLanguageLocaleInfo = async ({
       },
       {},
     );
-    return {
-      success: true,
-      errorCode: 0,
-      errorMsg: "",
-      response: res,
-    };
+    return res;
   } catch (error) {
     console.error("Error occurred in the languageData:", error);
-    return {
-      success: true,
-      errorCode: 0,
-      errorMsg: "",
-      response: undefined,
-    };
   }
 };
 
 //查询语言状态
 export const GetLanguageList = async ({
   shop,
-  server,
   source,
 }: {
   shop: string;
-  server: string;
   source: string;
 }) => {
   try {
     const response = await axios({
-      url: `${server}/translate/readInfoByShopName?shopName=${shop}&&source=${source}`,
+      url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}&&source=${source}`,
       method: "GET",
     });
-
-    console.log(`${shop} GetLanguageList: `, response.data);
-
-    return response.data;
+    const res = response.data.response;
+    return res;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);
-    return {
-      success: false,
-      errorCode: 0,
-      errorMsg: "",
-      response: [],
-    };
   }
 };
 
@@ -1285,7 +1262,7 @@ export const GetLanguageStatus = async ({
 
     console.log(`${shop} GetLanguageStatus: `, response.data);
 
-    const res = response.data;
+    const res = response.data.response;
     return res;
   } catch (error) {
     console.error("Error GetLanguageStatus:", error);
