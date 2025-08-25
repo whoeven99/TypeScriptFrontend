@@ -272,12 +272,10 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   }, [status, item]); // 添加 item 到依赖数组
 
   useEffect(() => {
-    if (fetcher.data?.translatingLanguage) {
-      setSource(fetcher.data?.translatingLanguage[0]?.source);
-      setTarget(
-        fetcher.data?.translatingLanguage.map((item: any) => item.target),
-      );
-      setStatus(fetcher.data?.translatingLanguage[0]?.status);
+    if (fetcher.data) {
+      setSource(fetcher.data.response[0]?.source);
+      setTarget(fetcher.data?.response?.map((item: any) => item?.target));
+      setStatus(fetcher.data?.response[0]?.status);
       setIndex(0);
       setLoading(false);
     }
@@ -643,8 +641,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         <Text>{t("progressing.reTranslateText")}</Text>
                       )}
                     </div>
-
-                    {/* 右侧部分 */}
                   </div>
                   <div
                     style={{

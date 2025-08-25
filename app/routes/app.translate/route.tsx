@@ -46,7 +46,11 @@ import axios from "axios";
 import styles from "./styles.module.css";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import EasyTranslateIcon from "~/components/easyTranslateIcon";
-import { GetGlossaryByShopName } from "~/api/JavaServer";
+import {
+  GetGlossaryByShopName,
+  GetLanguageList,
+  GetLanguageLocaleInfo,
+} from "~/api/JavaServer";
 
 const { Title, Text } = Typography;
 
@@ -167,18 +171,22 @@ const Index = () => {
     return matchedItem || null;
   }
   useEffect(() => {
-    const languageFormData = new FormData();
-    languageFormData.append("languageData", JSON.stringify(true));
-    loadingLanguageFetcher.submit(languageFormData, {
-      method: "post",
-      action: "/app",
-    });
-    const customApiKeyFormData = new FormData();
-    customApiKeyFormData.append("customApikeyData", JSON.stringify(true));
-    customApiKeyFetcher.submit(customApiKeyFormData, {
-      method: "post",
-      action: "/app",
-    });
+    loadingLanguageFetcher.submit(
+      { languageData: JSON.stringify(true) },
+      {
+        method: "post",
+        action: "/app",
+      },
+    );
+    customApiKeyFetcher.submit(
+      {
+        customApikeyData: JSON.stringify(true),
+      },
+      {
+        method: "post",
+        action: "/app",
+      },
+    );
     if (location) {
       setSelectedLanguageCode(location?.state?.selectedLanguageCode || "");
     }
@@ -194,12 +202,68 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingLanguageFetcher.data) {
-      setLanguageData(loadingLanguageFetcher.data?.data);
-      setLanguageSetting(loadingLanguageFetcher.data?.languageSetting);
-      // const translateSettings4 = localStorage.getItem("translateSettings4");
-      // if (translateSettings4) {
-      //   setTranslateSettings4(JSON.parse(translateSettings4));
-      // }
+      if (loadingLanguageFetcher.data.success) {
+        const shopLanguages = loadingLanguageFetcher.data.response;
+        const shopPrimaryLanguage = shopLanguages?.filter(
+          (language: any) => language?.primary,
+        );
+        const shopLanguagesWithoutPrimaryIndex = shopLanguages?.filter(
+          (language: any) => !language?.primary,
+        );
+        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
+          (item: any) => item?.locale,
+        );
+        setLanguageSetting({
+          primaryLanguage: shopPrimaryLanguage[0]?.name || "",
+          primaryLanguageCode: shopPrimaryLanguage[0]?.locale || "",
+        });
+
+        let data = shopLanguagesWithoutPrimaryIndex.map(
+          (lang: any, index: number) => ({
+            key: index,
+            name: lang?.name,
+            locale: lang?.locale,
+            published: lang.published,
+          }),
+        );
+        const GetLanguageLocaleInfoFront = async () => {
+          const languageLocaleInfo = await GetLanguageLocaleInfo({
+            server: server as string,
+            locale: shopLocalesIndex,
+          });
+          setLanguageData(
+            data.map((item: any) => ({
+              ...item, // 展开原对象
+              ["src"]: languageLocaleInfo?.response
+                ? languageLocaleInfo?.response[item?.locale]?.countries
+                : [], // 插入新字段
+              ["localeName"]: languageLocaleInfo?.response
+                ? languageLocaleInfo?.response[item?.locale]?.Local
+                : "", // 插入新字段
+            })),
+          );
+        };
+        const GetLanguageListFront = async () => {
+          const languageList = await GetLanguageList({
+            shop,
+            server: server as string,
+            source: shopPrimaryLanguage[0]?.locale,
+          });
+          setLanguageData(
+            data.map((item: any) => ({
+              ...item, // 展开原对象
+              ["status"]: languageList
+                ? languageList.find(
+                    (language: any) => language.target === item.locale,
+                  )?.status
+                : 0,
+            })),
+          );
+        };
+
+        GetLanguageLocaleInfoFront();
+        GetLanguageListFront();
+      }
       setLoadingLanguage(false);
     }
   }, [loadingLanguageFetcher.data]);
@@ -251,7 +315,7 @@ const Index = () => {
       }));
       dispatch(setTableData(data)); // 只在组件首次渲染时触发
     }
-  }, [dispatch, languageData]);
+  }, [languageData]);
 
   const translateSettings1Options = [
     {
@@ -620,7 +684,13 @@ const Index = () => {
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+      <Space
+        direction="vertical"
+        size="middle"
+        style={{
+          display: "flex",
+        }}
+      >
         <Affix offsetTop={0}>
           <div
             style={{
@@ -651,7 +721,7 @@ const Index = () => {
                 {t("Translate Store")}
               </Title>
             </div>
-            {languageSetting?.primaryLanguageCode ? (
+            {languageSetting?.primaryLanguageCode != undefined ? (
               <Button
                 type="primary"
                 onClick={() => checkIfNeedPay()}
@@ -743,8 +813,8 @@ const Index = () => {
                         }}
                       >
                         <img
-                          src={lang.src[0]}
-                          alt={lang.name}
+                          src={lang?.src[0]}
+                          alt={lang?.name}
                           style={{
                             width: "30px",
                             height: "auto",
@@ -753,8 +823,8 @@ const Index = () => {
                             borderRadius: "2px",
                           }}
                         />
-                        <span>{lang.name}</span>
-                        <EasyTranslateIcon status={lang.status} />
+                        <span>{lang?.name}</span>
+                        <EasyTranslateIcon status={lang?.status} />
                       </div>
                     </Checkbox>
                   ))}
