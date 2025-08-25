@@ -131,34 +131,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (true) {
     case !!loading:
       try {
-        const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+        const data: ShopLocalesType[] = await queryShopLanguages({
           shop: shop,
           accessToken: accessToken as string,
         });
-
-        const shopPrimaryLanguage = shopLanguagesLoad.filter(
-          (language) => language.primary,
-        );
-        const shopLocalesIndex = shopLanguagesLoad
-          .filter((language) => !language.primary)
-          .map((item) => item.locale);
-        const languageLocaleInfo = await GetLanguageLocaleInfo({
-          locale: shopLocalesIndex,
-        });
-        const languagesLoad = await GetLanguageList({
-          shop,
-          source: shopPrimaryLanguage[0].locale,
-        });
-        return json({
-          shop: shop,
-          shopLanguagesLoad: shopLanguagesLoad,
-          shopPrimaryLanguage: shopPrimaryLanguage,
-          languagesLoad: languagesLoad,
-          languageLocaleInfo: languageLocaleInfo,
-        });
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: data,
+        };
       } catch (error) {
         console.error("Error loading language:", error);
-        return json({ error: "Error loading language" }, { status: 500 });
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: [],
+        };
       }
 
     case !!primaryMarket:
@@ -293,32 +283,32 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.error("Error webPresencesUpdate language:", error);
       }
 
-    case !!addData:
-      try {
-        let allLanguages: AllLanguagesType[] = await queryAllLanguages({
-          shop,
-          accessToken: accessToken as string,
-        });
-        allLanguages = allLanguages.map((language, index) => ({
-          ...language,
-          key: index,
-        }));
+    // case !!addData:
+    //   try {
+    //     let allLanguages: AllLanguagesType[] = await queryAllLanguages({
+    //       shop,
+    //       accessToken: accessToken as string,
+    //     });
+    //     allLanguages = allLanguages.map((language, index) => ({
+    //       ...language,
+    //       key: index,
+    //     }));
 
-        const allCountryCode = allLanguages.map((item) => item.isoCode);
-        const languageLocaleInfo = await GetLanguageLocaleInfo({
-          locale: allCountryCode,
-        });
-        return json({
-          success: true,
-          data: {
-            allLanguages: allLanguages,
-            languageLocaleInfo: languageLocaleInfo,
-          },
-        });
-      } catch (error) {
-        console.error("Error addData language:", error);
-        return json({ error: "Error addData language" }, { status: 500 });
-      }
+    //     const allCountryCode = allLanguages.map((item) => item.isoCode);
+    //     const languageLocaleInfo = await GetLanguageLocaleInfo({
+    //       locale: allCountryCode,
+    //     });
+    //     return json({
+    //       success: true,
+    //       data: {
+    //         allLanguages: allLanguages,
+    //         languageLocaleInfo: languageLocaleInfo,
+    //       },
+    //     });
+    //   } catch (error) {
+    //     console.error("Error addData language:", error);
+    //     return json({ error: "Error addData language" }, { status: 500 });
+    //   }
 
     case !!addLanguages:
       try {
@@ -501,23 +491,123 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    if (!shopLanguagesLoad || !languagesLoad || !languageLocaleInfo) return; // 确保数据加载完成后再执行
+    let data = shopLanguagesLoad
+      .filter((language) => !language.primary)
+      .map((lang, i) => ({
+        key: i,
+        language: lang.name,
+        localeName: "",
+        locale: lang.locale,
+        status: 0,
+        autoTranslate: false,
+        published: lang.published,
+        publishLoading: false,
+        autoTranslateLoading: false,
+      }));
+    data = data.map((lang, i) => ({
+      ...lang,
+      status:
+        languagesLoad.find((language: any) => language.target === lang.locale)
+          ?.status || 0,
+      autoTranslate:
+        languagesLoad.find((language: any) => language.target === lang.locale)
+          ?.autoTranslate || false,
+    }));
+    const findItem = data.find((data: any) => data.status === 2);
+    if (findItem && shopPrimaryLanguage) {
+      const formData = new FormData();
+      formData.append(
+        "statusData",
+        JSON.stringify({
+          source: shopPrimaryLanguage[0]?.locale,
+          target: [findItem.locale],
+        }),
+      );
+      statusFetcher.submit(formData, {
+        method: "post",
+        action: "/app",
+      });
+    }
+    data = data.map((lang, i) => ({
+      ...lang,
+      localeName: languageLocaleInfo[lang.locale]?.Local || "",
+    }));
+    dispatch(setTableData(data));
+  }, [shopLanguagesLoad, languagesLoad]); // 依赖 shopLanguagesLoad 和 status
+
+  useEffect(() => {
     if (loadingFetcher.data) {
-      setLanguagesLoad(loadingFetcher.data.languagesLoad);
-      setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
-      setShopLanguagesLoad(loadingFetcher.data.shopLanguagesLoad);
-      setShopPrimaryLanguage(loadingFetcher.data.shopPrimaryLanguage);
+      // setLanguagesLoad(loadingFetcher.data.languagesLoad);
+      // setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
+      if (loadingFetcher.data.success) {
+        console.log(loadingFetcher.data.response);
+        const shopLanguages = loadingFetcher.data.response;
+        const shopPrimaryLanguage = shopLanguages?.filter(
+          (language: any) => language?.primary,
+        );
+        const shopLanguagesWithoutPrimaryIndex = shopLanguages?.filter(
+          (language: any) => !language?.primary,
+        );
+        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
+          (item: any) => item?.locale,
+        );
+        console.log("shopPrimaryLanguage: ", shopPrimaryLanguage);
+        console.log(
+          "shopLanguagesWithoutPrimaryIndex: ",
+          shopLanguagesWithoutPrimaryIndex,
+        );
+        console.log("shopLocalesIndex: ", shopLocalesIndex);
+        setShopPrimaryLanguage(loadingFetcher.data.shopPrimaryLanguage || []);
+
+        let data = shopLanguagesWithoutPrimaryIndex.map(
+          (lang: any, index: number) => ({
+            key: index,
+            name: lang?.name,
+            locale: lang?.locale,
+            published: lang.published,
+            localeName: "",
+            status: 0,
+            autoTranslate: false,
+            publishLoading: false,
+            autoTranslateLoading: false,
+          }),
+        );
+        setShopLanguagesLoad(shopLanguagesWithoutPrimaryIndex);
+        const GetLanguageLocaleInfoFront = async () => {
+          const languageLocaleInfo = await GetLanguageLocaleInfo({
+            server: server as string,
+            locale: shopLocalesIndex,
+          });
+          const languageList = await GetLanguageList({
+            shop,
+            server: server as string,
+            source: shopPrimaryLanguage[0]?.locale,
+          });
+          data = data.map((lang: any) => ({
+            ...lang,
+            status:
+              languageList.find(
+                (language: any) => language.target === lang.locale,
+              )?.status || 0,
+            autoTranslate:
+              languageList.find(
+                (language: any) => language.target === lang.locale,
+              )?.autoTranslate || false,
+            localeName: languageLocaleInfo
+              ? languageLocaleInfo[lang?.locale]?.Local
+              : "",
+          }));
+          console.log("data: ", data);
+          
+          dispatch(setTableData(data));
+        };
+
+        GetLanguageLocaleInfoFront();
+      }
       setLoading(false);
     }
   }, [loadingFetcher.data]);
-
-  useEffect(() => {
-    if (addDataFetcher.data) {
-      if (addDataFetcher.data.success) {
-        setAllLanguages(addDataFetcher.data.data.allLanguages);
-        setLanguageLocaleInfo(addDataFetcher.data.data.languageLocaleInfo);
-      }
-    }
-  }, [addDataFetcher.data]);
 
   useEffect(() => {
     if (deleteFetcher.data) {
@@ -616,53 +706,6 @@ const Index = () => {
       }
     }
   }, [publishFetcher.data]);
-
-  useEffect(() => {
-    if (!shopLanguagesLoad || !languagesLoad || !languageLocaleInfo) return; // 确保数据加载完成后再执行
-    let data = shopLanguagesLoad
-      .filter((language) => !language.primary)
-      .map((lang, i) => ({
-        key: i,
-        language: lang.name,
-        localeName: "",
-        locale: lang.locale,
-        primary: lang.primary,
-        status: 0,
-        autoTranslate: false,
-        published: lang.published,
-        publishLoading: false,
-        autoTranslateLoading: false,
-      }));
-    data = data.map((lang, i) => ({
-      ...lang,
-      status:
-        languagesLoad.find((language: any) => language.target === lang.locale)
-          ?.status || 0,
-      autoTranslate:
-        languagesLoad.find((language: any) => language.target === lang.locale)
-          ?.autoTranslate || false,
-    }));
-    const findItem = data.find((data: any) => data.status === 2);
-    if (findItem && shopPrimaryLanguage) {
-      const formData = new FormData();
-      formData.append(
-        "statusData",
-        JSON.stringify({
-          source: shopPrimaryLanguage[0]?.locale,
-          target: [findItem.locale],
-        }),
-      );
-      statusFetcher.submit(formData, {
-        method: "post",
-        action: "/app",
-      });
-    }
-    data = data.map((lang, i) => ({
-      ...lang,
-      localeName: languageLocaleInfo[lang.locale]?.Local || "",
-    }));
-    dispatch(setTableData(data));
-  }, [shopLanguagesLoad, languagesLoad]); // 依赖 shopLanguagesLoad 和 status
 
   useEffect(() => {
     if (dataSource && dataSource.find((item: any) => item.status === 2)) {

@@ -3,7 +3,6 @@ import {
   LanguagesDataType,
   ShopLocalesType,
 } from "~/routes/app.language/route";
-import { authenticate } from "~/shopify.server";
 
 // function filterEmptyTranslationsAndContent(data: any) {
 //   // 使用 filter 方法过滤掉 translations 和 translatableContent 为空的节点
@@ -61,7 +60,7 @@ export const queryShopLanguages = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2025-04/graphql.json`,
+      url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -69,10 +68,14 @@ export const queryShopLanguages = async ({
       },
       data: JSON.stringify({ query }),
     });
-    const res = response.data.data.shopLocales;
+    const res = response?.data?.data?.shopLocales;
+
+    console.log(`${shop} queryShopLanguages: `, res);
+
     return res;
   } catch (error) {
     console.error("Error fetching shoplocales:", error);
+    return [];
   }
 };
 
