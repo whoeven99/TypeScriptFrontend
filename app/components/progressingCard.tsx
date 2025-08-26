@@ -78,9 +78,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
-    console.log(status);
-    console.log(target[index + 1]);
-
     // 当状态为 2 时，开始轮询
     if (status === 2) {
       const pollStatus = () => {
@@ -156,10 +153,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         }
       };
     } else if (target[index + 1]) {
-      console.log(target[index + 1]);
       setIndex(index + 1);
-      console.log(target[index + 1]);
-
       const pollStatus = () => {
         // 状态查询请求
         const statusformData = new FormData();
@@ -244,12 +238,10 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   }, [status, item]); // 添加 item 到依赖数组
 
   useEffect(() => {
-    if (fetcher.data?.translatingLanguage) {
-      setSource(fetcher.data?.translatingLanguage[0]?.source);
-      setTarget(
-        fetcher.data?.translatingLanguage.map((item: any) => item.target),
-      );
-      setStatus(fetcher.data?.translatingLanguage[0]?.status);
+    if (fetcher.data) {
+      setSource(fetcher.data.response[0]?.source);
+      setTarget(fetcher.data?.response?.map((item: any) => item?.target));
+      setStatus(fetcher.data?.response[0]?.status);
       setIndex(0);
       setLoading(false);
     }
@@ -257,19 +249,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
 
   useEffect(() => {
     if (statusFetcher.data?.data) {
-      console.log("statusResponse", statusFetcher.data?.data);
       const statusValue =
         statusFetcher.data?.data?.translatesDOResult[0].status;
       setStatus(statusValue);
-      console.log(statusValue);
-      console.log(
-        statusFetcher.data?.data?.translatesDOResult[0].resourceType == "SHOP",
-      );
-      console.log(
-        statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-          "PRODUCT",
-      );
-
       if (statusValue === 2) {
         switch (true) {
           case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
@@ -418,14 +400,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
     }
   }, [stopTranslateFetcher.data]);
 
-  useEffect(() => {
-    console.log(item);
-  }, [item]);
-
-  useEffect(() => {
-    console.log(progressNumber);
-  }, [progressNumber]);
-
   // useEffect(() => {
   //     if (typeof itemsFetcher.data?.data[0]?.totalNumber === 'number' && typeof itemsFetcher.data?.data[0]?.translatedNumber === 'number') {
   //         setItemsCount({
@@ -461,7 +435,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           primaryLanguage: source,
           selectedLanguage: target,
           translateSettings1: "1",
-          translateSettings2: "1",
+          translateSettings2: ["1"],
           translateSettings3: [
             "products",
             "collection",
@@ -471,13 +445,14 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
             "filters",
             "metaobjects",
             "metadata",
-            "notifications",
             "navigation",
             "shop",
             "theme",
             "delivery",
             "shipping",
           ],
+          customKey: "",
+          translateSettings5: false,
         }),
       },
       {
@@ -505,6 +480,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   width: "100%", // 确保占满容器宽度
                   textAlign: "center",
                   gap: 10,
+                  minHeight: "75px",
                 }}
               >
                 <div
@@ -573,8 +549,14 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                               {translateStatus === 2
                                 ? t("progressing.progressingWithSpace", {
                                     item: t(item),
-                                    hasTranslated: progressNumber.hasTranslated,
-                                    totalNumber: progressNumber.totalNumber,
+                                    hasTranslated:
+                                      progressNumber.hasTranslated > 0
+                                        ? progressNumber.hasTranslated
+                                        : 0,
+                                    totalNumber:
+                                      progressNumber.totalNumber > 0
+                                        ? progressNumber.totalNumber
+                                        : 0,
                                   })
                                 : t("progressing.progressingWriting", {
                                     item: t(item),
@@ -625,8 +607,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         <Text>{t("progressing.reTranslateText")}</Text>
                       )}
                     </div>
-
-                    {/* 右侧部分 */}
                   </div>
                   <div
                     style={{

@@ -20,6 +20,90 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const GetLatestActiveSubscribeId = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/orders/getLatestActiveSubscribeId?shopName=${shop}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} GetLatestActiveSubscribeId: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} GetLatestActiveSubscribeId error:`, error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMessage: "",
+      response: "",
+    };
+  }
+};
+
+export const AddCharsByShopNameAfterSubscribe = async ({
+  shop,
+  appSubscription,
+}: {
+  shop: string;
+  appSubscription: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/translationCounter/addCharsByShopNameAfterSubscribe?shopName=${shop}`,
+      method: "POST",
+      data: {
+        subGid: appSubscription, //订阅计划的id
+      },
+    });
+
+    console.log(`${shop} AddCharsByShopNameAfterSubscribe: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} AddCharsByShopNameAfterSubscribe error:`, error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMessage: "",
+      response: false,
+    };
+  }
+};
+
+export const IsOpenFreePlan = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/userTrials/isOpenFreePlan?shopName=${shop}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} IsOpenFreePlan: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} IsOpenFreePlan error:`, error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMessage: "",
+      response: false,
+    };
+  }
+};
+
 export const GetProgressData = async ({
   shopName,
   server,
@@ -29,13 +113,6 @@ export const GetProgressData = async ({
   server: string;
   target: string;
 }) => {
-  // console.log(`${shopName} StopTranslatingTask: `, {
-  //   shopName,
-  //   source,
-  //   // target,
-  //   accessToken,
-  // });
-
   try {
     const response = await axios({
       url: `${server}/translate/getProgressData?shopName=${shopName}&target=${target}`,
@@ -306,19 +383,31 @@ export const SingleTextTranslate = async ({
 export const SendSubscribeSuccessEmail = async ({
   id,
   shopName,
+  feeType,
 }: {
   id: string;
   shopName: string;
+  feeType: number;
 }) => {
+  console.log(`${shopName} SendSubscribeSuccessEmail Input: `, {
+    id,
+    shopName,
+    feeType,
+  });
+
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/orders/sendSubscribeSuccessEmail`,
+      url: `${process.env.SERVER_URL}/orders/sendSubscribeSuccessEmail?shopName=${shopName}`,
       method: "POST",
       data: {
-        id: id,
+        subGid: id,
         shopName: shopName,
+        feeType: feeType,
       },
     });
+
+    console.log(`${shopName} SendSubscribeSuccessEmail: `, response.data);
+
     return response.data;
   } catch (error) {
     console.error("Error SendSubscribeSuccessEmail:", error);
@@ -457,6 +546,8 @@ export const UpdateStatus = async ({ shop }: { shop: string }) => {
         shopName: shop,
       },
     });
+
+    console.log(`${shop} UpdateStatus: `, response.data);
   } catch (error) {
     console.error("Error UpdateStatus:", error);
   }
@@ -479,6 +570,9 @@ export const UpdateUserPlan = async ({
         planId: plan,
       },
     });
+
+    console.log(`${shop} UpdateUserPlan: `, response.data);
+
     return response.data;
   } catch (error) {
     console.error("Error UpdateUserPlan:", error);
@@ -566,7 +660,7 @@ export const SavePrivateKey = async ({
         isSelected,
       },
     });
-    console.log(`SavePrivateKey [${apiName}]: `, response);
+    console.log(`SavePrivateKey [${apiName}]: `, response.data);
     return response.data;
   } catch (error) {
     // console.error(`Error SavePrivateKey [${model}]:`, error);
@@ -610,18 +704,34 @@ export const GetTranslateDOByShopNameAndSource = async ({
   source: string;
 }) => {
   try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/getTranslateDOByShopNameAndSource`,
-      method: "POST",
-      data: {
-        shopName: shop,
-        source: source,
-      },
-    });
-    console.log(`${shop} GetTranslateDOByShopNameAndSource: `, response.data);
-    return response.data;
+    if (source) {
+      const response = await axios({
+        url: `${process.env.SERVER_URL}/translate/getTranslateDOByShopNameAndSource`,
+        method: "POST",
+        data: {
+          shopName: shop,
+          source: source,
+        },
+      });
+      console.log(`${shop} GetTranslateDOByShopNameAndSource: `, response.data);
+      return response.data;
+    } else {
+      console.warn(`${shop} source disappear`);
+      return {
+        success: false,
+        errorCode: 0,
+        errorMsg: "",
+        response: [],
+      };
+    }
   } catch (error) {
     console.error("Error GetTranslateDOByShopNameAndSource:", error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMsg: "",
+      response: [],
+    };
   }
 };
 
@@ -645,13 +755,13 @@ export const TranslationInterface = async ({
   apiName,
   sourceText,
   targetCode,
-  prompt
+  prompt,
 }: {
   shop: string;
   apiName: Number;
   sourceText: string;
   targetCode?: string;
-  prompt?:string
+  prompt?: string;
 }) => {
   try {
     const response = await axios({
@@ -661,7 +771,7 @@ export const TranslationInterface = async ({
         apiName,
         sourceText,
         targetCode,
-        prompt
+        prompt,
       },
     });
     console.log("testApiKeyRes", response.data);
@@ -836,7 +946,7 @@ export const GetUserSubscriptionPlan = async ({
       if (shop == "ciwishop.myshopify.com") {
         return {
           userSubscriptionPlan: 6,
-          currentPeriodEnd: null,
+          currentPeriodEnd: "2025-09-17T06:24:28Z",
         };
       }
       return res;
@@ -907,8 +1017,7 @@ export const InsertTargets = async ({
   source: string;
   targets: string[];
 }) => {
-  console.log(`${shop} source: `, source);
-  console.log(`${shop} targets: `, targets);
+  console.log(`${shop} InsertTargets source: `, source, `, targets: `, targets);
   // 创建异步任务
   try {
     await axios({
@@ -1061,8 +1170,10 @@ export const GetUserWords = async ({
 
 //获取本地化信息
 export const GetLanguageLocaleInfo = async ({
+  server,
   locale,
 }: {
+  server: string;
   locale: string[];
 }) => {
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
@@ -1070,7 +1181,7 @@ export const GetLanguageLocaleInfo = async ({
 
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getImageInfo`,
+      url: `${server}/shopify/getImageInfo`,
       method: "POST",
       data: updatedLocales,
     });
@@ -1095,29 +1206,50 @@ export const GetLanguageLocaleInfo = async ({
       },
       {},
     );
-    return res;
+    return {
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: res,
+    };
   } catch (error) {
     console.error("Error occurred in the languageData:", error);
+    return {
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: undefined,
+    };
   }
 };
 
 //查询语言状态
 export const GetLanguageList = async ({
   shop,
+  server,
   source,
 }: {
   shop: string;
+  server: string;
   source: string;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}&&source=${source}`,
+      url: `${server}/translate/readInfoByShopName?shopName=${shop}&&source=${source}`,
       method: "GET",
     });
-    const res = response.data.response;
-    return res;
+
+    console.log(`${shop} GetLanguageList: `, response.data);
+
+    return response.data;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMsg: "",
+      response: [],
+    };
   }
 };
 
@@ -1149,10 +1281,19 @@ export const GetLanguageStatus = async ({
         },
       ],
     });
-    const res = response.data.response;
+
+    console.log(`${shop} GetLanguageStatus: `, response.data);
+
+    const res = response.data;
     return res;
   } catch (error) {
-    console.error("Error occurred in the languageStatus:", error);
+    console.error("Error GetLanguageStatus:", error);
+    return {
+      success: false,
+      errorCode: 0,
+      errorMsg: "",
+      response: [],
+    };
   }
 };
 
@@ -1242,7 +1383,21 @@ export const GetTranslate = async ({
     console.log(`${shop} 翻译项: `, translateSettings3);
     console.log(`${shop} 是否覆盖: `, translateSettings5);
     console.log(`${shop} 自定义提示: `, customKey);
-    const res = { ...response.data, target: target };
+    const res = {
+      ...response.data,
+      response: {
+        shopName: shop,
+        accessToken: accessToken,
+        source: source,
+        target: target,
+        translateSettings1: translateSettings1,
+        translateSettings2: translateSettings2.toString(),
+        translateSettings3: translateSettings3,
+        customKey: customKey,
+        isCover: translateSettings5,
+      },
+      target: target,
+    };
     console.log("GetTranslate: ", res);
     return res;
   } catch (error) {
@@ -1342,6 +1497,7 @@ export const updateManageTranslation = async ({
 
               return {
                 success: response.data.success,
+                errorCode: response.data.errorCode,
                 errorMsg: response.data.errorMsg,
                 data: {
                   resourceId: item.resourceId,
@@ -1798,7 +1954,7 @@ export const InsertOrUpdateOrder = async ({
     });
 
     const response = await axios({
-      url: `${process.env.SERVER_URL}/orders/insertOrUpdateOrder`,
+      url: `${process.env.SERVER_URL}/orders/insertOrUpdateOrder?shopName=${shop}`,
       method: "POST",
       data: {
         shopName: shop,
@@ -1864,11 +2020,31 @@ export const SendPurchaseSuccessEmail = async ({
     const res = response.data;
     console.log("SendPurchaseSuccessEmail: ", res);
   } catch (error) {
-    console.error("Error fetching add chars:", error);
+    console.error("Error SendPurchaseSuccessEmail:", error);
   }
 };
 
+//增加用户字符数
 export const GetGlossaryByShopName = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/glossary/getGlossaryByShopName?shopName=${shop}`,
+      method: "GET",
+    });
+    console.log("GetGlossaryByShopName: ", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error GetGlossaryByShopName:", error);
+  }
+};
+
+export const GetGlossaryByShopNameLoading = async ({
   shop,
   accessToken,
 }: {

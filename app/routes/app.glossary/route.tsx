@@ -21,7 +21,7 @@ import {
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import {
   DeleteGlossaryInfo,
-  GetGlossaryByShopName,
+  GetGlossaryByShopNameLoading,
   InsertGlossaryInfo,
   UpdateTargetTextById,
 } from "~/api/JavaServer";
@@ -90,7 +90,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     switch (true) {
       case !!loading:
         try {
-          const data = await GetGlossaryByShopName({
+          const data = await GetGlossaryByShopNameLoading({
             shop,
             accessToken: accessToken as string,
           });
@@ -128,7 +128,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { shop, server, mobile } = useLoaderData<typeof loader>();
-  console.log(shop, server, mobile);
 
   const { t } = useTranslation();
   const dispatch = useDispatch();

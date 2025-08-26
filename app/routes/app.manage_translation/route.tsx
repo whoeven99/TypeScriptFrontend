@@ -348,22 +348,22 @@ const Index = () => {
       sync_status: false,
       navigation: "policy",
     },
-    {
-      key: "email",
-      title: t("Email"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === current && item?.type === "EMAIL_TEMPLATE",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === current && item?.type === "EMAIL_TEMPLATE",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "email",
-    },
+    // {
+    //   key: "email",
+    //   title: t("Email"),
+    //   allTranslatedItems:
+    //     languageItemsData.find(
+    //       (item: any) =>
+    //         item?.language === current && item?.type === "EMAIL_TEMPLATE",
+    //     )?.translatedNumber ?? undefined,
+    //   allItems:
+    //     languageItemsData.find(
+    //       (item: any) =>
+    //         item?.language === current && item?.type === "EMAIL_TEMPLATE",
+    //     )?.totalNumber ?? undefined,
+    //   sync_status: false,
+    //   navigation: "email",
+    // },
     {
       key: "shipping",
       title: t("Shipping"),
@@ -759,10 +759,12 @@ const Index = () => {
     {
       title: t("Images data"),
       dataIndex: "title",
+      width: "60%",
       key: "title",
     },
     {
       title: t("Action"),
+      width: "40%",
       render: (_: any, record: any) => {
         return (
           <Button

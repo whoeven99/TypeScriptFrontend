@@ -1,7 +1,4 @@
-import type {
-  ActionFunctionArgs,
-  HeadersFunction,
-} from "@remix-run/node";
+import type { ActionFunctionArgs, HeadersFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import {
   Link,
@@ -115,82 +112,61 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop,
           accessToken: accessToken as string,
         });
-        const shopPrimaryLanguage = shopLanguagesIndex.filter(
-          (language) => language.primary,
+        const shopPrimaryLanguage = shopLanguagesIndex?.filter(
+          (language) => language?.primary,
         );
-        const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
+        const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex?.filter(
           (language) => !language.primary,
         );
-        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
+        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
           (item) => item.locale,
         );
 
-        await InsertTargets({
-          shop,
-          accessToken: accessToken!,
-          source: shopPrimaryLanguage[0].locale,
-          targets: shopLocalesIndex,
-        });
+        console.log("shopPrimaryLanguage: ", shopPrimaryLanguage);
+        console.log(
+          "shopLanguagesWithoutPrimaryIndex: ",
+          shopLanguagesWithoutPrimaryIndex,
+        );
+        console.log("shopLocalesIndex: ", shopLocalesIndex);
+
+        if (shopLocalesIndex.length && shopPrimaryLanguage[0].locale) {
+          await InsertTargets({
+            shop,
+            accessToken: accessToken!,
+            source: shopPrimaryLanguage[0].locale,
+            targets: shopLocalesIndex,
+          });
+        } else {
+          console.warn(`${shop} shopLanguagesIndex: `, shopLanguagesIndex);
+        }
 
         return null;
       } catch (error) {
         console.error("Error languageInit app:", error);
+        return null;
       }
     }
 
     if (languageData) {
       try {
-        const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
+        const data: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken: accessToken as string,
         });
-        const shopPrimaryLanguage = shopLanguagesIndex.filter(
-          (language) => language.primary,
-        );
-        const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
-          (language) => !language.primary,
-        );
-        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
-          (item) => item.locale,
-        );
-        const [languageLocaleInfo, languages] = await Promise.all([
-          GetLanguageLocaleInfo({ locale: shopLocalesIndex }),
-          GetLanguageList({ shop, source: shopPrimaryLanguage[0].locale }),
-        ]);
-
-        const data = shopLanguagesWithoutPrimaryIndex.map((lang, i) => ({
-          key: i,
-          src: languageLocaleInfo
-            ? languageLocaleInfo[lang.locale]?.countries
-            : [],
-          name: lang.name,
-          localeName: languageLocaleInfo
-            ? languageLocaleInfo[lang.locale]?.Local
-            : "",
-          locale: lang.locale,
-          status: languages
-            ? languages.find((language: any) => language.target === lang.locale)
-                ?.status
-            : 0,
-          published: lang.published,
-        }));
-
-        const languageSetting = {
-          primaryLanguage: shopPrimaryLanguage[0].name,
-          primaryLanguageCode: shopPrimaryLanguage[0].locale,
-          // shopLanguagesWithoutPrimary: shopLanguagesWithoutPrimaryIndex,
-          // shopLanguageCodesWithoutPrimary: shopLocalesIndex,
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: data,
         };
-
-        console.log("languageData: ", {
-          data,
-          languageSetting,
-        });
-
-        return json({ data, languageSetting, shop });
       } catch (error) {
         console.error("Error languageData app:", error);
-        return json({ error: "Error languageData app" }, { status: 500 });
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: [],
+        };
       }
     }
 
@@ -220,11 +196,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             GetUserData({
               shop,
               apiName,
-            })
-          )
+            }),
+          ),
         );
         return json({
-          customApikeyData: results
+          customApikeyData: results,
         });
       } catch (error) {
         console.error("Error customApikeyData app:", error);
@@ -238,69 +214,81 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop,
           accessToken: accessToken as string,
         });
-        const shopPrimaryLanguage = shopLanguagesIndex.filter(
-          (language) => language.primary,
+        const shopPrimaryLanguage = shopLanguagesIndex?.filter(
+          (language) => language?.primary,
         );
-        const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
-          (language) => !language.primary,
+        const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex?.filter(
+          (language) => !language?.primary,
         );
-        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex.map(
-          (item) => item.locale,
+        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
+          (item) => item?.locale,
         );
 
-        const data = await GetTranslateDOByShopNameAndSource({
+        const translatingData = await GetTranslateDOByShopNameAndSource({
           shop,
-          source: shopPrimaryLanguage[0].locale,
+          source: shopPrimaryLanguage[0]?.locale,
         });
 
-        if (
-          shopLocalesIndex.includes(data.response[0]?.target) &&
-          (data.response[0]?.status !== 1 ||
-            !shopLanguagesWithoutPrimaryIndex.find(
-              (item) => item.locale === data.response[0]?.target,
-            )?.published)
-        ) {
-          return {
-            translatingLanguage:
-              data.response.length > 0
-                ? data.response.map((item: any) => ({
-                    source: item?.source || shopPrimaryLanguage[0].locale,
-                    target: item?.target || "",
-                    status: item?.status || 0,
-                    resourceType: item?.resourceType || "",
-                  }))
-                : [
-                    {
-                      source: shopPrimaryLanguage[0].locale,
-                      target: "",
-                      status: 0,
-                      resourceType: "",
-                    },
-                  ],
-          };
-        } else {
-          return {
-            translatingLanguage:
-              data.response.length > 0
-                ? data.response.map((item: any) => ({
-                    source: item?.source || shopPrimaryLanguage[0].locale,
-                    target: item?.target || "",
-                    status: item?.status || 0,
-                    resourceType: item?.resourceType || "",
-                  }))
-                : [
-                    {
-                      source: shopPrimaryLanguage[0].locale,
-                      target: "",
-                      status: 0,
-                      resourceType: "",
-                    },
-                  ],
-          };
-        }
+        console.log(
+          "GetTranslateDOByShopNameAndSource: ",
+          translatingData.response,
+        );
+
+        const data = translatingData.response.filter(
+          (translatingDataItem: any) =>
+            shopLocalesIndex.includes(translatingDataItem?.target) &&
+            (translatingDataItem?.status !== 1 ||
+              !shopLanguagesWithoutPrimaryIndex.find(
+                (item) => item.locale === translatingDataItem?.target,
+              )?.published),
+        );
+
+        console.log(
+          `${shop} GetTranslateDOByShopNameAndSource filterData: `,
+          data.map((item: any) => ({
+            source: item?.source || shopPrimaryLanguage[0].locale,
+            target: item?.target || "",
+            status: item?.status || 0,
+            resourceType: item?.resourceType || "",
+          })),
+        );
+
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response:
+            data.length > 0
+              ? data.map((item: any) => ({
+                  source: item?.source || shopPrimaryLanguage[0].locale,
+                  target: item?.target || "",
+                  status: item?.status || 0,
+                  resourceType: item?.resourceType || "",
+                }))
+              : [
+                  {
+                    source: "",
+                    target: "",
+                    status: 0,
+                    resourceType: "",
+                  },
+                ],
+        };
       } catch (error) {
         console.error("Error nearTransaltedData app:", error);
-        return json({ error: "Error nearTransaltedData app" }, { status: 500 });
+        return {
+          success: false,
+          errorCode: 0,
+          errorMsg: "",
+          response: [
+            {
+              source: "",
+              target: "",
+              status: 0,
+              resourceType: "",
+            },
+          ],
+        };
       }
     }
 
@@ -329,10 +317,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           target: statusData.target,
         });
         console.log("GetLanguageStatus: ", data);
-        return json({ data });
+        return data;
       } catch (error) {
         console.error("Error statusData app:", error);
-        return json({ error: "Error statusData app" }, { status: 500 });
+        return {
+          success: false,
+          errorCode: 0,
+          errorMsg: "",
+          response: [],
+        };
       }
     }
 
@@ -494,11 +487,16 @@ export default function App() {
           plan: planFetcher.data?.plan?.userSubscriptionPlan || "",
         }),
       );
-      dispatch(
-        setUserConfig({
-          updateTime: planFetcher.data?.plan?.currentPeriodEnd || "",
-        }),
-      );
+      if (planFetcher.data?.plan?.currentPeriodEnd) {
+        const date = new Date(planFetcher.data?.plan?.currentPeriodEnd)
+          .toLocaleDateString("zh-CN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          })
+          .replace(/\//g, "-");
+        dispatch(setUserConfig({ updateTime: date }));
+      }
     }
   }, [planFetcher.data]);
 
