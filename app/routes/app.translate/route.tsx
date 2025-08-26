@@ -42,7 +42,6 @@ import {
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { ArrowLeftIcon, PlusIcon } from "@shopify/polaris-icons";
-import axios from "axios";
 import styles from "./styles.module.css";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import EasyTranslateIcon from "~/components/easyTranslateIcon";
@@ -52,7 +51,6 @@ import {
   GetLanguageLocaleInfo,
   GetUserWords,
 } from "~/api/JavaServer";
-import { GAtranslate } from "~/api/Gamaidian";
 
 const { Title, Text } = Typography;
 
@@ -110,7 +108,6 @@ const Index = () => {
     "filters",
     "metaobjects",
     "metadata",
-    // "notifications",
     "navigation",
     "shop",
     "theme",
@@ -172,6 +169,7 @@ const Index = () => {
     );
     return matchedItem || null;
   }
+
   useEffect(() => {
     loadingLanguageFetcher.submit(
       { languageData: JSON.stringify(true) },
@@ -228,11 +226,17 @@ const Index = () => {
             published: lang.published,
           }),
         );
-        const GetLanguageLocaleInfoFront = async () => {
+        const GetLanguageDataFront = async () => {
           const languageLocaleInfo = await GetLanguageLocaleInfo({
             server: server as string,
             locale: shopLocalesIndex,
           });
+          const languageList = await GetLanguageList({
+            shop,
+            server: server as string,
+            source: shopPrimaryLanguage[0]?.locale,
+          });
+
           setLanguageData(
             data.map((item: any) => ({
               ...item, // 展开原对象
@@ -242,31 +246,18 @@ const Index = () => {
               ["localeName"]: languageLocaleInfo?.response
                 ? languageLocaleInfo?.response[item?.locale]?.Local
                 : "", // 插入新字段
-            })),
-          );
-        };
-        const GetLanguageListFront = async () => {
-          const languageList = await GetLanguageList({
-            shop,
-            server: server as string,
-            source: shopPrimaryLanguage[0]?.locale,
-          });
-          setLanguageData(
-            data.map((item: any) => ({
-              ...item, // 展开原对象
-              ["status"]: languageList
-                ? languageList.find(
+              ["status"]: languageList?.response
+                ? languageList?.response.find(
                     (language: any) => language.target === item.locale,
                   )?.status
                 : 0,
             })),
           );
-        };
 
-        GetLanguageLocaleInfoFront();
-        GetLanguageListFront();
+          setLoadingLanguage(false);
+        };
+        GetLanguageDataFront();
       }
-      setLoadingLanguage(false);
     }
   }, [loadingLanguageFetcher.data]);
 
@@ -597,7 +588,6 @@ const Index = () => {
   };
 
   const handleTranslate = async () => {
-    await GAtranslate();
     if (
       (translateSettings1 === "8" || translateSettings1 === "9") &&
       selectedLanguageCode.length >= 2
@@ -733,7 +723,9 @@ const Index = () => {
                 {t("Translate Store")}
               </Title>
             </div>
-            {languageSetting?.primaryLanguageCode != undefined ? (
+            {loadingLanguage ? (
+              <Skeleton.Button active />
+            ) : (
               <Button
                 type="primary"
                 onClick={() => checkIfNeedPay()}
@@ -751,8 +743,6 @@ const Index = () => {
                   ? t("Update")
                   : t("Translate")}
               </Button>
-            ) : (
-              <Skeleton.Button active />
             )}
           </div>
         </Affix>

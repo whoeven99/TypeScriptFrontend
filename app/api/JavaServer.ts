@@ -40,8 +40,8 @@ export const GetLatestActiveSubscribeId = async ({
     console.error(`${shop} GetLatestActiveSubscribeId error:`, error);
     return {
       success: false,
-      errorCode: 0,
-      errorMessage: "",
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: "",
     };
   }
@@ -70,8 +70,8 @@ export const AddCharsByShopNameAfterSubscribe = async ({
     console.error(`${shop} AddCharsByShopNameAfterSubscribe error:`, error);
     return {
       success: false,
-      errorCode: 0,
-      errorMessage: "",
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: false,
     };
   }
@@ -97,8 +97,8 @@ export const IsOpenFreePlan = async ({
     console.error(`${shop} IsOpenFreePlan error:`, error);
     return {
       success: false,
-      errorCode: 0,
-      errorMessage: "",
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: false,
     };
   }
@@ -129,8 +129,8 @@ export const GetProgressData = async ({
     console.error(`${shopName} GetProgressData error:`, error);
     return {
       success: false,
-      errorCode: 0,
-      errorMessage: "",
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: {
         RemainingQuantity: 0,
         TotalQuantity: 0,
@@ -142,18 +142,15 @@ export const GetProgressData = async ({
 export const StopTranslatingTask = async ({
   shopName,
   source,
-  // target,
   accessToken,
 }: {
   shopName: string;
   source: string;
-  // target: string;
   accessToken: string;
 }) => {
   console.log(`${shopName} StopTranslatingTask: `, {
     shopName,
     source,
-    // target,
     accessToken,
   });
 
@@ -176,6 +173,12 @@ export const StopTranslatingTask = async ({
     return response.data;
   } catch (error) {
     console.error(`${shopName} StopTranslatingTask error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: false,
+    };
   }
 };
 
@@ -226,11 +229,17 @@ export const UpdateProductImageAltData = async ({
       },
     });
 
-    console.log("UpdateProductImageAltData: ", response.data);
+    console.log(`${shopName} UpdateProductImageAltData: `, response.data);
 
     return response.data;
   } catch (error) {
     console.error("Error UpdateProductImageAltData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
   }
 };
 
@@ -264,6 +273,12 @@ export const DeleteProductImageData = async ({
     return response.data;
   } catch (error) {
     console.error("Error DeleteProductImageData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
   }
 };
 
@@ -1162,7 +1177,7 @@ export const GetUserWords = async ({
       method: "GET",
     });
     console.log("GetUserWords: ", response.data);
-    const res = response.data.response;
+    const res = response.data;
     return res;
   } catch (error) {
     console.error("Error occurred in the userwords:", error);
