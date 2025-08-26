@@ -525,7 +525,6 @@ export const GetUserData = async ({
       url: `${process.env.SERVER_URL}/private/translate/getUserPrivateData?shopName=${shop}&apiName=${apiName}`,
       method: "POST",
     });
-    console.log("GetUserData: ", response.data);
     return response.data;
   } catch (error) {
     console.error("Error GetUserData:", error);

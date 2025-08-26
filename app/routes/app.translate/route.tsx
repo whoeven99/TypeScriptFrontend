@@ -220,10 +220,12 @@ const Index = () => {
   }, [customApiKeyFetcher.data]);
 
   useEffect(() => {
-    if (fetcher.data) {
+    if (fetcher.data) {      
       if (fetcher.data?.success) {
         shopify.toast.show(t("The translation task is in progress."));
         navigate("/app");
+      } else if (!fetcher.data?.success) {
+        shopify.toast.show('私有key的额度超限,请重新配置额度');
       } else if (fetcher.data?.message === "words get error") {
         shopify.toast.show(
           t("The query of the remaining credits failed. Please try again."),
@@ -524,6 +526,26 @@ const Index = () => {
     ) {
       shopify.toast.show("选择私有key进行翻译，只能选择一种目标语言");
       return;
+    }
+    switch (translateSettings1) {
+      case "8":
+        if (customApikeyData) {
+          const useData = checkApiKeyConfiguration(customApikeyData, 0);
+          if (useData && useData?.usedToken >= useData?.tokenLimit) {
+            // 如果私有key的额度超限，弹出提示框
+            shopify.toast.show("google 私有key的额度超限,请重新配置额度");
+            // return;
+          }
+        }
+      case "9":
+        if (customApikeyData) {
+          const useData = checkApiKeyConfiguration(customApikeyData, 1);
+          if (useData && useData?.usedToken >= useData?.tokenLimit) {
+            // 如果私有key的额度超限，弹出提示框
+            shopify.toast.show("Open AI 私有key的额度超限,请重新配置额度");
+            // return;
+          }
+        }
     }
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
     console.log(customKey);
