@@ -344,8 +344,10 @@ const Index = () => {
         shop,
         server: server as string,
       });
-      setCurrentCredits(data.chars);
-      setMaxCredits(data.totalChars);
+      if (data?.success) {
+        setCurrentCredits(data.response?.chars);
+        setMaxCredits(data.response?.totalChars);
+      }
     };
     getWords();
     const checkFreeUsed = async () => {

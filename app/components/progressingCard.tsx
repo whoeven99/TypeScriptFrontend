@@ -393,10 +393,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   }, [statusFetcher.data]);
 
   useEffect(() => {
-    if (stopTranslateFetcher.data?.data?.success) {
-      setStatus(7);
-      // setResourceType("");
-      setTranslateStatus(1);
+    if (stopTranslateFetcher.data) {
+      if (stopTranslateFetcher.data?.success) {
+        setStatus(7);
+        setTranslateStatus(1);
+      } else {
+        
+      }
     }
   }, [stopTranslateFetcher.data]);
 
