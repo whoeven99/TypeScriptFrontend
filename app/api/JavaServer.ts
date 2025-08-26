@@ -1361,7 +1361,21 @@ export const GetTranslate = async ({
     console.log(`${shop} 翻译项: `, translateSettings3);
     console.log(`${shop} 是否覆盖: `, translateSettings5);
     console.log(`${shop} 自定义提示: `, customKey);
-    const res = { ...response.data, target: target };
+    const res = {
+      ...response.data,
+      response: {
+        shopName: shop,
+        accessToken: accessToken,
+        source: source,
+        target: target,
+        translateSettings1: translateSettings1,
+        translateSettings2: translateSettings2.toString(),
+        translateSettings3: translateSettings3,
+        customKey: customKey,
+        isCover: translateSettings5,
+      },
+      target: target,
+    };
     console.log("GetTranslate: ", res);
     return res;
   } catch (error) {
