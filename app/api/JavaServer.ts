@@ -238,7 +238,7 @@ export const UpdateProductImageAltData = async ({
       success: false,
       errorCode: 10001,
       errorMsg: "SERVER_ERROR",
-      response: null,
+      response: undefined,
     };
   }
 };
@@ -277,7 +277,7 @@ export const DeleteProductImageData = async ({
       success: false,
       errorCode: 10001,
       errorMsg: "SERVER_ERROR",
-      response: null,
+      response: undefined,
     };
   }
 };
@@ -1181,6 +1181,12 @@ export const GetUserWords = async ({
     return res;
   } catch (error) {
     console.error("Error occurred in the userwords:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -1231,9 +1237,9 @@ export const GetLanguageLocaleInfo = async ({
   } catch (error) {
     console.error("Error occurred in the languageData:", error);
     return {
-      success: true,
-      errorCode: 0,
-      errorMsg: "",
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: undefined,
     };
   }
