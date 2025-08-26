@@ -658,21 +658,22 @@ const Index = () => {
           productId: selectedKey,
           languageCode: selectedLanguage,
         });
-
-        setProductImageData(
-          data.map((item: any) => {
-            const index = targetData.response.findIndex(
-              (image: any) => item.imageUrl === image.imageBeforeUrl,
-            );
-            if (index !== -1) {
-              return {
-                ...item,
-                targetImageUrl: targetData.response[index].imageAfterUrl,
-              };
-            }
-            return item;
-          }),
-        );
+        if (targetData?.success && targetData?.response?.length > 0) {
+          setProductImageData(
+            data.map((item: any) => {
+              const index = targetData.response.findIndex(
+                (image: any) => item.imageUrl === image?.imageBeforeUrl,
+              );
+              if (index !== -1) {
+                return {
+                  ...item,
+                  targetImageUrl: targetData.response[index]?.imageAfterUrl,
+                };
+              }
+              return item;
+            }),
+          );
+        }
       }
       getTargetData();
       setIsLoading(false);

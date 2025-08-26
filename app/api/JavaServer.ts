@@ -306,9 +306,20 @@ export const GetProductImageData = async ({
 
     console.log("GetProductImageData: ", response.data);
 
-    return response.data;
+    return {
+      success: true,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [] as any[],
+    };
   } catch (error) {
     console.error("Error GetProductImageData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [] as any[],
+    };
   }
 };
 
@@ -389,9 +400,15 @@ export const SingleTextTranslate = async ({
         type: type,
       },
     });
+
+    console.log(`${shopName} SingleTextTranslate: `, response.data);
+
     return response.data;
   } catch (error) {
     console.error("Error SingleTextTranslate:", error);
+    return {
+      success: false,
+    };
   }
 };
 
