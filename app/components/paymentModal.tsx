@@ -19,6 +19,8 @@ import "./styles.css";
 const { Title, Text } = Typography;
 
 interface PaymentModalProps {
+  shop: string;
+  server: string;
   visible: boolean;
   setVisible: (visible: boolean) => void;
   source: string;
@@ -41,6 +43,8 @@ export interface OptionType {
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
+  shop,
+  server,
   visible,
   setVisible,
   source,
@@ -50,14 +54,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   needPay,
   handleTranslate,
 }) => {
-  const [selectedOption, setSelectedOption] = useState<OptionType>();
+  const [selectedKey, setSelectedKey] = useState<string>("option-1");
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [credits, setCredits] = useState<number | undefined>(undefined);
   const [multiple1, setMultiple1] = useState<number>(1);
   const [multiple2, setMultiple2] = useState<number>(model?.speed || 2);
   const { t } = useTranslation();
   const fetcher = useFetcher<any>();
-  const recalculateFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
 
@@ -187,106 +190,59 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     [plan],
   );
 
+  const selectedOption = useMemo(() => {
+    return options.find((item) => item.key == selectedKey) || options[0];
+  }, [selectedKey]);
+
   useEffect(() => {
-    if (credits && !selectedOption) {
+    if (credits && !selectedKey) {
       const matchedOption = options.find(
         (option) => option?.Credits >= credits * multiple1 * multiple2,
       ); // 找到第一个符合条件的选项
       if (matchedOption) {
-        setSelectedOption(matchedOption);
+        setSelectedKey(matchedOption?.key);
       }
     }
   }, [credits]);
 
-  useEffect(() => {
-    if (visible) {
-      fetcher.submit(
-        {
-          credits: JSON.stringify({
-            source: source || "en",
-            target: target || "zh-CN",
-          }),
-        },
-        {
-          method: "post",
-          action: "/app",
-        },
-      );
-    }
-  }, [visible]);
+  // useEffect(() => {
+  //   fetcher.submit(
+  //     {
+  //       credits: JSON.stringify({
+  //         source: source || "en",
+  //         target: target || "zh-CN",
+  //       }),
+  //     },
+  //     {
+  //       method: "post",
+  //       action: "/app",
+  //     },
+  //   );
+  // }, []);
 
-  useEffect(() => {
-    if (fetcher.data) {
-      if (fetcher.data.data.success) {
-        const { id, translationId, shopName, ...rest } =
-          fetcher.data.data.response;
-        let credits = 0;
-        Object.entries(rest)
-          .filter(([key, value]) => translateSettings3.includes(key as string))
-          .forEach(([key, value]) => {
-            if (value !== null) {
-              credits += value as number;
-            } else {
-              recalculateFetcher.submit(
-                {
-                  recalculate: JSON.stringify(true),
-                },
-                {
-                  method: "post",
-                  action: "/app",
-                },
-              );
-            }
-          });
-        if (credits === 0) {
-          recalculateFetcher.submit(
-            {
-              recalculate: JSON.stringify(true),
-            },
-            {
-              method: "post",
-              action: "/app",
-            },
-          );
-        } else {
-          setCredits(credits);
-        }
-      } else {
-        recalculateFetcher.submit(
-          {
-            recalculate: JSON.stringify(true),
-          },
-          {
-            method: "post",
-            action: "/app",
-          },
-        );
-      }
-    }
-  }, [fetcher.data]);
+  // useEffect(() => {
+  //   if (fetcher.data) {
+  //     if (fetcher.data?.success) {
+  //       const { id, translationId, shopName, ...rest } = fetcher.data?.response;
+  //       let credits = 0;
+  //       let submitted = false;
 
-  useEffect(() => {
-    if (recalculateFetcher.data) {
-      if (recalculateFetcher.data.data.success) {
-        const { id, translationId, shopName, ...rest } =
-          recalculateFetcher.data.data.response;
-        let credits = 0;
-        Object.entries(rest)
-          .filter(([key, value]) => translateSettings3.includes(key as string))
-          .forEach(([key, value]) => {
-            if (value !== null) {
-              credits += value as number;
-            } else {
-              setCredits(-1);
-              return;
-            }
-          });
-        setCredits(credits);
-      } else {
-        setCredits(-1);
-      }
-    }
-  }, [recalculateFetcher.data]);
+  //       for (const [key, value] of Object.entries(rest)) {
+  //         if (translateSettings3.includes(key as string)) {
+  //           if (value !== null) {
+  //             credits += value as number;
+  //           } else {
+  //             getCreditsFromServer();
+  //             submitted = true; // 标记已提交
+  //             break; // 中断循环
+  //           }
+  //         }
+  //       }
+  //     } else {
+  //       getCreditsFromServer();
+  //     }
+  //   }
+  // }, [fetcher.data]);
 
   useEffect(() => {
     if (payFetcher.data) {
@@ -321,6 +277,25 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       }
     }
   }, [payFetcher.data]);
+
+  // const getCreditsFromServer = async () => {
+  //   const data = await GetUserInitTokenByShopName({ shop, server });
+  //   if (data?.success) {
+  //     let credits = 0;
+  //     const { id, translationId, shopName, ...rest } = data?.response;
+  //     Object.entries(rest)
+  //       .filter(([key, value]) => translateSettings3.includes(key as string))
+  //       .forEach(([key, value]) => {
+  //         if (value !== null) {
+  //           credits += value as number;
+  //         } else {
+  //           setCredits(-1);
+  //           return;
+  //         }
+  //       });
+  //     setCredits(credits);
+  //   }
+  // };
 
   const onClick = () => {
     setBuyButtonLoading(true);
@@ -376,7 +351,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
               key="buy-now"
               type="primary"
               onClick={onClick}
-              disabled={buyButtonLoading}
+              disabled={buyButtonLoading || !selectedKey}
               loading={buyButtonLoading}
               style={{
                 height: "auto",
@@ -483,7 +458,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                     <PaymentOptionSelect
                       option={option}
                       selectedOption={selectedOption}
-                      onChange={(e) => setSelectedOption(e)}
+                      onChange={(e) => setSelectedKey(e.key)}
                     />
                   </div>
                 ))}

@@ -1672,6 +1672,8 @@ const Index = () => {
       </Space>
       {showPaymentModal && (
         <PaymentModal
+          shop={shop}
+          server={server as string}
           visible={showPaymentModal}
           setVisible={setShowPaymentModal}
           source={source}

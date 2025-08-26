@@ -320,10 +320,10 @@ const Index = () => {
           shop,
           server: server as string,
         });
-        setSelectedPlan(data.userSubscriptionPlan);
-        dispatch(setUserConfig({ plan: data.userSubscriptionPlan }));
-        if (data.currentPeriodEnd) {
-          const date = new Date(data.currentPeriodEnd)
+        setSelectedPlan(data?.response?.userSubscriptionPlan || "2");
+        dispatch(setUserConfig({ plan: data?.response?.userSubscriptionPlan }));
+        if (data?.response?.currentPeriodEnd) {
+          const date = new Date(data?.response?.currentPeriodEnd)
             .toLocaleDateString("zh-CN", {
               year: "numeric",
               month: "2-digit",
@@ -843,17 +843,6 @@ const Index = () => {
       { method: "POST" },
     );
   };
-
-  // const handleFreeTrial = async () => {
-  //   // setFreeTrialButtonLoading(true);
-  //   freeTrialFetcher.submit(
-  //     { freeTrial: JSON.stringify(true) },
-  //     { method: "POST" },
-  //   );
-  //   // const data = await StartFreePlan({ shop, server: server as string });
-  //   // console.log("freeTrial: ", data);
-  //   // return data;
-  // };
 
   return (
     <Page>

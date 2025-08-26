@@ -651,7 +651,7 @@ const Index = () => {
         dataResource.filter(
           (item: any) => item[0]?.productId === selectedKey,
         )[0] || [];
-      async function getTargetData() {
+      const getTargetData = async () => {
         const targetData = await GetProductImageData({
           server: server || "",
           shopName: shop,
@@ -673,8 +673,10 @@ const Index = () => {
               return item;
             }),
           );
+        } else {
+          setProductImageData(data);
         }
-      }
+      };
       getTargetData();
       setIsLoading(false);
     }

@@ -306,12 +306,7 @@ export const GetProductImageData = async ({
 
     console.log("GetProductImageData: ", response.data);
 
-    return {
-      success: true,
-      errorCode: 10001,
-      errorMsg: "SERVER_ERROR",
-      response: [] as any[],
-    };
+    return response.data;
   } catch (error) {
     console.error("Error GetProductImageData:", error);
     return {
@@ -341,28 +336,9 @@ export const GetUserValue = async ({
     console.error("Error GetUserValue:", error);
     return {
       success: false,
-      errorCode: 0,
-      errorMsg: "Error GetUserValue",
-      response: null,
-    };
-  }
-};
-
-export const StartFreePlan = async ({ shop }: { shop: string }) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/userTrials/startFreePlan?shopName=${shop}`,
-      method: "POST",
-    });
-    console.log("StartFreePlan: ", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error StartFreePlan:", error);
-    return {
-      success: false,
-      errorCode: 0,
-      errorMsg: "Error StartFreePlan",
-      response: null,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
     };
   }
 };
@@ -408,6 +384,9 @@ export const SingleTextTranslate = async ({
     console.error("Error SingleTextTranslate:", error);
     return {
       success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: "",
     };
   }
 };
@@ -437,10 +416,7 @@ export const SendSubscribeSuccessEmail = async ({
         feeType: feeType,
       },
     });
-
     console.log(`${shopName} SendSubscribeSuccessEmail: `, response.data);
-
-    return response.data;
   } catch (error) {
     console.error("Error SendSubscribeSuccessEmail:", error);
   }
@@ -470,16 +446,31 @@ export const UpdateAutoTranslateByData = async ({
         autoTranslate: autoTranslate,
       },
     });
+
+    console.log(`${shopName} UpdateAutoTranslateByData: `, response.data);
+
     return response.data;
   } catch (error) {
     console.error("Error UpdateAutoTranslateByData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
-export const WidgetConfigurations = async ({ shop }: { shop: string }) => {
+export const WidgetConfigurations = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/widgetConfigurations/getData`,
+      url: `${server}/widgetConfigurations/getData`,
       method: "POST",
       data: {
         shopName: shop,
@@ -491,11 +482,18 @@ export const WidgetConfigurations = async ({ shop }: { shop: string }) => {
     return response.data;
   } catch (error) {
     console.error("Error WidgetConfigurations:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
 export const SaveAndUpdateData = async ({
   shopName,
+  server,
   languageSelector,
   currencySelector,
   ipOpen,
@@ -510,6 +508,7 @@ export const SaveAndUpdateData = async ({
   isTransparent,
 }: {
   shopName: string;
+  server: string;
   languageSelector: boolean;
   currencySelector: boolean;
   ipOpen: boolean;
@@ -525,7 +524,7 @@ export const SaveAndUpdateData = async ({
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/widgetConfigurations/saveAndUpdateData`,
+      url: `${server}/widgetConfigurations/saveAndUpdateData`,
       method: "POST",
       data: {
         shopName: shopName,
@@ -544,9 +543,17 @@ export const SaveAndUpdateData = async ({
       },
     });
 
+    console.log(`${shopName} SaveAndUpdateData`);
+
     return response.data;
   } catch (error) {
-    console.error("Error WidgetConfigurations:", error);
+    console.error("Error SaveAndUpdateData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -608,33 +615,6 @@ export const UpdateUserPlan = async ({
     return response.data;
   } catch (error) {
     console.error("Error UpdateUserPlan:", error);
-  }
-};
-
-//删除用户私人API Key
-export const DeleteUserData = async ({ shop }: { shop: string }) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/private/deleteUserData`,
-      method: "PUT",
-      data: {
-        shopName: shop,
-      },
-    });
-    console.log("DeleteUserData: ", response.data);
-    return {
-      ...response.data,
-      response: {
-        amount: 0,
-        googleKey: null,
-        id: null,
-        openaiKey: null,
-        shopName: shop,
-        usedAmount: null,
-      },
-    };
-  } catch (error) {
-    console.error("Error DeleteUserData:", error);
   }
 };
 
@@ -701,33 +681,6 @@ export const SavePrivateKey = async ({
   }
 };
 
-// export const SaveGoogleKey = async ({
-//   shop,
-//   apiKey,
-//   count,
-// }: {
-//   shop: string;
-//   apiKey: string;
-//   count: number;
-// }) => {
-//   try {
-//     const response = await axios({
-//       url: `${process.env.SERVER_URL}/privateKey/saveGoogleKey`,
-//       method: "PUT",
-//       data: {
-//         shopName: shop,
-//         model: "google",
-//         secret: apiKey,
-//         amount: count,
-//       },
-//     });
-//     console.log("SaveGoogleKey: ", response.data);
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error SaveGoogleKey:", error);
-//   }
-// };
-
 //获取最新翻译状态
 export const GetTranslateDOByShopNameAndSource = async ({
   shop,
@@ -752,8 +705,8 @@ export const GetTranslateDOByShopNameAndSource = async ({
       console.warn(`${shop} source disappear`);
       return {
         success: false,
-        errorCode: 0,
-        errorMsg: "",
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
         response: [],
       };
     }
@@ -761,25 +714,10 @@ export const GetTranslateDOByShopNameAndSource = async ({
     console.error("Error GetTranslateDOByShopNameAndSource:", error);
     return {
       success: false,
-      errorCode: 0,
-      errorMsg: "",
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: [],
     };
-  }
-};
-
-export const VerifyAPIkey = async ({ shopName }: { shopName: string }) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/privateKey/translate?shopName=${shopName}`,
-      method: "PUT",
-      data: {
-        shopName,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
   }
 };
 
@@ -807,6 +745,7 @@ export const TranslationInterface = async ({
         prompt,
       },
     });
+
     console.log("testApiKeyRes", response.data);
 
     return response.data;
@@ -815,53 +754,64 @@ export const TranslationInterface = async ({
   }
 };
 
-export const GetUserInitTokenByShopName = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/userTypeToken/getUserInitTokenByShopName`,
-      method: "POST",
-      data: {
-        shopName: shop,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error GetUserInitTokenByShopName:", error);
-  }
-};
+// export const GetUserInitTokenByShopName = async ({
+//   shop,
+//   server,
+// }: {
+//   shop: string;
+//   server: string;
+// }) => {
+//   try {
+//     const response = await axios({
+//       url: `${server}/userTypeToken/getUserInitTokenByShopName`,
+//       method: "POST",
+//       data: {
+//         shopName: shop,
+//       },
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error GetUserInitTokenByShopName:", error);
+//     return {
+//       success: false,
+//       errorCode: 10001,
+//       errorMsg: "SERVER_ERROR",
+//       response: undefined,
+//     };
+//   }
+// };
 
-//获取用户翻译字数
-export const getCredits = async ({
-  shop,
-  accessToken,
-  target,
-  source,
-}: {
-  shop: string;
-  accessToken: string;
-  target: string;
-  source: string;
-}) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/userTypeToken/getUserToken`,
-      method: "POST",
-      data: {
-        shopName: shop,
-        accessToken: accessToken,
-        target: target,
-        source: source,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error getCredits:", error);
-  }
-};
+// //获取用户翻译字数
+// export const GetUserToken = async ({
+//   shop,
+//   accessToken,
+//   target,
+//   source,
+// }: {
+//   shop: string;
+//   accessToken: string;
+//   target: string;
+//   source: string;
+// }) => {
+//   try {
+//     const response = await axios({
+//       url: `${process.env.SERVER_URL}/userTypeToken/getUserToken`,
+//       method: "POST",
+//       data: {
+//         shopName: shop,
+//         accessToken: accessToken,
+//         target: target,
+//         source: source,
+//       },
+//     });
+
+//     console.log(`${shop} GetUserToken: `, response.data);
+
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error GetUserToken:", error);
+//   }
+// };
 
 //用户数据初始化检测
 export const InitializationDetection = async ({ shop }: { shop: string }) => {
@@ -873,10 +823,20 @@ export const InitializationDetection = async ({ shop }: { shop: string }) => {
 
     console.log(`${shop} InitializationDetection: `, response.data);
 
-    const res = response.data.response;
+    const res = response.data;
     return res;
   } catch (error) {
     console.error("Error InitializationDetection:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: {
+        insertCharsByShopName: true,
+        addUserSubscriptionPlan: true,
+        addDefaultLanguagePack: true,
+      },
+    };
   }
 };
 
@@ -964,47 +924,50 @@ export const GetUserSubscriptionPlan = async ({
   server,
 }: {
   shop: string;
-  server?: string;
+  server: string;
 }) => {
   try {
     const response = await axios({
-      url: `${server || process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
+      url: `${server}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
       method: "GET",
     });
 
     console.log("GetUserSubscriptionPlan: ", response.data);
 
-    if (response.data?.success) {
-      const res = response.data?.response;
-      if (shop == "ciwishop.myshopify.com") {
-        return {
+    if (shop == "ciwishop.myshopify.com") {
+      return {
+        ...response.data,
+        response: {
           userSubscriptionPlan: 6,
           currentPeriodEnd: "2025-09-17T06:24:28Z",
-        };
-      }
-      return res;
-    } else {
-      return {
-        userSubscriptionPlan: 2,
-        currentPeriodEnd: null,
+        },
       };
     }
+    return response.data;
   } catch (error) {
     console.error("Error GetUserSubscriptionPlan:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: {
+        userSubscriptionPlan: 2,
+        currentPeriodEnd: "",
+      },
+    };
   }
 };
 
 //用户字数初始化
 export const AddUserFreeSubscription = async ({ shop }: { shop: string }) => {
   try {
-    const addUserFreeSubscriptionResponse = await axios({
+    await axios({
       url: `${process.env.SERVER_URL}/shopify/addUserFreeSubscription`,
       method: "POST",
       data: {
         shopName: shop,
       },
     });
-    return addUserFreeSubscriptionResponse.data.success;
   } catch (error) {
     console.error("Error AddUserFreeSubscription:", error);
   }
@@ -1023,7 +986,7 @@ export const InsertShopTranslateInfo = async ({
   target: string;
 }) => {
   try {
-    await axios({
+    const response = await axios({
       url: `${process.env.SERVER_URL}/translate/insertShopTranslateInfo`,
       method: "POST",
       data: {
@@ -1033,6 +996,8 @@ export const InsertShopTranslateInfo = async ({
         target: target,
       },
     });
+
+    console.log(`${shop} InsertShopTranslateInfo: `, response.data);
   } catch (error) {
     console.error("Error InsertShopTranslateInfo:", error);
   }

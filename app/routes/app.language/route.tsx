@@ -867,34 +867,34 @@ const Index = () => {
       setNoFirstTranslation(true);
       return;
     }
-    const items = dataSource.filter((item) => item.autoTranslate).length;
-    if (
-      items <=
-      autoTranslationMapping[plan as keyof typeof autoTranslationMapping]
-    ) {
-      dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
-      const row = dataSource.find((item: any) => item.locale === locale);
-      if (row) {
-        const data = await UpdateAutoTranslateByData({
-          shopName: shop,
-          source: shopPrimaryLanguage[0]?.locale,
-          target: row.locale,
-          autoTranslate: checked,
-          server: server || "",
-        });
-        if (data?.success) {
-          dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
-          dispatch(setAutoTranslateState({ locale, autoTranslate: checked }));
-          shopify.toast.show(t("Auto translate updated successfully"));
-        }
+    // const items = dataSource.filter((item) => item.autoTranslate).length;
+    // if (
+    //   items <=
+    //   autoTranslationMapping[plan as keyof typeof autoTranslationMapping]
+    // ) {
+    dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
+    const row = dataSource.find((item: any) => item.locale === locale);
+    if (row) {
+      const data = await UpdateAutoTranslateByData({
+        shopName: shop,
+        source: shopPrimaryLanguage[0]?.locale,
+        target: row.locale,
+        autoTranslate: checked,
+        server: server || "",
+      });
+      if (data?.success) {
+        dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
+        dispatch(setAutoTranslateState({ locale, autoTranslate: checked }));
+        shopify.toast.show(t("Auto translate updated successfully"));
       }
-    } else {
-      shopify.toast.show(
-        t(
-          `The ${autoTranslationMapping[plan as keyof typeof autoTranslationMapping]} autoTranslation limit has been reached`,
-        ),
-      );
     }
+    // } else {
+    //   shopify.toast.show(
+    //     t(
+    //       `The ${autoTranslationMapping[plan as keyof typeof autoTranslationMapping]} autoTranslation limit has been reached`,
+    //     ),
+    //   );
+    // }
   };
 
   //表格编辑

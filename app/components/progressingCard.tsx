@@ -129,9 +129,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         }
 
         async function getUserValue() {
-          const userValue = await GetUserValue({ shop: shop, server });
-          setValue(userValue?.response?.value || "");
-          setTranslateStatus(userValue?.response?.status || 2);
+          const data = await GetUserValue({ shop: shop, server });
+          setValue(data?.response?.value || "");
+          setTranslateStatus(data?.response?.status || 2);
         }
 
         getProgressData();

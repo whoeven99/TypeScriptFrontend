@@ -10,7 +10,7 @@ import {
 import { SessionService } from "~/utils/session.server";
 import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { DeleteUserData, GetUserData, SavePrivateKey, VerifyAPIkey, TranslationInterface } from "~/api/JavaServer";
+import {  GetUserData, SavePrivateKey, TranslationInterface } from "~/api/JavaServer";
 import { useEffect, useState, useRef } from "react";
 import styles from './styles.module.css';
 import { ExclamationCircleOutlined } from '@ant-design/icons';

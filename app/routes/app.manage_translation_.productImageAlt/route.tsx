@@ -665,23 +665,26 @@ const Index = () => {
           productId: selectedKey,
           languageCode: selectedLanguage,
         });
-
-        setProductAltTextData(
-          data.map((item: any) => {
-            const index = targetData.response.findIndex(
-              (image: any) => item.imageUrl === image.imageBeforeUrl,
-            );
-            if (index !== -1) {
-              return {
-                ...item,
-                imageUrl:
-                  targetData.response[index].imageAfterUrl || item.imageUrl,
-                targetAltText: targetData.response[index].altAfterTranslation,
-              };
-            }
-            return item;
-          }),
-        );
+        if (targetData?.success && targetData?.response?.length > 0) {
+          setProductAltTextData(
+            data.map((item: any) => {
+              const index = targetData.response.findIndex(
+                (image: any) => item.imageUrl === image.imageBeforeUrl,
+              );
+              if (index !== -1) {
+                return {
+                  ...item,
+                  imageUrl:
+                    targetData.response[index].imageAfterUrl || item.imageUrl,
+                  targetAltText: targetData.response[index].altAfterTranslation,
+                };
+              }
+              return item;
+            }),
+          );
+        } else {
+          setProductAltTextData(data);
+        }
       }
       getTargetData();
       setIsLoading(false);
