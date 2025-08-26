@@ -1,4 +1,10 @@
-import { Icon, Page } from "@shopify/polaris";
+import {
+  Icon,
+  Page,
+  BlockStack,
+  Text as PolarisText,
+  Modal as PolarisModal,
+} from "@shopify/polaris";
 import { useEffect, useRef, useState } from "react";
 import {
   Affix,
@@ -153,7 +159,44 @@ const Index = () => {
   const location = useLocation();
   const fetcher = useFetcher<any>();
   const customApiKeyFetcher = useFetcher<any>();
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [currentModal, setCurrentModal] = useState<'limitExceeded' | 'outOfRange' | 'interfaceIsOccupied'>('limitExceeded');
+  const modalTypeObject = {
+    limitExceeded: {
+      Title: `${t('Insufficient private API quota')}`,
+      Body: `${t('The usage has exceeded your configured quota. Please update your settings.')}`,
+      Button: `${t('Configure now')}`,
+    },
+    outOfRange: {
+      Title: `${t('Unsupported language')}`,
+      Body: `${t('This language is not supported by Google Translate. Check the supported list in Google or switch to another model.')}`,
+      Button: `${t('OK')}`,
+    },
+    interfaceIsOccupied: {
+      Title: `${t('Task in progress')}`,
+      Body: `${t('Your private API can run only one translation at a time. Please wait until the current task is finished.')}`,
+      Button: `${t('OK')}`,
+    }
+  };
 
+  const handleConfigureQuota = () => {
+    switch(currentModal) {
+      case 'limitExceeded':
+        navigate("/app/apikeySetting");
+        setIsApiKeyModalOpen(false);
+        break;
+      case 'outOfRange':
+        setIsApiKeyModalOpen(false);
+        break;
+      case 'interfaceIsOccupied':
+        setIsApiKeyModalOpen(false);
+        break;
+    }
+  };
+
+  const handleApiKeyModalClose = () => {
+    setIsApiKeyModalOpen(false);
+  };
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
@@ -281,9 +324,7 @@ const Index = () => {
   }, [customApiKeyFetcher.data]);
 
   useEffect(() => {
-    if (fetcher.data) {      
-      console.log(fetcher.data);
-      
+    if (fetcher.data) {
       if (fetcher.data?.success) {
         shopify.toast.show(t("The translation task is in progress."));
         navigate("/app");
@@ -303,6 +344,10 @@ const Index = () => {
             }
           };
           getUserWords();
+          if (fetcher?.data?.errorCode === 10001) {
+            setCurrentModal('outOfRange');
+            setIsApiKeyModalOpen(true);
+          }
         } catch (error) {
           shopify.toast.show(
             t("The query of the remaining credits failed. Please try again."),
@@ -567,6 +612,9 @@ const Index = () => {
       );
       return;
     }
+    // if (!checkCanTranslate()) {
+    //   return;
+    // }
     const selectedItems = dataSource.find((item: LanguagesDataType) =>
       selectedLanguageCode.includes(item.locale),
     );
@@ -582,41 +630,59 @@ const Index = () => {
       setModel(modalSetting);
       handleTranslate();
     } else {
-      shopify.toast.show(
-        t(
-          "The translation task is in progress. Please try translating again later.",
-        ),
-      );
+      // shopify.toast.show(
+      //   t(
+      //     "The translation task is in progress. Please try translating again later.",
+      //   ),
+      // );
+      setCurrentModal('interfaceIsOccupied');
+      setIsApiKeyModalOpen(true);
     }
   };
 
-  const handleTranslate = async () => {
+  const checkCanTranslate = () => {
     if (
       (translateSettings1 === "8" || translateSettings1 === "9") &&
       selectedLanguageCode.length >= 2
     ) {
       shopify.toast.show("选择私有key进行翻译，只能选择一种目标语言");
-      return;
+      return false;
     }
     switch (translateSettings1) {
       case "8":
         if (customApikeyData) {
           const useData = checkApiKeyConfiguration(customApikeyData, 0);
+          console.log(useData);
+
           if (useData && useData?.usedToken >= useData?.tokenLimit) {
             // 如果私有key的额度超限，弹出提示框
-            shopify.toast.show("google 私有key的额度超限,请重新配置额度");
-            // return;
+            // setIsApiKeyModalOpen(true);
+            setIsApiKeyModalOpen(true);
+            return false;
           }
         }
+        break;
       case "9":
         if (customApikeyData) {
           const useData = checkApiKeyConfiguration(customApikeyData, 1);
           if (useData && useData?.usedToken >= useData?.tokenLimit) {
             // 如果私有key的额度超限，弹出提示框
-            shopify.toast.show("Open AI 私有key的额度超限,请重新配置额度");
-            // return;
+            setIsApiKeyModalOpen(true);
+            return false;
           }
         }
+        break;
+      default:
+        console.log(
+          `Unsupported translateSettings1 value: ${translateSettings1}`,
+        );
+        break;
+    }
+    return true;
+  }
+  const handleTranslate = async () => {
+    if (!checkCanTranslate()) {
+      return;
     }
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
     const formData = new FormData();
@@ -1691,6 +1757,29 @@ const Index = () => {
         >
           <Text>{t("This feature is available only with the paid plan.")}</Text>
         </Modal>
+        <PolarisModal
+          open={isApiKeyModalOpen}
+          onClose={handleApiKeyModalClose}
+          title={modalTypeObject[currentModal].Title}
+          primaryAction={{
+            content: `${modalTypeObject[currentModal].Button}`,
+            onAction: handleConfigureQuota,
+          }}
+          secondaryActions={[
+            {
+              content: `${t("Cancel")}`,
+              onAction: handleApiKeyModalClose,
+            },
+          ]}
+        >
+          <PolarisModal.Section>
+            <BlockStack gap="200">
+              <PolarisText variant="bodyMd" as="p">
+                {modalTypeObject[currentModal].Body}
+              </PolarisText>
+            </BlockStack>
+          </PolarisModal.Section>
+        </PolarisModal>
       </Space>
       {showPaymentModal && (
         <PaymentModal

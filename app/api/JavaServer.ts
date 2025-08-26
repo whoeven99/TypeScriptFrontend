@@ -1398,6 +1398,8 @@ export const GetTranslate = async ({
     console.log(`${shop} 翻译项: `, translateSettings3);
     console.log(`${shop} 是否覆盖: `, translateSettings5);
     console.log(`${shop} 自定义提示: `, customKey);
+    console.log('response', response.data);
+
     const res = {
       ...response.data,
       response: {

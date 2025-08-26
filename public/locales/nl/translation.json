@@ -601,5 +601,13 @@
   "{{ locale }} is unPublished": "{{ locale }} is unPublished",
   "{{amount}} free credits": "{{amount}} free credits",
   "{{credits}} credits/month": "{{credits}} credits/month",
-  "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> has been used, total credits: <strong>{{maxCredits}}</strong>."
+  "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> has been used, total credits: <strong>{{maxCredits}}</strong>.",
+  "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> wordt eenmaal per jaar gefactureerd",
+  "Insufficient private API quotas": "Onvoldoende quota voor privé-API's",
+  "Configure now": "Nu configureren",
+  "The usage has exceeded your configured quota. Please update your settings.": "Het gebruik heeft uw geconfigureerde quotum overschreden. Werk uw instellingen bij.",
+  "Unsupported language": "Niet-ondersteunde taal",
+  "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "Deze taal wordt niet ondersteund door Google Translate. Controleer de ondersteunde lijst in Google of schakel over naar een ander model.",
+  "Task in progress": "Taak in uitvoering",
+  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "Uw privé-API kan slechts één vertaling tegelijk uitvoeren. Wacht tot de huidige taak is voltooid."
 }

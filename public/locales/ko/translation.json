@@ -601,5 +601,13 @@
   "{{ locale }} is unPublished": "{{ locale }} is unPublished",
   "{{amount}} free credits": "{{amount}} free credits",
   "{{credits}} credits/month": "{{credits}} credits/month",
-  "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> has been used, total credits: <strong>{{maxCredits}}</strong>."
+  "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> has been used, total credits: <strong>{{maxCredits}}</strong>.",
+  "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}가</strong> 1년에 한 번 청구됩니다.",
+  "Insufficient private API quotas": "개인 API 할당량이 부족합니다",
+  "Configure now": "지금 구성하세요",
+  "The usage has exceeded your configured quota. Please update your settings.": "사용량이 설정된 할당량을 초과했습니다. 설정을 업데이트하세요.",
+  "Unsupported language": "지원되지 않는 언어",
+  "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "이 언어는 Google Translate에서 지원되지 않습니다. Google에서 지원 목록을 확인하거나 다른 모델로 전환하세요.",
+  "Task in progress": "진행 중인 작업",
+  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "비공개 API는 한 번에 하나의 번역만 실행할 수 있습니다. 현재 작업이 완료될 때까지 기다려 주세요."
 }

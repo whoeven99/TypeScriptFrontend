@@ -619,5 +619,13 @@
   "{{ locale }} is unPublished": "{{ locale }} is unPublished",
   "{{amount}} free credits": "{{amount}} free credits",
   "{{credits}} credits/month": "{{credits}} credits/month",
-  "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> has been used, total credits: <strong>{{maxCredits}}</strong>."
+  "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> has been used, total credits: <strong>{{maxCredits}}</strong>.",
+  "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> faktureras en gång om året",
+  "Insufficient private API quotas": "Otillräckliga privata API-kvoter",
+  "Configure now": "Konfigurera nu",
+  "The usage has exceeded your configured quota. Please update your settings.": "Användningen har överskridit din konfigurerade kvot. Uppdatera dina inställningar.",
+  "Unsupported language": "Språk som inte stöds",
+  "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "Det här språket stöds inte av Google Translate. Kontrollera listan över språk som stöds i Google eller byt till en annan modell.",
+  "Task in progress": "Uppgift pågår",
+  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "Ditt privata API kan bara köra en översättning åt gången. Vänta tills den aktuella uppgiften är klar."
 }

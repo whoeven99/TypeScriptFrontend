@@ -165,7 +165,7 @@
   "progressing.noTranslate": "当前没有翻译任务",
   "progressing.contactButton": "联系支持",
   "progressing.somethingWentWrong": "发生意外错误。请点击按钮联系支持获取解决方案。",
-  "progressing.privateApiKeyAmountLimit": "私有API key限制已达到。请点击右侧按钮重置限制并重新开始翻译。",
+  "progressing.privateApiKeyAmountLimit": "Google/Open AI私有key限制已达到。请点击右侧按钮重置限制并重新开始翻译。",
   "progressing.apikeySetting": "重置限制",
   "progressing.hasPayed": "您的翻译积分已添加。请继续翻译。",
   "progressing.stopTranslate": "停止翻译",
@@ -551,7 +551,7 @@
     "hd": "如何获取 API Key？",
     "pe": "请输入 API Key",
     "ls": "使用限制 (字符)",
-    "lsgpt":"使用限制 (令牌)",
+    "lsgpt": "使用限制 (令牌)",
     "ps": "请设置限额",
     "pw": "提示词设置",
     "fi": "填写提示词",
@@ -572,8 +572,8 @@
     "tf": "翻译失败，请检查API密钥的有效性",
     "tcm": "翻译完成",
     "mv": "模型版本：",
-    "ip":"输入提示词",
-    "tips":"tips：测试会消耗对应的额度"
+    "ip": "输入提示词",
+    "tips": "tips：测试会消耗对应的额度"
   },
   "support": "支持",
   "Upgrade to a paid plan to unlock this feature": "升级到付费计划以解锁此功能",
@@ -584,7 +584,7 @@
   "Advance Setting": "高级设置",
   "Brand-First Sentence Structure": "品牌优先句子结构",
   "You don’t have any glossary active right now": "您当前没有激活的术语表",
-  "Add credits": "添加积分",  
+  "Add credits": "添加积分",
   "Choose the right plan for you": "选择适合您的计划",
   "Yearly": "年度",
   "Save 20%": "年度折扣 20%",
@@ -632,5 +632,14 @@
   "Switch to free plan": "切换到免费计划",
   "1v1 support": "1v1 支持",
   "Compare plans": "比较计划",
-  "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> 每年计费"
+  "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> 每年计费",
+  "translate to": "翻译为",
+  "This feature is available only with the paid plan.": "此功能仅在付费计划中可用。",
+  "Insufficient private API quotas": "私有 api 可用额度不足",
+  "Configure now": "去配置",
+  "The usage has exceeded your configured quota. Please update your settings.": "请重新配置额度",
+  "Unsupported language": "该语言不支持翻译",
+  "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "请登录 Google 查看支持的翻译语言列表，或者使用其他模型进行翻译",
+  "Task in progress": "API 正在执行另一个翻译任务",
+  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "私有API只能同时翻译一种语言，请完成翻译后重试"
 }

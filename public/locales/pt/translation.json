@@ -601,5 +601,13 @@
   "{{ locale }} is unPublished": "{{ locale }} is unPublished",
   "{{amount}} free credits": "{{amount}} free credits",
   "{{credits}} credits/month": "{{credits}} credits/month",
-  "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> has been used, total credits: <strong>{{maxCredits}}</strong>."
+  "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> has been used, total credits: <strong>{{maxCredits}}</strong>.",
+  "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> cobrado uma vez por ano",
+  "Insufficient private API quotas": "Cotas de API privadas insuficientes",
+  "Configure now": "Configurar agora",
+  "The usage has exceeded your configured quota. Please update your settings.": "O uso excedeu sua cota configurada. Atualize suas configurações.",
+  "Unsupported language": "Idioma não suportado",
+  "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "Este idioma não é suportado pelo Google Tradutor. Verifique a lista de idiomas suportados no Google ou troque para outro modelo.",
+  "Task in progress": "Tarefa em andamento",
+  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "Sua API privada só pode executar uma tradução por vez. Aguarde até que a tarefa atual seja concluída."
 }

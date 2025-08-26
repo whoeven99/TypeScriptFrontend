@@ -619,5 +619,13 @@
   "{{ locale }} is unPublished": "{{ locale }} is unPublished",
   "{{amount}} free credits": "{{amount}} free credits",
   "{{credits}} credits/month": "{{credits}} credits/month",
-  "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> has been used, total credits: <strong>{{maxCredits}}</strong>."
+  "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> has been used, total credits: <strong>{{maxCredits}}</strong>.",
+  "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> yılda bir kez faturalandırılır",
+  "Insufficient private API quotas": "Yetersiz özel API kotası",
+  "Configure now": "Şimdi yapılandırın",
+  "The usage has exceeded your configured quota. Please update your settings.": "Kullanım, yapılandırdığınız kotayı aştı. Lütfen ayarlarınızı güncelleyin.",
+  "Unsupported language": "Desteklenmeyen dil",
+  "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "Bu dil Google Çeviri tarafından desteklenmiyor. Google'daki desteklenen diller listesini kontrol edin veya başka bir modele geçin.",
+  "Task in progress": "Görev devam ediyor",
+  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "Özel API'niz aynı anda yalnızca bir çeviri çalıştırabilir. Lütfen mevcut görev tamamlanana kadar bekleyin."
 }

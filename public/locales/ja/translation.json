@@ -601,5 +601,13 @@
   "{{ locale }} is unPublished": "{{ locale }} is unPublished",
   "{{amount}} free credits": "{{amount}} free credits",
   "{{credits}} credits/month": "{{credits}} credits/month",
-  "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> has been used, total credits: <strong>{{maxCredits}}</strong>."
+  "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> has been used, total credits: <strong>{{maxCredits}}</strong>.",
+  "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong>年1回請求",
+  "Insufficient private API quotas": "プライベート API 割り当てが不十分です",
+  "Configure now": "今すぐ設定",
+  "The usage has exceeded your configured quota. Please update your settings.": "使用量が設定されたクォータを超えました。設定を更新してください。",
+  "Unsupported language": "サポートされていない言語",
+  "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "この言語はGoogle翻訳ではサポートされていません。Google翻訳のサポートリストを確認するか、別のモデルに切り替えてください。",
+  "Task in progress": "タスク進行中",
+  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "プライベートAPIでは一度に1つの翻訳しか実行できません。現在のタスクが完了するまでお待ちください。"
 }
