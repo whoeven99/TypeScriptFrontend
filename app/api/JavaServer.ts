@@ -1162,7 +1162,7 @@ export const GetUserWords = async ({
       method: "GET",
     });
     console.log("GetUserWords: ", response.data);
-    const res = response.data.response;
+    const res = response.data;
     return res;
   } catch (error) {
     console.error("Error occurred in the userwords:", error);
