@@ -289,14 +289,15 @@ const Index = () => {
         try {
           const getUserWords = async () => {
             const data = await GetUserWords({ shop, server });
-            const words = data?.response;
-            if (
-              words?.totalChars <= words?.chars &&
-              fetcher.data?.response?.translateSettings1 !== "8" &&
-              fetcher.data?.response?.translateSettings1 !== "9"
-            ) {
-              setNeedPay(true);
-              setShowPaymentModal(true);
+            if (data.success) {
+              if (
+                data?.response?.totalChars <= data?.response?.chars &&
+                fetcher.data?.response?.translateSettings1 !== "8" &&
+                fetcher.data?.response?.translateSettings1 !== "9"
+              ) {
+                setNeedPay(true);
+                setShowPaymentModal(true);
+              }
             }
           };
           getUserWords();
