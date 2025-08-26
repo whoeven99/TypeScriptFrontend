@@ -1873,7 +1873,6 @@ export const mutationAppSubscriptionCreate = async ({
   returnUrl: URL;
 }) => {
   console.log("mutationAppSubscriptionCreate is coming");
-
   try {
     // 执行 API 请求
     const response = await axios({
