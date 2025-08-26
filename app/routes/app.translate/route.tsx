@@ -50,6 +50,7 @@ import {
   GetGlossaryByShopName,
   GetLanguageList,
   GetLanguageLocaleInfo,
+  GetUserWords,
 } from "~/api/JavaServer";
 import { GAtranslate } from "~/api/Gamaidian";
 
@@ -293,7 +294,27 @@ const Index = () => {
       if (fetcher.data?.success) {
         shopify.toast.show(t("The translation task is in progress."));
         navigate("/app");
-      } else if (fetcher.data?.message === "words get error") {
+      } else if (!fetcher.data?.success) {
+        try {
+          const getUserWords = async () => {
+            const data = await GetUserWords({ shop, server });
+            const words = data?.response;
+            if (
+              words?.totalChars <= words?.chars &&
+              fetcher.data?.response?.translateSettings1 !== "8" &&
+              fetcher.data?.response?.translateSettings1 !== "9"
+            ) {
+              setNeedPay(true);
+              setShowPaymentModal(true);
+            }
+          };
+          getUserWords();
+        } catch (error) {
+          shopify.toast.show(
+            t("The query of the remaining credits failed. Please try again."),
+          );
+        }
+      } else if (fetcher.data?.errorMsg === "words get error") {
         shopify.toast.show(
           t("The query of the remaining credits failed. Please try again."),
         );
@@ -561,22 +582,11 @@ const Index = () => {
     if (selectedItems && !selectedTranslatingItem) {
       setSource(languageSetting?.primaryLanguageCode);
       setTarget(selectedLanguageCode);
-      const response = await axios({
-        url: `${server}/shopify/getUserLimitChars?shopName=${shop}`,
-        method: "GET",
-      });
-      const words = response.data.response;
-      if (words?.totalChars <= words?.chars) {
-        setNeedPay(true);
-        setShowPaymentModal(true);
-      } else {
-        setNeedPay(false);
-        handleTranslate();
-      }
       const modalSetting = translateSettings1Options.find(
         (option) => option.value === translateSettings1,
       );
       setModel(modalSetting);
+      handleTranslate();
     } else {
       shopify.toast.show(
         t(
