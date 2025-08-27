@@ -290,7 +290,8 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
   const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
-  const [buyButtonLoading, setBuyButtonLoading] = useState(false);
+  const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
+  const [selectedPayPlanOption, setSelectedPayPlanOption] = useState<any>();
   // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
   // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
@@ -306,7 +307,6 @@ const Index = () => {
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
-  // const freeTrialFetcher = useFetcher<any>();
 
   useEffect(() => {
     // wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
@@ -348,7 +348,6 @@ const Index = () => {
         setCurrentCredits(data?.response?.chars);
         setMaxCredits(data?.response?.totalChars);
       } else {
-        
       }
     };
     getWords();
@@ -424,6 +423,7 @@ const Index = () => {
     () => [
       {
         title: "Basic",
+        yearlyTitle: "Basic - Yearly",
         monthlyPrice: 7.99,
         yearlyPrice: 6.39,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -451,6 +451,7 @@ const Index = () => {
       },
       {
         title: "Pro",
+        yearlyTitle: "Pro - Yearly",
         monthlyPrice: 19.99,
         yearlyPrice: 15.99,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -478,6 +479,7 @@ const Index = () => {
       },
       {
         title: "Premium",
+        yearlyTitle: "Premium - Yearly",
         monthlyPrice: 39.99,
         yearlyPrice: 31.99,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -664,7 +666,7 @@ const Index = () => {
         key: 0,
         label: t("How does the 5-day free trial work?"),
         children: t(
-          "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.",
+          "Choosing Pro or Premium gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.",
         ),
       },
       {
@@ -839,7 +841,7 @@ const Index = () => {
     plan: any;
     trialDays: number;
   }) => {
-    setBuyButtonLoading(true);
+    setSelectedPayPlanOption({ ...plan, yearly, trialDays });
     payForPlanFetcher.submit(
       { payForPlan: JSON.stringify({ ...plan, yearly, trialDays }) },
       { method: "POST" },
@@ -1039,10 +1041,13 @@ const Index = () => {
               <Button
                 type="default"
                 block
-                disabled={selectedPlan === 1 || selectedPlan === 2}
+                disabled={
+                  selectedPlan === 1 ||
+                  selectedPlan === 2 ||
+                  selectedPayPlanOption
+                }
                 style={{ marginBottom: hasOpenFreePlan ? "20px" : "70px" }}
                 onClick={() => setCancelPlanWarnModal(true)}
-                loading={buyButtonLoading}
               >
                 {selectedPlan === 1 || selectedPlan === 2
                   ? t("pricing.current_plan")
@@ -1157,16 +1162,15 @@ const Index = () => {
                   }}
                   loading={!selectedPlan}
                 >
-                  <Title level={5}>{plan.title}</Title>
+                  <Title level={5}>
+                    {yearly ? plan.yearlyTitle : plan.title}
+                  </Title>
                   <div style={{ margin: "12px 0" }}>
                     <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
                       ${yearly ? plan.yearlyPrice : plan.monthlyPrice}
                     </Text>
                     <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
                   </div>
-                  {/* <Paragraph type="secondary" style={{ fontSize: "13px" }}>
-                    {plan.subtitle}
-                  </Paragraph> */}
                   {yearly && (
                     <div
                       dangerouslySetInnerHTML={{ __html: plan.subtitle }}
@@ -1176,10 +1180,14 @@ const Index = () => {
                   <Button
                     type="default"
                     block
-                    disabled={plan.disabled}
+                    disabled={plan.disabled || selectedPayPlanOption}
                     style={{ marginBottom: "20px" }}
                     onClick={() => handlePayForPlan({ plan, trialDays: 0 })}
-                    loading={buyButtonLoading}
+                    loading={
+                      yearly == selectedPayPlanOption?.yearly &&
+                      plan.title == selectedPayPlanOption?.title &&
+                      !selectedPayPlanOption?.trialdays
+                    }
                   >
                     {plan.buttonText}
                   </Button>
@@ -1187,10 +1195,14 @@ const Index = () => {
                     <Button
                       type="primary"
                       block
-                      disabled={plan.disabled}
+                      disabled={plan.disabled || selectedPayPlanOption}
                       style={{ marginBottom: "20px" }}
                       onClick={() => handlePayForPlan({ plan, trialDays: 5 })}
-                      loading={buyButtonLoading}
+                      loading={
+                        yearly == selectedPayPlanOption?.yearly &&
+                        plan.title == selectedPayPlanOption?.title &&
+                        selectedPayPlanOption?.trialdays
+                      }
                     >
                       {t("Free trial")}
                     </Button>
