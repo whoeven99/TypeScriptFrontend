@@ -640,5 +640,7 @@
     "basic": "基本方案優惠，享10%折扣",
     "free": "升級到付費方案可享 10%–50% 的折扣"
   },
-  "Insufficient private API quota": "私有 API 配額不足"
+  "Insufficient private API quota": "私有 API 配額不足",
+  "Select a private key for translation. Only one target language can be selected.": "選擇一個私有金鑰進行翻譯。只能選擇一種目標語言。"
+
 }

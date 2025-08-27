@@ -640,5 +640,7 @@
   },
   "plan": "Plan",
   "support": "Destek",
-  "Insufficient private API quota": "Yetersiz özel API kotası"
+  "Insufficient private API quota": "Yetersiz özel API kotası",
+  "Select a private key for translation. Only one target language can be selected.": "Çeviri için özel anahtar seçin. Sadece bir hedef dil seçilebilir."
+
 }

@@ -639,5 +639,6 @@
   "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "Diese Sprache wird von Google Translate nicht unterstützt. Überprüfen Sie die Liste der unterstützten Sprachen in Google oder wechseln Sie zu einem anderen Modell.",
   "Task in progress": "Aufgabe in Bearbeitung",
   "Your private API can run only one translation at a time. Please wait until the current task is finished.": "Ihre private API kann jeweils nur eine Übersetzung ausführen. Bitte warten Sie, bis die aktuelle Aufgabe abgeschlossen ist.",
-  "Insufficient private API quota": "Unzureichendes privates API-Kontingent"
+  "Insufficient private API quota": "Unzureichendes privates API-Kontingent",
+  "Select a private key for translation. Only one target language can be selected.": "Wählen Sie einen privaten Schlüssel für die Übersetzung aus. Nur eine Zielsprache kann ausgewählt werden."
 }

@@ -640,5 +640,6 @@
   "Unsupported language":"Unsupported language",
   "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.":"This language is not supported by Google Translate. Check the supported list in Google or switch to another model.",
   "Task in progress":"Task in progress",
-  "Your private API can run only one translation at a time. Please wait until the current task is finished.":"Your private API can run only one translation at a time. Please wait until the current task is finished."
+  "Your private API can run only one translation at a time. Please wait until the current task is finished.":"Your private API can run only one translation at a time. Please wait until the current task is finished.",
+  "Select a private key for translation. Only one target language can be selected.": "Select a private key for translation. Only one target language can be selected."
 }

@@ -640,5 +640,7 @@
   },
   "plan": "Planera",
   "support": "stöd",
-  "Insufficient private API quota": "Otillräcklig privat API-kvot"
+  "Insufficient private API quota": "Otillräcklig privat API-kvot",
+  "Select a private key for translation. Only one target language can be selected.": "Välj en privat nyckel för översättning. Kan endast väljas en målspråk."
+
 }
