@@ -348,7 +348,6 @@ const Index = () => {
         setCurrentCredits(data?.response?.chars);
         setMaxCredits(data?.response?.totalChars);
       } else {
-        
       }
     };
     getWords();
@@ -424,6 +423,7 @@ const Index = () => {
     () => [
       {
         title: "Basic",
+        yearlyTitle: "Basic Plan – Billed Yearly",
         monthlyPrice: 7.99,
         yearlyPrice: 6.39,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -451,6 +451,7 @@ const Index = () => {
       },
       {
         title: "Pro",
+        yearlyTitle: "Pro Plan – Billed Yearly",
         monthlyPrice: 19.99,
         yearlyPrice: 15.99,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -478,6 +479,7 @@ const Index = () => {
       },
       {
         title: "Premium",
+        yearlyTitle: "Premium Plan – Billed Yearly",
         monthlyPrice: 39.99,
         yearlyPrice: 31.99,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -1157,16 +1159,15 @@ const Index = () => {
                   }}
                   loading={!selectedPlan}
                 >
-                  <Title level={5}>{plan.title}</Title>
+                  <Title level={5}>
+                    {yearly ? plan.yearlyTitle : plan.title}
+                  </Title>
                   <div style={{ margin: "12px 0" }}>
                     <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
                       ${yearly ? plan.yearlyPrice : plan.monthlyPrice}
                     </Text>
                     <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
                   </div>
-                  {/* <Paragraph type="secondary" style={{ fontSize: "13px" }}>
-                    {plan.subtitle}
-                  </Paragraph> */}
                   {yearly && (
                     <div
                       dangerouslySetInnerHTML={{ __html: plan.subtitle }}
