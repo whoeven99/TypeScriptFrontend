@@ -652,8 +652,6 @@ const Index = () => {
       case "8":
         if (customApikeyData) {
           const useData = checkApiKeyConfiguration(customApikeyData, 0);
-          console.log(useData);
-
           if (useData && useData?.usedToken >= useData?.tokenLimit) {
             // 如果私有key的额度超限，弹出提示框
             // setIsApiKeyModalOpen(true);
