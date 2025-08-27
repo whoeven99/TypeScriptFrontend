@@ -290,7 +290,8 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
   const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
-  const [buyButtonLoading, setBuyButtonLoading] = useState(false);
+  const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
+  const [selectedPayPlanOption, setSelectedPayPlanOption] = useState<any>();
   // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
   // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
@@ -306,7 +307,6 @@ const Index = () => {
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
-  // const freeTrialFetcher = useFetcher<any>();
 
   useEffect(() => {
     // wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
@@ -451,7 +451,7 @@ const Index = () => {
       },
       {
         title: "Pro",
-        yearlyTitle: "Pro – Yearly",
+        yearlyTitle: "Pro - Yearly",
         monthlyPrice: 19.99,
         yearlyPrice: 15.99,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -479,7 +479,7 @@ const Index = () => {
       },
       {
         title: "Premium",
-        yearlyTitle: "Premium – Yearly",
+        yearlyTitle: "Premium - Yearly",
         monthlyPrice: 39.99,
         yearlyPrice: 31.99,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -841,7 +841,7 @@ const Index = () => {
     plan: any;
     trialDays: number;
   }) => {
-    setBuyButtonLoading(true);
+    setSelectedPayPlanOption({ ...plan, yearly, trialDays });
     payForPlanFetcher.submit(
       { payForPlan: JSON.stringify({ ...plan, yearly, trialDays }) },
       { method: "POST" },
@@ -1041,10 +1041,13 @@ const Index = () => {
               <Button
                 type="default"
                 block
-                disabled={selectedPlan === 1 || selectedPlan === 2}
+                disabled={
+                  selectedPlan === 1 ||
+                  selectedPlan === 2 ||
+                  selectedPayPlanOption
+                }
                 style={{ marginBottom: hasOpenFreePlan ? "20px" : "70px" }}
                 onClick={() => setCancelPlanWarnModal(true)}
-                loading={buyButtonLoading}
               >
                 {selectedPlan === 1 || selectedPlan === 2
                   ? t("pricing.current_plan")
@@ -1177,10 +1180,14 @@ const Index = () => {
                   <Button
                     type="default"
                     block
-                    disabled={plan.disabled}
+                    disabled={plan.disabled || selectedPayPlanOption}
                     style={{ marginBottom: "20px" }}
                     onClick={() => handlePayForPlan({ plan, trialDays: 0 })}
-                    loading={buyButtonLoading}
+                    loading={
+                      yearly == selectedPayPlanOption?.yearly &&
+                      plan.title == selectedPayPlanOption?.title &&
+                      !selectedPayPlanOption?.trialdays
+                    }
                   >
                     {plan.buttonText}
                   </Button>
@@ -1188,10 +1195,14 @@ const Index = () => {
                     <Button
                       type="primary"
                       block
-                      disabled={plan.disabled}
+                      disabled={plan.disabled || selectedPayPlanOption}
                       style={{ marginBottom: "20px" }}
                       onClick={() => handlePayForPlan({ plan, trialDays: 5 })}
-                      loading={buyButtonLoading}
+                      loading={
+                        yearly == selectedPayPlanOption?.yearly &&
+                        plan.title == selectedPayPlanOption?.title &&
+                        selectedPayPlanOption?.trialdays
+                      }
                     >
                       {t("Free trial")}
                     </Button>
