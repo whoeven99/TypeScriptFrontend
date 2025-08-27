@@ -423,7 +423,7 @@ const Index = () => {
     () => [
       {
         title: "Basic",
-        yearlyTitle: "Basic Plan – Billed Yearly",
+        yearlyTitle: "Basic - Yearly",
         monthlyPrice: 7.99,
         yearlyPrice: 6.39,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -451,7 +451,7 @@ const Index = () => {
       },
       {
         title: "Pro",
-        yearlyTitle: "Pro Plan – Billed Yearly",
+        yearlyTitle: "Pro – Yearly",
         monthlyPrice: 19.99,
         yearlyPrice: 15.99,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -479,7 +479,7 @@ const Index = () => {
       },
       {
         title: "Premium",
-        yearlyTitle: "Premium Plan – Billed Yearly",
+        yearlyTitle: "Premium – Yearly",
         monthlyPrice: 39.99,
         yearlyPrice: 31.99,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -666,7 +666,7 @@ const Index = () => {
         key: 0,
         label: t("How does the 5-day free trial work?"),
         children: t(
-          "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.",
+          "Choosing Pro or Premium gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.",
         ),
       },
       {

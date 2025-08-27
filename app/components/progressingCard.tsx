@@ -795,12 +795,15 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                       >
                         {t("progressing.apikeySetting")}
                       </Button>
-                      <Button
+                      {/* <Button
                         block
                         icon={<PhoneOutlined />}
                         onClick={handleContactSupport}
                       >
                         {t("progressing.contactButton")}
+                      </Button> */}
+                      <Button block onClick={() => navigate("/app/translate")}>
+                        {t("progressing.reTranslate")}
                       </Button>
                     </div>
                   )}
