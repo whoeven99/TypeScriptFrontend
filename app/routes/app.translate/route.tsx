@@ -1682,13 +1682,11 @@ const Index = () => {
           open={isApiKeyModalOpen}
           onCancel={handleApiKeyModalClose}
           title={modalTypeObject[currentModal].Title}
+          centered
           footer={
-            <Space>
-              <Button type="primary" onClick={handleConfigureQuota}>
-                {modalTypeObject[currentModal].Button}
-              </Button>
-              <Button onClick={handleApiKeyModalClose}>{t("Cancel")}</Button>
-            </Space>
+            <Button type="primary" onClick={handleConfigureQuota}>
+              {modalTypeObject[currentModal].Button}
+            </Button>
           }
         >
           <Text>{modalTypeObject[currentModal].Body}</Text>
