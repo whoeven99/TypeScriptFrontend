@@ -635,11 +635,11 @@
   "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> 每年计费",
   "translate to": "翻译为",
   "This feature is available only with the paid plan.": "此功能仅在付费计划中可用。",
-  "Insufficient private API quotas": "私有 api 可用额度不足",
   "Configure now": "去配置",
   "The usage has exceeded your configured quota. Please update your settings.": "请重新配置额度",
   "Unsupported language": "该语言不支持翻译",
   "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "请登录 Google 查看支持的翻译语言列表，或者使用其他模型进行翻译",
   "Task in progress": "API 正在执行另一个翻译任务",
-  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "私有API只能同时翻译一种语言，请完成翻译后重试"
+  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "私有API只能同时翻译一种语言，请完成翻译后重试",
+  "Insufficient private API quota": "私有 api 可用额度不足"
 }

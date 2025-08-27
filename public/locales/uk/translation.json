@@ -632,11 +632,11 @@
   "{{credits}} credits/month": "{{credits}} кредитів/місяць",
   "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> використано, всього кредитів: <strong>{{maxCredits}}</strong>.",
   "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> виставляється один раз на рік",
-  "Insufficient private API quotas": "Недостатньо квот приватного API",
   "Configure now": "Налаштувати зараз",
   "The usage has exceeded your configured quota. Please update your settings.": "Використання перевищило налаштовану вами квоту. Будь ласка, оновіть свої налаштування.",
   "Unsupported language": "Непідтримувана мова",
   "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "Ця мова не підтримується Перекладачем Google. Перевірте список підтримуваних мов у Google або перейдіть на іншу модель.",
   "Task in progress": "Завдання виконується",
-  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "Ваш приватний API може виконувати лише один переклад одночасно. Будь ласка, зачекайте, поки поточне завдання завершиться."
+  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "Ваш приватний API може виконувати лише один переклад одночасно. Будь ласка, зачекайте, поки поточне завдання завершиться.",
+  "Insufficient private API quota": "Недостатня квота приватного API"
 }

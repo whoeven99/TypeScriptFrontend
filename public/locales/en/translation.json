@@ -633,7 +633,7 @@
   "1v1 support": "1v1 support",
   "Compare plans": "Compare plans",
   "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> billed once a year",
-  "Insufficient private API quotas":"Insufficient private API quotas",
+  "Insufficient private API quota":"Insufficient private API quota",
   "Configure now": "Configure now",
   "The usage has exceeded your configured quota. Please update your settings.":"The usage has exceeded your configured quota. Please update your settings.",
   "Unsupported language":"Unsupported language",
