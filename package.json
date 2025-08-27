@@ -4,7 +4,6 @@
   "scripts": {
     "build": "remix vite:build",
     "dev": "shopify app dev",
-    "translate": "node scripts/translate.js",
     "i18n:key": "ts-node ./i18n.js",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
@@ -26,7 +25,6 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
-    "@google-cloud/translate": "^9.2.0",
     "@prisma/client": "^5.17.0",
     "@react-spring/web": "^9.7.5",
     "@reduxjs/toolkit": "^2.2.7",
