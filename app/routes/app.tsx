@@ -423,7 +423,6 @@ export default function App() {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { plan, updateTime } = useSelector((state: any) => state.userConfig);
-  const planFetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
 

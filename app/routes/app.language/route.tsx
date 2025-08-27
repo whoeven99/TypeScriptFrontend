@@ -328,15 +328,31 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = await mutationShopLocaleEnable({
           shop,
           accessToken: accessToken as string,
-          addLanguages,
+          source: addLanguages?.primaryLanguage[0]?.locale || "",
+          targets: addLanguages?.selectedLanguages || [],
         }); // 处理逻辑
 
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: data,
-        };
+        if (data?.length > 0) {
+          const successItems = data.map((item) => {
+            if (item.status === "fulfilled" && item?.value) {
+              return item?.value;
+            }
+          });
+
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response: successItems,
+          };
+        } else {
+          return {
+            success: false,
+            errorCode: 0,
+            errorMsg: "",
+            response: [],
+          };
+        }
       } catch (error) {
         console.error("Error addLanguages language:", error);
         return {

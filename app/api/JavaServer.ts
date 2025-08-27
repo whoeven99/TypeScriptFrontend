@@ -1075,24 +1075,39 @@ export const GetTranslationItemsInfo = async ({
 
     console.log("GetTranslationItemsInfo Response: ", response.data);
 
-    const data = response.data.response;
-
-    res = [
-      ...res,
-      ...Object.keys(data).map((key) => {
-        return {
-          language: target,
-          type: data[key].itemName,
-          translatedNumber: data[key].translatedNumber,
-          totalNumber: data[key].totalNumber,
-        };
-      }),
-    ];
-    console.log("GetTranslationItemsInfo Return: ", res);
-    return res || [];
+    if (response.data?.success && response.data?.response != undefined) {
+      const data = response.data?.response;
+      res = [
+        ...res,
+        ...Object.keys(data).map((key) => {
+          return {
+            language: target,
+            type: data[key]?.itemName || "",
+            translatedNumber: data[key]?.translatedNumber || 0,
+            totalNumber: data[key]?.totalNumber || 0,
+          };
+        }),
+      ];
+      return {
+        ...response.data,
+        response: res,
+      };
+    } else {
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: [],
+      };
+    }
   } catch (error) {
     console.error("Error GetTranslationItemsInfo:", error);
-    return [];
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [],
+    };
   }
 };
 

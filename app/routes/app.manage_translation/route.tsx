@@ -95,10 +95,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           resourceType: itemsCount.resourceType,
         });
         console.log("GetTranslationItemsInfo: ", data);
-        return json({ data: data });
+        return data;
       } catch (error) {
         console.error("Error manage_translation itemsCount:", error);
-        return json({ data: [] });
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: [],
+        };
       }
     default:
       // 你可以在这里处理一个默认的情况，如果没有符合的条件
@@ -455,92 +460,142 @@ const Index = () => {
   }, [languageFetcher.data]);
 
   useEffect(() => {
-    if (productsFetcher.data?.data?.length > 0) {
-      dispatch(updateData(productsFetcher.data.data));
+    if (productsFetcher.data) {
+      if (
+        productsFetcher.data?.success &&
+        productsFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(productsFetcher.data?.response));
+      }
     }
   }, [productsFetcher.data]);
 
   useEffect(() => {
-    if (collectionsFetcher.data?.data?.length > 0) {
-      dispatch(updateData(collectionsFetcher.data.data));
+    if (collectionsFetcher.data) {
+      if (
+        collectionsFetcher.data?.success &&
+        collectionsFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(collectionsFetcher.data?.response));
+      }
     }
   }, [collectionsFetcher.data]);
 
   useEffect(() => {
-    if (articlesFetcher.data?.data?.length > 0) {
-      dispatch(updateData(articlesFetcher.data.data));
+    if (articlesFetcher.data) {
+      if (
+        articlesFetcher.data?.success &&
+        articlesFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(articlesFetcher.data?.response));
+      }
     }
   }, [articlesFetcher.data]);
 
   useEffect(() => {
-    if (blog_titlesFetcher.data?.data?.length > 0) {
-      dispatch(updateData(blog_titlesFetcher.data.data));
+    if (blog_titlesFetcher.data) {
+      if (
+        blog_titlesFetcher.data?.success &&
+        blog_titlesFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(blog_titlesFetcher.data?.response));
+      }
     }
   }, [blog_titlesFetcher.data]);
 
   useEffect(() => {
-    if (pagesFetcher.data?.data?.length > 0) {
-      dispatch(updateData(pagesFetcher.data.data));
+    if (pagesFetcher.data) {
+      if (
+        pagesFetcher.data?.success &&
+        pagesFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(pagesFetcher.data?.response));
+      }
     }
   }, [pagesFetcher.data]);
 
   useEffect(() => {
-    if (filtersFetcher.data?.data?.length > 0) {
-      dispatch(updateData(filtersFetcher.data.data));
+    if (filtersFetcher.data) {
+      if (
+        filtersFetcher.data?.success &&
+        filtersFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(filtersFetcher.data?.response));
+      }
     }
   }, [filtersFetcher.data]);
 
   useEffect(() => {
-    if (metaobjectsFetcher.data?.data?.length > 0) {
-      dispatch(updateData(metaobjectsFetcher.data.data));
+    if (metaobjectsFetcher.data) {
+      if (
+        metaobjectsFetcher.data?.success &&
+        metaobjectsFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(metaobjectsFetcher.data?.response));
+      }
     }
   }, [metaobjectsFetcher.data]);
 
   useEffect(() => {
-    if (navigationFetcher.data?.data?.length > 0) {
-      dispatch(updateData(navigationFetcher.data.data));
-    }
-  }, [navigationFetcher.data]);
-
-  useEffect(() => {
-    if (emailFetcher.data?.data?.length > 0) {
-      dispatch(updateData(emailFetcher.data.data));
-    }
-  }, [emailFetcher.data]);
-
-  useEffect(() => {
-    if (policiesFetcher.data?.data?.length > 0) {
-      dispatch(updateData(policiesFetcher.data.data));
+    if (policiesFetcher.data) {
+      if (
+        policiesFetcher.data?.success &&
+        policiesFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(policiesFetcher.data?.response));
+      }
     }
   }, [policiesFetcher.data]);
 
   useEffect(() => {
-    if (shopFetcher.data?.data?.length > 0) {
-      dispatch(updateData(shopFetcher.data.data));
+    if (shopFetcher.data) {
+      if (shopFetcher.data?.success && shopFetcher.data?.response?.length > 0) {
+        dispatch(updateData(shopFetcher.data?.response));
+      }
     }
   }, [shopFetcher.data]);
 
   useEffect(() => {
-    if (store_metadataFetcher.data?.data?.length > 0) {
-      dispatch(updateData(store_metadataFetcher.data.data));
+    if (store_metadataFetcher.data) {
+      if (
+        store_metadataFetcher.data?.success &&
+        store_metadataFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(store_metadataFetcher.data?.response));
+      }
     }
   }, [store_metadataFetcher.data]);
 
   useEffect(() => {
-    if (themeFetcher.data?.data?.length > 0) {
-      dispatch(updateData(themeFetcher.data.data));
+    if (themeFetcher.data) {
+      if (
+        themeFetcher.data?.success &&
+        themeFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(themeFetcher.data?.response));
+      }
     }
   }, [themeFetcher.data]);
 
   useEffect(() => {
-    if (deliveryFetcher.data?.data?.length > 0) {
-      dispatch(updateData(deliveryFetcher.data.data));
+    if (deliveryFetcher.data) {
+      if (
+        deliveryFetcher.data?.success &&
+        deliveryFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(deliveryFetcher.data?.response));
+      }
     }
   }, [deliveryFetcher.data]);
 
   useEffect(() => {
-    if (shippingFetcher.data?.data?.length > 0) {
-      dispatch(updateData(shippingFetcher.data.data));
+    if (shippingFetcher.data) {
+      if (
+        shippingFetcher.data?.success &&
+        shippingFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(shippingFetcher.data.response));
+      }
     }
   }, [shippingFetcher.data]);
 
