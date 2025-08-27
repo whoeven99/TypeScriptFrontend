@@ -639,5 +639,7 @@
   "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "Ця мова не підтримується Перекладачем Google. Перевірте список підтримуваних мов у Google або перейдіть на іншу модель.",
   "Task in progress": "Завдання виконується",
   "Your private API can run only one translation at a time. Please wait until the current task is finished.": "Ваш приватний API може виконувати лише один переклад одночасно. Будь ласка, зачекайте, поки поточне завдання завершиться.",
-  "Insufficient private API quota": "Недостатня квота приватного API"
+  "Insufficient private API quota": "Недостатня квота приватного API",
+  "Select a private key for translation. Only one target language can be selected.": "Виберіть приватний ключ для перекладу. Можна вибрати лише один цільовий мовний пакет."
+
 }

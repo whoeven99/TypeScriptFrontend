@@ -640,5 +640,6 @@
     "get_start": "始めましょう",
     "for_large_teams": "大規模チーム向け"
   },
-  "Insufficient private API quota": "プライベート API 割り当てが不足しています"
+  "Insufficient private API quota": "プライベート API 割り当てが不足しています",
+  "Select a private key for translation. Only one target language can be selected.": "翻訳に使用するプライベートキーを選択してください。翻訳先の言語は1つだけ選択できます。"
 }

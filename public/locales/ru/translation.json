@@ -640,5 +640,6 @@
   },
   "plan": "План",
   "support": "поддерживать",
-  "Insufficient private API quota": "Недостаточная квота частного API"
+  "Insufficient private API quota": "Недостаточная квота частного API",
+  "Select a private key for translation. Only one target language can be selected.": "Выберите приватный ключ для перевода. Можно выбрать только одну целевую язык."
 }

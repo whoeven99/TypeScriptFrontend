@@ -642,5 +642,7 @@
   "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "请登录 Google 查看支持的翻译语言列表，或者使用其他模型进行翻译",
   "Task in progress": "API 正在执行另一个翻译任务",
   "Your private API can run only one translation at a time. Please wait until the current task is finished.": "私有API只能同时翻译一种语言，请完成翻译后重试",
-  "Insufficient private API quota": "私有 api 可用额度不足"
+  "Insufficient private API quota": "私有 api 可用额度不足",
+  "Select a private key for translation. Only one target language can be selected.": "选择一个私有 key 进行翻译，只能选择一种目标语言"
+
 }

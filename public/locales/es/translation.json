@@ -640,5 +640,6 @@
     "get_start": "Empezar",
     "for_large_teams": "Para equipos grandes"
   },
-  "Insufficient private API quota": "Cuota de API privada insuficiente"
+  "Insufficient private API quota": "Cuota de API privada insuficiente",
+  "Select a private key for translation. Only one target language can be selected.": "Selecciona una clave privada para la traducción. Solo se puede seleccionar una lengua objetivo."
 }

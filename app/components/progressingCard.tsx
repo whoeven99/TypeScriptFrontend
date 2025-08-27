@@ -49,45 +49,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         action: "/app",
       },
     );
-    async function getProgressData() {
-      const progressData = await GetProgressData({
-        shopName: shop,
-        server,
-        target: target[index],
-      });
-
-      if (
-        !progressData?.response?.TotalQuantity &&
-        !progressData?.response?.RemainingQuantity
-      ) {
-        return;
-      }
-
-      const progress = (
-        ((progressData?.response?.TotalQuantity -
-          progressData?.response?.RemainingQuantity) /
-          progressData?.response?.TotalQuantity) *
-        100
-      ).toFixed(2);
-
-      setProgressNumber({
-        hasTranslated:
-          progressData?.response?.TotalQuantity -
-          progressData?.response?.RemainingQuantity,
-        totalNumber: progressData?.response?.TotalQuantity,
-      });
-
-      if (typeof progress == "string" || typeof progress == "number") {
-        setProgress(parseFloat(progress));
-      }
-
-      if (!progressData?.response?.TranslateType) {
-        setItemsVisible(true);
-      }
-    }
-
-    getProgressData();
-
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -156,6 +117,10 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
 
           if (typeof progress == "string" || typeof progress == "number") {
             setProgress(parseFloat(progress));
+          }
+
+          if (!progressData?.response?.TranslateType) {
+            setItemsVisible(true);
           }
         }
 
@@ -239,6 +204,10 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           if (typeof progress == "string" || typeof progress == "number") {
             setProgress(parseFloat(progress));
           }
+
+          if (!progressData?.response?.TranslateType) {
+            setItemsVisible(true);
+          }
         }
 
         async function getUserValue() {
@@ -276,6 +245,46 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       );
       setStatus(fetcher.data?.translatingLanguage[0]?.status);
       setIndex(0);
+      async function getProgressData() {
+        const progressData = await GetProgressData({
+          shopName: shop,
+          server,
+          target: fetcher.data?.translatingLanguage.map(
+            (item: any) => item.target,
+          )[index],
+        });
+
+        if (
+          !progressData?.response?.TotalQuantity &&
+          !progressData?.response?.RemainingQuantity
+        ) {
+          return;
+        }
+
+        const progress = (
+          ((progressData?.response?.TotalQuantity -
+            progressData?.response?.RemainingQuantity) /
+            progressData?.response?.TotalQuantity) *
+          100
+        ).toFixed(2);
+
+        setProgressNumber({
+          hasTranslated:
+            progressData?.response?.TotalQuantity -
+            progressData?.response?.RemainingQuantity,
+          totalNumber: progressData?.response?.TotalQuantity,
+        });
+
+        if (typeof progress == "string" || typeof progress == "number") {
+          setProgress(parseFloat(progress));
+        }
+
+        if (!progressData?.response?.TranslateType) {
+          setItemsVisible(true);
+        }
+      }
+
+      getProgressData();
       setLoading(false);
     }
   }, [fetcher.data]);

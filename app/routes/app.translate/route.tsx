@@ -585,7 +585,11 @@ const Index = () => {
       (translateSettings1 === "8" || translateSettings1 === "9") &&
       selectedLanguageCode.length >= 2
     ) {
-      shopify.toast.show("选择私有key进行翻译，只能选择一种目标语言");
+      shopify.toast.show(
+        t(
+          "Select a private key for translation. Only one target language can be selected.",
+        ),
+      );
       return false;
     }
     switch (translateSettings1) {

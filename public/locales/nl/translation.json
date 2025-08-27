@@ -640,5 +640,7 @@
     "get_start": "Aan de slag",
     "for_large_teams": "Voor grote teams"
   },
-  "Insufficient private API quota": "Onvoldoende privé-API-quotum"
+  "Insufficient private API quota": "Onvoldoende privé-API-quotum",
+  "Select a private key for translation. Only one target language can be selected.": "Selecteer een privé-sleutel voor vertaling. Er kan slechts één doeltaal worden geselecteerd."
+
 }
