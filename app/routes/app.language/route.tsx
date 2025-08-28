@@ -831,7 +831,7 @@ const Index = () => {
     });
     fetcher.submit(
       {
-        log: `${shop} 前往翻译${selectedLanguageCode.join(",")}, 从语言页面点击`,
+        log: `${shop} 前往翻译${selectedLanguageCode?.join(",")}, 从语言页面点击`,
       },
       {
         method: "POST",
@@ -921,7 +921,7 @@ const Index = () => {
         shopify.toast.show(t("Auto translate updated successfully"));
         fetcher.submit(
           {
-            log: `${shop} 自动翻译${checked ? "开启" : "关闭"}${row.locale}`,
+            log: `${shop} 自动翻译${checked ? "开启" : "关闭"}${row?.locale}`,
           },
           {
             method: "POST",

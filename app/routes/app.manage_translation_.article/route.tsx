@@ -772,11 +772,11 @@ const Index = () => {
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response);
+        handleInputChange(key, data?.response);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
-            log: `${shop} 从翻译管理-文章页面点击单行翻译返回结果 ${data.response}`,
+            log: `${shop} 从翻译管理-文章页面点击单行翻译返回结果 ${data?.response}`,
           },
           {
             method: "POST",
