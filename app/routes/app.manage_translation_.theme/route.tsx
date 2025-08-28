@@ -58,7 +58,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  console.log(`${shop} load manage_translation_theme`);
+  console.log(`${shop} 目前在翻译管理-主题页面`);
 
   try {
     return json({
@@ -73,7 +73,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
-  console.log("url: ", url);
 
   const searchTerm = url.searchParams.get("language");
 
@@ -89,7 +88,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     switch (true) {
       case !!loading:
-        console.log("searchTerm: ", searchTerm);
         try {
           const response = await admin.graphql(
             `#graphql
@@ -122,7 +120,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             response: data?.data?.translatableResources?.nodes || [],
           };
         } catch (error) {
-          console.log("Error manage theme loading:", error);
+          console.error("Error manage theme loading:", error);
           return {
             success: false,
             errorCode: 0,
@@ -139,7 +137,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
           return json({ data: data, confirmData });
         } catch (error) {
-          console.log("Error manage theme confirmData:", error);
+          console.error("Error manage theme confirmData:", error);
           return {
             data: [],
             confirmData,
@@ -269,11 +267,8 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
-    console.log("themes: ", themes);
-    console.log(isManualChangeRef.current);
     if (themes.length && isManualChangeRef.current) {
       const data = generateMenuItemsArray(themes);
-      console.log("data: ", data);
       setResourceData(data);
       setFilteredResourceData(data);
       isManualChangeRef.current = false;
@@ -536,10 +531,6 @@ const Index = () => {
     );
     setFilteredResourceData(filteredData);
   };
-
-  useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
 
   const handleConfirm = () => {
     const formData = new FormData();

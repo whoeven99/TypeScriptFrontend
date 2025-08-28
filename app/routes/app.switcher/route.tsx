@@ -100,7 +100,7 @@ const planMapping = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  console.log(`${shop} load switcher`);
+  console.log(`${shop} 目前在切换器页面`);
   return {
     shop,
     server: process.env.SERVER_URL,
@@ -213,6 +213,8 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
+
+  const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
   const shopFetcher = useFetcher<any>();
 
@@ -229,15 +231,6 @@ const Index = () => {
     if (switcherEnableCardOpen) {
       setSwitcherEnableCardOpen(switcherEnableCardOpen === "true");
     }
-    // fetcher.submit(
-    //   {
-    //     loading: JSON.stringify(true),
-    //   },
-    //   {
-    //     method: "POST",
-    //     action: "/app/switcher",
-    //   },
-    // );
     themeFetcher.submit(
       {
         theme: JSON.stringify(true),
@@ -411,7 +404,6 @@ const Index = () => {
             setWithoutMoneyValue(moneyFormatHtmlData);
           }
         }
-
         setDefaultCurrencyCode(shopFetcher.data.response.defaultCurrencyCode);
       }
     } else {
@@ -623,6 +615,15 @@ const Index = () => {
     if (isGeoLocationEnabled) {
       await axios.post(`${server}/userIp/addOrUpdateUserIp?shopName=${shop}`);
     }
+    fetcher.submit(
+      {
+        log: `${shop} 切换器配置修改数据保存成功`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   };
 
   const handleCancel = () => {

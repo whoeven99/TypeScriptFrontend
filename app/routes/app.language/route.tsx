@@ -47,7 +47,6 @@ import TranslatedIcon from "~/components/translateIcon";
 import { useTranslation } from "react-i18next";
 import PrimaryLanguage from "./components/primaryLanguage";
 import AddLanguageModal from "./components/addLanguageModal";
-import PreviewModal from "~/components/previewModal";
 import ScrollNotice from "~/components/ScrollNotice";
 import DeleteConfirmModal from "./components/deleteConfirmModal";
 import TranslationWarnModal from "~/components/translationWarnModal";
@@ -97,7 +96,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
-  console.log(`${shop} load language`);
+  console.log(`${shop} 目前在语言页面`);
 
   return json({
     server: process.env.SERVER_URL,
@@ -245,19 +244,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         // 并发执行所有请求
         const results = await Promise.allSettled(promises);
 
-        results.forEach((result) => {
-          if (result.status === "fulfilled" && result.value) {
-            console.log(
-              `${shop} webPresences result: `,
-              result.value.data?.webPresenceUpdate?.userErrors,
-            );
-            console.log(
-              `${shop} webPresences result: `,
-              result.value.data?.webPresenceUpdate?.webPresence,
-            );
-          }
-        });
-
         if (results.every((item) => item.status === "fulfilled")) {
           return json({
             success: true,
@@ -328,7 +314,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = await mutationShopLocaleEnable({
           shop,
           accessToken: accessToken as string,
-          source: addLanguages?.primaryLanguage[0]?.locale || "",
+          source: addLanguages?.primaryLanguage?.locale || "",
           targets: addLanguages?.selectedLanguages || [],
         }); // 处理逻辑
 
@@ -435,13 +421,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             },
           );
           const data = await Promise.allSettled(promise);
-          data.forEach((result) => {
-            if (result.status === "fulfilled") {
-              console.log("Request successful:", result.value);
-            } else {
-              console.error("Request failed:", result.reason);
-            }
-          });
+
           return json({ data: data });
         }
       } catch (error) {
@@ -474,8 +454,6 @@ const Index = () => {
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
   const [deleteloading, setDeleteLoading] = useState(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [previewModalVisible, setPreviewModalVisible] =
-    useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(mobile);
   const [dontPromptAgain, setDontPromptAgain] = useState(false);
   const [deleteConfirmModalVisible, setDeleteConfirmModalVisible] =
@@ -500,6 +478,7 @@ const Index = () => {
     [dataSource, selectedRowKeys],
   );
 
+  const fetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
@@ -641,6 +620,15 @@ const Index = () => {
       // 结束加载状态
       setDeleteLoading(false);
       shopify.toast.show(t("Delete successfully"));
+      fetcher.submit(
+        {
+          log: `${shop} 删除语言${deleteData}`,
+        },
+        {
+          method: "POST",
+          action: "/log",
+        },
+      );
     }
   }, [deleteFetcher.data]);
 
@@ -700,18 +688,27 @@ const Index = () => {
           t("{{ locale }} is published", { locale: response.name }),
         );
       } else {
-        const response = publishFetcher.data.data;
+        const response = publishFetcher.data?.data;
         dispatch(
-          setPublishLoadingState({ locale: response.locale, loading: false }),
+          setPublishLoadingState({ locale: response?.locale, loading: false }),
         );
         dispatch(
           setPublishState({
-            locale: response.locale,
-            published: response.published,
+            locale: response?.locale,
+            published: response?.published,
           }),
         );
         shopify.toast.show(
-          t("{{ locale }} is unPublished", { locale: response.name }),
+          t("{{ locale }} is unPublished", { locale: response?.name }),
+        );
+        fetcher.submit(
+          {
+            log: `${shop} 取消发布语言${response?.locale}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
         );
       }
     }
@@ -811,32 +808,52 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button
-            onClick={() =>
-              navigate("/app/translate", {
-                state: {
-                  from: "/app/language",
-                  selectedLanguageCode: [record.locale],
-                },
-              })
-            }
+            onClick={() => navigateToTranslate([record.locale])}
             style={{ width: "100px" }}
             type="primary"
           >
             {record?.status === 1 ? t("Update") : t("Translate")}
           </Button>
-          <Button
-            onClick={() => {
-              navigate("/app/manage_translation", {
-                state: { key: record.locale },
-              });
-            }}
-          >
+          <Button onClick={() => navigateToManage(record.locale)}>
             {t("Manage")}
           </Button>
         </Space>
       ),
     },
   ];
+
+  const navigateToTranslate = (selectedLanguageCode: string[]) => {
+    navigate("/app/translate", {
+      state: {
+        from: "/app/language",
+        selectedLanguageCode: selectedLanguageCode,
+      },
+    });
+    fetcher.submit(
+      {
+        log: `${shop} 前往翻译${selectedLanguageCode.join(",")}, 从语言页面点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+  };
+
+  const navigateToManage = (selectedLanguageCode: string) => {
+    navigate("/app/manage_translation", {
+      state: { key: selectedLanguageCode },
+    });
+    fetcher.submit(
+      {
+        log: `${shop} 前往管理${selectedLanguageCode}, 从语言页面点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+  };
 
   const handleOpenModal = () => {
     if (dataSource.length === 20) {
@@ -902,6 +919,15 @@ const Index = () => {
         dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
         dispatch(setAutoTranslateState({ locale, autoTranslate: checked }));
         shopify.toast.show(t("Auto translate updated successfully"));
+        fetcher.submit(
+          {
+            log: `${shop} 自动翻译${checked ? "开启" : "关闭"}${row.locale}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       }
     }
     // } else {
@@ -913,7 +939,6 @@ const Index = () => {
     // }
   };
 
-  //表格编辑
   const handleDelete = () => {
     setDeleteConfirmModalVisible(false);
     if (dontPromptAgain) {
@@ -1108,14 +1133,11 @@ const Index = () => {
         </div>
       </Space>
       <AddLanguageModal
+        shop={shop}
         isVisible={isLanguageModalOpen}
         setIsModalOpen={setIsLanguageModalOpen}
         languageLocaleInfo={languageLocaleInfo}
         primaryLanguage={shopPrimaryLanguage[0]}
-      />
-      <PreviewModal
-        visible={previewModalVisible}
-        setVisible={setPreviewModalVisible}
       />
       <DeleteConfirmModal
         isVisible={deleteConfirmModalVisible}
@@ -1138,6 +1160,7 @@ const Index = () => {
         setShow={setShowWarnModal}
       />
       <PublishModal
+        shop={shop}
         isVisible={isPublishModalOpen}
         setIsModalOpen={setIsPublishModalOpen}
         languageCode={publishModalLanguageCode}

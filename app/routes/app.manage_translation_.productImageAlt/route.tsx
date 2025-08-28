@@ -63,7 +63,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  console.log(`${shop} load manage_translation_productImage`);
+  console.log(`${shop} 目前在翻译管理-产品图片描述页面`);
 
   const formData = await request.formData();
   const loading: any = JSON.parse(formData.get("loading") as string);

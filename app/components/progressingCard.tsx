@@ -34,13 +34,14 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   const [itemsVisible, setItemsVisible] = useState<boolean>(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const fetcher = useFetcher<any>();
+  const fetcher = useFetcher<any>()
+  const languagefetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
   const stopTranslateFetcher = useFetcher<any>();
 
   useEffect(() => {
-    fetcher.submit(
+    languagefetcher.submit(
       {
         nearTransaltedData: JSON.stringify(true),
       },
@@ -88,49 +89,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           action: "/app",
         });
 
-        async function getProgressData() {
-          const progressData = await GetProgressData({
-            shopName: shop,
-            server,
-            target: target[index],
-          });
-
-          if (
-            !progressData?.response?.TotalQuantity &&
-            !progressData?.response?.RemainingQuantity
-          ) {
-            return;
-          }
-
-          const progress = (
-            ((progressData?.response?.TotalQuantity -
-              progressData?.response?.RemainingQuantity) /
-              progressData?.response?.TotalQuantity) *
-            100
-          ).toFixed(2);
-          setProgressNumber({
-            hasTranslated:
-              progressData?.response?.TotalQuantity -
-              progressData?.response?.RemainingQuantity,
-            totalNumber: progressData?.response?.TotalQuantity,
-          });
-
-          if (typeof progress == "string" || typeof progress == "number") {
-            setProgress(parseFloat(progress));
-          }
-
-          if (!progressData?.response?.TranslateType) {
-            setItemsVisible(true);
-          }
-        }
-
         async function getUserValue() {
           const data = await GetUserValue({ shop: shop, server });
           setValue(data?.response?.value || "");
           setTranslateStatus(data?.response?.status || 2);
         }
 
-        getProgressData();
+        getProgressData(target[index]);
         getUserValue();
 
         // setValue(userValue.data.userValue);
@@ -166,57 +131,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           action: "/app",
         });
 
-        async function getProgressData() {
-          const progressData = await GetProgressData({
-            shopName: shop,
-            server,
-            target: target[index],
-          });
-
-          if (
-            !progressData?.response?.TotalQuantity &&
-            !progressData?.response?.RemainingQuantity
-          ) {
-            return;
-          }
-
-          const progress = (
-            ((progressData?.response?.TotalQuantity -
-              progressData?.response?.RemainingQuantity) /
-              progressData?.response?.TotalQuantity) *
-            100
-          ).toFixed(2);
-
-          setProgressNumber({
-            hasTranslated:
-              progressData?.response?.TotalQuantity -
-                progressData?.response?.RemainingQuantity >=
-              0
-                ? progressData?.response?.TotalQuantity -
-                  progressData?.response?.RemainingQuantity
-                : 0,
-            totalNumber:
-              progressData?.response?.TotalQuantity >= 0
-                ? progressData?.response?.TotalQuantity
-                : 0,
-          });
-
-          if (typeof progress == "string" || typeof progress == "number") {
-            setProgress(parseFloat(progress));
-          }
-
-          if (!progressData?.response?.TranslateType) {
-            setItemsVisible(true);
-          }
-        }
-
         async function getUserValue() {
           const userValue = await GetUserValue({ shop: shop, server });
           setValue(userValue?.response?.value || "");
           setTranslateStatus(userValue?.response?.status || 2);
         }
 
-        getProgressData();
+        getProgressData(target[index]);
         getUserValue();
 
         // setValue(userValue.data.userValue);
@@ -238,54 +159,19 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   }, [status, item]); // 添加 item 到依赖数组
 
   useEffect(() => {
-    if (fetcher.data) {
-      setSource(fetcher.data.response[0]?.source);
-      setTarget(fetcher.data?.response?.map((item: any) => item?.target));
-      setStatus(fetcher.data?.response[0]?.status);
+    if (languagefetcher.data) {
+      setSource(languagefetcher.data.response[0]?.source);
+      setTarget(
+        languagefetcher.data?.response?.map((item: any) => item?.target),
+      );
+      setStatus(languagefetcher.data?.response[0]?.status);
       setIndex(0);
-      async function getProgressData() {
-        const progressData = await GetProgressData({
-          shopName: shop,
-          server,
-          target: fetcher.data?.translatingLanguage.map(
-            (item: any) => item.target,
-          )[index],
-        });
-
-        if (
-          !progressData?.response?.TotalQuantity &&
-          !progressData?.response?.RemainingQuantity
-        ) {
-          return;
-        }
-
-        const progress = (
-          ((progressData?.response?.TotalQuantity -
-            progressData?.response?.RemainingQuantity) /
-            progressData?.response?.TotalQuantity) *
-          100
-        ).toFixed(2);
-
-        setProgressNumber({
-          hasTranslated:
-            progressData?.response?.TotalQuantity -
-            progressData?.response?.RemainingQuantity,
-          totalNumber: progressData?.response?.TotalQuantity,
-        });
-
-        if (typeof progress == "string" || typeof progress == "number") {
-          setProgress(parseFloat(progress));
-        }
-
-        if (!progressData?.response?.TranslateType) {
-          setItemsVisible(true);
-        }
-      }
-
-      getProgressData();
       setLoading(false);
+      getProgressData(
+        languagefetcher.data?.response.map((item: any) => item?.target)[index],
+      );
     }
-  }, [fetcher.data]);
+  }, [languagefetcher.data]);
 
   useEffect(() => {
     if (statusFetcher.data?.data) {
@@ -438,26 +324,46 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         setStatus(7);
         setTranslateStatus(1);
       } else {
-        
       }
     }
   }, [stopTranslateFetcher.data]);
 
-  // useEffect(() => {
-  //     if (typeof itemsFetcher.data?.data[0]?.totalNumber === 'number' && typeof itemsFetcher.data?.data[0]?.translatedNumber === 'number') {
-  //         setItemsCount({
-  //             totalNumber: itemsFetcher.data?.data[0]?.totalNumber || 0,
-  //             translatedNumber: itemsFetcher.data?.data[0]?.translatedNumber || 0,
-  //         });
-  //     }
-  // }, [itemsFetcher.data]);
+  const getProgressData = async (target: string) => {
+    const progressData = await GetProgressData({
+      shopName: shop,
+      server,
+      target: target,
+    });
 
-  // useEffect(() => {
-  //   if (resourceType) {
-  //     const progress = calculateProgressByType(resourceType);
-  //     setProgress(progress);
-  //   }
-  // }, [resourceType]);
+    if (
+      !progressData?.response?.TotalQuantity &&
+      !progressData?.response?.RemainingQuantity
+    ) {
+      return;
+    }
+
+    const progress = (
+      ((progressData?.response?.TotalQuantity -
+        progressData?.response?.RemainingQuantity) /
+        progressData?.response?.TotalQuantity) *
+      100
+    ).toFixed(2);
+
+    setProgressNumber({
+      hasTranslated:
+        progressData?.response?.TotalQuantity -
+        progressData?.response?.RemainingQuantity,
+      totalNumber: progressData?.response?.TotalQuantity,
+    });
+
+    if (typeof progress == "string" || typeof progress == "number") {
+      setProgress(parseFloat(progress));
+    }
+
+    if (!progressData?.response?.TranslateType) {
+      setItemsVisible(true);
+    }
+  };
 
   const handleStopTranslate = () => {
     stopTranslateFetcher.submit(

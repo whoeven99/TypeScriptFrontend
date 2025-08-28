@@ -58,7 +58,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  console.log(`${shop} load manage_translation_metafield`);
+  console.log(`${shop} 目前在翻译管理-元字段页面`);
 
   try {
     const metafields = await queryNextTransType({

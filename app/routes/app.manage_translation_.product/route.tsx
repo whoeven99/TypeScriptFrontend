@@ -95,7 +95,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  console.log(`${shop} load manage_translation_product`);
+  console.log(`${shop} 目前在翻译管理-产品页面`);
   return json({
     server: process.env.SERVER_URL,
     shopName: shop,
@@ -1430,17 +1430,7 @@ const Index = () => {
       return;
     }
     setLoadingItems((prev) => [...prev, key]);
-    console.log({
-      shopName: shopName,
-      source: productBaseData[0]?.locale,
-      target: searchTerm || "",
-      resourceType: resourceType,
-      context: context,
-      key: key,
-      type: type,
-      server: server || "",
-    });
-
+    
     const data = await SingleTextTranslate({
       shopName: shopName,
       source: productBaseData[0]?.locale,

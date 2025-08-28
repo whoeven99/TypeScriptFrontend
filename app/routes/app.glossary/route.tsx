@@ -68,7 +68,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
-  console.log(`${shop} load glossary`);
+  console.log(`${shop} 目前在术语表页面`);
 
   return {
     shop,
@@ -105,13 +105,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               return DeleteGlossaryInfo({ id: item });
             });
             const data = await Promise.allSettled(promise);
-            data.forEach((result) => {
-              if (result.status === "fulfilled") {
-                console.log("Request successful:", result.value);
-              } else {
-                console.error("Request failed:", result.reason);
-              }
-            });
             return json({ data: data });
           }
         } catch (error) {

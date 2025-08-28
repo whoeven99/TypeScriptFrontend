@@ -32,13 +32,13 @@ export interface GLossaryDataType {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  console.log(`${shop} load apikeySetting`);
+  console.log(`${shop} 目前在私有key页面`);
+
   return null;
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  console.log("adminAuthResult.session", adminAuthResult.session);
 
   const { shop, accessToken } = adminAuthResult.session;
   try {
@@ -76,7 +76,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!updateUserAPIKey:
         try {
           const { apiKey, count, modelVersion, keywords, apiName, apiStatus, isSelected } = updateUserAPIKey;
-          console.log("updateUserAPIKey", updateUserAPIKey);
 
           const countNum = Number(count);
           if (isNaN(countNum) || countNum < 0) {
@@ -90,7 +89,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       case !!testUserAPIKey:
         try {
           const { content, apiName, targetCode, prompt } = testUserAPIKey;
-          console.log('testUserAPIKey', testUserAPIKey);
 
           const data = await TranslationInterface({ shop, apiName, sourceText: content, targetCode, prompt });
           return json({ data });

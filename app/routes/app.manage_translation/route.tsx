@@ -61,8 +61,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
 
-  console.log(`${shop} load manage`);
+  console.log(`${shop} 目前在翻译管理页面`);
   return json({
+    shop,
     searchTerm: searchTerm || "",
   });
 };
@@ -94,7 +95,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           target: itemsCount.target,
           resourceType: itemsCount.resourceType,
         });
-        console.log("GetTranslationItemsInfo: ", data);
         return data;
       } catch (error) {
         console.error("Error manage_translation itemsCount:", error);
@@ -112,7 +112,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { searchTerm } = useLoaderData<typeof loader>();
+  const { shop, searchTerm } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
@@ -134,6 +134,7 @@ const Index = () => {
     (state: any) => state.languageItemsData,
   );
 
+  const fetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
   const collectionsFetcher = useFetcher<any>();
@@ -183,6 +184,7 @@ const Index = () => {
       navigation: "collection",
     },
   ];
+
   const onlineStoreDataSource: TableDataType[] = [
     {
       key: "shop",
@@ -837,6 +839,19 @@ const Index = () => {
     },
   ];
 
+  const navigateToPricing = () => {
+    navigate("/app/pricing");
+    fetcher.submit(
+      {
+        log: `${shop} 前往付费页面, 从翻译管理页面点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+  };
+
   return (
     <Page>
       <TitleBar title={t("Manage Translation")} />
@@ -885,7 +900,7 @@ const Index = () => {
                     trigger="hover"
                     showCancel={false}
                     okText={t("Upgrade")}
-                    onConfirm={() => navigate("/app/pricing")}
+                    onConfirm={() => navigateToPricing()}
                   >
                     <InfoCircleOutlined />
                   </Popconfirm>
@@ -960,7 +975,7 @@ const Index = () => {
         centered
         footer={null}
       >
-        <Space direction="vertical" size={"small"}>
+        <Space direction="vertical" size={"small"} style={{ width: "100%" }}>
           <Text>{t("Import steps:")}</Text>
           <Text>
             {t("1. Click to download the product import template")}{" "}
@@ -977,6 +992,15 @@ const Index = () => {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                fetcher.submit(
+                  {
+                    log: `${shop} 下载批量导入文件`,
+                  },
+                  {
+                    method: "POST",
+                    action: "/log",
+                  },
+                );
               }}
             >
               Shop_translation.csv

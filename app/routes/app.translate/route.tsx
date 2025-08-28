@@ -83,7 +83,7 @@ interface apiKeyConfiguration {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  console.log(`${shop} load translate`);
+  console.log(`${shop} 目前在翻译设置页面`);
   return {
     shop,
     server: process.env.SERVER_URL,
@@ -148,11 +148,8 @@ const Index = () => {
   const dispatch = useDispatch();
   const languageCardRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
-  const loadingLanguageFetcher = useFetcher<any>();
   const navigate = useNavigate();
   const location = useLocation();
-  const fetcher = useFetcher<any>();
-  const customApiKeyFetcher = useFetcher<any>();
 
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [currentModal, setCurrentModal] = useState<
@@ -175,6 +172,11 @@ const Index = () => {
       Button: `${t("OK")}`,
     },
   };
+
+  const fetcher = useFetcher<any>();
+  const translateFetcher = useFetcher<any>();
+  const loadingLanguageFetcher = useFetcher<any>();
+  const customApiKeyFetcher = useFetcher<any>();
 
   const handleConfigureQuota = () => {
     switch (currentModal) {
@@ -294,6 +296,16 @@ const Index = () => {
             })),
           );
 
+          fetcher.submit(
+            {
+              log: `${shop} 翻译设置页面数据加载完毕`,
+            },
+            {
+              method: "POST",
+              action: "/log",
+            },
+          );
+
           setLoadingLanguage(false);
         };
         GetLanguageDataFront();
@@ -321,14 +333,23 @@ const Index = () => {
   }, [customApiKeyFetcher.data]);
 
   useEffect(() => {
-    if (fetcher.data) {
-      if (fetcher.data?.success) {
+    if (translateFetcher.data) {
+      if (translateFetcher.data?.success) {
         shopify.toast.show(t("The translation task is in progress."));
         navigate("/app");
-      } else if (!fetcher.data?.success) {
+        fetcher.submit(
+          {
+            log: `${shop} 翻译成功, 正在跳转至主页面`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
+      } else if (!translateFetcher.data?.success) {
         if (
-          fetcher.data?.response?.translateSettings1 !== "8" &&
-          fetcher.data?.response?.translateSettings1 !== "9"
+          translateFetcher.data?.response?.translateSettings1 !== "8" &&
+          translateFetcher.data?.response?.translateSettings1 !== "9"
         ) {
           const getUserWords = async () => {
             const data = await GetUserWords({ shop, server });
@@ -348,17 +369,17 @@ const Index = () => {
           getUserWords();
         }
 
-        if (fetcher?.data?.errorCode === 10014) {
+        if (translateFetcher?.data?.errorCode === 10014) {
           setCurrentModal("outOfRange");
           setIsApiKeyModalOpen(true);
         }
-        if (fetcher?.data?.errorCode === 10015) {
+        if (translateFetcher?.data?.errorCode === 10015) {
           setCurrentModal("interfaceIsOccupied");
           setIsApiKeyModalOpen(true);
         }
       }
     }
-  }, [fetcher.data]);
+  }, [translateFetcher.data]);
 
   useEffect(() => {
     if (languageData.length) {
@@ -591,6 +612,15 @@ const Index = () => {
       return;
     }
     navigate("/app/apikeySetting");
+    fetcher.submit(
+      {
+        log: `${shop} 前往私有key页面, 从翻译设置页面点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   };
 
   const checkIfNeedPay = async () => {
@@ -651,7 +681,6 @@ const Index = () => {
       case "8":
         if (customApikeyData) {
           const useData = checkApiKeyConfiguration(customApikeyData, 0);
-          console.log(useData);
 
           if (useData && useData?.usedToken >= useData?.tokenLimit) {
             // 如果私有key的额度超限，弹出提示框
@@ -685,7 +714,7 @@ const Index = () => {
       return;
     }
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
-    fetcher.submit(
+    translateFetcher.submit(
       {
         translation: JSON.stringify({
           primaryLanguage: languageSetting?.primaryLanguageCode,
@@ -821,7 +850,7 @@ const Index = () => {
                 style={{
                   visibility: languageData.length != 0 ? "visible" : "hidden",
                 }}
-                loading={fetcher.state === "submitting"}
+                loading={translateFetcher.state === "submitting"}
               >
                 {selectedLanguageCode.length > 0 &&
                 selectedLanguageCode.every(

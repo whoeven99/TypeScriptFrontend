@@ -84,7 +84,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  console.log(`${shop} load manage_translation_metaobject`);
+  console.log(`${shop} 目前在翻译管理-元对象页面`);
 
   try {
     const formData = await request.formData();

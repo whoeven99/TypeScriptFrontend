@@ -50,6 +50,7 @@ export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
+
   return json({
     shop,
     server: process.env.SERVER_URL,
@@ -63,7 +64,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const formData = await request.formData();
-    const loading = JSON.parse(formData.get("loading") as string);
+    const init = JSON.parse(formData.get("init") as string);
     const languageInit = JSON.parse(formData.get("languageInit") as string);
     const languageData = JSON.parse(formData.get("languageData") as string);
     const customApikeyData = JSON.parse(
@@ -73,16 +74,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("nearTransaltedData") as string,
     );
     const userData = JSON.parse(formData.get("userData") as string);
-    // const languageCode = JSON.parse(formData.get("languageCode") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
-    const rate = JSON.parse(formData.get("rate") as string);
-    // const credits = JSON.parse(formData.get("credits") as string);
-    // const recalculate = JSON.parse(formData.get("recalculate") as string);
     const stopTranslate = JSON.parse(formData.get("stopTranslate") as string);
+    const log = formData.get("log") as string;
 
-    if (loading) {
+    if (init) {
       try {
         const init = await InitializationDetection({ shop });
         await UserAdd({
@@ -126,13 +124,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
           (item) => item.locale,
         );
-
-        console.log("shopPrimaryLanguage: ", shopPrimaryLanguage);
-        console.log(
-          "shopLanguagesWithoutPrimaryIndex: ",
-          shopLanguagesWithoutPrimaryIndex,
-        );
-        console.log("shopLocalesIndex: ", shopLocalesIndex);
 
         if (shopLocalesIndex.length && shopPrimaryLanguage[0].locale) {
           await InsertTargets({
@@ -216,11 +207,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source: shopPrimaryLanguage[0]?.locale,
         });
 
-        console.log(
-          "GetTranslateDOByShopNameAndSource: ",
-          translatingData.response,
-        );
-
         const data = translatingData.response.filter(
           (translatingDataItem: any) =>
             shopLocalesIndex.includes(translatingDataItem?.target) &&
@@ -230,15 +216,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               )?.published),
         );
 
-        console.log(
-          `${shop} GetTranslateDOByShopNameAndSource filterData: `,
-          data.map((item: any) => ({
-            source: item?.source || shopPrimaryLanguage[0].locale,
-            target: item?.target || "",
-            status: item?.status || 0,
-            resourceType: item?.resourceType || "",
-          })),
-        );
+        console.log(`${shop} 进度条返回数据 ${data}`);
+        console.log(`${shop} 主页面数据加载完毕`);
 
         return {
           success: true,
@@ -303,7 +282,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source: statusData.source,
           target: statusData.target,
         });
-        console.log("GetLanguageStatus: ", data);
         return data;
       } catch (error) {
         console.error("Error statusData app:", error);
@@ -315,20 +293,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         };
       }
     }
-
-    // if (languageCode) {
-    //   try {
-    //     const totalWords = await GetTotalWords({
-    //       shop,
-    //       accessToken: accessToken as string,
-    //       target: languageCode,
-    //     });
-    //     return json({ totalWords });
-    //   } catch (error) {
-    //     console.error("Error languageCode app:", error);
-    //     return json({ error: "Error languageCode app" }, { status: 500 });
-    //   }
-    // }
 
     if (payInfo) {
       try {
@@ -370,21 +334,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    // if (credits) {
-    //   try {
-    //     const data = await GetUserToken({
-    //       shop,
-    //       accessToken: accessToken!,
-    //       target: credits.target,
-    //       source: credits.source,
-    //     });
-    //     return data;
-    //   } catch (error) {
-    //     console.error("Error credits app:", error);
-    //     return json({ error: "Error credits app" }, { status: 500 });
-    //   }
-    // }
-
     if (stopTranslate) {
       try {
         const data = await StopTranslatingTask({
@@ -404,9 +353,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    if (typeof rate === "number") {
-      console.log(`商店${shop}的评分: ${rate}`);
+    if (log) {
+      console.log(`${shop} ${log}`);
     }
+
+    // if (typeof rate === "number") {
+    //   console.log(`商店${shop}的评分: ${rate}`);
+    //   return null;
+    // }
 
     return json({ success: false, message: "Invalid data" });
   } catch (error) {
@@ -422,12 +376,12 @@ export default function App() {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { plan, updateTime } = useSelector((state: any) => state.userConfig);
-  const loadingFetcher = useFetcher<any>();
+  const initFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
 
   useEffect(() => {
-    loadingFetcher.submit(
-      { loading: JSON.stringify(true) },
+    initFetcher.submit(
+      { init: JSON.stringify(true) },
       {
         method: "post",
         action: "/app",
@@ -442,7 +396,7 @@ export default function App() {
     );
     const getPlan = async () => {
       const data = await GetUserSubscriptionPlan({
-        shop,
+        shop: shop,
         server: server as string,
       });
       if (data?.success) {
@@ -467,6 +421,10 @@ export default function App() {
     };
     getPlan();
     setIsClient(true);
+    const shopName = localStorage.getItem("shop");
+    if (!shopName) {
+      localStorage.setItem("shop", (shop as string) || "");
+    }
   }, []);
 
   return (

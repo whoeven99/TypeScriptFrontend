@@ -43,7 +43,7 @@ const { Title, Text, Paragraph } = Typography;
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  console.log(`${shop} load pricing`);
+  console.log(`${shop} 目前在付费页面`);
   return {
     shop,
     server: process.env.SERVER_URL,
@@ -129,7 +129,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         const data = await response.json();
-        console.log(`${shop} AppSubscriptionCancel: `, data);
+        console.log(`${shop} 取消计划: `, data);
         return data;
       } catch (error) {
         console.error("Error cancelId action:", error);
@@ -823,7 +823,6 @@ const Index = () => {
       shop,
       server: server as string,
     });
-    console.log("GetLatestActiveSubscribeId: ", data);
     if (data.success) {
       planCancelFetcher.submit(
         {

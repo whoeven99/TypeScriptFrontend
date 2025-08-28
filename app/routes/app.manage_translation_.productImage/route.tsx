@@ -44,7 +44,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
 
-  console.log(`${shop} load manage_translation_productImage`);
+  console.log(`${shop} 目前在翻译管理-产品图片页面`);
 
   return {
     shop: shop,
@@ -60,8 +60,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-
-  console.log(`${shop} load manage_translation_productImage`);
 
   const formData = await request.formData();
   const loading: any = JSON.parse(formData.get("loading") as string);

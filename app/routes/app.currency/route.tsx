@@ -63,7 +63,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
-  console.log(`${shop} load currency`);
+  console.log(`${shop} 进入货币页面`);
   return json({
     shop,
     mobile: isMobile as boolean,
@@ -85,14 +85,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const updateCurrencies = JSON.parse(
     formData.get("updateCurrencies") as string,
   );
-
-  console.log(`${shop} init: `, init);
-  console.log(`${shop} loading: `, loading);
-  console.log(`${shop} theme: `, theme);
-  console.log(`${shop} rateData: `, rateData);
-  console.log(`${shop} addCurrencies: `, addCurrencies);
-  console.log(`${shop} deleteCurrencies: `, deleteCurrencies);
-  console.log(`${shop} updateCurrencies: `, updateCurrencies);
 
   switch (true) {
     case !!init:

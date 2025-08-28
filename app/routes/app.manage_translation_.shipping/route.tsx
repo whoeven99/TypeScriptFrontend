@@ -55,7 +55,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  console.log(`${shop} load manage_translation_shipping`);
+  console.log(`${shop} 目前在翻译管理-配送方式页面`);
 
   try {
     const shippings = await queryNextTransType({

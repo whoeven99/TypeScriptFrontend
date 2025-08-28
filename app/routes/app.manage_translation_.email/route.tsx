@@ -80,7 +80,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  console.log(`${shop} load manage_translation_email`);
+  console.log(`${shop} 目前在翻译管理-电子邮件页面`);
 
   try {
     const emails = await queryNextTransType({
