@@ -100,7 +100,6 @@ const planMapping = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  console.log(`${shop} 目前在切换器页面`);
   return {
     shop,
     server: process.env.SERVER_URL,
@@ -295,6 +294,15 @@ const Index = () => {
       }
     };
     getSwitcherConfig();
+    fetcher.submit(
+      {
+        log: `${shop} 目前在切换器页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   }, []);
 
   useEffect(() => {

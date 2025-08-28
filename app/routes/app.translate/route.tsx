@@ -83,7 +83,6 @@ interface apiKeyConfiguration {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  console.log(`${shop} 目前在翻译设置页面`);
   return {
     shop,
     server: process.env.SERVER_URL,
@@ -227,6 +226,15 @@ const Index = () => {
       {
         method: "post",
         action: "/app",
+      },
+    );
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译设置页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
       },
     );
     if (location) {

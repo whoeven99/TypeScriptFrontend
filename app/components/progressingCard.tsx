@@ -514,8 +514,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                 : t("progressing.progressingWriting", {
                                     item: t(item),
                                   })}
-                              {itemsVisible &&
-                                t("progressing.progressingItems", {})}
                             </Text>
                             {translateStatus === 2 && (
                               <div style={{ width: "100%" }}>

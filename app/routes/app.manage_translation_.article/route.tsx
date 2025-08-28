@@ -97,8 +97,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  console.log(`${shop} 目前在翻译管理-文章页面`);
-
   try {
     const articles = await queryNextTransType({
       shop,
@@ -146,7 +144,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           startCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-        console.log(`${shop} 翻译管理-文章页面翻到上一页`);
+        console.log(`应用日志: ${shop} 翻译管理-文章页面翻到上一页`);
 
         return json({ previousArticles: previousArticles });
       case !!endCursor:
@@ -157,7 +155,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
-        console.log(`${shop} 翻译管理-文章页面翻到下一页`);
+        console.log(`应用日志: ${shop} 翻译管理-文章页面翻到下一页`);
 
         return json({ nextArticles: nextArticles });
       case !!confirmData:
@@ -261,6 +259,15 @@ const Index = () => {
         },
       );
     }
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译管理-文章页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -416,19 +423,19 @@ const Index = () => {
       });
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
+        fetcher.submit(
+          {
+            log: `${shop} 翻译管理-文章页面修改数据保存成功`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       } else {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
-      fetcher.submit(
-        {
-          log: `${shop} 翻译管理-文章页面修改数据保存成功`,
-        },
-        {
-          method: "POST",
-          action: "/log",
-        },
-      );
     }
   }, [confirmFetcher.data]);
 

@@ -63,7 +63,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
-  console.log(`${shop} 进入货币页面`);
   return json({
     shop,
     mobile: isMobile as boolean,
@@ -284,6 +283,8 @@ const Index = () => {
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
+
+  const fetcher = useFetcher<any>();
   const initFetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const rateFetcher = useFetcher<any>();
@@ -296,6 +297,15 @@ const Index = () => {
       method: "post",
       action: "/app/currency",
     });
+    fetcher.submit(
+      {
+        log: `${shop} 目前在货币页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };

@@ -75,8 +75,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  console.log(`${shop} 目前在翻译管理-博客页面`);
-
   try {
     const blogs = await queryNextTransType({
       shop,
@@ -87,6 +85,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
 
     return json({
+      shop,
       server: process.env.SERVER_URL,
       shopName: shop,
       searchTerm,
@@ -123,6 +122,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           startCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
+        console.log(`应用日志: ${shop} 翻译管理-博客页面翻到上一页`);
+
         return json({ previousBlogs: previousBlogs });
       case !!endCursor:
         const nextBlogs = await queryNextTransType({
@@ -132,6 +133,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
+        console.log(`应用日志: ${shop} 翻译管理-博客页面翻到下一页`);
+
         return json({ nextBlogs: nextBlogs });
       case !!confirmData:
         const data = await updateManageTranslation({
@@ -158,7 +161,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, blogs, server, shopName } =
+  const { shop, searchTerm, blogs, server, shopName } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
@@ -166,6 +169,7 @@ const Index = () => {
   const loadingItemsRef = useRef<string[]>([]);
 
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const fetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
@@ -232,6 +236,15 @@ const Index = () => {
         },
       );
     }
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译管理-博客页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -358,6 +371,15 @@ const Index = () => {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
+      fetcher.submit(
+        {
+          log: `${shop} 翻译管理-博客页面修改数据保存成功`,
+        },
+        {
+          method: "POST",
+          action: "/log",
+        },
+      );
     }
   }, [confirmFetcher.data]);
 
@@ -549,6 +571,15 @@ const Index = () => {
     if (!key || !type || !context) {
       return;
     }
+    fetcher.submit(
+      {
+        log: `${shop} 从翻译管理-博客页面点击单行翻译`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: shopName,
@@ -566,6 +597,15 @@ const Index = () => {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
         shopify.toast.show(t("Translated successfully"));
+        fetcher.submit(
+          {
+            log: `${shop} 从翻译管理-博客页面点击单行翻译返回结果 ${data?.response}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       }
     } else {
       shopify.toast.show(data.errorMsg);
@@ -643,6 +683,15 @@ const Index = () => {
       method: "post",
       action: `/app/manage_translation/blog?language=${searchTerm}`,
     }); // 提交表单请求
+    fetcher.submit(
+      {
+        log: `${shop} 提交翻译管理-博客页面修改数据`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   };
 
   const handleDiscard = () => {

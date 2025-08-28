@@ -95,12 +95,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  console.log(`${shop} 目前在翻译管理-产品页面`);
   return json({
+    shop,
     server: process.env.SERVER_URL,
     shopName: shop,
     searchTerm,
-    // products,
   });
 };
 
@@ -152,6 +151,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         const data = await response.json();
+        console.log(`应用日志: ${shop} 翻译管理-文章页面翻到上一页`);
 
         return json({
           success: true,
@@ -215,6 +215,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         const data = await response.json();
+        console.log(`应用日志: ${shop} 翻译管理-文章页面翻到下一页`);
 
         return json({
           success: true,
@@ -387,12 +388,13 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, server, shopName } = useLoaderData<typeof loader>();
+  const { shop, searchTerm, server, shopName } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
   const fetcher = useFetcher<any>();
+  const dataFetcher = useFetcher<any>();
   const productFetcher = useFetcher<any>();
   // const optionFetcher = useFetcher<any>();
   // const metafieldFetcher = useFetcher<any>();
@@ -535,7 +537,7 @@ const Index = () => {
         },
       );
     }
-    fetcher.submit(
+    dataFetcher.submit(
       {
         endCursor: JSON.stringify({
           cursor: "",
@@ -545,6 +547,15 @@ const Index = () => {
       {
         method: "post",
         action: `/app/manage_translation/product?language=${searchTerm}`,
+      },
+    );
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译管理-文章页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
       },
     );
     const handleResize = () => {
@@ -558,25 +569,25 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (fetcher.data) {
-      if (fetcher.data.success) {
-        const menuData = fetcher.data.response.data.map((item: any) => {
+    if (dataFetcher.data) {
+      if (dataFetcher.data.success) {
+        const menuData = dataFetcher.data.response.data.map((item: any) => {
           return {
             key: item.id,
             label: item.title,
           };
         });
         setMenuData(menuData);
-        setSelectProductKey(fetcher.data.response.data[0]?.id);
-        setHasPrevious(fetcher.data.response.pageInfo.hasPreviousPage);
-        setHasNext(fetcher.data.response.pageInfo.hasNextPage);
-        setStartCursor(fetcher.data.response.pageInfo.startCursor);
-        setEndCursor(fetcher.data.response.pageInfo.endCursor);
-        setProductsData(fetcher.data.response.data);
+        setSelectProductKey(dataFetcher.data.response.data[0]?.id);
+        setHasPrevious(dataFetcher.data.response.pageInfo.hasPreviousPage);
+        setHasNext(dataFetcher.data.response.pageInfo.hasNextPage);
+        setStartCursor(dataFetcher.data.response.pageInfo.startCursor);
+        setEndCursor(dataFetcher.data.response.pageInfo.endCursor);
+        setProductsData(dataFetcher.data.response.data);
         setIsLoading(false);
       }
     }
-  }, [fetcher.data]);
+  }, [dataFetcher.data]);
 
   useEffect(() => {
     if (productFetcher.data) {
@@ -875,6 +886,15 @@ const Index = () => {
       );
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
+        fetcher.submit(
+          {
+            log: `${shop} 翻译管理-文章页面修改数据保存成功`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       } else {
         shopify.toast.show(t("Some items saved failed"));
       }
@@ -1429,8 +1449,17 @@ const Index = () => {
     if (!key || !type || !context) {
       return;
     }
+    fetcher.submit(
+      {
+        log: `${shop} 从翻译管理-文章页面点击单行翻译`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     setLoadingItems((prev) => [...prev, key]);
-    
+
     const data = await SingleTextTranslate({
       shopName: shopName,
       source: productBaseData[0]?.locale,
@@ -1445,6 +1474,15 @@ const Index = () => {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
         shopify.toast.show(t("Translated successfully"));
+        fetcher.submit(
+          {
+            log: `${shop} 从翻译管理-文章页面点击单行翻译返回结果 ${data?.response}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       }
     } else {
       shopify.toast.show(data.errorMsg);
@@ -1458,7 +1496,7 @@ const Index = () => {
     } else {
       shopify.saveBar.hide("save-bar");
       setIsLoading(true);
-      fetcher.submit(
+      dataFetcher.submit(
         {
           endCursor: JSON.stringify({
             cursor: "",
@@ -1513,7 +1551,7 @@ const Index = () => {
   // 下一页请求函数
   const throttleNextSubmit = useMemo(() => {
     return throttle(async () => {
-      fetcher.submit(
+      dataFetcher.submit(
         {
           endCursor: JSON.stringify({
             cursor: endCursor,
@@ -1531,7 +1569,7 @@ const Index = () => {
   // 上一页请求函数
   const throttleBackSubmit = useMemo(() => {
     return throttle(() => {
-      fetcher.submit(
+      dataFetcher.submit(
         {
           startCursor: JSON.stringify({
             cursor: startCursor,
@@ -1613,6 +1651,15 @@ const Index = () => {
       method: "post",
       action: `/app/manage_translation/product?language=${searchTerm}`,
     }); // 提交表单请求
+    fetcher.submit(
+      {
+        log: `${shop} 提交翻译管理-文章页面修改数据`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   };
 
   const handleDiscard = () => {

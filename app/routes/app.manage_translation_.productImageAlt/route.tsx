@@ -49,8 +49,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { shop } = adminAuthResult.session;
 
   return json({
-    searchTerm,
     shop,
+    searchTerm,
     server: process.env.SERVER_URL,
   });
 };
@@ -62,8 +62,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-
-  console.log(`${shop} 目前在翻译管理-产品图片描述页面`);
 
   const formData = await request.formData();
   const loading: any = JSON.parse(formData.get("loading") as string);
@@ -569,6 +567,7 @@ const Index = () => {
     { label: t("Shipping"), value: "shipping" },
   ];
 
+  const fetcher = useFetcher<any>();
   const loadFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
@@ -587,6 +586,15 @@ const Index = () => {
         },
       );
     }
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译管理-产品图片描述页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };

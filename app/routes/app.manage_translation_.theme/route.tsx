@@ -58,10 +58,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  console.log(`${shop} 目前在翻译管理-主题页面`);
-
   try {
     return json({
+      shop,
       server: process.env.SERVER_URL,
       shopName: shop,
       searchTerm,
@@ -161,11 +160,12 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, server, shopName } = useLoaderData<typeof loader>();
+  const { shop, searchTerm, server, shopName } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
+  const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
@@ -231,6 +231,15 @@ const Index = () => {
       {
         method: "POST",
         action: `/app/manage_translation/theme?language=${searchTerm}`,
+      },
+    );
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译管理-主题页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
       },
     );
     const handleResize = () => {
@@ -305,6 +314,15 @@ const Index = () => {
           }
         });
         shopify.toast.show("Saved successfully");
+        fetcher.submit(
+          {
+            log: `${shop} 翻译管理-主题页面修改数据保存成功`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       } else {
         shopify.toast.show(errorItem?.errorMsg);
       }
@@ -464,6 +482,15 @@ const Index = () => {
     if (!key || !type || !context) {
       return;
     }
+    fetcher.submit(
+      {
+        log: `${shop} 从翻译管理-主题页面点击单行翻译`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: shopName,
@@ -481,6 +508,15 @@ const Index = () => {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
         shopify.toast.show(t("Translated successfully"));
+        fetcher.submit(
+          {
+            log: `${shop} 从翻译管理-主题页面点击单行翻译返回结果 ${data?.response}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       }
     } else {
       shopify.toast.show(data.errorMsg);
@@ -539,6 +575,15 @@ const Index = () => {
       method: "post",
       action: `/app/manage_translation/theme?language=${searchTerm}`,
     }); // 提交表单请求
+    fetcher.submit(
+      {
+        log: `${shop} 提交翻译管理-主题页面修改数据`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   };
 
   const handleDiscard = () => {

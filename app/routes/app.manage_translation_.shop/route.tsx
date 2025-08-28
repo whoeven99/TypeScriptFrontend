@@ -57,7 +57,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  console.log(`${shop} 目前在翻译管理-店铺页面`);
   try {
     const shops = await queryNextTransType({
       shop,
@@ -68,6 +67,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
 
     return json({
+      shop,
       server: process.env.SERVER_URL,
       shopName: shop,
       searchTerm,
@@ -139,7 +139,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, shops, server, shopName } =
+  const { shop, searchTerm, shops, server, shopName } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
@@ -147,6 +147,7 @@ const Index = () => {
   const loadingItemsRef = useRef<string[]>([]);
 
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const fetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
@@ -208,6 +209,15 @@ const Index = () => {
         },
       );
     }
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译管理-店铺页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };

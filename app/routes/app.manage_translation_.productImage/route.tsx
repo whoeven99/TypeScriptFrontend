@@ -44,10 +44,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
 
-  console.log(`${shop} 目前在翻译管理-产品图片页面`);
-
   return {
-    shop: shop,
+    shop,
     server: process.env.SERVER_URL,
     searchTerm,
   };
@@ -560,6 +558,7 @@ const Index = () => {
     { label: t("Shipping"), value: "shipping" },
   ];
 
+  const fetcher = useFetcher<any>();
   const loadFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
@@ -578,6 +577,15 @@ const Index = () => {
         },
       );
     }
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译管理-产品图片页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };

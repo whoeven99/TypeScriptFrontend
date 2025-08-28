@@ -55,8 +55,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  console.log(`${shop} 目前在翻译管理-配送方式页面`);
-
   try {
     const shippings = await queryNextTransType({
       shop,
@@ -67,6 +65,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
 
     return json({
+      shop,
       server: process.env.SERVER_URL,
       shopName: shop,
       searchTerm,
@@ -111,12 +110,13 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, shippings, server, shopName } =
+  const { shop, searchTerm, shippings, server, shopName } =
     useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
+  const fetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
@@ -171,6 +171,15 @@ const Index = () => {
         },
       );
     }
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译管理-配送方式页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -223,6 +232,15 @@ const Index = () => {
       );
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
+        fetcher.submit(
+          {
+            log: `${shop} 翻译管理-配送方式页面修改数据保存成功`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       } else {
         shopify.toast.show(t("Some items saved failed"));
       }
@@ -363,6 +381,15 @@ const Index = () => {
     if (!key || !type || !context) {
       return;
     }
+    fetcher.submit(
+      {
+        log: `${shop} 从翻译管理-配送方式页面点击单行翻译`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: shopName,
@@ -380,6 +407,15 @@ const Index = () => {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response, index);
         shopify.toast.show(t("Translated successfully"));
+        fetcher.submit(
+          {
+            log: `${shop} 从翻译管理-配送方式页面点击单行翻译返回结果 ${data?.response}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       }
     } else {
       shopify.toast.show(data.errorMsg);
@@ -418,6 +454,15 @@ const Index = () => {
       method: "post",
       action: `/app/manage_translation/shipping?language=${searchTerm}`,
     }); // 提交表单请求
+    fetcher.submit(
+      {
+        log: `${shop} 提交翻译管理-配送方式页面修改数据`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   };
 
   const handleDiscard = () => {

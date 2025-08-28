@@ -43,7 +43,6 @@ const { Title, Text, Paragraph } = Typography;
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  console.log(`${shop} 目前在付费页面`);
   return {
     shop,
     server: process.env.SERVER_URL,
@@ -129,7 +128,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         const data = await response.json();
-        console.log(`${shop} 取消计划: `, data);
+        console.log(`应用日志: ${shop} 取消计划: `, data);
         return data;
       } catch (error) {
         console.error("Error cancelId action:", error);
@@ -303,6 +302,8 @@ const Index = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const userConfig = useSelector((state: any) => state.userConfig);
+
+  const fetcher = useFetcher<any>();
   const planCancelFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
@@ -365,6 +366,15 @@ const Index = () => {
     };
     checkFreeUsed();
     setIsLoading(false);
+    fetcher.submit(
+      {
+        log: `${shop} 目前在付费页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   }, []);
 
   useEffect(() => {

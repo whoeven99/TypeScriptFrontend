@@ -78,7 +78,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
     const stopTranslate = JSON.parse(formData.get("stopTranslate") as string);
-    const log = formData.get("log") as string;
 
     if (init) {
       try {
@@ -216,8 +215,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               )?.published),
         );
 
-        console.log(`${shop} 进度条返回数据 ${data}`);
-        console.log(`${shop} 主页面数据加载完毕`);
+        console.log(`应用日志: ${shop} 进度条返回数据 ${data}`);
+        console.log(`应用日志: ${shop} 主页面数据加载完毕`);
 
         return {
           success: true,
@@ -352,15 +351,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       }
     }
-
-    if (log) {
-      console.log(`${shop} ${log}`);
-    }
-
-    // if (typeof rate === "number") {
-    //   console.log(`商店${shop}的评分: ${rate}`);
-    //   return null;
-    // }
 
     return json({ success: false, message: "Invalid data" });
   } catch (error) {

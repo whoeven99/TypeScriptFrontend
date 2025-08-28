@@ -35,10 +35,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const language =
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   const languageCode = language.split("-")[0];
-  console.log(`${shop} 目前在主页面, 页面语言为${language}`);
-
   if (languageCode === "zh" || languageCode === "zh-CN") {
     return {
+      language,
       isChinese: true,
       ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
       ciwiSwitcherBlocksId: process.env
@@ -48,6 +47,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     };
   } else {
     return {
+      language,
       isChinese: false,
       ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
       ciwiSwitcherBlocksId: process.env
@@ -59,8 +59,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 const Index = () => {
-  const { isChinese, server, shop, ciwiSwitcherBlocksId, ciwiSwitcherId } =
-    useLoaderData<typeof loader>();
+  const {
+    language,
+    isChinese,
+    server,
+    shop,
+    ciwiSwitcherBlocksId,
+    ciwiSwitcherId,
+  } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
@@ -84,6 +90,15 @@ const Index = () => {
       {
         method: "post",
         action: "/app/currency",
+      },
+    );
+    fetcher.submit(
+      {
+        log: `${shop} 目前在主页面, 页面语言为${language}`,
+      },
+      {
+        method: "POST",
+        action: "/log",
       },
     );
   }, []);

@@ -96,8 +96,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
-  console.log(`${shop} 目前在语言页面`);
-
   return json({
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
@@ -499,6 +497,15 @@ const Index = () => {
       {
         method: "post",
         action: "/app/language",
+      },
+    );
+    fetcher.submit(
+      {
+        log: `${shop} 目前在语言页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
       },
     );
     if (localStorage.getItem("dontPromptAgain")) {
