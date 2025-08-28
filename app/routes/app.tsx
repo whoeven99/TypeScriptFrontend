@@ -19,7 +19,6 @@ import { authenticate } from "../shopify.server";
 import {
   GetLanguageLocaleInfo,
   GetLanguageList,
-  GetTotalWords,
   GetUserWords,
   GetLanguageStatus,
   AddUserFreeSubscription,
@@ -74,7 +73,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("nearTransaltedData") as string,
     );
     const userData = JSON.parse(formData.get("userData") as string);
-    const languageCode = JSON.parse(formData.get("languageCode") as string);
+    // const languageCode = JSON.parse(formData.get("languageCode") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
@@ -317,19 +316,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    if (languageCode) {
-      try {
-        const totalWords = await GetTotalWords({
-          shop,
-          accessToken: accessToken as string,
-          target: languageCode,
-        });
-        return json({ totalWords });
-      } catch (error) {
-        console.error("Error languageCode app:", error);
-        return json({ error: "Error languageCode app" }, { status: 500 });
-      }
-    }
+    // if (languageCode) {
+    //   try {
+    //     const totalWords = await GetTotalWords({
+    //       shop,
+    //       accessToken: accessToken as string,
+    //       target: languageCode,
+    //     });
+    //     return json({ totalWords });
+    //   } catch (error) {
+    //     console.error("Error languageCode app:", error);
+    //     return json({ error: "Error languageCode app" }, { status: 500 });
+    //   }
+    // }
 
     if (payInfo) {
       try {

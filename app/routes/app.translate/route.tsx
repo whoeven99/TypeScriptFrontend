@@ -326,38 +326,36 @@ const Index = () => {
         shopify.toast.show(t("The translation task is in progress."));
         navigate("/app");
       } else if (!fetcher.data?.success) {
-        try {
+        if (
+          fetcher.data?.response?.translateSettings1 !== "8" &&
+          fetcher.data?.response?.translateSettings1 !== "9"
+        ) {
           const getUserWords = async () => {
             const data = await GetUserWords({ shop, server });
             if (data.success) {
-              if (
-                data?.response?.totalChars <= data?.response?.chars &&
-                fetcher.data?.response?.translateSettings1 !== "8" &&
-                fetcher.data?.response?.translateSettings1 !== "9"
-              ) {
+              if (data?.response?.totalChars <= data?.response?.chars) {
                 setNeedPay(true);
                 setShowPaymentModal(true);
               }
+            } else {
+              shopify.toast.show(
+                t(
+                  "The query of the remaining credits failed. Please try again.",
+                ),
+              );
             }
           };
           getUserWords();
-          if (fetcher?.data?.errorCode === 10014) {
-            setCurrentModal("outOfRange");
-            setIsApiKeyModalOpen(true);
-          }
-          if (fetcher?.data?.errorCode === 10015) {
-            setCurrentModal("interfaceIsOccupied");
-            setIsApiKeyModalOpen(true);
-          }
-        } catch (error) {
-          shopify.toast.show(
-            t("The query of the remaining credits failed. Please try again."),
-          );
         }
-      } else if (fetcher.data?.errorMsg === "words get error") {
-        shopify.toast.show(
-          t("The query of the remaining credits failed. Please try again."),
-        );
+
+        if (fetcher?.data?.errorCode === 10014) {
+          setCurrentModal("outOfRange");
+          setIsApiKeyModalOpen(true);
+        }
+        if (fetcher?.data?.errorCode === 10015) {
+          setCurrentModal("interfaceIsOccupied");
+          setIsApiKeyModalOpen(true);
+        }
       }
     }
   }, [fetcher.data]);
@@ -687,23 +685,23 @@ const Index = () => {
       return;
     }
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
-    const formData = new FormData();
-    formData.append(
-      "translation",
-      JSON.stringify({
-        primaryLanguage: languageSetting?.primaryLanguageCode,
-        selectedLanguage: selectedLanguageCode,
-        translateSettings1: translateSettings1,
-        translateSettings2: ["1"],
-        translateSettings3: translateSettings3,
-        customKey: customKey,
-        translateSettings5: translateSettings5,
-      }),
-    ); // 将选中的语言作为字符串发送
-    fetcher.submit(formData, {
-      method: "post",
-      action: "/app/language",
-    });
+    fetcher.submit(
+      {
+        translation: JSON.stringify({
+          primaryLanguage: languageSetting?.primaryLanguageCode,
+          selectedLanguage: selectedLanguageCode,
+          translateSettings1: translateSettings1,
+          translateSettings2: ["1"],
+          translateSettings3: translateSettings3,
+          customKey: customKey,
+          translateSettings5: translateSettings5,
+        }),
+      },
+      {
+        method: "post",
+        action: "/app/language",
+      },
+    );
     localStorage.setItem(
       "translateSettings4",
       JSON.stringify(translateSettings4),

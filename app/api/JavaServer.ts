@@ -1111,55 +1111,6 @@ export const GetTranslationItemsInfo = async ({
   }
 };
 
-//获取各项翻译状态
-export const GetItemsInSqlByShopName = async ({
-  shop,
-  accessToken,
-  source,
-  targets,
-}: {
-  shop: string;
-  accessToken: string | undefined;
-  source: string;
-  targets: string[];
-}) => {
-  let res: {
-    language: string;
-    type: string;
-    translatedNumber: number;
-    totalNumber: number;
-  }[] = [];
-  try {
-    for (const target of targets) {
-      const response = await axios({
-        url: `${process.env.SERVER_URL}/shopify/getItemsInSqlByShopName`,
-        method: "POST",
-        data: {
-          shopName: shop,
-          accessToken: accessToken,
-          source: source,
-          target: target,
-        },
-      });
-      const data = response.data.response;
-      res = [
-        ...res,
-        ...Object.keys(data).map((key) => {
-          return {
-            language: target,
-            type: data[key].itemName,
-            translatedNumber: data[key].translatedNumber,
-            totalNumber: data[key].totalNumber,
-          };
-        }),
-      ];
-    }
-    return res;
-  } catch (error) {
-    console.error("Error fetching search translation items:", error);
-  }
-};
-
 //获取用户的额度字符数 和 已使用的字符
 export const GetUserWords = async ({
   shop,
@@ -1174,8 +1125,7 @@ export const GetUserWords = async ({
       method: "GET",
     });
     console.log("GetUserWords: ", response.data);
-    const res = response.data;
-    return res;
+    return response.data;
   } catch (error) {
     console.error("Error occurred in the userwords:", error);
     return {
@@ -1204,33 +1154,40 @@ export const GetLanguageLocaleInfo = async ({
       method: "POST",
       data: updatedLocales,
     });
-    const data = response.data.response;
-    const res = Object.keys(data).reduce(
-      (
-        acc: {
-          [key: string]: {
-            isoCode: string;
-            Local: string;
-            countries: [];
-            Name: string;
-          };
+    if (response.data?.success) {
+      const data = response.data?.response;
+      const res = Object.keys(data).reduce(
+        (
+          acc: {
+            [key: string]: {
+              isoCode: string;
+              Local: string;
+              countries: [];
+              Name: string;
+            };
+          },
+          key,
+        ) => {
+          // 将 key 中的 "_" 替换为 "-"
+          const newKey = key.replace("_", "-");
+          // 保持原来的值，重新赋值给新键
+          acc[newKey] = data[key];
+          return acc;
         },
-        key,
-      ) => {
-        // 将 key 中的 "_" 替换为 "-"
-        const newKey = key.replace("_", "-");
-        // 保持原来的值，重新赋值给新键
-        acc[newKey] = data[key];
-        return acc;
-      },
-      {},
-    );
-    return {
-      success: true,
-      errorCode: 0,
-      errorMsg: "",
-      response: res,
-    };
+        {},
+      );
+      return {
+        ...response.data,
+        response: res,
+      };
+    } else {
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: undefined,
+      };
+    }
   } catch (error) {
     console.error("Error occurred in the languageData:", error);
     return {
@@ -1265,8 +1222,8 @@ export const GetLanguageList = async ({
     console.error("Error occurred in the languageList:", error);
     return {
       success: false,
-      errorCode: 0,
-      errorMsg: "",
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: [],
     };
   }
@@ -1303,46 +1260,45 @@ export const GetLanguageStatus = async ({
 
     console.log(`${shop} GetLanguageStatus: `, response.data);
 
-    const res = response.data;
-    return res;
+    return response.data;
   } catch (error) {
     console.error("Error GetLanguageStatus:", error);
     return {
       success: false,
-      errorCode: 0,
-      errorMsg: "",
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: [],
     };
   }
 };
 
-//查询语言待翻译字符数
-export const GetTotalWords = async ({
-  shop,
-  accessToken,
-  target,
-}: {
-  shop: string;
-  accessToken: string;
-  target: string;
-}) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getTotalWords`,
-      method: "Post",
-      data: {
-        shopName: shop,
-        accessToken: accessToken,
-        target: target,
-      },
-    });
+// //查询语言待翻译字符数
+// export const GetTotalWords = async ({
+//   shop,
+//   accessToken,
+//   target,
+// }: {
+//   shop: string;
+//   accessToken: string;
+//   target: string;
+// }) => {
+//   try {
+//     const response = await axios({
+//       url: `${process.env.SERVER_URL}/shopify/getTotalWords`,
+//       method: "Post",
+//       data: {
+//         shopName: shop,
+//         accessToken: accessToken,
+//         target: target,
+//       },
+//     });
 
-    const res = response.data.response;
-    return res;
-  } catch (error) {
-    console.error("Error GetTotalWords:", error);
-  }
-};
+//     const res = response.data.response;
+//     return res;
+//   } catch (error) {
+//     console.error("Error GetTotalWords:", error);
+//   }
+// };
 
 //一键全部翻译
 export const GetTranslate = async ({
@@ -1415,7 +1371,6 @@ export const GetTranslate = async ({
         customKey: customKey,
         isCover: translateSettings5,
       },
-      target: target,
     };
     console.log("GetTranslate: ", res);
     return res;
@@ -1423,11 +1378,14 @@ export const GetTranslate = async ({
     console.error("Error GetTranslate:", error);
     return {
       success: false,
-      errorCode: 10014,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
     };
   }
 };
 
+//编辑翻译
 //编辑翻译
 export const updateManageTranslation = async ({
   shop,
@@ -1720,11 +1678,18 @@ export const InitCurrency = async ({ shop }: { shop: string }) => {
       url: `${process.env.SERVER_URL}/currency/initCurrency?shopName=${shop}`,
       method: "Get",
     });
-    const res = response.data.response;
-    console.log("InitCurrency: ", res);
-    return res;
+
+    console.log(`${shop} InitCurrency: `, response.data);
+
+    return response.data;
   } catch (error) {
     console.error("Error InitCurrency:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -1753,11 +1718,16 @@ export const UpdateDefaultCurrency = async ({
         primaryStatus: primaryStatus,
       },
     });
-    const res = response.data.response;
-    console.log("UpdateDefaultCurrency: ", res);
-    return res;
+    console.log("UpdateDefaultCurrency: ", response.data);
+    return response.data;
   } catch (error) {
     console.error("Error UpdateDefaultCurrency:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -1782,41 +1752,30 @@ export const AddCurrency = async ({
     primaryStatus: primaryStatus,
   });
   try {
-    if (primaryStatus) {
-      const response = await axios({
-        url: `${process.env.SERVER_URL}/currency/insertCurrency`,
-        method: "POST",
-        data: {
-          shopName: shop,
-          currencyName: currencyName, // 国家
-          currencyCode: currencyCode, // 货币代码
-          rounding: null,
-          exchangeRate: null,
-          primaryStatus: primaryStatus,
-        },
-      });
-      const res = response.data;
-      console.log("AddCurrency: ", res);
-      return res;
-    } else {
-      const response = await axios({
-        url: `${process.env.SERVER_URL}/currency/insertCurrency`,
-        method: "POST",
-        data: {
-          shopName: shop,
-          currencyName: currencyName, // 国家
-          currencyCode: currencyCode, // 货币代码
-          rounding: "",
-          exchangeRate: "Auto",
-          primaryStatus: 0,
-        },
-      });
-      const res = response.data;
-      console.log("AddCurrency: ", res);
-      return res;
-    }
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/currency/insertCurrency`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        currencyName: currencyName, // 国家
+        currencyCode: currencyCode, // 货币代码
+        rounding: primaryStatus ? null : "",
+        exchangeRate: primaryStatus ? null : "Auto",
+        primaryStatus: primaryStatus,
+      },
+    });
+
+    console.log(`${shop} AddCurrency: `, response.data);
+
+    return response.data;
   } catch (error) {
-    console.error("Error add currency:", error);
+    console.error("Error AddCurrency:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -1838,10 +1797,17 @@ export const DeleteCurrency = async ({
       },
     });
 
-    const res = response.data;
-    return res;
+    console.log(`${shop} DeleteCurrency: `, response.data);
+
+    return response.data;
   } catch (error) {
     console.error("Error delete currency:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
