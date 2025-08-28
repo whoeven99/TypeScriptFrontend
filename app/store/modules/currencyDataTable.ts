@@ -28,7 +28,7 @@ const currencyTableDataSlice = createSlice({
           state.rows[index] = newData;
         } else {
           // 将包含 key 的 newData 添加到 rows
-          state.rows.push(newData);
+          state.rows.unshift(newData);
         }
       });
     },

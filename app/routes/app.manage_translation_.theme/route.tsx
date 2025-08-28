@@ -58,10 +58,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  console.log(`${shop} load manage_translation_theme`);
-
   try {
     return json({
+      shop,
       server: process.env.SERVER_URL,
       shopName: shop,
       searchTerm,
@@ -73,7 +72,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
-  console.log("url: ", url);
 
   const searchTerm = url.searchParams.get("language");
 
@@ -89,7 +87,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     switch (true) {
       case !!loading:
-        console.log("searchTerm: ", searchTerm);
         try {
           const response = await admin.graphql(
             `#graphql
@@ -122,7 +119,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             response: data?.data?.translatableResources?.nodes || [],
           };
         } catch (error) {
-          console.log("Error manage theme loading:", error);
+          console.error("Error manage theme loading:", error);
           return {
             success: false,
             errorCode: 0,
@@ -139,7 +136,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
           return json({ data: data, confirmData });
         } catch (error) {
-          console.log("Error manage theme confirmData:", error);
+          console.error("Error manage theme confirmData:", error);
           return {
             data: [],
             confirmData,
@@ -163,11 +160,12 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, server, shopName } = useLoaderData<typeof loader>();
+  const { shop, searchTerm, server, shopName } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
+  const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
@@ -235,6 +233,15 @@ const Index = () => {
         action: `/app/manage_translation/theme?language=${searchTerm}`,
       },
     );
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译管理-主题页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -269,11 +276,8 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
-    console.log("themes: ", themes);
-    console.log(isManualChangeRef.current);
     if (themes.length && isManualChangeRef.current) {
       const data = generateMenuItemsArray(themes);
-      console.log("data: ", data);
       setResourceData(data);
       setFilteredResourceData(data);
       isManualChangeRef.current = false;
@@ -310,6 +314,15 @@ const Index = () => {
           }
         });
         shopify.toast.show("Saved successfully");
+        fetcher.submit(
+          {
+            log: `${shop} 翻译管理-主题页面修改数据保存成功`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       } else {
         shopify.toast.show(errorItem?.errorMsg);
       }
@@ -469,6 +482,15 @@ const Index = () => {
     if (!key || !type || !context) {
       return;
     }
+    fetcher.submit(
+      {
+        log: `${shop} 从翻译管理-主题页面点击单行翻译`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: shopName,
@@ -486,6 +508,15 @@ const Index = () => {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
         shopify.toast.show(t("Translated successfully"));
+        fetcher.submit(
+          {
+            log: `${shop} 从翻译管理-主题页面点击单行翻译返回结果 ${data?.response}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       }
     } else {
       shopify.toast.show(data.errorMsg);
@@ -537,10 +568,6 @@ const Index = () => {
     setFilteredResourceData(filteredData);
   };
 
-  useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
-
   const handleConfirm = () => {
     const formData = new FormData();
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
@@ -548,6 +575,15 @@ const Index = () => {
       method: "post",
       action: `/app/manage_translation/theme?language=${searchTerm}`,
     }); // 提交表单请求
+    fetcher.submit(
+      {
+        log: `${shop} 提交翻译管理-主题页面修改数据`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   };
 
   const handleDiscard = () => {

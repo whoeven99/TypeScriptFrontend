@@ -26,6 +26,7 @@ import { useFetcher } from "@remix-run/react";
 const { Panel } = Collapse;
 
 interface AddLanguageModalProps {
+  shop: string;
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   languageLocaleInfo: any;
@@ -33,6 +34,7 @@ interface AddLanguageModalProps {
 }
 
 const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
+  shop,
   isVisible,
   setIsModalOpen,
   languageLocaleInfo,
@@ -289,6 +291,8 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
 
   const dispatch = useDispatch();
   const searchRef = useRef<InputRef>(null);
+
+  const fetcher = useFetcher<any>();
   const addFetcher = useFetcher<any>();
 
   useEffect(() => {
@@ -325,6 +329,15 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
         setFilteredLanguages(updatedLocales);
         setIsModalOpen(false);
         setConfirmButtonDisable(false);
+        fetcher.submit(
+          {
+            log: `${shop} 添加语言${data?.map((item: any) => item?.locale)}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       } else if (addFetcher.data && !addFetcher.data?.success) {
         shopify.toast.show(t("Add failed"));
         setConfirmButtonDisable(false);

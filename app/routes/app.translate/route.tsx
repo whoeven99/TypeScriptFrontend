@@ -89,7 +89,6 @@ interface apiKeyConfiguration {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  console.log(`${shop} load translate`);
   return {
     shop,
     server: process.env.SERVER_URL,
@@ -154,10 +153,12 @@ const Index = () => {
   const dispatch = useDispatch();
   const languageCardRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
-  const loadingLanguageFetcher = useFetcher<any>();
   const navigate = useNavigate();
   const location = useLocation();
+
   const fetcher = useFetcher<any>();
+  const translateFetcher = useFetcher<any>();
+  const loadingLanguageFetcher = useFetcher<any>();
   const customApiKeyFetcher = useFetcher<any>();
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [currentModal, setCurrentModal] = useState<'limitExceeded' | 'outOfRange' | 'interfaceIsOccupied'>('limitExceeded');
@@ -180,15 +181,15 @@ const Index = () => {
   };
 
   const handleConfigureQuota = () => {
-    switch(currentModal) {
-      case 'limitExceeded':
+    switch (currentModal) {
+      case "limitExceeded":
         navigate("/app/apikeySetting");
         setIsApiKeyModalOpen(false);
         break;
-      case 'outOfRange':
+      case "outOfRange":
         setIsApiKeyModalOpen(false);
         break;
-      case 'interfaceIsOccupied':
+      case "interfaceIsOccupied":
         setIsApiKeyModalOpen(false);
         break;
     }
@@ -228,6 +229,15 @@ const Index = () => {
       {
         method: "post",
         action: "/app",
+      },
+    );
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译设置页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
       },
     );
     if (location) {
@@ -297,6 +307,16 @@ const Index = () => {
             })),
           );
 
+          fetcher.submit(
+            {
+              log: `${shop} 翻译设置页面数据加载完毕`,
+            },
+            {
+              method: "POST",
+              action: "/log",
+            },
+          );
+
           setLoadingLanguage(false);
         };
         GetLanguageDataFront();
@@ -324,42 +344,53 @@ const Index = () => {
   }, [customApiKeyFetcher.data]);
 
   useEffect(() => {
-    if (fetcher.data) {
-      if (fetcher.data?.success) {
+    if (translateFetcher.data) {
+      if (translateFetcher.data?.success) {
         shopify.toast.show(t("The translation task is in progress."));
         navigate("/app");
-      } else if (!fetcher.data?.success) {
-        try {
+        fetcher.submit(
+          {
+            log: `${shop} 翻译成功, 正在跳转至主页面`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
+      } else if (!translateFetcher.data?.success) {
+        if (
+          translateFetcher.data?.response?.translateSettings1 !== "8" &&
+          translateFetcher.data?.response?.translateSettings1 !== "9"
+        ) {
           const getUserWords = async () => {
             const data = await GetUserWords({ shop, server });
             if (data.success) {
-              if (
-                data?.response?.totalChars <= data?.response?.chars &&
-                fetcher.data?.response?.translateSettings1 !== "8" &&
-                fetcher.data?.response?.translateSettings1 !== "9"
-              ) {
+              if (data?.response?.totalChars <= data?.response?.chars) {
                 setNeedPay(true);
                 setShowPaymentModal(true);
               }
+            } else {
+              shopify.toast.show(
+                t(
+                  "The query of the remaining credits failed. Please try again.",
+                ),
+              );
             }
           };
           getUserWords();
-          if (fetcher?.data?.errorCode === 10001) {
-            setCurrentModal('outOfRange');
-            setIsApiKeyModalOpen(true);
-          }
-        } catch (error) {
-          shopify.toast.show(
-            t("The query of the remaining credits failed. Please try again."),
-          );
         }
-      } else if (fetcher.data?.errorMsg === "words get error") {
-        shopify.toast.show(
-          t("The query of the remaining credits failed. Please try again."),
-        );
+
+        if (translateFetcher?.data?.errorCode === 10014) {
+          setCurrentModal("outOfRange");
+          setIsApiKeyModalOpen(true);
+        }
+        if (translateFetcher?.data?.errorCode === 10015) {
+          setCurrentModal("interfaceIsOccupied");
+          setIsApiKeyModalOpen(true);
+        }
       }
     }
-  }, [fetcher.data]);
+  }, [translateFetcher.data]);
 
   useEffect(() => {
     if (languageData.length) {
@@ -592,6 +623,15 @@ const Index = () => {
       return;
     }
     navigate("/app/apikeySetting");
+    fetcher.submit(
+      {
+        log: `${shop} 前往私有key页面, 从翻译设置页面点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   };
 
   const checkIfNeedPay = async () => {
@@ -599,7 +639,7 @@ const Index = () => {
       shopify.toast.show(t("Please set the primary language first."));
       return;
     }
-    if (!selectedLanguageCode) {
+    if (!selectedLanguageCode?.length) {
       if (languageCardRef.current) {
         languageCardRef.current.style.border = "1px solid red";
       }
@@ -621,6 +661,7 @@ const Index = () => {
     const selectedTranslatingItem = dataSource.find(
       (item: LanguagesDataType) => item.status === 2,
     );
+
     if (selectedItems && !selectedTranslatingItem) {
       setSource(languageSetting?.primaryLanguageCode);
       setTarget(selectedLanguageCode);
@@ -645,18 +686,21 @@ const Index = () => {
       (translateSettings1 === "8" || translateSettings1 === "9") &&
       selectedLanguageCode.length >= 2
     ) {
-      shopify.toast.show("选择私有key进行翻译，只能选择一种目标语言");
+      shopify.toast.show(
+        t(
+          "Select a private key for translation. Only one target language can be selected.",
+        ),
+      );
       return false;
     }
     switch (translateSettings1) {
       case "8":
         if (customApikeyData) {
           const useData = checkApiKeyConfiguration(customApikeyData, 0);
-          console.log(useData);
 
           if (useData && useData?.usedToken >= useData?.tokenLimit) {
             // 如果私有key的额度超限，弹出提示框
-            // setIsApiKeyModalOpen(true);
+            setCurrentModal("limitExceeded");
             setIsApiKeyModalOpen(true);
             return false;
           }
@@ -667,6 +711,7 @@ const Index = () => {
           const useData = checkApiKeyConfiguration(customApikeyData, 1);
           if (useData && useData?.usedToken >= useData?.tokenLimit) {
             // 如果私有key的额度超限，弹出提示框
+            setCurrentModal("limitExceeded");
             setIsApiKeyModalOpen(true);
             return false;
           }
@@ -679,29 +724,29 @@ const Index = () => {
         break;
     }
     return true;
-  }
+  };
   const handleTranslate = async () => {
     if (!checkCanTranslate()) {
       return;
     }
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
-    const formData = new FormData();
-    formData.append(
-      "translation",
-      JSON.stringify({
-        primaryLanguage: languageSetting?.primaryLanguageCode,
-        selectedLanguage: selectedLanguageCode,
-        translateSettings1: translateSettings1,
-        translateSettings2: ["1"],
-        translateSettings3: translateSettings3,
-        customKey: customKey,
-        translateSettings5: translateSettings5,
-      }),
-    ); // 将选中的语言作为字符串发送
-    fetcher.submit(formData, {
-      method: "post",
-      action: "/app/language",
-    });
+    translateFetcher.submit(
+      {
+        translation: JSON.stringify({
+          primaryLanguage: languageSetting?.primaryLanguageCode,
+          selectedLanguage: selectedLanguageCode,
+          translateSettings1: translateSettings1,
+          translateSettings2: ["1"],
+          translateSettings3: translateSettings3,
+          customKey: customKey,
+          translateSettings5: translateSettings5,
+        }),
+      },
+      {
+        method: "post",
+        action: "/app/language",
+      },
+    );
     localStorage.setItem(
       "translateSettings4",
       JSON.stringify(translateSettings4),
@@ -821,7 +866,7 @@ const Index = () => {
                 style={{
                   visibility: languageData.length != 0 ? "visible" : "hidden",
                 }}
-                loading={fetcher.state === "submitting"}
+                loading={translateFetcher.state === "submitting"}
               >
                 {selectedLanguageCode.length > 0 &&
                 selectedLanguageCode.every(
@@ -1744,6 +1789,19 @@ const Index = () => {
           <NoLanguageSetCard />
         )}
         <Modal
+          open={isApiKeyModalOpen}
+          onCancel={handleApiKeyModalClose}
+          title={modalTypeObject[currentModal].Title}
+          centered
+          footer={
+            <Button type="primary" onClick={handleConfigureQuota}>
+              {modalTypeObject[currentModal].Button}
+            </Button>
+          }
+        >
+          <Text>{modalTypeObject[currentModal].Body}</Text>
+        </Modal>
+        <Modal
           title={t("Feature Unavailable")}
           open={showWarnModal}
           onCancel={() => setShowWarnModal(false)}
@@ -1783,6 +1841,8 @@ const Index = () => {
       </Space>
       {showPaymentModal && (
         <PaymentModal
+          shop={shop}
+          server={server as string}
           visible={showPaymentModal}
           setVisible={setShowPaymentModal}
           source={source}

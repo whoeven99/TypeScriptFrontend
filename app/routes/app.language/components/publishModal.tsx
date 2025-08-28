@@ -22,6 +22,7 @@ interface MarketDataType {
 }
 
 interface PublishModalProps {
+  shop: string;
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   languageCode: string;
@@ -29,6 +30,7 @@ interface PublishModalProps {
 }
 
 const PublishModal: React.FC<PublishModalProps> = ({
+  shop,
   isVisible,
   setIsModalOpen,
   languageCode,
@@ -41,6 +43,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
+  const fetcher = useFetcher<any>();
   const primaryMarketFetcher = useFetcher<any>();
   const webPresencesFetcher = useFetcher<any>();
   const webPresencesUpdateFetcher = useFetcher<any>();
@@ -139,6 +142,15 @@ const PublishModal: React.FC<PublishModalProps> = ({
           t("{{ locale }} is published", { locale: response?.name || "" }),
         );
         setIsModalOpen(false);
+        fetcher.submit(
+          {
+            log: `${shop} 发布语言${response?.locale}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       } else {
         shopify.toast.show(t("Publish failed"));
       }

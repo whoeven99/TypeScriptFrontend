@@ -63,7 +63,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
-  console.log(`${shop} load currency`);
   return json({
     shop,
     mobile: isMobile as boolean,
@@ -78,9 +77,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const loading = JSON.parse(formData.get("loading") as string);
   const theme = JSON.parse(formData.get("theme") as string);
   const rateData = JSON.parse(formData.get("rateData") as string);
-  const updateDefaultCurrency = JSON.parse(
-    formData.get("updateDefaultCurrency") as string,
-  );
   const addCurrencies = JSON.parse(formData.get("addCurrencies") as string);
   const deleteCurrencies: number[] = JSON.parse(
     formData.get("deleteCurrencies") as string,
@@ -88,15 +84,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const updateCurrencies = JSON.parse(
     formData.get("updateCurrencies") as string,
   );
-
-  console.log(`${shop} init: `, init);
-  console.log(`${shop} loading: `, loading);
-  console.log(`${shop} theme: `, theme);
-  console.log(`${shop} rateData: `, rateData);
-  console.log(`${shop} updateDefaultCurrency: `, updateDefaultCurrency);
-  console.log(`${shop} addCurrencies: `, addCurrencies);
-  console.log(`${shop} deleteCurrencies: `, deleteCurrencies);
-  console.log(`${shop} updateCurrencies: `, updateCurrencies);
 
   switch (true) {
     case !!init:
@@ -144,7 +131,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
         if (
           primaryCurrency &&
-          shopLoad.currencyCode !== primaryCurrency.currencyCode
+          shopLoad.currencyCode !== primaryCurrency?.currencyCode
         ) {
           await UpdateDefaultCurrency({
             shop,
@@ -206,18 +193,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       } catch (error) {
         console.error("Error rateData currency:", error);
       }
-    case !!updateDefaultCurrency:
-      try {
-        const data = await UpdateDefaultCurrency({
-          shop,
-          currencyName: updateDefaultCurrency.currencyName,
-          currencyCode: updateDefaultCurrency.currencyCode,
-          primaryStatus: updateDefaultCurrency.primaryStatus,
-        });
-        return json({ data });
-      } catch (error) {
-        console.error("Error updateDefaultCurrency currency:", error);
-      }
     case !!addCurrencies:
       try {
         const promises = addCurrencies.map((currency: any) =>
@@ -229,9 +204,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }),
         );
         const data = await Promise.allSettled(promises);
-        return json({ data });
+        return data;
       } catch (error) {
         console.error("Error addCurrencies currency:", error);
+        return [];
       }
     case !!deleteCurrencies:
       try {
@@ -239,9 +215,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           DeleteCurrency({ shop, id: currency }),
         );
         const data = await Promise.allSettled(promises);
-        return json({ data });
+        return data;
       } catch (error) {
         console.error("Error deleteCurrencies currency:", error);
+        return [];
       }
     case !!updateCurrencies:
       try {
@@ -306,6 +283,8 @@ const Index = () => {
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
+
+  const fetcher = useFetcher<any>();
   const initFetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const rateFetcher = useFetcher<any>();
@@ -318,6 +297,15 @@ const Index = () => {
       method: "post",
       action: "/app/currency",
     });
+    fetcher.submit(
+      {
+        log: `${shop} 目前在货币页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -389,23 +377,27 @@ const Index = () => {
   }, [rateFetcher.data]);
 
   useEffect(() => {
-    if (deleteFetcher.data !== undefined) {
-      let newData = [...dataSource];
-      // 遍历 deleteFetcher.data
-      deleteFetcher.data.data.forEach((data: any) => {
-        if (data.value.success) {
-          newData = newData.filter((item) => item.key !== data.value.response);
-        } else {
-          message.error(data.value.errorMsg);
-        }
-      });
-      dispatch(setTableData(newData));
-      shopify.toast.show(t("Delete successfully"));
-      setDeleteLoading(false);
-      setSelectedRowKeys([]);
-      setDeleteCode("");
-      setOriginalData(newData);
-      setFilteredData(newData);
+    if (deleteFetcher.data) {
+      if (deleteFetcher.data?.length) {
+        let newData = [...dataSource];
+        // 遍历 deleteFetcher.data
+        deleteFetcher.data?.forEach((item: any) => {
+          if (item?.value?.success) {
+            newData = newData.filter(
+              (currency) => currency.key !== item?.value?.response,
+            );
+          } else {
+            shopify.toast.show(item?.value?.errorMsg);
+          }
+        });
+        dispatch(setTableData(newData));
+        shopify.toast.show(t("Delete successfully"));
+        setDeleteLoading(false);
+        setSelectedRowKeys([]);
+        setDeleteCode("");
+        setOriginalData(newData);
+        setFilteredData(newData);
+      }
     }
   }, [deleteFetcher.data]);
 

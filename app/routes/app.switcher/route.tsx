@@ -100,7 +100,6 @@ const planMapping = {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  console.log(`${shop} load switcher`);
   return {
     shop,
     server: process.env.SERVER_URL,
@@ -114,66 +113,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
 
   const formData = await request.formData();
-  const loading = JSON.parse(formData.get("loading") as string);
   const shopInfo = JSON.parse(formData.get("shopInfo") as string);
-  const editData = JSON.parse(formData.get("editData") as string);
   switch (true) {
-    case !!loading:
-      try {
-        const data = await WidgetConfigurations({
-          shop: shop,
-        });
-        const initData = {
-          shopName: shop,
-          includedFlag: true,
-          languageSelector: true,
-          currencySelector: true,
-          ipOpen: false,
-          fontColor: "#000000",
-          backgroundColor: "#ffffff",
-          buttonColor: "#ffffff",
-          buttonBackgroundColor: "#000000",
-          optionBorderColor: "#ccc",
-          selectorPosition: "bottom_left",
-          positionData: 10,
-        };
-        console.log("initData", data);
-
-        if (
-          data.success &&
-          typeof data.response === "object" &&
-          data.response !== null
-        ) {
-          const filteredResponse = Object.fromEntries(
-            Object.entries(data.response).filter(
-              ([_, value]) => value !== null,
-            ),
-          );
-          const res = {
-            ...initData,
-            ...filteredResponse,
-          };
-          return res;
-        } else {
-          return initData;
-        }
-      } catch (error) {
-        console.error("Error switcher loading:", error);
-        return {
-          shopName: shop,
-          includedFlag: true,
-          languageSelector: true,
-          currencySelector: true,
-          ipOpen: false,
-          fontColor: "#000000",
-          backgroundColor: "#ffffff",
-          buttonColor: "#ffffff",
-          buttonBackgroundColor: "#000000",
-          optionBorderColor: "#ccc",
-          selectorPosition: "bottom_left",
-          positionData: 10,
-        };
-      }
     case !!shopInfo:
       try {
         const shopLoad = await queryShop({
@@ -210,13 +151,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       } catch (error) {
         console.error("Error switcher shopInfo:", error);
       }
-    case !!editData:
-      try {
-        const data = SaveAndUpdateData(editData);
-        return data;
-      } catch (error) {
-        console.error("Error switcher editData:", error);
-      }
     default:
       return null;
   }
@@ -226,7 +160,7 @@ const Index = () => {
   const { shop, server, ciwiSwitcherId, ciwiSwitcherBlocksId } =
     useLoaderData<typeof loader>();
   const [isGeoLocationEnabled, setIsGeoLocationEnabled] = useState(false);
-  const [isIncludedFlag, setIsIncludedFlag] = useState(false);
+  const [isIncludedFlag, setIsIncludedFlag] = useState(true);
   const [languageSelector, setLanguageSelector] = useState(true);
   const [currencySelector, setCurrencySelector] = useState(true);
   const [fontColor, setFontColor] = useState("#000000");
@@ -240,7 +174,6 @@ const Index = () => {
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [isCurrencyOpen, setIsCurrencyOpen] = useState(false);
   const [isSelectorOpen, setIsSelectorOpen] = useState(false);
-  // const [mainBoxText, setMainBoxText] = useState("");
   const [localization, setLocalization] = useState(initialLocalization);
   const [originalData, setOriginalData] = useState<EditData>();
   const [editData, setEditData] = useState<EditData>({
@@ -264,7 +197,6 @@ const Index = () => {
   const [selectedCurrency, setSelectedCurrency] = useState<any>(
     localization.currencies.find((currency) => currency.selected),
   );
-  const [isEdit, setIsEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showWarnModal, setShowWarnModal] = useState(false);
   const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>("");
@@ -275,14 +207,15 @@ const Index = () => {
   const [withMoneyValue, setWithMoneyValue] = useState<string>("");
   const [withoutMoneyValue, setWithoutMoneyValue] = useState<string>("");
   const [cardLoading, setCardLoading] = useState<boolean>(true);
+  const [updateLoading, setUpdateLoading] = useState<boolean>(false);
 
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
+
   const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
   const shopFetcher = useFetcher<any>();
-  const editFetcher = useFetcher<any>();
 
   useEffect(() => {
     const currencyFormatConfigCardOpen = localStorage.getItem(
@@ -297,15 +230,6 @@ const Index = () => {
     if (switcherEnableCardOpen) {
       setSwitcherEnableCardOpen(switcherEnableCardOpen === "true");
     }
-    fetcher.submit(
-      {
-        loading: JSON.stringify(true),
-      },
-      {
-        method: "POST",
-        action: "/app/switcher",
-      },
-    );
     themeFetcher.submit(
       {
         theme: JSON.stringify(true),
@@ -324,27 +248,62 @@ const Index = () => {
         action: "/app/switcher",
       },
     );
+    const getSwitcherConfig = async () => {
+      const data = await WidgetConfigurations({
+        shop: shop,
+        server: server as string,
+      });
+      const initData = {
+        shopName: shop,
+        includedFlag: true,
+        languageSelector: true,
+        currencySelector: true,
+        ipOpen: false,
+        fontColor: "#000000",
+        backgroundColor: "#ffffff",
+        buttonColor: "#ffffff",
+        buttonBackgroundColor: "#000000",
+        optionBorderColor: "#ccc",
+        selectorPosition: "bottom_left",
+        positionData: "10",
+        isTransparent: false,
+      };
+      if (data.success && data.response !== undefined) {
+        const filteredResponse = Object.fromEntries(
+          Object.entries(data.response).filter(([_, value]) => value !== null),
+        );
+        const res = {
+          ...initData,
+          ...filteredResponse,
+        };
+        setOriginalData(res);
+        setIsIncludedFlag(res.includedFlag);
+        setLanguageSelector(res.languageSelector);
+        setCurrencySelector(res.currencySelector);
+        setIsGeoLocationEnabled(res.ipOpen);
+        setFontColor(res.fontColor);
+        setBackgroundColor(res.backgroundColor);
+        setButtonColor(res.buttonColor);
+        setButtonBackgroundColor(res.buttonBackgroundColor);
+        setOptionBorderColor(res.optionBorderColor);
+        setSelectorPosition(res.selectorPosition);
+        setPositionData(res.positionData);
+        setIsTransparent(res.isTransparent);
+        setEditData(res);
+        setIsLoading(false);
+      }
+    };
+    getSwitcherConfig();
+    fetcher.submit(
+      {
+        log: `${shop} 目前在切换器页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   }, []);
-
-  useEffect(() => {
-    if (fetcher.data) {
-      setOriginalData(fetcher.data);
-      setIsIncludedFlag(fetcher.data.includedFlag);
-      setLanguageSelector(fetcher.data.languageSelector);
-      setCurrencySelector(fetcher.data.currencySelector);
-      setIsGeoLocationEnabled(fetcher.data.ipOpen);
-      setFontColor(fetcher.data.fontColor);
-      setBackgroundColor(fetcher.data.backgroundColor);
-      setButtonColor(fetcher.data.buttonColor);
-      setButtonBackgroundColor(fetcher.data.buttonBackgroundColor);
-      setOptionBorderColor(fetcher.data.optionBorderColor);
-      setSelectorPosition(fetcher.data.selectorPosition);
-      setPositionData(fetcher.data.positionData);
-      setIsTransparent(fetcher.data.isTransparent);
-      setEditData(fetcher.data);
-      setIsLoading(false);
-    }
-  }, [fetcher.data]);
 
   useEffect(() => {
     if (themeFetcher.data) {
@@ -453,24 +412,11 @@ const Index = () => {
             setWithoutMoneyValue(moneyFormatHtmlData);
           }
         }
-
         setDefaultCurrencyCode(shopFetcher.data.response.defaultCurrencyCode);
       }
     } else {
     }
   }, [shopFetcher.data]);
-
-  useEffect(() => {
-    if (editFetcher.data) {
-      if (editFetcher.data.success) {
-        setOriginalData(editFetcher.data.response);
-        setEditData(editFetcher.data.response);
-        shopify.toast.show(t("Switcher configuration updated successfully"));
-      } else {
-        shopify.toast.show(t("Switcher configuration update failed"));
-      }
-    }
-  }, [editFetcher.data]);
 
   // useEffect(() => {
   //   if (languageSelector && !currencySelector) {
@@ -661,17 +607,31 @@ const Index = () => {
   };
 
   const handleSave = async () => {
-    editFetcher.submit(
-      {
-        editData: JSON.stringify(editData),
-      },
-      {
-        method: "POST",
-      },
-    );
+    setUpdateLoading(true);
+    const data = await SaveAndUpdateData({
+      ...editData,
+      server: server as string,
+    });
+    if (data?.success && data.response != undefined) {
+      setOriginalData(data.response);
+      setEditData(data.response);
+      shopify.toast.show(t("Switcher configuration updated successfully"));
+    } else {
+      shopify.toast.show(t("Switcher configuration update failed"));
+    }
+    setUpdateLoading(false);
     if (isGeoLocationEnabled) {
       await axios.post(`${server}/userIp/addOrUpdateUserIp?shopName=${shop}`);
     }
+    fetcher.submit(
+      {
+        log: `${shop} 切换器配置修改数据保存成功`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   };
 
   const handleCancel = () => {
@@ -736,7 +696,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleSave}
-          loading={editFetcher.state === "submitting" ? "true" : undefined}
+          loading={updateLoading ? "true" : undefined}
         ></button>
         <button onClick={handleCancel}></button>
       </SaveBar>

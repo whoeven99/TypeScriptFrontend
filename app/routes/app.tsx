@@ -1,4 +1,8 @@
-import type { ActionFunctionArgs, HeadersFunction } from "@remix-run/node";
+import type {
+  ActionFunctionArgs,
+  HeadersFunction,
+  LoaderFunctionArgs,
+} from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import {
   Link,
@@ -15,22 +19,19 @@ import { authenticate } from "../shopify.server";
 import {
   GetLanguageLocaleInfo,
   GetLanguageList,
-  GetTotalWords,
   GetUserWords,
   GetLanguageStatus,
   AddUserFreeSubscription,
   InsertOrUpdateOrder,
-  GetUserSubscriptionPlan,
   InitializationDetection,
   UserAdd,
   AddDefaultLanguagePack,
   InsertCharsByShopName,
   InsertTargets,
-  getCredits,
-  GetUserInitTokenByShopName,
   GetTranslateDOByShopNameAndSource,
   GetUserData,
   StopTranslatingTask,
+  GetUserSubscriptionPlan,
 } from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -43,12 +44,16 @@ import { useTranslation } from "react-i18next";
 import { ConfigProvider } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
-import ScrollNotice from "~/components/ScrollNotice";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
-export const loader = async () => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const adminAuthResult = await authenticate.admin(request);
+  const { shop } = adminAuthResult.session;
+
   return json({
+    shop,
+    server: process.env.SERVER_URL,
     apiKey: process.env.SHOPIFY_API_KEY || "",
   });
 };
@@ -59,10 +64,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const formData = await request.formData();
-    const loading = JSON.parse(formData.get("loading") as string);
+    const init = JSON.parse(formData.get("init") as string);
     const languageInit = JSON.parse(formData.get("languageInit") as string);
     const languageData = JSON.parse(formData.get("languageData") as string);
-    const plan = JSON.parse(formData.get("plan") as string);
     const customApikeyData = JSON.parse(
       formData.get("customApikeyData") as string,
     );
@@ -70,16 +74,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("nearTransaltedData") as string,
     );
     const userData = JSON.parse(formData.get("userData") as string);
-    const languageCode = JSON.parse(formData.get("languageCode") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
-    const rate = JSON.parse(formData.get("rate") as string);
-    const credits = JSON.parse(formData.get("credits") as string);
-    const recalculate = JSON.parse(formData.get("recalculate") as string);
     const stopTranslate = JSON.parse(formData.get("stopTranslate") as string);
 
-    if (loading) {
+    if (init) {
       try {
         const init = await InitializationDetection({ shop });
         await UserAdd({
@@ -87,22 +87,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           accessToken: accessToken as string,
           init: init?.add,
         });
-        if (!init?.insertCharsByShopName) {
-          await InsertCharsByShopName({
-            shop,
-            accessToken: accessToken as string,
-          });
+        if (init?.success) {
+          if (!init?.response?.insertCharsByShopName) {
+            await InsertCharsByShopName({
+              shop,
+              accessToken: accessToken as string,
+            });
+          }
+          if (!init?.response?.addUserFreeSubscription) {
+            await AddUserFreeSubscription({ shop });
+          }
+          if (!init?.response?.addDefaultLanguagePack) {
+            await AddDefaultLanguagePack({ shop });
+          }
         }
-        if (!init?.addUserFreeSubscription) {
-          await AddUserFreeSubscription({ shop });
-        }
-        if (!init?.addDefaultLanguagePack) {
-          await AddDefaultLanguagePack({ shop });
-        }
-        return true;
+        return null;
       } catch (error) {
         console.error("Error loading app:", error);
-        return json({ error: "Error loading app" }, { status: 500 });
+        return null;
       }
     }
 
@@ -121,13 +123,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
           (item) => item.locale,
         );
-
-        console.log("shopPrimaryLanguage: ", shopPrimaryLanguage);
-        console.log(
-          "shopLanguagesWithoutPrimaryIndex: ",
-          shopLanguagesWithoutPrimaryIndex,
-        );
-        console.log("shopLocalesIndex: ", shopLocalesIndex);
 
         if (shopLocalesIndex.length && shopPrimaryLanguage[0].locale) {
           await InsertTargets({
@@ -167,24 +162,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           errorMsg: "",
           response: [],
         };
-      }
-    }
-
-    if (plan) {
-      try {
-        const planData = await GetUserSubscriptionPlan({
-          shop,
-          server: process.env.SERVER_URL as string,
-        });
-        return json({ plan: planData });
-      } catch (error) {
-        console.error("Error plan app:", error);
-        return json({
-          plan: {
-            userSubscriptionPlan: 2,
-            updateTime: "",
-          },
-        });
       }
     }
 
@@ -229,11 +206,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source: shopPrimaryLanguage[0]?.locale,
         });
 
-        console.log(
-          "GetTranslateDOByShopNameAndSource: ",
-          translatingData.response,
-        );
-
         const data = translatingData.response.filter(
           (translatingDataItem: any) =>
             shopLocalesIndex.includes(translatingDataItem?.target) &&
@@ -243,15 +215,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               )?.published),
         );
 
-        console.log(
-          `${shop} GetTranslateDOByShopNameAndSource filterData: `,
-          data.map((item: any) => ({
-            source: item?.source || shopPrimaryLanguage[0].locale,
-            target: item?.target || "",
-            status: item?.status || 0,
-            resourceType: item?.resourceType || "",
-          })),
-        );
+        console.log(`应用日志: ${shop} 进度条返回数据 ${data}`);
+        console.log(`应用日志: ${shop} 主页面数据加载完毕`);
 
         return {
           success: true,
@@ -316,7 +281,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source: statusData.source,
           target: statusData.target,
         });
-        console.log("GetLanguageStatus: ", data);
         return data;
       } catch (error) {
         console.error("Error statusData app:", error);
@@ -326,20 +290,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           errorMsg: "",
           response: [],
         };
-      }
-    }
-
-    if (languageCode) {
-      try {
-        const totalWords = await GetTotalWords({
-          shop,
-          accessToken: accessToken as string,
-          target: languageCode,
-        });
-        return json({ totalWords });
-      } catch (error) {
-        console.error("Error languageCode app:", error);
-        return json({ error: "Error languageCode app" }, { status: 500 });
       }
     }
 
@@ -383,36 +333,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    if (credits) {
-      try {
-        const data = await getCredits({
-          shop,
-          accessToken: accessToken!,
-          target: credits.target,
-          source: credits.source,
-        });
-        return json({ data });
-      } catch (error) {
-        console.error("Error credits app:", error);
-        return json({ error: "Error credits app" }, { status: 500 });
-      }
-    }
-
-    if (recalculate) {
-      try {
-        const data = await GetUserInitTokenByShopName({ shop });
-        return json({ data });
-      } catch (error) {
-        console.error("Error recalculate app:", error);
-        return json({
-          data: {
-            success: false,
-            message: "Error recalculate app",
-          },
-        });
-      }
-    }
-
     if (stopTranslate) {
       try {
         const data = await StopTranslatingTask({
@@ -432,10 +352,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    if (typeof rate === "number") {
-      console.log(`商店${shop}的评分: ${rate}`);
-    }
-
     return json({ success: false, message: "Invalid data" });
   } catch (error) {
     console.error("Error action app:", error);
@@ -444,19 +360,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey } = useLoaderData<typeof loader>();
+  const { apiKey, shop, server } = useLoaderData<typeof loader>();
   const [isClient, setIsClient] = useState(false);
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { plan, updateTime } = useSelector((state: any) => state.userConfig);
-  const planFetcher = useFetcher<any>();
-  const loadingFetcher = useFetcher<any>();
+  const initFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
 
   useEffect(() => {
-    loadingFetcher.submit(
-      { loading: JSON.stringify(true) },
+    initFetcher.submit(
+      { init: JSON.stringify(true) },
       {
         method: "post",
         action: "/app",
@@ -469,35 +384,38 @@ export default function App() {
         action: "/app",
       },
     );
-    planFetcher.submit(
-      { plan: JSON.stringify(true) },
-      {
-        method: "post",
-        action: "/app",
-      },
-    );
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (planFetcher.data && (!plan || !updateTime)) {
-      dispatch(
-        setUserConfig({
-          plan: planFetcher.data?.plan?.userSubscriptionPlan || "",
-        }),
-      );
-      if (planFetcher.data?.plan?.currentPeriodEnd) {
-        const date = new Date(planFetcher.data?.plan?.currentPeriodEnd)
-          .toLocaleDateString("zh-CN", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-          })
-          .replace(/\//g, "-");
-        dispatch(setUserConfig({ updateTime: date }));
+    const getPlan = async () => {
+      const data = await GetUserSubscriptionPlan({
+        shop: shop,
+        server: server as string,
+      });
+      if (data?.success) {
+        if (!plan || !updateTime) {
+          dispatch(
+            setUserConfig({
+              plan: data?.response?.userSubscriptionPlan || "2",
+            }),
+          );
+          if (data?.response?.currentPeriodEnd) {
+            const date = new Date(data?.response?.currentPeriodEnd)
+              .toLocaleDateString("zh-CN", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+              })
+              .replace(/\//g, "-");
+            dispatch(setUserConfig({ updateTime: date }));
+          }
+        }
       }
+    };
+    getPlan();
+    setIsClient(true);
+    const shopName = localStorage.getItem("shop");
+    if (!shopName) {
+      localStorage.setItem("shop", (shop as string) || "");
     }
-  }, [planFetcher.data]);
+  }, []);
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

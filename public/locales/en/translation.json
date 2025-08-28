@@ -199,6 +199,7 @@
   "progressing.target":"Target:",
   "progressing.init":"Initializing translation task...",
   "progressing.progressingWithSpace":"Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
+  "progressing.progressingWithoutSpace":"Translating {{item}} Module: ",
   "progressing.progressingWriting":"Writing {{item}} Module",
   "progressing.finished":"Your translation is ready. Publish it to apply the changes.",
   "progressing.buyCredits":"Buy credits",
@@ -633,11 +634,12 @@
   "1v1 support": "1v1 support",
   "Compare plans": "Compare plans",
   "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> billed once a year",
-  "Insufficient private API quotas":"Insufficient private API quotas",
+  "Insufficient private API quota":"Insufficient private API quota",
   "Configure now": "Configure now",
   "The usage has exceeded your configured quota. Please update your settings.":"The usage has exceeded your configured quota. Please update your settings.",
   "Unsupported language":"Unsupported language",
   "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.":"This language is not supported by Google Translate. Check the supported list in Google or switch to another model.",
   "Task in progress":"Task in progress",
-  "Your private API can run only one translation at a time. Please wait until the current task is finished.":"Your private API can run only one translation at a time. Please wait until the current task is finished."
+  "Your private API can run only one translation at a time. Please wait until the current task is finished.":"Your private API can run only one translation at a time. Please wait until the current task is finished.",
+  "Select a private key for translation. Only one target language can be selected.": "Select a private key for translation. Only one target language can be selected."
 }

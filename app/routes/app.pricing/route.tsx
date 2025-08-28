@@ -43,7 +43,6 @@ const { Title, Text, Paragraph } = Typography;
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  console.log(`${shop} load pricing`);
   return {
     shop,
     server: process.env.SERVER_URL,
@@ -129,7 +128,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         const data = await response.json();
-        console.log(`${shop} AppSubscriptionCancel: `, data);
+        console.log(`应用日志: ${shop} 取消计划: `, data);
         return data;
       } catch (error) {
         console.error("Error cancelId action:", error);
@@ -290,7 +289,8 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
   const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
-  const [buyButtonLoading, setBuyButtonLoading] = useState(false);
+  const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
+  const [selectedPayPlanOption, setSelectedPayPlanOption] = useState<any>();
   // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
   // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
@@ -302,11 +302,12 @@ const Index = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const userConfig = useSelector((state: any) => state.userConfig);
+
+  const fetcher = useFetcher<any>();
   const planCancelFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
-  // const freeTrialFetcher = useFetcher<any>();
 
   useEffect(() => {
     // wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
@@ -320,10 +321,10 @@ const Index = () => {
           shop,
           server: server as string,
         });
-        setSelectedPlan(data.userSubscriptionPlan);
-        dispatch(setUserConfig({ plan: data.userSubscriptionPlan }));
-        if (data.currentPeriodEnd) {
-          const date = new Date(data.currentPeriodEnd)
+        setSelectedPlan(data?.response?.userSubscriptionPlan || "2");
+        dispatch(setUserConfig({ plan: data?.response?.userSubscriptionPlan }));
+        if (data?.response?.currentPeriodEnd) {
+          const date = new Date(data?.response?.currentPeriodEnd)
             .toLocaleDateString("zh-CN", {
               year: "numeric",
               month: "2-digit",
@@ -345,8 +346,9 @@ const Index = () => {
         server: server as string,
       });
       if (data?.success) {
-        setCurrentCredits(data.response?.chars);
-        setMaxCredits(data.response?.totalChars);
+        setCurrentCredits(data?.response?.chars);
+        setMaxCredits(data?.response?.totalChars);
+      } else {
       }
     };
     getWords();
@@ -364,6 +366,15 @@ const Index = () => {
     };
     checkFreeUsed();
     setIsLoading(false);
+    fetcher.submit(
+      {
+        log: `${shop} 目前在付费页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   }, []);
 
   useEffect(() => {
@@ -422,6 +433,7 @@ const Index = () => {
     () => [
       {
         title: "Basic",
+        yearlyTitle: "Basic - Yearly",
         monthlyPrice: 7.99,
         yearlyPrice: 6.39,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -449,6 +461,7 @@ const Index = () => {
       },
       {
         title: "Pro",
+        yearlyTitle: "Pro - Yearly",
         monthlyPrice: 19.99,
         yearlyPrice: 15.99,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -476,6 +489,7 @@ const Index = () => {
       },
       {
         title: "Premium",
+        yearlyTitle: "Premium - Yearly",
         monthlyPrice: 39.99,
         yearlyPrice: 31.99,
         subtitle: t("<strong>${{amount}}</strong> billed once a year", {
@@ -662,7 +676,7 @@ const Index = () => {
         key: 0,
         label: t("How does the 5-day free trial work?"),
         children: t(
-          "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.",
+          "Choosing Pro or Premium gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.",
         ),
       },
       {
@@ -819,7 +833,6 @@ const Index = () => {
       shop,
       server: server as string,
     });
-    console.log("GetLatestActiveSubscribeId: ", data);
     if (data.success) {
       planCancelFetcher.submit(
         {
@@ -837,23 +850,12 @@ const Index = () => {
     plan: any;
     trialDays: number;
   }) => {
-    setBuyButtonLoading(true);
+    setSelectedPayPlanOption({ ...plan, yearly, trialDays });
     payForPlanFetcher.submit(
       { payForPlan: JSON.stringify({ ...plan, yearly, trialDays }) },
       { method: "POST" },
     );
   };
-
-  // const handleFreeTrial = async () => {
-  //   // setFreeTrialButtonLoading(true);
-  //   freeTrialFetcher.submit(
-  //     { freeTrial: JSON.stringify(true) },
-  //     { method: "POST" },
-  //   );
-  //   // const data = await StartFreePlan({ shop, server: server as string });
-  //   // console.log("freeTrial: ", data);
-  //   // return data;
-  // };
 
   return (
     <Page>
@@ -1037,10 +1039,13 @@ const Index = () => {
               <Button
                 type="default"
                 block
-                disabled={selectedPlan === 1 || selectedPlan === 2}
+                disabled={
+                  selectedPlan === 1 ||
+                  selectedPlan === 2 ||
+                  selectedPayPlanOption
+                }
                 style={{ marginBottom: hasOpenFreePlan ? "20px" : "70px" }}
                 onClick={() => setCancelPlanWarnModal(true)}
-                loading={buyButtonLoading}
               >
                 {selectedPlan === 1 || selectedPlan === 2
                   ? t("pricing.current_plan")
@@ -1155,16 +1160,15 @@ const Index = () => {
                   }}
                   loading={!selectedPlan}
                 >
-                  <Title level={5}>{plan.title}</Title>
+                  <Title level={5}>
+                    {yearly ? plan.yearlyTitle : plan.title}
+                  </Title>
                   <div style={{ margin: "12px 0" }}>
                     <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
                       ${yearly ? plan.yearlyPrice : plan.monthlyPrice}
                     </Text>
                     <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
                   </div>
-                  {/* <Paragraph type="secondary" style={{ fontSize: "13px" }}>
-                    {plan.subtitle}
-                  </Paragraph> */}
                   {yearly && (
                     <div
                       dangerouslySetInnerHTML={{ __html: plan.subtitle }}
@@ -1174,10 +1178,14 @@ const Index = () => {
                   <Button
                     type="default"
                     block
-                    disabled={plan.disabled}
+                    disabled={plan.disabled || selectedPayPlanOption}
                     style={{ marginBottom: "20px" }}
                     onClick={() => handlePayForPlan({ plan, trialDays: 0 })}
-                    loading={buyButtonLoading}
+                    loading={
+                      yearly == selectedPayPlanOption?.yearly &&
+                      plan.title == selectedPayPlanOption?.title &&
+                      !selectedPayPlanOption?.trialdays
+                    }
                   >
                     {plan.buttonText}
                   </Button>
@@ -1185,10 +1193,14 @@ const Index = () => {
                     <Button
                       type="primary"
                       block
-                      disabled={plan.disabled}
+                      disabled={plan.disabled || selectedPayPlanOption}
                       style={{ marginBottom: "20px" }}
                       onClick={() => handlePayForPlan({ plan, trialDays: 5 })}
-                      loading={buyButtonLoading}
+                      loading={
+                        yearly == selectedPayPlanOption?.yearly &&
+                        plan.title == selectedPayPlanOption?.title &&
+                        selectedPayPlanOption?.trialdays
+                      }
                     >
                       {t("Free trial")}
                     </Button>

@@ -52,29 +52,32 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
 
   useEffect(() => {
     if (addFetcher.data) {
-      addFetcher.data.data.map((res: any) => {
-        if (res.value.success) {
-          const data = [
-            {
-              key: res.value.response.id, // 将 id 转换为 key
-              currency: res.value.response.currencyName, // 将 currencyName 作为 currencyName
-              rounding: res.value.response.rounding,
-              exchangeRate: res.value.response.exchangeRate,
-              currencyCode: res.value.response.currencyCode,
-              primaryStatus: res.value.response.primaryStatus,
-            },
-          ];
-          dispatch(updateTableData(data));
-          shopify.toast.show(t("Add success"));
-          setFilteredCurrencies(defaultData);
-          setAllSelectedKeys([]);
-          setSearchInput("");
-          setAllSelectedCurrency([]);
-          setIsModalOpen(false);
-        } else {
-          shopify.toast.show(res.value.errorMsg);
-        }
-      });
+      if (addFetcher.data?.length) {
+        addFetcher.data?.map((res: any) => {
+          if (res?.value?.success) {
+            const data = [
+              {
+                key: res.value.response.id, // 将 id 转换为 key
+                currency: res.value.response.currencyName, // 将 currencyName 作为 currencyName
+                rounding: res.value.response.rounding,
+                exchangeRate: res.value.response.exchangeRate,
+                currencyCode: res.value.response.currencyCode,
+                primaryStatus: res.value.response.primaryStatus,
+              },
+            ];
+            dispatch(updateTableData(data));
+            shopify.toast.show(t("Add success"));
+            setFilteredCurrencies(defaultData);
+            setAllSelectedKeys([]);
+            setSearchInput("");
+            setAllSelectedCurrency([]);
+            setIsModalOpen(false);
+          } else {
+            shopify.toast.show(res.value?.errorMsg);
+          }
+        });
+      }else{
+      }
     }
   }, [addFetcher.data]);
 
@@ -274,14 +277,17 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
       open={isVisible}
       onCancel={handleCloseModal}
       footer={[
-        <div key={"footer_buttons"} style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          width: "100%",
-          marginTop: "-12px",
-          gap: "12px"        // 使用 gap 替代 marginRight
-        }}>
+        <div
+          key={"footer_buttons"}
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            width: "100%",
+            marginTop: "-12px",
+            gap: "12px", // 使用 gap 替代 marginRight
+          }}
+        >
           <Button
             key={"manage_cancel_button"}
             onClick={handleCloseModal}

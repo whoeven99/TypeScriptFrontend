@@ -72,7 +72,7 @@
   "ChatGPT 4.1": "ChatGPT 4.1",
   "Check all": "Alle auswählen",
   "Choose the right plan for you": "Wählen Sie den richtigen Plan für Sie",
-  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "Die Wahl von Pro oder Unlimited gibt Ihnen 5 Tage vollen Zugang zu allen Funktionen, zusammen mit 200.000 Test-Credits. Kündigen Sie jederzeit vor Ende der Testversion, um Abrechnung zu vermeiden.",
+  "Choosing Pro or Premium gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "Die Wahl von Pro oder Premium gibt Ihnen 5 Tage vollen Zugang zu allen Funktionen, zusammen mit 200.000 Test-Credits. Kündigen Sie jederzeit vor Ende der Testversion, um Abrechnung zu vermeiden.",
   "Ciwi Help Center": "Ciwi Hilfe-Center",
   "Ciwi.ai": "Ciwi.ai",
   "Click here": " Hier klicken ",
@@ -548,6 +548,7 @@
   "progressing.noTranslate": "Es gibt keine laufenden Übersetzungsaufgaben.",
   "progressing.privateApiKeyAmountLimit": "Ihr API-Schlüssel hat das Limit erreicht. Bitte setzen Sie es zurück, um Ihre Übersetzungsaufgabe fortzusetzen.",
   "progressing.progressingWithSpace": "Übersetze {{item}} Modul({{hasTranslated}}/{{totalNumber}}): ",
+  "progressing.progressingWithoutSpace": "Übersetze {{item}} Modul: ",
   "progressing.progressingWriting": "Schreibe {{item}} Modul",
   "progressing.publish": "Veröffentlichen",
   "progressing.reTranslate": "Erneut übersetzen",
@@ -632,11 +633,12 @@
   "{{credits}} credits/month": "{{credits}} Credits/Monat",
   "{{currentCredits}} has been used, total credits: {{maxCredits}}.": "<strong>{{currentCredits}}</strong> wurde verwendet, Gesamt-Credits: <strong>{{maxCredits}}</strong>.",
   "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> wird einmal jährlich in Rechnung gestellt",
-  "Insufficient private API quotas": "Unzureichende private API-Kontingente",
   "Configure now": "Jetzt konfigurieren",
   "The usage has exceeded your configured quota. Please update your settings.": "Die Nutzung hat Ihr konfiguriertes Kontingent überschritten. Bitte aktualisieren Sie Ihre Einstellungen.",
   "Unsupported language": "Nicht unterstützte Sprache",
   "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "Diese Sprache wird von Google Translate nicht unterstützt. Überprüfen Sie die Liste der unterstützten Sprachen in Google oder wechseln Sie zu einem anderen Modell.",
   "Task in progress": "Aufgabe in Bearbeitung",
-  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "Ihre private API kann jeweils nur eine Übersetzung ausführen. Bitte warten Sie, bis die aktuelle Aufgabe abgeschlossen ist."
+  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "Ihre private API kann jeweils nur eine Übersetzung ausführen. Bitte warten Sie, bis die aktuelle Aufgabe abgeschlossen ist.",
+  "Insufficient private API quota": "Unzureichendes privates API-Kontingent",
+  "Select a private key for translation. Only one target language can be selected.": "Wählen Sie einen privaten Schlüssel für die Übersetzung aus. Nur eine Zielsprache kann ausgewählt werden."
 }

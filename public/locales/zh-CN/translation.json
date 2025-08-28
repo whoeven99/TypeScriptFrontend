@@ -156,6 +156,7 @@
   "progressing.target": "目标语言：",
   "progressing.init": "正在初始化翻译任务...",
   "progressing.progressingWithSpace": "正在翻译{{item}}模块({{hasTranslated}}/{{totalNumber}}): ",
+  "progressing.progressingWithoutSpace": "正在翻译{{item}}模块: ",
   "progressing.progressingWriting": "正在写入{{item}}模块",
   "progressing.finished": "翻译已完成。翻译内容需要发布后才能生效。",
   "progressing.buyCredits": "购买积分",
@@ -609,7 +610,7 @@
   "Manual support": "手动支持",
   "Everything you need to know about pricing and billing.": "关于定价和计费的一切都在这里。",
   "How does the 5-day free trial work?": "5 天免费试用工作原理",
-  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "选择 Pro 或 Unlimited 计划，您将获得 5 天的全部功能访问权限，以及 200,000 次试用积分。在试用结束前取消订阅，避免计费。",
+  "Choosing Pro or Premium gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "选择 Pro 或 Premium 计划，您将获得 5 天的全部功能访问权限，以及 200,000 次试用积分。在试用结束前取消订阅，避免计费。",
   "Can I get a discount on my plan?": "我可以在我的计划上获得折扣吗？",
   "Yes. You'll save 20% when you choose yearly billing. Discount applies automatically at checkout.": "是。当您选择年度计费时，您将节省 20%。折扣会在结账时自动应用。",
   "Can I get a refund?": "我可以退款吗？",
@@ -635,11 +636,13 @@
   "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> 每年计费",
   "translate to": "翻译为",
   "This feature is available only with the paid plan.": "此功能仅在付费计划中可用。",
-  "Insufficient private API quotas": "私有 api 可用额度不足",
   "Configure now": "去配置",
   "The usage has exceeded your configured quota. Please update your settings.": "请重新配置额度",
   "Unsupported language": "该语言不支持翻译",
   "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.": "请登录 Google 查看支持的翻译语言列表，或者使用其他模型进行翻译",
   "Task in progress": "API 正在执行另一个翻译任务",
-  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "私有API只能同时翻译一种语言，请完成翻译后重试"
+  "Your private API can run only one translation at a time. Please wait until the current task is finished.": "私有API只能同时翻译一种语言，请完成翻译后重试",
+  "Insufficient private API quota": "私有 api 可用额度不足",
+  "Select a private key for translation. Only one target language can be selected.": "选择一个私有 key 进行翻译，只能选择一种目标语言"
+
 }
