@@ -146,6 +146,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               break;
           }
           InsertOrUpdateOrder({
+            shop: shop,
             id: payload?.app_purchase_one_time.admin_graphql_api_id,
             status: payload?.app_purchase_one_time.status,
           });

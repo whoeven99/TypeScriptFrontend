@@ -154,6 +154,46 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const customApiKeyFetcher = useFetcher<any>();
 
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [currentModal, setCurrentModal] = useState<
+    "limitExceeded" | "outOfRange" | "interfaceIsOccupied"
+  >("limitExceeded");
+  const modalTypeObject = {
+    limitExceeded: {
+      Title: `${t("Insufficient private API quota")}`,
+      Body: `${t("The usage has exceeded your configured quota. Please update your settings.")}`,
+      Button: `${t("Configure now")}`,
+    },
+    outOfRange: {
+      Title: `${t("Unsupported language")}`,
+      Body: `${t("This language is not supported by Google Translate. Check the supported list in Google or switch to another model.")}`,
+      Button: `${t("OK")}`,
+    },
+    interfaceIsOccupied: {
+      Title: `${t("Task in progress")}`,
+      Body: `${t("Your private API can run only one translation at a time. Please wait until the current task is finished.")}`,
+      Button: `${t("OK")}`,
+    },
+  };
+
+  const handleConfigureQuota = () => {
+    switch (currentModal) {
+      case "limitExceeded":
+        navigate("/app/apikeySetting");
+        setIsApiKeyModalOpen(false);
+        break;
+      case "outOfRange":
+        setIsApiKeyModalOpen(false);
+        break;
+      case "interfaceIsOccupied":
+        setIsApiKeyModalOpen(false);
+        break;
+    }
+  };
+
+  const handleApiKeyModalClose = () => {
+    setIsApiKeyModalOpen(false);
+  };
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
@@ -301,6 +341,14 @@ const Index = () => {
             }
           };
           getUserWords();
+          if (fetcher?.data?.errorCode === 10014) {
+            setCurrentModal("outOfRange");
+            setIsApiKeyModalOpen(true);
+          }
+          if (fetcher?.data?.errorCode === 10015) {
+            setCurrentModal("interfaceIsOccupied");
+            setIsApiKeyModalOpen(true);
+          }
         } catch (error) {
           shopify.toast.show(
             t("The query of the remaining credits failed. Please try again."),
@@ -552,7 +600,7 @@ const Index = () => {
       shopify.toast.show(t("Please set the primary language first."));
       return;
     }
-    if (!selectedLanguageCode) {
+    if (!selectedLanguageCode?.length) {
       if (languageCardRef.current) {
         languageCardRef.current.style.border = "1px solid red";
       }
@@ -571,6 +619,7 @@ const Index = () => {
     const selectedTranslatingItem = dataSource.find(
       (item: LanguagesDataType) => item.status === 2,
     );
+
     if (selectedItems && !selectedTranslatingItem) {
       setSource(languageSetting?.primaryLanguageCode);
       setTarget(selectedLanguageCode);
@@ -588,12 +637,53 @@ const Index = () => {
     }
   };
 
-  const handleTranslate = async () => {
+  const checkCanTranslate = () => {
     if (
       (translateSettings1 === "8" || translateSettings1 === "9") &&
       selectedLanguageCode.length >= 2
     ) {
-      shopify.toast.show("选择私有key进行翻译，只能选择一种目标语言");
+      shopify.toast.show(
+        t(
+          "Select a private key for translation. Only one target language can be selected.",
+        ),
+      );
+      return false;
+    }
+    switch (translateSettings1) {
+      case "8":
+        if (customApikeyData) {
+          const useData = checkApiKeyConfiguration(customApikeyData, 0);
+          console.log(useData);
+
+          if (useData && useData?.usedToken >= useData?.tokenLimit) {
+            // 如果私有key的额度超限，弹出提示框
+            setCurrentModal("limitExceeded");
+            setIsApiKeyModalOpen(true);
+            return false;
+          }
+        }
+        break;
+      case "9":
+        if (customApikeyData) {
+          const useData = checkApiKeyConfiguration(customApikeyData, 1);
+          if (useData && useData?.usedToken >= useData?.tokenLimit) {
+            // 如果私有key的额度超限，弹出提示框
+            setCurrentModal("limitExceeded");
+            setIsApiKeyModalOpen(true);
+            return false;
+          }
+        }
+        break;
+      default:
+        console.log(
+          `Unsupported translateSettings1 value: ${translateSettings1}`,
+        );
+        break;
+    }
+    return true;
+  };
+  const handleTranslate = async () => {
+    if (!checkCanTranslate()) {
       return;
     }
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
@@ -1655,6 +1745,19 @@ const Index = () => {
         ) : (
           <NoLanguageSetCard />
         )}
+        <Modal
+          open={isApiKeyModalOpen}
+          onCancel={handleApiKeyModalClose}
+          title={modalTypeObject[currentModal].Title}
+          centered
+          footer={
+            <Button type="primary" onClick={handleConfigureQuota}>
+              {modalTypeObject[currentModal].Button}
+            </Button>
+          }
+        >
+          <Text>{modalTypeObject[currentModal].Body}</Text>
+        </Modal>
         <Modal
           title={t("Feature Unavailable")}
           open={showWarnModal}

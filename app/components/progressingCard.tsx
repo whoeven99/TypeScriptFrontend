@@ -14,15 +14,7 @@ interface ProgressingCardProps {
 }
 
 const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
-  // const [data, setData] = useState<any>(null);
   const [item, setItem] = useState("");
-  // const [itemsCount, setItemsCount] = useState<{
-  //     totalNumber: number;
-  //     translatedNumber: number;
-  // }>({
-  //     totalNumber: 0,
-  //     translatedNumber: 0,
-  // });
   const [value, setValue] = useState<string>("");
   const [source, setSource] = useState<string>("");
   const [target, setTarget] = useState<string[]>([]);
@@ -39,11 +31,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   const [translateStatus, setTranslateStatus] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
   const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [itemsVisible, setItemsVisible] = useState<boolean>(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
   const fetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
-  // const itemsFetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
   const stopTranslateFetcher = useFetcher<any>();
 
@@ -125,6 +117,10 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
 
           if (typeof progress == "string" || typeof progress == "number") {
             setProgress(parseFloat(progress));
+          }
+
+          if (!progressData?.response?.TranslateType) {
+            setItemsVisible(true);
           }
         }
 
@@ -208,6 +204,10 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           if (typeof progress == "string" || typeof progress == "number") {
             setProgress(parseFloat(progress));
           }
+
+          if (!progressData?.response?.TranslateType) {
+            setItemsVisible(true);
+          }
         }
 
         async function getUserValue() {
@@ -243,6 +243,46 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       setTarget(fetcher.data?.response?.map((item: any) => item?.target));
       setStatus(fetcher.data?.response[0]?.status);
       setIndex(0);
+      async function getProgressData() {
+        const progressData = await GetProgressData({
+          shopName: shop,
+          server,
+          target: fetcher.data?.translatingLanguage.map(
+            (item: any) => item.target,
+          )[index],
+        });
+
+        if (
+          !progressData?.response?.TotalQuantity &&
+          !progressData?.response?.RemainingQuantity
+        ) {
+          return;
+        }
+
+        const progress = (
+          ((progressData?.response?.TotalQuantity -
+            progressData?.response?.RemainingQuantity) /
+            progressData?.response?.TotalQuantity) *
+          100
+        ).toFixed(2);
+
+        setProgressNumber({
+          hasTranslated:
+            progressData?.response?.TotalQuantity -
+            progressData?.response?.RemainingQuantity,
+          totalNumber: progressData?.response?.TotalQuantity,
+        });
+
+        if (typeof progress == "string" || typeof progress == "number") {
+          setProgress(parseFloat(progress));
+        }
+
+        if (!progressData?.response?.TranslateType) {
+          setItemsVisible(true);
+        }
+      }
+
+      getProgressData();
       setLoading(false);
     }
   }, [fetcher.data]);
@@ -550,22 +590,26 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                               }}
                             >
                               {translateStatus === 2
-                                ? t("progressing.progressingWithSpace", {
-                                    item: t(item),
-                                    hasTranslated:
-                                      progressNumber.hasTranslated > 0
-                                        ? progressNumber.hasTranslated
-                                        : 0,
-                                    totalNumber:
-                                      progressNumber.totalNumber > 0
-                                        ? progressNumber.totalNumber
-                                        : 0,
-                                  })
+                                ? itemsVisible
+                                  ? t("progressing.progressingWithSpace", {
+                                      item: t(item),
+                                      hasTranslated:
+                                        progressNumber.hasTranslated > 0
+                                          ? progressNumber.hasTranslated
+                                          : 0,
+                                      totalNumber:
+                                        progressNumber.totalNumber > 0
+                                          ? progressNumber.totalNumber
+                                          : 0,
+                                    })
+                                  : t("progressing.progressingWithoutSpace", {
+                                      item: t(item),
+                                    })
                                 : t("progressing.progressingWriting", {
                                     item: t(item),
-                                    hasTranslated: progressNumber.hasTranslated,
-                                    totalNumber: progressNumber.totalNumber,
                                   })}
+                              {itemsVisible &&
+                                t("progressing.progressingItems", {})}
                             </Text>
                             {translateStatus === 2 && (
                               <div style={{ width: "100%" }}>
@@ -759,12 +803,15 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                       >
                         {t("progressing.apikeySetting")}
                       </Button>
-                      <Button
+                      {/* <Button
                         block
                         icon={<PhoneOutlined />}
                         onClick={handleContactSupport}
                       >
                         {t("progressing.contactButton")}
+                      </Button> */}
+                      <Button block onClick={() => navigate("/app/translate")}>
+                        {t("progressing.reTranslate")}
                       </Button>
                     </div>
                   )}
