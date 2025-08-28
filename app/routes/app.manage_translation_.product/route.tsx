@@ -151,7 +151,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         const data = await response.json();
-        console.log(`应用日志: ${shop} 翻译管理-文章页面翻到上一页`);
+        console.log(`应用日志: ${shop} 翻译管理-产品页面翻到上一页`);
 
         return json({
           success: true,
@@ -215,7 +215,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         const data = await response.json();
-        console.log(`应用日志: ${shop} 翻译管理-文章页面翻到下一页`);
+        console.log(`应用日志: ${shop} 翻译管理-产品页面翻到下一页`);
 
         return json({
           success: true,
@@ -551,7 +551,7 @@ const Index = () => {
     );
     fetcher.submit(
       {
-        log: `${shop} 目前在翻译管理-文章页面`,
+        log: `${shop} 目前在翻译管理-产品页面`,
       },
       {
         method: "POST",
@@ -888,7 +888,7 @@ const Index = () => {
         shopify.toast.show(t("Saved successfully"));
         fetcher.submit(
           {
-            log: `${shop} 翻译管理-文章页面修改数据保存成功`,
+            log: `${shop} 翻译管理-产品页面修改数据保存成功`,
           },
           {
             method: "POST",
@@ -1451,7 +1451,7 @@ const Index = () => {
     }
     fetcher.submit(
       {
-        log: `${shop} 从翻译管理-文章页面点击单行翻译`,
+        log: `${shop} 从翻译管理-产品页面点击单行翻译`,
       },
       {
         method: "POST",
@@ -1476,7 +1476,7 @@ const Index = () => {
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
-            log: `${shop} 从翻译管理-文章页面点击单行翻译返回结果 ${data?.response}`,
+            log: `${shop} 从翻译管理-产品页面点击单行翻译返回结果 ${data?.response}`,
           },
           {
             method: "POST",
@@ -1653,7 +1653,7 @@ const Index = () => {
     }); // 提交表单请求
     fetcher.submit(
       {
-        log: `${shop} 提交翻译管理-文章页面修改数据`,
+        log: `${shop} 提交翻译管理-产品页面修改数据`,
       },
       {
         method: "POST",
