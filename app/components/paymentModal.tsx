@@ -54,7 +54,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [credits, setCredits] = useState<number | undefined>(undefined);
   const [multiple1, setMultiple1] = useState<number>(1);
-  const [multiple2, setMultiple2] = useState<number>(model.speed || 2);
+  const [multiple2, setMultiple2] = useState<number>(model?.speed || 2);
   const { t } = useTranslation();
   const fetcher = useFetcher<any>();
   const recalculateFetcher = useFetcher<any>();
@@ -190,7 +190,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   useEffect(() => {
     if (credits && !selectedOption) {
       const matchedOption = options.find(
-        (option) => option.Credits >= credits * multiple1 * multiple2,
+        (option) => option?.Credits >= credits * multiple1 * multiple2,
       ); // 找到第一个符合条件的选项
       if (matchedOption) {
         setSelectedOption(matchedOption);
@@ -418,9 +418,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     >
       <Title level={4} style={{ textAlign: "center", marginTop: "20px" }}>
         {needPay
-          ? t(
-              "Not enough translation credits. Purchase more to continue",
-            )
+          ? t("Not enough translation credits. Purchase more to continue")
           : t("Translation task is about to start")}
       </Title>
       {/* <Card>

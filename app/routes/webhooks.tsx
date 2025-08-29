@@ -3,6 +3,7 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import {
   AddCharsByShopName,
+  AddCharsByShopNameAfterSubscribe,
   AddSubscriptionQuotaRecord,
   CleanData,
   DeleteData,
@@ -27,7 +28,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     throw new Response();
   }
 
-  console.log(`${shop} ${topic}`);
+  console.log(`${shop} ${topic} webhooks: ${payload}`);
 
   // The topics handled here should be declared in the shopify.app.toml.
   // More info: https://shopify.dev/docs/apps/build/cli-for-apps/app-configuration
@@ -50,7 +51,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           new Response(null, { status: 200 });
           let credits = 0;
           let price = 0;
-          const plan = await GetUserSubscriptionPlan({ shop });
+          const plan = await GetUserSubscriptionPlan({
+            shop,
+            server: process.env.SERVER_URL as string,
+          });
           switch (payload?.app_purchase_one_time.name) {
             case "500K Credits":
               credits = 500000;
@@ -142,6 +146,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               break;
           }
           InsertOrUpdateOrder({
+            shop: shop,
             id: payload?.app_purchase_one_time.admin_graphql_api_id,
             status: payload?.app_purchase_one_time.status,
           });
@@ -184,28 +189,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     case "APP_SUBSCRIPTIONS_UPDATE":
       try {
         new Response(null, { status: 200 });
-        let credits = 0;
-        let price = 0;
+        // let credits = 0;
+        // let price = 0;
         let plan = 0;
         switch (payload?.app_subscription.name) {
           case "Starter":
-            credits = 0;
-            price = 1.99;
+            // credits = 0;
+            // price = 1.99;
             plan = 3;
             break;
           case "Basic":
-            credits = 1500000;
-            price = 7.99;
+            // credits = 1500000;
+            // price = 7.99;
             plan = 4;
             break;
           case "Pro":
-            credits = 3000000;
-            price = 19.99;
+            // credits = 3000000;
+            // price = 19.99;
             plan = 5;
             break;
           case "Premium":
-            credits = 8000000;
-            price = 39.99;
+            // credits = 8000000;
+            // price = 39.99;
             plan = 6;
             break;
         }
@@ -214,7 +219,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           status: payload?.app_subscription.status,
         });
         if (payload?.app_subscription.status === "ACTIVE") {
-          const addChars = await AddCharsByShopName({ shop, amount: credits });
+          const addChars = await AddCharsByShopNameAfterSubscribe({
+            shop,
+            appSubscription: payload?.app_subscription.admin_graphql_api_id,
+          });
           if (addChars?.success) {
             AddSubscriptionQuotaRecord({
               subscriptionId: payload?.app_subscription.admin_graphql_api_id,
@@ -224,8 +232,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             SendSubscribeSuccessEmail({
               id: payload?.app_subscription.admin_graphql_api_id,
               shopName: shop,
+              feeType:
+                payload?.app_subscription?.interval == "every_30_days" ? 1 : 2,
             });
           }
+        }
+        if (payload?.app_subscription.status === "CANCELLED") {
+          UpdateUserPlan({ shop, plan: 2 });
         }
       } catch (error) {
         console.error("Error APP_SUBSCRIPTIONS_UPDATE:", error);

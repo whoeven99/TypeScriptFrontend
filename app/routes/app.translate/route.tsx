@@ -1,6 +1,7 @@
 import { Icon, Page } from "@shopify/polaris";
 import { useEffect, useRef, useState } from "react";
 import {
+  Affix,
   Badge,
   Button,
   Card,
@@ -8,6 +9,7 @@ import {
   Divider,
   Flex,
   Input,
+  Modal,
   Popconfirm,
   Popover,
   Radio,
@@ -15,6 +17,7 @@ import {
   Select,
   Skeleton,
   Space,
+  Switch,
   Typography,
 } from "antd";
 import { useTranslation } from "react-i18next";
@@ -32,6 +35,7 @@ import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import PaymentModal from "~/components/paymentModal";
 import ScrollNotice from "~/components/ScrollNotice";
 import {
+  CaretDownOutlined,
   ExclamationCircleOutlined,
   InfoCircleOutlined,
 } from "@ant-design/icons";
@@ -40,10 +44,9 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import { ArrowLeftIcon, PlusIcon } from "@shopify/polaris-icons";
 import axios from "axios";
 import styles from "./styles.module.css";
-import { planMapping } from "../app.glossary/route";
-import TranslationWarnModal from "~/components/translationWarnModal";
-import TranslateIcon from "~/components/translateIcon";
+import defaultStyles from "../styles/defaultStyles.module.css";
 import EasyTranslateIcon from "~/components/easyTranslateIcon";
+import { GetGlossaryByShopName, GetUserWords } from "~/api/JavaServer";
 
 const { Title, Text } = Typography;
 
@@ -57,17 +60,6 @@ interface LanguageDataType {
   published: boolean;
 }
 
-interface apiKeyConfiguration {
-  apiModel: string;
-  apiName: Number;
-  apiStatus: boolean;
-  isSelected: boolean;
-  promptWord: string;
-  shopName: string;
-  tokenLimit: Number;
-  usedToken: Number;
-}
-
 interface LanguageSettingType {
   primaryLanguage: string;
   primaryLanguageCode: string;
@@ -82,11 +74,6 @@ interface apiKeyConfiguration {
   shopName: string;
   tokenLimit: Number;
   usedToken: Number;
-}
-
-interface LanguageSettingType {
-  primaryLanguage: string;
-  primaryLanguageCode: string;
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -117,7 +104,7 @@ const Index = () => {
     "filters",
     "metaobjects",
     "metadata",
-    "notifications",
+    // "notifications",
     "navigation",
     "shop",
     "theme",
@@ -138,6 +125,8 @@ const Index = () => {
     option5: "",
   });
   const [translateSettings5, setTranslateSettings5] = useState<boolean>(false);
+  const [glossaryOpen, setGlossaryOpen] = useState<boolean>(false);
+  const [brandWordOpen, setBrandWordOpen] = useState<boolean>(false);
   const [model, setModel] = useState<any>("");
   const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -147,6 +136,9 @@ const Index = () => {
   const [source, setSource] = useState("");
   const [target, setTarget] = useState<string[]>([]);
   const [languageCardWarnText, setLanguageCardWarnText] = useState<string>("");
+  const [rotate, setRotate] = useState<boolean>(false);
+  const [loadingArray, setLoadingArray] = useState<string[]>([]);
+
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showWarnModal, setShowWarnModal] = useState(false);
 
@@ -159,6 +151,46 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const customApiKeyFetcher = useFetcher<any>();
 
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [currentModal, setCurrentModal] = useState<
+    "limitExceeded" | "outOfRange" | "interfaceIsOccupied"
+  >("limitExceeded");
+  const modalTypeObject = {
+    limitExceeded: {
+      Title: `${t("Insufficient private API quota")}`,
+      Body: `${t("The usage has exceeded your configured quota. Please update your settings.")}`,
+      Button: `${t("Configure now")}`,
+    },
+    outOfRange: {
+      Title: `${t("Unsupported language")}`,
+      Body: `${t("This language is not supported by Google Translate. Check the supported list in Google or switch to another model.")}`,
+      Button: `${t("OK")}`,
+    },
+    interfaceIsOccupied: {
+      Title: `${t("Task in progress")}`,
+      Body: `${t("Your private API can run only one translation at a time. Please wait until the current task is finished.")}`,
+      Button: `${t("OK")}`,
+    },
+  };
+
+  const handleConfigureQuota = () => {
+    switch (currentModal) {
+      case "limitExceeded":
+        navigate("/app/apikeySetting");
+        setIsApiKeyModalOpen(false);
+        break;
+      case "outOfRange":
+        setIsApiKeyModalOpen(false);
+        break;
+      case "interfaceIsOccupied":
+        setIsApiKeyModalOpen(false);
+        break;
+    }
+  };
+
+  const handleApiKeyModalClose = () => {
+    setIsApiKeyModalOpen(false);
+  };
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
@@ -216,11 +248,7 @@ const Index = () => {
     if (customApiKeyFetcher.data && customApiKeyFetcher.data.customApikeyData) {
       // 过滤 success 为 true 且 response 中有非空 apiKey 的条目
       const filteredData = customApiKeyFetcher.data.customApikeyData
-        .filter(
-          (item: any) =>
-            item.success &&
-            item.response
-        )
+        .filter((item: any) => item.success && item.response)
         .map((item: any) => ({
           apiModel: item.response.apiModel,
           apiName: item.response.apiName,
@@ -240,7 +268,36 @@ const Index = () => {
       if (fetcher.data?.success) {
         shopify.toast.show(t("The translation task is in progress."));
         navigate("/app");
-      } else if (fetcher.data?.message === "words get error") {
+      } else if (!fetcher.data?.success) {
+        try {
+          const getUserWords = async () => {
+            const data = await GetUserWords({ shop, server });
+            if (data.success) {
+              if (
+                data?.response?.totalChars <= data?.response?.chars &&
+                fetcher.data?.response?.translateSettings1 !== "8" &&
+                fetcher.data?.response?.translateSettings1 !== "9"
+              ) {
+                setNeedPay(true);
+                setShowPaymentModal(true);
+              }
+            }
+          };
+          getUserWords();
+          if (fetcher?.data?.errorCode === 10014) {
+            setCurrentModal("outOfRange");
+            setIsApiKeyModalOpen(true);
+          }
+          if (fetcher?.data?.errorCode === 10015) {
+            setCurrentModal("interfaceIsOccupied");
+            setIsApiKeyModalOpen(true);
+          }
+        } catch (error) {
+          shopify.toast.show(
+            t("The query of the remaining credits failed. Please try again."),
+          );
+        }
+      } else if (fetcher.data?.errorMsg === "words get error") {
         shopify.toast.show(
           t("The query of the remaining credits failed. Please try again."),
         );
@@ -396,10 +453,10 @@ const Index = () => {
       label: t("Store metadata"),
       value: "metadata",
     },
-    {
-      label: t("Email"),
-      value: "notifications",
-    },
+    // {
+    //   label: t("Email"),
+    //   value: "notifications",
+    // },
     {
       label: t("Policies"),
       value: "policies",
@@ -425,7 +482,7 @@ const Index = () => {
       value: "shipping",
     },
     {
-      label: "handle",
+      label: "Handle(URL)",
       value: "handle",
     },
   ];
@@ -450,10 +507,10 @@ const Index = () => {
     if (languageCardWarnText) {
       setLanguageCardWarnText("");
     }
-    if (e.length > 5) {
-      shopify.toast.show(t("You can select up to 5 languages at once."));
-      return;
-    }
+    // if (e.length > 5) {
+    //   shopify.toast.show(t("You can select up to 5 languages at once."));
+    //   return;
+    // }
     setSelectedLanguageCode(e);
   };
 
@@ -486,7 +543,7 @@ const Index = () => {
       shopify.toast.show(t("Please set the primary language first."));
       return;
     }
-    if (!selectedLanguageCode) {
+    if (!selectedLanguageCode?.length) {
       if (languageCardRef.current) {
         languageCardRef.current.style.border = "1px solid red";
       }
@@ -505,25 +562,15 @@ const Index = () => {
     const selectedTranslatingItem = dataSource.find(
       (item: LanguagesDataType) => item.status === 2,
     );
+
     if (selectedItems && !selectedTranslatingItem) {
       setSource(languageSetting?.primaryLanguageCode);
       setTarget(selectedLanguageCode);
-      const response = await axios({
-        url: `${server}/shopify/getUserLimitChars?shopName=${shop}`,
-        method: "GET",
-      });
-      const words = response.data.response;
-      if (words?.totalChars <= words?.chars) {
-        setNeedPay(true);
-        setShowPaymentModal(true);
-      } else {
-        setNeedPay(false);
-        handleTranslate();
-      }
       const modalSetting = translateSettings1Options.find(
         (option) => option.value === translateSettings1,
       );
       setModel(modalSetting);
+      handleTranslate();
     } else {
       shopify.toast.show(
         t(
@@ -533,16 +580,56 @@ const Index = () => {
     }
   };
 
-  const handleTranslate = async () => {
+  const checkCanTranslate = () => {
     if (
       (translateSettings1 === "8" || translateSettings1 === "9") &&
       selectedLanguageCode.length >= 2
     ) {
-      shopify.toast.show("选择私有key进行翻译，只能选择一种目标语言");
+      shopify.toast.show(
+        t(
+          "Select a private key for translation. Only one target language can be selected.",
+        ),
+      );
+      return false;
+    }
+    switch (translateSettings1) {
+      case "8":
+        if (customApikeyData) {
+          const useData = checkApiKeyConfiguration(customApikeyData, 0);
+          console.log(useData);
+
+          if (useData && useData?.usedToken >= useData?.tokenLimit) {
+            // 如果私有key的额度超限，弹出提示框
+            setCurrentModal("limitExceeded");
+            setIsApiKeyModalOpen(true);
+            return false;
+          }
+        }
+        break;
+      case "9":
+        if (customApikeyData) {
+          const useData = checkApiKeyConfiguration(customApikeyData, 1);
+          if (useData && useData?.usedToken >= useData?.tokenLimit) {
+            // 如果私有key的额度超限，弹出提示框
+            setCurrentModal("limitExceeded");
+            setIsApiKeyModalOpen(true);
+            return false;
+          }
+        }
+        break;
+      default:
+        console.log(
+          `Unsupported translateSettings1 value: ${translateSettings1}`,
+        );
+        break;
+    }
+    return true;
+  };
+  const handleTranslate = async () => {
+    if (!checkCanTranslate()) {
       return;
     }
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
-    console.log(customKey);
     const formData = new FormData();
     formData.append(
       "translation",
@@ -550,7 +637,7 @@ const Index = () => {
         primaryLanguage: languageSetting?.primaryLanguageCode,
         selectedLanguage: selectedLanguageCode,
         translateSettings1: translateSettings1,
-        translateSettings2: translateSettings2,
+        translateSettings2: ["1"],
         translateSettings3: translateSettings3,
         customKey: customKey,
         translateSettings5: translateSettings5,
@@ -567,12 +654,7 @@ const Index = () => {
   };
 
   const handleTranslateSettings2Change = (value: string[]) => {
-    if (!value.length) {
-      shopify.toast.show(t("Select at least one language pack"));
-      return;
-    } else {
-      setTranslateSettings2(value);
-    }
+    setTranslateSettings2(value);
   };
 
   const handleTranslateSettings3Change = (value: string[]) => {
@@ -584,6 +666,53 @@ const Index = () => {
     }
   };
 
+  const handleAdvanceSettingChange = async (type: "glossary" | "brand") => {
+    if (loadingArray.some((item) => ["glossary", "brand"].includes(item)))
+      return;
+
+    setLoadingArray([...loadingArray, type]);
+
+    let error;
+
+    const data = await GetGlossaryByShopName({
+      shop,
+      server: server as string,
+    });
+
+    if (data?.success) {
+      if (data.response.length == 0) {
+        error = 2;
+      } else if (data.response.every((item: any) => item?.status == 0)) {
+        error = 3;
+      }
+      // if (data.response.length > 0 && type == "glossary") {
+      //   setGlossaryOpen(!glossaryOpen);
+      // } else if (data.response.length > 0 && type == "brand") {
+      //   setBrandWordOpen(!brandWordOpen);
+      // } else if (data.response.length == 0) {
+      //   shopify.toast.show(t("No available glossary found"));
+      // }
+    } else {
+      error = 1;
+    }
+    switch (true) {
+      case error == 1 || error == 2:
+        shopify.toast.show(t("No available glossary found"));
+        break;
+      case error == 3:
+        shopify.toast.show(t("You don’t have any glossary active right now"));
+        break;
+      default:
+        if (type == "glossary") {
+          setGlossaryOpen(!glossaryOpen);
+        } else if (type == "brand") {
+          setBrandWordOpen(!brandWordOpen);
+        }
+    }
+    const newArray = loadingArray.filter((item) => item == type);
+    setLoadingArray(newArray);
+  };
+
   return (
     <Page>
       <ScrollNotice
@@ -592,54 +721,59 @@ const Index = () => {
         )}
       />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Button
-              type="text"
-              variant="outlined"
-              onClick={handleNavigate}
-              style={{ padding: "4px" }}
-            >
-              <Icon source={ArrowLeftIcon} tone="base" />
-            </Button>
-            <Title
-              style={{
-                margin: "0",
-                fontSize: "1.25rem",
-                fontWeight: 700,
-              }}
-            >
-              {t("Translate Store")}
-            </Title>
+        <Affix offsetTop={0}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              zIndex: 10,
+              backgroundColor: "rgb(241, 241, 241)",
+              padding: "16px 0",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Button
+                type="text"
+                variant="outlined"
+                onClick={handleNavigate}
+                style={{ padding: "4px" }}
+              >
+                <Icon source={ArrowLeftIcon} tone="base" />
+              </Button>
+              <Title
+                style={{
+                  margin: "0",
+                  fontSize: "1.25rem",
+                  fontWeight: 700,
+                }}
+              >
+                {t("Translate Store")}
+              </Title>
+            </div>
+            {languageSetting?.primaryLanguageCode ? (
+              <Button
+                type="primary"
+                onClick={() => checkIfNeedPay()}
+                style={{
+                  visibility: languageData.length != 0 ? "visible" : "hidden",
+                }}
+                loading={fetcher.state === "submitting"}
+              >
+                {selectedLanguageCode.length > 0 &&
+                selectedLanguageCode.every(
+                  (item) =>
+                    languageData.find((lang) => lang.locale === item)
+                      ?.status === 1,
+                )
+                  ? t("Update")
+                  : t("Translate")}
+              </Button>
+            ) : (
+              <Skeleton.Button active />
+            )}
           </div>
-          {languageSetting?.primaryLanguageCode ? (
-            <Button
-              type="primary"
-              onClick={() => checkIfNeedPay()}
-              style={{
-                visibility: languageData.length != 0 ? "visible" : "hidden",
-              }}
-              loading={fetcher.state === "submitting"}
-            >
-              {selectedLanguageCode.length > 0 &&
-              selectedLanguageCode.every(
-                (item) =>
-                  languageData.find((lang) => lang.locale === item)?.status ===
-                  1,
-              )
-                ? t("Update")
-                : t("Translate")}
-            </Button>
-          ) : (
-            <Skeleton.Button active />
-          )}
-        </div>
+        </Affix>
         <Divider style={{ margin: "0" }} />
 
         {loadingLanguage ? (
@@ -762,7 +896,103 @@ const Index = () => {
                 marginBottom: "16px",
               }}
             >
-              <Space direction="vertical" size={24} style={{ display: "flex" }}>
+              <Space
+                direction="vertical"
+                size="large"
+                style={{ display: "flex" }}
+              >
+                <Space
+                  direction="vertical"
+                  size={16}
+                  style={{ display: "flex" }}
+                >
+                  <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+                    {t("translateSettings3.title")}
+                  </Title>
+                  <Checkbox
+                    indeterminate={
+                      translateSettings3.length > 0 &&
+                      translateSettings3.length <
+                        translateSettings3Options.length
+                    }
+                    onChange={(e) =>
+                      setTranslateSettings3(
+                        e.target.checked
+                          ? translateSettings3Options.map((item) => item.value)
+                          : [],
+                      )
+                    }
+                    checked={
+                      translateSettings3.length ==
+                      translateSettings3Options.length
+                    }
+                  >
+                    {t("Check all")}
+                  </Checkbox>
+                  <Divider style={{ margin: "0" }} />
+                  <Checkbox.Group
+                    value={translateSettings3}
+                    options={translateSettings3Options}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(200px, 1fr))",
+                      width: "100%",
+                    }}
+                    onChange={(e) => handleTranslateSettings3Change(e)}
+                  />
+                </Space>
+                <Space
+                  direction="vertical"
+                  size={16}
+                  style={{ display: "flex" }}
+                >
+                  <Space
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
+                      {t("translateSettings5.title")}
+                    </Title>
+                  </Space>
+                  {/* <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr", // 每行只一列，自动换行
+                      gap: "16px",
+                      width: "100%",
+                    }}
+                  > */}
+                  {translateSettings5Options.map((item, index) => (
+                    <Flex
+                      key={index}
+                      style={{
+                        width: "100%",
+                        marginRight: 0,
+                        padding: "8px 12px",
+                        border: "1px solid #f0f0f0",
+                        borderRadius: "4px",
+                        alignItems: "center",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => setTranslateSettings5(item.value)}
+                    >
+                      <Radio
+                        key={index}
+                        value={item.value}
+                        checked={translateSettings5 === item.value}
+                      />
+
+                      <Text>{item.label}</Text>
+                      {!isMobile && (
+                        <Text type="secondary">: {item.description}</Text>
+                      )}
+                    </Flex>
+                  ))}
+                </Space>
                 <Space
                   direction="vertical"
                   size={16}
@@ -784,7 +1014,7 @@ const Index = () => {
                         <Popconfirm
                           title=""
                           description={t(
-                            "Upgrade to a paid plan to unlock this feature",
+                            "This feature is available only with the paid plan.",
                           )}
                           trigger="hover"
                           showCancel={false}
@@ -794,7 +1024,7 @@ const Index = () => {
                           <InfoCircleOutlined />
                         </Popconfirm>
                         <Button
-                          disabled
+                          className={defaultStyles.Button_disable}
                           icon={<Icon source={PlusIcon} />}
                           onClick={() => handleUsePrivateApi()}
                         >
@@ -969,427 +1199,400 @@ const Index = () => {
                     )}
                   {/* </div> */}
                 </Space>
-                <Space
-                  direction="vertical"
-                  size={16}
-                  style={{ display: "flex" }}
+              </Space>
+            </Card>
+            {(translateSettings1 == "1" || translateSettings1 == "2") && (
+              <>
+                <div
+                  style={{
+                    paddingLeft: "8px",
+                  }}
                 >
-                  <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                    {t("translateSettings2.title")}
-                  </Title>
-                  <Checkbox.Group
-                    value={translateSettings2}
-                    options={translateSettings2Options}
+                  <Title
                     style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(200px, 1fr))",
-                      width: "100%",
-                      alignItems: "center", // 关键：让每个格子内容垂直居中
-                    }}
-                    onChange={(e) => handleTranslateSettings2Change(e)}
-                  />
-                </Space>
-                <Space
-                  direction="vertical"
-                  size={16}
-                  style={{ display: "flex" }}
-                >
-                  <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                    {t("translateSettings3.title")}
-                  </Title>
-                  <Checkbox.Group
-                    value={translateSettings3}
-                    options={translateSettings3Options}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(200px, 1fr))",
-                      width: "100%",
-                    }}
-                    onChange={(e) => handleTranslateSettings3Change(e)}
-                  />
-                </Space>
-                <Space
-                  direction="vertical"
-                  size={16}
-                  style={{ display: "flex" }}
-                >
-                  <Space
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
+                      margin: "0",
+                      fontSize: "1.25rem",
+                      fontWeight: 700,
                     }}
                   >
-                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                      {t("translateSettings5.title")}
-                    </Title>
-                  </Space>
-                  {/* <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr", // 每行只一列，自动换行
-                      gap: "16px",
-                      width: "100%",
-                    }}
-                  > */}
-                  {translateSettings5Options.map((item, index) => (
-                    <Flex
-                      key={index}
-                      style={{
-                        width: "100%",
-                        marginRight: 0,
-                        padding: "8px 12px",
-                        border: "1px solid #f0f0f0",
-                        borderRadius: "4px",
-                        alignItems: "center",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => setTranslateSettings5(item.value)}
-                    >
-                      <Radio
-                        key={index}
-                        value={item.value}
-                        checked={translateSettings5 === item.value}
-                      />
-
-                      <Text>{item.label}</Text>
-                      {!isMobile && (
-                        <Text type="secondary">: {item.description}</Text>
-                      )}
-                    </Flex>
-                  ))}
-                </Space>
-                <Space
-                  direction="vertical"
-                  size={16}
-                  style={{ display: "flex" }}
+                    {t("translateSettings.title3")}
+                  </Title>
+                </div>
+                <Card
+                  style={{
+                    width: "100%",
+                    minHeight: "222px",
+                    marginBottom: "16px",
+                  }}
                 >
-                  <div>
-                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                      {t("translateSettings4.title")}
-                    </Title>
-                    <Text type="secondary">
-                      {t("translateSettings4.description")}
-                    </Text>
-                  </div>
-                  <Space direction="vertical" style={{ width: "100%" }}>
-                    <div>
-                      <Text>{t("translateSettings4.title1")}</Text>
-                      <Select
-                        defaultActiveFirstOption={true}
-                        options={[
-                          {
-                            label: "",
-                            value: "",
-                          },
-                          {
-                            label: t("Formal"),
-                            value: "Formal",
-                          },
-                          {
-                            label: t("Neutral"),
-                            value: "Neutral",
-                          },
-                          {
-                            label: t("Casual"),
-                            value: "Casual",
-                          },
-                          {
-                            label: t("Youthful"),
-                            value: "Youthful",
-                          },
-                          {
-                            label: t("Luxury"),
-                            value: "Luxury",
-                          },
-                        ]}
-                        style={{
-                          width: "100%",
-                        }}
-                        onSelect={(e) =>
-                          setTranslateSettings4({
-                            ...translateSettings4,
-                            option1: e,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Text>{t("translateSettings4.title2")}</Text>
-                      <Select
-                        defaultActiveFirstOption={true}
-                        options={[
-                          {
-                            label: "",
-                            value: "",
-                          },
-                          {
-                            label: t("Apple – Minimal & premium (Tech/design)"),
-                            value: "Apple – Minimal & premium (Tech/design)",
-                          },
-                          {
-                            label: t(
-                              "Samsung – Innovative & versatile (Electronics)",
-                            ),
-                            value:
-                              "Samsung – Innovative & versatile (Electronics)",
-                          },
-                          {
-                            label: t("Nike – Bold & empowering (Sportswear)"),
-                            value: "Nike – Bold & empowering (Sportswear)",
-                          },
-                          {
-                            label: t(
-                              "Adidas – Dynamic & inclusive (Activewear)",
-                            ),
-                            value: "Adidas – Dynamic & inclusive (Activewear)",
-                          },
-                          {
-                            label: t(
-                              "Patagonia – Ethical & adventurous (Outdoor gear)",
-                            ),
-                            value:
-                              "Patagonia – Ethical & adventurous (Outdoor gear)",
-                          },
-                          {
-                            label: t("Zara – Modern & chic (Womenswear)"),
-                            value: "Zara – Modern & chic (Womenswear)",
-                          },
-                          {
-                            label: t("H&M – Trendy & casual (Fast fashion)"),
-                            value: "H&M – Trendy & casual (Fast fashion)",
-                          },
-                          {
-                            label: t(
-                              "Dior – Feminine & luxurious (High fashion)",
-                            ),
-                            value: "Dior – Feminine & luxurious (High fashion)",
-                          },
-                          {
-                            label: t(
-                              "Uniqlo – Simple & comfortable (Everyday basics)",
-                            ),
-                            value:
-                              "Uniqlo – Simple & comfortable (Everyday basics)",
-                          },
-                          {
-                            label: t(
-                              "Ralph Lauren – Timeless & masculine (Menswear)",
-                            ),
-                            value:
-                              "Ralph Lauren – Timeless & masculine (Menswear)",
-                          },
-                          {
-                            label: t(
-                              "Uniqlo – Clean & functional (Essentials)",
-                            ),
-                            value: "Uniqlo – Clean & functional (Essentials)",
-                          },
-                          {
-                            label: t(
-                              "Tommy Hilfiger – Classic & youthful (Men's fashion)",
-                            ),
-                            value:
-                              "Tommy Hilfiger – Classic & youthful (Men's fashion)",
-                          },
-                          {
-                            label: t("Tiffany – Elegant & romantic (Jewelry)"),
-                            value: "Tiffany – Elegant & romantic (Jewelry)",
-                          },
-                          {
-                            label: t(
-                              "Cartier – Luxurious & timeless (Fine jewelry)",
-                            ),
-                            value:
-                              "Cartier – Luxurious & timeless (Fine jewelry)",
-                          },
-                          {
-                            label: t(
-                              "Swarovski – Sparkling & accessible (Fashion jewelry)",
-                            ),
-                            value:
-                              "Swarovski – Sparkling & accessible (Fashion jewelry)",
-                          },
-                          {
-                            label: t(
-                              "L'Oréal – Confident & universal (Beauty)",
-                            ),
-                            value: "L'Oréal – Confident & universal (Beauty)",
-                          },
-                          {
-                            label: t(
-                              "Estée Lauder – Elegant & premium (Skincare)",
-                            ),
-                            value:
-                              "Estée Lauder – Elegant & premium (Skincare)",
-                          },
-                          {
-                            label: t(
-                              "Fenty Beauty – Bold & inclusive (Cosmetics)",
-                            ),
-                            value:
-                              "Fenty Beauty – Bold & inclusive (Cosmetics)",
-                          },
-                          {
-                            label: t(
-                              "Pampers – Caring & reassuring (Baby care)",
-                            ),
-                            value: "Pampers – Caring & reassuring (Baby care)",
-                          },
-                          {
-                            label: t("Mustela – Gentle & safe (Baby skincare)"),
-                            value: "Mustela – Gentle & safe (Baby skincare)",
-                          },
-                          {
-                            label: t(
-                              "IKEA – Practical & family-friendly (Home)",
-                            ),
-                            value: "IKEA – Practical & family-friendly (Home)",
-                          },
-                          {
-                            label: t("Dyson – Innovative & sleek (Appliances)"),
-                            value: "Dyson – Innovative & sleek (Appliances)",
-                          },
-                          {
-                            label: t("Philips – Smart & reliable (Home tech)"),
-                            value: "Philips – Smart & reliable (Home tech)",
-                          },
-                          {
-                            label: t(
-                              "Royal Canin – Scientific & premium (Pet food)",
-                            ),
-                            value:
-                              "Royal Canin – Scientific & premium (Pet food)",
-                          },
-                          {
-                            label: t("Pedigree – Friendly & caring (Pet care)"),
-                            value: "Pedigree – Friendly & caring (Pet care)",
-                          },
-                          {
-                            label: t("Unilever – Mass-market & trusted (FMCG)"),
-                            value: "Unilever – Mass-market & trusted (FMCG)",
-                          },
-                          {
-                            label: t("P&G – Reliable & practical (Household)"),
-                            value: "P&G – Reliable & practical (Household)",
-                          },
-                          {
-                            label: t(
-                              "Starbucks – Warm & lifestyle-driven (Coffee & culture)",
-                            ),
-                            value:
-                              "Starbucks – Warm & lifestyle-driven (Coffee & culture)",
-                          },
-                          {
-                            label: t(
-                              "Red Bull – Energetic & bold (Energy drinks)",
-                            ),
-                            value:
-                              "Red Bull – Energetic & bold (Energy drinks)",
-                          },
-                          {
-                            label: t(
-                              "Nestlé – Family-oriented & global (Food & beverage)",
-                            ),
-                            value:
-                              "Nestlé – Family-oriented & global (Food & beverage)",
-                          },
-                          {
-                            label: t(
-                              "Centrum – Scientific & trustworthy (Supplements)",
-                            ),
-                            value:
-                              "Centrum – Scientific & trustworthy (Supplements)",
-                          },
-                        ]}
-                        style={{
-                          width: "100%",
-                        }}
-                        onSelect={(e) =>
-                          setTranslateSettings4({
-                            ...translateSettings4,
-                            option2: e,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Text>{t("translateSettings4.title3")}</Text>
-                      <Select
-                        defaultActiveFirstOption={true}
-                        options={[
-                          {
-                            label: "",
-                            value: "",
-                          },
-                          {
-                            label: t("Informational – Just the facts"),
-                            value: "Informational – Just the facts",
-                          },
-                          {
-                            label: t("Soft CTA – Gentle encouragement"),
-                            value: "Soft CTA – Gentle encouragement",
-                          },
-                          {
-                            label: t("Strong CTA – Clear call to buy"),
-                            value: "Strong CTA – Clear call to buy",
-                          },
-                        ]}
-                        style={{
-                          width: "100%",
-                        }}
-                        onSelect={(e) =>
-                          setTranslateSettings4({
-                            ...translateSettings4,
-                            option3: e,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Text>{t("translateSettings4.title4")}</Text>
-                      <Select
-                        defaultActiveFirstOption={true}
-                        options={[
-                          {
-                            label: "",
-                            value: "",
-                          },
-                          {
-                            label: t("SEO-friendly"),
-                            value: "SEO-friendly",
-                          },
-                          {
-                            label: t("Minimalist"),
-                            value: "Minimalist",
-                          },
-                          {
-                            label: t("Storytelling"),
-                            value: "Storytelling",
-                          },
-                          {
-                            label: t("Feature-first"),
-                            value: "Feature-first",
-                          },
-                          {
-                            label: t("Call-to-action"),
-                            value: "Call-to-action",
-                          },
-                        ]}
-                        style={{
-                          width: "100%",
-                        }}
-                        onSelect={(e) =>
-                          setTranslateSettings4({
-                            ...translateSettings4,
-                            option4: e,
-                          })
-                        }
-                      />
-                    </div>
-                    {/* <div>
+                  <Space
+                    direction="vertical"
+                    size="large"
+                    style={{ display: "flex" }}
+                  >
+                    <Space
+                      direction="vertical"
+                      size={16}
+                      style={{ display: "flex" }}
+                    >
+                      <div>
+                        <Title
+                          level={5}
+                          style={{ fontSize: "1rem", margin: "0" }}
+                        >
+                          {t("translateSettings4.title")}
+                        </Title>
+                        <Text type="secondary">
+                          {t("translateSettings4.description")}
+                        </Text>
+                      </div>
+                      <Space direction="vertical" style={{ width: "100%" }}>
+                        <div>
+                          <Text>{t("translateSettings4.title1")}</Text>
+                          <Select
+                            defaultActiveFirstOption={true}
+                            options={[
+                              {
+                                label: "",
+                                value: "",
+                              },
+                              {
+                                label: t("Formal"),
+                                value: "Formal",
+                              },
+                              {
+                                label: t("Neutral"),
+                                value: "Neutral",
+                              },
+                              {
+                                label: t("Casual"),
+                                value: "Casual",
+                              },
+                              {
+                                label: t("Youthful"),
+                                value: "Youthful",
+                              },
+                              {
+                                label: t("Luxury"),
+                                value: "Luxury",
+                              },
+                            ]}
+                            style={{
+                              width: "100%",
+                            }}
+                            onSelect={(e) =>
+                              setTranslateSettings4({
+                                ...translateSettings4,
+                                option1: e,
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Text>{t("translateSettings4.title2")}</Text>
+                          <Select
+                            defaultActiveFirstOption={true}
+                            options={[
+                              {
+                                label: "",
+                                value: "",
+                              },
+                              {
+                                label: t(
+                                  "Apple – Minimal & premium (Tech/design)",
+                                ),
+                                value:
+                                  "Apple – Minimal & premium (Tech/design)",
+                              },
+                              {
+                                label: t(
+                                  "Samsung – Innovative & versatile (Electronics)",
+                                ),
+                                value:
+                                  "Samsung – Innovative & versatile (Electronics)",
+                              },
+                              {
+                                label: t(
+                                  "Nike – Bold & empowering (Sportswear)",
+                                ),
+                                value: "Nike – Bold & empowering (Sportswear)",
+                              },
+                              {
+                                label: t(
+                                  "Adidas – Dynamic & inclusive (Activewear)",
+                                ),
+                                value:
+                                  "Adidas – Dynamic & inclusive (Activewear)",
+                              },
+                              {
+                                label: t(
+                                  "Patagonia – Ethical & adventurous (Outdoor gear)",
+                                ),
+                                value:
+                                  "Patagonia – Ethical & adventurous (Outdoor gear)",
+                              },
+                              {
+                                label: t("Zara – Modern & chic (Womenswear)"),
+                                value: "Zara – Modern & chic (Womenswear)",
+                              },
+                              {
+                                label: t(
+                                  "H&M – Trendy & casual (Fast fashion)",
+                                ),
+                                value: "H&M – Trendy & casual (Fast fashion)",
+                              },
+                              {
+                                label: t(
+                                  "Dior – Feminine & luxurious (High fashion)",
+                                ),
+                                value:
+                                  "Dior – Feminine & luxurious (High fashion)",
+                              },
+                              {
+                                label: t(
+                                  "Uniqlo – Simple & comfortable (Everyday basics)",
+                                ),
+                                value:
+                                  "Uniqlo – Simple & comfortable (Everyday basics)",
+                              },
+                              {
+                                label: t(
+                                  "Ralph Lauren – Timeless & masculine (Menswear)",
+                                ),
+                                value:
+                                  "Ralph Lauren – Timeless & masculine (Menswear)",
+                              },
+                              {
+                                label: t(
+                                  "Uniqlo – Clean & functional (Essentials)",
+                                ),
+                                value:
+                                  "Uniqlo – Clean & functional (Essentials)",
+                              },
+                              {
+                                label: t(
+                                  "Tommy Hilfiger – Classic & youthful (Men's fashion)",
+                                ),
+                                value:
+                                  "Tommy Hilfiger – Classic & youthful (Men's fashion)",
+                              },
+                              {
+                                label: t(
+                                  "Tiffany – Elegant & romantic (Jewelry)",
+                                ),
+                                value: "Tiffany – Elegant & romantic (Jewelry)",
+                              },
+                              {
+                                label: t(
+                                  "Cartier – Luxurious & timeless (Fine jewelry)",
+                                ),
+                                value:
+                                  "Cartier – Luxurious & timeless (Fine jewelry)",
+                              },
+                              {
+                                label: t(
+                                  "Swarovski – Sparkling & accessible (Fashion jewelry)",
+                                ),
+                                value:
+                                  "Swarovski – Sparkling & accessible (Fashion jewelry)",
+                              },
+                              {
+                                label: t(
+                                  "L'Oréal – Confident & universal (Beauty)",
+                                ),
+                                value:
+                                  "L'Oréal – Confident & universal (Beauty)",
+                              },
+                              {
+                                label: t(
+                                  "Estée Lauder – Elegant & premium (Skincare)",
+                                ),
+                                value:
+                                  "Estée Lauder – Elegant & premium (Skincare)",
+                              },
+                              {
+                                label: t(
+                                  "Fenty Beauty – Bold & inclusive (Cosmetics)",
+                                ),
+                                value:
+                                  "Fenty Beauty – Bold & inclusive (Cosmetics)",
+                              },
+                              {
+                                label: t(
+                                  "Pampers – Caring & reassuring (Baby care)",
+                                ),
+                                value:
+                                  "Pampers – Caring & reassuring (Baby care)",
+                              },
+                              {
+                                label: t(
+                                  "Mustela – Gentle & safe (Baby skincare)",
+                                ),
+                                value:
+                                  "Mustela – Gentle & safe (Baby skincare)",
+                              },
+                              {
+                                label: t(
+                                  "IKEA – Practical & family-friendly (Home)",
+                                ),
+                                value:
+                                  "IKEA – Practical & family-friendly (Home)",
+                              },
+                              {
+                                label: t(
+                                  "Dyson – Innovative & sleek (Appliances)",
+                                ),
+                                value:
+                                  "Dyson – Innovative & sleek (Appliances)",
+                              },
+                              {
+                                label: t(
+                                  "Philips – Smart & reliable (Home tech)",
+                                ),
+                                value: "Philips – Smart & reliable (Home tech)",
+                              },
+                              {
+                                label: t(
+                                  "Royal Canin – Scientific & premium (Pet food)",
+                                ),
+                                value:
+                                  "Royal Canin – Scientific & premium (Pet food)",
+                              },
+                              {
+                                label: t(
+                                  "Pedigree – Friendly & caring (Pet care)",
+                                ),
+                                value:
+                                  "Pedigree – Friendly & caring (Pet care)",
+                              },
+                              {
+                                label: t(
+                                  "Unilever – Mass-market & trusted (FMCG)",
+                                ),
+                                value:
+                                  "Unilever – Mass-market & trusted (FMCG)",
+                              },
+                              {
+                                label: t(
+                                  "P&G – Reliable & practical (Household)",
+                                ),
+                                value: "P&G – Reliable & practical (Household)",
+                              },
+                              {
+                                label: t(
+                                  "Starbucks – Warm & lifestyle-driven (Coffee & culture)",
+                                ),
+                                value:
+                                  "Starbucks – Warm & lifestyle-driven (Coffee & culture)",
+                              },
+                              {
+                                label: t(
+                                  "Red Bull – Energetic & bold (Energy drinks)",
+                                ),
+                                value:
+                                  "Red Bull – Energetic & bold (Energy drinks)",
+                              },
+                              {
+                                label: t(
+                                  "Nestlé – Family-oriented & global (Food & beverage)",
+                                ),
+                                value:
+                                  "Nestlé – Family-oriented & global (Food & beverage)",
+                              },
+                              {
+                                label: t(
+                                  "Centrum – Scientific & trustworthy (Supplements)",
+                                ),
+                                value:
+                                  "Centrum – Scientific & trustworthy (Supplements)",
+                              },
+                            ]}
+                            style={{
+                              width: "100%",
+                            }}
+                            onSelect={(e) =>
+                              setTranslateSettings4({
+                                ...translateSettings4,
+                                option2: e,
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Text>{t("translateSettings4.title3")}</Text>
+                          <Select
+                            defaultActiveFirstOption={true}
+                            options={[
+                              {
+                                label: "",
+                                value: "",
+                              },
+                              {
+                                label: t("Informational – Just the facts"),
+                                value: "Informational – Just the facts",
+                              },
+                              {
+                                label: t("Soft CTA – Gentle encouragement"),
+                                value: "Soft CTA – Gentle encouragement",
+                              },
+                              {
+                                label: t("Strong CTA – Clear call to buy"),
+                                value: "Strong CTA – Clear call to buy",
+                              },
+                            ]}
+                            style={{
+                              width: "100%",
+                            }}
+                            onSelect={(e) =>
+                              setTranslateSettings4({
+                                ...translateSettings4,
+                                option3: e,
+                              })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Text>{t("translateSettings4.title4")}</Text>
+                          <Select
+                            defaultActiveFirstOption={true}
+                            options={[
+                              {
+                                label: "",
+                                value: "",
+                              },
+                              {
+                                label: t("SEO-friendly"),
+                                value: "SEO-friendly",
+                              },
+                              {
+                                label: t("Minimalist"),
+                                value: "Minimalist",
+                              },
+                              {
+                                label: t("Storytelling"),
+                                value: "Storytelling",
+                              },
+                              {
+                                label: t("Feature-first"),
+                                value: "Feature-first",
+                              },
+                              {
+                                label: t("Call-to-action"),
+                                value: "Call-to-action",
+                              },
+                            ]}
+                            style={{
+                              width: "100%",
+                            }}
+                            onSelect={(e) =>
+                              setTranslateSettings4({
+                                ...translateSettings4,
+                                option4: e,
+                              })
+                            }
+                          />
+                        </div>
+                        {/* <div>
                       <Text>{t("translateSettings4.title5")}</Text>
                       <Input
                         style={{ width: "100%" }}
@@ -1403,29 +1606,109 @@ const Index = () => {
                         placeholder={t("translateSettings4.placeholder5")}
                       />
                     </div> */}
+                      </Space>
+                    </Space>
+                    <Space
+                      direction="vertical"
+                      size={16}
+                      style={{ display: "flex" }}
+                    >
+                      <Title
+                        level={5}
+                        style={{ fontSize: "1rem", margin: "0" }}
+                      >
+                        {t("translateSettings2.title")}
+                      </Title>
+                      <Checkbox.Group
+                        value={translateSettings2}
+                        options={translateSettings2Options}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fill, minmax(200px, 1fr))",
+                          width: "100%",
+                        }}
+                        onChange={(e) => handleTranslateSettings2Change(e)}
+                      />
+                    </Space>
                   </Space>
+                </Card>
+              </>
+            )}
+            <Card
+              title={t("Advance Setting")}
+              extra={
+                <Button type="text" onClick={() => setRotate(!rotate)}>
+                  <CaretDownOutlined rotate={rotate ? 180 : 0} />
+                </Button>
+              }
+              style={{
+                width: "100%",
+                marginBottom: "16px",
+              }}
+              styles={{
+                body: {
+                  padding: rotate ? "24px" : "0",
+                },
+              }}
+            >
+              {rotate && (
+                <Space
+                  direction="vertical"
+                  size="large"
+                  style={{ display: "flex", width: "100%" }}
+                >
+                  <Flex gap={8} align="center" justify="space-between">
+                    <Text>{t("Glossary")}</Text>
+                    <Switch
+                      checked={glossaryOpen}
+                      loading={loadingArray.includes("glossary")}
+                      onClick={() => handleAdvanceSettingChange("glossary")}
+                    />
+                  </Flex>
+                  {/* <Flex gap={8} align="center" justify="space-between">
+                    <Text>{t("Brand-First Sentence Structure")}</Text>
+
+                    <Switch
+                      checked={brandWordOpen}
+                      loading={loadingArray.includes("brand")}
+                      onClick={() => handleAdvanceSettingChange("brand")}
+                    />
+                  </Flex> */}
                 </Space>
-              </Space>
+              )}
             </Card>
           </Space>
         ) : (
           <NoLanguageSetCard />
         )}
-        <TranslationWarnModal
-          title={t(
-            "The Private API has been limited due to your plan (Current plan: {{plan}})",
-            { plan: "Free" },
-          )}
-          content={t(
-            "Please upgrade to a higher plan to unlock the Private API",
-          )}
-          action={() => {
-            navigate("/app/pricing");
-          }}
-          actionText={t("Upgrade")}
-          show={showWarnModal}
-          setShow={setShowWarnModal}
-        />
+        <Modal
+          open={isApiKeyModalOpen}
+          onCancel={handleApiKeyModalClose}
+          title={modalTypeObject[currentModal].Title}
+          centered
+          footer={
+            <Button type="primary" onClick={handleConfigureQuota}>
+              {modalTypeObject[currentModal].Button}
+            </Button>
+          }
+        >
+          <Text>{modalTypeObject[currentModal].Body}</Text>
+        </Modal>
+        <Modal
+          title={t("Feature Unavailable")}
+          open={showWarnModal}
+          onCancel={() => setShowWarnModal(false)}
+          centered
+          width={700}
+          footer={
+            <Button type="primary" onClick={() => navigate("/app/pricing")}>
+              {t("Upgrade")}
+            </Button>
+          }
+        >
+          <Text>{t("This feature is available only with the paid plan.")}</Text>
+        </Modal>
       </Space>
       {showPaymentModal && (
         <PaymentModal

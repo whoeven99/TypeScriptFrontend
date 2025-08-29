@@ -737,7 +737,7 @@ const Index = () => {
       setIsLoading(true);
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
-      navigate(`/app/manage_translation/blog?language=${language}`);
+      navigate(`/app/manage_translation/collection?language=${language}`);
     }
   };
 

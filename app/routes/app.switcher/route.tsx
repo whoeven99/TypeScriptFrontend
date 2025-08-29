@@ -11,6 +11,7 @@ import {
   Button,
   Popconfirm,
   Flex,
+  Modal,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
@@ -21,12 +22,12 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { SaveAndUpdateData, WidgetConfigurations } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useSelector } from "react-redux";
-import TranslationWarnModal from "~/components/translationWarnModal";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { queryShop } from "~/api/admin";
 import SwitcherSettingCard from "./components/switcherSettingCard";
 const { Text, Title } = Typography;
+import defaultStyles from "../styles/defaultStyles.module.css";
 
 interface EditData {
   shopName: string;
@@ -777,7 +778,7 @@ const Index = () => {
                       <Popconfirm
                         title=""
                         description={t(
-                          "Upgrade to a paid plan to unlock this feature",
+                          "This feature is available only with the paid plan.",
                         )}
                         trigger="hover"
                         showCancel={false}
@@ -794,9 +795,11 @@ const Index = () => {
                   <Flex justify="space-between">
                     <Text>{t("Geolocation: ")}</Text>
                     <Switch
-                      disabled={
+                      className={
                         (typeof plan === "number" && plan <= 3) ||
                         typeof plan === "undefined"
+                          ? defaultStyles.Switch_disable
+                          : ""
                       }
                       checked={isGeoLocationEnabled}
                       onChange={handleIpOpenChange}
@@ -1353,21 +1356,20 @@ const Index = () => {
             </Card>
           </div>
         </div>
-        <TranslationWarnModal
-          title={t(
-            "The Auto IP position has been limited due to your plan (Current plan: {{plan}})",
-            { plan: planMapping[plan as keyof typeof planMapping] },
-          )}
-          content={t(
-            "Please upgrade to a higher plan to unlock the Auto IP position",
-          )}
-          action={() => {
-            navigate("/app/pricing");
-          }}
-          actionText={t("Upgrade")}
-          show={showWarnModal}
-          setShow={setShowWarnModal}
-        />
+        <Modal
+          title={t("Feature Unavailable")}
+          open={showWarnModal}
+          onCancel={() => setShowWarnModal(false)}
+          centered
+          width={700}
+          footer={
+            <Button type="primary" onClick={() => navigate("/app/pricing")}>
+              {t("Upgrade")}
+            </Button>
+          }
+        >
+          <Text>{t("This feature is available only with the paid plan.")}</Text>
+        </Modal>
       </Space>
     </Page>
   );

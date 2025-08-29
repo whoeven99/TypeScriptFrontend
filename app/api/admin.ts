@@ -1162,7 +1162,7 @@ export const queryNextTransType = async ({
     const res = response.data.data.translatableResources;
     return res;
   } catch (error) {
-    console.error(`Error fetching ${resourceType} translation data:`, error);
+    console.error(`Error fetching ${resourceType} queryNextTransType:`, error);
   }
 };
 
@@ -1218,7 +1218,10 @@ export const queryPreviousTransType = async ({
 
     return res;
   } catch (error) {
-    console.error(`Error fetching ${resourceType} translation data:`, error);
+    console.error(
+      `Error fetching ${resourceType} queryPreviousTransType:`,
+      error,
+    );
   }
 };
 
@@ -1282,7 +1285,10 @@ export const queryNextNestTransType = async ({
 
     return res;
   } catch (error) {
-    console.error(`Error fetching ${resourceType} translation data:`, error);
+    console.error(
+      `Error fetching ${resourceType} queryNextNestTransType:`,
+      error,
+    );
   }
 };
 
@@ -1344,7 +1350,10 @@ export const queryPreviousNestTransType = async ({
     const res = response.data.data.translatableResources;
     return res;
   } catch (error) {
-    console.error(`Error queryPreviousNestTransType:`, error);
+    console.error(
+      `Error fetching ${resourceType} queryPreviousNestTransType:`,
+      error,
+    );
   }
 };
 
@@ -1460,7 +1469,7 @@ export const queryPrimaryMarket = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2025-04/graphql.json`,
+      url: `https://${shop}/admin/api/2024-10/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -1469,11 +1478,16 @@ export const queryPrimaryMarket = async ({
       data: JSON.stringify({ query }),
     });
 
-    const res = response.data.data.primaryMarket.webPresences.nodes;
+    const res = response.data?.data?.primaryMarket?.webPresences?.nodes;
 
-    return res;
+    console.log(
+      `${shop} queryPrimaryMarket: `,
+      response.data?.data?.primaryMarket?.webPresences?.nodes,
+    );
+
+    return res || [];
   } catch (error) {
-    console.error("Error queryPrimaryMarket:", error);
+    console.error("Error fetching all markets:", error);
   }
 };
 
@@ -1708,8 +1722,9 @@ export const mutationShopLocalePublish = async ({
       },
       data: JSON.stringify({ query: confirmMutation }),
     });
+    console.log(`${shop} mutationShopLocalePublish:`, response.data);
 
-    const res = response.data.data.shopLocaleUpdate.shopLocale;
+    const res = response.data?.data?.shopLocaleUpdate?.shopLocale;
 
     return res;
   } catch (error) {
@@ -1899,6 +1914,7 @@ export const mutationAppSubscriptionCreate = async ({
             {
               plan: {
                 appRecurringPricingDetails: {
+                  interval: yearly ? "ANNUAL" : "EVERY_30_DAYS",
                   price: {
                     amount: price.amount,
                     currencyCode: price.currencyCode,
