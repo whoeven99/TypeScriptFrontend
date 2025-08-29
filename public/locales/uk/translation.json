@@ -640,6 +640,19 @@
   "Task in progress": "Завдання виконується",
   "Your private API can run only one translation at a time. Please wait until the current task is finished.": "Ваш приватний API може виконувати лише один переклад одночасно. Будь ласка, зачекайте, поки поточне завдання завершиться.",
   "Insufficient private API quota": "Недостатня квота приватного API",
-  "Select a private key for translation. Only one target language can be selected.": "Виберіть приватний ключ для перекладу. Можна вибрати лише один цільовий мовний пакет."
-
+  "Select a private key for translation. Only one target language can be selected.": "Виберіть приватний ключ для перекладу. Можна вибрати лише один цільовий мовний пакет.",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "Вибір Pro або Unlimited надає вам 5 днів повного доступу до всіх функцій, а також 200 000 пробних кредитів. Скасуйте підписку будь-коли до закінчення пробного періоду, щоб уникнути стягнення плати.",
+  "How to Shared Plan Overview": "Огляд спільного плану",
+  "Shared Plan Overview": "Огляд спільного плану",
+  "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "За допомогою спільного плану ви можете поділитися своїм поточним придбаним планом з іншими магазинами, дозволяючи їм користуватися тими ж перевагами плану. Це спрощує та спрощує співпрацю між кількома магазинами.",
+  "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "Зверніть увагу: баланс балів та квота IP-адрес не є спільними. Інші магазини можуть купувати бали окремо, щоб отримати доступ до функцій, пов’язаних із балами або використанням IP-адрес.",
+  "tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.": "поради: Порада: План Pro підтримує спільний доступ з 1 магазином, тоді як план Premium підтримує спільний доступ до 3 магазинів.",
+  "Shared Plan": "Спільний план",
+  "1.Get the Shop ID": "1. Отримайте ідентифікатор магазину",
+  ":Find the store you want to bind and note down its": ":Знайдіть магазин, який потрібно зв'язати, і запишіть його",
+  "Shop ID.": "Ідентифікатор магазину.",
+  "2.Download the App": "2. Завантажте додаток",
+  ":Install the official app for the corresponding store.": ":Встановіть офіційний додаток відповідного магазину.",
+  "3.Contact Customer Service": "3. Зверніться до служби підтримки клієнтів",
+  ":Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.": ":Зверніться до служби підтримки клієнтів магазину, надайте підготовлений ідентифікатор магазину та повідомте їм, що ви хочете прив’язати субрахунок."
 }

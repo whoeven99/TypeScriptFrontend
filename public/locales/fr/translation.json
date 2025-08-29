@@ -641,5 +641,19 @@
     "for_large_teams": "Pour les grandes équipes"
   },
   "Insufficient private API quota": "Quota d'API privé insuffisant",
-  "Select a private key for translation. Only one target language can be selected.": "Sélectionnez une clé privée pour la traduction. Seul une langue cible peut être sélectionnée."
+  "Select a private key for translation. Only one target language can be selected.": "Sélectionnez une clé privée pour la traduction. Seul une langue cible peut être sélectionnée.",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "En choisissant l'abonnement Pro ou Illimité, vous bénéficiez de 5 jours d'accès complet à toutes les fonctionnalités, ainsi que de 200 000 crédits d'essai. Vous pouvez annuler votre essai à tout moment avant la fin pour éviter toute facturation.",
+  "How to Shared Plan Overview": "Présentation du plan partagé",
+  "Shared Plan Overview": "Présentation du plan partagé",
+  "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "Avec le forfait partagé, vous pouvez partager votre forfait actuel avec d'autres magasins et leur permettre de bénéficier des mêmes avantages. La collaboration entre magasins est ainsi simplifiée et fluide.",
+  "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "Remarque : le solde de points et le quota d'IP ne sont pas partagés. D'autres boutiques peuvent acheter des points séparément pour accéder à des fonctionnalités liées aux points ou à l'utilisation d'IP.",
+  "1.Get the Shop ID": "1. Obtenez l'ID de la boutique ",
+  ":Find the store you want to bind and note down its": ":Trouvez le magasin que vous souhaitez relier et notez-le",
+  "Shop ID.": "ID de la boutique.",
+  "2.Download the App": "2. Téléchargez l'application ",
+  ":Install the official app for the corresponding store.": ":Installez l'application officielle pour le magasin correspondant.",
+  "3.Contact Customer Service": "3.Contactez le service client",
+  ":Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.": ":Contactez le service client du magasin, fournissez l’ID de boutique préparé et faites-leur savoir que vous souhaitez lier un sous-compte.",
+  "tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.": "conseils : Conseil : le plan Pro prend en charge le partage avec 1 magasin, tandis que le plan Premium prend en charge le partage avec jusqu'à 3 magasins.",
+  "Shared Plan": "Plan partagé"
 }

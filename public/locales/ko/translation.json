@@ -641,6 +641,19 @@
     "for_large_teams": "대규모 팀의 경우"
   },
   "Insufficient private API quota": "개인 API 할당량이 부족합니다",
-  "Select a private key for translation. Only one target language can be selected.": "번역에 사용할 개인 키를 선택하세요. 목표 언어는 하나만 선택할 수 있습니다."
-
+  "Select a private key for translation. Only one target language can be selected.": "번역에 사용할 개인 키를 선택하세요. 목표 언어는 하나만 선택할 수 있습니다.",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "Pro 또는 Unlimited를 선택하시면 모든 기능을 5일 동안 자유롭게 이용하실 수 있으며, 20만 개의 체험 크레딧도 제공됩니다. 체험 기간이 종료되기 전에 언제든지 취소하시면 요금이 청구되지 않습니다.",
+  "How to Shared Plan Overview": "공유 계획 개요 방법",
+  "Shared Plan Overview": "공유 계획 개요",
+  "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "공유 플랜을 사용하면 현재 구매하신 플랜을 다른 매장과 공유하여 동일한 플랜 혜택을 누릴 수 있습니다. 이를 통해 여러 매장 간 협업이 더욱 쉽고 원활해집니다.",
+  "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "참고: 포인트 잔액과 IP 할당량은 공유되지 않습니다. 다른 매장에서 포인트를 별도로 구매하여 포인트 또는 IP 사용 관련 기능을 이용할 수 있습니다.",
+  "tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.": "팁: 팁: Pro Plan은 1개 매장과의 공유를 지원하는 반면, Premium Plan은 최대 3개 매장과의 공유를 지원합니다.",
+  "Shared Plan": "공유 계획",
+  "1.Get the Shop ID": "1. 매장 ID 받기",
+  ":Find the store you want to bind and note down its": ": 바인딩하려는 매장을 찾아 기록해 두세요.",
+  "Shop ID.": "매장 ID",
+  "2.Download the App": "2. 앱을 다운로드하세요",
+  ":Install the official app for the corresponding store.": ":해당 매장의 공식 앱을 설치하세요.",
+  "3.Contact Customer Service": "3. 고객센터에 문의하세요",
+  ":Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.": ":매장의 고객 서비스에 연락하여 준비된 매장 ID를 제공하고 하위 계정을 연결하고 싶다고 알려주세요."
 }

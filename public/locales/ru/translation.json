@@ -641,5 +641,19 @@
   "plan": "План",
   "support": "поддерживать",
   "Insufficient private API quota": "Недостаточная квота частного API",
-  "Select a private key for translation. Only one target language can be selected.": "Выберите приватный ключ для перевода. Можно выбрать только одну целевую язык."
+  "Select a private key for translation. Only one target language can be selected.": "Выберите приватный ключ для перевода. Можно выбрать только одну целевую язык.",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "Выбрав тарифы Pro или Unlimited, вы получите 5 дней полного доступа ко всем функциям, а также 200 000 пробных кредитов. Отмените подписку в любое время до окончания пробного периода, чтобы избежать списания средств.",
+  "How to Shared Plan Overview": "Обзор общего плана",
+  "Shared Plan Overview": "Обзор общего плана",
+  "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "С помощью общего плана вы можете поделиться своим текущим тарифным планом с другими магазинами, предоставляя им те же преимущества. Это упрощает и делает более удобным сотрудничество между магазинами.",
+  "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "Обратите внимание: баланс баллов и квота IP-адресов не передаются. Другие магазины могут приобретать баллы отдельно для доступа к функциям, связанным с баллами или использованием IP-адресов.",
+  "tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.": "советы:Совет: План Pro поддерживает обмен данными с 1 магазином, тогда как план Premium поддерживает обмен данными с 3 магазинами.",
+  "Shared Plan": "Общий план",
+  "1.Get the Shop ID": "1. Получите идентификатор магазина",
+  ":Find the store you want to bind and note down its": ":Найдите магазин, который вы хотите связать, и запишите его",
+  "Shop ID.": "Идентификатор магазина.",
+  "2.Download the App": "2.Скачать приложение",
+  ":Install the official app for the corresponding store.": ":Установите официальное приложение соответствующего магазина.",
+  "3.Contact Customer Service": "3.Свяжитесь со службой поддержки клиентов",
+  ":Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.": ": Обратитесь в службу поддержки клиентов магазина, предоставьте подготовленный идентификатор магазина и сообщите, что вы хотите привязать дополнительную учетную запись."
 }

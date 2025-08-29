@@ -641,5 +641,19 @@
     "for_large_teams": "大規模チーム向け"
   },
   "Insufficient private API quota": "プライベート API 割り当てが不足しています",
-  "Select a private key for translation. Only one target language can be selected.": "翻訳に使用するプライベートキーを選択してください。翻訳先の言語は1つだけ選択できます。"
+  "Select a private key for translation. Only one target language can be selected.": "翻訳に使用するプライベートキーを選択してください。翻訳先の言語は1つだけ選択できます。",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "ProまたはUnlimitedプランをお選びいただくと、全機能を5日間フルにご利用いただけるほか、200,000クレジットのトライアルクレジットが付与されます。トライアル期間終了前にいつでもキャンセルすれば、請求は発生しません。",
+  "How to Shared Plan Overview": "共有プランの概要",
+  "Shared Plan Overview": "共有プランの概要",
+  "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "共有プランをご利用いただくと、現在ご購入済みのプランを他の店舗と共有し、同じプランの特典をご利用いただけるようになります。これにより、複数店舗間の連携がより容易かつシームレスになります。",
+  "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "ご注意：ポイント残高とIPクォータは共有されません。他のストアは、ポイントまたはIP使用に関連する機能にアクセスするために、別途ポイントを購入できます。",
+  "tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.": "ヒント:ヒント: プロ プランでは 1 つのストアとの共有がサポートされますが、プレミアム プランでは最大 3 つのストアとの共有がサポートされます。",
+  "Shared Plan": "共有プラン",
+  "1.Get the Shop ID": "1.ショップIDを取得する",
+  ":Find the store you want to bind and note down its": ":バインドしたいストアを見つけて、その",
+  "Shop ID.": "ショップID。",
+  "2.Download the App": "2.アプリをダウンロードする",
+  ":Install the official app for the corresponding store.": ":該当ストアの公式アプリをインストールしてください。",
+  "3.Contact Customer Service": "3.カスタマーサービスに連絡する",
+  ":Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.": ":ストアのカスタマーサービスに連絡し、用意したショップIDを伝え、サブアカウントをバインドしたい旨を伝えます。"
 }

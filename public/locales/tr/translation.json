@@ -641,6 +641,19 @@
   "plan": "Plan",
   "support": "Destek",
   "Insufficient private API quota": "Yetersiz özel API kotası",
-  "Select a private key for translation. Only one target language can be selected.": "Çeviri için özel anahtar seçin. Sadece bir hedef dil seçilebilir."
-
+  "Select a private key for translation. Only one target language can be selected.": "Çeviri için özel anahtar seçin. Sadece bir hedef dil seçilebilir.",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "Pro veya Sınırsız aboneliği seçtiğinizde, tüm özelliklere 5 gün boyunca tam erişim ve 200.000 deneme kredisi kazanırsınız. Fatura ödememek için deneme süresi bitmeden önce istediğiniz zaman iptal edebilirsiniz.",
+  "How to Shared Plan Overview": "Paylaşımlı Plana Genel Bakış Nasıl Yapılır",
+  "Shared Plan Overview": "Paylaşımlı Plan Genel Bakışı",
+  "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "Paylaşımlı Plan ile mevcut satın aldığınız planı diğer mağazalarla paylaşabilir, onların da aynı plan avantajlarından yararlanmasını sağlayabilirsiniz. Bu sayede, birden fazla mağaza arasında iş birliği daha kolay ve sorunsuz hale gelir.",
+  "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "Lütfen dikkat: Puan bakiyesi ve IP kotası paylaşılmaz. Diğer mağazalar, puan veya IP kullanımıyla ilgili özelliklere erişmek için ayrı olarak puan satın alabilir.",
+  "tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.": "İpuçları:İpucu: Pro Plan 1 mağazayla paylaşımı desteklerken, Premium Plan 3 mağazaya kadar paylaşımı destekler.",
+  "Shared Plan": "Paylaşımlı Plan",
+  "1.Get the Shop ID": "1.Mağaza Kimliğini Alın",
+  ":Find the store you want to bind and note down its": ":Bağlamak istediğiniz mağazayı bulun ve not edin",
+  "Shop ID.": "Mağaza ID'si.",
+  "2.Download the App": "2.Uygulamayı İndirin",
+  ":Install the official app for the corresponding store.": ":İlgili mağazanın resmi uygulamasını yükleyin.",
+  "3.Contact Customer Service": "3.Müşteri Hizmetleri ile iletişime geçin",
+  ":Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.": ":Mağazanın müşteri hizmetlerine ulaşın, hazırladığınız Mağaza Kimliğini sağlayın ve bir alt hesap bağlamak istediğinizi bildirin."
 }

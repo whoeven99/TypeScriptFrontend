@@ -641,6 +641,19 @@
     "for_large_teams": "Voor grote teams"
   },
   "Insufficient private API quota": "Onvoldoende privé-API-quotum",
-  "Select a private key for translation. Only one target language can be selected.": "Selecteer een privé-sleutel voor vertaling. Er kan slechts één doeltaal worden geselecteerd."
-
+  "Select a private key for translation. Only one target language can be selected.": "Selecteer een privé-sleutel voor vertaling. Er kan slechts één doeltaal worden geselecteerd.",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "Als je kiest voor Pro of Unlimited, krijg je 5 dagen volledige toegang tot alle functies, inclusief 200.000 proefcredits. Je kunt op elk gewenst moment vóór het einde van de proefperiode opzeggen om kosten te voorkomen.",
+  "How to Shared Plan Overview": "Overzicht van het gedeelde plan",
+  "Shared Plan Overview": "Overzicht van het gedeelde plan",
+  "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "Met het Shared Plan kun je je huidige abonnement delen met andere winkels, zodat zij van dezelfde abonnementsvoordelen profiteren. Dit maakt samenwerking tussen meerdere winkels eenvoudiger en soepeler.",
+  "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "Let op: Puntensaldo en IP-quota worden niet gedeeld. Andere winkels kunnen punten apart kopen om toegang te krijgen tot functies gerelateerd aan punten- of IP-gebruik.",
+  "tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.": "tips:Tip: Het Pro-abonnement ondersteunt delen met 1 winkel, terwijl het Premium-abonnement delen met maximaal 3 winkels ondersteunt.",
+  "Shared Plan": "Gedeeld plan",
+  "1.Get the Shop ID": "1. Haal de winkel-ID op",
+  ":Find the store you want to bind and note down its": ":Zoek de winkel die je wilt binden en noteer de naam ervan",
+  "Shop ID.": "Winkel-ID.",
+  "2.Download the App": "2. Download de app",
+  ":Install the official app for the corresponding store.": ":Installeer de officiële app voor de bijbehorende winkel.",
+  "3.Contact Customer Service": "3. Neem contact op met de klantenservice",
+  ":Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.": ":Neem contact op met de klantenservice van de winkel, geef de voorbereide winkel-ID door en laat hen weten dat u een subaccount wilt koppelen."
 }
