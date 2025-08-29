@@ -107,15 +107,17 @@ export const IsOpenFreePlan = async ({
 export const GetProgressData = async ({
   shopName,
   server,
+  source,
   target,
 }: {
   shopName: string;
   server: string;
+  source: string;
   target: string;
 }) => {
   try {
     const response = await axios({
-      url: `${server}/translate/getProgressData?shopName=${shopName}&target=${target}`,
+      url: `${server}/translate/getProgressData?shopName=${shopName}&target=${target}&source=${source}`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
