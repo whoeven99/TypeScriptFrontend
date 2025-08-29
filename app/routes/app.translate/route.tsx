@@ -47,6 +47,7 @@ import styles from "./styles.module.css";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import EasyTranslateIcon from "~/components/easyTranslateIcon";
 import { GetGlossaryByShopName, GetUserWords } from "~/api/JavaServer";
+import ReactGA from "react-ga4";
 
 const { Title, Text } = Typography;
 
@@ -206,6 +207,14 @@ const Index = () => {
     );
     return matchedItem || null;
   }
+  // 初始化 Google Analytics
+  useEffect(() => {
+    console.log("Initializing GA with ID: G-F1BN24YVJN");
+    ReactGA.initialize("G-F1BN24YVJN");
+    ReactGA.send({ hitType: "pageview", page: window.location.pathname });
+    console.log("GA initialized, pageview sent");
+  }, []);
+
   useEffect(() => {
     const languageFormData = new FormData();
     languageFormData.append("languageData", JSON.stringify(true));
@@ -629,6 +638,31 @@ const Index = () => {
     if (!checkCanTranslate()) {
       return;
     }
+    // 跟踪事件并调试
+    const isGAInitialized = ReactGA.ga() !== undefined;
+    if (isGAInitialized) {
+      ReactGA.event({
+        category: "Translation",
+        action: "translate_click_dashboard",
+        label: "Translation Button",
+        value: 1,
+        primary_language: languageSetting?.primaryLanguageCode || "unknown",
+        selected_language: selectedLanguageCode || "unknown",
+        translation_style: translateSettings4.option2 || "none",
+        translation_tone: translateSettings4.option1 || "none",
+        translation_format: translateSettings4.option4 || "none",
+        translation_focus: translateSettings4.option3 || "none",
+        device_type: window.innerWidth < 576 ? "mobile" : "desktop",
+      } as any);
+      console.log("GA event sent: translate_click_dashboard", {
+        primary_language: languageSetting?.primaryLanguageCode,
+        selected_language: selectedLanguageCode,
+        translation_style: translateSettings4.option2,
+      });
+    } else {
+      console.warn("GA not initialized, event not sent");
+    }
+
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
     const formData = new FormData();
     formData.append(
