@@ -21,3 +21,14 @@
   border-radius: 8px;
   gap: 4px;
 }
+
+
+.flexBox{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.blodSharedPlan {
+  font-weight: 500;
+  font-size: 24px;
+}
