@@ -1044,7 +1044,7 @@ const Index = () => {
               </Flex>
             </Col>
             <Col span={screens.xs ? 8 : 6} style={{textAlign: screens.xs ? 'center' : 'right'}}>
-              <Button style={{right:0}}  type="primary" size="middle" onClick={()=>{
+              <Button style={{right:0}} loading={isLoading} disabled={isLoading} type="primary" size="middle" onClick={()=>{
                   setIsModalVisible(true)
                 }}>{t("Shared Plan")}</Button>
             </Col>
@@ -1570,17 +1570,18 @@ const Index = () => {
           }}
         >
           <div style={{display:'flex',flexDirection:'column',gap:'8px',marginBottom:'16px'}}>
+            <h2 style={{fontSize:'16px'}}><strong>{t('Steps to Bind a Sub-Account')}</strong></h2>
             <div>
-            <span><strong>{t('1.Get the Shop ID')}</strong>{t(':Find the store you want to bind and note down its')} <strong>{t('Shop ID.')}</strong></span>
+            <span><strong>{t("1.Get the Store Name (URL)")}</strong>{t('Locate the store you want to bind and copy its name (URL).')}</span>
           </div>
           <div>
-            <span><strong>{t('2.Download the App')}</strong>{t(':Install the official app for the corresponding store.')}</span>
+            <span><strong>{t('2.Download the App')}</strong>{t('Install the official app for that store.')}</span>
           </div> 
           <div>
-            <span><strong>{t('3.Contact Customer Service')}</strong>{t(':Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.')}</span>
+            <span><strong>{t('3.Contact Customer Support')}</strong>{t('Provide the store name (URL) to the support team and request to bind a sub-account.')}</span>
           </div> 
           </div>
-          <div style={{fontSize:'14px',lineHeight:'1.5',fontWeight:600}}>{t('tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.')}</div> 
+          <div style={{fontSize:'14px',lineHeight:'1.5',fontWeight:600}}>{t('Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.')}</div> 
         </Card>
         <div style={{ textAlign: 'center', marginTop: 16 }}>
           <Button type="primary" size="large" onClick={()=>{

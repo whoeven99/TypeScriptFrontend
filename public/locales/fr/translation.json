@@ -647,13 +647,13 @@
   "Shared Plan Overview": "Présentation du plan partagé",
   "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "Avec le forfait partagé, vous pouvez partager votre forfait actuel avec d'autres magasins et leur permettre de bénéficier des mêmes avantages. La collaboration entre magasins est ainsi simplifiée et fluide.",
   "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "Remarque : le solde de points et le quota d'IP ne sont pas partagés. D'autres boutiques peuvent acheter des points séparément pour accéder à des fonctionnalités liées aux points ou à l'utilisation d'IP.",
-  "1.Get the Shop ID": "1. Obtenez l'ID de la boutique ",
-  ":Find the store you want to bind and note down its": ":Trouvez le magasin que vous souhaitez relier et notez-le",
-  "Shop ID.": "ID de la boutique.",
-  "2.Download the App": "2. Téléchargez l'application ",
-  ":Install the official app for the corresponding store.": ":Installez l'application officielle pour le magasin correspondant.",
-  "3.Contact Customer Service": "3.Contactez le service client",
-  ":Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.": ":Contactez le service client du magasin, fournissez l’ID de boutique préparé et faites-leur savoir que vous souhaitez lier un sous-compte.",
-  "tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.": "conseils : Conseil : le plan Pro prend en charge le partage avec 1 magasin, tandis que le plan Premium prend en charge le partage avec jusqu'à 3 magasins.",
-  "Shared Plan": "Plan partagé"
+  "Shared Plan": "Plan partagé",
+  "1.Get the Store Name (URL)": "1. Obtenez le nom du magasin (URL) :",
+  "Locate the store you want to bind and copy its name (URL).": "Localisez le magasin que vous souhaitez lier et copiez son nom (URL).",
+  "2.Download the App": "2. Téléchargez l'application :",
+  "Install the official app for that store.": "Installez l'application officielle de ce magasin.",
+  "3.Contact Customer Support": "3.Contactez le support client :",
+  "Provide the store name (URL) to the support team and request to bind a sub-account.": "Fournissez le nom du magasin (URL) à l'équipe d'assistance et demandez à lier un sous-compte.",
+  "Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.": "Astuce : le plan Pro permet le partage avec 1 magasin, tandis que le plan Premium prend en charge jusqu'à 3 magasins.",
+  "Steps to Bind a Sub-Account": "Étapes pour lier un sous-compte"
 }

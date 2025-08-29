@@ -647,13 +647,13 @@
   "Shared Plan Overview": "Översikt över delad plan",
   "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "Med den delade planen kan du dela din nuvarande abonnemang med andra butiker, så att de kan dra nytta av samma planförmåner. Detta gör samarbete mellan flera butiker enklare och smidigare.",
   "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "Observera: Poängsaldo och IP-kvot delas inte. Andra butiker kan köpa poäng separat för att få tillgång till funktioner relaterade till poäng eller IP-användning.",
-  "tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.": "tips:Tips: Pro-planen stöder delning med 1 butik, medan Premium-planen stöder delning med upp till 3 butiker.",
   "Shared Plan": "Delad plan",
-  "1.Get the Shop ID": "1. Hämta butiks-ID:t",
-  ":Find the store you want to bind and note down its": ":Hitta butiken du vill binda och anteckna dess",
-  "Shop ID.": "Butiks-ID.",
-  "2.Download the App": "2. Ladda ner appen",
-  ":Install the official app for the corresponding store.": ":Installera den officiella appen för motsvarande butik.",
-  "3.Contact Customer Service": "3. Kontakta kundtjänst",
-  ":Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.": ":Kontakta butikens kundtjänst, ange det förberedda butiks-ID:t och låt dem veta att du vill koppla ett underkonto."
+  "1.Get the Store Name (URL)": "1. Hämta butiksnamnet (URL):",
+  "Locate the store you want to bind and copy its name (URL).": "Leta reda på butiken du vill binda och kopiera dess namn (URL).",
+  "2.Download the App": "2. Ladda ner appen:",
+  "Install the official app for that store.": "Installera den officiella appen för den butiken.",
+  "3.Contact Customer Support": "3. Kontakta kundsupport:",
+  "Provide the store name (URL) to the support team and request to bind a sub-account.": "Ange butiksnamnet (URL) till supportteamet och begär att få koppla ett underkonto.",
+  "Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.": "Tips: Pro-planen tillåter delning med 1 butik, medan Premium-planen stöder upp till 3 butiker.",
+  "Steps to Bind a Sub-Account": "Steg för att binda ett underkonto"
 }

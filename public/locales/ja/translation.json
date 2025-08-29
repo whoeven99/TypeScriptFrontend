@@ -647,13 +647,13 @@
   "Shared Plan Overview": "共有プランの概要",
   "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "共有プランをご利用いただくと、現在ご購入済みのプランを他の店舗と共有し、同じプランの特典をご利用いただけるようになります。これにより、複数店舗間の連携がより容易かつシームレスになります。",
   "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "ご注意：ポイント残高とIPクォータは共有されません。他のストアは、ポイントまたはIP使用に関連する機能にアクセスするために、別途ポイントを購入できます。",
-  "tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.": "ヒント:ヒント: プロ プランでは 1 つのストアとの共有がサポートされますが、プレミアム プランでは最大 3 つのストアとの共有がサポートされます。",
   "Shared Plan": "共有プラン",
-  "1.Get the Shop ID": "1.ショップIDを取得する",
-  ":Find the store you want to bind and note down its": ":バインドしたいストアを見つけて、その",
-  "Shop ID.": "ショップID。",
-  "2.Download the App": "2.アプリをダウンロードする",
-  ":Install the official app for the corresponding store.": ":該当ストアの公式アプリをインストールしてください。",
-  "3.Contact Customer Service": "3.カスタマーサービスに連絡する",
-  ":Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.": ":ストアのカスタマーサービスに連絡し、用意したショップIDを伝え、サブアカウントをバインドしたい旨を伝えます。"
+  "1.Get the Store Name (URL)": "1.ストア名（URL）を取得します。",
+  "Locate the store you want to bind and copy its name (URL).": "バインドするストアを見つけて、その名前 (URL) をコピーします。",
+  "2.Download the App": "2.アプリをダウンロードする:",
+  "Install the official app for that store.": "そのストアの公式アプリをインストールしてください。",
+  "3.Contact Customer Support": "3.カスタマーサポートにお問い合わせください。",
+  "Provide the store name (URL) to the support team and request to bind a sub-account.": "サポート チームにストア名 (URL) を提供し、サブ アカウントのバインドをリクエストします。",
+  "Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.": "ヒント: プロ プランでは 1 つのストアとの共有が許可されますが、プレミアム プランでは最大 3 つのストアがサポートされます。",
+  "Steps to Bind a Sub-Account": "サブアカウントをバインドする手順"
 }

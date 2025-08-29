@@ -647,13 +647,13 @@
   "Shared Plan Overview": "Paylaşımlı Plan Genel Bakışı",
   "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "Paylaşımlı Plan ile mevcut satın aldığınız planı diğer mağazalarla paylaşabilir, onların da aynı plan avantajlarından yararlanmasını sağlayabilirsiniz. Bu sayede, birden fazla mağaza arasında iş birliği daha kolay ve sorunsuz hale gelir.",
   "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "Lütfen dikkat: Puan bakiyesi ve IP kotası paylaşılmaz. Diğer mağazalar, puan veya IP kullanımıyla ilgili özelliklere erişmek için ayrı olarak puan satın alabilir.",
-  "tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.": "İpuçları:İpucu: Pro Plan 1 mağazayla paylaşımı desteklerken, Premium Plan 3 mağazaya kadar paylaşımı destekler.",
   "Shared Plan": "Paylaşımlı Plan",
-  "1.Get the Shop ID": "1.Mağaza Kimliğini Alın",
-  ":Find the store you want to bind and note down its": ":Bağlamak istediğiniz mağazayı bulun ve not edin",
-  "Shop ID.": "Mağaza ID'si.",
-  "2.Download the App": "2.Uygulamayı İndirin",
-  ":Install the official app for the corresponding store.": ":İlgili mağazanın resmi uygulamasını yükleyin.",
-  "3.Contact Customer Service": "3.Müşteri Hizmetleri ile iletişime geçin",
-  ":Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.": ":Mağazanın müşteri hizmetlerine ulaşın, hazırladığınız Mağaza Kimliğini sağlayın ve bir alt hesap bağlamak istediğinizi bildirin."
+  "1.Get the Store Name (URL)": "1.Mağaza Adını (URL) Alın:",
+  "Locate the store you want to bind and copy its name (URL).": "Bağlamak istediğiniz mağazayı bulun ve adını (URL) kopyalayın.",
+  "2.Download the App": "2.Uygulamayı İndirin:",
+  "Install the official app for that store.": "O mağazanın resmi uygulamasını yükleyin.",
+  "3.Contact Customer Support": "3.Müşteri Desteği ile İletişime Geçin:",
+  "Provide the store name (URL) to the support team and request to bind a sub-account.": "Mağaza adını (URL) destek ekibine iletin ve bir alt hesap bağlama talebinde bulunun.",
+  "Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.": "İpucu: Pro Plan 1 mağazayla paylaşım yapmanıza olanak tanırken, Premium Plan 3 mağazaya kadar paylaşım yapmanızı destekler.",
+  "Steps to Bind a Sub-Account": "Alt Hesabı Bağlama Adımları"
 }

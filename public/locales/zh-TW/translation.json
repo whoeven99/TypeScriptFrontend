@@ -647,13 +647,13 @@
   "Shared Plan Overview": "共享計劃概述",
   "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "透過共享方案，您可以與其他門市共享目前購買的方案，讓他們享受相同的方案權益。這使得多門店協作更加輕鬆順暢。",
   "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "請注意：積分餘額和 IP 配額不共享。其他商店可以單獨購買積分，以使用與積分或 IP 使用相關的功能。",
-  "tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.": "tips：提示：專業版支援1家店共享，高級版支援最多3家店鋪共享。",
   "Shared Plan": "共享計劃",
-  "1.Get the Shop ID": "1.取得店家ID",
-  ":Find the store you want to bind and note down its": "：找到要綁定的商店並記下其",
-  "Shop ID.": "商店 ID。",
-  "2.Download the App": "2.下載應用程式",
-  ":Install the official app for the corresponding store.": "：安裝對應商店的官方應用程式。",
-  "3.Contact Customer Service": "3.聯絡客服",
-  ":Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.": "：聯絡店舖客服，提供準備好的店舖ID，並告知需要綁定子帳號。"
+  "1.Get the Store Name (URL)": "1.取得商店名稱（URL）：",
+  "Locate the store you want to bind and copy its name (URL).": "找到您要綁定的商店並複製其名稱（URL）。",
+  "2.Download the App": "2.下載應用程式：",
+  "Install the official app for that store.": "安裝該商店的官方應用程式。",
+  "3.Contact Customer Support": "3.聯絡客服：",
+  "Provide the store name (URL) to the support team and request to bind a sub-account.": "向客服提供商店名稱（URL），並要求綁定子帳戶。",
+  "Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.": "提示：專業計劃允許與 1 家商店共享，而高級計劃最多支援 3 家商店。",
+  "Steps to Bind a Sub-Account": "綁定子帳號步驟"
 }

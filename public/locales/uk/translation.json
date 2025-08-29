@@ -646,13 +646,13 @@
   "Shared Plan Overview": "Огляд спільного плану",
   "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "За допомогою спільного плану ви можете поділитися своїм поточним придбаним планом з іншими магазинами, дозволяючи їм користуватися тими ж перевагами плану. Це спрощує та спрощує співпрацю між кількома магазинами.",
   "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "Зверніть увагу: баланс балів та квота IP-адрес не є спільними. Інші магазини можуть купувати бали окремо, щоб отримати доступ до функцій, пов’язаних із балами або використанням IP-адрес.",
-  "tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.": "поради: Порада: План Pro підтримує спільний доступ з 1 магазином, тоді як план Premium підтримує спільний доступ до 3 магазинів.",
   "Shared Plan": "Спільний план",
-  "1.Get the Shop ID": "1. Отримайте ідентифікатор магазину",
-  ":Find the store you want to bind and note down its": ":Знайдіть магазин, який потрібно зв'язати, і запишіть його",
-  "Shop ID.": "Ідентифікатор магазину.",
-  "2.Download the App": "2. Завантажте додаток",
-  ":Install the official app for the corresponding store.": ":Встановіть офіційний додаток відповідного магазину.",
-  "3.Contact Customer Service": "3. Зверніться до служби підтримки клієнтів",
-  ":Reach out to the store’s customer service, provide the prepared Shop ID, and let them know you want to bind a sub-account.": ":Зверніться до служби підтримки клієнтів магазину, надайте підготовлений ідентифікатор магазину та повідомте їм, що ви хочете прив’язати субрахунок."
+  "1.Get the Store Name (URL)": "1. Отримайте назву магазину (URL):",
+  "Locate the store you want to bind and copy its name (URL).": "Знайдіть магазин, який потрібно прив’язати, та скопіюйте його назву (URL-адресу).",
+  "2.Download the App": "2. Завантажте додаток:",
+  "Install the official app for that store.": "Встановіть офіційний додаток для цього магазину.",
+  "3.Contact Customer Support": "3. Зверніться до служби підтримки клієнтів:",
+  "Provide the store name (URL) to the support team and request to bind a sub-account.": "Надайте назву магазину (URL-адресу) команді підтримки та попросіть прив’язати до нього субакаунт.",
+  "Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.": "Порада: План Pro дозволяє спільний доступ з 1 магазином, тоді як план Premium підтримує до 3 магазинів.",
+  "Steps to Bind a Sub-Account": "Кроки для прив'язки субрахунку"
 }
