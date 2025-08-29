@@ -155,29 +155,31 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-
+  const googleAnalyticsFetcher = useFetcher<any>();
   const fetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
   const loadingLanguageFetcher = useFetcher<any>();
   const customApiKeyFetcher = useFetcher<any>();
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
-  const [currentModal, setCurrentModal] = useState<'limitExceeded' | 'outOfRange' | 'interfaceIsOccupied'>('limitExceeded');
+  const [currentModal, setCurrentModal] = useState<
+    "limitExceeded" | "outOfRange" | "interfaceIsOccupied"
+  >("limitExceeded");
   const modalTypeObject = {
     limitExceeded: {
-      Title: `${t('Insufficient private API quota')}`,
-      Body: `${t('The usage has exceeded your configured quota. Please update your settings.')}`,
-      Button: `${t('Configure now')}`,
+      Title: `${t("Insufficient private API quota")}`,
+      Body: `${t("The usage has exceeded your configured quota. Please update your settings.")}`,
+      Button: `${t("Configure now")}`,
     },
     outOfRange: {
-      Title: `${t('Unsupported language')}`,
-      Body: `${t('This language is not supported by Google Translate. Check the supported list in Google or switch to another model.')}`,
-      Button: `${t('OK')}`,
+      Title: `${t("Unsupported language")}`,
+      Body: `${t("This language is not supported by Google Translate. Check the supported list in Google or switch to another model.")}`,
+      Button: `${t("OK")}`,
     },
     interfaceIsOccupied: {
-      Title: `${t('Task in progress')}`,
-      Body: `${t('Your private API can run only one translation at a time. Please wait until the current task is finished.')}`,
-      Button: `${t('OK')}`,
-    }
+      Title: `${t("Task in progress")}`,
+      Body: `${t("Your private API can run only one translation at a time. Please wait until the current task is finished.")}`,
+      Button: `${t("OK")}`,
+    },
   };
 
   const handleConfigureQuota = () => {
@@ -392,6 +394,18 @@ const Index = () => {
     }
   }, [translateFetcher.data]);
 
+  useEffect(()=>{
+    if (googleAnalyticsFetcher.data) {
+      console.log('google analytics',googleAnalyticsFetcher.data);
+      
+      // if (googleAnalyticsFetcher.data?.success) {
+      //   console.log("google analytic success");
+      // } else if (!googleAnalyticsFetcher.data?.success) {
+      //   console.log("google analytic failed");
+      // }
+      
+    }
+  },[googleAnalyticsFetcher])
   useEffect(() => {
     if (languageData.length) {
       const data = languageData.map((lang) => ({
@@ -676,7 +690,7 @@ const Index = () => {
       //     "The translation task is in progress. Please try translating again later.",
       //   ),
       // );
-      setCurrentModal('interfaceIsOccupied');
+      setCurrentModal("interfaceIsOccupied");
       setIsApiKeyModalOpen(true);
     }
   };
@@ -750,6 +764,23 @@ const Index = () => {
     localStorage.setItem(
       "translateSettings4",
       JSON.stringify(translateSettings4),
+    );
+    googleAnalyticsFetcher.submit(
+      {
+        googleAnalytic: JSON.stringify({
+          primaryLanguage: languageSetting?.primaryLanguageCode,
+          selectedLanguage: selectedLanguageCode,
+          translateSettings1: translateSettings1,
+          translateSettings2: ["1"],
+          translateSettings3: translateSettings3,
+          customKey: customKey,
+          translateSettings5: translateSettings5,
+        }),
+      },
+      {
+        method: "post",
+        action: "/app/language",
+      },
     );
   };
 

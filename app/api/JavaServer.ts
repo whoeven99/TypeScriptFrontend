@@ -1357,7 +1357,7 @@ export const GetTranslate = async ({
     console.log(`${shop} 翻译项: `, translateSettings3);
     console.log(`${shop} 是否覆盖: `, translateSettings5);
     console.log(`${shop} 自定义提示: `, customKey);
-    console.log('response', response.data);
+    console.log("response", response.data);
 
     const res = {
       ...response.data,
@@ -1383,6 +1383,61 @@ export const GetTranslate = async ({
       errorMsg: "SERVER_ERROR",
       response: undefined,
     };
+  }
+};
+
+// 获取谷歌分析
+export const GetGoogleAnalytic = async ({
+  shop,
+  accessToken,
+  source,
+  target,
+  translateSettings1,
+  translateSettings2,
+  translateSettings3,
+  customKey,
+  translateSettings5,
+}: {
+  shop: string;
+  accessToken: string;
+  source: string;
+  target: string[];
+  translateSettings1: string;
+  translateSettings2: string[];
+  translateSettings3: string[];
+  customKey: string;
+  translateSettings5: boolean;
+}) => {
+  try {
+    const response = await fetch(
+      `https://www.google-analytics.com/mp/collect?measurement_id=${process.env.MEASURE_ID}&api_secret=${process.env.GTM_API_KEY}`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          client_id: `client.${Math.random().toString(36).slice(2)}`, // 生成唯一客户端 ID
+          events: [
+            {
+              name: `${process.env.EVENT_NAME}`,
+              params: {
+                shop,
+                accessToken,
+                source,
+                target,
+                translateSettings1,
+                translateSettings2,
+                translateSettings3,
+                customKey,
+                translateSettings5,
+              },
+            },
+          ],
+        }),
+      },
+    );
+    return response.status === 204;
+  } catch (error) {
+    console.log("google analytic error:", error);
+    return false;
   }
 };
 
