@@ -1735,11 +1735,13 @@ export const UpdateDefaultCurrency = async ({
 //添加用户自定义汇率
 export const AddCurrency = async ({
   shop,
+  server,
   currencyName,
   currencyCode,
   primaryStatus,
 }: {
   shop: string;
+  server: string;
   currencyName: string;
   currencyCode: string;
   primaryStatus: number;
@@ -1754,7 +1756,7 @@ export const AddCurrency = async ({
   });
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/currency/insertCurrency`,
+      url: `${server}/currency/insertCurrency`,
       method: "POST",
       data: {
         shopName: shop,
@@ -1802,7 +1804,7 @@ export const DeleteCurrency = async ({
 
     return response.data;
   } catch (error) {
-    console.error("Error delete currency:", error);
+    console.error("Error DeleteCurrency:", error);
     return {
       success: false,
       errorCode: 10001,
@@ -1843,20 +1845,31 @@ export const UpdateCurrency = async ({
       },
     });
 
-    const res = response.data;
-    console.log("UpdateCurrency: ", res);
+    console.log("UpdateCurrency: ", response.data);
 
-    return res;
+    return response.data;
   } catch (error) {
-    console.error("Error update currency:", error);
+    console.error("Error UpdateCurrency:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
 //获取用户自定义汇率
-export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
+export const GetCurrencyByShopName = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/currency/getCurrencyByShopName?shopName=${shop}`,
+      url: `${server}/currency/getCurrencyByShopName?shopName=${shop}`,
       method: "GET",
     });
 
@@ -1864,7 +1877,7 @@ export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
     console.log("GetCurrencyByShopName: ", res);
 
     if (Array.isArray(res)) {
-      const data = res.map((item: any) => ({
+      const data = res?.map((item: any) => ({
         key: item.id, // 将 id 转换为 key
         currency: item?.currencyName, // 将 currencyName 作为 currency
         rounding: item?.rounding,
@@ -1872,26 +1885,44 @@ export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
         currencyCode: item?.currencyCode,
         primaryStatus: item?.primaryStatus,
       }));
-      return data;
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: data,
+      };
     } else {
-      return [];
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: [],
+      };
     }
   } catch (error) {
     console.error("Error get currency:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [],
+    };
   }
 };
 
 //获取自动汇率
 export const GetCacheData = async ({
   shop,
+  server,
   currencyCode,
 }: {
   shop: string;
+  server: string;
   currencyCode: string;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/currency/getCacheData`,
+      url: `${server}/currency/getCacheData`,
       method: "POST",
       data: {
         shopName: shop,
@@ -1899,14 +1930,15 @@ export const GetCacheData = async ({
       },
     });
 
-    const res = response.data.response;
-    console.log("GetCacheData: ", res);
-    return {
-      currencyCode: currencyCode,
-      rate: res?.exchangeRate || 0,
-    };
+    return response.data;
   } catch (error) {
     console.error("Error GetCacheData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -1939,7 +1971,7 @@ export const InsertOrUpdateOrder = async ({
       confirmationUrl: confirmationUrl,
     });
 
-    const response = await axios({
+    await axios({
       url: `${process.env.SERVER_URL}/orders/insertOrUpdateOrder?shopName=${shop}`,
       method: "POST",
       data: {
@@ -1952,10 +1984,8 @@ export const InsertOrUpdateOrder = async ({
         confirmationUrl: confirmationUrl,
       },
     });
-    const res = response.data;
-    console.log("InsertOrUpdateOrder:", res);
   } catch (error) {
-    console.error("Error fetching insert order:", error);
+    console.error("Error InsertOrUpdateOrder:", error);
   }
 };
 
@@ -1976,10 +2006,17 @@ export const AddCharsByShopName = async ({
         chars: amount,
       },
     });
-    const res = response.data;
-    return res;
+    console.log(`${shop} AddCharsByShopName:`, response.data);
+
+    return response.data;
   } catch (error) {
-    console.error("Error fetching add chars:", error);
+    console.error("Error AddCharsByShopName:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -2003,14 +2040,12 @@ export const SendPurchaseSuccessEmail = async ({
         credit: credit,
       },
     });
-    const res = response.data;
-    console.log("SendPurchaseSuccessEmail: ", res);
+    console.log(`${shop} SendPurchaseSuccessEmail: `, response.data);
   } catch (error) {
     console.error("Error SendPurchaseSuccessEmail:", error);
   }
 };
 
-//增加用户字符数
 export const GetGlossaryByShopName = async ({
   shop,
   server,
@@ -2023,10 +2058,18 @@ export const GetGlossaryByShopName = async ({
       url: `${server}/glossary/getGlossaryByShopName?shopName=${shop}`,
       method: "GET",
     });
-    console.log("GetGlossaryByShopName: ", response.data);
+
+    console.log(`${shop} GetGlossaryByShopName: `, response.data);
+
     return response.data;
   } catch (error) {
     console.error("Error GetGlossaryByShopName:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [],
+    };
   }
 };
 
@@ -2049,30 +2092,31 @@ export const GetGlossaryByShopNameLoading = async ({
     const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
       (language) => !language.primary,
     );
-    const res = response.data.response.map((item: any) => {
+
+    const res = response.data?.response?.map((item: any) => {
       let data = {
-        key: item.id,
-        status: item.status,
-        sourceText: item.sourceText,
-        targetText: item.targetText,
+        key: item?.id,
+        status: item?.status,
+        sourceText: item?.sourceText,
+        targetText: item?.targetText,
         language: "",
-        rangeCode: item.rangeCode,
-        type: item.caseSensitive,
+        rangeCode: item?.rangeCode,
+        type: item?.caseSensitive,
         loading: false,
-        createdDate: item.createdDate,
+        createdDate: item?.createdDate,
       };
       if (
         shopLanguagesWithoutPrimaryIndex.find((language: ShopLocalesType) => {
-          return language.locale == item.rangeCode;
+          return language?.locale == item?.rangeCode;
         }) ||
-        item.rangeCode === "ALL"
+        item?.rangeCode === "ALL"
       ) {
         data = {
           ...data,
           language:
             shopLanguagesWithoutPrimaryIndex.find(
               (language: ShopLocalesType) => {
-                return language.locale === item.rangeCode;
+                return language?.locale === item?.rangeCode;
               },
             )?.name || "All Languages",
         };
@@ -2084,19 +2128,31 @@ export const GetGlossaryByShopNameLoading = async ({
     const sortedRes = res.sort(
       (a: { createdDate: string }, b: { createdDate: string }) => {
         return (
-          new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+          new Date(b.createdDate)?.getTime() -
+          new Date(a.createdDate)?.getTime()
         );
       },
     );
 
-    console.log("GetGlossaryByShopName: ", sortedRes);
+    console.log(`${shop} GetGlossaryByShopName: `, sortedRes);
 
     return {
-      glossaryTableData: sortedRes,
-      shopLocales: shopLanguagesWithoutPrimaryIndex,
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: {
+        glossaryTableData: sortedRes,
+        shopLocales: shopLanguagesWithoutPrimaryIndex,
+      },
     };
   } catch (error) {
     console.error("Error GetGlossaryByShopName:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 

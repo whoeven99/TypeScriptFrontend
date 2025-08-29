@@ -7,10 +7,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { CurrencyDataType, CurrencyType } from "../route";
 import { updateTableData } from "~/store/modules/currencyDataTable";
 import { useTranslation } from "react-i18next";
+import { AddCurrency } from "~/api/JavaServer";
 
 const { Text } = Typography;
 
 interface AddCurrencyModalProps {
+  shop: string;
+  server: string;
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   addCurrencies: CurrencyType[];
@@ -18,6 +21,8 @@ interface AddCurrencyModalProps {
 }
 
 const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
+  shop,
+  server,
   isVisible,
   setIsModalOpen,
   addCurrencies,
@@ -34,6 +39,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   const [allSelectedCurrency, setAllSelectedCurrency] = useState<
     CurrencyType[]
   >([]);
+  const [addLoading, setAddLoading] = useState<boolean>(false);
   const selectedCurrency: CurrencyDataType[] = useSelector(
     (state: any) => state.currencyTableData.rows,
   );
@@ -42,44 +48,12 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   );
   const dispatch = useDispatch();
   const { t } = useTranslation();
-  const addFetcher = useFetcher<any>();
 
   useEffect(() => {
     if (addCurrencies.length) {
       setFilteredCurrencies(defaultData);
     }
   }, [addCurrencies]);
-
-  useEffect(() => {
-    if (addFetcher.data) {
-      if (addFetcher.data?.length) {
-        addFetcher.data?.map((res: any) => {
-          if (res?.value?.success) {
-            const data = [
-              {
-                key: res.value.response.id, // 将 id 转换为 key
-                currency: res.value.response.currencyName, // 将 currencyName 作为 currencyName
-                rounding: res.value.response.rounding,
-                exchangeRate: res.value.response.exchangeRate,
-                currencyCode: res.value.response.currencyCode,
-                primaryStatus: res.value.response.primaryStatus,
-              },
-            ];
-            dispatch(updateTableData(data));
-            shopify.toast.show(t("Add success"));
-            setFilteredCurrencies(defaultData);
-            setAllSelectedKeys([]);
-            setSearchInput("");
-            setAllSelectedCurrency([]);
-            setIsModalOpen(false);
-          } else {
-            shopify.toast.show(res.value?.errorMsg);
-          }
-        });
-      }else{
-      }
-    }
-  }, [addFetcher.data]);
 
   useEffect(() => {
     // 更新语言状态
@@ -175,16 +149,45 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
   };
 
   // 确认选择 -> 触发 action
-  const handleConfirm = () => {
-    const formData = new FormData();
-    formData.append("addCurrencies", JSON.stringify(allSelectedCurrency)); // 将选中的语言作为字符串发送
-    addFetcher.submit(formData, {
-      method: "post",
-      action: "/app/currency",
-    }); // 提交表单请求
-    setAllSelectedKeys([]); // 清除已选中的语言
-    setSearchInput(""); // 清除搜索框内容
-    setAllSelectedCurrency([]); // 清除已选中的语言对象
+  const handleConfirm = async () => {
+    setAddLoading(true);
+    const promises = allSelectedCurrency.map((currency: any) =>
+      AddCurrency({
+        shop,
+        server,
+        currencyName: currency.currencyName,
+        currencyCode: currency.currencyCode,
+        primaryStatus: currency?.primaryStatus || 0,
+      }),
+    );
+    const data = await Promise.allSettled(promises);
+    if (data?.length) {
+      data?.map((res: any) => {
+        if (res?.value?.success) {
+          const data = [
+            {
+              key: res.value.response.id, // 将 id 转换为 key
+              currency: res.value.response.currencyName, // 将 currencyName 作为 currencyName
+              rounding: res.value.response.rounding,
+              exchangeRate: res.value.response.exchangeRate,
+              currencyCode: res.value.response.currencyCode,
+              primaryStatus: res.value.response.primaryStatus,
+            },
+          ];
+          dispatch(updateTableData(data));
+          shopify.toast.show(t("Add success"));
+          setFilteredCurrencies(defaultData);
+          setAllSelectedKeys([]);
+          setSearchInput("");
+          setAllSelectedCurrency([]);
+          setIsModalOpen(false);
+        } else {
+          shopify.toast.show(res.value?.errorMsg);
+        }
+      });
+    } else {
+    }
+    setAddLoading(false);
   };
 
   const handleCloseModal = () => {
@@ -300,7 +303,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
             key={"manage_confirm_button"}
             type="primary"
             disabled={allSelectedKeys.length === 0}
-            loading={addFetcher.state === "submitting"}
+            loading={addLoading}
           >
             {t("Add")}
           </Button>
@@ -332,7 +335,7 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
       <Table
         rowSelection={rowSelection}
         dataSource={filteredCurrencies}
-        loading={addFetcher.state === "submitting"}
+        loading={addLoading}
         columns={columns}
         rowKey="key"
         pagination={{

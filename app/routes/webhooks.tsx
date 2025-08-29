@@ -164,7 +164,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 price: price,
               });
             } else {
-              console.warn("addChars error! ! ! ");
+              console.error("addChars error! ! ! ");
             }
           }
         }

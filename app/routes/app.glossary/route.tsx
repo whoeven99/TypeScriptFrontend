@@ -92,9 +92,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             shop,
             accessToken: accessToken as string,
           });
-          return json({ data: data });
+          return data;
         } catch (error) {
           console.error("Error glossary loading:", error);
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
         }
       case !!deleteInfo:
         try {
@@ -189,10 +195,14 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data) {
-      dispatch(
-        setGLossaryTableData(loadingFetcher.data.data.glossaryTableData),
-      );
-      setShopLocales(loadingFetcher.data.data.shopLocales);
+      if (loadingFetcher.data?.success) {
+        dispatch(
+          setGLossaryTableData(
+            loadingFetcher.data?.response?.glossaryTableData || [],
+          ),
+        );
+        setShopLocales(loadingFetcher.data?.response?.shopLocales || []);
+      }
       setLoading(false);
     }
   }, [loadingFetcher.data]);
