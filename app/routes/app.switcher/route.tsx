@@ -268,7 +268,7 @@ const Index = () => {
         positionData: "10",
         isTransparent: false,
       };
-      if (data?.success && data.response !== undefined) {
+      if (data?.success) {
         const filteredResponse = Object.fromEntries(
           Object.entries(data.response).filter(([_, value]) => value !== null),
         );
