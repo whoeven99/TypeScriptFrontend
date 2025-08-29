@@ -210,8 +210,8 @@ const Index = () => {
   // 初始化 Google Analytics
   useEffect(() => {
     console.log("Initializing GA with ID: G-F1BN24YVJN");
-    ReactGA.initialize("G-F1BN24YVJN");
-    ReactGA.send({ hitType: "pageview", page: window.location.pathname });
+    // ReactGA.initialize("G-F1BN24YVJN");
+    // ReactGA.send({ hitType: "pageview", page: window.location.pathname });
     console.log("GA initialized, pageview sent");
   }, []);
 
