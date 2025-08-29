@@ -34,7 +34,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   const [itemsVisible, setItemsVisible] = useState<boolean>(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const fetcher = useFetcher<any>()
+  const fetcher = useFetcher<any>();
   const languagefetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
@@ -363,6 +363,16 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
     if (!progressData?.response?.TranslateType) {
       setItemsVisible(true);
     }
+
+    fetcher.submit(
+      {
+        log: `${shop} 当前进度 ${progress}`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   };
 
   const handleStopTranslate = () => {
