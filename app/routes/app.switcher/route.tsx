@@ -268,28 +268,46 @@ const Index = () => {
         positionData: "10",
         isTransparent: false,
       };
-      const filteredResponse = Object.fromEntries(
-        Object.entries(data.response).filter(([_, value]) => value !== null),
-      );
-      const res = {
-        ...initData,
-        ...filteredResponse,
-      };
-      setOriginalData(res);
-      setIsIncludedFlag(res.includedFlag);
-      setLanguageSelector(res.languageSelector);
-      setCurrencySelector(res.currencySelector);
-      setIsGeoLocationEnabled(res.ipOpen);
-      setFontColor(res.fontColor);
-      setBackgroundColor(res.backgroundColor);
-      setButtonColor(res.buttonColor);
-      setButtonBackgroundColor(res.buttonBackgroundColor);
-      setOptionBorderColor(res.optionBorderColor);
-      setSelectorPosition(res.selectorPosition);
-      setPositionData(res.positionData);
-      setIsTransparent(res.isTransparent);
-      setEditData(res);
-      setIsLoading(false);
+      if (data?.success && data.response !== undefined) {
+        const filteredResponse = Object.fromEntries(
+          Object.entries(data.response).filter(([_, value]) => value !== null),
+        );
+        const res = {
+          ...initData,
+          ...filteredResponse,
+        };
+        setOriginalData(res);
+        setIsIncludedFlag(res.includedFlag);
+        setLanguageSelector(res.languageSelector);
+        setCurrencySelector(res.currencySelector);
+        setIsGeoLocationEnabled(res.ipOpen);
+        setFontColor(res.fontColor);
+        setBackgroundColor(res.backgroundColor);
+        setButtonColor(res.buttonColor);
+        setButtonBackgroundColor(res.buttonBackgroundColor);
+        setOptionBorderColor(res.optionBorderColor);
+        setSelectorPosition(res.selectorPosition);
+        setPositionData(res.positionData);
+        setIsTransparent(res.isTransparent);
+        setEditData(res);
+        setIsLoading(false);
+      } else {
+        setOriginalData(initData);
+        setIsIncludedFlag(initData.includedFlag);
+        setLanguageSelector(initData.languageSelector);
+        setCurrencySelector(initData.currencySelector);
+        setIsGeoLocationEnabled(initData.ipOpen);
+        setFontColor(initData.fontColor);
+        setBackgroundColor(initData.backgroundColor);
+        setButtonColor(initData.buttonColor);
+        setButtonBackgroundColor(initData.buttonBackgroundColor);
+        setOptionBorderColor(initData.optionBorderColor);
+        setSelectorPosition(initData.selectorPosition);
+        setPositionData(initData.positionData);
+        setIsTransparent(initData.isTransparent);
+        setEditData(initData);
+        setIsLoading(false);
+      }
     };
     getSwitcherConfig();
     fetcher.submit(
