@@ -1540,7 +1540,6 @@ const Index = () => {
         width={800}
         style={{ top: 50 }}
         footer={null} // 移除 OK 和 Cancel 按钮
-        bodyStyle={{ padding: 24 }} // 调整内容内边距
         className="custom-modal" // 自定义类名
       >
         <Card
