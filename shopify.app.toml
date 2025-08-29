@@ -1,9 +1,9 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "4c3f52479223c2cd7ef817687bb10319"
-name = "Ciwi.ai:FAT(LocalW)"
-handle = "ciwi-localw"
-application_url = "https://f1b2521d7409.ngrok.app"
+client_id = "4b05c1caefa9e0761a0538b64159b627"
+name = "Ciwi.ai:FAT(Local)"
+handle = "ciwi-local"
+application_url = "https://1560eb51cc3d.ngrok.app"
 embedded = true
 
 [build]
@@ -13,14 +13,10 @@ include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_content,read_legal_policies,read_metaobjects,read_online_store_navigation,read_themes,read_translations,unauthenticated_read_metaobjects,unauthenticated_read_product_listings,write_locales,write_markets,write_metaobjects,write_products,write_translations"
+scopes = "read_content,read_legal_policies,read_metaobjects,read_online_store_navigation,unauthenticated_read_product_listings,read_themes,read_translations,unauthenticated_read_metaobjects,write_locales,write_markets,write_metaobjects,write_products,write_translations"
 
 [auth]
-redirect_urls = [
-  "https://f1b2521d7409.ngrok.app/auth/callback",
-  "https://f1b2521d7409.ngrok.app/auth/shopify/callback",
-  "https://f1b2521d7409.ngrok.app/api/auth/callback"
-]
+redirect_urls = ["https://1560eb51cc3d.ngrok.app/auth/callback", "https://1560eb51cc3d.ngrok.app/auth/shopify/callback", "https://1560eb51cc3d.ngrok.app/api/auth/callback"]
 
 [webhooks]
 api_version = "2025-04"
