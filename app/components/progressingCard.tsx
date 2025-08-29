@@ -114,6 +114,8 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         }
       };
     } else if (target[index + 1]) {
+      console.log("target[index + 1]: ", target[index + 1]);
+
       setIndex(index + 1);
       const pollStatus = () => {
         // 状态查询请求
@@ -156,10 +158,12 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         }
       };
     }
-  }, [status, item]); // 添加 item 到依赖数组
+  }, [status]); // 添加 item 到依赖数组
 
   useEffect(() => {
     if (languagefetcher.data) {
+      console.log("languagefetcher.data: ", languagefetcher.data);
+
       setSource(languagefetcher.data.response[0]?.source);
       setTarget(
         languagefetcher.data?.response?.map((item: any) => item?.target),
@@ -174,145 +178,123 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   }, [languagefetcher.data]);
 
   useEffect(() => {
-    if (statusFetcher.data?.data) {
-      const statusValue =
-        statusFetcher.data?.data?.translatesDOResult[0].status;
-      setStatus(statusValue);
-      if (statusValue === 2) {
-        switch (true) {
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "SHOP":
-            setItem("Shop");
-            break;
+    if (statusFetcher.data) {
+      if (statusFetcher.data?.success) {
+        const statusValue =
+          statusFetcher.data?.response?.translatesDOResult[0].status;
+        const resourceType =
+          statusFetcher.data?.response?.translatesDOResult[0].resourceType;
+        setStatus(statusValue);
+        if (statusValue === 2) {
+          switch (true) {
+            case resourceType == "SHOP":
+              setItem("Shop");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "PAGE":
-            setItem("Pages");
-            break;
+            case resourceType == "PAGE":
+              setItem("Pages");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "ONLINE_STORE_THEME":
-            setItem("Theme");
-            break;
+            case resourceType == "ONLINE_STORE_THEME":
+              setItem("Theme");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "PRODUCT":
-            setItem("Products");
-            break;
+            case resourceType == "PRODUCT":
+              setItem("Products");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "PRODUCT_OPTION":
-            setItem("Products");
-            break;
+            case resourceType == "PRODUCT_OPTION":
+              setItem("Products");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "PRODUCT_OPTION_VALUE":
-            setItem("Products");
-            break;
+            case resourceType == "PRODUCT_OPTION_VALUE":
+              setItem("Products");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "COLLECTION":
-            setItem("Collection");
-            break;
+            case resourceType == "COLLECTION":
+              setItem("Collection");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "METAFIELD":
-            setItem("Store metadata");
-            break;
+            case resourceType == "METAFIELD":
+              setItem("Store metadata");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "ARTICLE":
-            setItem("Article");
-            break;
+            case resourceType == "ARTICLE":
+              setItem("Article");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "BLOG":
-            setItem("Blog titles");
-            break;
+            case resourceType == "BLOG":
+              setItem("Blog titles");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "MENU":
-            setItem("Navigation");
-            break;
+            case resourceType == "MENU":
+              setItem("Navigation");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "LINK":
-            setItem("Navigation");
-            break;
+            case resourceType == "LINK":
+              setItem("Navigation");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "FILTER":
-            setItem("Filters");
-            break;
+            case resourceType == "FILTER":
+              setItem("Filters");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "METAOBJECT":
-            setItem("Metaobjects");
-            break;
+            case resourceType == "METAOBJECT":
+              setItem("Metaobjects");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "ONLINE_STORE_THEME_JSON_TEMPLATE":
-            setItem("Theme");
-            break;
+            case resourceType == "ONLINE_STORE_THEME_JSON_TEMPLATE":
+              setItem("Theme");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "ONLINE_STORE_THEME_SECTION_GROUP":
-            setItem("Theme");
-            break;
+            case resourceType == "ONLINE_STORE_THEME_SECTION_GROUP":
+              setItem("Theme");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "ONLINE_STORE_THEME_SETTINGS_CATEGORY":
-            setItem("Theme");
-            break;
+            case resourceType == "ONLINE_STORE_THEME_SETTINGS_CATEGORY":
+              setItem("Theme");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS":
-            setItem("Theme");
-            break;
+            case resourceType == "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS":
+              setItem("Theme");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "PACKING_SLIP_TEMPLATE":
-            setItem("Shipping");
-            break;
+            case resourceType == "PACKING_SLIP_TEMPLATE":
+              setItem("Shipping");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "DELIVERY_METHOD_DEFINITION":
-            setItem("Delivery");
-            break;
+            case resourceType == "DELIVERY_METHOD_DEFINITION":
+              setItem("Delivery");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "SHOP_POLICY":
-            setItem("Policies");
-            break;
+            case resourceType == "SHOP_POLICY":
+              setItem("Policies");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "EMAIL_TEMPLATE":
-            setItem("Shipping");
-            break;
+            case resourceType == "EMAIL_TEMPLATE":
+              setItem("Shipping");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "ONLINE_STORE_THEME_APP_EMBED":
-            setItem("Theme");
-            break;
+            case resourceType == "ONLINE_STORE_THEME_APP_EMBED":
+              setItem("Theme");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "PAYMENT_GATEWAY":
-            setItem("Metaobjects");
-            break;
+            case resourceType == "PAYMENT_GATEWAY":
+              setItem("Metaobjects");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "SELLING_PLAN":
-            setItem("Metaobjects");
-            break;
+            case resourceType == "SELLING_PLAN":
+              setItem("Metaobjects");
+              break;
 
-          case statusFetcher.data?.data?.translatesDOResult[0].resourceType ==
-            "SELLING_PLAN_GROUP":
-            setItem("Shop");
-            break;
+            case resourceType == "SELLING_PLAN_GROUP":
+              setItem("Shop");
+              break;
 
-          default:
-            setItem("");
-            break;
+            default:
+              setItem("");
+              break;
+          }
         }
       }
     }
@@ -332,6 +314,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
     const progressData = await GetProgressData({
       shopName: shop,
       server,
+      source,
       target: target,
     });
 
