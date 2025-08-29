@@ -588,7 +588,56 @@ const Index = () => {
       );
     }
   };
-
+  const GoogleAnalytics = async () => {
+    try {
+      const data = await fetch(
+        `https://www.google-analytics.com/mp/collect?measurement_id=${process.env.MEASURE_ID}&api_secret=${process.env.GTM_API_KEY}`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            client_id: "client_id",
+            events: [
+              {
+                name: `${process.env.EVENT_NAME}`,
+                params: {
+                  currency: "USD",
+                  value: 7.77,
+                  coupon: "SUMMER_FUN",
+                  payment_type: "Credit Card",
+                  items: [
+                    {
+                      item_id: "SKU_12345",
+                      item_name: "Stan and Friends Tee",
+                      affiliation: "Google Merchandise Store",
+                      coupon: "SUMMER_FUN",
+                      currency: "USD",
+                      discount: 2.22,
+                      index: 0,
+                      item_brand: "Google",
+                      item_category: "Apparel",
+                      item_category2: "Adult",
+                      item_category3: "Shirts",
+                      item_category4: "Crew",
+                      item_category5: "Short sleeve",
+                      item_list_id: "related_products",
+                      item_list_name: "Related Products",
+                      item_variant: "green",
+                      location_id: "ChIJIQBpAG2ahYAR_6128GcTUEo",
+                      price: 9.99,
+                      quantity: 1,
+                    },
+                  ],
+                },
+              },
+            ],
+          }),
+        },
+      );
+      return data.json();
+    } catch (error) {
+      console.log("GTM", error);
+    }
+  };
   const checkCanTranslate = () => {
     if (
       (translateSettings1 === "8" || translateSettings1 === "9") &&
@@ -685,6 +734,9 @@ const Index = () => {
       "translateSettings4",
       JSON.stringify(translateSettings4),
     );
+
+    // 追踪事件
+    const data = await GoogleAnalytics();
   };
 
   const handleTranslateSettings2Change = (value: string[]) => {
