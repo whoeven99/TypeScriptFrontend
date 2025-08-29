@@ -107,15 +107,17 @@ export const IsOpenFreePlan = async ({
 export const GetProgressData = async ({
   shopName,
   server,
+  source,
   target,
 }: {
   shopName: string;
   server: string;
+  source: string;
   target: string;
 }) => {
   try {
     const response = await axios({
-      url: `${server}/translate/getProgressData?shopName=${shopName}&target=${target}`,
+      url: `${server}/translate/getProgressData?shopName=${shopName}&target=${target}&source=${source}`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1357,7 +1359,7 @@ export const GetTranslate = async ({
     console.log(`${shop} 翻译项: `, translateSettings3);
     console.log(`${shop} 是否覆盖: `, translateSettings5);
     console.log(`${shop} 自定义提示: `, customKey);
-    console.log('response', response.data);
+    console.log("response", response.data);
 
     const res = {
       ...response.data,
