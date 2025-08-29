@@ -1,4 +1,10 @@
-import { Icon, Page } from "@shopify/polaris";
+import {
+  Icon,
+  Page,
+  BlockStack,
+  Text as PolarisText,
+  Modal as PolarisModal,
+} from "@shopify/polaris";
 import { useEffect, useRef, useState } from "react";
 import {
   Affix,
@@ -42,11 +48,15 @@ import {
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { ArrowLeftIcon, PlusIcon } from "@shopify/polaris-icons";
-import axios from "axios";
 import styles from "./styles.module.css";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import EasyTranslateIcon from "~/components/easyTranslateIcon";
-import { GetGlossaryByShopName, GetUserWords } from "~/api/JavaServer";
+import {
+  GetGlossaryByShopName,
+  GetLanguageList,
+  GetLanguageLocaleInfo,
+  GetUserWords,
+} from "~/api/JavaServer";
 
 const { Title, Text } = Typography;
 
@@ -79,7 +89,6 @@ interface apiKeyConfiguration {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  console.log(`${shop} load translate`);
   return {
     shop,
     server: process.env.SERVER_URL,
@@ -104,7 +113,6 @@ const Index = () => {
     "filters",
     "metaobjects",
     "metadata",
-    // "notifications",
     "navigation",
     "shop",
     "theme",
@@ -145,32 +153,31 @@ const Index = () => {
   const dispatch = useDispatch();
   const languageCardRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
-  const loadingLanguageFetcher = useFetcher<any>();
   const navigate = useNavigate();
   const location = useLocation();
-  const fetcher = useFetcher<any>();
-  const customApiKeyFetcher = useFetcher<any>();
 
+  const fetcher = useFetcher<any>();
+  const translateFetcher = useFetcher<any>();
+  const loadingLanguageFetcher = useFetcher<any>();
+  const customApiKeyFetcher = useFetcher<any>();
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
-  const [currentModal, setCurrentModal] = useState<
-    "limitExceeded" | "outOfRange" | "interfaceIsOccupied"
-  >("limitExceeded");
+  const [currentModal, setCurrentModal] = useState<'limitExceeded' | 'outOfRange' | 'interfaceIsOccupied'>('limitExceeded');
   const modalTypeObject = {
     limitExceeded: {
-      Title: `${t("Insufficient private API quota")}`,
-      Body: `${t("The usage has exceeded your configured quota. Please update your settings.")}`,
-      Button: `${t("Configure now")}`,
+      Title: `${t('Insufficient private API quota')}`,
+      Body: `${t('The usage has exceeded your configured quota. Please update your settings.')}`,
+      Button: `${t('Configure now')}`,
     },
     outOfRange: {
-      Title: `${t("Unsupported language")}`,
-      Body: `${t("This language is not supported by Google Translate. Check the supported list in Google or switch to another model.")}`,
-      Button: `${t("OK")}`,
+      Title: `${t('Unsupported language')}`,
+      Body: `${t('This language is not supported by Google Translate. Check the supported list in Google or switch to another model.')}`,
+      Button: `${t('OK')}`,
     },
     interfaceIsOccupied: {
-      Title: `${t("Task in progress")}`,
-      Body: `${t("Your private API can run only one translation at a time. Please wait until the current task is finished.")}`,
-      Button: `${t("OK")}`,
-    },
+      Title: `${t('Task in progress')}`,
+      Body: `${t('Your private API can run only one translation at a time. Please wait until the current task is finished.')}`,
+      Button: `${t('OK')}`,
+    }
   };
 
   const handleConfigureQuota = () => {
@@ -206,19 +213,33 @@ const Index = () => {
     );
     return matchedItem || null;
   }
+
   useEffect(() => {
-    const languageFormData = new FormData();
-    languageFormData.append("languageData", JSON.stringify(true));
-    loadingLanguageFetcher.submit(languageFormData, {
-      method: "post",
-      action: "/app",
-    });
-    const customApiKeyFormData = new FormData();
-    customApiKeyFormData.append("customApikeyData", JSON.stringify(true));
-    customApiKeyFetcher.submit(customApiKeyFormData, {
-      method: "post",
-      action: "/app",
-    });
+    loadingLanguageFetcher.submit(
+      { languageData: JSON.stringify(true) },
+      {
+        method: "post",
+        action: "/app",
+      },
+    );
+    customApiKeyFetcher.submit(
+      {
+        customApikeyData: JSON.stringify(true),
+      },
+      {
+        method: "post",
+        action: "/app",
+      },
+    );
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译设置页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     if (location) {
       setSelectedLanguageCode(location?.state?.selectedLanguageCode || "");
     }
@@ -234,13 +255,72 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingLanguageFetcher.data) {
-      setLanguageData(loadingLanguageFetcher.data?.data);
-      setLanguageSetting(loadingLanguageFetcher.data?.languageSetting);
-      // const translateSettings4 = localStorage.getItem("translateSettings4");
-      // if (translateSettings4) {
-      //   setTranslateSettings4(JSON.parse(translateSettings4));
-      // }
-      setLoadingLanguage(false);
+      if (loadingLanguageFetcher.data.success) {
+        const shopLanguages = loadingLanguageFetcher.data.response;
+        const shopPrimaryLanguage = shopLanguages?.filter(
+          (language: any) => language?.primary,
+        );
+        const shopLanguagesWithoutPrimaryIndex = shopLanguages?.filter(
+          (language: any) => !language?.primary,
+        );
+        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
+          (item: any) => item?.locale,
+        );
+        setLanguageSetting({
+          primaryLanguage: shopPrimaryLanguage[0]?.name || "",
+          primaryLanguageCode: shopPrimaryLanguage[0]?.locale || "",
+        });
+
+        let data = shopLanguagesWithoutPrimaryIndex.map(
+          (lang: any, index: number) => ({
+            key: index,
+            name: lang?.name,
+            locale: lang?.locale,
+            published: lang.published,
+          }),
+        );
+        const GetLanguageDataFront = async () => {
+          const languageLocaleInfo = await GetLanguageLocaleInfo({
+            server: server as string,
+            locale: shopLocalesIndex,
+          });
+          const languageList = await GetLanguageList({
+            shop,
+            server: server as string,
+            source: shopPrimaryLanguage[0]?.locale,
+          });
+
+          setLanguageData(
+            data.map((item: any) => ({
+              ...item, // 展开原对象
+              ["src"]: languageLocaleInfo?.response
+                ? languageLocaleInfo?.response[item?.locale]?.countries
+                : [], // 插入新字段
+              ["localeName"]: languageLocaleInfo?.response
+                ? languageLocaleInfo?.response[item?.locale]?.Local
+                : "", // 插入新字段
+              ["status"]: languageList?.response
+                ? languageList?.response.find(
+                    (language: any) => language.target === item.locale,
+                  )?.status
+                : 0,
+            })),
+          );
+
+          fetcher.submit(
+            {
+              log: `${shop} 翻译设置页面数据加载完毕`,
+            },
+            {
+              method: "POST",
+              action: "/log",
+            },
+          );
+
+          setLoadingLanguage(false);
+        };
+        GetLanguageDataFront();
+      }
     }
   }, [loadingLanguageFetcher.data]);
 
@@ -264,46 +344,53 @@ const Index = () => {
   }, [customApiKeyFetcher.data]);
 
   useEffect(() => {
-    if (fetcher.data) {
-      if (fetcher.data?.success) {
+    if (translateFetcher.data) {
+      if (translateFetcher.data?.success) {
         shopify.toast.show(t("The translation task is in progress."));
         navigate("/app");
-      } else if (!fetcher.data?.success) {
-        try {
+        fetcher.submit(
+          {
+            log: `${shop} 翻译成功, 正在跳转至主页面`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
+      } else if (!translateFetcher.data?.success) {
+        if (
+          translateFetcher.data?.response?.translateSettings1 !== "8" &&
+          translateFetcher.data?.response?.translateSettings1 !== "9"
+        ) {
           const getUserWords = async () => {
             const data = await GetUserWords({ shop, server });
             if (data.success) {
-              if (
-                data?.response?.totalChars <= data?.response?.chars &&
-                fetcher.data?.response?.translateSettings1 !== "8" &&
-                fetcher.data?.response?.translateSettings1 !== "9"
-              ) {
+              if (data?.response?.totalChars <= data?.response?.chars) {
                 setNeedPay(true);
                 setShowPaymentModal(true);
               }
+            } else {
+              shopify.toast.show(
+                t(
+                  "The query of the remaining credits failed. Please try again.",
+                ),
+              );
             }
           };
           getUserWords();
-          if (fetcher?.data?.errorCode === 10014) {
-            setCurrentModal("outOfRange");
-            setIsApiKeyModalOpen(true);
-          }
-          if (fetcher?.data?.errorCode === 10015) {
-            setCurrentModal("interfaceIsOccupied");
-            setIsApiKeyModalOpen(true);
-          }
-        } catch (error) {
-          shopify.toast.show(
-            t("The query of the remaining credits failed. Please try again."),
-          );
         }
-      } else if (fetcher.data?.errorMsg === "words get error") {
-        shopify.toast.show(
-          t("The query of the remaining credits failed. Please try again."),
-        );
+
+        if (translateFetcher?.data?.errorCode === 10014) {
+          setCurrentModal("outOfRange");
+          setIsApiKeyModalOpen(true);
+        }
+        if (translateFetcher?.data?.errorCode === 10015) {
+          setCurrentModal("interfaceIsOccupied");
+          setIsApiKeyModalOpen(true);
+        }
       }
     }
-  }, [fetcher.data]);
+  }, [translateFetcher.data]);
 
   useEffect(() => {
     if (languageData.length) {
@@ -320,7 +407,7 @@ const Index = () => {
       }));
       dispatch(setTableData(data)); // 只在组件首次渲染时触发
     }
-  }, [dispatch, languageData]);
+  }, [languageData]);
 
   const translateSettings1Options = [
     {
@@ -536,6 +623,15 @@ const Index = () => {
       return;
     }
     navigate("/app/apikeySetting");
+    fetcher.submit(
+      {
+        log: `${shop} 前往私有key页面, 从翻译设置页面点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   };
 
   const checkIfNeedPay = async () => {
@@ -556,6 +652,9 @@ const Index = () => {
       );
       return;
     }
+    // if (!checkCanTranslate()) {
+    //   return;
+    // }
     const selectedItems = dataSource.find((item: LanguagesDataType) =>
       selectedLanguageCode.includes(item.locale),
     );
@@ -572,11 +671,13 @@ const Index = () => {
       setModel(modalSetting);
       handleTranslate();
     } else {
-      shopify.toast.show(
-        t(
-          "The translation task is in progress. Please try translating again later.",
-        ),
-      );
+      // shopify.toast.show(
+      //   t(
+      //     "The translation task is in progress. Please try translating again later.",
+      //   ),
+      // );
+      setCurrentModal('interfaceIsOccupied');
+      setIsApiKeyModalOpen(true);
     }
   };
 
@@ -596,7 +697,6 @@ const Index = () => {
       case "8":
         if (customApikeyData) {
           const useData = checkApiKeyConfiguration(customApikeyData, 0);
-          console.log(useData);
 
           if (useData && useData?.usedToken >= useData?.tokenLimit) {
             // 如果私有key的额度超限，弹出提示框
@@ -630,23 +730,23 @@ const Index = () => {
       return;
     }
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
-    const formData = new FormData();
-    formData.append(
-      "translation",
-      JSON.stringify({
-        primaryLanguage: languageSetting?.primaryLanguageCode,
-        selectedLanguage: selectedLanguageCode,
-        translateSettings1: translateSettings1,
-        translateSettings2: ["1"],
-        translateSettings3: translateSettings3,
-        customKey: customKey,
-        translateSettings5: translateSettings5,
-      }),
-    ); // 将选中的语言作为字符串发送
-    fetcher.submit(formData, {
-      method: "post",
-      action: "/app/language",
-    });
+    translateFetcher.submit(
+      {
+        translation: JSON.stringify({
+          primaryLanguage: languageSetting?.primaryLanguageCode,
+          selectedLanguage: selectedLanguageCode,
+          translateSettings1: translateSettings1,
+          translateSettings2: ["1"],
+          translateSettings3: translateSettings3,
+          customKey: customKey,
+          translateSettings5: translateSettings5,
+        }),
+      },
+      {
+        method: "post",
+        action: "/app/language",
+      },
+    );
     localStorage.setItem(
       "translateSettings4",
       JSON.stringify(translateSettings4),
@@ -680,9 +780,9 @@ const Index = () => {
     });
 
     if (data?.success) {
-      if (data.response.length == 0) {
+      if (data.response?.length == 0) {
         error = 2;
-      } else if (data.response.every((item: any) => item?.status == 0)) {
+      } else if (data.response?.every((item: any) => item?.status == 0)) {
         error = 3;
       }
       // if (data.response.length > 0 && type == "glossary") {
@@ -720,7 +820,13 @@ const Index = () => {
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
-      <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+      <Space
+        direction="vertical"
+        size="middle"
+        style={{
+          display: "flex",
+        }}
+      >
         <Affix offsetTop={0}>
           <div
             style={{
@@ -751,14 +857,16 @@ const Index = () => {
                 {t("Translate Store")}
               </Title>
             </div>
-            {languageSetting?.primaryLanguageCode ? (
+            {loadingLanguage ? (
+              <Skeleton.Button active />
+            ) : (
               <Button
                 type="primary"
                 onClick={() => checkIfNeedPay()}
                 style={{
                   visibility: languageData.length != 0 ? "visible" : "hidden",
                 }}
-                loading={fetcher.state === "submitting"}
+                loading={translateFetcher.state === "submitting"}
               >
                 {selectedLanguageCode.length > 0 &&
                 selectedLanguageCode.every(
@@ -769,8 +877,6 @@ const Index = () => {
                   ? t("Update")
                   : t("Translate")}
               </Button>
-            ) : (
-              <Skeleton.Button active />
             )}
           </div>
         </Affix>
@@ -843,8 +949,8 @@ const Index = () => {
                         }}
                       >
                         <img
-                          src={lang.src[0]}
-                          alt={lang.name}
+                          src={lang?.src[0]}
+                          alt={lang?.name}
                           style={{
                             width: "30px",
                             height: "auto",
@@ -853,8 +959,8 @@ const Index = () => {
                             borderRadius: "2px",
                           }}
                         />
-                        <span>{lang.name}</span>
-                        <EasyTranslateIcon status={lang.status} />
+                        <span>{lang?.name}</span>
+                        <EasyTranslateIcon status={lang?.status} />
                       </div>
                     </Checkbox>
                   ))}
@@ -1709,9 +1815,34 @@ const Index = () => {
         >
           <Text>{t("This feature is available only with the paid plan.")}</Text>
         </Modal>
+        <PolarisModal
+          open={isApiKeyModalOpen}
+          onClose={handleApiKeyModalClose}
+          title={modalTypeObject[currentModal].Title}
+          primaryAction={{
+            content: `${modalTypeObject[currentModal].Button}`,
+            onAction: handleConfigureQuota,
+          }}
+          secondaryActions={[
+            {
+              content: `${t("Cancel")}`,
+              onAction: handleApiKeyModalClose,
+            },
+          ]}
+        >
+          <PolarisModal.Section>
+            <BlockStack gap="200">
+              <PolarisText variant="bodyMd" as="p">
+                {modalTypeObject[currentModal].Body}
+              </PolarisText>
+            </BlockStack>
+          </PolarisModal.Section>
+        </PolarisModal>
       </Space>
       {showPaymentModal && (
         <PaymentModal
+          shop={shop}
+          server={server as string}
           visible={showPaymentModal}
           setVisible={setShowPaymentModal}
           source={source}

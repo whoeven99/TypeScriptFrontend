@@ -40,8 +40,8 @@ export const GetLatestActiveSubscribeId = async ({
     console.error(`${shop} GetLatestActiveSubscribeId error:`, error);
     return {
       success: false,
-      errorCode: 0,
-      errorMessage: "",
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: "",
     };
   }
@@ -70,8 +70,8 @@ export const AddCharsByShopNameAfterSubscribe = async ({
     console.error(`${shop} AddCharsByShopNameAfterSubscribe error:`, error);
     return {
       success: false,
-      errorCode: 0,
-      errorMessage: "",
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: false,
     };
   }
@@ -97,8 +97,8 @@ export const IsOpenFreePlan = async ({
     console.error(`${shop} IsOpenFreePlan error:`, error);
     return {
       success: false,
-      errorCode: 0,
-      errorMessage: "",
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: false,
     };
   }
@@ -129,8 +129,8 @@ export const GetProgressData = async ({
     console.error(`${shopName} GetProgressData error:`, error);
     return {
       success: false,
-      errorCode: 0,
-      errorMessage: "",
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: {
         RemainingQuantity: 0,
         TotalQuantity: 0,
@@ -142,18 +142,15 @@ export const GetProgressData = async ({
 export const StopTranslatingTask = async ({
   shopName,
   source,
-  // target,
   accessToken,
 }: {
   shopName: string;
   source: string;
-  // target: string;
   accessToken: string;
 }) => {
   console.log(`${shopName} StopTranslatingTask: `, {
     shopName,
     source,
-    // target,
     accessToken,
   });
 
@@ -176,6 +173,12 @@ export const StopTranslatingTask = async ({
     return response.data;
   } catch (error) {
     console.error(`${shopName} StopTranslatingTask error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: false,
+    };
   }
 };
 
@@ -226,11 +229,17 @@ export const UpdateProductImageAltData = async ({
       },
     });
 
-    console.log("UpdateProductImageAltData: ", response.data);
+    console.log(`${shopName} UpdateProductImageAltData: `, response.data);
 
     return response.data;
   } catch (error) {
     console.error("Error UpdateProductImageAltData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -264,6 +273,12 @@ export const DeleteProductImageData = async ({
     return response.data;
   } catch (error) {
     console.error("Error DeleteProductImageData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -294,6 +309,12 @@ export const GetProductImageData = async ({
     return response.data;
   } catch (error) {
     console.error("Error GetProductImageData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [] as any[],
+    };
   }
 };
 
@@ -315,28 +336,9 @@ export const GetUserValue = async ({
     console.error("Error GetUserValue:", error);
     return {
       success: false,
-      errorCode: 0,
-      errorMsg: "Error GetUserValue",
-      response: null,
-    };
-  }
-};
-
-export const StartFreePlan = async ({ shop }: { shop: string }) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/userTrials/startFreePlan?shopName=${shop}`,
-      method: "POST",
-    });
-    console.log("StartFreePlan: ", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("Error StartFreePlan:", error);
-    return {
-      success: false,
-      errorCode: 0,
-      errorMsg: "Error StartFreePlan",
-      response: null,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
     };
   }
 };
@@ -374,9 +376,18 @@ export const SingleTextTranslate = async ({
         type: type,
       },
     });
+
+    console.log(`${shopName} SingleTextTranslate: `, response.data);
+
     return response.data;
   } catch (error) {
     console.error("Error SingleTextTranslate:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: "",
+    };
   }
 };
 
@@ -405,10 +416,7 @@ export const SendSubscribeSuccessEmail = async ({
         feeType: feeType,
       },
     });
-
     console.log(`${shopName} SendSubscribeSuccessEmail: `, response.data);
-
-    return response.data;
   } catch (error) {
     console.error("Error SendSubscribeSuccessEmail:", error);
   }
@@ -438,16 +446,31 @@ export const UpdateAutoTranslateByData = async ({
         autoTranslate: autoTranslate,
       },
     });
+
+    console.log(`${shopName} UpdateAutoTranslateByData: `, response.data);
+
     return response.data;
   } catch (error) {
     console.error("Error UpdateAutoTranslateByData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
-export const WidgetConfigurations = async ({ shop }: { shop: string }) => {
+export const WidgetConfigurations = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/widgetConfigurations/getData`,
+      url: `${server}/widgetConfigurations/getData`,
       method: "POST",
       data: {
         shopName: shop,
@@ -459,11 +482,18 @@ export const WidgetConfigurations = async ({ shop }: { shop: string }) => {
     return response.data;
   } catch (error) {
     console.error("Error WidgetConfigurations:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
 export const SaveAndUpdateData = async ({
   shopName,
+  server,
   languageSelector,
   currencySelector,
   ipOpen,
@@ -478,6 +508,7 @@ export const SaveAndUpdateData = async ({
   isTransparent,
 }: {
   shopName: string;
+  server: string;
   languageSelector: boolean;
   currencySelector: boolean;
   ipOpen: boolean;
@@ -493,7 +524,7 @@ export const SaveAndUpdateData = async ({
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/widgetConfigurations/saveAndUpdateData`,
+      url: `${server}/widgetConfigurations/saveAndUpdateData`,
       method: "POST",
       data: {
         shopName: shopName,
@@ -512,9 +543,17 @@ export const SaveAndUpdateData = async ({
       },
     });
 
+    console.log(`${shopName} SaveAndUpdateData`);
+
     return response.data;
   } catch (error) {
-    console.error("Error WidgetConfigurations:", error);
+    console.error("Error SaveAndUpdateData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -579,33 +618,6 @@ export const UpdateUserPlan = async ({
   }
 };
 
-//删除用户私人API Key
-export const DeleteUserData = async ({ shop }: { shop: string }) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/private/deleteUserData`,
-      method: "PUT",
-      data: {
-        shopName: shop,
-      },
-    });
-    console.log("DeleteUserData: ", response.data);
-    return {
-      ...response.data,
-      response: {
-        amount: 0,
-        googleKey: null,
-        id: null,
-        openaiKey: null,
-        shopName: shop,
-        usedAmount: null,
-      },
-    };
-  } catch (error) {
-    console.error("Error DeleteUserData:", error);
-  }
-};
-
 //获取用户私人API Key
 export const GetUserData = async ({
   shop,
@@ -619,7 +631,6 @@ export const GetUserData = async ({
       url: `${process.env.SERVER_URL}/private/translate/getUserPrivateData?shopName=${shop}&apiName=${apiName}`,
       method: "POST",
     });
-    console.log("GetUserData: ", response.data);
     return response.data;
   } catch (error) {
     console.error("Error GetUserData:", error);
@@ -669,33 +680,6 @@ export const SavePrivateKey = async ({
   }
 };
 
-// export const SaveGoogleKey = async ({
-//   shop,
-//   apiKey,
-//   count,
-// }: {
-//   shop: string;
-//   apiKey: string;
-//   count: number;
-// }) => {
-//   try {
-//     const response = await axios({
-//       url: `${process.env.SERVER_URL}/privateKey/saveGoogleKey`,
-//       method: "PUT",
-//       data: {
-//         shopName: shop,
-//         model: "google",
-//         secret: apiKey,
-//         amount: count,
-//       },
-//     });
-//     console.log("SaveGoogleKey: ", response.data);
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error SaveGoogleKey:", error);
-//   }
-// };
-
 //获取最新翻译状态
 export const GetTranslateDOByShopNameAndSource = async ({
   shop,
@@ -720,8 +704,8 @@ export const GetTranslateDOByShopNameAndSource = async ({
       console.warn(`${shop} source disappear`);
       return {
         success: false,
-        errorCode: 0,
-        errorMsg: "",
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
         response: [],
       };
     }
@@ -729,25 +713,10 @@ export const GetTranslateDOByShopNameAndSource = async ({
     console.error("Error GetTranslateDOByShopNameAndSource:", error);
     return {
       success: false,
-      errorCode: 0,
-      errorMsg: "",
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: [],
     };
-  }
-};
-
-export const VerifyAPIkey = async ({ shopName }: { shopName: string }) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/privateKey/translate?shopName=${shopName}`,
-      method: "PUT",
-      data: {
-        shopName,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
   }
 };
 
@@ -775,6 +744,7 @@ export const TranslationInterface = async ({
         prompt,
       },
     });
+
     console.log("testApiKeyRes", response.data);
 
     return response.data;
@@ -783,53 +753,64 @@ export const TranslationInterface = async ({
   }
 };
 
-export const GetUserInitTokenByShopName = async ({
-  shop,
-}: {
-  shop: string;
-}) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/userTypeToken/getUserInitTokenByShopName`,
-      method: "POST",
-      data: {
-        shopName: shop,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error GetUserInitTokenByShopName:", error);
-  }
-};
+// export const GetUserInitTokenByShopName = async ({
+//   shop,
+//   server,
+// }: {
+//   shop: string;
+//   server: string;
+// }) => {
+//   try {
+//     const response = await axios({
+//       url: `${server}/userTypeToken/getUserInitTokenByShopName`,
+//       method: "POST",
+//       data: {
+//         shopName: shop,
+//       },
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error GetUserInitTokenByShopName:", error);
+//     return {
+//       success: false,
+//       errorCode: 10001,
+//       errorMsg: "SERVER_ERROR",
+//       response: undefined,
+//     };
+//   }
+// };
 
-//获取用户翻译字数
-export const getCredits = async ({
-  shop,
-  accessToken,
-  target,
-  source,
-}: {
-  shop: string;
-  accessToken: string;
-  target: string;
-  source: string;
-}) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/userTypeToken/getUserToken`,
-      method: "POST",
-      data: {
-        shopName: shop,
-        accessToken: accessToken,
-        target: target,
-        source: source,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error getCredits:", error);
-  }
-};
+// //获取用户翻译字数
+// export const GetUserToken = async ({
+//   shop,
+//   accessToken,
+//   target,
+//   source,
+// }: {
+//   shop: string;
+//   accessToken: string;
+//   target: string;
+//   source: string;
+// }) => {
+//   try {
+//     const response = await axios({
+//       url: `${process.env.SERVER_URL}/userTypeToken/getUserToken`,
+//       method: "POST",
+//       data: {
+//         shopName: shop,
+//         accessToken: accessToken,
+//         target: target,
+//         source: source,
+//       },
+//     });
+
+//     console.log(`${shop} GetUserToken: `, response.data);
+
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error GetUserToken:", error);
+//   }
+// };
 
 //用户数据初始化检测
 export const InitializationDetection = async ({ shop }: { shop: string }) => {
@@ -841,10 +822,20 @@ export const InitializationDetection = async ({ shop }: { shop: string }) => {
 
     console.log(`${shop} InitializationDetection: `, response.data);
 
-    const res = response.data.response;
+    const res = response.data;
     return res;
   } catch (error) {
     console.error("Error InitializationDetection:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: {
+        insertCharsByShopName: true,
+        addUserSubscriptionPlan: true,
+        addDefaultLanguagePack: true,
+      },
+    };
   }
 };
 
@@ -932,47 +923,50 @@ export const GetUserSubscriptionPlan = async ({
   server,
 }: {
   shop: string;
-  server?: string;
+  server: string;
 }) => {
   try {
     const response = await axios({
-      url: `${server || process.env.SERVER_URL}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
+      url: `${server}/shopify/getUserSubscriptionPlan?shopName=${shop}`,
       method: "GET",
     });
 
     console.log("GetUserSubscriptionPlan: ", response.data);
 
-    if (response.data?.success) {
-      const res = response.data?.response;
-      if (shop == "ciwishop.myshopify.com") {
-        return {
+    if (shop == "ciwishop.myshopify.com") {
+      return {
+        ...response.data,
+        response: {
           userSubscriptionPlan: 6,
           currentPeriodEnd: "2025-09-17T06:24:28Z",
-        };
-      }
-      return res;
-    } else {
-      return {
-        userSubscriptionPlan: 2,
-        currentPeriodEnd: null,
+        },
       };
     }
+    return response.data;
   } catch (error) {
     console.error("Error GetUserSubscriptionPlan:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: {
+        userSubscriptionPlan: 2,
+        currentPeriodEnd: "",
+      },
+    };
   }
 };
 
 //用户字数初始化
 export const AddUserFreeSubscription = async ({ shop }: { shop: string }) => {
   try {
-    const addUserFreeSubscriptionResponse = await axios({
+    await axios({
       url: `${process.env.SERVER_URL}/shopify/addUserFreeSubscription`,
       method: "POST",
       data: {
         shopName: shop,
       },
     });
-    return addUserFreeSubscriptionResponse.data.success;
   } catch (error) {
     console.error("Error AddUserFreeSubscription:", error);
   }
@@ -991,7 +985,7 @@ export const InsertShopTranslateInfo = async ({
   target: string;
 }) => {
   try {
-    await axios({
+    const response = await axios({
       url: `${process.env.SERVER_URL}/translate/insertShopTranslateInfo`,
       method: "POST",
       data: {
@@ -1001,6 +995,8 @@ export const InsertShopTranslateInfo = async ({
         target: target,
       },
     });
+
+    console.log(`${shop} InsertShopTranslateInfo: `, response.data);
   } catch (error) {
     console.error("Error InsertShopTranslateInfo:", error);
   }
@@ -1078,73 +1074,39 @@ export const GetTranslationItemsInfo = async ({
 
     console.log("GetTranslationItemsInfo Response: ", response.data);
 
-    const data = response.data.response;
-
-    res = [
-      ...res,
-      ...Object.keys(data).map((key) => {
-        return {
-          language: target,
-          type: data[key].itemName,
-          translatedNumber: data[key].translatedNumber,
-          totalNumber: data[key].totalNumber,
-        };
-      }),
-    ];
-    console.log("GetTranslationItemsInfo Return: ", res);
-    return res || [];
-  } catch (error) {
-    console.error("Error GetTranslationItemsInfo:", error);
-    return [];
-  }
-};
-
-//获取各项翻译状态
-export const GetItemsInSqlByShopName = async ({
-  shop,
-  accessToken,
-  source,
-  targets,
-}: {
-  shop: string;
-  accessToken: string | undefined;
-  source: string;
-  targets: string[];
-}) => {
-  let res: {
-    language: string;
-    type: string;
-    translatedNumber: number;
-    totalNumber: number;
-  }[] = [];
-  try {
-    for (const target of targets) {
-      const response = await axios({
-        url: `${process.env.SERVER_URL}/shopify/getItemsInSqlByShopName`,
-        method: "POST",
-        data: {
-          shopName: shop,
-          accessToken: accessToken,
-          source: source,
-          target: target,
-        },
-      });
-      const data = response.data.response;
+    if (response.data?.success && response.data?.response != undefined) {
+      const data = response.data?.response;
       res = [
         ...res,
         ...Object.keys(data).map((key) => {
           return {
             language: target,
-            type: data[key].itemName,
-            translatedNumber: data[key].translatedNumber,
-            totalNumber: data[key].totalNumber,
+            type: data[key]?.itemName || "",
+            translatedNumber: data[key]?.translatedNumber || 0,
+            totalNumber: data[key]?.totalNumber || 0,
           };
         }),
       ];
+      return {
+        ...response.data,
+        response: res,
+      };
+    } else {
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: [],
+      };
     }
-    return res;
   } catch (error) {
-    console.error("Error fetching search translation items:", error);
+    console.error("Error GetTranslationItemsInfo:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [],
+    };
   }
 };
 
@@ -1162,17 +1124,24 @@ export const GetUserWords = async ({
       method: "GET",
     });
     console.log("GetUserWords: ", response.data);
-    const res = response.data;
-    return res;
+    return response.data;
   } catch (error) {
     console.error("Error occurred in the userwords:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
 //获取本地化信息
 export const GetLanguageLocaleInfo = async ({
+  server,
   locale,
 }: {
+  server: string;
   locale: string[];
 }) => {
   // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
@@ -1180,54 +1149,82 @@ export const GetLanguageLocaleInfo = async ({
 
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getImageInfo`,
+      url: `${server}/shopify/getImageInfo`,
       method: "POST",
       data: updatedLocales,
     });
-    const data = response.data.response;
-    const res = Object.keys(data).reduce(
-      (
-        acc: {
-          [key: string]: {
-            isoCode: string;
-            Local: string;
-            countries: [];
-            Name: string;
-          };
+    if (response.data?.success) {
+      const data = response.data?.response;
+      const res = Object.keys(data).reduce(
+        (
+          acc: {
+            [key: string]: {
+              isoCode: string;
+              Local: string;
+              countries: [];
+              Name: string;
+            };
+          },
+          key,
+        ) => {
+          // 将 key 中的 "_" 替换为 "-"
+          const newKey = key.replace("_", "-");
+          // 保持原来的值，重新赋值给新键
+          acc[newKey] = data[key];
+          return acc;
         },
-        key,
-      ) => {
-        // 将 key 中的 "_" 替换为 "-"
-        const newKey = key.replace("_", "-");
-        // 保持原来的值，重新赋值给新键
-        acc[newKey] = data[key];
-        return acc;
-      },
-      {},
-    );
-    return res;
+        {},
+      );
+      return {
+        ...response.data,
+        response: res,
+      };
+    } else {
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: undefined,
+      };
+    }
   } catch (error) {
     console.error("Error occurred in the languageData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
 //查询语言状态
 export const GetLanguageList = async ({
   shop,
+  server,
   source,
 }: {
   shop: string;
+  server: string;
   source: string;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translate/readInfoByShopName?shopName=${shop}&&source=${source}`,
+      url: `${server}/translate/readInfoByShopName?shopName=${shop}&&source=${source}`,
       method: "GET",
     });
-    const res = response.data.response;
-    return res;
+
+    console.log(`${shop} GetLanguageList: `, response.data);
+
+    return response.data;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [],
+    };
   }
 };
 
@@ -1262,46 +1259,45 @@ export const GetLanguageStatus = async ({
 
     console.log(`${shop} GetLanguageStatus: `, response.data);
 
-    const res = response.data.response;
-    return res;
+    return response.data;
   } catch (error) {
     console.error("Error GetLanguageStatus:", error);
     return {
       success: false,
-      errorCode: 0,
-      errorMsg: "",
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
       response: [],
     };
   }
 };
 
-//查询语言待翻译字符数
-export const GetTotalWords = async ({
-  shop,
-  accessToken,
-  target,
-}: {
-  shop: string;
-  accessToken: string;
-  target: string;
-}) => {
-  try {
-    const response = await axios({
-      url: `${process.env.SERVER_URL}/shopify/getTotalWords`,
-      method: "Post",
-      data: {
-        shopName: shop,
-        accessToken: accessToken,
-        target: target,
-      },
-    });
+// //查询语言待翻译字符数
+// export const GetTotalWords = async ({
+//   shop,
+//   accessToken,
+//   target,
+// }: {
+//   shop: string;
+//   accessToken: string;
+//   target: string;
+// }) => {
+//   try {
+//     const response = await axios({
+//       url: `${process.env.SERVER_URL}/shopify/getTotalWords`,
+//       method: "Post",
+//       data: {
+//         shopName: shop,
+//         accessToken: accessToken,
+//         target: target,
+//       },
+//     });
 
-    const res = response.data.response;
-    return res;
-  } catch (error) {
-    console.error("Error GetTotalWords:", error);
-  }
-};
+//     const res = response.data.response;
+//     return res;
+//   } catch (error) {
+//     console.error("Error GetTotalWords:", error);
+//   }
+// };
 
 //一键全部翻译
 export const GetTranslate = async ({
@@ -1361,6 +1357,8 @@ export const GetTranslate = async ({
     console.log(`${shop} 翻译项: `, translateSettings3);
     console.log(`${shop} 是否覆盖: `, translateSettings5);
     console.log(`${shop} 自定义提示: `, customKey);
+    console.log('response', response.data);
+
     const res = {
       ...response.data,
       response: {
@@ -1374,7 +1372,6 @@ export const GetTranslate = async ({
         customKey: customKey,
         isCover: translateSettings5,
       },
-      target: target,
     };
     console.log("GetTranslate: ", res);
     return res;
@@ -1382,11 +1379,14 @@ export const GetTranslate = async ({
     console.error("Error GetTranslate:", error);
     return {
       success: false,
-      errorCode: 10014,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
     };
   }
 };
 
+//编辑翻译
 //编辑翻译
 export const updateManageTranslation = async ({
   shop,
@@ -1679,11 +1679,18 @@ export const InitCurrency = async ({ shop }: { shop: string }) => {
       url: `${process.env.SERVER_URL}/currency/initCurrency?shopName=${shop}`,
       method: "Get",
     });
-    const res = response.data.response;
-    console.log("InitCurrency: ", res);
-    return res;
+
+    console.log(`${shop} InitCurrency: `, response.data);
+
+    return response.data;
   } catch (error) {
     console.error("Error InitCurrency:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -1712,22 +1719,29 @@ export const UpdateDefaultCurrency = async ({
         primaryStatus: primaryStatus,
       },
     });
-    const res = response.data.response;
-    console.log("UpdateDefaultCurrency: ", res);
-    return res;
+    console.log("UpdateDefaultCurrency: ", response.data);
+    return response.data;
   } catch (error) {
     console.error("Error UpdateDefaultCurrency:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
 //添加用户自定义汇率
 export const AddCurrency = async ({
   shop,
+  server,
   currencyName,
   currencyCode,
   primaryStatus,
 }: {
   shop: string;
+  server: string;
   currencyName: string;
   currencyCode: string;
   primaryStatus: number;
@@ -1741,41 +1755,30 @@ export const AddCurrency = async ({
     primaryStatus: primaryStatus,
   });
   try {
-    if (primaryStatus) {
-      const response = await axios({
-        url: `${process.env.SERVER_URL}/currency/insertCurrency`,
-        method: "POST",
-        data: {
-          shopName: shop,
-          currencyName: currencyName, // 国家
-          currencyCode: currencyCode, // 货币代码
-          rounding: null,
-          exchangeRate: null,
-          primaryStatus: primaryStatus,
-        },
-      });
-      const res = response.data;
-      console.log("AddCurrency: ", res);
-      return res;
-    } else {
-      const response = await axios({
-        url: `${process.env.SERVER_URL}/currency/insertCurrency`,
-        method: "POST",
-        data: {
-          shopName: shop,
-          currencyName: currencyName, // 国家
-          currencyCode: currencyCode, // 货币代码
-          rounding: "",
-          exchangeRate: "Auto",
-          primaryStatus: 0,
-        },
-      });
-      const res = response.data;
-      console.log("AddCurrency: ", res);
-      return res;
-    }
+    const response = await axios({
+      url: `${server}/currency/insertCurrency`,
+      method: "POST",
+      data: {
+        shopName: shop,
+        currencyName: currencyName, // 国家
+        currencyCode: currencyCode, // 货币代码
+        rounding: primaryStatus ? null : "",
+        exchangeRate: primaryStatus ? null : "Auto",
+        primaryStatus: primaryStatus,
+      },
+    });
+
+    console.log(`${shop} AddCurrency: `, response.data);
+
+    return response.data;
   } catch (error) {
-    console.error("Error add currency:", error);
+    console.error("Error AddCurrency:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -1797,10 +1800,17 @@ export const DeleteCurrency = async ({
       },
     });
 
-    const res = response.data;
-    return res;
+    console.log(`${shop} DeleteCurrency: `, response.data);
+
+    return response.data;
   } catch (error) {
-    console.error("Error delete currency:", error);
+    console.error("Error DeleteCurrency:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -1835,20 +1845,31 @@ export const UpdateCurrency = async ({
       },
     });
 
-    const res = response.data;
-    console.log("UpdateCurrency: ", res);
+    console.log("UpdateCurrency: ", response.data);
 
-    return res;
+    return response.data;
   } catch (error) {
-    console.error("Error update currency:", error);
+    console.error("Error UpdateCurrency:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
 //获取用户自定义汇率
-export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
+export const GetCurrencyByShopName = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/currency/getCurrencyByShopName?shopName=${shop}`,
+      url: `${server}/currency/getCurrencyByShopName?shopName=${shop}`,
       method: "GET",
     });
 
@@ -1856,7 +1877,7 @@ export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
     console.log("GetCurrencyByShopName: ", res);
 
     if (Array.isArray(res)) {
-      const data = res.map((item: any) => ({
+      const data = res?.map((item: any) => ({
         key: item.id, // 将 id 转换为 key
         currency: item?.currencyName, // 将 currencyName 作为 currency
         rounding: item?.rounding,
@@ -1864,26 +1885,44 @@ export const GetCurrencyByShopName = async ({ shop }: { shop: string }) => {
         currencyCode: item?.currencyCode,
         primaryStatus: item?.primaryStatus,
       }));
-      return data;
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: data,
+      };
     } else {
-      return [];
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: [],
+      };
     }
   } catch (error) {
     console.error("Error get currency:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [],
+    };
   }
 };
 
 //获取自动汇率
 export const GetCacheData = async ({
   shop,
+  server,
   currencyCode,
 }: {
   shop: string;
+  server: string;
   currencyCode: string;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/currency/getCacheData`,
+      url: `${server}/currency/getCacheData`,
       method: "POST",
       data: {
         shopName: shop,
@@ -1891,14 +1930,15 @@ export const GetCacheData = async ({
       },
     });
 
-    const res = response.data.response;
-    console.log("GetCacheData: ", res);
-    return {
-      currencyCode: currencyCode,
-      rate: res?.exchangeRate || 0,
-    };
+    return response.data;
   } catch (error) {
     console.error("Error GetCacheData:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -1931,7 +1971,7 @@ export const InsertOrUpdateOrder = async ({
       confirmationUrl: confirmationUrl,
     });
 
-    const response = await axios({
+    await axios({
       url: `${process.env.SERVER_URL}/orders/insertOrUpdateOrder?shopName=${shop}`,
       method: "POST",
       data: {
@@ -1944,10 +1984,8 @@ export const InsertOrUpdateOrder = async ({
         confirmationUrl: confirmationUrl,
       },
     });
-    const res = response.data;
-    console.log("InsertOrUpdateOrder:", res);
   } catch (error) {
-    console.error("Error fetching insert order:", error);
+    console.error("Error InsertOrUpdateOrder:", error);
   }
 };
 
@@ -1968,10 +2006,17 @@ export const AddCharsByShopName = async ({
         chars: amount,
       },
     });
-    const res = response.data;
-    return res;
+    console.log(`${shop} AddCharsByShopName:`, response.data);
+
+    return response.data;
   } catch (error) {
-    console.error("Error fetching add chars:", error);
+    console.error("Error AddCharsByShopName:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -1995,14 +2040,12 @@ export const SendPurchaseSuccessEmail = async ({
         credit: credit,
       },
     });
-    const res = response.data;
-    console.log("SendPurchaseSuccessEmail: ", res);
+    console.log(`${shop} SendPurchaseSuccessEmail: `, response.data);
   } catch (error) {
     console.error("Error SendPurchaseSuccessEmail:", error);
   }
 };
 
-//增加用户字符数
 export const GetGlossaryByShopName = async ({
   shop,
   server,
@@ -2015,10 +2058,18 @@ export const GetGlossaryByShopName = async ({
       url: `${server}/glossary/getGlossaryByShopName?shopName=${shop}`,
       method: "GET",
     });
-    console.log("GetGlossaryByShopName: ", response.data);
+
+    console.log(`${shop} GetGlossaryByShopName: `, response.data);
+
     return response.data;
   } catch (error) {
     console.error("Error GetGlossaryByShopName:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [],
+    };
   }
 };
 
@@ -2041,30 +2092,31 @@ export const GetGlossaryByShopNameLoading = async ({
     const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex.filter(
       (language) => !language.primary,
     );
-    const res = response.data.response.map((item: any) => {
+
+    const res = response.data?.response?.map((item: any) => {
       let data = {
-        key: item.id,
-        status: item.status,
-        sourceText: item.sourceText,
-        targetText: item.targetText,
+        key: item?.id,
+        status: item?.status,
+        sourceText: item?.sourceText,
+        targetText: item?.targetText,
         language: "",
-        rangeCode: item.rangeCode,
-        type: item.caseSensitive,
+        rangeCode: item?.rangeCode,
+        type: item?.caseSensitive,
         loading: false,
-        createdDate: item.createdDate,
+        createdDate: item?.createdDate,
       };
       if (
         shopLanguagesWithoutPrimaryIndex.find((language: ShopLocalesType) => {
-          return language.locale == item.rangeCode;
+          return language?.locale == item?.rangeCode;
         }) ||
-        item.rangeCode === "ALL"
+        item?.rangeCode === "ALL"
       ) {
         data = {
           ...data,
           language:
             shopLanguagesWithoutPrimaryIndex.find(
               (language: ShopLocalesType) => {
-                return language.locale === item.rangeCode;
+                return language?.locale === item?.rangeCode;
               },
             )?.name || "All Languages",
         };
@@ -2076,19 +2128,31 @@ export const GetGlossaryByShopNameLoading = async ({
     const sortedRes = res.sort(
       (a: { createdDate: string }, b: { createdDate: string }) => {
         return (
-          new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+          new Date(b.createdDate)?.getTime() -
+          new Date(a.createdDate)?.getTime()
         );
       },
     );
 
-    console.log("GetGlossaryByShopName: ", sortedRes);
+    console.log(`${shop} GetGlossaryByShopName: `, sortedRes);
 
     return {
-      glossaryTableData: sortedRes,
-      shopLocales: shopLanguagesWithoutPrimaryIndex,
+      success: true,
+      errorCode: 0,
+      errorMsg: "",
+      response: {
+        glossaryTableData: sortedRes,
+        shopLocales: shopLanguagesWithoutPrimaryIndex,
+      },
     };
   } catch (error) {
     console.error("Error GetGlossaryByShopName:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 

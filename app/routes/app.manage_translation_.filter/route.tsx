@@ -58,7 +58,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  console.log(`${shop} load manage_translation_filter`);
+  console.log(`${shop} 目前在翻译管理-筛选器页面`);
 
   try {
     const filters = await queryNextTransType({

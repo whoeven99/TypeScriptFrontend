@@ -56,7 +56,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-  console.log(`${shop} load manage_translation_delivery`);
+  console.log(`${shop} 目前在翻译管理-配送方式页面`);
 
   try {
     const deliverys = await queryNextTransType({

@@ -17,12 +17,25 @@ import { createHead } from "remix-island";
 import "./styles.css";
 
 export function ErrorBoundary() {
+  const fetcher = useFetcher<any>();
   const error = useRouteError();
   console.error("Root Error:", error);
   let errorCode = "500";
   if (isRouteErrorResponse(error)) {
     errorCode = error.status.toString();
   }
+  const shop = localStorage.getItem("shop");
+
+  fetcher.submit(
+    {
+      log: `${shop} 错误码: ${errorCode}`,
+    },
+    {
+      method: "POST",
+      action: "/log",
+    },
+  );
+
   // 错误信息映射
   const errorMessages: {
     [key: string]: { title: string; message: string; solution: string };
@@ -31,23 +44,23 @@ export function ErrorBoundary() {
       title: "Bad Request",
       message:
         "The request could not be understood by the server due to malformed syntax.",
-      solution: `Please click the ${"Translate Language AI Adapt"} option in the app navigation bar again`,
+      solution: `Please click the Ciwi-Translator option in the app navigation bar again`,
     },
     "401": {
       title: "Unauthorized",
       message:
         "Authentication is required and has failed or has not been provided.",
-      solution: `Please  click the ${"Translate Language AI Adapt"} option in the app navigation bar again`,
+      solution: `Please  click the Ciwi-Translator option in the app navigation bar again`,
     },
     "403": {
       title: "Forbidden",
       message: "You don't have permission to access this resource.",
-      solution: `Please click the ${"Translate Language AI Adapt"} option in the app navigation bar again`,
+      solution: `Please click the Ciwi-Translator option in the app navigation bar again`,
     },
     "404": {
       title: "Not Found",
       message: "The requested resource could not be found.",
-      solution: `Please click the ${"Translate Language AI Adapt"} option in the app navigation bar again`,
+      solution: `Please click the Ciwi-Translator option in the app navigation bar again`,
     },
     "500": {
       title: "Internal Server Error",
@@ -117,8 +130,8 @@ export function ErrorBoundary() {
                   fontSize: 16,
                 }}
               >
-                Please click the "Translate Language AI Adapt" option in the app
-                navigation bar again
+                Please click the "Ciwi-Translator" option in the app navigation
+                bar again
               </p>
             </div>
           </div>

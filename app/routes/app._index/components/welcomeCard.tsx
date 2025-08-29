@@ -1,5 +1,4 @@
-import { RedoOutlined } from "@ant-design/icons";
-import { useNavigate } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import { Button, Card, ConfigProvider, Flex, Skeleton, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 
@@ -8,18 +7,48 @@ const { Text } = Typography;
 interface WelcomeCardProps {
   switcherOpen: boolean;
   blockUrl: string;
-  loading: boolean;
-  // handleReload: () => void;
+  shop: string;
 }
 
 const WelcomeCard: React.FC<WelcomeCardProps> = ({
   switcherOpen,
   blockUrl,
-  loading,
-  // handleReload,
+  shop,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const fetcher = useFetcher<any>();
+
+  const handleSetting = () => {
+    if (!switcherOpen) {
+      // TODO: Disable App
+      window.open(blockUrl, "_blank");
+      fetcher.submit(
+        {
+          log: `${shop} 前往开启switcher, 从主页面点击`,
+        },
+        {
+          method: "POST",
+          action: "/log",
+        },
+      );
+    } else {
+      // TODO: Setup App
+      localStorage.setItem("switcherCard", "true");
+      fetcher.submit(
+        {
+          log: `${shop} 前往配置switcher, 从主页面点击`,
+        },
+        {
+          method: "POST",
+          action: "/log",
+        },
+      );
+      setTimeout(() => {
+        navigate("/app/switcher");
+      }, 500);
+    }
+  };
 
   return (
     <Card
@@ -48,16 +77,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
         </Text>
         <Button
           onClick={() => {
-            if (!switcherOpen) {
-              // TODO: Disable App
-              window.open(blockUrl, "_blank");
-            } else {
-              // TODO: Setup App
-              localStorage.setItem("switcherCard", "true");
-              setTimeout(() => {
-                navigate("/app/switcher");
-              }, 500);
-            }
+            handleSetting();
           }}
         >
           {!switcherOpen ? t("Disable App") : t("Setup App")}

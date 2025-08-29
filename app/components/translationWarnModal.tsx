@@ -39,10 +39,7 @@ const TranslationWarnModal: React.FC<TranslationWarnModalProps> = ({
           )}
         </Space>
       }
-      style={{
-        top: "40%",
-        zIndex: 1001,
-      }}
+      centered
       width={700}
     >
       <Text>

@@ -68,8 +68,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
-  console.log(`${shop} load glossary`);
-
   return {
     shop,
     server: process.env.SERVER_URL,
@@ -94,9 +92,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             shop,
             accessToken: accessToken as string,
           });
-          return json({ data: data });
+          return data;
         } catch (error) {
           console.error("Error glossary loading:", error);
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
         }
       case !!deleteInfo:
         try {
@@ -105,13 +109,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               return DeleteGlossaryInfo({ id: item });
             });
             const data = await Promise.allSettled(promise);
-            data.forEach((result) => {
-              if (result.status === "fulfilled") {
-                console.log("Request successful:", result.value);
-              } else {
-                console.error("Request failed:", result.reason);
-              }
-            });
             return json({ data: data });
           }
         } catch (error) {
@@ -168,6 +165,7 @@ const Index = () => {
     [currentPageKeys, selectedRowKeys],
   );
 
+  const fetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
 
@@ -175,6 +173,15 @@ const Index = () => {
     loadingFetcher.submit(
       { loading: JSON.stringify(true) },
       { method: "POST" },
+    );
+    fetcher.submit(
+      {
+        log: `${shop} 目前在术语表页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
     );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
@@ -188,10 +195,14 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data) {
-      dispatch(
-        setGLossaryTableData(loadingFetcher.data.data.glossaryTableData),
-      );
-      setShopLocales(loadingFetcher.data.data.shopLocales);
+      if (loadingFetcher.data?.success) {
+        dispatch(
+          setGLossaryTableData(
+            loadingFetcher.data?.response?.glossaryTableData || [],
+          ),
+        );
+        setShopLocales(loadingFetcher.data?.response?.shopLocales || []);
+      }
       setLoading(false);
     }
   }, [loadingFetcher.data]);

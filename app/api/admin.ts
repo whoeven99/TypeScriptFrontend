@@ -3,7 +3,7 @@ import {
   LanguagesDataType,
   ShopLocalesType,
 } from "~/routes/app.language/route";
-import { authenticate } from "~/shopify.server";
+import { InsertShopTranslateInfo } from "./JavaServer";
 
 // function filterEmptyTranslationsAndContent(data: any) {
 //   // 使用 filter 方法过滤掉 translations 和 translatableContent 为空的节点
@@ -61,7 +61,7 @@ export const queryShopLanguages = async ({
     }`;
 
     const response = await axios({
-      url: `https://${shop}/admin/api/2025-04/graphql.json`,
+      url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
       method: "POST",
       headers: {
         "X-Shopify-Access-Token": accessToken, // 确保使用正确的 Token 名称
@@ -69,10 +69,14 @@ export const queryShopLanguages = async ({
       },
       data: JSON.stringify({ query }),
     });
-    const res = response.data.data.shopLocales;
+    const res = response?.data?.data?.shopLocales;
+
+    console.log(`${shop} queryShopLanguages: `, res);
+
     return res;
   } catch (error) {
-    console.error("Error fetching shoplocales:", error);
+    console.error("Error queryShopLanguages:", error);
+    return [];
   }
 };
 
@@ -1442,11 +1446,12 @@ export const queryAllLanguages = async ({
       },
       data: JSON.stringify({ query }),
     });
-    const res = response.data.data.availableLocales;
+    const res = response.data?.data?.availableLocales;
 
     return res;
   } catch (error) {
     console.error("Error queryAllLanguages:", error);
+    return [];
   }
 };
 
@@ -1487,7 +1492,7 @@ export const queryPrimaryMarket = async ({
 
     return res || [];
   } catch (error) {
-    console.error("Error fetching all markets:", error);
+    console.error("Error queryPrimaryMarket:", error);
   }
 };
 
@@ -1529,20 +1534,16 @@ export const queryOrders = async ({
 export const mutationShopLocaleEnable = async ({
   shop,
   accessToken,
-  addLanguages,
+  source,
+  targets,
 }: {
   shop: string;
   accessToken: string;
-  addLanguages: {
-    primaryLanguage: ShopLocalesType | undefined;
-    selectedLanguages: string[];
-  }; // 接受语言数组
+  source: string; // 接受语言数组
+  targets: string[];
 }) => {
-  let shopLanguages: any[] = [];
-  let success = true;
   try {
-    // 遍历语言数组并逐个执行 GraphQL mutation
-    for (const language of addLanguages.selectedLanguages) {
+    const promises = targets?.map(async (language) => {
       const mutation = `
         mutation {
           shopLocaleEnable(locale: "${language}") {
@@ -1555,68 +1556,45 @@ export const mutationShopLocaleEnable = async ({
           }
         }
       `;
+      try {
+        const response = await axios({
+          url: `https://${shop}/admin/api/${process.env.GRAPHQL_VERSION}/graphql.json`,
+          method: "POST",
+          headers: {
+            "X-Shopify-Access-Token": accessToken,
+            "Content-Type": "application/json",
+          },
+          data: JSON.stringify({ query: mutation }),
+        });
 
-      // 增加重试机制
-      let shopifyResponse;
-      let retryCount = 0;
-      const maxRetries = 3;
-      while (retryCount < maxRetries) {
-        try {
-          shopifyResponse = await axios({
-            url: `https://${shop}/admin/api/2025-04/graphql.json`,
-            method: "POST",
-            headers: {
-              "X-Shopify-Access-Token": accessToken,
-              "Content-Type": "application/json",
-            },
-            data: JSON.stringify({ query: mutation }),
-          });
-          // 如果请求成功，跳出循环
-          if (shopifyResponse.status >= 200 && shopifyResponse.status < 300) {
-            break;
-          }
-        } catch (err) {
-          retryCount++;
-          if (retryCount >= maxRetries) {
-            success = false;
-            break;
-          }
-          // 延迟 1 秒后重试
-          await new Promise((res) => setTimeout(res, 1000));
-        }
-      }
+        console.log("source: ", source);
 
-      await axios({
-        url: `${process.env.SERVER_URL}/translate/insertShopTranslateInfo`,
-        method: "Post",
-        data: {
-          shopName: shop,
-          accessToken: accessToken,
-          source: addLanguages?.primaryLanguage?.locale,
+        const res = response.data?.data?.shopLocaleEnable?.shopLocale;
+
+        await InsertShopTranslateInfo({
+          shop,
+          accessToken,
+          source,
           target: language,
-        },
-      });
-      if (
-        shopifyResponse &&
-        shopifyResponse.data?.data?.shopLocaleEnable?.shopLocale
-      ) {
-        console.log(
-          "shopLocaleEnable: ",
-          shopifyResponse.data.data.shopLocaleEnable,
-        );
-        shopLanguages.push(
-          shopifyResponse.data.data.shopLocaleEnable.shopLocale,
-        );
-      } else {
-        success = false;
+        });
+
+        console.log(`${shop} mutationShopLocaleEnable: `, res);
+
+        return res;
+      } catch (error) {
+        console.error(`${shop} add language ${language} failed: `, error);
+        return undefined;
       }
-    }
-    return {
-      success,
-      shopLanguages,
-    };
+    });
+
+    const results = await Promise.allSettled(promises);
+
+    console.log(results);
+
+    return results;
   } catch (error) {
     console.error("Error mutationShopLocaleEnable:", error);
+    return [];
   }
 };
 
@@ -1870,7 +1848,6 @@ export const mutationAppSubscriptionCreate = async ({
   returnUrl: URL;
 }) => {
   console.log("mutationAppSubscriptionCreate is coming");
-
   try {
     // 执行 API 请求
     const response = await axios({

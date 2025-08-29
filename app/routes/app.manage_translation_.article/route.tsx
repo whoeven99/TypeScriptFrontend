@@ -11,11 +11,7 @@ import {
   theme,
   Typography,
 } from "antd";
-import {
-  useEffect,
-  useState,
-  useRef
-} from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   useActionData,
   useFetcher,
@@ -27,11 +23,12 @@ import {
 } from "@remix-run/react"; // 引入 useNavigate
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
+import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
 import {
-  queryNextTransType,
-  queryPreviousTransType,
-} from "~/api/admin";
-import { ConfirmDataType, SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
+  ConfirmDataType,
+  SingleTextTranslate,
+  updateManageTranslation,
+} from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -43,7 +40,7 @@ import { setUserConfig } from "~/store/modules/userConfig";
 
 const { Sider, Content } = Layout;
 
-const { Title, Text } = Typography
+const { Title, Text } = Typography;
 
 interface ArticleType {
   key: string;
@@ -100,8 +97,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  console.log(`${shop} load manage_translation_article`);
-
   try {
     const articles = await queryNextTransType({
       shop,
@@ -112,6 +107,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
 
     return json({
+      shop,
       server: process.env.SERVER_URL,
       shopName: shop,
       searchTerm,
@@ -148,6 +144,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           startCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
+        console.log(`应用日志: ${shop} 翻译管理-文章页面翻到上一页`);
+
         return json({ previousArticles: previousArticles });
       case !!endCursor:
         const nextArticles = await queryNextTransType({
@@ -157,6 +155,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           endCursor,
           locale: searchTerm || "",
         }); // 处理逻辑
+        console.log(`应用日志: ${shop} 翻译管理-文章页面翻到下一页`);
+
         return json({ nextArticles: nextArticles });
       case !!confirmData:
         const data = await updateManageTranslation({
@@ -183,7 +183,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, articles, server, shopName } =
+  const { shop, searchTerm, articles, server, shopName } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
@@ -191,6 +191,7 @@ const Index = () => {
   const loadingItemsRef = useRef<string[]>([]);
 
   const submit = useSubmit(); // 使用 useSubmit 钩子
+  const fetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
@@ -229,28 +230,44 @@ const Index = () => {
     { label: t("Product image alt text"), value: "productImageAlt" },
     { label: t("Delivery"), value: "delivery" },
     { label: t("Shipping"), value: "shipping" },
-  ]
-  const [languageOptions, setLanguageOptions] = useState<{ label: string; value: string }[]>([]);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(searchTerm || "");
+  ];
+  const [languageOptions, setLanguageOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(
+    searchTerm || "",
+  );
   const [selectedItem, setSelectedItem] = useState<string>("article");
 
   const [hasPrevious, setHasPrevious] = useState<boolean>(
-    articles?.pageInfo.hasPreviousPage || false
+    articles?.pageInfo.hasPreviousPage || false,
   );
   const [hasNext, setHasNext] = useState<boolean>(
-    articles?.pageInfo.hasNextPage || false
+    articles?.pageInfo.hasNextPage || false,
   );
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     if (languageTableData.length === 0) {
-      languageFetcher.submit({
-        language: JSON.stringify(true),
-      }, {
-        method: "post",
-        action: "/app/manage_translation",
-      });
+      languageFetcher.submit(
+        {
+          language: JSON.stringify(true),
+        },
+        {
+          method: "post",
+          action: "/app/manage_translation",
+        },
+      );
     }
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译管理-文章页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -271,14 +288,16 @@ const Index = () => {
 
   useEffect(() => {
     if (languageTableData) {
-      setLanguageOptions(languageTableData
-        .filter((item: any) => !item.primary)
-        .map((item: any) => ({
-          label: item.language,
-          value: item.locale,
-        })));
+      setLanguageOptions(
+        languageTableData
+          .filter((item: any) => !item.primary)
+          .map((item: any) => ({
+            label: item.language,
+            value: item.locale,
+          })),
+      );
     }
-  }, [languageTableData])
+  }, [languageTableData]);
 
   useEffect(() => {
     if (articles && isManualChangeRef.current) {
@@ -377,17 +396,21 @@ const Index = () => {
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
-      const successfulItem = confirmFetcher.data.data.filter((item: any) =>
-        item.success === true
+      const successfulItem = confirmFetcher.data.data.filter(
+        (item: any) => item.success === true,
       );
-      const errorItem = confirmFetcher.data.data.filter((item: any) =>
-        item.success === false
+      const errorItem = confirmFetcher.data.data.filter(
+        (item: any) => item.success === false,
       );
 
       successfulItem.forEach((item: any) => {
-        const index = articlesData.nodes.findIndex((option: any) => option.resourceId === item.data.resourceId);
+        const index = articlesData.nodes.findIndex(
+          (option: any) => option.resourceId === item.data.resourceId,
+        );
         if (index !== -1) {
-          const article = articlesData.nodes[index].translations.find((option: any) => option.key === item.data.key);
+          const article = articlesData.nodes[index].translations.find(
+            (option: any) => option.key === item.data.key,
+          );
           if (article) {
             article.value = item.data.value;
           } else {
@@ -397,9 +420,18 @@ const Index = () => {
             });
           }
         }
-      })
+      });
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
+        fetcher.submit(
+          {
+            log: `${shop} 翻译管理-文章页面修改数据保存成功`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       } else {
         shopify.toast.show(t("Some items saved failed"));
       }
@@ -411,13 +443,17 @@ const Index = () => {
     if (languageFetcher.data) {
       if (languageFetcher.data.data) {
         const shopLanguages = languageFetcher.data.data;
-        dispatch(setTableData(shopLanguages.map((language: ShopLocalesType, index: number) => ({
-          key: index,
-          language: language.name,
-          locale: language.locale,
-          primary: language.primary,
-          published: language.published,
-        }))));
+        dispatch(
+          setTableData(
+            shopLanguages.map((language: ShopLocalesType, index: number) => ({
+              key: index,
+              language: language.name,
+              locale: language.locale,
+              primary: language.primary,
+              published: language.published,
+            })),
+          ),
+        );
         const locale = shopLanguages.find(
           (language: ShopLocalesType) => language.primary === true,
         )?.locale;
@@ -474,7 +510,12 @@ const Index = () => {
         return (
           <Button
             onClick={() => {
-              handleTranslate("ARTICLE", record?.key || "", record?.type || "", record?.default_language || "");
+              handleTranslate(
+                "ARTICLE",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+              );
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -525,7 +566,12 @@ const Index = () => {
         return (
           <Button
             onClick={() => {
-              handleTranslate("ARTICLE", record?.key || "", record?.type || "", record?.default_language || "");
+              handleTranslate(
+                "ARTICLE",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+              );
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -699,17 +745,31 @@ const Index = () => {
     return data;
   };
 
-  const handleTranslate = async (resourceType: string, key: string, type: string, context: string) => {
+  const handleTranslate = async (
+    resourceType: string,
+    key: string,
+    type: string,
+    context: string,
+  ) => {
     if (!key || !type || !context) {
       return;
     }
+    fetcher.submit(
+      {
+        log: `${shop} 从翻译管理-文章页面点击单行翻译`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: shopName,
       source: articlesData.nodes
         .find((item: any) => item?.resourceId === selectArticleKey)
-        ?.translatableContent.find((item: any) => item.key === key)
-        ?.locale,
+        ?.translatableContent.find((item: any) => item.key === key)?.locale,
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -719,14 +779,23 @@ const Index = () => {
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response)
-        shopify.toast.show(t("Translated successfully"))
+        handleInputChange(key, data?.response);
+        shopify.toast.show(t("Translated successfully"));
+        fetcher.submit(
+          {
+            log: `${shop} 从翻译管理-文章页面点击单行翻译返回结果 ${data?.response}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       }
     } else {
-      shopify.toast.show(data.errorMsg)
+      shopify.toast.show(data.errorMsg);
     }
     setLoadingItems((prev) => prev.filter((item) => item !== key));
-  }
+  };
 
   const onPrevious = () => {
     if (confirmData.length > 0) {
@@ -799,6 +868,15 @@ const Index = () => {
       method: "post",
       action: `/app/manage_translation/article?language=${searchTerm}`,
     }); // 提交表单请求
+    fetcher.submit(
+      {
+        log: `${shop} 提交翻译管理-文章页面修改数据`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   };
 
   const handleDiscard = () => {

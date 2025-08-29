@@ -1,12 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Button,
-  InputNumber,
-  Modal,
-  Select,
-  Space,
-  Typography,
-} from "antd";
+import { Button, InputNumber, Modal, Select, Space, Typography } from "antd";
 import { useFetcher } from "@remix-run/react";
 import { BaseOptionType, DefaultOptionType } from "antd/es/select";
 import { CurrencyDataType } from "../route";
@@ -43,7 +36,9 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   const [saveButtonDisable, setSaveButtonDisable] = useState<boolean>(true);
   const [exRateError, setExRateError] = useState<boolean>(false);
   const [exRateErrorMsg, setExRateErrorMsg] = useState<string>("");
-  const [exRateStatus, setExRateStatus] = useState<"warning" | "error" | "">("");
+  const [exRateStatus, setExRateStatus] = useState<"warning" | "error" | "">(
+    "",
+  );
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const updateFetcher = useFetcher<any>();
@@ -52,8 +47,8 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
 
   useEffect(() => {
     if (updateFetcher.data) {
-      if (updateFetcher.data?.data.success) {
-        const newData = updateFetcher.data.data.response;
+      if (updateFetcher.data?.success) {
+        const newData = updateFetcher.data.response;
         const oldData: CurrencyDataType = dataSource.find(
           (row: CurrencyDataType) => row.key === newData.id,
         );
@@ -69,15 +64,15 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         dispatch(updateTableData(data));
         shopify.toast.show(t("Saved successfully"));
         setIsModalOpen(false);
+        setUpdateFetcherLoading(false);
         setExRateSelectValue(undefined);
         setRoundingSelectValue(undefined);
         setExRateValue(0);
       } else {
         setExRateError(true);
-        setExRateErrorMsg(updateFetcher.data?.data.errorMsg);
+        setExRateErrorMsg(updateFetcher.data?.errorMsg);
       }
     }
-    setUpdateFetcherLoading(false);
   }, [updateFetcher.data]);
 
   useEffect(() => {
@@ -85,7 +80,10 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
       setExRateSelectValue("Auto");
     } else {
       setExRateSelectValue("Manual Rate");
-      if (selectedRow?.exchangeRate !== null && typeof selectedRow?.exchangeRate === "number") {
+      if (
+        selectedRow?.exchangeRate !== null &&
+        typeof selectedRow?.exchangeRate === "number"
+      ) {
         setExRateValue(selectedRow?.exchangeRate);
       }
     }
@@ -115,19 +113,20 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   const handleConfirm = () => {
     setUpdateFetcherLoading(true);
     if (exRateSelectValue === "Auto") {
-      const okdata = {
-        id: selectedRow?.key,
-        rounding: roundingSelectValue,
-        exchangeRate: "Auto",
-      };
-      const formData = new FormData();
-      formData.append("updateCurrencies", JSON.stringify(okdata)); // 将选中的语言作为字符串发送
-
-      updateFetcher.submit(formData, {
-        method: "post",
-        action: "/app/currency",
-      }); // 提交表单请求
-    } else if (exRateSelectValue === "Manual Rate") {      
+      updateFetcher.submit(
+        {
+          updateCurrencies: JSON.stringify({
+            id: selectedRow?.key,
+            rounding: roundingSelectValue,
+            exchangeRate: "Auto",
+          }),
+        },
+        {
+          method: "post",
+          action: "/app/currency",
+        },
+      ); // 提交表单请求
+    } else if (exRateSelectValue === "Manual Rate") {
       if (exRateValue > 2147483647) {
         setExRateError(true);
         setExRateErrorMsg(t("Exchange rate must be less than 2147483647"));
@@ -135,7 +134,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         setUpdateFetcherLoading(false);
         return;
       }
-      
+
       if (exRateValue < 0 || typeof exRateValue !== "number") {
         setExRateError(true);
         setExRateErrorMsg(t("Exchange rate must be a positive number"));
@@ -145,18 +144,20 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
       }
       setExRateError(false);
       setExRateErrorMsg("");
-      const okdata = {
-        id: selectedRow?.key,
-        rounding: roundingSelectValue,
-        exchangeRate: exRateValue,
-      };
-      const formData = new FormData();
-      formData.append("updateCurrencies", JSON.stringify(okdata)); // 将选中的语言作为字符串发送
 
-      updateFetcher.submit(formData, {
-        method: "post",
-        action: "/app/currency",
-      }); // 提交表单请求
+      updateFetcher.submit(
+        {
+          updateCurrencies: JSON.stringify({
+            id: selectedRow?.key,
+            rounding: roundingSelectValue,
+            exchangeRate: exRateValue,
+          }),
+        },
+        {
+          method: "post",
+          action: "/app/currency",
+        },
+      ); // 提交表单请求
     }
   };
 
@@ -186,13 +187,16 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
         top: "40%",
       }}
       footer={[
-        <div key={"footer_buttons"} style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          width: "100%",
-          gap: "12px"        // 使用 gap 替代 marginRight
-        }}>
+        <div
+          key={"footer_buttons"}
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            width: "100%",
+            gap: "12px", // 使用 gap 替代 marginRight
+          }}
+        >
           <Button
             key={"manage_cancel_button"}
             onClick={handleCloseModal}
@@ -223,14 +227,15 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
             onChange={handleExRateSelectChange}
           />
           {exRateSelectValue === "Auto" && (
-            <div style={{ marginBottom: '8px' }}>
-              {selectedRow?.currency}{t("will fluctuate based on market rates.")}.
+            <div style={{ marginBottom: "8px" }}>
+              {selectedRow?.currency}
+              {t("will fluctuate based on market rates.")}.
             </div>
           )}
         </div>
         {exRateSelectValue !== "Auto" && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <Text>1 {defaultCurrencyCode} =</Text>
               <InputNumber
                 placeholder={t("Please enter Exchange rate")}
@@ -242,10 +247,12 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
               <Text>{selectedRow?.currencyCode}</Text>
             </div>
             {/* 错误提示放在下方，并且与输入框左对齐 */}
-            <div style={{
-              marginLeft: '60px',  // 80px(标签宽度) + 8px(间距)
-              visibility: exRateError ? 'visible' : 'hidden',
-            }}>
+            <div
+              style={{
+                marginLeft: "60px", // 80px(标签宽度) + 8px(间距)
+                visibility: exRateError ? "visible" : "hidden",
+              }}
+            >
               <Text type="danger">
                 <ExclamationCircleOutlined style={{ marginRight: "4px" }} />
                 {t(exRateErrorMsg)}

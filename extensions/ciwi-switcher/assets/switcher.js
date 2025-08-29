@@ -1,7 +1,7 @@
 async function GetProductImageData({ shopName, productId, languageCode }) {
   try {
     const response = await axios({
-      url: `https://springbackendprod.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
       method: "POST",
       data: {
         shopName: shopName,
@@ -18,7 +18,7 @@ async function GetProductImageData({ shopName, productId, languageCode }) {
 
 async function fetchSwitcherConfig(shop) {
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/widgetConfigurations/getData`,
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/widgetConfigurations/getData`,
     method: "POST",
     data: {
       shopName: shop,
@@ -60,7 +60,7 @@ async function fetchSwitcherConfig(shop) {
 
 async function fetchCurrencies(shop) {
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
     method: "GET",
   });
 
@@ -82,7 +82,7 @@ async function fetchCurrencies(shop) {
 
 async function fetchAutoRate(shop, currencyCode) {
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/currency/getCacheData`,
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
     method: "POST",
     data: {
       shopName: shop,
@@ -97,7 +97,7 @@ async function fetchAutoRate(shop, currencyCode) {
 async function checkUserIp(shop) {
   try {
     const response = await axios({
-      url: `https://springbackendprod.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
       method: "POST",
     });
     return response.data?.response;
@@ -124,7 +124,7 @@ async function fetchLanguageLocaleInfo(locale) {
   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
   try {
     const response = await axios({
-      url: `https://springbackendprod.azurewebsites.net/shopify/getImageInfo`,
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getImageInfo`,
       method: "POST",
       data: updatedLocales,
     });

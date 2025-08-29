@@ -35,12 +35,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const fetcher = useFetcher<any>();
+  const languagefetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
   const stopTranslateFetcher = useFetcher<any>();
 
   useEffect(() => {
-    fetcher.submit(
+    languagefetcher.submit(
       {
         nearTransaltedData: JSON.stringify(true),
       },
@@ -88,49 +89,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           action: "/app",
         });
 
-        async function getProgressData() {
-          const progressData = await GetProgressData({
-            shopName: shop,
-            server,
-            target: target[index],
-          });
-
-          if (
-            !progressData?.response?.TotalQuantity &&
-            !progressData?.response?.RemainingQuantity
-          ) {
-            return;
-          }
-
-          const progress = (
-            ((progressData?.response?.TotalQuantity -
-              progressData?.response?.RemainingQuantity) /
-              progressData?.response?.TotalQuantity) *
-            100
-          ).toFixed(2);
-          setProgressNumber({
-            hasTranslated:
-              progressData?.response?.TotalQuantity -
-              progressData?.response?.RemainingQuantity,
-            totalNumber: progressData?.response?.TotalQuantity,
-          });
-
-          if (typeof progress == "string" || typeof progress == "number") {
-            setProgress(parseFloat(progress));
-          }
-
-          if (!progressData?.response?.TranslateType) {
-            setItemsVisible(true);
-          }
-        }
-
         async function getUserValue() {
-          const userValue = await GetUserValue({ shop: shop, server });
-          setValue(userValue?.response?.value || "");
-          setTranslateStatus(userValue?.response?.status || 2);
+          const data = await GetUserValue({ shop: shop, server });
+          setValue(data?.response?.value || "");
+          setTranslateStatus(data?.response?.status || 2);
         }
 
-        getProgressData();
+        getProgressData(target[index]);
         getUserValue();
 
         // setValue(userValue.data.userValue);
@@ -166,57 +131,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           action: "/app",
         });
 
-        async function getProgressData() {
-          const progressData = await GetProgressData({
-            shopName: shop,
-            server,
-            target: target[index],
-          });
-
-          if (
-            !progressData?.response?.TotalQuantity &&
-            !progressData?.response?.RemainingQuantity
-          ) {
-            return;
-          }
-
-          const progress = (
-            ((progressData?.response?.TotalQuantity -
-              progressData?.response?.RemainingQuantity) /
-              progressData?.response?.TotalQuantity) *
-            100
-          ).toFixed(2);
-
-          setProgressNumber({
-            hasTranslated:
-              progressData?.response?.TotalQuantity -
-                progressData?.response?.RemainingQuantity >=
-              0
-                ? progressData?.response?.TotalQuantity -
-                  progressData?.response?.RemainingQuantity
-                : 0,
-            totalNumber:
-              progressData?.response?.TotalQuantity >= 0
-                ? progressData?.response?.TotalQuantity
-                : 0,
-          });
-
-          if (typeof progress == "string" || typeof progress == "number") {
-            setProgress(parseFloat(progress));
-          }
-
-          if (!progressData?.response?.TranslateType) {
-            setItemsVisible(true);
-          }
-        }
-
         async function getUserValue() {
           const userValue = await GetUserValue({ shop: shop, server });
           setValue(userValue?.response?.value || "");
           setTranslateStatus(userValue?.response?.status || 2);
         }
 
-        getProgressData();
+        getProgressData(target[index]);
         getUserValue();
 
         // setValue(userValue.data.userValue);
@@ -238,56 +159,19 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   }, [status, item]); // 添加 item 到依赖数组
 
   useEffect(() => {
-    if (fetcher.data?.translatingLanguage) {
-      setSource(fetcher.data?.translatingLanguage[0]?.source);
+    if (languagefetcher.data) {
+      setSource(languagefetcher.data.response[0]?.source);
       setTarget(
-        fetcher.data?.translatingLanguage.map((item: any) => item.target),
+        languagefetcher.data?.response?.map((item: any) => item?.target),
       );
-      setStatus(fetcher.data?.translatingLanguage[0]?.status);
+      setStatus(languagefetcher.data?.response[0]?.status);
       setIndex(0);
-      async function getProgressData() {
-        const progressData = await GetProgressData({
-          shopName: shop,
-          server,
-          target: fetcher.data?.translatingLanguage.map(
-            (item: any) => item.target,
-          )[index],
-        });
-
-        if (
-          !progressData?.response?.TotalQuantity &&
-          !progressData?.response?.RemainingQuantity
-        ) {
-          return;
-        }
-
-        const progress = (
-          ((progressData?.response?.TotalQuantity -
-            progressData?.response?.RemainingQuantity) /
-            progressData?.response?.TotalQuantity) *
-          100
-        ).toFixed(2);
-
-        setProgressNumber({
-          hasTranslated:
-            progressData?.response?.TotalQuantity -
-            progressData?.response?.RemainingQuantity,
-          totalNumber: progressData?.response?.TotalQuantity,
-        });
-
-        if (typeof progress == "string" || typeof progress == "number") {
-          setProgress(parseFloat(progress));
-        }
-
-        if (!progressData?.response?.TranslateType) {
-          setItemsVisible(true);
-        }
-      }
-
-      getProgressData();
       setLoading(false);
+      getProgressData(
+        languagefetcher.data?.response.map((item: any) => item?.target)[index],
+      );
     }
-  }, [fetcher.data]);
+  }, [languagefetcher.data]);
 
   useEffect(() => {
     if (statusFetcher.data?.data) {
@@ -435,28 +319,61 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   }, [statusFetcher.data]);
 
   useEffect(() => {
-    if (stopTranslateFetcher.data?.data?.success) {
-      setStatus(7);
-      // setResourceType("");
-      setTranslateStatus(1);
+    if (stopTranslateFetcher.data) {
+      if (stopTranslateFetcher.data?.success) {
+        setStatus(7);
+        setTranslateStatus(1);
+      } else {
+      }
     }
   }, [stopTranslateFetcher.data]);
 
-  // useEffect(() => {
-  //     if (typeof itemsFetcher.data?.data[0]?.totalNumber === 'number' && typeof itemsFetcher.data?.data[0]?.translatedNumber === 'number') {
-  //         setItemsCount({
-  //             totalNumber: itemsFetcher.data?.data[0]?.totalNumber || 0,
-  //             translatedNumber: itemsFetcher.data?.data[0]?.translatedNumber || 0,
-  //         });
-  //     }
-  // }, [itemsFetcher.data]);
+  const getProgressData = async (target: string) => {
+    const progressData = await GetProgressData({
+      shopName: shop,
+      server,
+      target: target,
+    });
 
-  // useEffect(() => {
-  //   if (resourceType) {
-  //     const progress = calculateProgressByType(resourceType);
-  //     setProgress(progress);
-  //   }
-  // }, [resourceType]);
+    if (
+      !progressData?.response?.TotalQuantity &&
+      !progressData?.response?.RemainingQuantity
+    ) {
+      return;
+    }
+
+    const progress = (
+      ((progressData?.response?.TotalQuantity -
+        progressData?.response?.RemainingQuantity) /
+        progressData?.response?.TotalQuantity) *
+      100
+    ).toFixed(2);
+
+    setProgressNumber({
+      hasTranslated:
+        progressData?.response?.TotalQuantity -
+        progressData?.response?.RemainingQuantity,
+      totalNumber: progressData?.response?.TotalQuantity,
+    });
+
+    if (typeof progress == "string" || typeof progress == "number") {
+      setProgress(parseFloat(progress));
+    }
+
+    if (!progressData?.response?.TranslateType) {
+      setItemsVisible(true);
+    }
+
+    fetcher.submit(
+      {
+        log: `${shop} 当前进度 ${progress}`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+  };
 
   const handleStopTranslate = () => {
     stopTranslateFetcher.submit(
@@ -607,8 +524,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                                 : t("progressing.progressingWriting", {
                                     item: t(item),
                                   })}
-                              {itemsVisible &&
-                                t("progressing.progressingItems", {})}
                             </Text>
                             {translateStatus === 2 && (
                               <div style={{ width: "100%" }}>
@@ -653,8 +568,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         <Text>{t("progressing.reTranslateText")}</Text>
                       )}
                     </div>
-
-                    {/* 右侧部分 */}
                   </div>
                   <div
                     style={{

@@ -43,7 +43,6 @@ const { Title, Text, Paragraph } = Typography;
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
-  console.log(`${shop} load pricing`);
   return {
     shop,
     server: process.env.SERVER_URL,
@@ -129,7 +128,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         const data = await response.json();
-        console.log(`${shop} AppSubscriptionCancel: `, data);
+        console.log(`应用日志: ${shop} 取消计划: `, data);
         return data;
       } catch (error) {
         console.error("Error cancelId action:", error);
@@ -303,6 +302,8 @@ const Index = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const userConfig = useSelector((state: any) => state.userConfig);
+
+  const fetcher = useFetcher<any>();
   const planCancelFetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
@@ -320,10 +321,10 @@ const Index = () => {
           shop,
           server: server as string,
         });
-        setSelectedPlan(data.userSubscriptionPlan);
-        dispatch(setUserConfig({ plan: data.userSubscriptionPlan }));
-        if (data.currentPeriodEnd) {
-          const date = new Date(data.currentPeriodEnd)
+        setSelectedPlan(data?.response?.userSubscriptionPlan || "2");
+        dispatch(setUserConfig({ plan: data?.response?.userSubscriptionPlan }));
+        if (data?.response?.currentPeriodEnd) {
+          const date = new Date(data?.response?.currentPeriodEnd)
             .toLocaleDateString("zh-CN", {
               year: "numeric",
               month: "2-digit",
@@ -365,6 +366,15 @@ const Index = () => {
     };
     checkFreeUsed();
     setIsLoading(false);
+    fetcher.submit(
+      {
+        log: `${shop} 目前在付费页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   }, []);
 
   useEffect(() => {
@@ -823,7 +833,6 @@ const Index = () => {
       shop,
       server: server as string,
     });
-    console.log("GetLatestActiveSubscribeId: ", data);
     if (data.success) {
       planCancelFetcher.submit(
         {
@@ -847,17 +856,6 @@ const Index = () => {
       { method: "POST" },
     );
   };
-
-  // const handleFreeTrial = async () => {
-  //   // setFreeTrialButtonLoading(true);
-  //   freeTrialFetcher.submit(
-  //     { freeTrial: JSON.stringify(true) },
-  //     { method: "POST" },
-  //   );
-  //   // const data = await StartFreePlan({ shop, server: server as string });
-  //   // console.log("freeTrial: ", data);
-  //   // return data;
-  // };
 
   return (
     <Page>

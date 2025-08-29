@@ -63,9 +63,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
-  console.log(`${shop} load currency`);
   return json({
     shop,
+    server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
   });
 };
@@ -78,9 +78,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const loading = JSON.parse(formData.get("loading") as string);
   const theme = JSON.parse(formData.get("theme") as string);
   const rateData = JSON.parse(formData.get("rateData") as string);
-  const updateDefaultCurrency = JSON.parse(
-    formData.get("updateDefaultCurrency") as string,
-  );
   const addCurrencies = JSON.parse(formData.get("addCurrencies") as string);
   const deleteCurrencies: number[] = JSON.parse(
     formData.get("deleteCurrencies") as string,
@@ -88,15 +85,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const updateCurrencies = JSON.parse(
     formData.get("updateCurrencies") as string,
   );
-
-  console.log(`${shop} init: `, init);
-  console.log(`${shop} loading: `, loading);
-  console.log(`${shop} theme: `, theme);
-  console.log(`${shop} rateData: `, rateData);
-  console.log(`${shop} updateDefaultCurrency: `, updateDefaultCurrency);
-  console.log(`${shop} addCurrencies: `, addCurrencies);
-  console.log(`${shop} deleteCurrencies: `, deleteCurrencies);
-  console.log(`${shop} updateCurrencies: `, updateCurrencies);
 
   switch (true) {
     case !!init:
@@ -135,6 +123,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const promises = currencyData.map((currency: any) =>
             AddCurrency({
               shop,
+              server: process.env.SERVER_URL as string,
               currencyName: currency?.currencyName,
               currencyCode: currency?.currencyCode,
               primaryStatus: currency?.primaryStatus || 0,
@@ -144,7 +133,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
         if (
           primaryCurrency &&
-          shopLoad.currencyCode !== primaryCurrency.currencyCode
+          shopLoad.currencyCode !== primaryCurrency?.currencyCode
         ) {
           await UpdateDefaultCurrency({
             shop,
@@ -162,13 +151,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       } catch (error) {
         console.error("Error init currency:", error);
-      }
-    case !!loading:
-      try {
-        const currencyList = await GetCurrencyByShopName({ shop });
-        return json({ currencyList });
-      } catch (error) {
-        console.error("Error loading currency:", error);
       }
     case !!theme:
       try {
@@ -196,52 +178,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       } catch (error) {
         console.error("Error theme currency:", error);
       }
-    case !!rateData:
-      try {
-        const promises = rateData.map((currencyCode: any) =>
-          GetCacheData({ shop, currencyCode }),
-        );
-        const data = await Promise.allSettled(promises);
-        return json({ data });
-      } catch (error) {
-        console.error("Error rateData currency:", error);
-      }
-    case !!updateDefaultCurrency:
-      try {
-        const data = await UpdateDefaultCurrency({
-          shop,
-          currencyName: updateDefaultCurrency.currencyName,
-          currencyCode: updateDefaultCurrency.currencyCode,
-          primaryStatus: updateDefaultCurrency.primaryStatus,
-        });
-        return json({ data });
-      } catch (error) {
-        console.error("Error updateDefaultCurrency currency:", error);
-      }
-    case !!addCurrencies:
-      try {
-        const promises = addCurrencies.map((currency: any) =>
-          AddCurrency({
-            shop,
-            currencyName: currency.currencyName,
-            currencyCode: currency.currencyCode,
-            primaryStatus: currency?.primaryStatus || 0,
-          }),
-        );
-        const data = await Promise.allSettled(promises);
-        return json({ data });
-      } catch (error) {
-        console.error("Error addCurrencies currency:", error);
-      }
     case !!deleteCurrencies:
       try {
         const promises = deleteCurrencies.map((currency) =>
           DeleteCurrency({ shop, id: currency }),
         );
         const data = await Promise.allSettled(promises);
-        return json({ data });
+        return data;
       } catch (error) {
         console.error("Error deleteCurrencies currency:", error);
+        return [];
       }
     case !!updateCurrencies:
       try {
@@ -249,7 +195,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop,
           updateCurrencies,
         });
-        return json({ data });
+        return data;
       } catch (error) {
         console.error("Error updateCurrencies currency:", error);
       }
@@ -259,7 +205,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, mobile } = useLoaderData<typeof loader>();
+  const { shop, server, mobile } = useLoaderData<typeof loader>();
   const userShop = `https://${shop}`;
   const [loading, setLoading] = useState<boolean>(true);
   const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>("");
@@ -306,6 +252,8 @@ const Index = () => {
 
   const dispatch = useDispatch();
   const { t } = useTranslation();
+
+  const fetcher = useFetcher<any>();
   const initFetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const rateFetcher = useFetcher<any>();
@@ -318,6 +266,15 @@ const Index = () => {
       method: "post",
       action: "/app/currency",
     });
+    fetcher.submit(
+      {
+        log: `${shop} 目前在货币页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -344,68 +301,32 @@ const Index = () => {
       if (defaultCurrency) {
         setDefaultSymbol(defaultCurrency.symbol);
       }
-      const loadingFormData = new FormData();
-      loadingFormData.append("loading", JSON.stringify(true));
-      loadingFetcher.submit(loadingFormData, {
-        method: "post",
-        action: "/app/currency",
-      });
+      getCurrencyByShopName();
     }
   }, [initFetcher.data]);
 
   useEffect(() => {
-    if (loadingFetcher.data) {
-      const tableData = loadingFetcher.data.currencyList?.filter(
-        (item: any) => !item?.primaryStatus,
-      );
-      setOriginalData(tableData);
-      setFilteredData(tableData);
-      dispatch(setTableData(tableData));
-      const autoRateData = loadingFetcher.data.currencyList
-        ?.filter((item: any) => item?.exchangeRate == "Auto")
-        .map((item: any) => item?.currencyCode);
-      const rateFormData = new FormData();
-      rateFormData.append("rateData", JSON.stringify(autoRateData));
-      rateFetcher.submit(rateFormData, {
-        method: "post",
-        action: "/app/currency",
-      });
-      setLoading(false);
-    }
-  }, [loadingFetcher.data]);
-
-  useEffect(() => {
-    if (rateFetcher.data) {
-      const newRates = rateFetcher.data.data.reduce((acc: any[], item: any) => {
-        if (item.status === "fulfilled" && item.value) {
-          acc.push(item.value);
-        }
-        return acc;
-      }, []);
-      if (newRates.length > 0) {
-        setCurrencyAutoRate(newRates);
+    if (deleteFetcher.data) {
+      if (deleteFetcher.data?.length) {
+        let newData = [...dataSource];
+        // 遍历 deleteFetcher.data
+        deleteFetcher.data?.forEach((item: any) => {
+          if (item?.value?.success) {
+            newData = newData.filter(
+              (currency) => currency.key !== item?.value?.response,
+            );
+          } else {
+            shopify.toast.show(item?.value?.errorMsg);
+          }
+        });
+        dispatch(setTableData(newData));
+        shopify.toast.show(t("Delete successfully"));
+        setDeleteLoading(false);
+        setSelectedRowKeys([]);
+        setDeleteCode("");
+        setOriginalData(newData);
+        setFilteredData(newData);
       }
-    }
-  }, [rateFetcher.data]);
-
-  useEffect(() => {
-    if (deleteFetcher.data !== undefined) {
-      let newData = [...dataSource];
-      // 遍历 deleteFetcher.data
-      deleteFetcher.data.data.forEach((data: any) => {
-        if (data.value.success) {
-          newData = newData.filter((item) => item.key !== data.value.response);
-        } else {
-          message.error(data.value.errorMsg);
-        }
-      });
-      dispatch(setTableData(newData));
-      shopify.toast.show(t("Delete successfully"));
-      setDeleteLoading(false);
-      setSelectedRowKeys([]);
-      setDeleteCode("");
-      setOriginalData(newData);
-      setFilteredData(newData);
     }
   }, [deleteFetcher.data]);
 
@@ -471,19 +392,20 @@ const Index = () => {
         const autoRate: any = currencyAutoRate.find(
           (item: any) => item?.currencyCode == record.currencyCode,
         );
+
         return record.exchangeRate === "Auto" ? (
           <div>
             <Text>{t("Auto")}</Text>
-            {typeof autoRate?.rate === "number" && (
+            {typeof autoRate?.exchangeRate === "number" && (
               <Text>
-                ({defaultSymbol}1 = {autoRate.rate.toFixed(4)}{" "}
+                ({defaultSymbol}1 = {autoRate.exchangeRate.toFixed(4)}{" "}
                 {record.currencyCode})
               </Text>
             )}
           </div>
         ) : (
           <Text>
-            {defaultSymbol}1 = {record.exchangeRate} {record.currencyCode}
+            {defaultSymbol}1 = {record?.exchangeRate} {record?.currencyCode}
           </Text>
         );
       },
@@ -521,6 +443,46 @@ const Index = () => {
   //     }
   //   }
   // };
+
+  const getCurrencyByShopName = async () => {
+    const data = await GetCurrencyByShopName({
+      shop,
+      server: server as string,
+    });
+    if (data?.success) {
+      const tableData = data?.response?.filter(
+        (item: any) => !item?.primaryStatus,
+      );
+      console.log("tableData: ", tableData);
+
+      setOriginalData(tableData);
+      setFilteredData(tableData);
+      dispatch(setTableData(tableData));
+      const autoRateData = data?.response
+        ?.filter((item: any) => item?.exchangeRate == "Auto")
+        .map((item: any) => item?.currencyCode);
+      setLoading(false);
+      if (autoRateData?.length) {
+        getAutoRateData(autoRateData);
+      }
+    }
+  };
+
+  const getAutoRateData = async (autoRateData: string[]) => {
+    const promises = autoRateData.map((currencyCode: any) =>
+      GetCacheData({ shop, server: server as string, currencyCode }),
+    );
+    const data = await Promise.allSettled(promises);
+    if (data?.length) {
+      let currencyAutoRateData: any[] = [];
+      data?.map((item: any) => {
+        if (item?.value?.success && item?.status == "fulfilled") {
+          currencyAutoRateData.push(item?.value?.response);
+        }
+      });
+      setCurrencyAutoRate(currencyAutoRateData);
+    }
+  };
 
   const handleEdit = (key: number) => {
     const row = dataSource.find((item) => item.key === key);
@@ -755,6 +717,8 @@ const Index = () => {
         )}
       </Space>
       <AddCurrencyModal
+        shop={shop}
+        server={server as string}
         isVisible={isAddCurrencyModalOpen}
         setIsModalOpen={setIsAddCurrencyModalOpen}
         addCurrencies={addCurrencies}

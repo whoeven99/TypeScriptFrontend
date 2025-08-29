@@ -7,7 +7,6 @@ import {
   Row,
   Skeleton,
   Space,
-  Spin,
   Table,
   Typography,
 } from "antd";
@@ -22,7 +21,6 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import ProgressingCard from "~/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
-import FreePlanCountdownCard from "~/components/freePlanCountdownCard";
 
 const { Title, Text } = Typography;
 
@@ -39,6 +37,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const languageCode = language.split("-")[0];
   if (languageCode === "zh" || languageCode === "zh-CN") {
     return {
+      language,
       isChinese: true,
       ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
       ciwiSwitcherBlocksId: process.env
@@ -48,6 +47,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     };
   } else {
     return {
+      language,
       isChinese: false,
       ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
       ciwiSwitcherBlocksId: process.env
@@ -59,8 +59,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 const Index = () => {
-  const { isChinese, server, shop, ciwiSwitcherBlocksId, ciwiSwitcherId } =
-    useLoaderData<typeof loader>();
+  const {
+    language,
+    isChinese,
+    server,
+    shop,
+    ciwiSwitcherBlocksId,
+    ciwiSwitcherId,
+  } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
@@ -72,6 +78,7 @@ const Index = () => {
     [shop, ciwiSwitcherBlocksId],
   );
 
+  const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
 
   useEffect(() => {
@@ -83,6 +90,15 @@ const Index = () => {
       {
         method: "post",
         action: "/app/currency",
+      },
+    );
+    fetcher.submit(
+      {
+        log: `${shop} 目前在主页面, 页面语言为${language}`,
+      },
+      {
+        method: "POST",
+        action: "/log",
       },
     );
   }, []);
@@ -161,6 +177,47 @@ const Index = () => {
     },
   ];
 
+  const navigateToTranslate = () => {
+    navigate("/app/translate", {
+      state: { from: "/app", selectedLanguageCode: "" },
+    });
+    fetcher.submit(
+      {
+        log: `${shop} 前往翻译页面, 从主页面点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+  };
+
+  const navigateToLanguage = () => {
+    navigate("/app/language");
+    fetcher.submit(
+      {
+        log: `${shop} 前往语言页面, 从主页面点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+  };
+
+  const navigateToCurrency = () => {
+    navigate("/app/currency");
+    fetcher.submit(
+      {
+        log: `${shop} 前往货币页面, 从主页面点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+  };
+
   return (
     <Page>
       <TitleBar title={t("Dashboard")} />
@@ -173,7 +230,7 @@ const Index = () => {
       <Space
         direction="vertical"
         size="large"
-        style={{ 
+        style={{
           display: "flex",
           overflowX: "hidden",
         }}
@@ -181,7 +238,7 @@ const Index = () => {
         <WelcomeCard
           switcherOpen={switcherOpen}
           blockUrl={blockUrl}
-          loading={switcherLoading}
+          shop={shop}
           // handleReload={handleReload}
         />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
@@ -201,14 +258,7 @@ const Index = () => {
                 {isLoading ? (
                   <Skeleton.Button active />
                 ) : (
-                  <Button
-                    type="primary"
-                    onClick={() =>
-                      navigate("/app/translate", {
-                        state: { from: "/app", selectedLanguageCode: "" },
-                      })
-                    }
-                  >
+                  <Button type="primary" onClick={() => navigateToTranslate()}>
                     {t("transLanguageCard1.button")}
                   </Button>
                 )}
@@ -248,7 +298,7 @@ const Index = () => {
                     <Skeleton.Button active />
                   ) : (
                     <Button
-                      onClick={() => navigate("/app/language")}
+                      onClick={() => navigateToLanguage()}
                       style={{ marginLeft: "auto", alignSelf: "flex-start" }}
                     >
                       {t("transLanguageCard2.button")}
@@ -336,10 +386,7 @@ const Index = () => {
                 {isLoading ? (
                   <Skeleton.Button active />
                 ) : (
-                  <Button
-                    type="primary"
-                    onClick={() => navigate("/app/currency")}
-                  >
+                  <Button type="primary" onClick={() => navigateToCurrency()}>
                     {t("transCurrencyCard1.button")}
                   </Button>
                 )}
@@ -474,7 +521,7 @@ const Index = () => {
               <UserGuideCard />
             </Col>
           </Row>
-          <PreviewCard />
+          <PreviewCard shop={shop} />
         </Space>
         <Text
           style={{

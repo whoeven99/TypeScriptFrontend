@@ -44,10 +44,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
 
-  console.log(`${shop} load manage_translation_productImage`);
-
   return {
-    shop: shop,
+    shop,
     server: process.env.SERVER_URL,
     searchTerm,
   };
@@ -60,8 +58,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-
-  console.log(`${shop} load manage_translation_productImage`);
 
   const formData = await request.formData();
   const loading: any = JSON.parse(formData.get("loading") as string);
@@ -562,6 +558,7 @@ const Index = () => {
     { label: t("Shipping"), value: "shipping" },
   ];
 
+  const fetcher = useFetcher<any>();
   const loadFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
@@ -580,6 +577,15 @@ const Index = () => {
         },
       );
     }
+    fetcher.submit(
+      {
+        log: `${shop} 目前在翻译管理-产品图片页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -651,29 +657,32 @@ const Index = () => {
         dataResource.filter(
           (item: any) => item[0]?.productId === selectedKey,
         )[0] || [];
-      async function getTargetData() {
+      const getTargetData = async () => {
         const targetData = await GetProductImageData({
           server: server || "",
           shopName: shop,
           productId: selectedKey,
           languageCode: selectedLanguage,
         });
-
-        setProductImageData(
-          data.map((item: any) => {
-            const index = targetData.response.findIndex(
-              (image: any) => item.imageUrl === image.imageBeforeUrl,
-            );
-            if (index !== -1) {
-              return {
-                ...item,
-                targetImageUrl: targetData.response[index].imageAfterUrl,
-              };
-            }
-            return item;
-          }),
-        );
-      }
+        if (targetData?.success && targetData?.response?.length > 0) {
+          setProductImageData(
+            data.map((item: any) => {
+              const index = targetData.response.findIndex(
+                (image: any) => item.imageUrl === image?.imageBeforeUrl,
+              );
+              if (index !== -1) {
+                return {
+                  ...item,
+                  targetImageUrl: targetData.response[index]?.imageAfterUrl,
+                };
+              }
+              return item;
+            }),
+          );
+        } else {
+          setProductImageData(data);
+        }
+      };
       getTargetData();
       setIsLoading(false);
     }

@@ -47,7 +47,6 @@ import TranslatedIcon from "~/components/translateIcon";
 import { useTranslation } from "react-i18next";
 import PrimaryLanguage from "./components/primaryLanguage";
 import AddLanguageModal from "./components/addLanguageModal";
-import PreviewModal from "~/components/previewModal";
 import ScrollNotice from "~/components/ScrollNotice";
 import DeleteConfirmModal from "./components/deleteConfirmModal";
 import TranslationWarnModal from "~/components/translationWarnModal";
@@ -97,8 +96,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
-  console.log(`${shop} load language`);
-
   return json({
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
@@ -131,34 +128,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (true) {
     case !!loading:
       try {
-        const shopLanguagesLoad: ShopLocalesType[] = await queryShopLanguages({
+        const data: ShopLocalesType[] = await queryShopLanguages({
           shop: shop,
           accessToken: accessToken as string,
         });
-
-        const shopPrimaryLanguage = shopLanguagesLoad.filter(
-          (language) => language.primary,
-        );
-        const shopLocalesIndex = shopLanguagesLoad
-          .filter((language) => !language.primary)
-          .map((item) => item.locale);
-        const languageLocaleInfo = await GetLanguageLocaleInfo({
-          locale: shopLocalesIndex,
-        });
-        const languagesLoad = await GetLanguageList({
-          shop,
-          source: shopPrimaryLanguage[0].locale,
-        });
-        return json({
-          shop: shop,
-          shopLanguagesLoad: shopLanguagesLoad,
-          shopPrimaryLanguage: shopPrimaryLanguage,
-          languagesLoad: languagesLoad,
-          languageLocaleInfo: languageLocaleInfo,
-        });
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: data,
+        };
       } catch (error) {
         console.error("Error loading language:", error);
-        return json({ error: "Error loading language" }, { status: 500 });
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: [],
+        };
       }
 
     case !!primaryMarket:
@@ -255,19 +242,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         // 并发执行所有请求
         const results = await Promise.allSettled(promises);
 
-        results.forEach((result) => {
-          if (result.status === "fulfilled" && result.value) {
-            console.log(
-              `${shop} webPresences result: `,
-              result.value.data?.webPresenceUpdate?.userErrors,
-            );
-            console.log(
-              `${shop} webPresences result: `,
-              result.value.data?.webPresenceUpdate?.webPresence,
-            );
-          }
-        });
-
         if (results.every((item) => item.status === "fulfilled")) {
           return json({
             success: true,
@@ -306,18 +280,31 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         const allCountryCode = allLanguages.map((item) => item.isoCode);
         const languageLocaleInfo = await GetLanguageLocaleInfo({
+          server: process.env.SERVER_URL as string,
           locale: allCountryCode,
         });
-        return json({
+        return {
           success: true,
-          data: {
+          errorCode: 0,
+          errorMsg: "",
+          response: {
             allLanguages: allLanguages,
-            languageLocaleInfo: languageLocaleInfo,
+            languageLocaleInfo: languageLocaleInfo?.success
+              ? languageLocaleInfo?.response
+              : [],
           },
-        });
+        };
       } catch (error) {
         console.error("Error addData language:", error);
-        return json({ error: "Error addData language" }, { status: 500 });
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            allLanguages: [],
+            languageLocaleInfo: [],
+          },
+        };
       }
 
     case !!addLanguages:
@@ -325,12 +312,39 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = await mutationShopLocaleEnable({
           shop,
           accessToken: accessToken as string,
-          addLanguages,
+          source: addLanguages?.primaryLanguage?.locale || "",
+          targets: addLanguages?.selectedLanguages || [],
         }); // 处理逻辑
-        console.log("addLanguages: ", data);
-        return data;
+
+        if (data?.length > 0) {
+          const successItems = data.map((item) => {
+            if (item.status === "fulfilled" && item?.value) {
+              return item?.value;
+            }
+          });
+
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response: successItems,
+          };
+        } else {
+          return {
+            success: false,
+            errorCode: 0,
+            errorMsg: "",
+            response: [],
+          };
+        }
       } catch (error) {
         console.error("Error addLanguages language:", error);
+        return {
+          success: false,
+          errorCode: 0,
+          errorMsg: "",
+          response: [],
+        };
       }
 
     case !!translation:
@@ -405,13 +419,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             },
           );
           const data = await Promise.allSettled(promise);
-          data.forEach((result) => {
-            if (result.status === "fulfilled") {
-              console.log("Request successful:", result.value);
-            } else {
-              console.error("Request failed:", result.reason);
-            }
-          });
+
           return json({ data: data });
         }
       } catch (error) {
@@ -439,15 +447,11 @@ const Index = () => {
   const [shopPrimaryLanguage, setShopPrimaryLanguage] = useState<
     ShopLocalesType[]
   >([]);
-  const [allLanguages, setAllLanguages] = useState<AllLanguagesType[]>([]);
-  const [languagesLoad, setLanguagesLoad] = useState<any>(null);
   const [languageLocaleInfo, setLanguageLocaleInfo] = useState<any>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
   const [deleteloading, setDeleteLoading] = useState(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [previewModalVisible, setPreviewModalVisible] =
-    useState<boolean>(false);
   const [isMobile, setIsMobile] = useState<boolean>(mobile);
   const [dontPromptAgain, setDontPromptAgain] = useState(false);
   const [deleteConfirmModalVisible, setDeleteConfirmModalVisible] =
@@ -458,8 +462,6 @@ const Index = () => {
   const [noFirstTranslation, setNoFirstTranslation] = useState(false);
   const [noFirstTranslationLocale, setNoFirstTranslationLocale] =
     useState<string>("");
-  const [warnModalTitle, setWarnModalTitle] = useState<string>("");
-  const [warnModalContent, setWarnModalContent] = useState<string>("");
   const [showWarnModal, setShowWarnModal] = useState(false);
   const hasSelected = useMemo(
     () => selectedRowKeys.length > 0,
@@ -474,6 +476,7 @@ const Index = () => {
     [dataSource, selectedRowKeys],
   );
 
+  const fetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
@@ -487,6 +490,24 @@ const Index = () => {
       method: "post",
       action: "/app/language",
     });
+    addDataFetcher.submit(
+      {
+        addData: JSON.stringify(true),
+      },
+      {
+        method: "post",
+        action: "/app/language",
+      },
+    );
+    fetcher.submit(
+      {
+        log: `${shop} 目前在语言页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     if (localStorage.getItem("dontPromptAgain")) {
       setDontPromptAgain(true);
     }
@@ -502,22 +523,85 @@ const Index = () => {
 
   useEffect(() => {
     if (loadingFetcher.data) {
-      setLanguagesLoad(loadingFetcher.data.languagesLoad);
-      setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
-      setShopLanguagesLoad(loadingFetcher.data.shopLanguagesLoad);
-      setShopPrimaryLanguage(loadingFetcher.data.shopPrimaryLanguage);
-      setLoading(false);
-    }
-  }, [loadingFetcher.data]);
+      // setLanguagesLoad(loadingFetcher.data.languagesLoad);
+      // setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
+      if (loadingFetcher.data.success) {
+        const shopLanguages = loadingFetcher.data.response;
+        const shopPrimaryLanguageData = shopLanguages?.filter(
+          (language: any) => language?.primary,
+        );
+        const shopLanguagesWithoutPrimaryIndex = shopLanguages?.filter(
+          (language: any) => !language?.primary,
+        );
+        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
+          (item: any) => item?.locale,
+        );
+        setShopPrimaryLanguage(shopPrimaryLanguageData || []);
 
-  useEffect(() => {
-    if (addDataFetcher.data) {
-      if (addDataFetcher.data.success) {
-        setAllLanguages(addDataFetcher.data.data.allLanguages);
-        setLanguageLocaleInfo(addDataFetcher.data.data.languageLocaleInfo);
+        let data = shopLanguagesWithoutPrimaryIndex.map(
+          (lang: any, index: number) => ({
+            key: index,
+            language: lang?.name,
+            locale: lang?.locale,
+            published: lang.published,
+            localeName: "",
+            status: 0,
+            countries: [],
+            autoTranslate: false,
+            publishLoading: false,
+            autoTranslateLoading: false,
+          }),
+        );
+        setShopLanguagesLoad(shopLanguagesWithoutPrimaryIndex);
+        const GetLanguageLocaleInfoFront = async () => {
+          const languageLocaleInfo = await GetLanguageLocaleInfo({
+            server: server as string,
+            locale: shopLocalesIndex,
+          });
+          const languageList = await GetLanguageList({
+            shop,
+            server: server as string,
+            source: shopPrimaryLanguageData[0]?.locale,
+          });
+
+          data = data.map((lang: any) => ({
+            ...lang,
+            status:
+              languageList.response?.find(
+                (language: any) => language.target === lang.locale,
+              )?.status || 0,
+            autoTranslate:
+              languageList.response?.find(
+                (language: any) => language.target === lang.locale,
+              )?.autoTranslate || false,
+            localeName:
+              languageLocaleInfo.success && languageLocaleInfo.response
+                ? languageLocaleInfo.response[lang?.locale]?.Local
+                : "",
+          }));
+          const findItem = data.find((data: any) => data.status === 2);
+          if (findItem && shopPrimaryLanguageData) {
+            const formData = new FormData();
+            formData.append(
+              "statusData",
+              JSON.stringify({
+                source: shopPrimaryLanguageData[0]?.locale,
+                target: [findItem.locale],
+              }),
+            );
+            statusFetcher.submit(formData, {
+              method: "post",
+              action: "/app",
+            });
+          }
+          dispatch(setTableData(data));
+          setLoading(false);
+        };
+
+        GetLanguageLocaleInfoFront();
       }
     }
-  }, [addDataFetcher.data]);
+  }, [loadingFetcher.data]);
 
   useEffect(() => {
     if (deleteFetcher.data) {
@@ -543,42 +627,53 @@ const Index = () => {
       // 结束加载状态
       setDeleteLoading(false);
       shopify.toast.show(t("Delete successfully"));
+      fetcher.submit(
+        {
+          log: `${shop} 删除语言${deleteData}`,
+        },
+        {
+          method: "POST",
+          action: "/log",
+        },
+      );
     }
   }, [deleteFetcher.data]);
 
   useEffect(() => {
-    if (statusFetcher.data?.data) {
-      const items = statusFetcher.data?.data?.translatesDOResult.map(
-        (item: any) => {
-          if (item?.status === 2) {
-            return item;
-          } else {
-            dispatch(
-              setStatusState({ target: item.target, status: item.status }),
+    if (statusFetcher.data) {
+      if (statusFetcher.data?.success) {
+        const items = statusFetcher.data?.response?.translatesDOResult?.map(
+          (item: any) => {
+            if (item?.status === 2) {
+              return item;
+            } else {
+              dispatch(
+                setStatusState({ target: item?.target, status: item?.status }),
+              );
+            }
+          },
+        );
+        if (items[0] !== undefined && items[0].status === 2) {
+          // 加入10秒的延时
+          const delayTimeout = setTimeout(() => {
+            const formData = new FormData();
+            formData.append(
+              "statusData",
+              JSON.stringify({
+                source: shopPrimaryLanguage[0]?.locale,
+                target: [items[0]?.target],
+              }),
             );
-          }
-        },
-      );
-      if (items[0] !== undefined && items[0].status === 2) {
-        // 加入10秒的延时
-        const delayTimeout = setTimeout(() => {
-          const formData = new FormData();
-          formData.append(
-            "statusData",
-            JSON.stringify({
-              source: shopPrimaryLanguage[0].locale,
-              target: [items[0].target],
-            }),
-          );
 
-          statusFetcher.submit(formData, {
-            method: "post",
-            action: "/app",
-          });
-        }, 10000); // 10秒延时（10000毫秒）
+            statusFetcher.submit(formData, {
+              method: "post",
+              action: "/app",
+            });
+          }, 10000); // 10秒延时（10000毫秒）
 
-        // 清除超时定时器，以防组件卸载后仍然尝试执行
-        return () => clearTimeout(delayTimeout);
+          // 清除超时定时器，以防组件卸载后仍然尝试执行
+          return () => clearTimeout(delayTimeout);
+        }
       }
     }
   }, [statusFetcher.data]);
@@ -600,69 +695,39 @@ const Index = () => {
           t("{{ locale }} is published", { locale: response.name }),
         );
       } else {
-        const response = publishFetcher.data.data;
+        const response = publishFetcher.data?.data;
         dispatch(
-          setPublishLoadingState({ locale: response.locale, loading: false }),
+          setPublishLoadingState({ locale: response?.locale, loading: false }),
         );
         dispatch(
           setPublishState({
-            locale: response.locale,
-            published: response.published,
+            locale: response?.locale,
+            published: response?.published,
           }),
         );
         shopify.toast.show(
-          t("{{ locale }} is unPublished", { locale: response.name }),
+          t("{{ locale }} is unPublished", { locale: response?.name }),
+        );
+        fetcher.submit(
+          {
+            log: `${shop} 取消发布语言${response?.locale}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
         );
       }
     }
   }, [publishFetcher.data]);
 
   useEffect(() => {
-    if (!shopLanguagesLoad || !languagesLoad || !languageLocaleInfo) return; // 确保数据加载完成后再执行
-    let data = shopLanguagesLoad
-      .filter((language) => !language.primary)
-      .map((lang, i) => ({
-        key: i,
-        language: lang.name,
-        localeName: "",
-        locale: lang.locale,
-        primary: lang.primary,
-        status: 0,
-        autoTranslate: false,
-        published: lang.published,
-        publishLoading: false,
-        autoTranslateLoading: false,
-      }));
-    data = data.map((lang, i) => ({
-      ...lang,
-      status:
-        languagesLoad.find((language: any) => language.target === lang.locale)
-          ?.status || 0,
-      autoTranslate:
-        languagesLoad.find((language: any) => language.target === lang.locale)
-          ?.autoTranslate || false,
-    }));
-    const findItem = data.find((data: any) => data.status === 2);
-    if (findItem && shopPrimaryLanguage) {
-      const formData = new FormData();
-      formData.append(
-        "statusData",
-        JSON.stringify({
-          source: shopPrimaryLanguage[0]?.locale,
-          target: [findItem.locale],
-        }),
-      );
-      statusFetcher.submit(formData, {
-        method: "post",
-        action: "/app",
-      });
+    if (addDataFetcher.data) {
+      if (addDataFetcher.data.success) {
+        setLanguageLocaleInfo(addDataFetcher.data.response.languageLocaleInfo);
+      }
     }
-    data = data.map((lang, i) => ({
-      ...lang,
-      localeName: languageLocaleInfo[lang.locale]?.Local || "",
-    }));
-    dispatch(setTableData(data));
-  }, [shopLanguagesLoad, languagesLoad]); // 依赖 shopLanguagesLoad 和 status
+  }, [addDataFetcher.data]);
 
   useEffect(() => {
     if (dataSource && dataSource.find((item: any) => item.status === 2)) {
@@ -750,32 +815,52 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Space>
           <Button
-            onClick={() =>
-              navigate("/app/translate", {
-                state: {
-                  from: "/app/language",
-                  selectedLanguageCode: [record.locale],
-                },
-              })
-            }
+            onClick={() => navigateToTranslate([record.locale])}
             style={{ width: "100px" }}
             type="primary"
           >
             {record?.status === 1 ? t("Update") : t("Translate")}
           </Button>
-          <Button
-            onClick={() => {
-              navigate("/app/manage_translation", {
-                state: { key: record.locale },
-              });
-            }}
-          >
+          <Button onClick={() => navigateToManage(record.locale)}>
             {t("Manage")}
           </Button>
         </Space>
       ),
     },
   ];
+
+  const navigateToTranslate = (selectedLanguageCode: string[]) => {
+    navigate("/app/translate", {
+      state: {
+        from: "/app/language",
+        selectedLanguageCode: selectedLanguageCode,
+      },
+    });
+    fetcher.submit(
+      {
+        log: `${shop} 前往翻译${selectedLanguageCode?.join(",")}, 从语言页面点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+  };
+
+  const navigateToManage = (selectedLanguageCode: string) => {
+    navigate("/app/manage_translation", {
+      state: { key: selectedLanguageCode },
+    });
+    fetcher.submit(
+      {
+        log: `${shop} 前往管理${selectedLanguageCode}, 从语言页面点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+  };
 
   const handleOpenModal = () => {
     if (dataSource.length === 20) {
@@ -785,15 +870,6 @@ const Index = () => {
     startTransition(() => {
       setIsLanguageModalOpen((prev) => !prev); // 你的状态更新逻辑
     });
-    addDataFetcher.submit(
-      {
-        addData: JSON.stringify(true),
-      },
-      {
-        method: "post",
-        action: "/app/language",
-      },
-    );
   };
 
   const handlePublishChange = (locale: string, checked: boolean) => {
@@ -801,16 +877,6 @@ const Index = () => {
     if (checked && row) {
       setPublishModalLanguageCode(locale);
       setIsPublishModalOpen(true);
-      // dispatch(setPublishLoadingState({ locale, loading: true }));
-      // publishFetcher.submit({
-      //   publishInfo: JSON.stringify({
-      //     locale: row.locale,
-      //     shopLocale: { published: true },
-      //   })
-      // }, {
-      //   method: "POST",
-      //   action: "/app/language",
-      // });
     } else if (!checked && row) {
       dispatch(setPublishLoadingState({ locale, loading: true }));
       publishFetcher.submit(
@@ -841,37 +907,45 @@ const Index = () => {
       setNoFirstTranslation(true);
       return;
     }
-    const items = dataSource.filter((item) => item.autoTranslate).length;
-    if (
-      items <=
-      autoTranslationMapping[plan as keyof typeof autoTranslationMapping]
-    ) {
-      dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
-      const row = dataSource.find((item: any) => item.locale === locale);
-      if (row) {
-        const data = await UpdateAutoTranslateByData({
-          shopName: shop,
-          source: shopPrimaryLanguage[0]?.locale,
-          target: row.locale,
-          autoTranslate: checked,
-          server: server || "",
-        });
-        if (data?.success) {
-          dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
-          dispatch(setAutoTranslateState({ locale, autoTranslate: checked }));
-          shopify.toast.show(t("Auto translate updated successfully"));
-        }
+    // const items = dataSource.filter((item) => item.autoTranslate).length;
+    // if (
+    //   items <=
+    //   autoTranslationMapping[plan as keyof typeof autoTranslationMapping]
+    // ) {
+    dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
+    const row = dataSource.find((item: any) => item.locale === locale);
+    if (row) {
+      const data = await UpdateAutoTranslateByData({
+        shopName: shop,
+        source: shopPrimaryLanguage[0]?.locale,
+        target: row.locale,
+        autoTranslate: checked,
+        server: server || "",
+      });
+      if (data?.success) {
+        dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
+        dispatch(setAutoTranslateState({ locale, autoTranslate: checked }));
+        shopify.toast.show(t("Auto translate updated successfully"));
+        fetcher.submit(
+          {
+            log: `${shop} 自动翻译${checked ? "开启" : "关闭"}${row?.locale}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       }
-    } else {
-      shopify.toast.show(
-        t(
-          `The ${autoTranslationMapping[plan as keyof typeof autoTranslationMapping]} autoTranslation limit has been reached`,
-        ),
-      );
     }
+    // } else {
+    //   shopify.toast.show(
+    //     t(
+    //       `The ${autoTranslationMapping[plan as keyof typeof autoTranslationMapping]} autoTranslation limit has been reached`,
+    //     ),
+    //   );
+    // }
   };
 
-  //表格编辑
   const handleDelete = () => {
     setDeleteConfirmModalVisible(false);
     if (dontPromptAgain) {
@@ -1066,14 +1140,11 @@ const Index = () => {
         </div>
       </Space>
       <AddLanguageModal
+        shop={shop}
         isVisible={isLanguageModalOpen}
         setIsModalOpen={setIsLanguageModalOpen}
         languageLocaleInfo={languageLocaleInfo}
         primaryLanguage={shopPrimaryLanguage[0]}
-      />
-      <PreviewModal
-        visible={previewModalVisible}
-        setVisible={setPreviewModalVisible}
       />
       <DeleteConfirmModal
         isVisible={deleteConfirmModalVisible}
@@ -1096,6 +1167,7 @@ const Index = () => {
         setShow={setShowWarnModal}
       />
       <PublishModal
+        shop={shop}
         isVisible={isPublishModalOpen}
         setIsModalOpen={setIsPublishModalOpen}
         languageCode={publishModalLanguageCode}
