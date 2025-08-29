@@ -588,54 +588,50 @@ const Index = () => {
       );
     }
   };
-  const GoogleAnalytics = async () => {
+  const GoogleAnalytics = async ({
+    primaryLanguage,
+    selectedLanguage,
+    translationStyle,
+    translationTone,
+    translationFormat,
+    translationFocus,
+  }: {
+    primaryLanguage: any;
+    selectedLanguage: string[];
+    translationStyle: string;
+    translationTone: string;
+    translationFormat: string;
+    translationFocus: string;
+  }) => {
     try {
-      const data = await fetch(
-        `https://www.google-analytics.com/mp/collect?measurement_id=${process.env.MEASURE_ID}&api_secret=${process.env.GTM_API_KEY}`,
+      const response = await fetch(
+        `https://www.google-analytics.com/mp/collect?measurement_id=G-F1BN24YVJN&api_secret=ppqOSsvpRAiIBnB8fdoZPg`,
         {
           method: "POST",
           body: JSON.stringify({
-            client_id: "client_id",
+            client_id: `client.${Math.random().toString(36).slice(2)}`, // 生成唯一客户端 ID
             events: [
               {
-                name: `${process.env.EVENT_NAME}`,
+                name: "translate_click_dashboard",
                 params: {
-                  currency: "USD",
-                  value: 7.77,
-                  coupon: "SUMMER_FUN",
-                  payment_type: "Credit Card",
-                  items: [
-                    {
-                      item_id: "SKU_12345",
-                      item_name: "Stan and Friends Tee",
-                      affiliation: "Google Merchandise Store",
-                      coupon: "SUMMER_FUN",
-                      currency: "USD",
-                      discount: 2.22,
-                      index: 0,
-                      item_brand: "Google",
-                      item_category: "Apparel",
-                      item_category2: "Adult",
-                      item_category3: "Shirts",
-                      item_category4: "Crew",
-                      item_category5: "Short sleeve",
-                      item_list_id: "related_products",
-                      item_list_name: "Related Products",
-                      item_variant: "green",
-                      location_id: "ChIJIQBpAG2ahYAR_6128GcTUEo",
-                      price: 9.99,
-                      quantity: 1,
-                    },
-                  ],
+                  primary_language: primaryLanguage || "unknown",
+                  selected_language: selectedLanguage || "unknown",
+                  translation_style: translationStyle || "none",
+                  translation_tone: translationTone || "none",
+                  translation_format: translationFormat || "none",
+                  translation_focus: translationFocus || "none",
+                  device_type: window.innerWidth < 576 ? "mobile" : "desktop",
                 },
               },
             ],
           }),
         },
       );
-      return data.json();
+      console.log("GA request status:", response.status);
+      return response.status === 204; // 204 表示成功
     } catch (error) {
-      console.log("GTM", error);
+      console.error("GA request failed:", error);
+      return false;
     }
   };
   const checkCanTranslate = () => {
@@ -687,30 +683,6 @@ const Index = () => {
     if (!checkCanTranslate()) {
       return;
     }
-    // 跟踪事件并调试
-    const isGAInitialized = ReactGA.ga() !== undefined;
-    if (isGAInitialized) {
-      ReactGA.event({
-        category: "Translation",
-        action: "translate_click_dashboard",
-        label: "Translation Button",
-        value: 1,
-        primary_language: languageSetting?.primaryLanguageCode || "unknown",
-        selected_language: selectedLanguageCode || "unknown",
-        translation_style: translateSettings4.option2 || "none",
-        translation_tone: translateSettings4.option1 || "none",
-        translation_format: translateSettings4.option4 || "none",
-        translation_focus: translateSettings4.option3 || "none",
-        device_type: window.innerWidth < 576 ? "mobile" : "desktop",
-      } as any);
-      console.log("GA event sent: translate_click_dashboard", {
-        primary_language: languageSetting?.primaryLanguageCode,
-        selected_language: selectedLanguageCode,
-        translation_style: translateSettings4.option2,
-      });
-    } else {
-      console.warn("GA not initialized, event not sent");
-    }
 
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
     const formData = new FormData();
@@ -735,8 +707,20 @@ const Index = () => {
       JSON.stringify(translateSettings4),
     );
 
-    // 追踪事件
-    const data = await GoogleAnalytics();
+    // 发送 GA 事件
+    try {
+      const isSuccess = await GoogleAnalytics({
+        primaryLanguage: languageSetting?.primaryLanguageCode,
+        selectedLanguage: selectedLanguageCode,
+        translationStyle: translateSettings4.option2,
+        translationTone: translateSettings4.option1,
+        translationFormat: translateSettings4.option4,
+        translationFocus: translateSettings4.option3,
+      });
+      console.log("GA event sent:", isSuccess ? "Success" : "Failed");
+    } catch (error) {
+      console.error("GA event error:", error);
+    }
   };
 
   const handleTranslateSettings2Change = (value: string[]) => {
