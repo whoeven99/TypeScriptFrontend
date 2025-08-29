@@ -1583,7 +1583,10 @@ const Index = () => {
           <div style={{fontSize:'14px',lineHeight:'1.5',fontWeight:600}}>{t('tips:Tip: The Pro Plan supports sharing with 1 store, while the Premium Plan supports sharing with up to 3 stores.')}</div> 
         </Card>
         <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <Button type="primary" size="large" onClick={()=>handleContactSupport()}>
+          <Button type="primary" size="large" onClick={()=>{
+            handleContactSupport();
+            setIsModalVisible(false);
+          }}>
             {t('Contact Support')}
           </Button>
         </div>
