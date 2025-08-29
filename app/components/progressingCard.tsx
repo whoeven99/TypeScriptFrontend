@@ -95,7 +95,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           setTranslateStatus(data?.response?.status || 2);
         }
 
-        getProgressData(target[index]);
+        getProgressData({ source, target: target[index] });
         getUserValue();
 
         // setValue(userValue.data.userValue);
@@ -139,7 +139,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           setTranslateStatus(userValue?.response?.status || 2);
         }
 
-        getProgressData(target[index]);
+        getProgressData({ source, target: target[index + 1] });
         getUserValue();
 
         // setValue(userValue.data.userValue);
@@ -163,7 +163,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   useEffect(() => {
     if (languagefetcher.data) {
       console.log("languagefetcher.data: ", languagefetcher.data);
-
       setSource(languagefetcher.data.response[0]?.source);
       setTarget(
         languagefetcher.data?.response?.map((item: any) => item?.target),
@@ -171,9 +170,12 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       setStatus(languagefetcher.data?.response[0]?.status);
       setIndex(0);
       setLoading(false);
-      getProgressData(
-        languagefetcher.data?.response.map((item: any) => item?.target)[index],
-      );
+      getProgressData({
+        source: languagefetcher.data.response[0]?.source,
+        target: languagefetcher.data?.response.map((item: any) => item?.target)[
+          index
+        ],
+      });
     }
   }, [languagefetcher.data]);
 
@@ -310,7 +312,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
     }
   }, [stopTranslateFetcher.data]);
 
-  const getProgressData = async (target: string) => {
+  const getProgressData = async ({
+    source,
+    target,
+  }: {
+    source: string;
+    target: string;
+  }) => {
     const progressData = await GetProgressData({
       shopName: shop,
       server,
