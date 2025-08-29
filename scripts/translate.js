@@ -2,22 +2,19 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { v2 } from '@google-cloud/translate';
-import dotenv from 'dotenv'; // 添加 dotenv 支持
+import dotenv from 'dotenv';
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 初始化 Google Cloud Translation 客户端
 const { Translate } = v2;
-// 优先使用环境变量，如果未设置则抛出错误
 const apiKey = process.env.GOOGLE_CLOUD_API_KEY;
 if (!apiKey) {
     throw new Error('GOOGLE_CLOUD_API_KEY environment variable is not set.');
 }
-const translateClient = new Translate({
-    key: apiKey,
-});
+const translateClient = new Translate({ key: apiKey });
 
 async function getLanguageDirs(sourceDir) {
     try {
@@ -29,6 +26,28 @@ async function getLanguageDirs(sourceDir) {
         console.error('Error reading language directories:', error);
         return [];
     }
+}
+
+async function translateValue(value, targetLang, sourceLang) {
+    if (typeof value === 'string') {
+        try {
+            const [translation] = await translateClient.translate(value, {
+                from: sourceLang,
+                to: targetLang,
+            });
+            return translation;
+        } catch (error) {
+            console.error(`Error translating value "${value}" to ${targetLang}:`, error);
+            return value; // 返回原始值以避免中断
+        }
+    } else if (typeof value === 'object' && value !== null) {
+        const translatedObject = Array.isArray(value) ? [] : {};
+        for (const key in value) {
+            translatedObject[key] = await translateValue(value[key], targetLang, sourceLang);
+        }
+        return translatedObject;
+    }
+    return value; // 非字符串、非对象的值直接返回
 }
 
 async function translateFiles(sourceLang, targetLang, sourceDir) {
@@ -52,21 +71,10 @@ async function translateFiles(sourceLang, targetLang, sourceDir) {
 
     for (const key in sourceData) {
         if (!targetData[key]) {
-            try {
-                const [translation] = await translateClient.translate(sourceData[key], {
-                    from: sourceLang,
-                    to: targetLang,
-                });
-                targetData[key] = translation;
-                console.log(`Translated "${key}" to ${targetLang}: ${translation}`);
-            } catch (error) {
-                if (error instanceof Error && error.code === 403) {
-                    console.error(`Authentication error for "${key}" to ${targetLang}:`, error.message);
-                    console.error('Please check your API Key or service account credentials.');
-                } else {
-                    console.error(`Error translating "${key}" to ${targetLang}:`, error);
-                }
-            }
+            console.log(`Translating "${key}" for ${targetLang}`);
+            targetData[key] = await translateValue(sourceData[key], targetLang, sourceLang);
+        } else {
+            console.log(`Skipping "${key}" for ${targetLang} as it already exists`);
         }
     }
 
@@ -93,6 +101,6 @@ async function main() {
     for (const targetLang of targetLangs) {
         await translateFiles(sourceLang, targetLang, sourceDir);
     }
-}
+} 
 
 main().catch(console.error);

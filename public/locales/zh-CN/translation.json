@@ -643,6 +643,19 @@
   "Task in progress": "API 正在执行另一个翻译任务",
   "Your private API can run only one translation at a time. Please wait until the current task is finished.": "私有API只能同时翻译一种语言，请完成翻译后重试",
   "Insufficient private API quota": "私有 api 可用额度不足",
-  "Select a private key for translation. Only one target language can be selected.": "选择一个私有 key 进行翻译，只能选择一种目标语言"
-
+  "Select a private key for translation. Only one target language can be selected.": "选择一个私有 key 进行翻译，只能选择一种目标语言",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "选择专业版或无限版，即可享受 5 天所有功能的完整使用权限，以及 20 万试用积分。试用期结束前可随时取消，避免产生费用。",
+  "How to Shared Plan Overview": "如何共享计划概述",
+  "Shared Plan Overview": "共享计划概述",
+  "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "通过共享计划，您可以将当前购买的套餐与其他门店共享，让他们同样享受套餐内的权益。这让多门店的协作更加便捷顺畅。",
+  "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "温馨提示： 积分余额与 IP 配额不在共享范围内。其他门店可根据需要单独购买积分，以使用相关功能。",
+  "Shared Plan": "共享计划",
+  "1.Get the Store Name (URL)": "1.获取店铺名称：",
+  "Locate the store you want to bind and copy its name (URL).": "找到需要绑定的商店，并记录下其店铺名称(网址)。",
+  "2.Download the App": "2.下载应用：",
+  "Install the official app for that store.": "在对应商店中安装官方应用程序。",
+  "3.Contact Customer Support": "3.联系客服：",
+  "Provide the store name (URL) to the support team and request to bind a sub-account.": "联系商店客服，提供店铺名称(网址)，并说明需要绑定子账号。",
+  "Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.": "提示：Pro Plan支持绑定 1 家店铺共享，而Premium Plan最多可支持 3 家店铺共享。",
+  "Steps to Bind a Sub-Account": "绑定子账号步骤"
 }

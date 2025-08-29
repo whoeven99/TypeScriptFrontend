@@ -641,6 +641,19 @@
   "plan": "Plan",
   "support": "Destek",
   "Insufficient private API quota": "Yetersiz özel API kotası",
-  "Select a private key for translation. Only one target language can be selected.": "Çeviri için özel anahtar seçin. Sadece bir hedef dil seçilebilir."
-
+  "Select a private key for translation. Only one target language can be selected.": "Çeviri için özel anahtar seçin. Sadece bir hedef dil seçilebilir.",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "Pro veya Sınırsız aboneliği seçtiğinizde, tüm özelliklere 5 gün boyunca tam erişim ve 200.000 deneme kredisi kazanırsınız. Fatura ödememek için deneme süresi bitmeden önce istediğiniz zaman iptal edebilirsiniz.",
+  "How to Shared Plan Overview": "Paylaşımlı Plana Genel Bakış Nasıl Yapılır",
+  "Shared Plan Overview": "Paylaşımlı Plan Genel Bakışı",
+  "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "Paylaşımlı Plan ile mevcut satın aldığınız planı diğer mağazalarla paylaşabilir, onların da aynı plan avantajlarından yararlanmasını sağlayabilirsiniz. Bu sayede, birden fazla mağaza arasında iş birliği daha kolay ve sorunsuz hale gelir.",
+  "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "Lütfen dikkat: Puan bakiyesi ve IP kotası paylaşılmaz. Diğer mağazalar, puan veya IP kullanımıyla ilgili özelliklere erişmek için ayrı olarak puan satın alabilir.",
+  "Shared Plan": "Paylaşımlı Plan",
+  "1.Get the Store Name (URL)": "1.Mağaza Adını (URL) Alın:",
+  "Locate the store you want to bind and copy its name (URL).": "Bağlamak istediğiniz mağazayı bulun ve adını (URL) kopyalayın.",
+  "2.Download the App": "2.Uygulamayı İndirin:",
+  "Install the official app for that store.": "O mağazanın resmi uygulamasını yükleyin.",
+  "3.Contact Customer Support": "3.Müşteri Desteği ile İletişime Geçin:",
+  "Provide the store name (URL) to the support team and request to bind a sub-account.": "Mağaza adını (URL) destek ekibine iletin ve bir alt hesap bağlama talebinde bulunun.",
+  "Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.": "İpucu: Pro Plan 1 mağaza ile paylaşmaya izin verirken, Premium Plan en fazla 3 mağazayı destekler.",
+  "Steps to Bind a Sub-Account": "Alt Hesabı Bağlama Adımları"
 }

@@ -641,5 +641,18 @@
   "This language is not supported by Google Translate. Check the supported list in Google or switch to another model.":"This language is not supported by Google Translate. Check the supported list in Google or switch to another model.",
   "Task in progress":"Task in progress",
   "Your private API can run only one translation at a time. Please wait until the current task is finished.":"Your private API can run only one translation at a time. Please wait until the current task is finished.",
-  "Select a private key for translation. Only one target language can be selected.": "Select a private key for translation. Only one target language can be selected."
+  "Select a private key for translation. Only one target language can be selected.": "Select a private key for translation. Only one target language can be selected.",
+  "How to Shared Plan Overview":"How to Shared Plan Overview",
+  "Shared Plan Overview": "Shared Plan Overview",
+  "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.":"With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.",
+  "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.":"Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.",
+  "1.Get the Store Name (URL)":"1.Get the Store Name (URL):",
+  "Locate the store you want to bind and copy its name (URL).":"Locate the store you want to bind and copy its name (URL).",
+  "2.Download the App":"2.Download the App:",
+  "Install the official app for that store.":"Install the official app for that store.",
+  "3.Contact Customer Support":"3.Contact Customer Support:",
+  "Provide the store name (URL) to the support team and request to bind a sub-account.":"Provide the store name (URL) to the support team and request to bind a sub-account.",
+  "Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.":"Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.",
+  "Shared Plan":"Shared Plan",
+  "Steps to Bind a Sub-Account":"Steps to Bind a Sub-Account"
 }

@@ -640,5 +640,19 @@
   "Task in progress": "Aufgabe in Bearbeitung",
   "Your private API can run only one translation at a time. Please wait until the current task is finished.": "Ihre private API kann jeweils nur eine Übersetzung ausführen. Bitte warten Sie, bis die aktuelle Aufgabe abgeschlossen ist.",
   "Insufficient private API quota": "Unzureichendes privates API-Kontingent",
-  "Select a private key for translation. Only one target language can be selected.": "Wählen Sie einen privaten Schlüssel für die Übersetzung aus. Nur eine Zielsprache kann ausgewählt werden."
+  "Select a private key for translation. Only one target language can be selected.": "Wählen Sie einen privaten Schlüssel für die Übersetzung aus. Nur eine Zielsprache kann ausgewählt werden.",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "Mit der Option „Pro“ oder „Unlimited“ erhalten Sie 5 Tage lang vollen Zugriff auf alle Funktionen sowie 200.000 Testguthaben. Sie können jederzeit vor Ablauf der Testphase kündigen, um eine Kostenerstattung zu vermeiden.",
+  "How to Shared Plan Overview": "Übersicht über den gemeinsamen Plan",
+  "Shared Plan Overview": "Übersicht über den gemeinsamen Plan",
+  "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "Mit dem Shared Plan können Sie Ihren aktuell erworbenen Plan mit anderen Geschäften teilen, sodass diese von denselben Planvorteilen profitieren. Dies macht die Zusammenarbeit mehrerer Geschäfte einfacher und reibungsloser.",
+  "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "Bitte beachten: Punktestand und IP-Kontingent werden nicht geteilt. Andere Shops können Punkte separat erwerben, um auf Funktionen zuzugreifen, die mit Punkten oder der IP-Nutzung verbunden sind.",
+  "Shared Plan": "Gemeinsamer Plan",
+  "1.Get the Store Name (URL)": "1. Holen Sie sich den Shop-Namen (URL):",
+  "Locate the store you want to bind and copy its name (URL).": "Suchen Sie den Store, den Sie binden möchten, und kopieren Sie seinen Namen (URL).",
+  "2.Download the App": "2. Laden Sie die App herunter:",
+  "Install the official app for that store.": "Installieren Sie die offizielle App für diesen Store.",
+  "3.Contact Customer Support": "3.Kontaktieren Sie den Kundendienst:",
+  "Provide the store name (URL) to the support team and request to bind a sub-account.": "Geben Sie dem Support-Team den Shop-Namen (URL) und fordern Sie die Bindung eines Unterkontos an.",
+  "Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.": "Tipp: Der Pro Plan ermöglicht die Freigabe mit 1 Store, während der Premium Plan bis zu 3 Stores unterstützt.",
+  "Steps to Bind a Sub-Account": "Schritte zum Binden eines Unterkontos"
 }

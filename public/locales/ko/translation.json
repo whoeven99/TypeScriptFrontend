@@ -641,6 +641,19 @@
     "for_large_teams": "대규모 팀의 경우"
   },
   "Insufficient private API quota": "개인 API 할당량이 부족합니다",
-  "Select a private key for translation. Only one target language can be selected.": "번역에 사용할 개인 키를 선택하세요. 목표 언어는 하나만 선택할 수 있습니다."
-
+  "Select a private key for translation. Only one target language can be selected.": "번역에 사용할 개인 키를 선택하세요. 목표 언어는 하나만 선택할 수 있습니다.",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "Pro 또는 Unlimited를 선택하시면 모든 기능을 5일 동안 자유롭게 이용하실 수 있으며, 20만 개의 체험 크레딧도 제공됩니다. 체험 기간이 종료되기 전에 언제든지 취소하시면 요금이 청구되지 않습니다.",
+  "How to Shared Plan Overview": "공유 계획 개요 방법",
+  "Shared Plan Overview": "공유 계획 개요",
+  "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.": "공유 플랜을 사용하면 현재 구매하신 플랜을 다른 매장과 공유하여 동일한 플랜 혜택을 누릴 수 있습니다. 이를 통해 여러 매장 간 협업이 더욱 쉽고 원활해집니다.",
+  "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.": "참고: 포인트 잔액과 IP 할당량은 공유되지 않습니다. 다른 매장에서 포인트를 별도로 구매하여 포인트 또는 IP 사용 관련 기능을 이용할 수 있습니다.",
+  "Shared Plan": "공유 계획",
+  "1.Get the Store Name (URL)": "1. 매장 이름(URL) 가져오기:",
+  "Locate the store you want to bind and copy its name (URL).": "바인딩하려는 스토어를 찾아 해당 이름(URL)을 복사합니다.",
+  "2.Download the App": "2. 앱 다운로드:",
+  "Install the official app for that store.": "해당 매장의 공식 앱을 설치하세요.",
+  "3.Contact Customer Support": "3. 고객 지원팀에 문의하세요:",
+  "Provide the store name (URL) to the support team and request to bind a sub-account.": "지원팀에 매장 이름(URL)을 제공하고 하위 계정을 연결해 달라고 요청하세요.",
+  "Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.": "팁: Pro Plan은 1개의 스토어와 공유할 수 있으며, Premium Plan은 최대 3개의 스토어를 지원합니다.",
+  "Steps to Bind a Sub-Account": "하위 계정을 바인딩하는 단계"
 }
