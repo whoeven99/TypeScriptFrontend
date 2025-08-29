@@ -772,9 +772,9 @@ const Index = () => {
     });
 
     if (data?.success) {
-      if (data.response.length == 0) {
+      if (data.response?.length == 0) {
         error = 2;
-      } else if (data.response.every((item: any) => item?.status == 0)) {
+      } else if (data.response?.every((item: any) => item?.status == 0)) {
         error = 3;
       }
       // if (data.response.length > 0 && type == "glossary") {

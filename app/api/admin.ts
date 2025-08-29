@@ -75,7 +75,7 @@ export const queryShopLanguages = async ({
 
     return res;
   } catch (error) {
-    console.error("Error fetching shoplocales:", error);
+    console.error("Error queryShopLanguages:", error);
     return [];
   }
 };
