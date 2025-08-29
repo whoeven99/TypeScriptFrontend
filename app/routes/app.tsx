@@ -206,7 +206,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source: shopPrimaryLanguage[0]?.locale,
         });
 
-        const data = translatingData.response.filter(
+        const data = translatingData.response?.filter(
           (translatingDataItem: any) =>
             shopLocalesIndex.includes(translatingDataItem?.target) &&
             (translatingDataItem?.status !== 1 ||
