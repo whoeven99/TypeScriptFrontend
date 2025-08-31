@@ -147,12 +147,12 @@ async function initializeCurrency(data, shop, ciwiBlock) {
   let value = localStorage.getItem("selectedCurrency");
   let moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat").value;
 
-  console.log("moneyFormat: ", moneyFormat);
+  console.log("moneyFormat: ", moneyFormat, new Date().toLocaleString());
 
   const selectedCurrency = data.find(
     (currency) => currency?.currencyCode === value,
   );
-  console.log("selectedCurrency: ", selectedCurrency);
+  console.log("selectedCurrency: ", selectedCurrency, new Date().toLocaleString());
 
   const isValueInCurrencies =
     selectedCurrency && !selectedCurrency.primaryStatus;
@@ -931,7 +931,7 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
   const blockId = document.querySelector('input[name="block_id"]');
-  console.log("blockId", blockId);
+  console.log("blockId", blockId, new Date().toLocaleString());
   const ciwiBlock = document.querySelector(`#shopify-block-${blockId.value}`);
   if (!ciwiBlock) {
     console.log("ciwiBlock not found");
@@ -971,7 +971,7 @@ window.onload = async function () {
   const isRtlLanguage = rtlLanguages.includes(currentSelectedLanguage);
   const data = await fetchSwitcherConfig(shop.value);
 
-  console.log("加载中...");
+  console.log("加载中...", new Date().toLocaleString());
 
   if (data.ipOpen) {
     const iptoken = ciwiBlock.querySelector('input[name="iptoken"]');
@@ -1131,8 +1131,11 @@ window.onload = async function () {
     const currencyData = await fetchCurrencies(shop.value);
 
     if (currencyData) {
+      console.log('before initializeCurrency', new Date().toLocaleString());
       await initializeCurrency(currencyData, shop, ciwiBlock);
+      console.log('after initializeCurrency', new Date().toLocaleString());
     }
+
     if (!data.languageSelector) {
       const mainLanguageFlag = ciwiBlock.querySelector("#main-language-flag");
       if (mainLanguageFlag) {
