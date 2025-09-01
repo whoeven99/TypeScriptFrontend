@@ -30,7 +30,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { ShopLocalesType } from "../app.language/route";
 import { setTableData } from "~/store/modules/languageTableData";
-import { setUserConfig } from "~/store/modules/userConfig";
+import { t } from "~/store/modules/userConfig";
 import { authenticate } from "~/shopify.server";
 import {
   DeleteProductImageData,
@@ -655,7 +655,7 @@ const Index = () => {
         const locale = shopLanguages.find(
           (language: ShopLocalesType) => language.primary === true,
         )?.locale;
-        dispatch(setUserConfig({ locale: locale || "" }));
+        dispatch(t({ locale: locale || "" }));
       }
     }
   }, [languageFetcher.data]);

@@ -1126,7 +1126,14 @@ export const GetUserWords = async ({
       method: "GET",
     });
     console.log("GetUserWords: ", response.data);
-    return response.data;
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: {
+        totalChars: 0,
+      },
+    };
   } catch (error) {
     console.error("Error occurred in the userwords:", error);
     return {

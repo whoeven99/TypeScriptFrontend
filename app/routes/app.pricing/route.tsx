@@ -18,7 +18,7 @@ import {
   Collapse,
   Modal,
   CollapseProps,
-  Grid
+  Grid,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
@@ -37,8 +37,8 @@ import { CheckOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import "./style.css";
 import { mutationAppSubscriptionCreate } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
-import { setUserConfig } from "~/store/modules/userConfig";
-import {handleContactSupport} from '../app._index/route'
+import { handleContactSupport } from "../app._index/route";
+import { setPlan, setUpdateTime } from "~/store/modules/userConfig";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -141,7 +141,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { shop, server } = useLoaderData<typeof loader>();
-  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const { plan, updateTime, chars, totalChars } = useSelector(
+    (state: any) => state.userConfig,
+  );
+
   const creditOptions: OptionType[] = useMemo(
     () => [
       {
@@ -150,13 +153,7 @@ const Index = () => {
         Credits: 500000,
         price: {
           currentPrice:
-            selectedPlan === 6
-              ? 1.99
-              : selectedPlan === 5
-                ? 2.99
-                : selectedPlan === 4
-                  ? 3.59
-                  : 3.99,
+            plan === 6 ? 1.99 : plan === 5 ? 2.99 : plan === 4 ? 3.59 : 3.99,
           comparedPrice: 3.99,
           currencyCode: "USD",
         },
@@ -167,13 +164,7 @@ const Index = () => {
         Credits: 1000000,
         price: {
           currentPrice:
-            selectedPlan === 6
-              ? 3.99
-              : selectedPlan === 5
-                ? 5.99
-                : selectedPlan === 4
-                  ? 7.19
-                  : 7.99,
+            plan === 6 ? 3.99 : plan === 5 ? 5.99 : plan === 4 ? 7.19 : 7.99,
           comparedPrice: 7.99,
           currencyCode: "USD",
         },
@@ -184,13 +175,7 @@ const Index = () => {
         Credits: 2000000,
         price: {
           currentPrice:
-            selectedPlan === 6
-              ? 7.99
-              : selectedPlan === 5
-                ? 11.99
-                : selectedPlan === 4
-                  ? 14.39
-                  : 15.99,
+            plan === 6 ? 7.99 : plan === 5 ? 11.99 : plan === 4 ? 14.39 : 15.99,
           comparedPrice: 15.99,
           currencyCode: "USD",
         },
@@ -201,11 +186,11 @@ const Index = () => {
         Credits: 3000000,
         price: {
           currentPrice:
-            selectedPlan === 6
+            plan === 6
               ? 11.99
-              : selectedPlan === 5
+              : plan === 5
                 ? 17.99
-                : selectedPlan === 4
+                : plan === 4
                   ? 21.79
                   : 23.99,
           comparedPrice: 23.99,
@@ -218,11 +203,11 @@ const Index = () => {
         Credits: 5000000,
         price: {
           currentPrice:
-            selectedPlan === 6
+            plan === 6
               ? 19.99
-              : selectedPlan === 5
+              : plan === 5
                 ? 29.99
-                : selectedPlan === 4
+                : plan === 4
                   ? 35.99
                   : 39.99,
           comparedPrice: 39.99,
@@ -235,11 +220,11 @@ const Index = () => {
         Credits: 10000000,
         price: {
           currentPrice:
-            selectedPlan === 6
+            plan === 6
               ? 39.99
-              : selectedPlan === 5
+              : plan === 5
                 ? 59.99
-                : selectedPlan === 4
+                : plan === 4
                   ? 71.99
                   : 79.99,
           comparedPrice: 79.99,
@@ -252,11 +237,11 @@ const Index = () => {
         Credits: 20000000,
         price: {
           currentPrice:
-            selectedPlan === 6
+            plan === 6
               ? 79.99
-              : selectedPlan === 5
+              : plan === 5
                 ? 119.99
-                : selectedPlan === 4
+                : plan === 4
                   ? 143.99
                   : 159.99,
           comparedPrice: 159.99,
@@ -269,11 +254,11 @@ const Index = () => {
         Credits: 30000000,
         price: {
           currentPrice:
-            selectedPlan === 6
+            plan === 6
               ? 119.99
-              : selectedPlan === 5
+              : plan === 5
                 ? 179.99
-                : selectedPlan === 4
+                : plan === 4
                   ? 215.99
                   : 239.99,
           comparedPrice: 239.99,
@@ -281,13 +266,10 @@ const Index = () => {
         },
       },
     ],
-    [selectedPlan],
+    [plan],
   );
-  const [currentCredits, setCurrentCredits] = useState(0);
-  const [maxCredits, setMaxCredits] = useState(0);
   const [yearly, setYearly] = useState(true);
   const [selectedOptionKey, setSelectedOption] = useState<string>("option-1");
-  const [updateTime, setUpdateTime] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
   const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
@@ -298,12 +280,11 @@ const Index = () => {
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
   const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
   const isQuotaExceeded = useMemo(
-    () => currentCredits >= maxCredits && maxCredits > 0,
-    [currentCredits, maxCredits],
+    () => chars >= totalChars && totalChars > 0,
+    [chars, totalChars],
   );
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const userConfig = useSelector((state: any) => state.userConfig);
 
   const fetcher = useFetcher<any>();
   const planCancelFetcher = useFetcher<any>();
@@ -311,73 +292,28 @@ const Index = () => {
   const orderFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const showModal = () => {
-    setIsModalVisible(true);
-  };
-  const handleOk = () => {
+
+  const handleCancel = () => {
     setIsModalVisible(false);
   };
-  const handleCancel = ()=>{
-    setIsModalVisible(false);
-  }
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint(); // 监听屏幕断点
+
   useEffect(() => {
-    // wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
-    if (!userConfig.plan || !userConfig.updateTime) {
-      // planfetcher.submit(
-      //   { planInfo: JSON.stringify(true) },
-      //   { method: "POST" },
-      // );
-      const getPlan = async () => {
-        const data = await GetUserSubscriptionPlan({
-          shop,
-          server: server as string,
-        });
-        setSelectedPlan(data?.response?.userSubscriptionPlan || "2");
-        dispatch(setUserConfig({ plan: data?.response?.userSubscriptionPlan }));
-        if (data?.response?.currentPeriodEnd) {
-          const date = new Date(data?.response?.currentPeriodEnd)
-            .toLocaleDateString("zh-CN", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-            })
-            .replace(/\//g, "-");
-          setUpdateTime(date);
-          dispatch(setUserConfig({ updateTime: date }));
-        }
-      };
-      getPlan();
-    } else {
-      setSelectedPlan(userConfig.plan);
-      setUpdateTime(userConfig.updateTime);
-    }
-    const getWords = async () => {
-      const data = await GetUserWords({
-        shop,
-        server: server as string,
-      });
-      if (data?.success) {
-        setCurrentCredits(data?.response?.chars);
-        setMaxCredits(data?.response?.totalChars);
-      } else {
-      }
-    };
-    getWords();
     const checkFreeUsed = async () => {
       try {
-        const response = await IsOpenFreePlan({
+        const data = await IsOpenFreePlan({
           shop,
           server: server as string,
         });
 
-        setHasOpenFreePlan(response.response || false);
+        setHasOpenFreePlan(data?.response || false);
       } catch (error) {
         console.error("Error getPlan:", error);
       }
     };
     checkFreeUsed();
+
     setIsLoading(false);
     fetcher.submit(
       {
@@ -434,10 +370,8 @@ const Index = () => {
 
   useEffect(() => {
     if (planCancelFetcher.data) {
-      setSelectedPlan(2);
-      dispatch(setUserConfig({ plan: "2" }));
-      setUpdateTime("");
-      dispatch(setUserConfig({ updateTime: "" }));
+      dispatch(setPlan({ plan: 2 }));
+      dispatch(setUpdateTime({ updateTime: "" }));
       setCancelPlanWarnModal(false);
     }
   }, [planCancelFetcher.data]);
@@ -453,11 +387,9 @@ const Index = () => {
           amount: 76.68,
         }),
         buttonText:
-          selectedPlan === 4
-            ? t("pricing.current_plan")
-            : t("pricing.get_start"),
+          plan === 4 ? t("pricing.current_plan") : t("pricing.get_start"),
         buttonType: "default",
-        disabled: selectedPlan === 4,
+        disabled: plan === 4,
         features: [
           t("{{credits}} credits/month", { credits: "1,500,000" }),
           t("Glossary ({{count}} entries)", { count: 10 }),
@@ -481,11 +413,9 @@ const Index = () => {
           amount: 191.88,
         }),
         buttonText:
-          selectedPlan === 5
-            ? t("pricing.current_plan")
-            : t("pricing.get_start"),
+          plan === 5 ? t("pricing.current_plan") : t("pricing.get_start"),
         buttonType: "default",
-        disabled: selectedPlan === 5,
+        disabled: plan === 5,
         features: [
           t("all in Basic Plan"),
           t("{{credits}} credits/month", { credits: "3,000,000" }),
@@ -509,10 +439,8 @@ const Index = () => {
           amount: 383.88,
         }),
         buttonText:
-          selectedPlan === 6
-            ? t("pricing.current_plan")
-            : t("pricing.get_start"),
-        disabled: selectedPlan === 6,
+          plan === 6 ? t("pricing.current_plan") : t("pricing.get_start"),
+        disabled: plan === 6,
         isRecommended: true,
         features: [
           t("all in Pro Plan"),
@@ -530,7 +458,7 @@ const Index = () => {
         ],
       },
     ],
-    [selectedPlan],
+    [plan],
   );
 
   const tableData = useMemo(
@@ -907,19 +835,19 @@ const Index = () => {
                   {t("Add credits")}
                 </Button>
               </div>
-              {selectedPlan && (
+              {plan && (
                 <div>
                   <Text>{t("Current plan: ")}</Text>
                   <Text style={{ color: "#007F61", fontWeight: "bold" }}>
-                    {selectedPlan === 3
+                    {plan === 3
                       ? "Starter"
-                      : selectedPlan === 4
+                      : plan === 4
                         ? "Basic"
-                        : selectedPlan === 5
+                        : plan === 5
                           ? "Pro"
-                          : selectedPlan === 6
+                          : plan === 6
                             ? "Premium"
-                            : selectedPlan === 7
+                            : plan === 7
                               ? "Free Trial"
                               : "Free"}{" "}
                     {t("plan")}
@@ -934,14 +862,14 @@ const Index = () => {
                 justifyContent: "space-between",
               }}
             >
-              {maxCredits ? (
+              {totalChars ? (
                 <div
                   dangerouslySetInnerHTML={{
                     __html: t(
                       "{{currentCredits}} has been used, total credits: {{maxCredits}}.",
                       {
-                        currentCredits: currentCredits.toLocaleString(),
-                        maxCredits: maxCredits.toLocaleString(),
+                        currentCredits: chars.toLocaleString(),
+                        maxCredits: totalChars.toLocaleString(),
                       },
                     ),
                   }}
@@ -951,14 +879,14 @@ const Index = () => {
               )}
               <Text
                 style={{
-                  display: updateTime && maxCredits ? "block" : "none",
+                  display: updateTime && totalChars ? "block" : "none",
                 }}
               >
                 {t("This bill was issued on {{date}}", { date: updateTime })}
               </Text>
             </div>
             <Progress
-              percent={Math.round((currentCredits / maxCredits) * 100)}
+              percent={Math.round((chars / totalChars) * 100)}
               size={["100%", 15]}
               strokeColor="#007F61"
               showInfo={false}
@@ -1029,11 +957,23 @@ const Index = () => {
           <Title level={3} style={{ fontWeight: 700 }}>
             {t("Choose the right plan for you")}
           </Title>
-          <Row style={{ width: "100%"}} >
-            <Col span={screens.xs ? 16 : 18} style={{ display: 'flex', alignItems:'center',justifyContent:screens.xs ? 'left':'center',left:screens.xs?'0':'50%',transform:screens.xs?"translateX(0)":'translateX(-50%)' }}>
+          <Row style={{ width: "100%" }}>
+            <Col
+              span={screens.xs ? 16 : 18}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: screens.xs ? "left" : "center",
+                left: screens.xs ? "0" : "50%",
+                transform: screens.xs ? "translateX(0)" : "translateX(-50%)",
+              }}
+            >
               <Flex align="center">
                 <Space align="center" size="small">
-                  <Switch checked={yearly} onChange={() => setYearly(!yearly)} />
+                  <Switch
+                    checked={yearly}
+                    onChange={() => setYearly(!yearly)}
+                  />
                   <Text>{t("Yearly")}</Text>
                 </Space>
                 <div className="yearly_save">
@@ -1041,10 +981,22 @@ const Index = () => {
                 </div>
               </Flex>
             </Col>
-            <Col span={screens.xs ? 8 : 6} style={{textAlign: screens.xs ? 'center' : 'right'}}>
-              <Button style={{right:0}} loading={isLoading} disabled={isLoading} type="primary" size="middle" onClick={()=>{
-                  setIsModalVisible(true)
-                }}>{t("Shared Plan")}</Button>
+            <Col
+              span={screens.xs ? 8 : 6}
+              style={{ textAlign: screens.xs ? "center" : "right" }}
+            >
+              <Button
+                style={{ right: 0 }}
+                loading={isLoading}
+                disabled={isLoading}
+                type="primary"
+                size="middle"
+                onClick={() => {
+                  setIsModalVisible(true);
+                }}
+              >
+                {t("Shared Plan")}
+              </Button>
             </Col>
           </Row>
           {!hasOpenFreePlan && (
@@ -1080,10 +1032,7 @@ const Index = () => {
                 display: "flex",
                 flexDirection: "column",
                 position: "relative",
-                borderColor:
-                  selectedPlan === 1 || selectedPlan === 2
-                    ? "#007F61"
-                    : undefined,
+                borderColor: plan === 1 || plan === 2 ? "#007F61" : undefined,
                 minWidth: "220px",
               }}
               styles={{
@@ -1094,7 +1043,7 @@ const Index = () => {
                   padding: "16px",
                 },
               }}
-              loading={!selectedPlan}
+              loading={!plan}
             >
               <Title level={5}>Free</Title>
               <div style={{ margin: yearly ? "12px 0 46px 0" : "12px  0" }}>
@@ -1105,15 +1054,11 @@ const Index = () => {
               <Button
                 type="default"
                 block
-                disabled={
-                  selectedPlan === 1 ||
-                  selectedPlan === 2 ||
-                  selectedPayPlanOption
-                }
+                disabled={plan === 1 || plan === 2 || selectedPayPlanOption}
                 style={{ marginBottom: hasOpenFreePlan ? "20px" : "70px" }}
                 onClick={() => setCancelPlanWarnModal(true)}
               >
-                {selectedPlan === 1 || selectedPlan === 2
+                {plan === 1 || plan === 2
                   ? t("pricing.current_plan")
                   : t("pricing.get_start")}
               </Button>
@@ -1178,9 +1123,9 @@ const Index = () => {
               </div>
             </Card>
           </Col>
-          {plans.map((plan, index) => (
+          {plans.map((item, index) => (
             <Col
-              key={plan.title}
+              key={item.title}
               xs={24}
               sm={24}
               md={12}
@@ -1195,9 +1140,7 @@ const Index = () => {
                 color="#1890ff"
                 style={{
                   display:
-                    plan.isRecommended && selectedPlan <= 2 && selectedPlan
-                      ? "block"
-                      : "none",
+                    item.isRecommended && plan <= 2 && plan ? "block" : "none",
                   right: -8,
                 }}
               >
@@ -1209,9 +1152,9 @@ const Index = () => {
                     display: "flex",
                     flexDirection: "column",
                     position: "relative",
-                    borderColor: plan.disabled
+                    borderColor: item.disabled
                       ? "#007F61"
-                      : plan.isRecommended && selectedPlan <= 2 && selectedPlan
+                      : item.isRecommended && plan <= 2 && plan
                         ? "#1890ff"
                         : undefined,
                     minWidth: "220px",
@@ -1224,47 +1167,47 @@ const Index = () => {
                       padding: "16px",
                     },
                   }}
-                  loading={!selectedPlan}
+                  loading={!plan}
                 >
                   <Title level={5}>
-                    {yearly ? plan.yearlyTitle : plan.title}
+                    {yearly ? item.yearlyTitle : item.title}
                   </Title>
                   <div style={{ margin: "12px 0" }}>
                     <Text style={{ fontSize: "28px", fontWeight: "bold" }}>
-                      ${yearly ? plan.yearlyPrice : plan.monthlyPrice}
+                      ${yearly ? item.yearlyPrice : item.monthlyPrice}
                     </Text>
                     <Text style={{ fontSize: "14px" }}>{t("/month")}</Text>
                   </div>
                   {yearly && (
                     <div
-                      dangerouslySetInnerHTML={{ __html: plan.subtitle }}
+                      dangerouslySetInnerHTML={{ __html: item.subtitle }}
                       style={{ marginBottom: "12px" }}
                     />
                   )}
                   <Button
                     type="default"
                     block
-                    disabled={plan.disabled || selectedPayPlanOption}
+                    disabled={item.disabled || selectedPayPlanOption}
                     style={{ marginBottom: "20px" }}
                     onClick={() => handlePayForPlan({ plan, trialDays: 0 })}
                     loading={
                       yearly == selectedPayPlanOption?.yearly &&
-                      plan.title == selectedPayPlanOption?.title &&
+                      item.title == selectedPayPlanOption?.title &&
                       !selectedPayPlanOption?.trialdays
                     }
                   >
-                    {plan.buttonText}
+                    {item.buttonText}
                   </Button>
                   {!hasOpenFreePlan && (
                     <Button
                       type="primary"
                       block
-                      disabled={plan.disabled || selectedPayPlanOption}
+                      disabled={item.disabled || selectedPayPlanOption}
                       style={{ marginBottom: "20px" }}
                       onClick={() => handlePayForPlan({ plan, trialDays: 5 })}
                       loading={
                         yearly == selectedPayPlanOption?.yearly &&
-                        plan.title == selectedPayPlanOption?.title &&
+                        item.title == selectedPayPlanOption?.title &&
                         selectedPayPlanOption?.trialdays
                       }
                     >
@@ -1287,7 +1230,7 @@ const Index = () => {
                     } */}
 
                   <div style={{ flex: 1 }}>
-                    {plan.features.map((feature, idx) => (
+                    {item.features.map((feature, idx) => (
                       <div
                         key={idx}
                         style={{
@@ -1374,11 +1317,11 @@ const Index = () => {
               {t("Buy Credits")}
             </Title> */}
             <Text style={{ fontWeight: "bold" }}>
-              {selectedPlan === 6
+              {plan === 6
                 ? t("discountText.premium")
-                : selectedPlan === 5
+                : plan === 5
                   ? t("discountText.pro")
-                  : selectedPlan === 4
+                  : plan === 4
                     ? t("discountText.basic")
                     : t("discountText.free")}
             </Text>
@@ -1419,9 +1362,7 @@ const Index = () => {
                   >
                     {option.Credits.toLocaleString()} {t("Credits")}
                   </Text>
-                  {selectedPlan === 6 ||
-                  selectedPlan === 5 ||
-                  selectedPlan === 4 ? (
+                  {plan === 6 || plan === 5 || plan === 4 ? (
                     <>
                       <Title
                         level={3}
@@ -1532,7 +1473,11 @@ const Index = () => {
       </Modal> */}
       <Modal
         centered
-        title={<span style={{fontSize:'24px',fontWeight:700}}>{t('How to Shared Plan Overview')}</span>} // 标题加粗
+        title={
+          <span style={{ fontSize: "24px", fontWeight: 700 }}>
+            {t("How to Shared Plan Overview")}
+          </span>
+        } // 标题加粗
         open={isModalVisible}
         onCancel={handleCancel}
         width={800}
@@ -1543,49 +1488,85 @@ const Index = () => {
         <Card
           style={{
             borderRadius: 8,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
             marginBottom: 16,
-            fontSize: '16px',
-            lineHeight: '1.5',
+            fontSize: "16px",
+            lineHeight: "1.5",
           }}
         >
-          <h2 style={{fontSize:'16px'}}><strong>{t('Shared Plan Overview')}</strong></h2>
+          <h2 style={{ fontSize: "16px" }}>
+            <strong>{t("Shared Plan Overview")}</strong>
+          </h2>
           <p>
-            {t('With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.')}
+            {t(
+              "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.",
+            )}
           </p>
           <p>
-            {t('Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.')}
+            {t(
+              "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.",
+            )}
           </p>
         </Card>
         <Card
           style={{
             borderRadius: 8,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
             marginBottom: 16,
-            fontSize: '16px',
-            lineHeight: '1.5',
+            fontSize: "16px",
+            lineHeight: "1.5",
           }}
         >
-          <div style={{display:'flex',flexDirection:'column',gap:'8px',marginBottom:'16px'}}>
-            <h2 style={{fontSize:'16px'}}><strong>{t('Steps to Bind a Sub-Account')}</strong></h2>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              marginBottom: "16px",
+            }}
+          >
+            <h2 style={{ fontSize: "16px" }}>
+              <strong>{t("Steps to Bind a Sub-Account")}</strong>
+            </h2>
             <div>
-            <span><strong>{t("1.Get the Store Name (URL)")}</strong>{t('Locate the store you want to bind and copy its name (URL).')}</span>
+              <span>
+                <strong>{t("1.Get the Store Name (URL)")}</strong>
+                {t(
+                  "Locate the store you want to bind and copy its name (URL).",
+                )}
+              </span>
+            </div>
+            <div>
+              <span>
+                <strong>{t("2.Download the App")}</strong>
+                {t("Install the official app for that store.")}
+              </span>
+            </div>
+            <div>
+              <span>
+                <strong>{t("3.Contact Customer Support")}</strong>
+                {t(
+                  "Provide the store name (URL) to the support team and request to bind a sub-account.",
+                )}
+              </span>
+            </div>
           </div>
-          <div>
-            <span><strong>{t('2.Download the App')}</strong>{t('Install the official app for that store.')}</span>
-          </div> 
-          <div>
-            <span><strong>{t('3.Contact Customer Support')}</strong>{t('Provide the store name (URL) to the support team and request to bind a sub-account.')}</span>
-          </div> 
+          <div style={{ fontSize: "14px", lineHeight: "1.5", fontWeight: 600 }}>
+            {t(
+              "Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.",
+            )}
           </div>
-          <div style={{fontSize:'14px',lineHeight:'1.5',fontWeight:600}}>{t('Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.')}</div> 
         </Card>
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <Button type="primary" size="large" onClick={()=>{
-            handleContactSupport();
-            setIsModalVisible(false);
-          }}>
-            {t('Contact Support')}
+        <div style={{ textAlign: "center", marginTop: 16 }}>
+          <Button
+            type="primary"
+            size="large"
+            onClick={() => {
+              handleContactSupport();
+              setIsModalVisible(false);
+            }}
+          >
+            {t("Contact Support")}
           </Button>
         </div>
       </Modal>

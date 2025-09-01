@@ -49,7 +49,6 @@ import PrimaryLanguage from "./components/primaryLanguage";
 import AddLanguageModal from "./components/addLanguageModal";
 import ScrollNotice from "~/components/ScrollNotice";
 import DeleteConfirmModal from "./components/deleteConfirmModal";
-import TranslationWarnModal from "~/components/translationWarnModal";
 import PublishModal from "./components/publishModal";
 
 const { Title, Text } = Typography;
@@ -1158,14 +1157,24 @@ const Index = () => {
           "Are you sure to delete this language? After deletion, the translation data will be deleted together",
         )}
       />
-      <TranslationWarnModal
+      <Modal
         title={t("The 20 language limit has been reached")}
-        content={t(
-          "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.",
-        )}
-        show={showWarnModal}
-        setShow={setShowWarnModal}
-      />
+        open={showWarnModal}
+        onCancel={() => setShowWarnModal(false)}
+        centered
+        width={700}
+        footer={
+          <Space>
+            <Button onClick={() => setShowWarnModal(false)}>{t("OK")}</Button>
+          </Space>
+        }
+      >
+        <Text>
+          {t(
+            "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.",
+          )}
+        </Text>
+      </Modal>
       <PublishModal
         shop={shop}
         isVisible={isPublishModalOpen}
