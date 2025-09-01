@@ -320,6 +320,44 @@ export const GetProductImageData = async ({
   }
 };
 
+export const GetTranslateImageData = async ({
+  productImageData,
+  sourceLanguage,
+  targetLanguage,
+}: {
+  productImageData: any;
+  sourceLanguage: string;
+  targetLanguage: string;
+}) => {
+  try {
+    // const response = await axios({
+    //   url: `${server}/translate/getUserValue?shopName=${shopName}&productId=${productId}&languageCode=${languageCode}`,
+    //   method: "GET",
+    // });
+    const response = await new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve({
+          data: {
+            productImageData,
+            sourceLanguage,
+            targetLanguage,
+          },
+        });
+      }, 3000);
+    }) as any;
+    console.log("GetUserValue: ", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error GetUserValue:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
+  }
+};
+
 export const GetUserValue = async ({
   shop,
   server,

@@ -14,6 +14,7 @@ import {
   Card,
   Divider,
   Skeleton,
+  Flex,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
@@ -24,16 +25,25 @@ import {
   useNavigate,
   useSearchParams,
 } from "@remix-run/react";
-import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
-import { Page, Pagination, Select } from "@shopify/polaris";
-import { useEffect, useRef, useState } from "react";
+import { SaveBar, TitleBar } from "@shopify/app-bridge-react";
+import {
+  Page,
+  Pagination,
+  Select,
+  EmptyState,
+  Thumbnail,
+  Modal,
+  FormLayout
+} from "@shopify/polaris";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
 import { ShopLocalesType } from "../app.language/route";
 import { setUserConfig } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
-import { DeleteProductImageData, GetProductImageData } from "~/api/JavaServer";
+import { DeleteProductImageData, GetProductImageData,GetTranslateImageData } from "~/api/JavaServer";
+import { use } from "i18next";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -73,7 +83,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const imageEndCursor: any = JSON.parse(
     formData.get("imageEndCursor") as string,
   );
-
+  const translateImage : any = JSON.parse(
+    formData.get("translateImage") as string
+  );
   switch (true) {
     case !!loading:
       try {
@@ -478,6 +490,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           imageData: [],
         });
       }
+    case !!translateImage:
+      const {productImageData,sourceLanguage,targetLanguage } = translateImage;
+      await GetTranslateImageData({
+        productImageData,
+        sourceLanguage,
+        targetLanguage
+      });
+      return json({
+        success: true,
+        message: "Image translation successful",
+        data: translateImage,
+      });
   }
   return null;
 };
@@ -563,7 +587,39 @@ const Index = () => {
   const languageFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
   const imageFetcher = useFetcher<any>();
+  const translateImageFetcher = useFetcher<any>();
+  const [active, setActive] = useState(false);
+  const [sourceLanguage, setSourceLanguage] = useState("English");
+  const [targetLanguage, setTargetLanguage] = useState("Chinese");
+  const [hasConfigLanguage, setHasConfigLanguage] = useState(false);
+  const [currentImageData, setCurrentImageData] = useState<any>();
+  const handleModalToggle = useCallback(() => {
+    setActive(!active);
+  }, [active]);
+  const handleTranslateImage = useCallback((record:any) => {
+    setActive(true);
+    setCurrentImageData(record);
+    console.log("Translating image:", record);
+  }, []);
+  const handleSourceChange = useCallback(
+    (value: string) => setSourceLanguage(value),
+    [],
+  );
+  const handleTargetChange = useCallback(
+    (value: string) => setTargetLanguage(value),
+    [],
+  );
+  const sourceOptions = [
+    {label: 'English', value: 'English'},
+    {label: 'Spanish', value: 'Spanish'},
+    {label: 'French', value: 'French'},
+  ];
 
+  const targetOptions = [
+    {label: 'Chinese', value: 'Chinese'},
+    {label: 'Japanese', value: 'Japanese'},
+    {label: 'Korean', value: 'Korean'},
+  ];
   useEffect(() => {
     loadFetcher.submit({ loading: true }, { method: "post" });
     if (languageTableData.length === 0) {
@@ -595,7 +651,21 @@ const Index = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-
+  const handleImageTranslate = useCallback(() => {
+    // Your translation logic here
+    console.log(currentImageData);
+    
+    translateImageFetcher.submit({
+      translateImage:JSON.stringify({
+        sourceLanguage,
+        targetLanguage,
+        productImageData,
+      })
+    },{
+      method: "post",
+      action: `/app/manage_translation/productImage`,
+    })
+  }, []);
   useEffect(() => {
     if (loadFetcher.data) {
       setMenuData(loadFetcher.data.menuData);
@@ -609,7 +679,11 @@ const Index = () => {
       setIsLoading(false);
     }
   }, [loadFetcher.data]);
-
+  useEffect(() => {
+    if (translateImageFetcher.data) {
+      console.log(translateImageFetcher.data);
+    }
+  }, [translateImageFetcher.data]);
   useEffect(() => {
     if (productsFetcher.data) {
       setMenuData(productsFetcher.data.menuData);
@@ -749,7 +823,136 @@ const Index = () => {
             height={"auto"}
           />
         ) : (
-          <Upload
+          <EmptyState
+            heading="Manage your inventory transfers"
+            action={{ content: "Add transfer" }}
+            image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+          ></EmptyState>
+          
+          // <Thumbnail
+          //   source="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png" // 图片URL缺失时显示默认占位图像
+          //   alt="Placeholder for missing image"
+          //   size="medium"
+          // />
+          // <Upload
+          //   pastable={false}
+          //   maxCount={1}
+          //   accept="image/*"
+          //   name="file"
+          //   action={`${server}/picture/insertPictureToDbAndCloud`}
+          //   beforeUpload={(file) => {
+          //     const isImage = file.type.startsWith("image/");
+          //     const isLt20M = file.size / 1024 / 1024 < 20;
+
+          //     // 检查文件格式
+          //     const supportedFormats = [
+          //       "image/jpeg",
+          //       "image/png",
+          //       "image/webp",
+          //       "image/heic",
+          //       "image/gif",
+          //     ];
+          //     const isSupportedFormat = supportedFormats.includes(file.type);
+
+          //     if (!isImage) {
+          //       shopify.toast.show(t("Only images can be uploaded"));
+          //       return false;
+          //     }
+
+          //     if (!isSupportedFormat) {
+          //       shopify.toast.show(
+          //         t("Only JPEG, PNG, WEBP, HEIC and GIF formats are supported"),
+          //       );
+          //       return false;
+          //     }
+
+          //     if (!isLt20M) {
+          //       shopify.toast.show(t("File must be less than 20MB"));
+          //       return false;
+          //     }
+
+          //     // 检查图片像素大小
+          //     return new Promise((resolve) => {
+          //       const img = new window.Image();
+          //       img.onload = () => {
+          //         const pixelCount = img.width * img.height;
+          //         const maxPixels = 20000000; // 2000万像素
+
+          //         if (pixelCount > maxPixels) {
+          //           shopify.toast.show(
+          //             t("Image pixel size cannot exceed 20 million pixels"),
+          //           );
+          //           resolve(false);
+          //         } else {
+          //           resolve(true);
+          //         }
+          //       };
+          //       img.onerror = () => {
+          //         shopify.toast.show(t("Failed to read image dimensions"));
+          //         resolve(false);
+          //       };
+          //       img.src = URL.createObjectURL(file);
+          //     });
+          //   }}
+          //   data={(file) => {
+          //     return {
+          //       shopName: shop,
+          //       file: file,
+          //       userPicturesDoJson: JSON.stringify({
+          //         shopName: shop,
+          //         imageId: record?.productId,
+          //         imageBeforeUrl: record?.imageUrl,
+          //         altBeforeTranslation: "",
+          //         altAfterTranslation: "",
+          //         languageCode: selectedLanguage,
+          //       }),
+          //     };
+          //   }}
+          //   onChange={(info) => {
+          //     if (info.file.status !== "uploading") {
+          //     }
+          //     if (info.file.status === "done") {
+          //       setProductImageData(
+          //         productImageData.map((item: any) => {
+          //           if (
+          //             item.imageUrl ===
+          //             info.fileList[0].response.response?.imageBeforeUrl
+          //           ) {
+          //             return {
+          //               ...item,
+          //               targetImageUrl:
+          //                 info.fileList[0].response.response.imageAfterUrl,
+          //             };
+          //           }
+          //           return item;
+          //         }),
+          //       );
+          //       if (info.fileList[0].response?.success) {
+          //         shopify.toast.show(
+          //           `${info.file.name} ${t("Upload Success")}`,
+          //         );
+          //       } else {
+          //         shopify.toast.show(`${info.file.name} ${t("Upload Failed")}`);
+          //       }
+          //     } else if (info.file.status === "error") {
+          //       shopify.toast.show(`${info.file.name} ${t("Upload Failed")}`);
+          //     }
+          //   }}
+          // >
+          //   <Button icon={<UploadOutlined />}>{t("Click to Upload")}</Button>
+          // </Upload>
+        );
+      },
+    },
+    {
+      title: t("Action"),
+      key: "translate",
+      width: "10%",
+      render: (_: any, record: any) => {
+        return (
+          <Space direction="vertical">
+            <Button onClick={()=>handleTranslateImage(record)}>{t("Translate")}</Button>
+            <Upload
             pastable={false}
             maxCount={1}
             accept="image/*"
@@ -856,25 +1059,14 @@ const Index = () => {
           >
             <Button icon={<UploadOutlined />}>{t("Click to Upload")}</Button>
           </Upload>
-        );
-      },
-    },
-    {
-      title: t("Action"),
-      key: "translate",
-      width: "10%",
-      render: (_: any, record: any) => {
-        return (
-          // <Space>
-          //   <Button>{t("Translate")}</Button>
-          <Button
-            disabled={!record?.targetImageUrl}
-            loading={isDeleteLoading}
-            onClick={() => handleDelete(record?.productId, record?.imageUrl)}
-          >
-            {t("Delete")}
-          </Button>
-          // </Space>
+            <Button
+              disabled={!record?.targetImageUrl}
+              loading={isDeleteLoading}
+              onClick={() => handleDelete(record?.productId, record?.imageUrl)}
+            >
+              {t("Delete")}
+            </Button>
+          </Space>
         );
       },
     },
@@ -1480,6 +1672,50 @@ const Index = () => {
               }
               />
             )} */}
+        <Modal
+              open={active}
+              onClose={handleModalToggle}
+              title="Image Translation"
+              primaryAction={{
+                content: "Translate 500 pts",
+                onAction: handleImageTranslate,
+                loading: translateImageFetcher.state === "submitting",
+              }}
+              secondaryActions={[
+                {
+                  content: "Cancel",
+                  onAction: handleModalToggle,
+                },
+              ]}
+            >
+              <Modal.Section>
+                <FormLayout>
+                  <Select
+                    label="Source Language"
+                    options={sourceOptions}
+                    value={sourceLanguage}
+                    onChange={handleSourceChange}
+                  />
+                  <Select
+                    label="Target Language"
+                    options={targetOptions}
+                    value={targetLanguage}
+                    onChange={handleTargetChange}
+                  />
+                  <Flex>
+                    <div>
+                      <strong>当前产品图片</strong>
+                      {currentImageData ? <Image src={currentImageData?.imageUrl} preview={false} width={200}/> : null}
+                    </div>
+                    <div>------</div>
+                    <div>
+                      <strong>翻译后的图片</strong>
+                    {currentImageData ? <Image src={currentImageData?.imageUrl} preview={false} width={200}/> : null}
+                    </div>
+                  </Flex>
+                </FormLayout>
+              </Modal.Section>
+            </Modal>
       </Layout>
     </Page>
   );
