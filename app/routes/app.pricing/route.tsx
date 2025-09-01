@@ -18,7 +18,7 @@ import {
   Collapse,
   Modal,
   CollapseProps,
-  Grid
+  Grid,
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
@@ -38,7 +38,7 @@ import "./style.css";
 import { mutationAppSubscriptionCreate } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
-import {handleContactSupport} from '../app._index/route'
+import { handleContactSupport } from "../app._index/route";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -317,9 +317,9 @@ const Index = () => {
   const handleOk = () => {
     setIsModalVisible(false);
   };
-  const handleCancel = ()=>{
+  const handleCancel = () => {
     setIsModalVisible(false);
-  }
+  };
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint(); // 监听屏幕断点
   useEffect(() => {
@@ -1029,11 +1029,23 @@ const Index = () => {
           <Title level={3} style={{ fontWeight: 700 }}>
             {t("Choose the right plan for you")}
           </Title>
-          <Row style={{ width: "100%"}} >
-            <Col span={screens.xs ? 16 : 18} style={{ display: 'flex', alignItems:'center',justifyContent:screens.xs ? 'left':'center',left:screens.xs?'0':'50%',transform:screens.xs?"translateX(0)":'translateX(-50%)' }}>
+          <Row style={{ width: "100%" }}>
+            <Col
+              span={screens.xs ? 16 : 18}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: screens.xs ? "left" : "center",
+                left: screens.xs ? "0" : "50%",
+                transform: screens.xs ? "translateX(0)" : "translateX(-50%)",
+              }}
+            >
               <Flex align="center">
                 <Space align="center" size="small">
-                  <Switch checked={yearly} onChange={() => setYearly(!yearly)} />
+                  <Switch
+                    checked={yearly}
+                    onChange={() => setYearly(!yearly)}
+                  />
                   <Text>{t("Yearly")}</Text>
                 </Space>
                 <div className="yearly_save">
@@ -1041,10 +1053,24 @@ const Index = () => {
                 </div>
               </Flex>
             </Col>
-            <Col span={screens.xs ? 8 : 6} style={{textAlign: screens.xs ? 'center' : 'right'}}>
-              <Button style={{right:0}} loading={isLoading} disabled={isLoading} type="primary" size="middle" onClick={()=>{
-                  setIsModalVisible(true)
-                }}>{t("Shared Plan")}</Button>
+            <Col
+              span={screens.xs ? 8 : 6}
+              style={{ textAlign: screens.xs ? "center" : "right" }}
+            >
+              {isLoading ? (
+                <Skeleton.Button active />
+              ) : (
+                <Button
+                  style={{ right: 0 }}
+                  type="primary"
+                  size="middle"
+                  onClick={() => {
+                    setIsModalVisible(true);
+                  }}
+                >
+                  {t("Shared Plan")}
+                </Button>
+              )}
             </Col>
           </Row>
           {!hasOpenFreePlan && (
@@ -1532,7 +1558,11 @@ const Index = () => {
       </Modal> */}
       <Modal
         centered
-        title={<span style={{fontSize:'24px',fontWeight:700}}>{t('How to Shared Plan Overview')}</span>} // 标题加粗
+        title={
+          <span style={{ fontSize: "24px", fontWeight: 700 }}>
+            {t("Shared Plan: How to Set Up")}
+          </span>
+        } // 标题加粗
         open={isModalVisible}
         onCancel={handleCancel}
         width={800}
@@ -1543,49 +1573,92 @@ const Index = () => {
         <Card
           style={{
             borderRadius: 8,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
             marginBottom: 16,
-            fontSize: '16px',
-            lineHeight: '1.5',
+            fontSize: "16px",
+            lineHeight: "1.5",
           }}
         >
-          <h2 style={{fontSize:'16px'}}><strong>{t('Shared Plan Overview')}</strong></h2>
-          <p>
-            {t('With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.')}
+          {/* <h2 style={{fontSize:'16px'}}><strong>{t('Shared Plan: How to Set Up')}</strong></h2> */}
+          <p style={{marginBottom: '16px'}}>
+            {t(
+              "The Shared Plan lets you extend your purchased plan to multiple stores, so each store can access the same benefits. This makes managing and collaborating across stores simple and seamless.",
+            )}
           </p>
           <p>
-            {t('Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.')}
+            <strong>{t("Note")}</strong>
+            {t(
+              "Points balance and IP quota are not included in sharing. Each store can purchase its own points if needed for features that require points or IP usage.",
+            )}
           </p>
         </Card>
         <Card
           style={{
             borderRadius: 8,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
             marginBottom: 16,
-            fontSize: '16px',
-            lineHeight: '1.5',
+            fontSize: "16px",
+            lineHeight: "1.5",
           }}
         >
-          <div style={{display:'flex',flexDirection:'column',gap:'8px',marginBottom:'16px'}}>
-            <h2 style={{fontSize:'16px'}}><strong>{t('Steps to Bind a Sub-Account')}</strong></h2>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              marginBottom: "16px",
+            }}
+          >
+            <h2 style={{ fontSize: "18px" }}>
+              <strong>{t("Steps to Bind a Sub-Account")}</strong>
+            </h2>
             <div>
-            <span><strong>{t("1.Get the Store Name (URL)")}</strong>{t('Locate the store you want to bind and copy its name (URL).')}</span>
+              <div>
+                <strong>{t("1. Get the Store URL")}</strong>
+              </div>
+              <p>
+                {t("Find the store you want to bind and copy its store URL.")}
+              </p>
+            </div>
+            <div>
+              <div>
+                <strong>{t("2. Install the App")}</strong>
+              </div>
+              <p>{t("Download and install the official app on that store.")}</p>
+            </div>
+            <div>
+              <div>
+                <strong>{t("3. Contact Support")}</strong>
+              </div>
+              <p>
+                {t(
+                  "Share the store URL with our support team and request to bind a sub-account.",
+                )}
+              </p>
+            </div>
           </div>
-          <div>
-            <span><strong>{t('2.Download the App')}</strong>{t('Install the official app for that store.')}</span>
-          </div> 
-          <div>
-            <span><strong>{t('3.Contact Customer Support')}</strong>{t('Provide the store name (URL) to the support team and request to bind a sub-account.')}</span>
-          </div> 
-          </div>
-          <div style={{fontSize:'14px',lineHeight:'1.5',fontWeight:600}}>{t('Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.')}</div> 
+          <span>{t("💡 Tip:")}</span>
+          <ul style={{padding:'0 24px'}}>
+            <li>
+              <strong>{t("Pro Plan")}</strong>
+              {t("Share with 1 store")}
+            </li>
+            <li>
+              <strong>{t("Premium Plan")}</strong>
+              {t("Share with up to 3 stores")}
+            </li>
+          </ul>
         </Card>
-        <div style={{ textAlign: 'center', marginTop: 16 }}>
-          <Button type="primary" size="large" onClick={()=>{
-            handleContactSupport();
-            setIsModalVisible(false);
-          }}>
-            {t('Contact Support')}
+        <div style={{ textAlign: "center", marginTop: 16 }}>
+          <Button
+            type="primary"
+            size="large"
+            onClick={() => {
+              handleContactSupport();
+              setIsModalVisible(false);
+            }}
+          >
+            {t("Contact Support")}
           </Button>
         </div>
       </Modal>
