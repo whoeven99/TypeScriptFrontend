@@ -641,6 +641,23 @@
     "free": "升級到付費方案可享 10%–50% 的折扣"
   },
   "Insufficient private API quota": "私有 API 配額不足",
-  "Select a private key for translation. Only one target language can be selected.": "選擇一個私有金鑰進行翻譯。只能選擇一種目標語言。"
-
+  "Select a private key for translation. Only one target language can be selected.": "選擇一個私有金鑰進行翻譯。只能選擇一種目標語言。",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "選擇專業版或無限版，即可享有 5 天所有功能的完整使用權限，以及 20 萬試用積分。試用期結束前可隨時取消，避免產生費用。",
+  "Shared Plan: How to Set Up": "如何設定共享計劃",
+  "The Shared Plan lets you extend your purchased plan to multiple stores, so each store can access the same benefits. This makes managing and collaborating across stores simple and seamless.": "共享方案可讓您將購買的方案擴展至多家門市，以便每家店都能享受相同的權益。這使得跨門市管理和協作變得簡單無縫。",
+  "Note": "筆記：",
+  "Points balance and IP quota are not included in sharing. Each store can purchase its own points if needed for features that require points or IP usage.": "積分餘額和 IP 配額不參與共享。每個商店可以根據需要購買自己的積分，用於需要使用積分或 IP 的功能。",
+  "1. Get the Store URL": "1. 取得商店網址",
+  "Find the store you want to bind and copy its store URL.": "找到您要綁定的商店並複製其商店網址。",
+  "2. Install the App": "2.安裝應用程式",
+  "Download and install the official app on that store.": "在該商店下載並安裝官方應用程式。",
+  "3. Contact Support": "3.聯絡客服",
+  "Share the store URL with our support team and request to bind a sub-account.": "與我們的支援團隊分享商店網址並要求綁定子帳戶。",
+  "💡 Tip": "💡提示：",
+  "Pro Plan": "專業計劃 →",
+  "Share with 1 store": "與 1 家商店共享",
+  "Premium Plan": "高級計劃 →",
+  "Share with up to 3 stores": "與最多 3 家商店共享",
+  "Steps to Bind a Sub-Account": "綁定子帳號步驟",
+  "Shared Plan": "共享計劃"
 }

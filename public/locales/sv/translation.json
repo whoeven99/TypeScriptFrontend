@@ -641,6 +641,23 @@
   "plan": "Planera",
   "support": "stöd",
   "Insufficient private API quota": "Otillräcklig privat API-kvot",
-  "Select a private key for translation. Only one target language can be selected.": "Välj en privat nyckel för översättning. Kan endast väljas en målspråk."
-
+  "Select a private key for translation. Only one target language can be selected.": "Välj en privat nyckel för översättning. Kan endast väljas en målspråk.",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "Om du väljer Pro eller Unlimited får du 5 dagars full tillgång till alla funktioner, tillsammans med 200 000 provperiodskrediter. Avsluta när som helst innan provperioden är slut för att undvika debitering.",
+  "Shared Plan: How to Set Up": "Delad plan: Så här konfigurerar du",
+  "The Shared Plan lets you extend your purchased plan to multiple stores, so each store can access the same benefits. This makes managing and collaborating across stores simple and seamless.": "Med den delade planen kan du utöka din köpta plan till flera butiker, så att varje butik får tillgång till samma förmåner. Detta gör det enkelt och smidigt att hantera och samarbeta mellan butiker.",
+  "Note": "Notera:",
+  "Points balance and IP quota are not included in sharing. Each store can purchase its own points if needed for features that require points or IP usage.": "Poängsaldo och IP-kvot ingår inte i delningen. Varje butik kan köpa sina egna poäng om det behövs för funktioner som kräver poäng eller IP-användning.",
+  "1. Get the Store URL": "1. Hämta butikens URL",
+  "Find the store you want to bind and copy its store URL.": "Hitta butiken du vill binda och kopiera dess butiks-URL.",
+  "2. Install the App": "2. Installera appen",
+  "Download and install the official app on that store.": "Ladda ner och installera den officiella appen i den butiken.",
+  "3. Contact Support": "3. Kontakta supporten",
+  "Share the store URL with our support team and request to bind a sub-account.": "Dela butikens URL med vårt supportteam och begär att få koppla ett underkonto.",
+  "💡 Tip": "💡 Tips:",
+  "Pro Plan": "Pro-plan →",
+  "Share with 1 store": "Dela med 1 butik",
+  "Premium Plan": "Premiumplan →",
+  "Share with up to 3 stores": "Dela med upp till 3 butiker",
+  "Steps to Bind a Sub-Account": "Steg för att binda ett underkonto",
+  "Shared Plan": "Delad plan"
 }

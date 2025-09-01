@@ -985,18 +985,20 @@ const Index = () => {
               span={screens.xs ? 8 : 6}
               style={{ textAlign: screens.xs ? "center" : "right" }}
             >
-              <Button
-                style={{ right: 0 }}
-                loading={isLoading}
-                disabled={isLoading}
-                type="primary"
-                size="middle"
-                onClick={() => {
-                  setIsModalVisible(true);
-                }}
-              >
-                {t("Shared Plan")}
-              </Button>
+              {isLoading ? (
+                <Skeleton.Button active />
+              ) : (
+                <Button
+                  style={{ right: 0 }}
+                  type="primary"
+                  size="middle"
+                  onClick={() => {
+                    setIsModalVisible(true);
+                  }}
+                >
+                  {t("Shared Plan")}
+                </Button>
+              )}
             </Col>
           </Row>
           {!hasOpenFreePlan && (
@@ -1475,7 +1477,7 @@ const Index = () => {
         centered
         title={
           <span style={{ fontSize: "24px", fontWeight: 700 }}>
-            {t("How to Shared Plan Overview")}
+            {t("Shared Plan: How to Set Up")}
           </span>
         } // 标题加粗
         open={isModalVisible}
@@ -1494,17 +1496,16 @@ const Index = () => {
             lineHeight: "1.5",
           }}
         >
-          <h2 style={{ fontSize: "16px" }}>
-            <strong>{t("Shared Plan Overview")}</strong>
-          </h2>
-          <p>
+          {/* <h2 style={{fontSize:'16px'}}><strong>{t('Shared Plan: How to Set Up')}</strong></h2> */}
+          <p style={{marginBottom: '16px'}}>
             {t(
-              "With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.",
+              "The Shared Plan lets you extend your purchased plan to multiple stores, so each store can access the same benefits. This makes managing and collaborating across stores simple and seamless.",
             )}
           </p>
           <p>
+            <strong>{t("Note")}</strong>
             {t(
-              "Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.",
+              "Points balance and IP quota are not included in sharing. Each store can purchase its own points if needed for features that require points or IP usage.",
             )}
           </p>
         </Card>
@@ -1525,37 +1526,45 @@ const Index = () => {
               marginBottom: "16px",
             }}
           >
-            <h2 style={{ fontSize: "16px" }}>
+            <h2 style={{ fontSize: "18px" }}>
               <strong>{t("Steps to Bind a Sub-Account")}</strong>
             </h2>
             <div>
-              <span>
-                <strong>{t("1.Get the Store Name (URL)")}</strong>
-                {t(
-                  "Locate the store you want to bind and copy its name (URL).",
-                )}
-              </span>
+              <div>
+                <strong>{t("1. Get the Store URL")}</strong>
+              </div>
+              <p>
+                {t("Find the store you want to bind and copy its store URL.")}
+              </p>
             </div>
             <div>
-              <span>
-                <strong>{t("2.Download the App")}</strong>
-                {t("Install the official app for that store.")}
-              </span>
+              <div>
+                <strong>{t("2. Install the App")}</strong>
+              </div>
+              <p>{t("Download and install the official app on that store.")}</p>
             </div>
             <div>
-              <span>
-                <strong>{t("3.Contact Customer Support")}</strong>
+              <div>
+                <strong>{t("3. Contact Support")}</strong>
+              </div>
+              <p>
                 {t(
-                  "Provide the store name (URL) to the support team and request to bind a sub-account.",
+                  "Share the store URL with our support team and request to bind a sub-account.",
                 )}
-              </span>
+              </p>
             </div>
           </div>
-          <div style={{ fontSize: "14px", lineHeight: "1.5", fontWeight: 600 }}>
-            {t(
-              "Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.",
-            )}
-          </div>
+          <span>{t("💡 Tip:")}</span>
+          <ul style={{padding:'0 24px'}}>
+            <li>
+              <strong>{t("Pro Plan")}</strong>
+              {t("Share with 1 store")}
+            </li>
+            <li>
+              <strong>{t("Premium Plan")}</strong>
+              {t("Share with up to 3 stores")}
+            </li>
+          </ul>
         </Card>
         <div style={{ textAlign: "center", marginTop: 16 }}>
           <Button
