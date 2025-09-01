@@ -18,6 +18,7 @@ import {
   Collapse,
   Modal,
   CollapseProps,
+  Grid
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
@@ -37,6 +38,7 @@ import "./style.css";
 import { mutationAppSubscriptionCreate } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserConfig } from "~/store/modules/userConfig";
+import {handleContactSupport} from '../app._index/route'
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -308,7 +310,18 @@ const Index = () => {
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
   const payForPlanFetcher = useFetcher<any>();
-
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const showModal = () => {
+    setIsModalVisible(true);
+  };
+  const handleOk = () => {
+    setIsModalVisible(false);
+  };
+  const handleCancel = ()=>{
+    setIsModalVisible(false);
+  }
+  const { useBreakpoint } = Grid;
+  const screens = useBreakpoint(); // 监听屏幕断点
   useEffect(() => {
     // wordsfetcher.submit({ words: JSON.stringify(true) }, { method: "POST" });
     if (!userConfig.plan || !userConfig.updateTime) {
@@ -960,27 +973,45 @@ const Index = () => {
             showIcon
           />
         )}
-        <Space
+        {/* <Space
           direction="vertical"
           size="small"
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            width: "100%",
           }}
         >
           <Title level={3} style={{ fontWeight: 700 }}>
             {t("Choose the right plan for you")}
           </Title>
-          <Flex align="center" justify="space-between">
-            <Space align="center" size="small">
-              <Switch checked={yearly} onChange={() => setYearly(!yearly)} />
-              <Text>{t("Yearly")}</Text>
-            </Space>
-            <div className="yearly_save">
-              <Text strong>{t("Save 20%")}</Text>
-            </div>
-          </Flex>
+          <Row style={{ width: "100%" }}>
+            <Col span={18}>
+              <Button type="primary">居中按钮</Button>
+            </Col>
+            <Col span={6}>
+              <Button type="default">靠右按钮</Button>
+            </Col>
+          </Row>
+          <Row justify="space-between" align="middle" style={{ height: 100 }}>
+            <Col flex="auto" style={{ textAlign: 'center' }}>
+              <Flex align="center">
+                  <Space align="center" size="small">
+                    <Switch checked={yearly} onChange={() => setYearly(!yearly)} />
+                    <Text>{t("Yearly")}</Text>
+                  </Space>
+                  <div className="yearly_save">
+                    <Text strong>{t("Save 20%")}</Text>
+                  </div>
+                </Flex>
+            </Col>
+            <Col>
+              <Button style={{right:0}}  type="primary" size="middle" onClick={()=>{
+                  setIsModalVisible(true)
+                }}>{t("Shared Plan")}</Button>
+            </Col>
+          </Row>
           {!hasOpenFreePlan && (
             <Card styles={{ body: { padding: 12 } }}>
               <Flex align="center" justify="space-between" gap={10}>
@@ -993,7 +1024,42 @@ const Index = () => {
               </Flex>
             </Card>
           )}
-        </Space>
+        </Space> */}
+        <Flex vertical align="center" style={{ width: "100%" }}>
+          <Title level={3} style={{ fontWeight: 700 }}>
+            {t("Choose the right plan for you")}
+          </Title>
+          <Row style={{ width: "100%"}} >
+            <Col span={screens.xs ? 16 : 18} style={{ display: 'flex', alignItems:'center',justifyContent:screens.xs ? 'left':'center',left:screens.xs?'0':'50%',transform:screens.xs?"translateX(0)":'translateX(-50%)' }}>
+              <Flex align="center">
+                <Space align="center" size="small">
+                  <Switch checked={yearly} onChange={() => setYearly(!yearly)} />
+                  <Text>{t("Yearly")}</Text>
+                </Space>
+                <div className="yearly_save">
+                  <Text strong>{t("Save 20%")}</Text>
+                </div>
+              </Flex>
+            </Col>
+            <Col span={screens.xs ? 8 : 6} style={{textAlign: screens.xs ? 'center' : 'right'}}>
+              <Button style={{right:0}} loading={isLoading} disabled={isLoading} type="primary" size="middle" onClick={()=>{
+                  setIsModalVisible(true)
+                }}>{t("Shared Plan")}</Button>
+            </Col>
+          </Row>
+          {!hasOpenFreePlan && (
+            <Card styles={{ body: { padding: 12 } }}>
+              <Flex align="center" justify="space-between" gap={10}>
+                <Text>{t("Start your trial and unlock")}</Text>
+                <div className="free_trial">
+                  <Text strong>
+                    {t("{{amount}} free credits", { amount: "200,000" })}
+                  </Text>
+                </div>
+              </Flex>
+            </Card>
+          )}
+        </Flex>
         <Row gutter={[16, 16]}>
           <Col
             key={t("Free")}
@@ -1464,6 +1530,65 @@ const Index = () => {
           </Form.Item>
         </Form>
       </Modal> */}
+      <Modal
+        centered
+        title={<span style={{fontSize:'24px',fontWeight:700}}>{t('How to Shared Plan Overview')}</span>} // 标题加粗
+        open={isModalVisible}
+        onCancel={handleCancel}
+        width={800}
+        style={{ top: 50 }}
+        footer={null} // 移除 OK 和 Cancel 按钮
+        className="custom-modal" // 自定义类名
+      >
+        <Card
+          style={{
+            borderRadius: 8,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            marginBottom: 16,
+            fontSize: '16px',
+            lineHeight: '1.5',
+          }}
+        >
+          <h2 style={{fontSize:'16px'}}><strong>{t('Shared Plan Overview')}</strong></h2>
+          <p>
+            {t('With the Shared Plan, you can share your current purchased plan with other stores, allowing them to enjoy the same plan benefits. This makes multi-store collaboration easier and more seamless.')}
+          </p>
+          <p>
+            {t('Please note: Points balance and IP quota are not shared. Other stores can purchase points separately to access features related to points or IP usage.')}
+          </p>
+        </Card>
+        <Card
+          style={{
+            borderRadius: 8,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            marginBottom: 16,
+            fontSize: '16px',
+            lineHeight: '1.5',
+          }}
+        >
+          <div style={{display:'flex',flexDirection:'column',gap:'8px',marginBottom:'16px'}}>
+            <h2 style={{fontSize:'16px'}}><strong>{t('Steps to Bind a Sub-Account')}</strong></h2>
+            <div>
+            <span><strong>{t("1.Get the Store Name (URL)")}</strong>{t('Locate the store you want to bind and copy its name (URL).')}</span>
+          </div>
+          <div>
+            <span><strong>{t('2.Download the App')}</strong>{t('Install the official app for that store.')}</span>
+          </div> 
+          <div>
+            <span><strong>{t('3.Contact Customer Support')}</strong>{t('Provide the store name (URL) to the support team and request to bind a sub-account.')}</span>
+          </div> 
+          </div>
+          <div style={{fontSize:'14px',lineHeight:'1.5',fontWeight:600}}>{t('Tip: The Pro Plan allows sharing with 1 store, while the Premium Plan supports up to 3 stores.')}</div> 
+        </Card>
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <Button type="primary" size="large" onClick={()=>{
+            handleContactSupport();
+            setIsModalVisible(false);
+          }}>
+            {t('Contact Support')}
+          </Button>
+        </div>
+      </Modal>
     </Page>
   );
 };
