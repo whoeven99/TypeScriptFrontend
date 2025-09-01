@@ -641,5 +641,23 @@
     "for_large_teams": "Para equipos grandes"
   },
   "Insufficient private API quota": "Cuota de API privada insuficiente",
-  "Select a private key for translation. Only one target language can be selected.": "Selecciona una clave privada para la traducción. Solo se puede seleccionar una lengua objetivo."
+  "Select a private key for translation. Only one target language can be selected.": "Selecciona una clave privada para la traducción. Solo se puede seleccionar una lengua objetivo.",
+  "Choosing Pro or Unlimited gives you 5 days of full access to all features, along with 200,000 trial credits. Cancel anytime before the trial ends to avoid billing.": "Al elegir Pro o Unlimited, obtendrás 5 días de acceso completo a todas las funciones y 200,000 créditos de prueba. Puedes cancelar en cualquier momento antes de que finalice el periodo de prueba para evitar cargos.",
+  "Shared Plan: How to Set Up": "Plan compartido: cómo configurarlo",
+  "The Shared Plan lets you extend your purchased plan to multiple stores, so each store can access the same benefits. This makes managing and collaborating across stores simple and seamless.": "El Plan Compartido te permite extender tu plan adquirido a varias tiendas, para que cada una tenga acceso a los mismos beneficios. Esto simplifica y facilita la gestión y colaboración entre tiendas.",
+  "Note": "Nota:",
+  "Points balance and IP quota are not included in sharing. Each store can purchase its own points if needed for features that require points or IP usage.": "El saldo de puntos y la cuota de IP no se incluyen en el uso compartido. Cada tienda puede comprar sus propios puntos si los necesita para funciones que requieren puntos o uso de IP.",
+  "1. Get the Store URL": "1. Obtenga la URL de la tienda",
+  "Find the store you want to bind and copy its store URL.": "Busque la tienda que desea vincular y copie la URL de su tienda.",
+  "2. Install the App": "2. Instalar la aplicación",
+  "Download and install the official app on that store.": "Descargue e instale la aplicación oficial en esa tienda.",
+  "3. Contact Support": "3. Contactar con el soporte técnico",
+  "Share the store URL with our support team and request to bind a sub-account.": "Comparta la URL de la tienda con nuestro equipo de soporte y solicite vincular una subcuenta.",
+  "💡 Tip": "💡Consejo:",
+  "Pro Plan": "Plan Pro →",
+  "Share with 1 store": "Compartir con 1 tienda",
+  "Premium Plan": "Plan Premium →",
+  "Share with up to 3 stores": "Compartir con hasta 3 tiendas",
+  "Steps to Bind a Sub-Account": "Pasos para vincular una subcuenta",
+  "Shared Plan": "Plan compartido"
 }
