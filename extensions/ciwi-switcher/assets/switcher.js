@@ -1,7 +1,7 @@
 async function GetProductImageData({ shopName, productId, languageCode }) {
   try {
     const response = await axios({
-      url: `https://springbackendprod.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
       method: "POST",
       data: {
         shopName: shopName,
@@ -18,7 +18,7 @@ async function GetProductImageData({ shopName, productId, languageCode }) {
 
 async function fetchSwitcherConfig(shop) {
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/widgetConfigurations/getData`,
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/widgetConfigurations/getData`,
     method: "POST",
     data: {
       shopName: shop,
@@ -60,7 +60,7 @@ async function fetchSwitcherConfig(shop) {
 
 async function fetchCurrencies(shop) {
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
     method: "GET",
   });
 
@@ -82,7 +82,7 @@ async function fetchCurrencies(shop) {
 
 async function fetchAutoRate(shop, currencyCode) {
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/currency/getCacheData`,
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
     method: "POST",
     data: {
       shopName: shop,
@@ -97,7 +97,7 @@ async function fetchAutoRate(shop, currencyCode) {
 async function checkUserIp(shop) {
   try {
     const response = await axios({
-      url: `https://springbackendprod.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
       method: "POST",
     });
     return response.data?.response;
@@ -124,7 +124,7 @@ async function fetchLanguageLocaleInfo(locale) {
   const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
   try {
     const response = await axios({
-      url: `https://springbackendprod.azurewebsites.net/shopify/getImageInfo`,
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getImageInfo`,
       method: "POST",
       data: updatedLocales,
     });
@@ -147,12 +147,12 @@ async function initializeCurrency(data, shop, ciwiBlock) {
   let value = localStorage.getItem("selectedCurrency");
   let moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat").value;
 
-  console.log("moneyFormat: ", moneyFormat, new Date().toLocaleString());
+  console.log("moneyFormat: ", moneyFormat);
 
   const selectedCurrency = data.find(
     (currency) => currency?.currencyCode === value,
   );
-  console.log("selectedCurrency: ", selectedCurrency, new Date().toLocaleString());
+  console.log("selectedCurrency: ", selectedCurrency);
 
   const isValueInCurrencies =
     selectedCurrency && !selectedCurrency.primaryStatus;
@@ -931,7 +931,7 @@ customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 // Page load handling
 window.onload = async function () {
   const blockId = document.querySelector('input[name="block_id"]');
-  console.log("blockId", blockId, new Date().toLocaleString());
+  console.log("blockId", blockId);
   const ciwiBlock = document.querySelector(`#shopify-block-${blockId.value}`);
   if (!ciwiBlock) {
     console.log("ciwiBlock not found");
@@ -971,7 +971,7 @@ window.onload = async function () {
   const isRtlLanguage = rtlLanguages.includes(currentSelectedLanguage);
   const data = await fetchSwitcherConfig(shop.value);
 
-  console.log("加载中...", new Date().toLocaleString());
+  console.log("加载中...");
 
   if (data.ipOpen) {
     const iptoken = ciwiBlock.querySelector('input[name="iptoken"]');
@@ -1131,11 +1131,8 @@ window.onload = async function () {
     const currencyData = await fetchCurrencies(shop.value);
 
     if (currencyData) {
-      console.log('before initializeCurrency', new Date().toLocaleString());
       await initializeCurrency(currencyData, shop, ciwiBlock);
-      console.log('after initializeCurrency', new Date().toLocaleString());
     }
-
     if (!data.languageSelector) {
       const mainLanguageFlag = ciwiBlock.querySelector("#main-language-flag");
       if (mainLanguageFlag) {
