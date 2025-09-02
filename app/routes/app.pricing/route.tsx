@@ -862,20 +862,18 @@ const Index = () => {
                 justifyContent: "space-between",
               }}
             >
-              {totalChars ? (
+              {chars !== undefined && totalChars !== undefined && (
                 <div
                   dangerouslySetInnerHTML={{
                     __html: t(
                       "{{currentCredits}} has been used, total credits: {{maxCredits}}.",
                       {
-                        currentCredits: chars.toLocaleString(),
-                        maxCredits: totalChars.toLocaleString(),
+                        currentCredits: chars?.toLocaleString() || 0,
+                        maxCredits: totalChars?.toLocaleString() || 0,
                       },
                     ),
                   }}
                 />
-              ) : (
-                <Skeleton active paragraph={{ rows: 1 }} title={false} />
               )}
               <Text
                 style={{
@@ -886,7 +884,9 @@ const Index = () => {
               </Text>
             </div>
             <Progress
-              percent={Math.round((chars / totalChars) * 100)}
+              percent={
+                totalChars == 0 ? 100 : Math.round((chars / totalChars) * 100)
+              }
               size={["100%", 15]}
               strokeColor="#007F61"
               showInfo={false}
@@ -1497,7 +1497,7 @@ const Index = () => {
           }}
         >
           {/* <h2 style={{fontSize:'16px'}}><strong>{t('Shared Plan: How to Set Up')}</strong></h2> */}
-          <p style={{marginBottom: '16px'}}>
+          <p style={{ marginBottom: "16px" }}>
             {t(
               "The Shared Plan lets you extend your purchased plan to multiple stores, so each store can access the same benefits. This makes managing and collaborating across stores simple and seamless.",
             )}
@@ -1555,7 +1555,7 @@ const Index = () => {
             </div>
           </div>
           <span>{t("💡 Tip:")}</span>
-          <ul style={{padding:'0 24px'}}>
+          <ul style={{ padding: "0 24px" }}>
             <li>
               <strong>{t("Pro Plan")}</strong>
               {t("Share with 1 store")}

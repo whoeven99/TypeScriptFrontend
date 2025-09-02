@@ -395,7 +395,7 @@
   "Please select a language": "Please select a language",
   "The 20 language limit has been reached": "Language limit reached",
   "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "Shopify allows up to 20 languages. To add a new one, please remove an existing language first.",
-  "Auto translate": "Auto-translate",
+  "Auto translation": "Auto-translate",
   "{{credits}} credits/month": "{{credits}} credits/month",
   "Glossary ({{count}} entries)": "Glossary support (up to {{count}} entries)",
   "starter_features1": "Translate via your API (Google supported)",

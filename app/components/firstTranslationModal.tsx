@@ -60,7 +60,7 @@ const FirstTranslationModal: React.FC<FirstTranslationModalProps> = ({
             {t("🎁 Get free credits")}
           </Title>
 
-          <Text>{t("✅ Give 200,000 points")}</Text>
+          <Text>{t("✅ Give 1,000,000 points")}</Text>
           <Text>{t("✅ 5-day free trial (any plan)")}</Text>
           <Flex justify="center">
             <Button

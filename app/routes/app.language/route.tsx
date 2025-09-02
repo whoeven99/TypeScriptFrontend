@@ -788,7 +788,7 @@ const Index = () => {
       ),
     },
     {
-      title: t("Auto translate"),
+      title: t("Auto translation"),
       dataIndex: "autoTranslate",
       key: "autoTranslate",
       width: "15%",
@@ -1088,7 +1088,7 @@ const Index = () => {
                       />
                     </Flex>
                     <Flex justify="space-between">
-                      <Text>{t("Auto translate")}</Text>
+                      <Text>{t("Auto translation")}</Text>
                       <Switch
                         checked={item.autoTranslate}
                         onChange={(checked) =>

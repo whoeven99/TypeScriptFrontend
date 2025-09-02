@@ -1126,14 +1126,7 @@ export const GetUserWords = async ({
       method: "GET",
     });
     console.log("GetUserWords: ", response.data);
-    return {
-      success: false,
-      errorCode: 10001,
-      errorMsg: "SERVER_ERROR",
-      response: {
-        totalChars: 0,
-      },
-    };
+    return response.data;
   } catch (error) {
     console.error("Error occurred in the userwords:", error);
     return {
@@ -2002,17 +1995,20 @@ export const InsertOrUpdateOrder = async ({
 export const AddCharsByShopName = async ({
   shop,
   amount,
+  gid,
 }: {
   shop: string;
   amount: number;
+  gid: string;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translationCounter/addCharsByShopName`,
+      url: `${process.env.SERVER_URL}/translationCounter/addCharsByShopName?shopName=${shop}`,
       method: "POST",
       data: {
         shopName: shop,
         chars: amount,
+        gid: gid,
       },
     });
     console.log(`${shop} AddCharsByShopName:`, response.data);
