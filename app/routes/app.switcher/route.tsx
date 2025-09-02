@@ -268,11 +268,7 @@ const Index = () => {
         positionData: "10",
         isTransparent: false,
       };
-<<<<<<< HEAD
-      if (data.success) {
-=======
       if (data?.success) {
->>>>>>> feature/20250829/lwj_google_analytics_new
         const filteredResponse = Object.fromEntries(
           Object.entries(data.response).filter(([_, value]) => value !== null),
         );
