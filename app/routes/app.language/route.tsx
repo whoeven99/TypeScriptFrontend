@@ -42,7 +42,7 @@ import {
   GetLanguageLocaleInfo,
   GetTranslate,
   UpdateAutoTranslateByData,
-  GetGoogleAnalytic,
+  GoogleAnalyticClickReport,
 } from "~/api/JavaServer";
 import TranslatedIcon from "~/components/translateIcon";
 import { useTranslation } from "react-i18next";
@@ -367,26 +367,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       } catch (error) {
         console.error("Error translation language:", error);
         return json({ error: "Error translation language" }, { status: 500 });
-      }
-
-    case !!googleAnalytic:
-      try {
-        // 字符数未超限，调用翻译接口
-        const data = await GetGoogleAnalytic({
-          shop,
-          accessToken: accessToken as string,
-          source: googleAnalytic.primaryLanguage,
-          target: googleAnalytic.selectedLanguage,
-          translateSettings1: googleAnalytic.translateSettings1,
-          translateSettings2: googleAnalytic.translateSettings2,
-          translateSettings3: googleAnalytic.translateSettings3,
-          customKey: googleAnalytic.customKey,
-          translateSettings5: googleAnalytic.translateSettings5,
-        });
-        return data;
-      } catch (error) {
-        console.error("Error translation language:", error);
-        return false;
       }
 
     case !!publishInfo:

@@ -268,30 +268,28 @@ const Index = () => {
         positionData: "10",
         isTransparent: false,
       };
-      if (data.success && data.response !== undefined) {
-        const filteredResponse = Object.fromEntries(
-          Object.entries(data.response).filter(([_, value]) => value !== null),
-        );
-        const res = {
-          ...initData,
-          ...filteredResponse,
-        };
-        setOriginalData(res);
-        setIsIncludedFlag(res.includedFlag);
-        setLanguageSelector(res.languageSelector);
-        setCurrencySelector(res.currencySelector);
-        setIsGeoLocationEnabled(res.ipOpen);
-        setFontColor(res.fontColor);
-        setBackgroundColor(res.backgroundColor);
-        setButtonColor(res.buttonColor);
-        setButtonBackgroundColor(res.buttonBackgroundColor);
-        setOptionBorderColor(res.optionBorderColor);
-        setSelectorPosition(res.selectorPosition);
-        setPositionData(res.positionData);
-        setIsTransparent(res.isTransparent);
-        setEditData(res);
-        setIsLoading(false);
-      }
+      const filteredResponse = Object.fromEntries(
+        Object.entries(data.response).filter(([_, value]) => value !== null),
+      );
+      const res = {
+        ...initData,
+        ...filteredResponse,
+      };
+      setOriginalData(res);
+      setIsIncludedFlag(res.includedFlag);
+      setLanguageSelector(res.languageSelector);
+      setCurrencySelector(res.currencySelector);
+      setIsGeoLocationEnabled(res.ipOpen);
+      setFontColor(res.fontColor);
+      setBackgroundColor(res.backgroundColor);
+      setButtonColor(res.buttonColor);
+      setButtonBackgroundColor(res.buttonBackgroundColor);
+      setOptionBorderColor(res.optionBorderColor);
+      setSelectorPosition(res.selectorPosition);
+      setPositionData(res.positionData);
+      setIsTransparent(res.isTransparent);
+      setEditData(res);
+      setIsLoading(false);
     };
     getSwitcherConfig();
     fetcher.submit(

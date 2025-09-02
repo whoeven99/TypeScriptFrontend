@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useRef } from "react";
 import { Button, Card, Progress, Skeleton, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { PhoneOutlined } from "@ant-design/icons";
 import { handleContactSupport } from "~/routes/app._index/route";
 import { GetProgressData, GetUserValue } from "~/api/JavaServer";
-
+import useReport from "../../scripts/eventReport";
 const { Text, Title } = Typography;
 
 interface ProgressingCardProps {
@@ -39,7 +39,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   const statusFetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
   const stopTranslateFetcher = useFetcher<any>();
-
+  const stopTranslateReport = useFetcher<any>();
+  const { report, trackExposure, fetcherState } = useReport();
+  const stopTranslateButtonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     languagefetcher.submit(
       {
@@ -376,7 +378,27 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         action: "/app",
       },
     );
+    report(
+      {
+        stopTranslate: JSON.stringify({ source, target: target[index] }),
+      },
+      { method: "post", action: "/app", eventType: "click" },
+      "dashboard_translation_task_stop",
+    );
   };
+
+  useEffect(() => {
+    if (status === 2 && stopTranslateButtonRef.current) {
+      trackExposure(
+        stopTranslateButtonRef.current,
+        {
+          stopTranslate: JSON.stringify({ source, target: target[index] }),
+        },
+        { method: "post", action: "/app", eventType: "exposure" },
+        "dashboard_translation_task_stop",
+      );
+    }
+  }, [status]);
 
   const handleReTranslate = () => {
     translateFetcher.submit(
@@ -409,6 +431,33 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         method: "post",
         action: "/app/language",
       },
+    );
+    report(
+      {
+        primaryLanguage: source,
+        selectedLanguage: target,
+        translateSettings1: "1",
+        translateSettings2: ["1"],
+        translateSettings3: [
+          "products",
+          "collection",
+          "article",
+          "blog_titles",
+          "pages",
+          "filters",
+          "metaobjects",
+          "metadata",
+          "navigation",
+          "shop",
+          "theme",
+          "delivery",
+          "shipping",
+        ],
+        customKey: "",
+        translateSettings5: false,
+      },
+      { method: "post", action: "/app", eventType: "click" },
+      "dashboard_translation_task_continue",
     );
   };
 
@@ -636,6 +685,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   )}
                   {status === 2 && (
                     <Button
+                      ref={stopTranslateButtonRef}
                       block
                       onClick={handleStopTranslate}
                       loading={stopTranslateFetcher.state === "submitting"}

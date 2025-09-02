@@ -21,7 +21,7 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import ProgressingCard from "~/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
-
+import useReport from "scripts/eventReport";
 const { Title, Text } = Typography;
 
 export interface WordsType {
@@ -80,7 +80,7 @@ const Index = () => {
 
   const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
-
+  const { report } = useReport();
   useEffect(() => {
     setIsLoading(false);
     themeFetcher.submit(
@@ -203,6 +203,15 @@ const Index = () => {
         action: "/log",
       },
     );
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "dashboard_language_manage",
+    );
   };
 
   const navigateToCurrency = () => {
@@ -215,6 +224,15 @@ const Index = () => {
         method: "POST",
         action: "/log",
       },
+    );
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "dashboard_currency_manage",
     );
   };
 

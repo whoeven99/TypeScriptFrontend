@@ -57,9 +57,8 @@ import {
   GetLanguageLocaleInfo,
   GetUserWords,
 } from "~/api/JavaServer";
-
+import useReport from "scripts/eventReport";
 const { Title, Text } = Typography;
-
 interface LanguageDataType {
   key: number;
   src: string[];
@@ -155,7 +154,6 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const googleAnalyticsFetcher = useFetcher<any>();
   const fetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
   const loadingLanguageFetcher = useFetcher<any>();
@@ -181,6 +179,7 @@ const Index = () => {
       Button: `${t("OK")}`,
     },
   };
+  const { report, trackExposure, fetcherState } = useReport();
 
   const handleConfigureQuota = () => {
     switch (currentModal) {
@@ -394,18 +393,6 @@ const Index = () => {
     }
   }, [translateFetcher.data]);
 
-  useEffect(()=>{
-    if (googleAnalyticsFetcher.data) {
-      console.log('google analytics',googleAnalyticsFetcher.data);
-      
-      // if (googleAnalyticsFetcher.data?.success) {
-      //   console.log("google analytic success");
-      // } else if (!googleAnalyticsFetcher.data?.success) {
-      //   console.log("google analytic failed");
-      // }
-      
-    }
-  },[googleAnalyticsFetcher])
   useEffect(() => {
     if (languageData.length) {
       const data = languageData.map((lang) => ({
@@ -765,22 +752,18 @@ const Index = () => {
       "translateSettings4",
       JSON.stringify(translateSettings4),
     );
-    googleAnalyticsFetcher.submit(
+    report(
       {
-        googleAnalytic: JSON.stringify({
-          primaryLanguage: languageSetting?.primaryLanguageCode,
-          selectedLanguage: selectedLanguageCode,
-          translateSettings1: translateSettings1,
-          translateSettings2: ["1"],
-          translateSettings3: translateSettings3,
-          customKey: customKey,
-          translateSettings5: translateSettings5,
-        }),
+        primaryLanguage: languageSetting?.primaryLanguageCode,
+        selectedLanguage: selectedLanguageCode,
+        translateSettings1: translateSettings1,
+        translateSettings2: ["1"],
+        translateSettings3: translateSettings3,
+        customKey: customKey,
+        translateSettings5: translateSettings5,
       },
-      {
-        method: "post",
-        action: "/app/language",
-      },
+      { method: "post", action: "/app", eventType: "click" },
+      "dashboard_translate_button",
     );
   };
 
