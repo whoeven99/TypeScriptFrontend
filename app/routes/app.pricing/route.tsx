@@ -153,7 +153,13 @@ const Index = () => {
         Credits: 500000,
         price: {
           currentPrice:
-            plan === 6 ? 1.99 : plan === 5 ? 2.99 : plan === 4 ? 3.59 : 3.99,
+            plan.id === 6
+              ? 1.99
+              : plan.id === 5
+                ? 2.99
+                : plan.id === 4
+                  ? 3.59
+                  : 3.99,
           comparedPrice: 3.99,
           currencyCode: "USD",
         },
@@ -164,7 +170,13 @@ const Index = () => {
         Credits: 1000000,
         price: {
           currentPrice:
-            plan === 6 ? 3.99 : plan === 5 ? 5.99 : plan === 4 ? 7.19 : 7.99,
+            plan.id === 6
+              ? 3.99
+              : plan.id === 5
+                ? 5.99
+                : plan.id === 4
+                  ? 7.19
+                  : 7.99,
           comparedPrice: 7.99,
           currencyCode: "USD",
         },
@@ -175,7 +187,13 @@ const Index = () => {
         Credits: 2000000,
         price: {
           currentPrice:
-            plan === 6 ? 7.99 : plan === 5 ? 11.99 : plan === 4 ? 14.39 : 15.99,
+            plan.id === 6
+              ? 7.99
+              : plan.id === 5
+                ? 11.99
+                : plan.id === 4
+                  ? 14.39
+                  : 15.99,
           comparedPrice: 15.99,
           currencyCode: "USD",
         },
@@ -186,11 +204,11 @@ const Index = () => {
         Credits: 3000000,
         price: {
           currentPrice:
-            plan === 6
+            plan.id === 6
               ? 11.99
-              : plan === 5
+              : plan.id === 5
                 ? 17.99
-                : plan === 4
+                : plan.id === 4
                   ? 21.79
                   : 23.99,
           comparedPrice: 23.99,
@@ -203,11 +221,11 @@ const Index = () => {
         Credits: 5000000,
         price: {
           currentPrice:
-            plan === 6
+            plan.id === 6
               ? 19.99
-              : plan === 5
+              : plan.id === 5
                 ? 29.99
-                : plan === 4
+                : plan.id === 4
                   ? 35.99
                   : 39.99,
           comparedPrice: 39.99,
@@ -220,11 +238,11 @@ const Index = () => {
         Credits: 10000000,
         price: {
           currentPrice:
-            plan === 6
+            plan.id === 6
               ? 39.99
-              : plan === 5
+              : plan.id === 5
                 ? 59.99
-                : plan === 4
+                : plan.id === 4
                   ? 71.99
                   : 79.99,
           comparedPrice: 79.99,
@@ -237,11 +255,11 @@ const Index = () => {
         Credits: 20000000,
         price: {
           currentPrice:
-            plan === 6
+            plan.id === 6
               ? 79.99
-              : plan === 5
+              : plan.id === 5
                 ? 119.99
-                : plan === 4
+                : plan.id === 4
                   ? 143.99
                   : 159.99,
           comparedPrice: 159.99,
@@ -254,11 +272,11 @@ const Index = () => {
         Credits: 30000000,
         price: {
           currentPrice:
-            plan === 6
+            plan.id === 6
               ? 119.99
-              : plan === 5
+              : plan.id === 5
                 ? 179.99
-                : plan === 4
+                : plan.id === 4
                   ? 215.99
                   : 239.99,
           comparedPrice: 239.99,
@@ -370,7 +388,14 @@ const Index = () => {
 
   useEffect(() => {
     if (planCancelFetcher.data) {
-      dispatch(setPlan({ plan: 2 }));
+      dispatch(
+        setPlan({
+          plan: {
+            id: 2,
+            feeType: 0,
+          },
+        }),
+      );
       dispatch(setUpdateTime({ updateTime: "" }));
       setCancelPlanWarnModal(false);
     }
@@ -387,9 +412,11 @@ const Index = () => {
           amount: 76.68,
         }),
         buttonText:
-          plan === 4 ? t("pricing.current_plan") : t("pricing.get_start"),
+          plan.id === 4 && yearly === !!(plan.feeType === 2)
+            ? t("pricing.current_plan")
+            : t("pricing.get_start"),
         buttonType: "default",
-        disabled: plan === 4,
+        disabled: plan.id === 4 && yearly === !!(plan.feeType === 2),
         features: [
           t("{{credits}} credits/month", { credits: "1,500,000" }),
           t("Glossary ({{count}} entries)", { count: 10 }),
@@ -413,9 +440,11 @@ const Index = () => {
           amount: 191.88,
         }),
         buttonText:
-          plan === 5 ? t("pricing.current_plan") : t("pricing.get_start"),
+          plan.id === 5 && yearly === !!(plan.feeType === 2)
+            ? t("pricing.current_plan")
+            : t("pricing.get_start"),
         buttonType: "default",
-        disabled: plan === 5,
+        disabled: plan.id === 5 && yearly === !!(plan.feeType === 2),
         features: [
           t("all in Basic Plan"),
           t("{{credits}} credits/month", { credits: "3,000,000" }),
@@ -439,8 +468,10 @@ const Index = () => {
           amount: 383.88,
         }),
         buttonText:
-          plan === 6 ? t("pricing.current_plan") : t("pricing.get_start"),
-        disabled: plan === 6,
+          plan.id === 6 && yearly === !!(plan.feeType === 2)
+            ? t("pricing.current_plan")
+            : t("pricing.get_start"),
+        disabled: plan.id === 6 && yearly === !!(plan.feeType === 2),
         isRecommended: true,
         features: [
           t("all in Pro Plan"),
@@ -458,7 +489,7 @@ const Index = () => {
         ],
       },
     ],
-    [plan],
+    [plan, yearly],
   );
 
   const tableData = useMemo(
@@ -839,15 +870,15 @@ const Index = () => {
                 <div>
                   <Text>{t("Current plan: ")}</Text>
                   <Text style={{ color: "#007F61", fontWeight: "bold" }}>
-                    {plan === 3
+                    {plan.id === 3
                       ? "Starter"
-                      : plan === 4
+                      : plan.id === 4
                         ? "Basic"
-                        : plan === 5
+                        : plan.id === 5
                           ? "Pro"
-                          : plan === 6
+                          : plan.id === 6
                             ? "Premium"
-                            : plan === 7
+                            : plan.id === 7
                               ? "Free Trial"
                               : "Free"}{" "}
                     {t("plan")}
@@ -1034,7 +1065,8 @@ const Index = () => {
                 display: "flex",
                 flexDirection: "column",
                 position: "relative",
-                borderColor: plan === 1 || plan === 2 ? "#007F61" : undefined,
+                borderColor:
+                  plan.id === 1 || plan.id === 2 ? "#007F61" : undefined,
                 minWidth: "220px",
               }}
               styles={{
@@ -1045,7 +1077,7 @@ const Index = () => {
                   padding: "16px",
                 },
               }}
-              loading={!plan}
+              loading={!plan.id}
             >
               <Title level={5}>Free</Title>
               <div style={{ margin: yearly ? "12px 0 46px 0" : "12px  0" }}>
@@ -1056,11 +1088,13 @@ const Index = () => {
               <Button
                 type="default"
                 block
-                disabled={plan === 1 || plan === 2 || selectedPayPlanOption}
+                disabled={
+                  plan.id === 1 || plan.id === 2 || selectedPayPlanOption
+                }
                 style={{ marginBottom: hasOpenFreePlan ? "20px" : "70px" }}
                 onClick={() => setCancelPlanWarnModal(true)}
               >
-                {plan === 1 || plan === 2
+                {plan.id === 1 || plan.id === 2
                   ? t("pricing.current_plan")
                   : t("pricing.get_start")}
               </Button>
@@ -1142,7 +1176,9 @@ const Index = () => {
                 color="#1890ff"
                 style={{
                   display:
-                    item.isRecommended && plan <= 2 && plan ? "block" : "none",
+                    item.isRecommended && plan.id <= 2 && plan.id
+                      ? "block"
+                      : "none",
                   right: -8,
                 }}
               >
@@ -1156,7 +1192,7 @@ const Index = () => {
                     position: "relative",
                     borderColor: item.disabled
                       ? "#007F61"
-                      : item.isRecommended && plan <= 2 && plan
+                      : item.isRecommended && plan.id <= 2 && plan.id
                         ? "#1890ff"
                         : undefined,
                     minWidth: "220px",
@@ -1169,7 +1205,7 @@ const Index = () => {
                       padding: "16px",
                     },
                   }}
-                  loading={!plan}
+                  loading={!plan.id}
                 >
                   <Title level={5}>
                     {yearly ? item.yearlyTitle : item.title}
@@ -1191,7 +1227,9 @@ const Index = () => {
                     block
                     disabled={item.disabled || selectedPayPlanOption}
                     style={{ marginBottom: "20px" }}
-                    onClick={() => handlePayForPlan({ plan, trialDays: 0 })}
+                    onClick={() =>
+                      handlePayForPlan({ plan: item, trialDays: 0 })
+                    }
                     loading={
                       yearly == selectedPayPlanOption?.yearly &&
                       item.title == selectedPayPlanOption?.title &&
@@ -1206,7 +1244,9 @@ const Index = () => {
                       block
                       disabled={item.disabled || selectedPayPlanOption}
                       style={{ marginBottom: "20px" }}
-                      onClick={() => handlePayForPlan({ plan, trialDays: 5 })}
+                      onClick={() =>
+                        handlePayForPlan({ plan: item, trialDays: 5 })
+                      }
                       loading={
                         yearly == selectedPayPlanOption?.yearly &&
                         item.title == selectedPayPlanOption?.title &&
@@ -1319,11 +1359,11 @@ const Index = () => {
               {t("Buy Credits")}
             </Title> */}
             <Text style={{ fontWeight: "bold" }}>
-              {plan === 6
+              {plan.id === 6
                 ? t("discountText.premium")
-                : plan === 5
+                : plan.id === 5
                   ? t("discountText.pro")
-                  : plan === 4
+                  : plan.id === 4
                     ? t("discountText.basic")
                     : t("discountText.free")}
             </Text>
@@ -1364,7 +1404,7 @@ const Index = () => {
                   >
                     {option.Credits.toLocaleString()} {t("Credits")}
                   </Text>
-                  {plan === 6 || plan === 5 || plan === 4 ? (
+                  {plan.id === 6 || plan.id === 5 || plan.id === 4 ? (
                     <>
                       <Title
                         level={3}

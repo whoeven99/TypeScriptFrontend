@@ -383,7 +383,10 @@ export default function App() {
         if (!plan || !updateTime) {
           dispatch(
             setPlan({
-              plan: data?.response?.userSubscriptionPlan || "2",
+              plan: {
+                id: data?.response?.userSubscriptionPlan || 2,
+                feeType: data?.response?.feeType || 0,
+              },
             }),
           );
           if (data?.response?.currentPeriodEnd) {
