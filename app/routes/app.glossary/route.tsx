@@ -37,7 +37,7 @@ import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import defaultStyles from "../styles/defaultStyles.module.css";
-
+import useReport from "scripts/eventReport";
 const { Title, Text } = Typography;
 
 export interface GLossaryDataType {
@@ -168,7 +168,7 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
-
+  const { report } = useReport();
   useEffect(() => {
     loadingFetcher.submit(
       { loading: JSON.stringify(true) },
@@ -295,6 +295,15 @@ const Index = () => {
       setGlossaryModalId(key);
       setIsGlossaryModalOpen(true); // 打开Modal
     }
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "glossary_list_edit",
+    );
   };
 
   const columns = [
@@ -306,7 +315,18 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Switch
           checked={record?.status}
-          onClick={() => handleApplication(record.key)}
+          onClick={() => {
+            handleApplication(record.key);
+            report(
+              { status: !record?.status ? 1 : 0 },
+              {
+                action: "/app",
+                method: "post",
+                eventType: "click",
+              },
+              "glossary_list_status",
+            );
+          }}
           loading={record.loading} // 使用每个项的 loading 状态
         />
       ),

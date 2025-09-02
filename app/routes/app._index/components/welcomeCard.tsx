@@ -1,7 +1,7 @@
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { Button, Card, ConfigProvider, Flex, Skeleton, Typography } from "antd";
 import { useTranslation } from "react-i18next";
-
+import useReport from "scripts/eventReport";
 const { Text } = Typography;
 
 interface WelcomeCardProps {
@@ -18,7 +18,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const fetcher = useFetcher<any>();
-
+  const { report, trackExposure, fetcherState } = useReport();
   const handleSetting = () => {
     if (!switcherOpen) {
       // TODO: Disable App
@@ -48,6 +48,11 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
         navigate("/app/switcher");
       }, 500);
     }
+    report(
+      { status: !switcherOpen ? 0: 1 },
+      { method: "post", action: "/app", eventType: "click" },
+      "dashboard_switcher_button",
+    );
   };
 
   return (

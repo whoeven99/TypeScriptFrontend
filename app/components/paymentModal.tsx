@@ -14,6 +14,7 @@ import { useFetcher } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import { handleContactSupport } from "~/routes/app._index/route";
 import { useSelector } from "react-redux";
+import useReport from "../../scripts/eventReport";
 import "./styles.css";
 
 const { Title, Text } = Typography;
@@ -63,7 +64,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const fetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
-
+  const { report } = useReport();
   const { plan } = useSelector((state: any) => state.userConfig);
 
   const options: OptionType[] = useMemo(
@@ -296,7 +297,18 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   //     setCredits(credits);
   //   }
   // };
-
+  // const handleContactSupportReport = ()=>{
+  //   handleContactSupport();
+  //   report(
+  //     {},
+  //     {
+  //       action: "/app",
+  //       method: "post",
+  //       eventType: "click",
+  //     },
+  //     "dashboard_contact_us",
+  //   );
+  // }
   const onClick = () => {
     setBuyButtonLoading(true);
     const payInfo = {
@@ -340,7 +352,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
             <Button
               key="contact-support"
               type="link"
-              onClick={() => handleContactSupport()}
+              onClick={handleContactSupport}
               style={{ marginLeft: "-15px" }}
             >
               {t("Contact support")}

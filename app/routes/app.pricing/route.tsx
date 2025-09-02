@@ -39,7 +39,7 @@ import { mutationAppSubscriptionCreate } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import { handleContactSupport } from "../app._index/route";
 import { setPlan, setUpdateTime } from "~/store/modules/userConfig";
-
+import useReport from "scripts/eventReport";
 const { Title, Text, Paragraph } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -144,7 +144,7 @@ const Index = () => {
   const { plan, updateTime, chars, totalChars } = useSelector(
     (state: any) => state.userConfig,
   );
-
+  const { report } = useReport();
   const creditOptions: OptionType[] = useMemo(
     () => [
       {
@@ -316,7 +316,20 @@ const Index = () => {
   };
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint(); // 监听屏幕断点
-
+  const handleSetYearlyReport = () => {
+    setYearly(!yearly);
+    report(
+      {
+        status: yearly ? 0 : 1,
+      },
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "pricing_plan_yearly_switcher",
+    );
+  };
   useEffect(() => {
     const checkFreeUsed = async () => {
       try {
@@ -827,6 +840,15 @@ const Index = () => {
       { payForPlan: JSON.stringify({ ...plan, yearly, trialDays }) },
       { method: "POST" },
     );
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      trialDays !== 5 ? "pricing_plan_start" : "pricing_plan_trial",
+    );
   };
 
   return (
@@ -861,7 +883,18 @@ const Index = () => {
                 </Popover>
                 <Button
                   type="primary"
-                  onClick={() => setAddCreditsModalOpen(true)}
+                  onClick={() => {
+                    setAddCreditsModalOpen(true);
+                    report(
+                      {},
+                      {
+                        action: "/app",
+                        method: "post",
+                        eventType: "click",
+                      },
+                      "pricing_balance_add",
+                    );
+                  }}
                 >
                   {t("Add credits")}
                 </Button>
@@ -1001,10 +1034,7 @@ const Index = () => {
             >
               <Flex align="center">
                 <Space align="center" size="small">
-                  <Switch
-                    checked={yearly}
-                    onChange={() => setYearly(!yearly)}
-                  />
+                  <Switch checked={yearly} onChange={handleSetYearlyReport} />
                   <Text>{t("Yearly")}</Text>
                 </Space>
                 <div className="yearly_save">
@@ -1092,7 +1122,18 @@ const Index = () => {
                   plan.id === 1 || plan.id === 2 || selectedPayPlanOption
                 }
                 style={{ marginBottom: hasOpenFreePlan ? "20px" : "70px" }}
-                onClick={() => setCancelPlanWarnModal(true)}
+                onClick={() => {
+                  setCancelPlanWarnModal(true);
+                  report(
+                    {},
+                    {
+                      action: "/app",
+                      method: "post",
+                      eventType: "click",
+                    },
+                    "pricing_plan_trial",
+                  );
+                }}
               >
                 {plan.id === 1 || plan.id === 2
                   ? t("pricing.current_plan")
@@ -1334,7 +1375,20 @@ const Index = () => {
             </Space>
           </Col>
           <Col span={18}>
-            <Collapse items={collapseData} />
+            <Collapse
+              items={collapseData}
+              onChange={() => {
+                report(
+                  {},
+                  {
+                    action: "/app",
+                    method: "post",
+                    eventType: "click",
+                  },
+                  "pricing_faq_click",
+                );
+              }}
+            />
           </Col>
         </Row>
       </Space>

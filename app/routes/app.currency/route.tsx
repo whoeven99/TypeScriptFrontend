@@ -38,7 +38,7 @@ import { setTableData } from "~/store/modules/currencyDataTable";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import { useNavigate } from "react-router-dom";
-
+import useReport from "scripts/eventReport";
 const { Title, Text } = Typography;
 
 export interface CurrencyDataType {
@@ -249,7 +249,7 @@ const Index = () => {
     () => currentPageKeys.some((key) => selectedRowKeys.includes(key)),
     [currentPageKeys, selectedRowKeys],
   );
-
+  const { report } = useReport();
   const dispatch = useDispatch();
   const { t } = useTranslation();
 
@@ -488,6 +488,15 @@ const Index = () => {
     const row = dataSource.find((item) => item.key === key);
     setSelectedRow(row);
     setIsCurrencyEditModalOpen(true);
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "currency_list_edit",
+    );
   };
 
   const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
@@ -516,6 +525,15 @@ const Index = () => {
       });
     }
     setDeleteLoading(true);
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "currency_list_delete",
+    );
   };
 
   return (
@@ -559,7 +577,18 @@ const Index = () => {
           </Flex>
           <Button
             type="primary"
-            onClick={() => setIsAddCurrencyModalOpen(true)}
+            onClick={() => {
+              setIsAddCurrencyModalOpen(true);
+              report(
+                {},
+                {
+                  action: "/app",
+                  method: "post",
+                  eventType: "click",
+                },
+                "currency_navi_add",
+              );
+            }}
           >
             {t("Add Currency")}
           </Button>
