@@ -67,7 +67,7 @@
     "@shopify/api-codegen-preset": "^1.1.1",
     "@types/crypto-js": "^4.2.2",
     "@types/eslint": "^8.40.0",
-    "@types/jquery": "^3.5.33",
+    "@types/jquery": "^3.5.30",
     "@types/lodash": "^4.17.16",
     "@types/mockjs": "^1.0.10",
     "@types/node": "^22.2.0",
