@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import { Card, Button, Typography, Skeleton, Space, Popover } from "antd";
 import { useTranslation } from "react-i18next";
 import { PhoneOutlined, WechatOutlined } from "@ant-design/icons";
-
+import useReport from "scripts/eventReport";
 const { Text } = Typography;
 
 interface ContactCardProps {
@@ -12,7 +12,18 @@ interface ContactCardProps {
 
 const ContactCard: React.FC<ContactCardProps> = ({ isChinese, onClick }) => {
   const { t } = useTranslation();
-
+  const { report } = useReport();
+  const handleContactSupportReport = ()=>{
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "dashboard_contact_us",
+    );
+  }
   return (
     <Suspense
       fallback={<Skeleton.Button active style={{ height: 150 }} block />}
@@ -58,7 +69,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ isChinese, onClick }) => {
                 }
                 trigger="click"
               >
-                <Button>{t("contact.contactButton")}</Button>
+                <Button onClick={handleContactSupportReport}>{t("contact.contactButton")}</Button>
               </Popover>
             ) : (
               <Button onClick={onClick}>{t("contact.contactButton")}</Button>

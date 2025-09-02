@@ -1406,6 +1406,8 @@ export const GoogleAnalyticClickReport = async (params:any,name:string) => {
         }),
       },
     );
+    console.log('google params',params);
+    
     console.log(`${name} ${params.eventType}`,response.status === 204);
     return response.status === 204;
     

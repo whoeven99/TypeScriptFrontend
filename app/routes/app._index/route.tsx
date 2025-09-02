@@ -176,7 +176,29 @@ const Index = () => {
       devStatus: t("In development"),
     },
   ];
-
+  const handleCommitRequest = () => {
+    handleContactSupport();
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "dashboard_devprogress_request",
+    );
+  };
+  const handleReportCiwiHelpCenter = ()=>{
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "dashboard_footer_help_center",
+    );
+  }
   const navigateToTranslate = () => {
     navigate("/app/translate", {
       state: { from: "/app", selectedLanguageCode: "" },
@@ -191,7 +213,36 @@ const Index = () => {
       },
     );
   };
-
+  const navigateToHelpSwitchCurrency = () => {
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "dashboard_currency_guide",
+    );
+    window.open(
+      "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/",
+      "_blank",
+    );
+  };
+  const navigateToSwitchCurrencyDetail = () => {
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "dashboard_currency_view_detail",
+    );
+    window.open(
+      "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/",
+      "_blank",
+    );
+  };
   const navigateToLanguage = () => {
     navigate("/app/language");
     fetcher.submit(
@@ -442,14 +493,7 @@ const Index = () => {
                     {isLoading ? (
                       <Skeleton.Button active />
                     ) : (
-                      <Button
-                        onClick={() =>
-                          window.open(
-                            "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/",
-                            "_blank",
-                          )
-                        }
-                      >
+                      <Button onClick={navigateToHelpSwitchCurrency}>
                         {t("transCurrencyCard2.button")}
                       </Button>
                     )}
@@ -479,14 +523,7 @@ const Index = () => {
                     {isLoading ? (
                       <Skeleton.Button active />
                     ) : (
-                      <Button
-                        onClick={() =>
-                          window.open(
-                            "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/",
-                            "_blank",
-                          )
-                        }
-                      >
+                      <Button onClick={navigateToSwitchCurrencyDetail}>
                         {t("transCurrencyCard3.button")}
                       </Button>
                     )}
@@ -519,7 +556,7 @@ const Index = () => {
                 {isLoading ? (
                   <Skeleton.Button active />
                 ) : (
-                  <Button onClick={handleContactSupport}>
+                  <Button onClick={handleCommitRequest}>
                     {t("planCard.button")}
                   </Button>
                 )}
@@ -532,7 +569,18 @@ const Index = () => {
             <Col xs={24} sm={24} md={12}>
               <ContactCard
                 isChinese={isChinese}
-                onClick={handleContactSupport}
+                onClick={() => {
+                  report(
+                    {},
+                    {
+                      action: "/app",
+                      method: "post",
+                      eventType: "click",
+                    },
+                    "dashboard_contact_us",
+                  );
+                  handleContactSupport();
+                }}
               />
             </Col>
             <Col xs={24} sm={24} md={12}>
@@ -552,6 +600,7 @@ const Index = () => {
             to="https://ciwi.bogdatech.com/help"
             target="_blank"
             style={{ margin: "0 5px" }}
+            onClick={handleReportCiwiHelpCenter}
           >
             {t("Ciwi Help Center")}
           </Link>
