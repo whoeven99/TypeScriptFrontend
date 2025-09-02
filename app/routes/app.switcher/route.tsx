@@ -500,22 +500,18 @@ const Index = () => {
   const handleOptionChange = (value: string) => {
     const switcherType = {
       "sidebar widget": {
-        languageSelector: false,
-        currencySelector: false,
+        status: 3,
       },
-      "language_and_currency": {
-        languageSelector: true,
-        currencySelector: true,
+      language_and_currency: {
+        status: 0,
       },
-      "language": {
-        languageSelector: true,
-        currencySelector: false,
+      language: {
+        status: 1,
       },
-      "currency": {
-        languageSelector: false,
-        currencySelector: true,
+      currency: {
+        status: 2,
       },
-    };
+    } as any;
     switch (value) {
       case "sidebar widget":
         handleEditData({
@@ -548,7 +544,7 @@ const Index = () => {
     }
     report(
       {
-        status: value
+        status: switcherType[value].status,
       },
       {
         action: "/app",
@@ -866,9 +862,20 @@ const Index = () => {
                     <Switch
                       disabled={!languageSelector && currencySelector}
                       checked={isIncludedFlag}
-                      onChange={(checked) =>
-                        handleEditData({ includedFlag: checked })
-                      }
+                      onChange={(checked) => {
+                        handleEditData({ includedFlag: checked });
+                        report(
+                          {
+                            status: checked ? 1 : 0,
+                          },
+                          {
+                            action: "/app",
+                            method: "post",
+                            eventType: "click",
+                          },
+                          "switcher_style_flag",
+                        );
+                      }}
                     />
                   </div>
                   <div

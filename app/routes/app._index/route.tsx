@@ -22,6 +22,11 @@ import ProgressingCard from "~/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
 import useReport from "scripts/eventReport";
+import { useSelector } from "react-redux";
+import FirstTranslationModal from "~/components/firstTranslationModal";
+import CorrectIcon from "~/components/icon/correctIcon";
+import GiftIcon from "~/components/icon/giftIcon";
+
 const { Title, Text } = Typography;
 
 export interface WordsType {
@@ -194,7 +199,7 @@ const Index = () => {
       {
         action: "/app",
         method: "post",
-        eventType: "click",
+        eventType: "click", 
       },
       "dashboard_footer_help_center",
     );
