@@ -35,7 +35,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { Page, Select } from "@shopify/polaris";
 import { setTableData } from "~/store/modules/languageTableData";
-import { t } from "~/store/modules/userConfig";
+import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import { S } from "node_modules/vite/dist/node/types.d-aGj9QkWt";
 
@@ -348,7 +348,7 @@ const Index = () => {
         const locale = shopLanguages.find(
           (language: ShopLocalesType) => language.primary === true,
         )?.locale;
-        dispatch(t({ locale: locale || "" }));
+        dispatch(setLocale({ locale: locale || "" }));
       }
     }
   }, [languageFetcher.data]);
