@@ -1995,17 +1995,20 @@ export const InsertOrUpdateOrder = async ({
 export const AddCharsByShopName = async ({
   shop,
   amount,
+  gid,
 }: {
   shop: string;
   amount: number;
+  gid: string;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translationCounter/addCharsByShopName`,
+      url: `${process.env.SERVER_URL}/translationCounter/addCharsByShopName?shopName=${shop}`,
       method: "POST",
       data: {
         shopName: shop,
         chars: amount,
+        gid: gid,
       },
     });
     console.log(`${shop} AddCharsByShopName:`, response.data);

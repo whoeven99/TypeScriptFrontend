@@ -36,7 +36,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { setTableData } from "~/store/modules/languageTableData";
-import { setUserConfig } from "~/store/modules/userConfig";
+import { t } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 
 const { Sider, Content } = Layout;
@@ -447,7 +447,7 @@ const Index = () => {
         const locale = shopLanguages.find(
           (language: ShopLocalesType) => language.primary === true,
         )?.locale;
-        dispatch(setUserConfig({ locale: locale || "" }));
+        dispatch(t({ locale: locale || "" }));
       }
     }
   }, [languageFetcher.data]);

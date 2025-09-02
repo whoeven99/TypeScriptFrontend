@@ -43,7 +43,14 @@ import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
 import { useDispatch, useSelector } from "react-redux";
-import { setUserConfig } from "~/store/modules/userConfig";
+import {
+  setChars,
+  setPlan,
+  setShop,
+  setTotalChars,
+  setUpdateTime,
+  setUserConfigIsLoading,
+} from "~/store/modules/userConfig";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -257,23 +264,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    if (userData) {
-      try {
-        const words = await GetUserWords({
-          shop,
-          server: process.env.SERVER_URL as string,
-        });
-        const data = {
-          chars: words?.chars || 0,
-          totalChars: words?.totalChars || 0,
-        };
-        return json({ data });
-      } catch (error) {
-        console.error("Error userData app:", error);
-        return json({ error: "Error userData app" }, { status: 500 });
-      }
-    }
-
     if (statusData) {
       try {
         const data = await GetLanguageStatus({
@@ -392,7 +382,7 @@ export default function App() {
       if (data?.success) {
         if (!plan || !updateTime) {
           dispatch(
-            setUserConfig({
+            setPlan({
               plan: data?.response?.userSubscriptionPlan || "2",
             }),
           );
@@ -404,12 +394,28 @@ export default function App() {
                 day: "2-digit",
               })
               .replace(/\//g, "-");
-            dispatch(setUserConfig({ updateTime: date }));
+            dispatch(setUpdateTime({ updateTime: date }));
           }
         }
       }
     };
     getPlan();
+
+    const getWords = async () => {
+      const data = await GetUserWords({
+        shop,
+        server: server as string,
+      });
+      dispatch(setChars({ chars: data?.response?.chars }));
+      dispatch(
+        setTotalChars({
+          totalChars: data?.response?.totalChars,
+        }),
+      );
+      dispatch(setUserConfigIsLoading({ isLoading: false }));
+    };
+    getWords();
+    dispatch(setShop({ shop: shop as string }));
     setIsClient(true);
     const shopName = localStorage.getItem("shop");
     if (!shopName) {

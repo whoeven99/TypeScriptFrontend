@@ -348,7 +348,7 @@
   "Please select a language": "请选择一个语言",
   "The 20 language limit has been reached": "20语言限制已达到",
   "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "基于 Shopify 的语言限制，您只能添加最多 20 种语言。请删除一些语言然后继续。",
-  "Auto translate": "自动翻译",
+  "Auto translation": "自动翻译",
   "{{credits}} credits/month": "{{credits}} 积分/月",
   "Glossary ({{count}} entries)": "术语表 ({{count}} 条目)",
   "starter_features1": "使用私有AI模型接口翻译（支持 google translate）",
