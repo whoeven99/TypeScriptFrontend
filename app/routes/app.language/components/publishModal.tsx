@@ -69,11 +69,14 @@ const PublishModal: React.FC<PublishModalProps> = ({
 
   useEffect(() => {
     if (primaryMarketFetcher.data?.success) {
-      setPrimaryMarketId(
-        primaryMarketFetcher.data.data.primaryMarket.map(
-          (item: any) => item.id,
-        ),
-      );
+      const primaryMarket = primaryMarketFetcher.data.data.primaryMarket;
+      if (Array.isArray(primaryMarket)) {
+        setPrimaryMarketId(
+          primaryMarket.map((item: any) => item.id),
+        );
+      } else {
+        console.error("primaryMarket is not an array or is undefined");
+      }
     }
   }, [primaryMarketFetcher.data]);
 

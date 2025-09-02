@@ -19,7 +19,6 @@
     "paths": {
       "~/*": ["./app/*"]
     },
-    "types": ["node","jquery"]
-    
+    "types": ["node","jquery", "react", "react-dom"]
   }
 }

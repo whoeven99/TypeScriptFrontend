@@ -1054,7 +1054,7 @@ const Index = () => {
         isVisible={isLanguageModalOpen}
         setIsModalOpen={setIsLanguageModalOpen}
         languageLocaleInfo={languageLocaleInfo}
-        primaryLanguage={shopPrimaryLanguage[0]}
+        primaryLanguage={shopPrimaryLanguage?.[0] || null}
       />
       <PreviewModal
         visible={previewModalVisible}
@@ -1085,7 +1085,7 @@ const Index = () => {
         setIsModalOpen={setIsPublishModalOpen}
         languageCode={publishModalLanguageCode}
         languageName={
-          shopLanguagesLoad.find(
+          shopLanguagesLoad?.find(
             (item: any) => item.locale === publishModalLanguageCode,
           )?.name || ""
         }
