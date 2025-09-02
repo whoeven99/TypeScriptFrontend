@@ -32,7 +32,6 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
           action: "/log",
         },
       );
-      report({status:1}, { method: "post", action: "/app", eventType: "click" }, "dashboard_switcher_button");
     } else {
       // TODO: Setup App
       localStorage.setItem("switcherCard", "true");
@@ -48,8 +47,12 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
       setTimeout(() => {
         navigate("/app/switcher");
       }, 500);
-      report({status:0}, { method: "post", action: "/app", eventType: "click" }, "dashboard_switcher_button");
     }
+    report(
+      { status: !switcherOpen ? 0: 1 },
+      { method: "post", action: "/app", eventType: "click" },
+      "dashboard_switcher_button",
+    );
   };
 
   return (

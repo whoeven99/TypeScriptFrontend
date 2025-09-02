@@ -30,7 +30,7 @@
   "Asia": "Asia",
   "Authentication is required and has failed or has not been provided.": "Authentication is required and has failed or has not been provided.",
   "Auto": "Auto",
-  "Auto translate": "Auto-translate",
+  "Auto translation": "Auto-translate",
   "Auto translate updated successfully": "Auto translate updated successfully",
   "Automatic IP switching": "Automatic IP switching",
   "Automatic translation updates": "Automatic translation updates",
@@ -659,5 +659,14 @@
   "Share with 1 store": "Delen met 1 winkel",
   "Premium Plan": "Premium-abonnement →",
   "Share with up to 3 stores": "Delen met maximaal 3 winkels",
-  "Shared Plan": "Gedeeld plan"
+  "Shared Plan": "Gedeeld plan",
+  "1M free credits": "1M gratis credits",
+  "Image & alt text translation": "Afbeelding en alt-tekst vertaling",
+  "IP-based switching": "IP-basierter Wechsel",
+  "5 Days Free Trial >>": "5 dagen gratis proefperiode >>",
+  "🎁 Get free credits": "🎁 Gratis credits krijgen",
+  "✅ Give 1,000,000 points": "✅ 1.000.000 punten geven",
+  "✅ 5-day free trial (any plan)": "✅ 5 dagen gratis proefperiode (elke tarief)",
+  "Receive": "Ontvangen"
+
 }

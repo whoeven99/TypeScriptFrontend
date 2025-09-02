@@ -58,6 +58,8 @@ import {
   GetUserWords,
 } from "~/api/JavaServer";
 import useReport from "scripts/eventReport";
+import FirstTranslationModal from "~/components/firstTranslationModal";
+
 const { Title, Text } = Typography;
 interface LanguageDataType {
   key: number;
@@ -148,6 +150,8 @@ const Index = () => {
 
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showWarnModal, setShowWarnModal] = useState(false);
+  const [firstTranslationModalShow, setFirstTranslationModalShow] =
+    useState(false);
 
   const dispatch = useDispatch();
   const languageCardRef = useRef<HTMLDivElement>(null);
@@ -365,8 +369,11 @@ const Index = () => {
         ) {
           const getUserWords = async () => {
             const data = await GetUserWords({ shop, server });
-            if (data.success) {
-              if (data?.response?.totalChars <= data?.response?.chars) {
+
+            if (data?.success) {
+              if (!data?.response?.totalChars) {
+                setFirstTranslationModalShow(true);
+              } else if (data?.response?.totalChars <= data?.response?.chars) {
                 setNeedPay(true);
                 setShowPaymentModal(true);
               }
@@ -633,6 +640,15 @@ const Index = () => {
         action: "/log",
       },
     );
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "translate_setting_api",
+    );
   };
 
   const checkIfNeedPay = async () => {
@@ -763,7 +779,7 @@ const Index = () => {
         translateSettings5: translateSettings5,
       },
       { method: "post", action: "/app", eventType: "click" },
-      "dashboard_translate_button",
+      "translate_navi_translate",
     );
   };
 
@@ -1802,6 +1818,10 @@ const Index = () => {
         ) : (
           <NoLanguageSetCard />
         )}
+        <FirstTranslationModal
+          show={firstTranslationModalShow}
+          setShow={setFirstTranslationModalShow}
+        />
         <Modal
           open={isApiKeyModalOpen}
           onCancel={handleApiKeyModalClose}

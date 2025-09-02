@@ -193,18 +193,27 @@ const Index = () => {
       "dashboard_devprogress_request",
     );
   };
-  const handleReportCiwiHelpCenter = ()=>{
+  const handleReportCiwiHelpCenter = () => {
     report(
       {},
       {
         action: "/app",
         method: "post",
-        eventType: "click", 
+        eventType: "click",
       },
       "dashboard_footer_help_center",
     );
-  }
+  };
   const navigateToTranslate = () => {
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "dashboard_translate_button",
+    );
     navigate("/app/translate", {
       state: { from: "/app", selectedLanguageCode: "" },
     });

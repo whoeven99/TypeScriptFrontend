@@ -33,11 +33,12 @@ import languageItemsData, {
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
-import { setUserConfig } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
+import { setLocale } from "~/store/modules/userConfig";
+
 const { Text, Title } = Typography;
 
 interface ManageSelectDataType {
@@ -488,7 +489,7 @@ const Index = () => {
         const locale = shopLanguages.find(
           (language: ShopLocalesType) => language.primary === true,
         )?.locale;
-        dispatch(setUserConfig({ locale: locale || "" }));
+        dispatch(setLocale({ locale: locale || "" }));
       }
     }
   }, [languageFetcher.data]);

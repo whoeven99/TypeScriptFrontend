@@ -168,7 +168,7 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
-  const {report} = useReport();
+  const { report } = useReport();
   useEffect(() => {
     loadingFetcher.submit(
       { loading: JSON.stringify(true) },
@@ -302,7 +302,7 @@ const Index = () => {
         method: "post",
         eventType: "click",
       },
-      "glossary_navi_creat",
+      "glossary_list_edit",
     );
   };
 
@@ -315,7 +315,18 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Switch
           checked={record?.status}
-          onClick={() => handleApplication(record.key)}
+          onClick={() => {
+            handleApplication(record.key);
+            report(
+              { status: !record?.status ? 1 : 0 },
+              {
+                action: "/app",
+                method: "post",
+                eventType: "click",
+              },
+              "glossary_list_status",
+            );
+          }}
           loading={record.loading} // 使用每个项的 loading 状态
         />
       ),

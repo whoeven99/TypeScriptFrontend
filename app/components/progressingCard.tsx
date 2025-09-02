@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Button, Card, Progress, Skeleton, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useFetcher, useNavigate } from "@remix-run/react";
@@ -42,6 +42,20 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   const stopTranslateReport = useFetcher<any>();
   const { report, trackExposure, fetcherState } = useReport();
   const stopTranslateButtonRef = useRef<HTMLButtonElement>(null);
+
+  const handleReTranslateReport = () => {
+    navigate("/app/translate");
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "dashboard_translation_task_retranslate",
+    );
+  };
+
   useEffect(() => {
     languagefetcher.submit(
       {
@@ -657,13 +671,22 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                     >
                       <Button
                         block
-                        onClick={() =>
+                        onClick={() => {
                           navigate("/app/manage_translation", {
                             state: {
                               key: target[index],
                             },
-                          })
-                        }
+                          });
+                          report(
+                            {},
+                            {
+                              action: "/app",
+                              method: "post",
+                              eventType: "click",
+                            },
+                            "dashboard_translation_task_review",
+                          );
+                        }}
                       >
                         {t("progressing.review")}
                       </Button>
@@ -705,13 +728,22 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                     >
                       <Button
                         block
-                        onClick={() =>
+                        onClick={() => {
                           navigate("/app/manage_translation", {
                             state: {
                               key: target[index],
                             },
-                          })
-                        }
+                          });
+                          report(
+                            {},
+                            {
+                              action: "/app",
+                              method: "post",
+                              eventType: "click",
+                            },
+                            "dashboard_translation_task_review",
+                          );
+                        }}
                       >
                         {t("progressing.review")}
                       </Button>
@@ -765,7 +797,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                       >
                         {t("progressing.contactButton")}
                       </Button> */}
-                      <Button block onClick={() => navigate("/app/translate")}>
+                      <Button block onClick={handleReTranslateReport}>
                         {t("progressing.reTranslate")}
                       </Button>
                     </div>
@@ -794,13 +826,22 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                       </Button>
                       <Button
                         block
-                        onClick={() =>
+                        onClick={() => {
                           navigate("/app/manage_translation", {
                             state: {
                               key: target[index],
                             },
-                          })
-                        }
+                          });
+                          report(
+                            {},
+                            {
+                              action: "/app",
+                              method: "post",
+                              eventType: "click",
+                            },
+                            "dashboard_translation_task_review",
+                          );
+                        }}
                       >
                         {t("progressing.review")}
                       </Button>

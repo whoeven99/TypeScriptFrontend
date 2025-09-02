@@ -31,15 +31,17 @@ const useReport = () => {
       method = "post",
       eventType = "click",
     } = options;
-
+    console.log('report',data);
+    
     try {
       const reportData = {
-        ...data,
+        data,
         eventType,
         timestamp: new Date().toISOString(),
         name,
       };
-
+      console.log('reportdata',reportData);
+      
       fetcher.submit(
         { googleAnalytics: JSON.stringify(reportData) },
         {
