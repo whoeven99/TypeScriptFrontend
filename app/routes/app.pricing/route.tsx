@@ -62,47 +62,38 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (true) {
     case !!payForPlan:
       try {
-        const data = await GetUserSubscriptionPlan({
+        const returnUrl = new URL(
+          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}/app/pricing`,
+        );
+        const res = await mutationAppSubscriptionCreate({
           shop,
-          server: process.env.SERVER_URL as string,
+          accessToken: accessToken as string,
+          name: payForPlan.title,
+          yearly: payForPlan.yearly,
+          price: {
+            amount: payForPlan.yearly
+              ? payForPlan.yearlyPrice * 12
+              : payForPlan.monthlyPrice,
+            currencyCode: "USD",
+          },
+          trialDays: payForPlan.trialDays,
+          returnUrl,
+          test:
+            process.env.NODE_ENV === "development" ||
+            process.env.NODE_ENV === "test",
         });
-        if (data === payForPlan.title) {
-          return data;
-        } else {
-          const returnUrl = new URL(
-            `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}/app/pricing`,
-          );
-          const res = await mutationAppSubscriptionCreate({
-            shop,
-            accessToken: accessToken as string,
-            name: payForPlan.title,
-            yearly: payForPlan.yearly,
+        return {
+          ...res,
+          appSubscription: {
+            ...res.appSubscription,
             price: {
               amount: payForPlan.yearly
-                ? payForPlan.yearlyPrice * 12
+                ? payForPlan.yearlyPrice
                 : payForPlan.monthlyPrice,
               currencyCode: "USD",
             },
-            trialDays: payForPlan.trialDays,
-            returnUrl,
-            test:
-              process.env.NODE_ENV === "development" ||
-              process.env.NODE_ENV === "test",
-          });
-          return {
-            ...res,
-            appSubscription: {
-              ...res.appSubscription,
-              price: {
-                amount: payForPlan.yearly
-                  ? payForPlan.yearlyPrice
-                  : payForPlan.monthlyPrice,
-                currencyCode: "USD",
-              },
-            },
-          };
-        }
-        // }
+          },
+        };
       } catch (error) {
         console.error("Error payForPlan action:", error);
       }
