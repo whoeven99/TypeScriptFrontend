@@ -935,30 +935,14 @@ export const GetUserSubscriptionPlan = async ({
 
     console.log("GetUserSubscriptionPlan: ", response.data);
 
-    if (response.data?.success) {
-      return response.data;
-    }
-    return {
-      success: false,
-      errorCode: 10001,
-      errorMsg: "SERVER_ERROR",
-      response: {
-        userSubscriptionPlan: 2,
-        currentPeriodEnd: "",
-        feeType: 0,
-      },
-    };
+    return response.data;
   } catch (error) {
     console.error("Error GetUserSubscriptionPlan:", error);
     return {
       success: false,
       errorCode: 10001,
       errorMsg: "SERVER_ERROR",
-      response: {
-        userSubscriptionPlan: 2,
-        currentPeriodEnd: "",
-        feeType: 0,
-      },
+      response: undefined,
     };
   }
 };
