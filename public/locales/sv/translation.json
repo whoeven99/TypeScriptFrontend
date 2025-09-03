@@ -660,13 +660,18 @@
   "Share with up to 3 stores": "Dela med upp till 3 butiker",
   "Steps to Bind a Sub-Account": "Steg för att binda ett underkonto",
   "Shared Plan": "Delad plan",
-  "1M free credits": "1M gratis krediter",
+  "1 million free credits": "1M gratis krediter",
   "Image & alt text translation": "Bild och alt-textoversättning",
   "IP-based switching": "IP-baserat växel",
   "5 Days Free Trial >>": "5 dagars gratis provperiod >>",
-  "🎁 Get free credits": "🎁 Få gratis krediter",
-  "✅ Give 1,000,000 points": "✅ Ge 1.000.000 poäng",
-  "✅ 5-day free trial (any plan)": "✅ 5 dagars gratis provperiod (valfri plan)",
-  "Receive": "Mottag"
+  "No Translation Credits Available": "Inga gratis krediter tillgängliga",
+  "Activate your free trial to start translating instantly:": "Aktivera din gratis provperiod för att börja översätta direkt:",
+  "✅ 1,000,000 free credits for translation": "✅ 1M gratis krediter för översättning",
+  "✅ Automatic translation for store content": "✅ Automatisk översättning för butiksinnehåll",
+  "✅ Image & alt-text translation" : "✅ Bild och alt-textoversättning",
+  "✅ IP-based language & currency switching": "✅ IP-baserat språk- och valuta växel",
+  "✅ Glossary support for brand consistency": "✅ Terminologisupport för markekonsistens",
+  "✅ Live human support when needed": "✅ Live mänsklig support när det behövs",
+  "Start Free Trial": "Starta gratis provperiod"
 
 }

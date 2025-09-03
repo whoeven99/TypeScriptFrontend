@@ -132,7 +132,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { shop, server } = useLoaderData<typeof loader>();
-  const { plan, updateTime, chars, totalChars } = useSelector(
+  const { plan, updateTime, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
   const { report } = useReport();
@@ -287,7 +287,6 @@ const Index = () => {
   // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
   // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
-  const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
   const isQuotaExceeded = useMemo(
     () => chars >= totalChars && totalChars > 0,
     [chars, totalChars],
@@ -322,20 +321,6 @@ const Index = () => {
     );
   };
   useEffect(() => {
-    const checkFreeUsed = async () => {
-      try {
-        const data = await IsOpenFreePlan({
-          shop,
-          server: server as string,
-        });
-
-        setHasOpenFreePlan(data?.response || false);
-      } catch (error) {
-        console.error("Error getPlan:", error);
-      }
-    };
-    checkFreeUsed();
-
     setIsLoading(false);
     fetcher.submit(
       {
@@ -956,58 +941,6 @@ const Index = () => {
             showIcon
           />
         )}
-        {/* <Space
-          direction="vertical"
-          size="small"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-          }}
-        >
-          <Title level={3} style={{ fontWeight: 700 }}>
-            {t("Choose the right plan for you")}
-          </Title>
-          <Row style={{ width: "100%" }}>
-            <Col span={18}>
-              <Button type="primary">居中按钮</Button>
-            </Col>
-            <Col span={6}>
-              <Button type="default">靠右按钮</Button>
-            </Col>
-          </Row>
-          <Row justify="space-between" align="middle" style={{ height: 100 }}>
-            <Col flex="auto" style={{ textAlign: 'center' }}>
-              <Flex align="center">
-                  <Space align="center" size="small">
-                    <Switch checked={yearly} onChange={() => setYearly(!yearly)} />
-                    <Text>{t("Yearly")}</Text>
-                  </Space>
-                  <div className="yearly_save">
-                    <Text strong>{t("Save 20%")}</Text>
-                  </div>
-                </Flex>
-            </Col>
-            <Col>
-              <Button style={{right:0}}  type="primary" size="middle" onClick={()=>{
-                  setIsModalVisible(true)
-                }}>{t("Shared Plan")}</Button>
-            </Col>
-          </Row>
-          {!hasOpenFreePlan && (
-            <Card styles={{ body: { padding: 12 } }}>
-              <Flex align="center" justify="space-between" gap={10}>
-                <Text>{t("Start your trial and unlock")}</Text>
-                <div className="free_trial">
-                  <Text strong>
-                    {t("{{amount}} free credits", { amount: "200,000" })}
-                  </Text>
-                </div>
-              </Flex>
-            </Card>
-          )}
-        </Space> */}
         <Flex vertical align="center" style={{ width: "100%" }}>
           <Title level={3} style={{ fontWeight: 700 }}>
             {t("Choose the right plan for you")}
@@ -1053,18 +986,6 @@ const Index = () => {
               )}
             </Col>
           </Row>
-          {!hasOpenFreePlan && (
-            <Card styles={{ body: { padding: 12 } }}>
-              <Flex align="center" justify="space-between" gap={10}>
-                <Text>{t("Start your trial and unlock")}</Text>
-                <div className="free_trial">
-                  <Text strong>
-                    {t("{{amount}} free credits", { amount: "200,000" })}
-                  </Text>
-                </div>
-              </Flex>
-            </Card>
-          )}
         </Flex>
         <Row gutter={[16, 16]}>
           <Col
@@ -1112,19 +1033,8 @@ const Index = () => {
                 disabled={
                   plan.id === 1 || plan.id === 2 || selectedPayPlanOption
                 }
-                style={{ marginBottom: hasOpenFreePlan ? "20px" : "70px" }}
-                onClick={() => {
-                  setCancelPlanWarnModal(true);
-                  report(
-                    {},
-                    {
-                      action: "/app",
-                      method: "post",
-                      eventType: "click",
-                    },
-                    "pricing_plan_trial",
-                  );
-                }}
+                style={{ marginBottom: isNew ? "20px" : "70px" }}
+                onClick={() => setCancelPlanWarnModal(true)}
               >
                 {plan.id === 1 || plan.id === 2
                   ? t("pricing.current_plan")
@@ -1270,7 +1180,7 @@ const Index = () => {
                   >
                     {item.buttonText}
                   </Button>
-                  {!hasOpenFreePlan && (
+                  {isNew && (
                     <Button
                       type="primary"
                       block
@@ -1288,21 +1198,6 @@ const Index = () => {
                       {t("Free trial")}
                     </Button>
                   )}
-
-                  {/* {
-                      plan.title === "Premium" && !hasOpenFreePlan && (
-                        <Button
-                          type="primary"
-                          block
-                          style={{ marginBottom: "20px" }}
-                          onClick={() => setFreeTrialModalOpen(true)}
-                          disabled={buyButtonLoading}
-                        >
-                          {t("Free trial")}
-                        </Button>
-                      )
-                    } */}
-
                   <div style={{ flex: 1 }}>
                     {item.features.map((feature, idx) => (
                       <div
