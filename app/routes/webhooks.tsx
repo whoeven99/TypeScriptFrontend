@@ -151,6 +151,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             status: payload?.app_purchase_one_time.status,
           });
           if (payload?.app_purchase_one_time.status === "ACTIVE") {
+            console.log("data: ", {
+              shop,
+              amount: credits,
+              gid: payload?.app_purchase_one_time.admin_graphql_api_id,
+            });
+
             const addChars = await AddCharsByShopName({
               shop,
               amount: credits,

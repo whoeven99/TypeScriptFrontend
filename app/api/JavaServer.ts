@@ -92,7 +92,7 @@ export const IsOpenFreePlan = async ({
 
     console.log(`${shop} IsOpenFreePlan: `, response.data);
 
-    return response.data;
+    return { ...response.data, success: true };
   } catch (error) {
     console.error(`${shop} IsOpenFreePlan error:`, error);
     return {

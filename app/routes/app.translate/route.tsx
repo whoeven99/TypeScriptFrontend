@@ -207,7 +207,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { plan } = useSelector((state: any) => state.userConfig);
+  const { plan, isNew } = useSelector((state: any) => state.userConfig);
 
   function checkApiKeyConfiguration(
     customApikeyData: apiKeyConfiguration[],
@@ -367,27 +367,13 @@ const Index = () => {
           translateFetcher.data?.response?.translateSettings1 !== "8" &&
           translateFetcher.data?.response?.translateSettings1 !== "9"
         ) {
-          const getUserWords = async () => {
-            const data = await GetUserWords({ shop, server });
-
-            if (data?.success) {
-              if (!data?.response?.totalChars) {
-                setFirstTranslationModalShow(true);
-              } else if (data?.response?.totalChars <= data?.response?.chars) {
-                setNeedPay(true);
-                setShowPaymentModal(true);
-              }
-            } else {
-              shopify.toast.show(
-                t(
-                  "The query of the remaining credits failed. Please try again.",
-                ),
-              );
-            }
-          };
-          getUserWords();
+          if (isNew) {
+            setFirstTranslationModalShow(true);
+          } else {
+            setNeedPay(true);
+            setShowPaymentModal(true);
+          }
         }
-
         if (translateFetcher?.data?.errorCode === 10014) {
           setCurrentModal("outOfRange");
           setIsApiKeyModalOpen(true);
@@ -626,7 +612,7 @@ const Index = () => {
   };
 
   const handleUsePrivateApi = () => {
-    if (plan <= 2 || !plan) {
+    if (plan?.id <= 2 || !plan?.id) {
       setShowWarnModal(true);
       return;
     }
@@ -1122,8 +1108,8 @@ const Index = () => {
                     <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
                       {t("translateSettings1.title")}
                     </Title>
-                    {(typeof plan === "number" && plan <= 2) ||
-                    typeof plan === "undefined" ? (
+                    {(typeof plan?.id === "number" && plan?.id <= 2) ||
+                    typeof plan?.id === "undefined" ? (
                       <Flex align="center" gap="middle">
                         <Popconfirm
                           title=""

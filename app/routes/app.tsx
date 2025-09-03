@@ -33,6 +33,7 @@ import {
   GetUserData,
   StopTranslatingTask,
   GetUserSubscriptionPlan,
+  IsOpenFreePlan,
 } from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -46,6 +47,7 @@ import { ConfigProvider } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setChars,
+  setIsNew,
   setPlan,
   setShop,
   setTotalChars,
@@ -81,7 +83,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const nearTransaltedData = JSON.parse(
       formData.get("nearTransaltedData") as string,
     );
-    const userData = JSON.parse(formData.get("userData") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
@@ -287,7 +288,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (payInfo) {
       try {
         const returnUrl = new URL(
-          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
+          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}/app/pricing`,
         );
         const payData = await mutationAppPurchaseOneTimeCreate({
           shop,
@@ -358,7 +359,7 @@ export default function App() {
   const dispatch = useDispatch();
   const location = useLocation();
 
-  const { plan, chars, totalChars } = useSelector(
+  const { plan, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
   const initFetcher = useFetcher<any>();
@@ -396,6 +397,9 @@ export default function App() {
     }
     if (!chars || !totalChars) {
       getWords();
+    }
+    if (isNew === null) {
+      checkFreeUsed();
     }
   }, [location]); // 监听 URL 的变化
 
@@ -439,6 +443,16 @@ export default function App() {
         }),
       );
       dispatch(setUserConfigIsLoading({ isLoading: false }));
+    }
+  };
+
+  const checkFreeUsed = async () => {
+    const data = await IsOpenFreePlan({
+      shop,
+      server: server as string,
+    });
+    if (data?.success) {
+      dispatch(setIsNew({ isNew: !data?.response }));
     }
   };
 

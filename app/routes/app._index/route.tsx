@@ -23,16 +23,10 @@ import ProgressingCard from "~/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
 import { useSelector } from "react-redux";
-import FirstTranslationModal from "~/components/firstTranslationModal";
 import CorrectIcon from "~/components/icon/correctIcon";
 import GiftIcon from "~/components/icon/giftIcon";
 
 const { Title, Text } = Typography;
-
-export interface WordsType {
-  chars: number;
-  totalChars: number;
-}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -74,13 +68,11 @@ const Index = () => {
   } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { userConfigIsLoading, totalChars } = useSelector(
+  const { userConfigIsLoading, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
   const [isLoading, setIsLoading] = useState(true);
   const [switcherOpen, setSwitcherOpen] = useState(true);
-  const [firstTranslationModalShow, setFirstTranslationModalShow] =
-    useState(false);
   const [switcherLoading, setSwitcherLoading] = useState(true);
   const blockUrl = useMemo(
     () =>
@@ -272,7 +264,7 @@ const Index = () => {
           <div>
             <Card
               style={
-                !userConfigIsLoading && totalChars === 0
+                !userConfigIsLoading && isNew
                   ? {
                       borderBottomLeftRadius: 0,
                       borderBottomRightRadius: 0,
@@ -288,15 +280,8 @@ const Index = () => {
                 <Title level={4}>{t("transLanguageCard1.title")}</Title>
                 <Text>{t("transLanguageCard1.description")}</Text>
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  {userConfigIsLoading ? (
+                  {isLoading ? (
                     <Skeleton.Button active />
-                  ) : totalChars === 0 ? (
-                    <Button
-                      type="primary"
-                      onClick={() => setFirstTranslationModalShow(true)}
-                    >
-                      {t("Free translation")}
-                    </Button>
                   ) : (
                     <Button
                       type="primary"
@@ -308,7 +293,7 @@ const Index = () => {
                 </div>
               </Space>
             </Card>
-            {!userConfigIsLoading && totalChars === 0 && (
+            {!userConfigIsLoading && isNew && (
               <Card
                 style={{
                   borderBlockStartColor: "#f0f0f0",
@@ -338,7 +323,7 @@ const Index = () => {
                         color: "#007F61",
                       }}
                     >
-                      {t("1M free credits")}
+                      {t("1 million free credits")}
                     </Text>
                     <Flex align="center">
                       <CorrectIcon />
@@ -678,10 +663,6 @@ const Index = () => {
           </Link>
         </Text>
       </Space>
-      <FirstTranslationModal
-        show={firstTranslationModalShow}
-        setShow={setFirstTranslationModalShow}
-      />
     </Page>
   );
 };

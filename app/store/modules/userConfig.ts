@@ -11,6 +11,7 @@ interface UserConfigState {
   chars: number | undefined;
   totalChars: number | undefined;
   userConfigIsLoading: boolean;
+  isNew: boolean | null;
 }
 
 const initialState: UserConfigState = {
@@ -24,6 +25,7 @@ const initialState: UserConfigState = {
   chars: 0,
   totalChars: 0,
   userConfigIsLoading: true,
+  isNew: null,
 };
 
 const userConfigSlice = createSlice({
@@ -65,6 +67,9 @@ const userConfigSlice = createSlice({
     ) => {
       state.userConfigIsLoading = action.payload.isLoading;
     },
+    setIsNew: (state, action: PayloadAction<{ isNew: boolean }>) => {
+      state.isNew = action.payload.isNew;
+    },
   },
 });
 
@@ -76,6 +81,7 @@ export const {
   setChars,
   setTotalChars,
   setUserConfigIsLoading,
+  setIsNew,
 } = userConfigSlice.actions;
 
 const reducer = userConfigSlice.reducer;

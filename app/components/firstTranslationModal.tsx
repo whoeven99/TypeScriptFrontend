@@ -1,5 +1,6 @@
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { Button, ConfigProvider, Flex, Modal, Space, Typography } from "antd";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -16,11 +17,52 @@ const FirstTranslationModal: React.FC<FirstTranslationModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const fetcher = useFetcher<any>();
   const { shop } = useSelector((state: any) => state.userConfig);
 
+  const fetcher = useFetcher<any>();
+  const planFetcher = useFetcher<any>();
+  const orderFetcher = useFetcher<any>();
+
+  useEffect(() => {
+    if (planFetcher.data) {
+      if (
+        planFetcher.data?.appSubscription &&
+        planFetcher.data?.confirmationUrl
+      ) {
+        const order = planFetcher.data?.appSubscription;
+        const confirmationUrl = planFetcher.data?.confirmationUrl;
+        const orderInfo = {
+          id: order.id,
+          amount: order.price.amount,
+          name: order.name,
+          createdAt: order.createdAt,
+          status: order.status,
+          confirmationUrl: confirmationUrl,
+        };
+        const formData = new FormData();
+        formData.append("orderInfo", JSON.stringify(orderInfo));
+        orderFetcher.submit(formData, {
+          method: "post",
+          action: "/app",
+        });
+        open(confirmationUrl, "_top");
+      }
+    }
+  }, [planFetcher.data]);
+
   const handleReceive = () => {
-    navigate("/app/pricing");
+    planFetcher.submit(
+      {
+        payForPlan: JSON.stringify({
+          title: "Basic",
+          monthlyPrice: 7.99,
+          yearlyPrice: 6.39,
+          yearly: false,
+          trialDays: 5,
+        }),
+      },
+      { method: "POST", action: "/app/pricing" },
+    );
     fetcher.submit(
       {
         log: `${shop} 前往付费页面, 从领取免费额度表单点击`,
@@ -34,50 +76,46 @@ const FirstTranslationModal: React.FC<FirstTranslationModalProps> = ({
 
   return (
     // 添加 Modal 组件
-    <ConfigProvider
-      theme={{
-        components: {
-          Button: {
-            defaultHoverBorderColor: "",
-            defaultActiveBorderColor: "",
-          },
-        },
+    <Modal
+      open={show}
+      onCancel={() => setShow(false)}
+      footer={null}
+      centered
+      width={300}
+      style={{
+        maxWidth: "80%",
+        border: "none",
       }}
     >
-      <Modal
-        open={show}
-        onCancel={() => setShow(false)}
-        footer={null}
-        centered
-        width={300}
-        style={{
-          maxWidth: "80%",
-          border: "none",
-        }}
-      >
-        <Space direction="vertical" style={{ width: "100%" }}>
-          <Title level={3} style={{ marginTop: 20 }}>
-            {t("🎁 Get free credits")}
-          </Title>
+      <Space direction="vertical" style={{ width: "100%" }}>
+        <Title level={3} style={{ marginTop: 20 }}>
+          {t("No Translation Credits Available")}
+        </Title>
 
-          <Text>{t("✅ Give 1,000,000 points")}</Text>
-          <Text>{t("✅ 5-day free trial (any plan)")}</Text>
-          <Flex justify="center">
-            <Button
-              onClick={handleReceive}
-              style={{
-                backgroundColor: "rgb(34,197,94)",
-                display: "flex",
-                alignItems: "center",
-                marginTop: 10,
-              }}
-            >
-              {t("Receive")}
-            </Button>
-          </Flex>
-        </Space>
-      </Modal>
-    </ConfigProvider>
+        <Text>
+          {t("Activate your free trial to start translating instantly:")}
+        </Text>
+        <Text>{t("✅ 1,000,000 free credits for translation")}</Text>
+        <Text>{t("✅ Automatic translation for store content")}</Text>
+        <Text>{t("✅ Image & alt-text translation")}</Text>
+        <Text>{t("✅ IP-based language & currency switching")}</Text>
+        <Text>{t("✅ Glossary support for brand consistency")}</Text>
+        <Text>{t("✅ Live human support when needed")}</Text>
+        <Flex justify="center">
+          <Button
+            onClick={handleReceive}
+            loading={planFetcher.state == "submitting"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginTop: 10,
+            }}
+          >
+            {t("Start Free Trial")}
+          </Button>
+        </Flex>
+      </Space>
+    </Modal>
   );
 };
 
