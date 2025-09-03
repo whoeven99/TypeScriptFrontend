@@ -311,7 +311,7 @@ const Index = () => {
             {!userConfigIsLoading && totalChars === 0 && (
               <Card
                 style={{
-                  borderBlockStartColor: "#000",
+                  borderBlockStartColor: "#f0f0f0",
                   borderTopLeftRadius: 0,
                   borderTopRightRadius: 0,
                 }}
