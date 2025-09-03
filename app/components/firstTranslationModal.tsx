@@ -81,28 +81,45 @@ const FirstTranslationModal: React.FC<FirstTranslationModalProps> = ({
       onCancel={() => setShow(false)}
       footer={null}
       centered
-      width={300}
+      width={600}
       style={{
         maxWidth: "80%",
         border: "none",
       }}
     >
       <Space direction="vertical" style={{ width: "100%" }}>
-        <Title level={3} style={{ marginTop: 20 }}>
+        <Title
+          style={{
+            margin: "0",
+            fontSize: "1.25rem",
+            fontWeight: 700,
+            marginBottom: 24
+          }}
+        >
           {t("No Translation Credits Available")}
         </Title>
-
         <Text>
           {t("Activate your free trial to start translating instantly:")}
         </Text>
-        <Text>{t("✅ 1,000,000 free credits for translation")}</Text>
-        <Text>{t("✅ Automatic translation for store content")}</Text>
-        <Text>{t("✅ Image & alt-text translation")}</Text>
-        <Text>{t("✅ IP-based language & currency switching")}</Text>
-        <Text>{t("✅ Glossary support for brand consistency")}</Text>
-        <Text>{t("✅ Live human support when needed")}</Text>
+        <Space
+          direction="vertical"
+          style={{
+            width: "100%",
+            padding: "8px 4px",
+            border: "1px solid #f0f0f0",
+            borderRadius: "8px",
+          }}
+        >
+          <Text>{t("✅ 1,000,000 free credits for translation")}</Text>
+          <Text>{t("✅ Automatic translation for store content")}</Text>
+          <Text>{t("✅ Image & alt-text translation")}</Text>
+          <Text>{t("✅ IP-based language & currency switching")}</Text>
+          <Text>{t("✅ Glossary support for brand consistency")}</Text>
+          <Text>{t("✅ Live human support when needed")}</Text>
+        </Space>
         <Flex justify="center">
           <Button
+            type="primary"
             onClick={handleReceive}
             loading={planFetcher.state == "submitting"}
             style={{
