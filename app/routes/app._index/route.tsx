@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Col,
+  Flex,
   Row,
   Skeleton,
   Space,
@@ -21,7 +22,6 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import ProgressingCard from "~/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
-import useReport from "scripts/eventReport";
 import { useSelector } from "react-redux";
 import FirstTranslationModal from "~/components/firstTranslationModal";
 import CorrectIcon from "~/components/icon/correctIcon";
@@ -74,8 +74,13 @@ const Index = () => {
   } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { userConfigIsLoading, totalChars } = useSelector(
+    (state: any) => state.userConfig,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [switcherOpen, setSwitcherOpen] = useState(true);
+  const [firstTranslationModalShow, setFirstTranslationModalShow] =
+    useState(false);
   const [switcherLoading, setSwitcherLoading] = useState(true);
   const blockUrl = useMemo(
     () =>
@@ -85,7 +90,7 @@ const Index = () => {
 
   const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
-  const { report } = useReport();
+
   useEffect(() => {
     setIsLoading(false);
     themeFetcher.submit(
@@ -181,39 +186,8 @@ const Index = () => {
       devStatus: t("In development"),
     },
   ];
-  const handleCommitRequest = () => {
-    handleContactSupport();
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_devprogress_request",
-    );
-  };
-  const handleReportCiwiHelpCenter = () => {
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_footer_help_center",
-    );
-  };
+
   const navigateToTranslate = () => {
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_translate_button",
-    );
     navigate("/app/translate", {
       state: { from: "/app", selectedLanguageCode: "" },
     });
@@ -227,36 +201,7 @@ const Index = () => {
       },
     );
   };
-  const navigateToHelpSwitchCurrency = () => {
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_currency_guide",
-    );
-    window.open(
-      "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/",
-      "_blank",
-    );
-  };
-  const navigateToSwitchCurrencyDetail = () => {
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_currency_view_detail",
-    );
-    window.open(
-      "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/",
-      "_blank",
-    );
-  };
+
   const navigateToLanguage = () => {
     navigate("/app/language");
     fetcher.submit(
@@ -267,15 +212,6 @@ const Index = () => {
         method: "POST",
         action: "/log",
       },
-    );
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_language_manage",
     );
   };
 
@@ -290,14 +226,18 @@ const Index = () => {
         action: "/log",
       },
     );
-    report(
-      {},
+  };
+
+  const handleReceive = () => {
+    navigate("/app/pricing");
+    fetcher.submit(
       {
-        action: "/app",
-        method: "post",
-        eventType: "click",
+        log: `${shop} 前往付费页面, 从新人链接点击`,
       },
-      "dashboard_currency_manage",
+      {
+        method: "POST",
+        action: "/log",
+      },
     );
   };
 
@@ -329,25 +269,133 @@ const Index = () => {
             <Title level={3}>{t("dashboard.title1")}</Title>
             <Text strong>{t("dashboard.description1")}</Text>
           </div>
-          <Card>
-            <Space
-              direction="vertical"
-              size="middle"
-              style={{ display: "flex" }}
+          <div>
+            <Card
+              style={
+                !userConfigIsLoading && totalChars === 0
+                  ? {
+                      borderBottomLeftRadius: 0,
+                      borderBottomRightRadius: 0,
+                    }
+                  : {}
+              }
             >
-              <Title level={4}>{t("transLanguageCard1.title")}</Title>
-              <Text>{t("transLanguageCard1.description")}</Text>
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                {isLoading ? (
-                  <Skeleton.Button active />
-                ) : (
-                  <Button type="primary" onClick={() => navigateToTranslate()}>
-                    {t("transLanguageCard1.button")}
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ display: "flex" }}
+              >
+                <Title level={4}>{t("transLanguageCard1.title")}</Title>
+                <Text>{t("transLanguageCard1.description")}</Text>
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  {userConfigIsLoading ? (
+                    <Skeleton.Button active />
+                  ) : totalChars === 0 ? (
+                    <Button
+                      type="primary"
+                      onClick={() => setFirstTranslationModalShow(true)}
+                    >
+                      {t("Free translation")}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="primary"
+                      onClick={() => navigateToTranslate()}
+                    >
+                      {t("transLanguageCard1.button")}
+                    </Button>
+                  )}
+                </div>
+              </Space>
+            </Card>
+            {!userConfigIsLoading && totalChars === 0 && (
+              <Card
+                style={{
+                  borderBlockStartColor: "#f0f0f0",
+                  borderTopLeftRadius: 0,
+                  borderTopRightRadius: 0,
+                }}
+                styles={{
+                  body: {
+                    paddingTop: 6,
+                    paddingBottom: 6,
+                  },
+                }}
+              >
+                <Flex align="center" justify="space-between" gap={24}>
+                  <Space
+                    size={"small"}
+                    style={{ display: "flex", alignItems: "center" }}
+                  >
+                    <Flex align="center">
+                      <CorrectIcon />
+                    </Flex>
+                    <Text
+                      style={{
+                        whiteSpace: "normal", // 允许换行
+                        wordBreak: "break-word", // 长单词也能断开
+                        maxWidth: "100%", // 不超过容器宽度
+                        color: "#007F61",
+                      }}
+                    >
+                      {t("1M free credits")}
+                    </Text>
+                    <Flex align="center">
+                      <CorrectIcon />
+                    </Flex>
+                    <Text
+                      style={{
+                        whiteSpace: "normal", // 允许换行
+                        wordBreak: "break-word", // 长单词也能断开
+                        maxWidth: "100%", // 不超过容器宽度
+                        color: "#007F61",
+                      }}
+                    >
+                      {t("Auto translation")}
+                    </Text>
+                    <Flex align="center">
+                      <CorrectIcon />
+                    </Flex>
+                    <Text
+                      style={{
+                        whiteSpace: "normal", // 允许换行
+                        wordBreak: "break-word", // 长单词也能断开
+                        maxWidth: "100%", // 不超过容器宽度
+                        color: "#007F61",
+                      }}
+                    >
+                      {t("Image & alt text translation")}
+                    </Text>
+                    <Flex align="center">
+                      <CorrectIcon />
+                    </Flex>
+
+                    <Text
+                      style={{
+                        whiteSpace: "normal", // 允许换行
+                        wordBreak: "break-word", // 长单词也能断开
+                        maxWidth: "100%", // 不超过容器宽度
+                        color: "#007F61",
+                      }}
+                    >
+                      {t("IP-based switching")}
+                    </Text>
+                  </Space>
+                  <Button
+                    type="text"
+                    icon={<GiftIcon />}
+                    onClick={handleReceive}
+                    style={{
+                      color: "#007F61",
+                      padding: 0,
+                    }}
+                  >
+                    {t("5 Days Free Trial >>")}
                   </Button>
-                )}
-              </div>
-            </Space>
-          </Card>
+                </Flex>
+              </Card>
+            )}
+          </div>
           <ProgressingCard shop={shop} server={server || ""} />
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
@@ -507,7 +555,14 @@ const Index = () => {
                     {isLoading ? (
                       <Skeleton.Button active />
                     ) : (
-                      <Button onClick={navigateToHelpSwitchCurrency}>
+                      <Button
+                        onClick={() =>
+                          window.open(
+                            "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/",
+                            "_blank",
+                          )
+                        }
+                      >
                         {t("transCurrencyCard2.button")}
                       </Button>
                     )}
@@ -537,7 +592,14 @@ const Index = () => {
                     {isLoading ? (
                       <Skeleton.Button active />
                     ) : (
-                      <Button onClick={navigateToSwitchCurrencyDetail}>
+                      <Button
+                        onClick={() =>
+                          window.open(
+                            "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/",
+                            "_blank",
+                          )
+                        }
+                      >
                         {t("transCurrencyCard3.button")}
                       </Button>
                     )}
@@ -570,7 +632,7 @@ const Index = () => {
                 {isLoading ? (
                   <Skeleton.Button active />
                 ) : (
-                  <Button onClick={handleCommitRequest}>
+                  <Button onClick={handleContactSupport}>
                     {t("planCard.button")}
                   </Button>
                 )}
@@ -583,18 +645,7 @@ const Index = () => {
             <Col xs={24} sm={24} md={12}>
               <ContactCard
                 isChinese={isChinese}
-                onClick={() => {
-                  report(
-                    {},
-                    {
-                      action: "/app",
-                      method: "post",
-                      eventType: "click",
-                    },
-                    "dashboard_contact_us",
-                  );
-                  handleContactSupport();
-                }}
+                onClick={handleContactSupport}
               />
             </Col>
             <Col xs={24} sm={24} md={12}>
@@ -614,7 +665,6 @@ const Index = () => {
             to="https://ciwi.bogdatech.com/help"
             target="_blank"
             style={{ margin: "0 5px" }}
-            onClick={handleReportCiwiHelpCenter}
           >
             {t("Ciwi Help Center")}
           </Link>
@@ -628,6 +678,10 @@ const Index = () => {
           </Link>
         </Text>
       </Space>
+      <FirstTranslationModal
+        show={firstTranslationModalShow}
+        setShow={setFirstTranslationModalShow}
+      />
     </Page>
   );
 };
