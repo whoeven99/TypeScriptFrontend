@@ -9,6 +9,7 @@ import {
   Outlet,
   useFetcher,
   useLoaderData,
+  useLocation,
   useRouteError,
 } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
@@ -32,6 +33,7 @@ import {
   GetUserData,
   StopTranslatingTask,
   GetUserSubscriptionPlan,
+  IsOpenFreePlan,
 } from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -43,7 +45,15 @@ import { useTranslation } from "react-i18next";
 
 import { ConfigProvider } from "antd";
 import { useDispatch, useSelector } from "react-redux";
-import { setUserConfig } from "~/store/modules/userConfig";
+import {
+  setChars,
+  setIsNew,
+  setPlan,
+  setShop,
+  setTotalChars,
+  setUpdateTime,
+  setUserConfigIsLoading,
+} from "~/store/modules/userConfig";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -73,7 +83,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const nearTransaltedData = JSON.parse(
       formData.get("nearTransaltedData") as string,
     );
-    const userData = JSON.parse(formData.get("userData") as string);
     const statusData = JSON.parse(formData.get("statusData") as string);
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
@@ -257,23 +266,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    if (userData) {
-      try {
-        const words = await GetUserWords({
-          shop,
-          server: process.env.SERVER_URL as string,
-        });
-        const data = {
-          chars: words?.chars || 0,
-          totalChars: words?.totalChars || 0,
-        };
-        return json({ data });
-      } catch (error) {
-        console.error("Error userData app:", error);
-        return json({ error: "Error userData app" }, { status: 500 });
-      }
-    }
-
     if (statusData) {
       try {
         const data = await GetLanguageStatus({
@@ -296,7 +288,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (payInfo) {
       try {
         const returnUrl = new URL(
-          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/ciwi-translator/app`,
+          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}/app/pricing`,
         );
         const payData = await mutationAppPurchaseOneTimeCreate({
           shop,
@@ -365,7 +357,11 @@ export default function App() {
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const { plan, updateTime } = useSelector((state: any) => state.userConfig);
+  const location = useLocation();
+
+  const { plan, chars, totalChars, isNew } = useSelector(
+    (state: any) => state.userConfig,
+  );
   const initFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
 
@@ -384,38 +380,81 @@ export default function App() {
         action: "/app",
       },
     );
-    const getPlan = async () => {
-      const data = await GetUserSubscriptionPlan({
-        shop: shop,
-        server: server as string,
-      });
-      if (data?.success) {
-        if (!plan || !updateTime) {
-          dispatch(
-            setUserConfig({
-              plan: data?.response?.userSubscriptionPlan || "2",
-            }),
-          );
-          if (data?.response?.currentPeriodEnd) {
-            const date = new Date(data?.response?.currentPeriodEnd)
-              .toLocaleDateString("zh-CN", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-              })
-              .replace(/\//g, "-");
-            dispatch(setUserConfig({ updateTime: date }));
-          }
-        }
-      }
-    };
     getPlan();
+    getWords();
+    dispatch(setShop({ shop: shop as string }));
     setIsClient(true);
     const shopName = localStorage.getItem("shop");
     if (!shopName) {
       localStorage.setItem("shop", (shop as string) || "");
     }
   }, []);
+
+  useEffect(() => {
+    // 当 URL 改变时调用这两个函数
+    if (!plan?.id) {
+      getPlan();
+    }
+    if (!chars || !totalChars) {
+      getWords();
+    }
+    if (isNew === null) {
+      checkFreeUsed();
+    }
+  }, [location]); // 监听 URL 的变化
+
+  const getPlan = async () => {
+    const data = await GetUserSubscriptionPlan({
+      shop: shop,
+      server: server as string,
+    });
+    if (data?.success) {
+      dispatch(
+        setPlan({
+          plan: {
+            id: data?.response?.userSubscriptionPlan || 2,
+            feeType: data?.response?.feeType || 0,
+          },
+        }),
+      );
+      if (data?.response?.currentPeriodEnd) {
+        const date = new Date(data?.response?.currentPeriodEnd)
+          .toLocaleDateString("zh-CN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          })
+          .replace(/\//g, "-");
+        dispatch(setUpdateTime({ updateTime: date }));
+      }
+    }
+  };
+
+  const getWords = async () => {
+    const data = await GetUserWords({
+      shop,
+      server: server as string,
+    });
+    if (data?.success) {
+      dispatch(setChars({ chars: data?.response?.chars }));
+      dispatch(
+        setTotalChars({
+          totalChars: data?.response?.totalChars,
+        }),
+      );
+      dispatch(setUserConfigIsLoading({ isLoading: false }));
+    }
+  };
+
+  const checkFreeUsed = async () => {
+    const data = await IsOpenFreePlan({
+      shop,
+      server: server as string,
+    });
+    if (data?.success) {
+      dispatch(setIsNew({ isNew: !data?.response }));
+    }
+  };
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

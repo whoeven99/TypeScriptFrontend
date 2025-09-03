@@ -30,7 +30,7 @@
   "Asia": "Asia",
   "Authentication is required and has failed or has not been provided.": "Authentication is required and has failed or has not been provided.",
   "Auto": "Auto",
-  "Auto translate": "Auto-translate",
+  "Auto translation": "Auto-translate",
   "Auto translate updated successfully": "Auto translate updated successfully",
   "Automatic IP switching": "Automatic IP switching",
   "Automatic translation updates": "Automatic translation updates",
@@ -659,5 +659,19 @@
   "Share with 1 store": "Compartilhe com 1 loja",
   "Premium Plan": "Plano Premium →",
   "Share with up to 3 stores": "Compartilhe com até 3 lojas",
-  "Shared Plan": "Plano Compartilhado"
+  "Shared Plan": "Plano Compartilhado",
+  "Up to 8,000,000 translation credits": "Até 8.000.000 de créditos de tradução",
+  "Image & alt text translation": "Tradução de imagem e texto alternativo",
+  "IP-based switching": "Troca baseada em IP",
+  "5 Days Free Trial >>": "5 dias de teste grátis >>",
+  "No Translation Credits Available": "Nenhum crédito de tradução disponível",
+  "Activate your free trial to start translating instantly:": "Ative sua prova gratuita para começar a traduzir instantaneamente:",
+  "✅ 1,000,000 free credits for translation": "✅ 1,000,000 créditos gratuitos para tradução",
+  "✅ Automatic translation for store content": "✅ Tradução automática para conteúdo da loja",
+  "✅ Image & alt-text translation" : "✅ Tradução de imagem e texto alternativo",
+  "✅ IP-based language & currency switching": "✅ Troca de idioma e moeda baseada em IP",
+  "✅ Glossary support for brand consistency": "✅ Suporte de glosário para consistência de marca",
+  "✅ Live human support when needed": "✅ Suporte humano ao vivo quando necessário",
+  "Start Free Trial": "Iniciar prova gratuita"
+
 }

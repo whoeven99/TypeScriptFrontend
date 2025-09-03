@@ -30,7 +30,7 @@
   "Asia": "Азія",
   "Authentication is required and has failed or has not been provided.": "Потрібна автентифікація, яка не вдалася або не була надана.",
   "Auto": "Авто",
-  "Auto translate": "Автоматичний переклад",
+  "Auto translation": "Автоматичний переклад",
   "Auto translate updated successfully": "Автоматичний переклад успішно оновлено",
   "Automatic IP switching": "Automatic IP switching",
   "Automatic translation updates": "Automatic translation updates",
@@ -658,5 +658,21 @@
   "Share with 1 store": "Поділитися з 1 магазином",
   "Premium Plan": "Преміум-план →",
   "Share with up to 3 stores": "Поділитися з максимум 3 магазинами",
-  "Shared Plan": "Спільний план"
+  "Shared Plan": "Спільний план",
+  "Up to 8,000,000 translation credits": "Максимум 8 000 000 кредитів перекладу",
+  "Image & alt text translation": "Переклад зображень та альтернативного тексту",
+  "IP-based switching": "Перемикання на основі IP-адреси",
+  "5 Days Free Trial >>": "5 днів безкоштовної пробної версії >>",
+  "No Translation Credits Available": "Немає доступних безкоштовних кредитів",
+  "Activate your free trial to start translating instantly:": "Активуйте безкоштовну пробну версію, щоб розпочати переклад миттєво:",
+  "✅ 1,000,000 free credits for translation": "✅ 1000000 безкоштовних кредитів для перекладу",
+  "✅ Automatic translation for store content": "✅ Автоматичний переклад для вмісту магазину",
+  "✅ Image & alt-text translation" : "✅ Переклад зображень та альтернативного тексту",
+  "✅ IP-based language & currency switching": "✅ Перемикання мови та валюти на основі IP-адреси",
+  "✅ Glossary support for brand consistency": "✅ Підтримка словника для збереження консистентності бренду",
+  "✅ Live human support when needed": "✅ Живе підтримка людини, коли це потрібно",
+  "Start Free Trial": "Почати безкоштовну пробну версію"
+
+
+
 }

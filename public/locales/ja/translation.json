@@ -30,7 +30,7 @@
   "Asia": "Asia",
   "Authentication is required and has failed or has not been provided.": "Authentication is required and has failed or has not been provided.",
   "Auto": "自動",
-  "Auto translate": "Auto-translate",
+  "Auto translation": "Auto-translate",
   "Auto translate updated successfully": "Auto translate updated successfully",
   "Automatic IP switching": "Automatic IP switching",
   "Automatic translation updates": "Automatic translation updates",
@@ -659,5 +659,20 @@
   "Share with 1 store": "1店舗と共有",
   "Premium Plan": "プレミアムプラン →",
   "Share with up to 3 stores": "最大3店舗と共有",
-  "Shared Plan": "共有プラン"
+  "Shared Plan": "共有プラン",
+  "Up to 8,000,000 translation credits": "最大 800万 翻訳クレジット",
+  "Image & alt text translation": "画像と代替テキストの翻訳",
+  "IP-based switching": "IPに基づいた切り替え",
+  "5 Days Free Trial >>": "5日無料試用版 >>",
+  "No Translation Credits Available": "無料クレジットがありません",
+  "Activate your free trial to start translating instantly:": "無料試用版をアクティブにして、即座に翻訳を開始します:",
+  "✅ 1,000,000 free credits for translation": "✅ 1,000,000 無料クレジットが翻訳に使用されます",
+  "✅ Automatic translation for store content": "✅ 店舗コンテンツの自動翻訳",
+  "✅ Image & alt-text translation" : "✅ 画像と代替テキストの翻訳",
+  "✅ IP-based language & currency switching": "✅ IPに基づいた言語と通貨の切り替え",
+  "✅ Glossary support for brand consistency": "✅ ブランド一貫性のためのガロシアサポート",
+  "✅ Live human support when needed": "✅ 必要に応じたライブ人間サポート",
+  "Start Free Trial": "無料試用版を開始する"
+
+
 }

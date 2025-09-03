@@ -30,7 +30,7 @@
   "Asia": "Asia",
   "Authentication is required and has failed or has not been provided.": "Authentication is required and has failed or has not been provided.",
   "Auto": "Auto",
-  "Auto translate": "Auto-translate",
+  "Auto translation": "Auto-translate",
   "Auto translate updated successfully": "Auto translate updated successfully",
   "Automatic IP switching": "Automatic IP switching",
   "Automatic translation updates": "Automatic translation updates",
@@ -659,5 +659,18 @@
   "Premium Plan": "Forfait Premium →",
   "Share with up to 3 stores": "Partagez avec jusqu'à 3 magasins",
   "Steps to Bind a Sub-Account": "Étapes pour lier un sous-compte",
-  "Shared Plan": "Plan partagé"
+  "Shared Plan": "Plan partagé",
+  "Up to 8,000,000 translation credits": "Jusqu’à 8 000 000 crédits de traduction",
+  "Image & alt text translation": "Traduction d'images et de texte alternatif",
+  "IP-based switching": "Changement basé sur l'IP",
+  "5 Days Free Trial >>": "5 jours de test gratuit >>",
+  "No Translation Credits Available": "Pas de crédits de traduction disponibles",
+  "Activate your free trial to start translating instantly:": "Activer votre essai gratuit pour commencer à traduire instantanément:",
+  "✅ 1,000,000 free credits for translation": "✅ 1,000,000 crédits gratuits pour la traduction",
+  "✅ Automatic translation for store content": "✅ Traduction automatique pour le contenu de la boutique",
+  "✅ Image & alt-text translation" : "✅ Traduction d'images et de texte alternatif",
+  "✅ IP-based language & currency switching": "✅ Changement basé sur l'IP pour la langue et la monnaie",
+  "✅ Glossary support for brand consistency": "✅ Support de glosaire pour la cohérence de la marque",
+  "✅ Live human support when needed": "✅ Support humain en temps réel quand nécessaire",
+  "Start Free Trial": "Démarrer l'essai gratuit"
 }

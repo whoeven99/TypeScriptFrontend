@@ -92,7 +92,7 @@ export const IsOpenFreePlan = async ({
 
     console.log(`${shop} IsOpenFreePlan: `, response.data);
 
-    return response.data;
+    return { ...response.data, success: true };
   } catch (error) {
     console.error(`${shop} IsOpenFreePlan error:`, error);
     return {
@@ -935,15 +935,6 @@ export const GetUserSubscriptionPlan = async ({
 
     console.log("GetUserSubscriptionPlan: ", response.data);
 
-    if (shop == "ciwishop.myshopify.com") {
-      return {
-        ...response.data,
-        response: {
-          userSubscriptionPlan: 6,
-          currentPeriodEnd: "2025-09-17T06:24:28Z",
-        },
-      };
-    }
     return response.data;
   } catch (error) {
     console.error("Error GetUserSubscriptionPlan:", error);
@@ -951,10 +942,7 @@ export const GetUserSubscriptionPlan = async ({
       success: false,
       errorCode: 10001,
       errorMsg: "SERVER_ERROR",
-      response: {
-        userSubscriptionPlan: 2,
-        currentPeriodEnd: "",
-      },
+      response: undefined,
     };
   }
 };
@@ -1128,7 +1116,7 @@ export const GetUserWords = async ({
     console.log("GetUserWords: ", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error occurred in the userwords:", error);
+    console.error("Error GetUserWords:", error);
     return {
       success: false,
       errorCode: 10001,
@@ -1995,17 +1983,20 @@ export const InsertOrUpdateOrder = async ({
 export const AddCharsByShopName = async ({
   shop,
   amount,
+  gid,
 }: {
   shop: string;
   amount: number;
+  gid: string;
 }) => {
   try {
     const response = await axios({
-      url: `${process.env.SERVER_URL}/translationCounter/addCharsByShopName`,
+      url: `${process.env.SERVER_URL}/translationCounter/addCharsByShopName?shopName=${shop}`,
       method: "POST",
       data: {
         shopName: shop,
         chars: amount,
+        gid: gid,
       },
     });
     console.log(`${shop} AddCharsByShopName:`, response.data);

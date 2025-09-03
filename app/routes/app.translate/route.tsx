@@ -57,6 +57,7 @@ import {
   GetLanguageLocaleInfo,
   GetUserWords,
 } from "~/api/JavaServer";
+import FirstTranslationModal from "~/components/firstTranslationModal";
 
 const { Title, Text } = Typography;
 
@@ -149,6 +150,8 @@ const Index = () => {
 
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showWarnModal, setShowWarnModal] = useState(false);
+  const [firstTranslationModalShow, setFirstTranslationModalShow] =
+    useState(false);
 
   const dispatch = useDispatch();
   const languageCardRef = useRef<HTMLDivElement>(null);
@@ -161,23 +164,25 @@ const Index = () => {
   const loadingLanguageFetcher = useFetcher<any>();
   const customApiKeyFetcher = useFetcher<any>();
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
-  const [currentModal, setCurrentModal] = useState<'limitExceeded' | 'outOfRange' | 'interfaceIsOccupied'>('limitExceeded');
+  const [currentModal, setCurrentModal] = useState<
+    "limitExceeded" | "outOfRange" | "interfaceIsOccupied"
+  >("limitExceeded");
   const modalTypeObject = {
     limitExceeded: {
-      Title: `${t('Insufficient private API quota')}`,
-      Body: `${t('The usage has exceeded your configured quota. Please update your settings.')}`,
-      Button: `${t('Configure now')}`,
+      Title: `${t("Insufficient private API quota")}`,
+      Body: `${t("The usage has exceeded your configured quota. Please update your settings.")}`,
+      Button: `${t("Configure now")}`,
     },
     outOfRange: {
-      Title: `${t('Unsupported language')}`,
-      Body: `${t('This language is not supported by Google Translate. Check the supported list in Google or switch to another model.')}`,
-      Button: `${t('OK')}`,
+      Title: `${t("Unsupported language")}`,
+      Body: `${t("This language is not supported by Google Translate. Check the supported list in Google or switch to another model.")}`,
+      Button: `${t("OK")}`,
     },
     interfaceIsOccupied: {
-      Title: `${t('Task in progress')}`,
-      Body: `${t('Your private API can run only one translation at a time. Please wait until the current task is finished.')}`,
-      Button: `${t('OK')}`,
-    }
+      Title: `${t("Task in progress")}`,
+      Body: `${t("Your private API can run only one translation at a time. Please wait until the current task is finished.")}`,
+      Button: `${t("OK")}`,
+    },
   };
 
   const handleConfigureQuota = () => {
@@ -202,7 +207,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { plan } = useSelector((state: any) => state.userConfig);
+  const { plan, isNew } = useSelector((state: any) => state.userConfig);
 
   function checkApiKeyConfiguration(
     customApikeyData: apiKeyConfiguration[],
@@ -362,24 +367,13 @@ const Index = () => {
           translateFetcher.data?.response?.translateSettings1 !== "8" &&
           translateFetcher.data?.response?.translateSettings1 !== "9"
         ) {
-          const getUserWords = async () => {
-            const data = await GetUserWords({ shop, server });
-            if (data.success) {
-              if (data?.response?.totalChars <= data?.response?.chars) {
-                setNeedPay(true);
-                setShowPaymentModal(true);
-              }
-            } else {
-              shopify.toast.show(
-                t(
-                  "The query of the remaining credits failed. Please try again.",
-                ),
-              );
-            }
-          };
-          getUserWords();
+          if (isNew) {
+            setFirstTranslationModalShow(true);
+          } else {
+            setNeedPay(true);
+            setShowPaymentModal(true);
+          }
         }
-
         if (translateFetcher?.data?.errorCode === 10014) {
           setCurrentModal("outOfRange");
           setIsApiKeyModalOpen(true);
@@ -618,7 +612,7 @@ const Index = () => {
   };
 
   const handleUsePrivateApi = () => {
-    if (plan <= 2 || !plan) {
+    if (plan?.id <= 2 || !plan?.id) {
       setShowWarnModal(true);
       return;
     }
@@ -676,7 +670,7 @@ const Index = () => {
       //     "The translation task is in progress. Please try translating again later.",
       //   ),
       // );
-      setCurrentModal('interfaceIsOccupied');
+      setCurrentModal("interfaceIsOccupied");
       setIsApiKeyModalOpen(true);
     }
   };
@@ -1114,8 +1108,8 @@ const Index = () => {
                     <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
                       {t("translateSettings1.title")}
                     </Title>
-                    {(typeof plan === "number" && plan <= 2) ||
-                    typeof plan === "undefined" ? (
+                    {(typeof plan?.id === "number" && plan?.id <= 2) ||
+                    typeof plan?.id === "undefined" ? (
                       <Flex align="center" gap="middle">
                         <Popconfirm
                           title=""
@@ -1788,6 +1782,10 @@ const Index = () => {
         ) : (
           <NoLanguageSetCard />
         )}
+        <FirstTranslationModal
+          show={firstTranslationModalShow}
+          setShow={setFirstTranslationModalShow}
+        />
         <Modal
           open={isApiKeyModalOpen}
           onCancel={handleApiKeyModalClose}

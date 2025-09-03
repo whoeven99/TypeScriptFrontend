@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Col,
+  Flex,
   Row,
   Skeleton,
   Space,
@@ -21,13 +22,11 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import ProgressingCard from "~/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
+import { useSelector } from "react-redux";
+import CorrectIcon from "~/components/icon/correctIcon";
+import GiftIcon from "~/components/icon/giftIcon";
 
 const { Title, Text } = Typography;
-
-export interface WordsType {
-  chars: number;
-  totalChars: number;
-}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -69,6 +68,9 @@ const Index = () => {
   } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { userConfigIsLoading, isNew } = useSelector(
+    (state: any) => state.userConfig,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [switcherOpen, setSwitcherOpen] = useState(true);
   const [switcherLoading, setSwitcherLoading] = useState(true);
@@ -218,6 +220,19 @@ const Index = () => {
     );
   };
 
+  const handleReceive = () => {
+    navigate("/app/pricing");
+    fetcher.submit(
+      {
+        log: `${shop} 前往付费页面, 从新人链接点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+  };
+
   return (
     <Page>
       <TitleBar title={t("Dashboard")} />
@@ -246,25 +261,129 @@ const Index = () => {
             <Title level={3}>{t("dashboard.title1")}</Title>
             <Text strong>{t("dashboard.description1")}</Text>
           </div>
-          <Card>
-            <Space
-              direction="vertical"
-              size="middle"
-              style={{ display: "flex" }}
+          <div>
+            <Card
+              style={
+                !userConfigIsLoading && isNew
+                  ? {
+                      borderBottomLeftRadius: 0,
+                      borderBottomRightRadius: 0,
+                    }
+                  : {}
+              }
             >
-              <Title level={4}>{t("transLanguageCard1.title")}</Title>
-              <Text>{t("transLanguageCard1.description")}</Text>
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                {isLoading ? (
-                  <Skeleton.Button active />
-                ) : (
-                  <Button type="primary" onClick={() => navigateToTranslate()}>
-                    {t("transLanguageCard1.button")}
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ display: "flex" }}
+              >
+                <Title level={4}>{t("transLanguageCard1.title")}</Title>
+                <Text>{t("transLanguageCard1.description")}</Text>
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  {isLoading ? (
+                    <Skeleton.Button active />
+                  ) : (
+                    <Button
+                      type="primary"
+                      onClick={() => navigateToTranslate()}
+                    >
+                      {t("transLanguageCard1.button")}
+                    </Button>
+                  )}
+                </div>
+              </Space>
+            </Card>
+
+            <Card
+              style={{
+                borderBlockStartColor: "#f0f0f0",
+                borderTopLeftRadius: 0,
+                borderTopRightRadius: 0,
+              }}
+              styles={{
+                body: {
+                  paddingTop: 6,
+                  paddingBottom: 6,
+                },
+              }}
+            >
+              <Flex align="center" justify="space-between" gap={24}>
+                <Space
+                  size={"small"}
+                  style={{ display: "flex", alignItems: "center" }}
+                >
+                  <Flex align="center">
+                    <CorrectIcon />
+                  </Flex>
+                  <Text
+                    style={{
+                      whiteSpace: "normal", // 允许换行
+                      wordBreak: "break-word", // 长单词也能断开
+                      maxWidth: "100%", // 不超过容器宽度
+                      color: "#007F61",
+                    }}
+                  >
+                    {t("Up to 8,000,000 translation credits")}
+                  </Text>
+                  <Flex align="center">
+                    <CorrectIcon />
+                  </Flex>
+                  <Text
+                    style={{
+                      whiteSpace: "normal", // 允许换行
+                      wordBreak: "break-word", // 长单词也能断开
+                      maxWidth: "100%", // 不超过容器宽度
+                      color: "#007F61",
+                    }}
+                  >
+                    {t("Auto translation")}
+                  </Text>
+                  <Flex align="center">
+                    <CorrectIcon />
+                  </Flex>
+                  <Text
+                    style={{
+                      whiteSpace: "normal", // 允许换行
+                      wordBreak: "break-word", // 长单词也能断开
+                      maxWidth: "100%", // 不超过容器宽度
+                      color: "#007F61",
+                    }}
+                  >
+                    {t("Image & alt text translation")}
+                  </Text>
+                  <Flex align="center">
+                    <CorrectIcon />
+                  </Flex>
+
+                  <Text
+                    style={{
+                      whiteSpace: "normal", // 允许换行
+                      wordBreak: "break-word", // 长单词也能断开
+                      maxWidth: "100%", // 不超过容器宽度
+                      color: "#007F61",
+                    }}
+                  >
+                    {t("IP-based switching")}
+                  </Text>
+                </Space>
+                {!userConfigIsLoading ? (
+                  <Button
+                    type="text"
+                    icon={<GiftIcon />}
+                    onClick={handleReceive}
+                    style={{
+                      color: "#007F61",
+                      padding: 0,
+                    }}
+                  >
+                    {isNew ? t("5 Days Free Trial >>") : t("Activate >>")}
                   </Button>
+                ) : (
+                  <Skeleton.Button active />
                 )}
-              </div>
-            </Space>
-          </Card>
+              </Flex>
+            </Card>
+          </div>
           <ProgressingCard shop={shop} server={server || ""} />
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>

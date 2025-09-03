@@ -31,9 +31,9 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
 import { ShopLocalesType } from "../app.language/route";
-import { setUserConfig } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
 import { DeleteProductImageData, GetProductImageData } from "~/api/JavaServer";
+import { setLocale } from "~/store/modules/userConfig";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -646,7 +646,7 @@ const Index = () => {
         const locale = shopLanguages.find(
           (language: ShopLocalesType) => language.primary === true,
         )?.locale;
-        dispatch(setUserConfig({ locale: locale || "" }));
+        dispatch(setLocale({ locale: locale || "" }));
       }
     }
   }, [languageFetcher.data]);
