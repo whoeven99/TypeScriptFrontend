@@ -7,7 +7,7 @@ interface UserConfigState {
     id: number;
     feeType: number;
   };
-  updateTime: string;
+  updateTime: string | null;
   chars: number | undefined;
   totalChars: number | undefined;
   userConfigIsLoading: boolean;
@@ -20,7 +20,7 @@ const initialState: UserConfigState = {
     id: 0,
     feeType: 0,
   },
-  updateTime: "",
+  updateTime: null,
   chars: 0,
   totalChars: 0,
   userConfigIsLoading: true,

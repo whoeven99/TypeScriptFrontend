@@ -9,6 +9,7 @@ import {
   Outlet,
   useFetcher,
   useLoaderData,
+  useLocation,
   useRouteError,
 } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
@@ -355,7 +356,11 @@ export default function App() {
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const { plan, updateTime } = useSelector((state: any) => state.userConfig);
+  const location = useLocation();
+
+  const { plan, chars, totalChars } = useSelector(
+    (state: any) => state.userConfig,
+  );
   const initFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
 
@@ -374,49 +379,7 @@ export default function App() {
         action: "/app",
       },
     );
-    const getPlan = async () => {
-      const data = await GetUserSubscriptionPlan({
-        shop: shop,
-        server: server as string,
-      });
-      if (data?.success) {
-        if (!plan || !updateTime) {
-          dispatch(
-            setPlan({
-              plan: {
-                id: data?.response?.userSubscriptionPlan || 2,
-                feeType: data?.response?.feeType || 0,
-              },
-            }),
-          );
-          if (data?.response?.currentPeriodEnd) {
-            const date = new Date(data?.response?.currentPeriodEnd)
-              .toLocaleDateString("zh-CN", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-              })
-              .replace(/\//g, "-");
-            dispatch(setUpdateTime({ updateTime: date }));
-          }
-        }
-      }
-    };
     getPlan();
-
-    const getWords = async () => {
-      const data = await GetUserWords({
-        shop,
-        server: server as string,
-      });
-      dispatch(setChars({ chars: data?.response?.chars }));
-      dispatch(
-        setTotalChars({
-          totalChars: data?.response?.totalChars,
-        }),
-      );
-      dispatch(setUserConfigIsLoading({ isLoading: false }));
-    };
     getWords();
     dispatch(setShop({ shop: shop as string }));
     setIsClient(true);
@@ -425,6 +388,59 @@ export default function App() {
       localStorage.setItem("shop", (shop as string) || "");
     }
   }, []);
+
+  useEffect(() => {
+    // 当 URL 改变时调用这两个函数
+    if (!plan?.id) {
+      getPlan();
+    }
+    if (!chars || !totalChars) {
+      getWords();
+    }
+  }, [location]); // 监听 URL 的变化
+
+  const getPlan = async () => {
+    const data = await GetUserSubscriptionPlan({
+      shop: shop,
+      server: server as string,
+    });
+    if (data?.success) {
+      dispatch(
+        setPlan({
+          plan: {
+            id: data?.response?.userSubscriptionPlan || 2,
+            feeType: data?.response?.feeType || 0,
+          },
+        }),
+      );
+      if (data?.response?.currentPeriodEnd) {
+        const date = new Date(data?.response?.currentPeriodEnd)
+          .toLocaleDateString("zh-CN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          })
+          .replace(/\//g, "-");
+        dispatch(setUpdateTime({ updateTime: date }));
+      }
+    }
+  };
+
+  const getWords = async () => {
+    const data = await GetUserWords({
+      shop,
+      server: server as string,
+    });
+    if (data?.success) {
+      dispatch(setChars({ chars: data?.response?.chars }));
+      dispatch(
+        setTotalChars({
+          totalChars: data?.response?.totalChars,
+        }),
+      );
+      dispatch(setUserConfigIsLoading({ isLoading: false }));
+    }
+  };
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>

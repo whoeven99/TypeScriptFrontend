@@ -935,16 +935,19 @@ export const GetUserSubscriptionPlan = async ({
 
     console.log("GetUserSubscriptionPlan: ", response.data);
 
-    if (shop == "ciwishop.myshopify.com") {
-      return {
-        ...response.data,
-        response: {
-          userSubscriptionPlan: 6,
-          currentPeriodEnd: "2025-09-17T06:24:28Z",
-        },
-      };
+    if (response.data?.success) {
+      return response.data;
     }
-    return response.data;
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: {
+        userSubscriptionPlan: 2,
+        currentPeriodEnd: "",
+        feeType: 0,
+      },
+    };
   } catch (error) {
     console.error("Error GetUserSubscriptionPlan:", error);
     return {
@@ -954,6 +957,7 @@ export const GetUserSubscriptionPlan = async ({
       response: {
         userSubscriptionPlan: 2,
         currentPeriodEnd: "",
+        feeType: 0,
       },
     };
   }
@@ -1128,7 +1132,7 @@ export const GetUserWords = async ({
     console.log("GetUserWords: ", response.data);
     return response.data;
   } catch (error) {
-    console.error("Error occurred in the userwords:", error);
+    console.error("Error GetUserWords:", error);
     return {
       success: false,
       errorCode: 10001,
