@@ -7,10 +7,11 @@ interface UserConfigState {
     id: number;
     feeType: number;
   };
-  updateTime: string;
+  updateTime: string | null;
   chars: number | undefined;
   totalChars: number | undefined;
   userConfigIsLoading: boolean;
+  isNew: boolean | null;
 }
 
 const initialState: UserConfigState = {
@@ -20,10 +21,11 @@ const initialState: UserConfigState = {
     id: 0,
     feeType: 0,
   },
-  updateTime: "",
+  updateTime: null,
   chars: 0,
   totalChars: 0,
   userConfigIsLoading: true,
+  isNew: null,
 };
 
 const userConfigSlice = createSlice({
@@ -65,6 +67,9 @@ const userConfigSlice = createSlice({
     ) => {
       state.userConfigIsLoading = action.payload.isLoading;
     },
+    setIsNew: (state, action: PayloadAction<{ isNew: boolean }>) => {
+      state.isNew = action.payload.isNew;
+    },
   },
 });
 
@@ -76,6 +81,7 @@ export const {
   setChars,
   setTotalChars,
   setUserConfigIsLoading,
+  setIsNew,
 } = userConfigSlice.actions;
 
 const reducer = userConfigSlice.reducer;

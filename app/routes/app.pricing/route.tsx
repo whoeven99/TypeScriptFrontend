@@ -62,47 +62,38 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   switch (true) {
     case !!payForPlan:
       try {
-        const data = await GetUserSubscriptionPlan({
+        const returnUrl = new URL(
+          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}/app/pricing`,
+        );
+        const res = await mutationAppSubscriptionCreate({
           shop,
-          server: process.env.SERVER_URL as string,
+          accessToken: accessToken as string,
+          name: payForPlan.title,
+          yearly: payForPlan.yearly,
+          price: {
+            amount: payForPlan.yearly
+              ? payForPlan.yearlyPrice * 12
+              : payForPlan.monthlyPrice,
+            currencyCode: "USD",
+          },
+          trialDays: payForPlan.trialDays,
+          returnUrl,
+          test:
+            process.env.NODE_ENV === "development" ||
+            process.env.NODE_ENV === "test",
         });
-        if (data === payForPlan.title) {
-          return data;
-        } else {
-          const returnUrl = new URL(
-            `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}/app/pricing`,
-          );
-          const res = await mutationAppSubscriptionCreate({
-            shop,
-            accessToken: accessToken as string,
-            name: payForPlan.title,
-            yearly: payForPlan.yearly,
+        return {
+          ...res,
+          appSubscription: {
+            ...res.appSubscription,
             price: {
               amount: payForPlan.yearly
-                ? payForPlan.yearlyPrice * 12
+                ? payForPlan.yearlyPrice
                 : payForPlan.monthlyPrice,
               currencyCode: "USD",
             },
-            trialDays: payForPlan.trialDays,
-            returnUrl,
-            test:
-              process.env.NODE_ENV === "development" ||
-              process.env.NODE_ENV === "test",
-          });
-          return {
-            ...res,
-            appSubscription: {
-              ...res.appSubscription,
-              price: {
-                amount: payForPlan.yearly
-                  ? payForPlan.yearlyPrice
-                  : payForPlan.monthlyPrice,
-                currencyCode: "USD",
-              },
-            },
-          };
-        }
-        // }
+          },
+        };
       } catch (error) {
         console.error("Error payForPlan action:", error);
       }
@@ -141,7 +132,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const Index = () => {
   const { shop, server } = useLoaderData<typeof loader>();
-  const { plan, updateTime, chars, totalChars } = useSelector(
+  const { plan, updateTime, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
   const { report } = useReport();
@@ -286,17 +277,18 @@ const Index = () => {
     ],
     [plan],
   );
-  const [yearly, setYearly] = useState(true);
+  const [yearly, setYearly] = useState(false);
   const [selectedOptionKey, setSelectedOption] = useState<string>("option-1");
   const [isLoading, setIsLoading] = useState(true);
   const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
   const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
+  const [payForPlanButtonLoading, setPayForPlanButtonLoading] =
+    useState<string>("");
   const [selectedPayPlanOption, setSelectedPayPlanOption] = useState<any>();
   // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
   // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
   // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
-  const [hasOpenFreePlan, setHasOpenFreePlan] = useState(true);
   const isQuotaExceeded = useMemo(
     () => chars >= totalChars && totalChars > 0,
     [chars, totalChars],
@@ -331,20 +323,6 @@ const Index = () => {
     );
   };
   useEffect(() => {
-    const checkFreeUsed = async () => {
-      try {
-        const data = await IsOpenFreePlan({
-          shop,
-          server: server as string,
-        });
-
-        setHasOpenFreePlan(data?.response || false);
-      } catch (error) {
-        console.error("Error getPlan:", error);
-      }
-    };
-    checkFreeUsed();
-
     setIsLoading(false);
     fetcher.submit(
       {
@@ -831,10 +809,13 @@ const Index = () => {
   const handlePayForPlan = ({
     plan,
     trialDays,
+    id,
   }: {
     plan: any;
     trialDays: number;
+    id: string;
   }) => {
+    setPayForPlanButtonLoading(id);
     setSelectedPayPlanOption({ ...plan, yearly, trialDays });
     payForPlanFetcher.submit(
       { payForPlan: JSON.stringify({ ...plan, yearly, trialDays }) },
@@ -965,58 +946,6 @@ const Index = () => {
             showIcon
           />
         )}
-        {/* <Space
-          direction="vertical"
-          size="small"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-          }}
-        >
-          <Title level={3} style={{ fontWeight: 700 }}>
-            {t("Choose the right plan for you")}
-          </Title>
-          <Row style={{ width: "100%" }}>
-            <Col span={18}>
-              <Button type="primary">居中按钮</Button>
-            </Col>
-            <Col span={6}>
-              <Button type="default">靠右按钮</Button>
-            </Col>
-          </Row>
-          <Row justify="space-between" align="middle" style={{ height: 100 }}>
-            <Col flex="auto" style={{ textAlign: 'center' }}>
-              <Flex align="center">
-                  <Space align="center" size="small">
-                    <Switch checked={yearly} onChange={() => setYearly(!yearly)} />
-                    <Text>{t("Yearly")}</Text>
-                  </Space>
-                  <div className="yearly_save">
-                    <Text strong>{t("Save 20%")}</Text>
-                  </div>
-                </Flex>
-            </Col>
-            <Col>
-              <Button style={{right:0}}  type="primary" size="middle" onClick={()=>{
-                  setIsModalVisible(true)
-                }}>{t("Shared Plan")}</Button>
-            </Col>
-          </Row>
-          {!hasOpenFreePlan && (
-            <Card styles={{ body: { padding: 12 } }}>
-              <Flex align="center" justify="space-between" gap={10}>
-                <Text>{t("Start your trial and unlock")}</Text>
-                <div className="free_trial">
-                  <Text strong>
-                    {t("{{amount}} free credits", { amount: "200,000" })}
-                  </Text>
-                </div>
-              </Flex>
-            </Card>
-          )}
-        </Space> */}
         <Flex vertical align="center" style={{ width: "100%" }}>
           <Title level={3} style={{ fontWeight: 700 }}>
             {t("Choose the right plan for you")}
@@ -1062,18 +991,6 @@ const Index = () => {
               )}
             </Col>
           </Row>
-          {!hasOpenFreePlan && (
-            <Card styles={{ body: { padding: 12 } }}>
-              <Flex align="center" justify="space-between" gap={10}>
-                <Text>{t("Start your trial and unlock")}</Text>
-                <div className="free_trial">
-                  <Text strong>
-                    {t("{{amount}} free credits", { amount: "200,000" })}
-                  </Text>
-                </div>
-              </Flex>
-            </Card>
-          )}
         </Flex>
         <Row gutter={[16, 16]}>
           <Col
@@ -1264,54 +1181,47 @@ const Index = () => {
                     />
                   )}
                   <Button
+                    id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-0`}
                     type="default"
                     block
                     disabled={item.disabled || selectedPayPlanOption}
                     style={{ marginBottom: "20px" }}
                     onClick={() =>
-                      handlePayForPlan({ plan: item, trialDays: 0 })
+                      handlePayForPlan({
+                        plan: item,
+                        trialDays: 0,
+                        id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-0`,
+                      })
                     }
                     loading={
-                      yearly == selectedPayPlanOption?.yearly &&
-                      item.title == selectedPayPlanOption?.title &&
-                      !selectedPayPlanOption?.trialdays
+                      payForPlanButtonLoading ==
+                      `${item.title}-${yearly ? "yearly" : "month"}-${index}-0`
                     }
                   >
                     {item.buttonText}
                   </Button>
-                  {!hasOpenFreePlan && (
+                  {isNew && (
                     <Button
+                      id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-5`}
                       type="primary"
                       block
                       disabled={item.disabled || selectedPayPlanOption}
                       style={{ marginBottom: "20px" }}
                       onClick={() =>
-                        handlePayForPlan({ plan: item, trialDays: 5 })
+                        handlePayForPlan({
+                          plan: item,
+                          trialDays: 5,
+                          id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`,
+                        })
                       }
                       loading={
-                        yearly == selectedPayPlanOption?.yearly &&
-                        item.title == selectedPayPlanOption?.title &&
-                        selectedPayPlanOption?.trialdays
+                        payForPlanButtonLoading ==
+                        `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`
                       }
                     >
                       {t("Free trial")}
                     </Button>
                   )}
-
-                  {/* {
-                      plan.title === "Premium" && !hasOpenFreePlan && (
-                        <Button
-                          type="primary"
-                          block
-                          style={{ marginBottom: "20px" }}
-                          onClick={() => setFreeTrialModalOpen(true)}
-                          disabled={buyButtonLoading}
-                        >
-                          {t("Free trial")}
-                        </Button>
-                      )
-                    } */}
-
                   <div style={{ flex: 1 }}>
                     {item.features.map((feature, idx) => (
                       <div

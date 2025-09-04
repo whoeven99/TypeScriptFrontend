@@ -662,13 +662,17 @@
   "Premium Plan": "高级计划 →",
   "Share with up to 3 stores": "与最多 3 家商店共享",
   "Shared Plan": "共享计划",
-  "1M free credits": "1M 免费积分",
+  "Up to 8,000,000 translation credits": "最多 8 000 000 翻译积分",
   "Image & alt text translation": "图片和 alt 文本翻译",
   "IP-based switching": "基于 IP 的切换",
   "5 Days Free Trial >>": "5 天免费试用 >>",
-  "🎁 Get free credits": "🎁 获取免费积分",
-  "✅ Give 1,000,000 points": "✅ 赠送 1,000,000 积分",
-  "✅ 5-day free trial (any plan)": "✅ 5 天免费试用（任意计划）",
-  "Receive": "接收"
-
+  "No Translation Credits Available": "没有可用的翻译积分",
+  "Activate your free trial to start translating instantly:": "开启免费试用后，即可进行翻译",
+  "✅ 1,000,000 free credits for translation": "✅ 免费获得 1,000,000 Credits用于翻译",
+  "✅ Automatic translation for store content": "✅ 自动翻译功能",
+  "✅ Image & alt-text translation" : "✅ 图片翻译功能",
+  "✅ IP-based language & currency switching": "✅ 基于 IP 自动切换语言和货币",
+  "✅ Glossary support for brand consistency": "✅ 术语表",
+  "✅ Live human support when needed": "✅ 人工支持",
+  "Start Free Trial": "立即试用"
 }

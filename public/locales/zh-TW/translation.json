@@ -660,13 +660,17 @@
   "Share with up to 3 stores": "與最多 3 家商店共享",
   "Steps to Bind a Sub-Account": "綁定子帳號步驟",
   "Shared Plan": "共享計劃",
-  "1M free credits": "1M 免費積分",
+  "Up to 8,000,000 translation credits": "最多 8 000 000 翻譯積分",
   "Image & alt text translation": "圖片和替代文本翻譯",
   "IP-based switching": "基於 IP 的切換",
   "5 Days Free Trial >>": "5 天免費試用 >>",
-  "🎁 Get free credits": "🎁 獲得免費積分",
-  "✅ Give 1,000,000 points": "✅ 贈送 1,000,000 積分",
-  "✅ 5-day free trial (any plan)": "✅ 5 天免費試用（任意計劃）",
-  "Receive": "接收"
-
+  "No Translation Credits Available": "沒有可用的翻譯積分",
+  "Activate your free trial to start translating instantly:": "啟用免費試用版，立即開始翻譯：",
+  "✅ 1,000,000 free credits for translation": "✅ 1000000 免費積分可用於翻譯",
+  "✅ Automatic translation for store content": "✅ 自動翻譯商店內容",
+  "✅ Image & alt-text translation" : "✅ 圖片和替代文本翻譯",
+  "✅ IP-based language & currency switching": "✅ 基於 IP 的語言和貨幣切換",
+  "✅ Glossary support for brand consistency": "✅ 品牌一貫性的詞典支持",
+  "✅ Live human support when needed": "✅ 必要時的實時人類支持",
+  "Start Free Trial": "開始免費試用版"
 }
