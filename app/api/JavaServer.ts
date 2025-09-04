@@ -1100,6 +1100,53 @@ export const GetTranslationItemsInfo = async ({
   }
 };
 
+// 获取图片翻译结果
+export const TranslateImage = async ({
+  shop,
+  imageUrl,
+  sourceCode,
+  targetCode,
+  accessToken,
+}: {
+  shop: string;
+  imageUrl: string;
+  sourceCode: string;
+  targetCode: string;
+  accessToken: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/translate/imageTranslate?shopName=${shop}`,
+      method: "PUT",
+      data: {
+        imageUrl,
+        sourceCode,
+        targetCode,
+        accessToken,
+      },
+    });
+    console.log("imageTranslate Response", response);
+    if (response.data.success) {
+      return response.data.data;
+    } else {
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: [],
+      };
+    }
+  } catch (error) {
+    console.log("Error GetImageTranslate", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: [],
+    };
+  }
+};
+
 //获取用户的额度字符数 和 已使用的字符
 export const GetUserWords = async ({
   shop,

@@ -24,7 +24,7 @@ import {
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
-import { GetTranslationItemsInfo } from "~/api/JavaServer";
+import { GetTranslationItemsInfo, TranslateImage } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import languageItemsData, {
@@ -74,6 +74,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const language = JSON.parse(formData.get("language") as string);
   const itemsCount = JSON.parse(formData.get("itemsCount") as string);
+  const translateImage = JSON.parse(formData.get("translateImage") as string);
+  const replaceTranslateImage = JSON.parse(formData.get('replaceTranslateImage')as string);
   switch (true) {
     case !!language:
       try {
@@ -104,6 +106,32 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: [],
         };
       }
+    case !!translateImage:
+      try {
+        const { sourceLanguage, targetLanguage, imageUrl } = translateImage;
+        console.log('translateImage',translateImage);
+        console.log('token',accessToken);
+        
+        const response = await TranslateImage({
+          shop,
+          imageUrl,
+          sourceCode: sourceLanguage,
+          targetCode: targetLanguage,
+          accessToken: accessToken as string,
+        });
+        return response;
+      } catch (error) {
+        console.log("Error getImageTranslate", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: [],
+        };
+      }
+    case !!replaceTranslateImage:
+      const {file,userPicturesDoJson} = replaceTranslateImage;
+      const response = await replaceTranslateImage();
     default:
       // 你可以在这里处理一个默认的情况，如果没有符合的条件
       return json({ success: false, message: "Invalid data" });
