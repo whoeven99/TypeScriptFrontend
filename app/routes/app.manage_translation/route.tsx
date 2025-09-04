@@ -74,6 +74,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const language = JSON.parse(formData.get("language") as string);
   const itemsCount = JSON.parse(formData.get("itemsCount") as string);
+  const translateImage = JSON.parse(formData.get('translateImage') as string)
   switch (true) {
     case !!language:
       try {

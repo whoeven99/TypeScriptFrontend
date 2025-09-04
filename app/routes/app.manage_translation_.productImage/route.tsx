@@ -569,6 +569,7 @@ const Index = () => {
   const languageFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
   const imageFetcher = useFetcher<any>();
+  const translateImageFetcher = useFetcher<any>();
   const [translatrImageactive, setTranslatrImageactive] = useState(false);
   const sourceLanguages = [
     { label: "英语", value: "en" },
@@ -596,6 +597,15 @@ const Index = () => {
   };
   const onClose = () => {
     setTranslatrImageactive(false);
+  };
+  const handleImageTranslate = () => {
+    setTranslatrImageactive(true);
+    translateImageFetcher.submit(
+      {
+        translateImage: JSON.stringify(true),
+      },
+      { method: "post", action: "/app/manage_translation" },
+    );
   };
   useEffect(() => {
     loadFetcher.submit({ loading: true }, { method: "post" });
@@ -793,7 +803,7 @@ const Index = () => {
       render: (_: any, record: any) => {
         return (
           <Space direction="vertical">
-            <Button >{t("Translate")}</Button>
+            <Button onClick={handleImageTranslate}>{t("Translate")}</Button>
             <Upload
               pastable={false}
               maxCount={1}
@@ -1535,23 +1545,19 @@ const Index = () => {
         >
           <Modal.Section>
             <div style={{ marginBottom: "1rem" }}>
-              <label>Source Language</label>
               <Select
-                label="当前语言"
+                label="Source Language"
                 options={sourceLanguages}
                 onChange={handleSourceChange}
                 value={sourceLanguage}
-                placeholder="Select source language"
               />
             </div>
             <div>
-              <label>Target Language</label>
               <Select
-                label="目标语言"
+                label="Target Language"
                 options={targetLanguages}
                 onChange={handleTargetChange}
                 value={targetLanguage}
-                placeholder="Select target language"
               />
             </div>
           </Modal.Section>
