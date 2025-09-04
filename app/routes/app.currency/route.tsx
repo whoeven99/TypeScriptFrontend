@@ -249,7 +249,7 @@ const Index = () => {
     () => currentPageKeys.some((key) => selectedRowKeys.includes(key)),
     [currentPageKeys, selectedRowKeys],
   );
-  const { report } = useReport();
+  const { reportClick, report } = useReport();
   const dispatch = useDispatch();
   const { t } = useTranslation();
 
@@ -488,15 +488,7 @@ const Index = () => {
     const row = dataSource.find((item) => item.key === key);
     setSelectedRow(row);
     setIsCurrencyEditModalOpen(true);
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "currency_list_edit",
-    );
+    reportClick("currency_list_edit");
   };
 
   const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
@@ -525,15 +517,7 @@ const Index = () => {
       });
     }
     setDeleteLoading(true);
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "currency_list_delete",
-    );
+    reportClick("currency_list_delete");
   };
 
   return (
@@ -579,15 +563,7 @@ const Index = () => {
             type="primary"
             onClick={() => {
               setIsAddCurrencyModalOpen(true);
-              report(
-                {},
-                {
-                  action: "/app",
-                  method: "post",
-                  eventType: "click",
-                },
-                "currency_navi_add",
-              );
+              reportClick("currency_navi_add");
             }}
           >
             {t("Add Currency")}

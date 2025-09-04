@@ -69,8 +69,10 @@ const useReport = () => {
     },
     [report],
   );
-
-  return { report, trackExposure, fetcherState: fetcher.state };
+  const reportClick = (name:string)=>{
+    report({},{ method: "post", action: "/app", eventType: "click" },name);
+  }
+  return { reportClick,report, trackExposure, fetcherState: fetcher.state };
 };
 
 export default useReport;

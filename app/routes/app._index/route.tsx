@@ -83,7 +83,7 @@ const Index = () => {
 
   const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
-  const { report } = useReport();
+  const { reportClick, report } = useReport();
   useEffect(() => {
     setIsLoading(false);
     themeFetcher.submit(
@@ -181,37 +181,13 @@ const Index = () => {
   ];
   const handleCommitRequest = () => {
     handleContactSupport();
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_devprogress_request",
-    );
+    reportClick("dashboard_devprogress_request");
   };
   const handleReportCiwiHelpCenter = () => {
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_footer_help_center",
-    );
+    reportClick("dashboard_footer_help_center");
   };
   const navigateToTranslate = () => {
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_translate_button",
-    );
+    reportClick("dashboard_translate_button");
     navigate("/app/translate", {
       state: { from: "/app", selectedLanguageCode: "" },
     });
@@ -226,30 +202,14 @@ const Index = () => {
     );
   };
   const navigateToHelpSwitchCurrency = () => {
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_currency_guide",
-    );
+    reportClick("dashboard_currency_guide");
     window.open(
       "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/",
       "_blank",
     );
   };
   const navigateToSwitchCurrencyDetail = () => {
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_currency_view_detail",
-    );
+    reportClick("dashboard_currency_view_detail");
     window.open(
       "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/",
       "_blank",
@@ -266,15 +226,7 @@ const Index = () => {
         action: "/log",
       },
     );
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_language_manage",
-    );
+    reportClick("dashboard_language_manage");
   };
 
   const navigateToCurrency = () => {
@@ -288,15 +240,7 @@ const Index = () => {
         action: "/log",
       },
     );
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_currency_manage",
-    );
+    reportClick("dashboard_currency_manage");
   };
 
   const handleReceive = () => {
@@ -699,15 +643,7 @@ const Index = () => {
               <ContactCard
                 isChinese={isChinese}
                 onClick={() => {
-                  report(
-                    {},
-                    {
-                      action: "/app",
-                      method: "post",
-                      eventType: "click",
-                    },
-                    "dashboard_contact_us",
-                  );
+                  reportClick("dashboard_contact_us");
                   handleContactSupport();
                 }}
               />

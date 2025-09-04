@@ -168,7 +168,7 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const loadingFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
-  const { report } = useReport();
+  const { reportClick, report } = useReport();
   useEffect(() => {
     loadingFetcher.submit(
       { loading: JSON.stringify(true) },
@@ -295,15 +295,7 @@ const Index = () => {
       setGlossaryModalId(key);
       setIsGlossaryModalOpen(true); // 打开Modal
     }
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "glossary_list_edit",
-    );
+    reportClick("glossary_list_edit");
   };
 
   const columns = [

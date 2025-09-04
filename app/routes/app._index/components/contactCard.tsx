@@ -12,18 +12,10 @@ interface ContactCardProps {
 
 const ContactCard: React.FC<ContactCardProps> = ({ isChinese, onClick }) => {
   const { t } = useTranslation();
-  const { report } = useReport();
-  const handleContactSupportReport = ()=>{
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_contact_us",
-    );
-  }
+  const { reportClick, report } = useReport();  
+  const handleContactSupportReport = () => {
+    reportClick("dashboard_contact_us");
+  };
   return (
     <Card
       style={{
@@ -65,7 +57,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ isChinese, onClick }) => {
               }
               trigger="click"
             >
-              <Button>{t("contact.contactButton")}</Button>
+              <Button onClick={handleContactSupportReport}>{t("contact.contactButton")}</Button>
             </Popover>
           ) : (
             <Button onClick={onClick}>{t("contact.contactButton")}</Button>

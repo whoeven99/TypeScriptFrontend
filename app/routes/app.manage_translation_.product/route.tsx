@@ -423,7 +423,7 @@ const Index = () => {
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
-  const { report } = useReport();
+  const { reportClick } = useReport();
   const itemOptions = [
     { label: t("Products"), value: "product" },
     { label: t("Collection"), value: "collection" },
@@ -1012,15 +1012,7 @@ const Index = () => {
                 record?.default_language || "",
                 handleProductBaseInputChange,
               );
-              report(
-                {},
-                {
-                  action: "/app",
-                  method: "post",
-                  eventType: "click",
-                },
-                "editor_list_translate",
-              );
+              reportClick("editor_list_translate");
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1078,15 +1070,7 @@ const Index = () => {
                 record?.default_language || "",
                 handleProductSeoInputChange,
               );
-              report(
-                {},
-                {
-                  action: "/app",
-                  method: "post",
-                  eventType: "click",
-                },
-                "editor_list_translate",
-              );
+              reportClick("editor_list_translate");
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1149,15 +1133,7 @@ const Index = () => {
                 record?.default_language || "",
                 handleOptionsInputChange,
               );
-              report(
-                {},
-                {
-                  action: "/app",
-                  method: "post",
-                  eventType: "click",
-                },
-                "editor_list_translate",
-              );
+              reportClick("editor_list_translate");
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1220,15 +1196,7 @@ const Index = () => {
                 record?.default_language || "",
                 handleMetafieldsInputChange,
               );
-              report(
-                {},
-                {
-                  action: "/app",
-                  method: "post",
-                  eventType: "click",
-                },
-                "editor_list_translate",
-              );
+              reportClick("editor_list_translate");
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -1291,15 +1259,7 @@ const Index = () => {
                 record?.default_language || "",
                 handleVariantsInputChange,
               );
-              report(
-                {},
-                {
-                  action: "/app",
-                  method: "post",
-                  eventType: "click",
-                },
-                "editor_list_translate",
-              );
+              reportClick("editor_list_translate");
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -2057,15 +2017,7 @@ const Index = () => {
                                     item?.default_language || "",
                                     handleProductBaseInputChange,
                                   );
-                                  report(
-                                    {},
-                                    {
-                                      action: "/app",
-                                      method: "post",
-                                      eventType: "click",
-                                    },
-                                    "editor_list_translate",
-                                  );
+                                  reportClick("editor_list_translate");
                                 }}
                                 loading={loadingItems.includes(item?.key || "")}
                               >
@@ -2141,15 +2093,7 @@ const Index = () => {
                                     item?.default_language || "",
                                     handleProductSeoInputChange,
                                   );
-                                  report(
-                                    {},
-                                    {
-                                      action: "/app",
-                                      method: "post",
-                                      eventType: "click",
-                                    },
-                                    "editor_list_translate",
-                                  );
+                                  reportClick("editor_list_translate");
                                 }}
                                 loading={loadingItems.includes(item?.key || "")}
                               >
@@ -2227,15 +2171,7 @@ const Index = () => {
                                         item?.default_language || "",
                                         handleOptionsInputChange,
                                       );
-                                      report(
-                                        {},
-                                        {
-                                          action: "/app",
-                                          method: "post",
-                                          eventType: "click",
-                                        },
-                                        "editor_list_translate",
-                                      );
+                                      reportClick("editor_list_translate");
                                     }}
                                     loading={loadingItems.includes(
                                       item?.key || "",
@@ -2318,15 +2254,7 @@ const Index = () => {
                                         item?.default_language || "",
                                         handleMetafieldsInputChange,
                                       );
-                                      report(
-                                        {},
-                                        {
-                                          action: "/app",
-                                          method: "post",
-                                          eventType: "click",
-                                        },
-                                        "editor_list_translate",
-                                      );
+                                      reportClick("editor_list_translate");
                                     }}
                                     loading={loadingItems.includes(
                                       item?.key || "",
@@ -2409,15 +2337,7 @@ const Index = () => {
                                         item?.default_language || "",
                                         handleVariantsInputChange,
                                       );
-                                      report(
-                                        {},
-                                        {
-                                          action: "/app",
-                                          method: "post",
-                                          eventType: "click",
-                                        },
-                                        "editor_list_translate",
-                                      );
+                                      reportClick("editor_list_translate");
                                     }}
                                     loading={loadingItems.includes(
                                       item?.key || "",
