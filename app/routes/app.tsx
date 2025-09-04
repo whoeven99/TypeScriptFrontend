@@ -346,8 +346,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (googleAnalytics) {
       try {
         const { data, eventType, timestamp, name } = googleAnalytics;
-        console.log('app data',googleAnalytics);
-        
         const response = await GoogleAnalyticClickReport(
           { ...data, eventType, timestamp, shopName:shop },
           name
