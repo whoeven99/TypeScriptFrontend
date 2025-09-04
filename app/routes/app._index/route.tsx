@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Col,
+  Flex,
   Row,
   Skeleton,
   Space,
@@ -295,6 +296,19 @@ const Index = () => {
         eventType: "click",
       },
       "dashboard_currency_manage",
+    );
+  };
+
+  const handleReceive = () => {
+    navigate("/app/pricing");
+    fetcher.submit(
+      {
+        log: `${shop} 前往付费页面, 从新人链接点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
     );
   };
 
