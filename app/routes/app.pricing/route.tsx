@@ -277,12 +277,14 @@ const Index = () => {
     ],
     [plan],
   );
-  const [yearly, setYearly] = useState(true);
+  const [yearly, setYearly] = useState(false);
   const [selectedOptionKey, setSelectedOption] = useState<string>("option-1");
   const [isLoading, setIsLoading] = useState(true);
   const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
   const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
+  const [payForPlanButtonLoading, setPayForPlanButtonLoading] =
+    useState<string>("");
   const [selectedPayPlanOption, setSelectedPayPlanOption] = useState<any>();
   // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
   // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
@@ -807,10 +809,13 @@ const Index = () => {
   const handlePayForPlan = ({
     plan,
     trialDays,
+    id,
   }: {
     plan: any;
     trialDays: number;
+    id: string;
   }) => {
+    setPayForPlanButtonLoading(id);
     setSelectedPayPlanOption({ ...plan, yearly, trialDays });
     payForPlanFetcher.submit(
       { payForPlan: JSON.stringify({ ...plan, yearly, trialDays }) },
@@ -1033,7 +1038,7 @@ const Index = () => {
                 disabled={
                   plan.id === 1 || plan.id === 2 || selectedPayPlanOption
                 }
-                style={{ marginBottom: isNew ? "20px" : "70px" }}
+                style={{ marginBottom: isNew ? "70px" : "20px" }}
                 onClick={() => setCancelPlanWarnModal(true)}
               >
                 {plan.id === 1 || plan.id === 2
@@ -1165,34 +1170,42 @@ const Index = () => {
                     />
                   )}
                   <Button
+                    id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-0`}
                     type="default"
                     block
                     disabled={item.disabled || selectedPayPlanOption}
                     style={{ marginBottom: "20px" }}
                     onClick={() =>
-                      handlePayForPlan({ plan: item, trialDays: 0 })
+                      handlePayForPlan({
+                        plan: item,
+                        trialDays: 0,
+                        id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-0`,
+                      })
                     }
                     loading={
-                      yearly == selectedPayPlanOption?.yearly &&
-                      item.title == selectedPayPlanOption?.title &&
-                      !selectedPayPlanOption?.trialdays
+                      payForPlanButtonLoading ==
+                      `${item.title}-${yearly ? "yearly" : "month"}-${index}-0`
                     }
                   >
                     {item.buttonText}
                   </Button>
                   {isNew && (
                     <Button
+                      id={`${item.title}-${yearly ? "yearly" : "month"}-${index}-5`}
                       type="primary"
                       block
                       disabled={item.disabled || selectedPayPlanOption}
                       style={{ marginBottom: "20px" }}
                       onClick={() =>
-                        handlePayForPlan({ plan: item, trialDays: 5 })
+                        handlePayForPlan({
+                          plan: item,
+                          trialDays: 5,
+                          id: `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`,
+                        })
                       }
                       loading={
-                        yearly == selectedPayPlanOption?.yearly &&
-                        item.title == selectedPayPlanOption?.title &&
-                        selectedPayPlanOption?.trialdays
+                        payForPlanButtonLoading ==
+                        `${item.title}-${yearly ? "yearly" : "month"}-${index}-5`
                       }
                     >
                       {t("Free trial")}
