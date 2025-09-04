@@ -33,10 +33,11 @@ import languageItemsData, {
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
-import { setUserConfig } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import defaultStyles from "../styles/defaultStyles.module.css";
+import useReport from "scripts/eventReport";
+import { setLocale } from "~/store/modules/userConfig";
 
 const { Text, Title } = Typography;
 
@@ -151,7 +152,7 @@ const Index = () => {
   const themeFetcher = useFetcher<any>();
   const deliveryFetcher = useFetcher<any>();
   const shippingFetcher = useFetcher<any>();
-
+  const { reportClick } = useReport();
   const productsDataSource: TableDataType[] = [
     {
       key: "products",
@@ -408,6 +409,14 @@ const Index = () => {
       navigation: "delivery",
     },
   ];
+  const handleShowWarnModal = () => {
+    setShowWarnModal(true);
+    reportClick("manage_navi_import");
+  };
+  const handleShowImportModal = () => {
+    setShowModal(true);
+    reportClick("manage_navi_import");
+  };
 
   useEffect(() => {
     languageFetcher.submit(
@@ -465,7 +474,7 @@ const Index = () => {
         const locale = shopLanguages.find(
           (language: ShopLocalesType) => language.primary === true,
         )?.locale;
-        dispatch(setUserConfig({ locale: locale || "" }));
+        dispatch(setLocale({ locale: locale || "" }));
       }
     }
   }, [languageFetcher.data]);
@@ -839,6 +848,7 @@ const Index = () => {
                 navigate(
                   `/app/manage_translation/${record.navigation}?language=${current}`,
                 );
+              reportClick("manage_list_edit");
             }}
           >
             {t("Edit")}
@@ -915,15 +925,13 @@ const Index = () => {
                   </Popconfirm>
                   <Button
                     className={defaultStyles.Button_disable}
-                    onClick={() => setShowWarnModal(true)}
+                    onClick={handleShowWarnModal}
                   >
                     {t("Import")}
                   </Button>
                 </Flex>
               ) : (
-                <Button onClick={() => setShowModal(true)}>
-                  {t("Import")}
-                </Button>
+                <Button onClick={handleShowImportModal}>{t("Import")}</Button>
               )}
             </div>
           </div>

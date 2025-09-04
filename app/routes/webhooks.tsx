@@ -154,6 +154,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             const addChars = await AddCharsByShopName({
               shop,
               amount: credits,
+              gid: payload?.app_purchase_one_time.admin_graphql_api_id,
             });
             console.log("addChars: ", addChars);
             if (addChars?.success) {

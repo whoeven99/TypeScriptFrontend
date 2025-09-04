@@ -1,40 +1,88 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CurrencyDataType } from "~/routes/app.currency/route";
 
 interface UserConfigState {
+  shop: string;
   locale: string;
-  plan: string;
-  updateTime: string;
+  plan: {
+    id: number;
+    feeType: number;
+  };
+  updateTime: string | null;
+  chars: number | undefined;
+  totalChars: number | undefined;
+  userConfigIsLoading: boolean;
+  isNew: boolean | null;
 }
 
 const initialState: UserConfigState = {
+  shop: "",
   locale: "",
-  plan: "",
-  updateTime: "",
+  plan: {
+    id: 0,
+    feeType: 0,
+  },
+  updateTime: null,
+  chars: 0,
+  totalChars: 0,
+  userConfigIsLoading: true,
+  isNew: null,
 };
 
 const userConfigSlice = createSlice({
   name: "userConfig",
   initialState,
   reducers: {
-    setUserConfig: (
+    setPlan: (
       state,
-      action: PayloadAction<{ [key: string]: string }>,
+      action: PayloadAction<{
+        plan: {
+          id: number;
+          feeType: number;
+        };
+      }>,
     ) => {
-      if (action.payload.locale !== undefined) {
-        state.locale = action.payload.locale;
-      }
-      if (action.payload.plan !== undefined && !state.plan) {
-        state.plan = action.payload.plan;
-      }
-      if (action.payload.updateTime !== undefined && !state.updateTime) {
-        state.updateTime = action.payload.updateTime;
-      }
+      state.plan = action.payload.plan;
+    },
+    setUpdateTime: (state, action: PayloadAction<{ updateTime: string }>) => {
+      state.updateTime = action.payload.updateTime;
+    },
+    setShop: (state, action: PayloadAction<{ shop: string }>) => {
+      state.shop = action.payload.shop;
+    },
+    setLocale: (state, action: PayloadAction<{ locale: string }>) => {
+      state.locale = action.payload.locale;
+    },
+    setChars: (state, action: PayloadAction<{ chars: number | undefined }>) => {
+      state.chars = action.payload.chars;
+    },
+    setTotalChars: (
+      state,
+      action: PayloadAction<{ totalChars: number | undefined }>,
+    ) => {
+      state.totalChars = action.payload.totalChars;
+    },
+    setUserConfigIsLoading: (
+      state,
+      action: PayloadAction<{ isLoading: boolean }>,
+    ) => {
+      state.userConfigIsLoading = action.payload.isLoading;
+    },
+    setIsNew: (state, action: PayloadAction<{ isNew: boolean }>) => {
+      state.isNew = action.payload.isNew;
     },
   },
 });
 
-export const { setUserConfig } = userConfigSlice.actions;
+export const {
+  setPlan,
+  setUpdateTime,
+  setShop,
+  setLocale,
+  setChars,
+  setTotalChars,
+  setUserConfigIsLoading,
+  setIsNew,
+} = userConfigSlice.actions;
 
 const reducer = userConfigSlice.reducer;
 export default reducer;

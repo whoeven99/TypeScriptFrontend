@@ -17,24 +17,12 @@ import { createHead } from "remix-island";
 import "./styles.css";
 
 export function ErrorBoundary() {
-  const fetcher = useFetcher<any>();
   const error = useRouteError();
   console.error("Root Error:", error);
   let errorCode = "500";
   if (isRouteErrorResponse(error)) {
     errorCode = error.status.toString();
   }
-  const shop = localStorage.getItem("shop");
-
-  fetcher.submit(
-    {
-      log: `${shop} 错误码: ${errorCode}`,
-    },
-    {
-      method: "POST",
-      action: "/log",
-    },
-  );
 
   // 错误信息映射
   const errorMessages: {

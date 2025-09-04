@@ -348,7 +348,7 @@
   "Please select a language": "请选择一个语言",
   "The 20 language limit has been reached": "20语言限制已达到",
   "Based on Shopify's language limit, you can only add up to 20 languages.Please delete some languages and then continue.": "基于 Shopify 的语言限制，您只能添加最多 20 种语言。请删除一些语言然后继续。",
-  "Auto translate": "自动翻译",
+  "Auto translation": "自动翻译",
   "{{credits}} credits/month": "{{credits}} 积分/月",
   "Glossary ({{count}} entries)": "术语表 ({{count}} 条目)",
   "starter_features1": "使用私有AI模型接口翻译（支持 google translate）",
@@ -661,5 +661,18 @@
   "Share with 1 store": "与 1 家商店共享",
   "Premium Plan": "高级计划 →",
   "Share with up to 3 stores": "与最多 3 家商店共享",
-  "Shared Plan": "共享计划"
+  "Shared Plan": "共享计划",
+  "Up to 8,000,000 translation credits": "最多 8 000 000 翻译积分",
+  "Image & alt text translation": "图片和 alt 文本翻译",
+  "IP-based switching": "基于 IP 的切换",
+  "5 Days Free Trial >>": "5 天免费试用 >>",
+  "No Translation Credits Available": "没有可用的翻译积分",
+  "Activate your free trial to start translating instantly:": "开启免费试用后，即可进行翻译",
+  "✅ 1,000,000 free credits for translation": "✅ 免费获得 1,000,000 Credits用于翻译",
+  "✅ Automatic translation for store content": "✅ 自动翻译功能",
+  "✅ Image & alt-text translation" : "✅ 图片翻译功能",
+  "✅ IP-based language & currency switching": "✅ 基于 IP 自动切换语言和货币",
+  "✅ Glossary support for brand consistency": "✅ 术语表",
+  "✅ Live human support when needed": "✅ 人工支持",
+  "Start Free Trial": "立即试用"
 }

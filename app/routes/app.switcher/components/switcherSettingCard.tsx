@@ -11,7 +11,7 @@ import {
 } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-
+import useReport from "scripts/eventReport";
 const { Text, Paragraph, Title } = Typography;
 
 interface SwitcherSettingCardProps {
@@ -41,7 +41,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
 
   const { t } = useTranslation();
-
+  const { reportClick } = useReport();
   useEffect(() => {
     if (localStorage.getItem("switcherCard") == "false") {
       setVisible(false);
@@ -57,7 +57,12 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
     //保存当前的设置
     localStorage.setItem("switcherCard", "false");
   };
-
+  const handleGoogleReport = () => {
+    reportClick("switcher_guide_setup");
+  };
+  const handleClickHereReport = () => {
+    reportClick("switcher_guide_click_theme");
+  };
   return (
     <Card
       style={{ display: visible ? "block" : "none" }}
@@ -104,7 +109,11 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
             </Text>
           )}
           <Link url={settingUrl} target="_blank">
-            <Button type="primary" className="currency-action">
+            <Button
+              type="primary"
+              onClick={handleGoogleReport}
+              className="currency-action"
+            >
               {t("Setup")}
             </Button>
           </Link>
@@ -201,7 +210,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
         </div>
         <Text>
           {t("Please")}
-          <Link url={blockUrl} target="_blank">
+          <Link url={blockUrl} target="_blank" onClick={handleClickHereReport}>
             {t("Click here")}
           </Link>
           {t(

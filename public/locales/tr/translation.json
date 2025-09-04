@@ -30,7 +30,7 @@
   "Asia": "Asia",
   "Authentication is required and has failed or has not been provided.": "Authentication is required and has failed or has not been provided.",
   "Auto": "Auto",
-  "Auto translate": "Auto-translate",
+  "Auto translation": "Auto-translate",
   "Auto translate updated successfully": "Auto translate updated successfully",
   "Automatic IP switching": "Automatic IP switching",
   "Automatic translation updates": "Automatic translation updates",
@@ -659,5 +659,20 @@
   "Share with 1 store": "1 mağazayla paylaş",
   "Premium Plan": "Premium Plan →",
   "Share with up to 3 stores": "En fazla 3 mağazayla paylaşın",
-  "Shared Plan": "Paylaşımlı Plan"
+  "Shared Plan": "Paylaşımlı Plan",
+  "Up to 8,000,000 translation credits": "8.000.000'e kadar çeviri kredisi",
+  "Image & alt text translation": "Resim ve alternatif metin çevirisi",
+  "IP-based switching": "IP tabanlı değişim",
+  "5 Days Free Trial >>": "5 günü ücretsiz deneyin >>",
+  "No Translation Credits Available": "Çeviri kredisi mevcut değil",
+  "Activate your free trial to start translating instantly:": "Ücretsiz deneyimizi etkinleştirin ve çevirileri hemen başlatın:",
+  "✅ 1,000,000 free credits for translation": "✅ 1 milyon ücretsiz kredi çevirisi",
+  "✅ Automatic translation for store content": "✅ Mağaza içeriği otomatik çevirisi",
+  "✅ Image & alt-text translation" : "✅ Resim ve alternatif metin çevirisi",
+  "✅ IP-based language & currency switching": "✅ IP tabanlı dil ve para birim değişimi",
+  "✅ Glossary support for brand consistency": "✅ Marka tutarlılığı için terminoloji desteği",
+  "✅ Live human support when needed": "✅ Gerekirse canlı insan destekleri",
+  "Start Free Trial": "Ücretsiz deneyim başlat"
+
+
 }
