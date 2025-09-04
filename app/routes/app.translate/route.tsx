@@ -57,10 +57,10 @@ import {
   GetLanguageLocaleInfo,
   GetUserWords,
 } from "~/api/JavaServer";
+import useReport from "scripts/eventReport";
 import FirstTranslationModal from "~/components/firstTranslationModal";
 
 const { Title, Text } = Typography;
-
 interface LanguageDataType {
   key: number;
   src: string[];
@@ -158,7 +158,6 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-
   const fetcher = useFetcher<any>();
   const translateFetcher = useFetcher<any>();
   const loadingLanguageFetcher = useFetcher<any>();
@@ -184,6 +183,7 @@ const Index = () => {
       Button: `${t("OK")}`,
     },
   };
+  const { report, trackExposure, fetcherState } = useReport();
 
   const handleConfigureQuota = () => {
     switch (currentModal) {
@@ -626,6 +626,15 @@ const Index = () => {
         action: "/log",
       },
     );
+    report(
+      {},
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "translate_setting_api",
+    );
   };
 
   const checkIfNeedPay = async () => {
@@ -744,6 +753,19 @@ const Index = () => {
     localStorage.setItem(
       "translateSettings4",
       JSON.stringify(translateSettings4),
+    );
+    report(
+      {
+        primaryLanguage: languageSetting?.primaryLanguageCode,
+        selectedLanguage: selectedLanguageCode,
+        translateSettings1: translateSettings1,
+        translateSettings2: ["1"],
+        translateSettings3: translateSettings3,
+        customKey: customKey,
+        translateSettings5: translateSettings5,
+      },
+      { method: "post", action: "/app", eventType: "click" },
+      "translate_navi_translate",
     );
   };
 

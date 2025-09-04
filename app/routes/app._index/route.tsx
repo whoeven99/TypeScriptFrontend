@@ -22,6 +22,7 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import ProgressingCard from "~/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
+import useReport from "scripts/eventReport";
 import { useSelector } from "react-redux";
 import CorrectIcon from "~/components/icon/correctIcon";
 import GiftIcon from "~/components/icon/giftIcon";
@@ -82,7 +83,7 @@ const Index = () => {
 
   const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
-
+  const { reportClick, report } = useReport();
   useEffect(() => {
     setIsLoading(false);
     themeFetcher.submit(
@@ -178,8 +179,15 @@ const Index = () => {
       devStatus: t("In development"),
     },
   ];
-
+  const handleCommitRequest = () => {
+    handleContactSupport();
+    reportClick("dashboard_devprogress_request");
+  };
+  const handleReportCiwiHelpCenter = () => {
+    reportClick("dashboard_footer_help_center");
+  };
   const navigateToTranslate = () => {
+    reportClick("dashboard_translate_button");
     navigate("/app/translate", {
       state: { from: "/app", selectedLanguageCode: "" },
     });
@@ -193,7 +201,20 @@ const Index = () => {
       },
     );
   };
-
+  const navigateToHelpSwitchCurrency = () => {
+    reportClick("dashboard_currency_guide");
+    window.open(
+      "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/",
+      "_blank",
+    );
+  };
+  const navigateToSwitchCurrencyDetail = () => {
+    reportClick("dashboard_currency_view_detail");
+    window.open(
+      "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/",
+      "_blank",
+    );
+  };
   const navigateToLanguage = () => {
     navigate("/app/language");
     fetcher.submit(
@@ -205,6 +226,7 @@ const Index = () => {
         action: "/log",
       },
     );
+    reportClick("dashboard_language_manage");
   };
 
   const navigateToCurrency = () => {
@@ -218,6 +240,7 @@ const Index = () => {
         action: "/log",
       },
     );
+    reportClick("dashboard_currency_manage");
   };
 
   const handleReceive = () => {
@@ -543,14 +566,7 @@ const Index = () => {
                     {isLoading ? (
                       <Skeleton.Button active />
                     ) : (
-                      <Button
-                        onClick={() =>
-                          window.open(
-                            "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/",
-                            "_blank",
-                          )
-                        }
-                      >
+                      <Button onClick={navigateToHelpSwitchCurrency}>
                         {t("transCurrencyCard2.button")}
                       </Button>
                     )}
@@ -580,14 +596,7 @@ const Index = () => {
                     {isLoading ? (
                       <Skeleton.Button active />
                     ) : (
-                      <Button
-                        onClick={() =>
-                          window.open(
-                            "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/",
-                            "_blank",
-                          )
-                        }
-                      >
+                      <Button onClick={navigateToSwitchCurrencyDetail}>
                         {t("transCurrencyCard3.button")}
                       </Button>
                     )}
@@ -620,7 +629,7 @@ const Index = () => {
                 {isLoading ? (
                   <Skeleton.Button active />
                 ) : (
-                  <Button onClick={handleContactSupport}>
+                  <Button onClick={handleCommitRequest}>
                     {t("planCard.button")}
                   </Button>
                 )}
@@ -633,7 +642,10 @@ const Index = () => {
             <Col xs={24} sm={24} md={12}>
               <ContactCard
                 isChinese={isChinese}
-                onClick={handleContactSupport}
+                onClick={() => {
+                  reportClick("dashboard_contact_us");
+                  handleContactSupport();
+                }}
               />
             </Col>
             <Col xs={24} sm={24} md={12}>
@@ -653,6 +665,7 @@ const Index = () => {
             to="https://ciwi.bogdatech.com/help"
             target="_blank"
             style={{ margin: "0 5px" }}
+            onClick={handleReportCiwiHelpCenter}
           >
             {t("Ciwi Help Center")}
           </Link>

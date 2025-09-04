@@ -33,6 +33,7 @@ import {
   GetUserData,
   StopTranslatingTask,
   GetUserSubscriptionPlan,
+  GoogleAnalyticClickReport,
   IsOpenFreePlan,
 } from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
@@ -87,7 +88,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
     const stopTranslate = JSON.parse(formData.get("stopTranslate") as string);
-
+    const googleAnalytics = JSON.parse(formData.get("googleAnalytics") as string);
     if (init) {
       try {
         const init = await InitializationDetection({ shop });
@@ -339,6 +340,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           data: {
             success: false,
             message: "Error stopTranslate app",
+          },
+        });
+      }
+    }
+
+    if (googleAnalytics) {
+      try {
+        const { data, eventType, timestamp, name } = googleAnalytics;
+        const response = await GoogleAnalyticClickReport(
+          { ...data, eventType, timestamp, shopName:shop },
+          name
+        );
+        return json({ data: { success: response, message: `${name} ${eventType} success googleAnalytics` } });
+      } catch (error) {
+        console.error("Error googleAnalytics app:", error);
+        return json({
+          data: {
+            success: false,
+            message: "Error googleAnalytics app",
           },
         });
       }

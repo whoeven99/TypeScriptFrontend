@@ -3,7 +3,7 @@ import { Card, Rate, Input, Form, message, Typography, Button } from "antd";
 import { useTranslation } from "react-i18next";
 import { useFetcher } from "@remix-run/react";
 import { CloseOutlined } from "@ant-design/icons";
-
+import useReport from "scripts/eventReport";
 const { Text } = Typography;
 
 interface PreviewCardProps {
@@ -15,7 +15,7 @@ const PreviewCard: React.FC<PreviewCardProps> = ({ shop }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [count, setCount] = useState(0);
   const fetcher = useFetcher<any>();
-
+  const { report } = useReport();
   // 确保组件只在客户端渲染
   useEffect(() => {
     const rate = localStorage.getItem("rate");
@@ -38,6 +38,17 @@ const PreviewCard: React.FC<PreviewCardProps> = ({ shop }) => {
         "_blank",
       );
     }
+    report(
+      {
+        count: value
+      },
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "dashboard_reviews_rate",
+    );
   };
 
   const handleClose = () => {

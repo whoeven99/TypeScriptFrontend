@@ -42,6 +42,7 @@ import {
   GetLanguageLocaleInfo,
   GetTranslate,
   UpdateAutoTranslateByData,
+  GoogleAnalyticClickReport,
 } from "~/api/JavaServer";
 import TranslatedIcon from "~/components/translateIcon";
 import { useTranslation } from "react-i18next";
@@ -50,7 +51,7 @@ import AddLanguageModal from "./components/addLanguageModal";
 import ScrollNotice from "~/components/ScrollNotice";
 import DeleteConfirmModal from "./components/deleteConfirmModal";
 import PublishModal from "./components/publishModal";
-
+import useReport from "scripts/eventReport";
 const { Title, Text } = Typography;
 
 export interface ShopLocalesType {
@@ -116,6 +117,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const addData = JSON.parse(formData.get("addData") as string);
   const addLanguages = JSON.parse(formData.get("addLanguages") as string); // 获取语言数组
   const translation = JSON.parse(formData.get("translation") as string);
+  const googleAnalytic = JSON.parse(formData.get("googleAnalytic") as string);
   const publishInfo: PublishInfoType = JSON.parse(
     formData.get("publishInfo") as string,
   );
@@ -481,7 +483,7 @@ const Index = () => {
   const statusFetcher = useFetcher<any>();
   const addDataFetcher = useFetcher<any>();
   const publishFetcher = useFetcher<any>();
-
+  const { reportClick, report } = useReport();
   useEffect(() => {
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
@@ -844,6 +846,7 @@ const Index = () => {
         action: "/log",
       },
     );
+    reportClick("language_list_translate");
   };
 
   const navigateToManage = (selectedLanguageCode: string) => {
@@ -859,9 +862,11 @@ const Index = () => {
         action: "/log",
       },
     );
+    reportClick("language_list_manage");
   };
 
   const handleOpenModal = () => {
+    reportClick("language_navi_add");
     if (dataSource.length === 20) {
       setShowWarnModal(true);
       return;
@@ -891,6 +896,17 @@ const Index = () => {
         },
       );
     }
+    report(
+      {
+        status: checked ? 1 : 0,
+      },
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "language_list_publish",
+    );
   };
 
   const handleAutoUpdateTranslationChange = async (
@@ -936,6 +952,17 @@ const Index = () => {
         );
       }
     }
+    report(
+      {
+        status: checked ? 1 : 0,
+      },
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "language_list_auto_translate",
+    );
     // } else {
     //   shopify.toast.show(
     //     t(
@@ -964,6 +991,7 @@ const Index = () => {
     ); // 将选中的语言作为字符串发送
     deleteFetcher.submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
     setDeleteLoading(true);
+    reportClick("language_list_delete");
   };
 
   const rowSelection = {
@@ -976,6 +1004,7 @@ const Index = () => {
   const PreviewClick = () => {
     const shopUrl = `https://${shop}`;
     window.open(shopUrl, "_blank", "noopener,noreferrer");
+    reportClick("language_list_preview_store");
   };
 
   return (

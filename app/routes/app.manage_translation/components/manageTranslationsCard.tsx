@@ -11,7 +11,7 @@ import {
 } from "antd";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-
+import useReport from "scripts/eventReport";
 const { Title } = Typography;
 
 interface SwitcherSettingCardProps {
@@ -37,12 +37,24 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { plan } = useSelector((state: any) => state.userConfig);
-
+  const { report } = useReport();
   const handleEdit = (record: DataType) => {
     if (current)
       navigate(
         `/app/manage_translation/${record.navigation}?language=${current}`,
       );
+      report(
+      {
+        language: current,
+        online_store: record.navigation,
+      },
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "manage_list_edit",
+    );
   };
 
   const columns = [

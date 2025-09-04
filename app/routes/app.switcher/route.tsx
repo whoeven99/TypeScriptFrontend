@@ -28,7 +28,7 @@ import { queryShop } from "~/api/admin";
 import SwitcherSettingCard from "./components/switcherSettingCard";
 const { Text, Title } = Typography;
 import defaultStyles from "../styles/defaultStyles.module.css";
-
+import useReport from "scripts/eventReport";
 interface EditData {
   shopName: string;
   includedFlag: boolean;
@@ -208,7 +208,7 @@ const Index = () => {
   const [withoutMoneyValue, setWithoutMoneyValue] = useState<string>("");
   const [cardLoading, setCardLoading] = useState<boolean>(true);
   const [updateLoading, setUpdateLoading] = useState<boolean>(false);
-
+  const { report } = useReport();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
@@ -309,6 +309,7 @@ const Index = () => {
         setIsLoading(false);
       }
     };
+
     getSwitcherConfig();
     fetcher.submit(
       {
@@ -516,6 +517,20 @@ const Index = () => {
   };
 
   const handleOptionChange = (value: string) => {
+    const switcherType = {
+      "sidebar widget": {
+        status: 3,
+      },
+      language_and_currency: {
+        status: 0,
+      },
+      language: {
+        status: 1,
+      },
+      currency: {
+        status: 2,
+      },
+    } as any;
     switch (value) {
       case "sidebar widget":
         handleEditData({
@@ -546,6 +561,17 @@ const Index = () => {
         });
         break;
     }
+    report(
+      {
+        status: switcherType[value].status,
+      },
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "switcher_type",
+    );
   };
 
   const handleLanguageClick = () => {
@@ -620,6 +646,17 @@ const Index = () => {
       setIsGeoLocationEnabled(false);
       setShowWarnModal(true);
     }
+    report(
+      {
+        status: checked ? 1 : 0,
+      },
+      {
+        action: "/app",
+        method: "post",
+        eventType: "click",
+      },
+      "switcher_ip_geolocation",
+    );
   };
 
   const handleSave = async () => {
@@ -785,9 +822,20 @@ const Index = () => {
                     <Text>{t("No Visible Switcher: ")}</Text>
                     <Switch
                       checked={isTransparent}
-                      onChange={() =>
-                        handleEditData({ isTransparent: !isTransparent })
-                      }
+                      onChange={() => {
+                        handleEditData({ isTransparent: !isTransparent });
+                        report(
+                          {
+                            status: !isTransparent ? 1 : 0,
+                          },
+                          {
+                            action: "/app",
+                            method: "post",
+                            eventType: "click",
+                          },
+                          "switcher_ip_visible",
+                        );
+                      }}
                     />
                   </Flex>
                 </Space>
@@ -833,9 +881,20 @@ const Index = () => {
                     <Switch
                       disabled={!languageSelector && currencySelector}
                       checked={isIncludedFlag}
-                      onChange={(checked) =>
-                        handleEditData({ includedFlag: checked })
-                      }
+                      onChange={(checked) => {
+                        handleEditData({ includedFlag: checked });
+                        report(
+                          {
+                            status: checked ? 1 : 0,
+                          },
+                          {
+                            action: "/app",
+                            method: "post",
+                            eventType: "click",
+                          },
+                          "switcher_style_flag",
+                        );
+                      }}
                     />
                   </div>
                   <div
