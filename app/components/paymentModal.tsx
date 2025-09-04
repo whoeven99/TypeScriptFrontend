@@ -64,7 +64,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const fetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
-  const { report } = useReport();
+  const { reportClick } = useReport();
   const { plan } = useSelector((state: any) => state.userConfig);
 
   const options: OptionType[] = useMemo(
@@ -294,6 +294,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       method: "post",
       action: "/app",
     });
+    reportClick("dashboard_translation_task_buy");
   };
 
   const onCancel = () => {
