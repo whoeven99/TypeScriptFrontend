@@ -1,20 +1,20 @@
-async function FrontEndPrinting({
-  shop,
-  ip,
-  languageCode,
-  countryCode,
-  currencyCode,
-}) {
-  try {
-    await axios({
-      url: `https://springbackendprod.azurewebsites.net/frontEndPrinting`,
-      method: "GET",
-      data: `语言代码`,
-    });
-  } catch (error) {
-    console.error("Error FrontEndPrinting:", error);
-  }
-}
+// async function FrontEndPrinting({
+//   shop,
+//   ip,
+//   languageCode,
+//   countryCode,
+//   currencyCode,
+// }) {
+//   try {
+//     await axios({
+//       url: `https://springbackendprod.azurewebsites.net/frontEndPrinting`,
+//       method: "GET",
+//       data: `语言代码`,
+//     });
+//   } catch (error) {
+//     console.error("Error FrontEndPrinting:", error);
+//   }
+// }
 
 async function GetProductImageData({ shop, productId, languageCode }) {
   try {
@@ -962,13 +962,13 @@ async function IpPosition(ipOpen, shop, ciwiBlock) {
       const ip = IpData?.ip;
       const currencyCode = IpData?.currency?.code;
       const countryCode = IpData?.country_code;
-      await FrontEndPrinting(
-        shop,
-        ip,
-        detectedLanguage,
-        currencyCode,
-        countryCode,
-      );
+      // await FrontEndPrinting(
+      //   shop,
+      //   ip,
+      //   detectedLanguage,
+      //   currencyCode,
+      //   countryCode,
+      // );
       if (currencyCode) {
         localStorage.setItem("selectedCurrency", currencyCode);
       }
@@ -993,10 +993,10 @@ async function IpPosition(ipOpen, shop, ciwiBlock) {
         languageInput.value &&
         !isInThemeEditor
       ) {
-        // updateLocalization({
-        //   country: countryInput.value,
-        //   language: languageInput.value,
-        // });
+        updateLocalization({
+          country: countryInput.value,
+          language: languageInput.value,
+        });
       }
     }
   }
@@ -1310,7 +1310,7 @@ window.onload = async function () {
     });
 
     if (productImageData.response.length > 0) {
-      const imageDomList = ciwiBlock.querySelectorAll("img");
+      const imageDomList = document.querySelectorAll("img");
 
       // 遍历所有img
       imageDomList.forEach((img) => {
@@ -1332,12 +1332,6 @@ window.onload = async function () {
         }
       });
     }
-  }
-
-  if (
-    data.languageSelector ||
-    (!data.languageSelector && !data.currencySelector)
-  ) {
   }
 
   // 修改RTL和LTR的组件布局

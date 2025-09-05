@@ -25,6 +25,7 @@ import WelcomeCard from "./components/welcomeCard";
 import { useSelector } from "react-redux";
 import CorrectIcon from "~/components/icon/correctIcon";
 import GiftIcon from "~/components/icon/giftIcon";
+import useReport from "scripts/eventReport";
 
 const { Title, Text } = Typography;
 
@@ -82,7 +83,7 @@ const Index = () => {
 
   const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
-
+  const { reportClick, report } = useReport();
   useEffect(() => {
     setIsLoading(false);
     themeFetcher.submit(
@@ -178,8 +179,15 @@ const Index = () => {
       devStatus: t("In development"),
     },
   ];
-
+  const handleCommitRequest = () => {
+    handleContactSupport();
+    reportClick("dashboard_devprogress_request");
+  };
+  const handleReportCiwiHelpCenter = () => {
+    reportClick("dashboard_footer_help_center");
+  };
   const navigateToTranslate = () => {
+    reportClick("dashboard_translate_button");
     navigate("/app/translate", {
       state: { from: "/app", selectedLanguageCode: "" },
     });
@@ -193,7 +201,20 @@ const Index = () => {
       },
     );
   };
-
+  const navigateToHelpSwitchCurrency = () => {
+    reportClick("dashboard_currency_guide");
+    window.open(
+      "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/",
+      "_blank",
+    );
+  };
+  const navigateToSwitchCurrencyDetail = () => {
+    reportClick("dashboard_currency_view_detail");
+    window.open(
+      "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/",
+      "_blank",
+    );
+  };
   const navigateToLanguage = () => {
     navigate("/app/language");
     fetcher.submit(
@@ -205,6 +226,7 @@ const Index = () => {
         action: "/log",
       },
     );
+    reportClick("dashboard_language_manage");
   };
 
   const navigateToCurrency = () => {
@@ -218,6 +240,7 @@ const Index = () => {
         action: "/log",
       },
     );
+    reportClick("dashboard_currency_manage");
   };
 
   const handleReceive = () => {
@@ -633,7 +656,10 @@ const Index = () => {
             <Col xs={24} sm={24} md={12}>
               <ContactCard
                 isChinese={isChinese}
-                onClick={handleContactSupport}
+                onClick={() => {
+                  reportClick("dashboard_contact_us");
+                  handleContactSupport();
+                }}
               />
             </Col>
             <Col xs={24} sm={24} md={12}>

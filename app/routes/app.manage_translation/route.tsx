@@ -151,7 +151,7 @@ const Index = () => {
   const themeFetcher = useFetcher<any>();
   const deliveryFetcher = useFetcher<any>();
   const shippingFetcher = useFetcher<any>();
-  const { report } = useReport();
+  const { reportClick } = useReport();
   const productsDataSource: TableDataType[] = [
     {
       key: "products",
@@ -410,27 +410,11 @@ const Index = () => {
   ];
   const handleShowWarnModal = () => {
     setShowWarnModal(true);
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "manage_navi_import",
-    );
+    reportClick("manage_navi_import");
   };
   const handleShowImportModal = () => {
     setShowModal(true);
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "manage_navi_import",
-    );
+    reportClick("manage_navi_import");
   };
 
   useEffect(() => {
@@ -863,15 +847,7 @@ const Index = () => {
                 navigate(
                   `/app/manage_translation/${record.navigation}?language=${current}`,
                 );
-              report(
-                {},
-                {
-                  action: "/app",
-                  method: "post",
-                  eventType: "click",
-                },
-                "manage_list_edit",
-              );
+              reportClick("manage_list_edit");
             }}
           >
             {t("Edit")}

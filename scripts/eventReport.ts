@@ -13,13 +13,6 @@ interface ReportOptions {
 
 const useReport = () => {
   const fetcher = useFetcher();
-  useEffect(() => {
-    if (fetcher.data) {
-      console.log(fetcher.data);
-    } else {
-      console.log("No data received");
-    }
-  }, [fetcher.data]);
   // 通用上报函数
   const report = async (
     data: ReportData,
@@ -31,8 +24,6 @@ const useReport = () => {
       method = "post",
       eventType = "click",
     } = options;
-    console.log('report',data);
-    
     try {
       const reportData = {
         data,
@@ -40,8 +31,6 @@ const useReport = () => {
         timestamp: new Date().toISOString(),
         name,
       };
-      console.log('reportdata',reportData);
-      
       fetcher.submit(
         { googleAnalytics: JSON.stringify(reportData) },
         {
@@ -80,8 +69,10 @@ const useReport = () => {
     },
     [report],
   );
-
-  return { report, trackExposure, fetcherState: fetcher.state };
+  const reportClick = (name:string)=>{
+    report({},{ method: "post", action: "/app", eventType: "click" },name);
+  }
+  return { reportClick,report, trackExposure, fetcherState: fetcher.state };
 };
 
 export default useReport;

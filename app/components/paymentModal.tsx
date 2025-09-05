@@ -64,7 +64,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const fetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
-  const { report } = useReport();
+  const { reportClick } = useReport();
   const { plan } = useSelector((state: any) => state.userConfig);
 
   const options: OptionType[] = useMemo(
@@ -278,37 +278,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       }
     }
   }, [payFetcher.data]);
-
-  // const getCreditsFromServer = async () => {
-  //   const data = await GetUserInitTokenByShopName({ shop, server });
-  //   if (data?.success) {
-  //     let credits = 0;
-  //     const { id, translationId, shopName, ...rest } = data?.response;
-  //     Object.entries(rest)
-  //       .filter(([key, value]) => translateSettings3.includes(key as string))
-  //       .forEach(([key, value]) => {
-  //         if (value !== null) {
-  //           credits += value as number;
-  //         } else {
-  //           setCredits(-1);
-  //           return;
-  //         }
-  //       });
-  //     setCredits(credits);
-  //   }
-  // };
-  // const handleContactSupportReport = ()=>{
-  //   handleContactSupport();
-  //   report(
-  //     {},
-  //     {
-  //       action: "/app",
-  //       method: "post",
-  //       eventType: "click",
-  //     },
-  //     "dashboard_contact_us",
-  //   );
-  // }
+  
   const onClick = () => {
     setBuyButtonLoading(true);
     const payInfo = {
@@ -324,6 +294,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       method: "post",
       action: "/app",
     });
+    reportClick("dashboard_translation_task_buy");
   };
 
   const onCancel = () => {

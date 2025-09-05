@@ -135,7 +135,7 @@ const Index = () => {
   const { plan, updateTime, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
-  const { report } = useReport();
+  const { reportClick, report } = useReport();
   const creditOptions: OptionType[] = useMemo(
     () => [
       {
@@ -821,15 +821,7 @@ const Index = () => {
       { payForPlan: JSON.stringify({ ...plan, yearly, trialDays }) },
       { method: "POST" },
     );
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      trialDays !== 5 ? "pricing_plan_start" : "pricing_plan_trial",
-    );
+    reportClick(trialDays !== 5 ? "pricing_plan_start" : "pricing_plan_trial");
   };
 
   return (
@@ -866,15 +858,7 @@ const Index = () => {
                   type="primary"
                   onClick={() => {
                     setAddCreditsModalOpen(true);
-                    report(
-                      {},
-                      {
-                        action: "/app",
-                        method: "post",
-                        eventType: "click",
-                      },
-                      "pricing_balance_add",
-                    );
+                    reportClick("pricing_balance_add");
                   }}
                 >
                   {t("Add credits")}
@@ -1039,7 +1023,10 @@ const Index = () => {
                   plan.id === 1 || plan.id === 2 || selectedPayPlanOption
                 }
                 style={{ marginBottom: isNew ? "70px" : "20px" }}
-                onClick={() => setCancelPlanWarnModal(true)}
+                onClick={() => {
+                  setCancelPlanWarnModal(true);
+                  reportClick("pricing_plan_trial");
+                }}
               >
                 {plan.id === 1 || plan.id === 2
                   ? t("pricing.current_plan")
@@ -1277,15 +1264,7 @@ const Index = () => {
             <Collapse
               items={collapseData}
               onChange={() => {
-                report(
-                  {},
-                  {
-                    action: "/app",
-                    method: "post",
-                    eventType: "click",
-                  },
-                  "pricing_faq_click",
-                );
+                reportClick("pricing_faq_click");
               }}
             />
           </Col>

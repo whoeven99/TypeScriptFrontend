@@ -40,20 +40,12 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   const translateFetcher = useFetcher<any>();
   const stopTranslateFetcher = useFetcher<any>();
   const stopTranslateReport = useFetcher<any>();
-  const { report, trackExposure, fetcherState } = useReport();
+  const { reportClick, report, trackExposure, fetcherState } = useReport();
   const stopTranslateButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleReTranslateReport = () => {
     navigate("/app/translate");
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "dashboard_translation_task_retranslate",
-    );
+    reportClick("dashboard_translation_task_retranslate");
   };
 
   useEffect(() => {
@@ -677,15 +669,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                               key: target[index],
                             },
                           });
-                          report(
-                            {},
-                            {
-                              action: "/app",
-                              method: "post",
-                              eventType: "click",
-                            },
-                            "dashboard_translation_task_review",
-                          );
+                          reportClick("dashboard_translation_task_review");
                         }}
                       >
                         {t("progressing.review")}
@@ -734,15 +718,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                               key: target[index],
                             },
                           });
-                          report(
-                            {},
-                            {
-                              action: "/app",
-                              method: "post",
-                              eventType: "click",
-                            },
-                            "dashboard_translation_task_review",
-                          );
+                          reportClick("dashboard_translation_task_review");
                         }}
                       >
                         {t("progressing.review")}
@@ -832,15 +808,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                               key: target[index],
                             },
                           });
-                          report(
-                            {},
-                            {
-                              action: "/app",
-                              method: "post",
-                              eventType: "click",
-                            },
-                            "dashboard_translation_task_review",
-                          );
+                          reportClick("dashboard_translation_task_review");
                         }}
                       >
                         {t("progressing.review")}

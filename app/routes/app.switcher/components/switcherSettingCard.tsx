@@ -41,7 +41,7 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
 
   const { t } = useTranslation();
-  const { report } = useReport();
+  const { reportClick } = useReport();
   useEffect(() => {
     if (localStorage.getItem("switcherCard") == "false") {
       setVisible(false);
@@ -58,27 +58,11 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
     localStorage.setItem("switcherCard", "false");
   };
   const handleGoogleReport = () => {
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "switcher_guide_setup",
-    );
+    reportClick("switcher_guide_setup");
   };
-  const handleClickHereReport = ()=>{
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "switcher_guide_click_theme",
-    );
-  }
+  const handleClickHereReport = () => {
+    reportClick("switcher_guide_click_theme");
+  };
   return (
     <Card
       style={{ display: visible ? "block" : "none" }}

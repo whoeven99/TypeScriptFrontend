@@ -483,7 +483,7 @@ const Index = () => {
   const statusFetcher = useFetcher<any>();
   const addDataFetcher = useFetcher<any>();
   const publishFetcher = useFetcher<any>();
-  const { report } = useReport();
+  const { reportClick, report } = useReport();
   useEffect(() => {
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
@@ -846,15 +846,7 @@ const Index = () => {
         action: "/log",
       },
     );
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "language_list_translate",
-    );
+    reportClick("language_list_translate");
   };
 
   const navigateToManage = (selectedLanguageCode: string) => {
@@ -870,27 +862,11 @@ const Index = () => {
         action: "/log",
       },
     );
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "language_list_manage",
-    );
+    reportClick("language_list_manage");
   };
 
   const handleOpenModal = () => {
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "language_navi_add",
-    );
+    reportClick("language_navi_add");
     if (dataSource.length === 20) {
       setShowWarnModal(true);
       return;
@@ -1015,15 +991,7 @@ const Index = () => {
     ); // 将选中的语言作为字符串发送
     deleteFetcher.submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
     setDeleteLoading(true);
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "language_list_delete",
-    );
+    reportClick("language_list_delete");
   };
 
   const rowSelection = {
@@ -1036,15 +1004,7 @@ const Index = () => {
   const PreviewClick = () => {
     const shopUrl = `https://${shop}`;
     window.open(shopUrl, "_blank", "noopener,noreferrer");
-    report(
-      {},
-      {
-        action: "/app",
-        method: "post",
-        eventType: "click",
-      },
-      "language_list_preview_store",
-    );
+    reportClick("language_list_preview_store");
   };
 
   return (
