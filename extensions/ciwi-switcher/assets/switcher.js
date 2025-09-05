@@ -7,7 +7,7 @@
 // }) {
 //   try {
 //     await axios({
-//       url: `https://springbackendprod.azurewebsites.net/frontEndPrinting`,
+//       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/frontEndPrinting`,
 //       method: "GET",
 //       data: `语言代码`,
 //     });
@@ -19,7 +19,7 @@
 async function GetProductImageData({ shop, productId, languageCode }) {
   try {
     const response = await axios({
-      url: `https://springbackendprod.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shop}`,
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shop}`,
       method: "POST",
       data: {
         shopName: shop,
@@ -38,7 +38,7 @@ async function fetchSwitcherConfig(shop) {
   console.log("fetchSwitcherConfig start");
 
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/widgetConfigurations/getData`,
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/widgetConfigurations/getData`,
     method: "POST",
     data: {
       shopName: shop,
@@ -82,7 +82,7 @@ async function fetchSwitcherConfig(shop) {
 
 async function fetchCurrencies(shop) {
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
     method: "GET",
   });
 
@@ -104,7 +104,7 @@ async function fetchCurrencies(shop) {
 
 async function fetchAutoRate(shop, currencyCode) {
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/currency/getCacheData`,
+    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
     method: "POST",
     data: {
       shopName: shop,
@@ -119,7 +119,7 @@ async function fetchAutoRate(shop, currencyCode) {
 async function checkUserIp(shop) {
   try {
     const response = await axios({
-      url: `https://springbackendprod.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
+      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
       method: "POST",
     });
     return response.data?.response;
