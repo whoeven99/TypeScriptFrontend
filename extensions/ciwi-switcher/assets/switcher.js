@@ -1,20 +1,23 @@
-async function FrontEndPrinting({
-  shop,
-  ip,
-  languageCode,
-  countryCode,
-  currencyCode,
-}) {
-  try {
-    await axios({
-      url: `https://springbackendprod.azurewebsites.net/frontEndPrinting`,
-      method: "GET",
-      data: `语言代码`,
-    });
-  } catch (error) {
-    console.error("Error FrontEndPrinting:", error);
-  }
-}
+// async function FrontEndPrinting({
+//   shop,
+//   ip,
+//   languageCode,
+//   countryCode,
+//   currencyCode,
+// }) {
+//   try {
+//     await axios({
+//       url: `https://springbackendprod.azurewebsites.net/frontEndPrinting`,
+//       method: "GET",
+
+//       data: JSON.stringify({
+//         data: `${shop} 客户ip定位: ${ip}, 语言代码${languageCode}, 货币代码${currencyCode}, 国家代码${countryCode}`,
+//       }),
+//     });
+//   } catch (error) {
+//     console.error("Error FrontEndPrinting:", error);
+//   }
+// }
 
 async function GetProductImageData({ shop, productId, languageCode }) {
   try {
@@ -962,13 +965,13 @@ async function IpPosition(ipOpen, shop, ciwiBlock) {
       const ip = IpData?.ip;
       const currencyCode = IpData?.currency?.code;
       const countryCode = IpData?.country_code;
-      await FrontEndPrinting(
-        shop,
-        ip,
-        detectedLanguage,
-        currencyCode,
-        countryCode,
-      );
+      // await FrontEndPrinting({
+      //   shop,
+      //   ip,
+      //   detectedLanguage,
+      //   currencyCode,
+      //   countryCode,
+      // });
       if (currencyCode) {
         localStorage.setItem("selectedCurrency", currencyCode);
       }
