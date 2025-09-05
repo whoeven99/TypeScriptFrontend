@@ -668,11 +668,16 @@
   "Activate your free trial to start translating instantly:": "Ücretsiz deneyimizi etkinleştirin ve çevirileri hemen başlatın:",
   "✅ 1,000,000 free credits for translation": "✅ 1 milyon ücretsiz kredi çevirisi",
   "✅ Automatic translation for store content": "✅ Mağaza içeriği otomatik çevirisi",
-  "✅ Image & alt-text translation" : "✅ Resim ve alternatif metin çevirisi",
+  "✅ Image & alt-text translation": "✅ Resim ve alternatif metin çevirisi",
   "✅ IP-based language & currency switching": "✅ IP tabanlı dil ve para birim değişimi",
   "✅ Glossary support for brand consistency": "✅ Marka tutarlılığı için terminoloji desteği",
   "✅ Live human support when needed": "✅ Gerekirse canlı insan destekleri",
-  "Start Free Trial": "Ücretsiz deneyim başlat"
-
-
+  "Start Free Trial": "Ücretsiz deneyim başlat",
+  "1000 points": "1000 puan",
+  "Source Language": "kaynak Dil",
+  "Target Language": "hedef dil",
+  "Image translation failed": "Görüntü çevirisi başarısız oldu",
+  "Image translated successfully": "Resim başarıyla çevrildi",
+  "The current language does not support image translation": "Mevcut dil resim çevirisini desteklemiyor",
+  "1000 credits": "1000 kredi"
 }

@@ -668,10 +668,16 @@
   "Activate your free trial to start translating instantly:": "Активируйте бесплатную пробную версию, чтобы начать переводить мгновенно:",
   "✅ 1,000,000 free credits for translation": "✅ 1 миллион бесплатных кредитов для перевода",
   "✅ Automatic translation for store content": "✅ Автоматический перевод контента магазина",
-  "✅ Image & alt-text translation" : "✅ Перевод изображения и альтернативного текста",
+  "✅ Image & alt-text translation": "✅ Перевод изображения и альтернативного текста",
   "✅ IP-based language & currency switching": "✅ Переключение языка и валюты на основе IP-адреса",
   "✅ Glossary support for brand consistency": "✅ Поддержка словаря для обеспечения консистентности бренда",
   "✅ Live human support when needed": "✅ Живая поддержка человека при необходимости",
-  "Start Free Trial": "Начать бесплатную пробную версию"
-
+  "Start Free Trial": "Начать бесплатную пробную версию",
+  "1000 points": "1000 баллов",
+  "Source Language": "Исходный язык",
+  "Target Language": "целевой язык",
+  "Image translation failed": "Перевод изображения не удался",
+  "Image translated successfully": "Изображение успешно переведено",
+  "The current language does not support image translation": "Текущий язык не поддерживает перевод изображений.",
+  "1000 credits": "1000 кредитов"
 }
