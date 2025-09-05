@@ -14,6 +14,8 @@ import {
   Card,
   Divider,
   Skeleton,
+  Modal,
+  Select as SelectAnt,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
@@ -25,13 +27,8 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 import { SaveBar, TitleBar } from "@shopify/app-bridge-react";
-import {
-  Page,
-  Pagination,
-  Select,
-  SkeletonThumbnail,
-  Modal,
-} from "@shopify/polaris";
+import { NoteIcon } from "@shopify/polaris-icons";
+import { Page, Pagination, Select, Thumbnail, Spinner } from "@shopify/polaris";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -578,11 +575,11 @@ const Index = () => {
   const replaceTranslateImageFetcher = useFetcher<any>();
   const [translatrImageactive, setTranslatrImageactive] = useState(false);
   const sourceLanguages = [
-    { label: "英语", value: "en" },
+    { label: "English", value: "en" },
     { label: "中文", value: "zh" },
     // 根据需要添加更多语言
   ];
-  const [targetLanguages, setTargetLanguages] = useState<string[]>();
+  const [targetLanguages, setTargetLanguages] = useState<any[]>();
   const [currentTranslatingImage, serCurrentTranslatingImage] =
     useState<any>("");
   const languageFullNames: { [key: string]: string } = {
@@ -645,38 +642,34 @@ const Index = () => {
   } as any;
   const [sourceLanguage, setSourceLanguage] = useState("zh");
   const [targetLanguage, setTargetLanguage] = useState("en");
-  const handleSourceChange = useCallback(
-    (value: string) => setSourceLanguage(value),
-    [],
-  );
-  const handleTargetChange = useCallback(
-    (value: string) => setTargetLanguage(value),
-    [],
-  );
   useEffect(() => {
     const mappedValues = languageMapping[sourceLanguage] || [];
     const filteredOptions = mappedValues.map((value: string) => ({
       label: languageFullNames[value] || value,
       value: value,
     }));
+    // 自动切换 targetLanguage 为第一个可选项
+    if (filteredOptions.length > 0) {
+      setTargetLanguage(filteredOptions[0].value);
+    } else {
+      setTargetLanguage("");
+    }
     // 重置目标语言选择
     setTargetLanguages(filteredOptions);
-    // setTargetLanguage();
   }, [sourceLanguage]);
-  const handleTranslate = () => {
-    console.log(sourceLanguage,targetLanguage);
-    
-    // translateImageFetcher.submit(
-    //   {
-    //     translateImage: JSON.stringify({
-    //       sourceLanguage,
-    //       targetLanguage,
-    //       imageUrl: currentTranslatingImage.imageUrl,
-    //     }),
-    //   },
-    //   { method: "post", action: "/app/manage_translation" },
-    // );
-
+  // 图片翻译
+  const handleTranslate = async () => {
+    translateImageFetcher.submit(
+      {
+        translateImage: JSON.stringify({
+          sourceLanguage,
+          targetLanguage,
+          imageUrl: currentTranslatingImage.imageUrl,
+          imageId: currentTranslatingImage?.productId,
+        }),
+      },
+      { method: "post", action: "/app/manage_translation" },
+    );
     setTranslatrImageactive(false);
   };
   const onClose = () => {
@@ -685,41 +678,57 @@ const Index = () => {
   const handleImageTranslate = (record: any) => {
     setTranslatrImageactive(true);
     serCurrentTranslatingImage(record);
-    sourceLanguage==='zh' ? setTargetLanguage('en') :setTargetLanguage('zh')
+    // sourceLanguage === "zh" ? setTargetLanguage("en") : setTargetLanguage("zh");
   };
+
   useEffect(() => {
     if (translateImageFetcher.data) {
-      console.log(translateImageFetcher.data);
-      console.log("productImageData", productImageData);
-      shopify.toast.show("Image translation successful");
-      setProductImageData(
-        productImageData.map((item: any) => {
-          if (item.imageUrl === currentTranslatingImage.imageUrl) {
-            return {
-              ...item,
-              targetImageUrl: translateImageFetcher.data,
-            };
-          }
-          return item;
-        }),
-      );
-      // replaceTranslateImageFetcher.submit(
-      //   {
-      //     replaceTranslateImage: JSON.stringify({
-      //       file: null,
-      //       userPicturesDoJson: JSON.stringify({
-      //         imageId: currentTranslatingImage?.productId,
-      //         imageBeforeUrl: currentTranslatingImage?.imageUrl,
-      //         altBeforeTranslation: "",
-      //         altAfterTranslation: "",
-      //         languageCode: selectedLanguage,
-      //       }),
-      //     }),
-      //   },
-      //   { method: "post", action: "/app/manage_translation" },
-      // );
+      if (translateImageFetcher.data.success) {
+        shopify.toast.show(t("Image translation successful"));
+        setProductImageData(
+          productImageData.map((item: any) => {
+            if (item.imageUrl === currentTranslatingImage.imageUrl) {
+              return {
+                ...item,
+                targetImageUrl: translateImageFetcher.data.response,
+              };
+            }
+            return item;
+          }),
+        );
+        const replaceTranslateImage = {
+          url: translateImageFetcher.data.response,
+          userPicturesDoJson: {
+            imageId: currentTranslatingImage?.productId,
+            imageBeforeUrl: currentTranslatingImage?.imageUrl,
+            altBeforeTranslation: "",
+            altAfterTranslation: "",
+            languageCode: selectedLanguage,
+          },
+        };
+        const formData = new FormData();
+        formData.append(
+          "replaceTranslateImage",
+          JSON.stringify(replaceTranslateImage),
+        );
+        replaceTranslateImageFetcher.submit(formData, {
+          method: "post",
+          action: "/app/manage_translation",
+        });
+      } else {
+        shopify.toast.show(t("Image translation failed"));
+      }
     }
   }, [translateImageFetcher.data]);
+  useEffect(() => {
+    if (replaceTranslateImageFetcher.data) {
+      if (replaceTranslateImageFetcher.data?.success) {
+        shopify.toast.show(t("Image uploaded successfully!"));
+      } else {
+        shopify.toast.show(t("Image upload failed"));
+      }
+    }
+  }, [replaceTranslateImageFetcher.data]);
   useEffect(() => {
     loadFetcher.submit({ loading: true }, { method: "post" });
     if (languageTableData.length === 0) {
@@ -905,7 +914,13 @@ const Index = () => {
             height={"auto"}
           />
         ) : (
-          <SkeletonThumbnail size="medium" />
+          <>
+            {translateImageFetcher.state === "submitting" ? (
+              <Spinner accessibilityLabel="Loading thumbnail" size="large" />
+            ) : (
+              <Thumbnail source={NoteIcon} size="large" alt="Small document" />
+            )}
+          </>
         );
       },
     },
@@ -923,6 +938,7 @@ const Index = () => {
               {t("Translate")}
             </Button>
             <Upload
+              disabled={translateImageFetcher.state === "submitting"}
               pastable={false}
               maxCount={1}
               accept="image/*"
@@ -1647,38 +1663,35 @@ const Index = () => {
               />
             )} */}
         <Modal
+          title={t("Image Translation")}
           open={translatrImageactive}
-          onClose={onClose}
-          title="Image Translation"
-          primaryAction={{
-            content: "Translate 500 pts",
-            onAction: handleTranslate,
-          }}
-          secondaryActions={[
-            {
-              content: "Cancel",
-              onAction: onClose,
-            },
+          onCancel={onClose}
+          footer={[
+            <Button key="cancel" onClick={onClose}>
+              {t("Cancel")}
+            </Button>,
+            <Button key="translate" type="primary" onClick={handleTranslate}>
+              {t("1000 points")}
+            </Button>,
           ]}
+          centered
         >
-          <Modal.Section>
-            <div style={{ marginBottom: "1rem" }}>
-              <Select
-                label="Source Language"
-                options={sourceLanguages}
-                onChange={handleSourceChange}
-                value={sourceLanguage}
-              />
-            </div>
-            <div>
-              <Select
-                label="Target Language"
-                options={targetLanguages}
-                onChange={handleTargetChange}
-                value={targetLanguage}
-              />
-            </div>
-          </Modal.Section>
+          <div style={{ padding: "15px 0" }}>
+            <p style={{ marginBottom: "10px" }}>{t("source Language")}</p>
+            <SelectAnt
+              style={{ width: "100%", marginBottom: "20px" }}
+              value={sourceLanguage}
+              onChange={setSourceLanguage}
+              options={sourceLanguages}
+            />
+            <span>{t("target Language")}</span>
+            <SelectAnt
+              style={{ width: "100%", marginTop: "10px" }}
+              value={targetLanguage}
+              onChange={setTargetLanguage}
+              options={targetLanguages}
+            />
+          </div>
         </Modal>
       </Layout>
     </Page>

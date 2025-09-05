@@ -1107,12 +1107,14 @@ export const TranslateImage = async ({
   sourceCode,
   targetCode,
   accessToken,
+  imageId,
 }: {
   shop: string;
   imageUrl: string;
   sourceCode: string;
   targetCode: string;
   accessToken: string;
+  imageId: string;
 }) => {
   try {
     const response = await axios({
@@ -1123,11 +1125,12 @@ export const TranslateImage = async ({
         sourceCode,
         targetCode,
         accessToken,
+        imageId,
       },
     });
-    console.log("imageTranslate Response", response);
+    console.log("imageTranslate Response", response.data);
     if (response.data.success) {
-      return response.data.data;
+      return response.data;
     } else {
       return {
         success: false,
@@ -1143,6 +1146,47 @@ export const TranslateImage = async ({
       errorCode: 10001,
       errorMsg: "SERVER_ERROR",
       response: [],
+    };
+  }
+};
+// 存储翻译的图片文件
+export const storageTranslateImage = async ({
+  shop,
+  imageUrl,
+  userPicturesDoJson,
+}: {
+  shop: string;
+  imageUrl: string;
+  userPicturesDoJson: any;
+}) => {
+  try {
+    const formData = new FormData();
+    formData.append("pic", imageUrl); // 添加图片 URL
+    formData.append("shopName", shop); // 添加店铺名称
+    formData.append("userPicturesDoJson", JSON.stringify(userPicturesDoJson));
+    const response = await axios({
+      url: `${process.env.SERVER_URL}/picture/saveImageToCloud`,
+      method: "post",
+      data: formData,
+    });
+    console.log("storageImage response", response.data);
+    if (response.data.success) {
+      return response.data;
+    } else {
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: null,
+      };
+    }
+  } catch (error) {
+    console.log("replace image filed", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
     };
   }
 };

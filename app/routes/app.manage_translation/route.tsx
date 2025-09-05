@@ -24,7 +24,11 @@ import {
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { setSelectLanguageData } from "~/store/modules/selectLanguageData";
-import { GetTranslationItemsInfo, TranslateImage } from "~/api/JavaServer";
+import {
+  GetTranslationItemsInfo,
+  TranslateImage,
+  storageTranslateImage,
+} from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import languageItemsData, {
@@ -75,7 +79,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const language = JSON.parse(formData.get("language") as string);
   const itemsCount = JSON.parse(formData.get("itemsCount") as string);
   const translateImage = JSON.parse(formData.get("translateImage") as string);
-  const replaceTranslateImage = JSON.parse(formData.get('replaceTranslateImage')as string);
+  const replaceTranslateImage = JSON.parse(
+    formData.get("replaceTranslateImage") as string,
+  );
+  const replaceTranslateFile = JSON.parse(
+    formData.get("replaceTranslateFile") as string,
+  );
   switch (true) {
     case !!language:
       try {
@@ -108,16 +117,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     case !!translateImage:
       try {
-        const { sourceLanguage, targetLanguage, imageUrl } = translateImage;
-        console.log('translateImage',translateImage);
-        console.log('token',accessToken);
-        
+        const { sourceLanguage, targetLanguage, imageUrl,imageId } = translateImage;
         const response = await TranslateImage({
           shop,
           imageUrl,
           sourceCode: sourceLanguage,
           targetCode: targetLanguage,
           accessToken: accessToken as string,
+          imageId
         });
         return response;
       } catch (error) {
@@ -130,8 +137,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         };
       }
     case !!replaceTranslateImage:
-      const {file,userPicturesDoJson} = replaceTranslateImage;
-      const response = await replaceTranslateImage();
+      try {
+        const { url, userPicturesDoJson } = replaceTranslateImage;
+        userPicturesDoJson.shopName = shop;
+        const response = await storageTranslateImage({
+          shop,
+          imageUrl:url,
+          userPicturesDoJson,
+        });
+        return response;
+      } catch (error) {
+        console.log('error storageImage',error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: [],
+        };
+      }
+
     default:
       // 你可以在这里处理一个默认的情况，如果没有符合的条件
       return json({ success: false, message: "Invalid data" });

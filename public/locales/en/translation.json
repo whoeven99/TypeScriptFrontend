@@ -671,5 +671,12 @@
   "✅ IP-based language & currency switching": "✅ IP-based language & currency switching",
   "✅ Glossary support for brand consistency": "✅ Glossary support for brand consistency",
   "✅ Live human support when needed": "✅ Live human support when needed",
-  "Start Free Trial": "Start Free Trial"
+  "Start Free Trial": "Start Free Trial",
+  "1000 points":"1000 points",
+  "source Language":"source Language",
+  "target Language":"target Language",
+  "Image translation failed":"Image translation failed",
+  "Image translation successful":"Image translation successful",
+  "Image uploaded successfully!":"Image uploaded successfully!",
+  "Image upload failed":"Image upload failed"
 }
