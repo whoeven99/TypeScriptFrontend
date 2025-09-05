@@ -7,12 +7,9 @@
 // }) {
 //   try {
 //     await axios({
-//       url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/frontEndPrinting`,
+//       url: `https://springbackendprod.azurewebsites.net/frontEndPrinting`,
 //       method: "GET",
-
-//       data: JSON.stringify({
-//         data: `${shop} 客户ip定位: ${ip}, 语言代码${languageCode}, 货币代码${currencyCode}, 国家代码${countryCode}`,
-//       }),
+//       data: `语言代码`,
 //     });
 //   } catch (error) {
 //     console.error("Error FrontEndPrinting:", error);
@@ -22,7 +19,7 @@
 async function GetProductImageData({ shop, productId, languageCode }) {
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shop}`,
+      url: `https://springbackendprod.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shop}`,
       method: "POST",
       data: {
         shopName: shop,
@@ -41,7 +38,7 @@ async function fetchSwitcherConfig(shop) {
   console.log("fetchSwitcherConfig start");
 
   const response = await axios({
-    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/widgetConfigurations/getData`,
+    url: `https://springbackendprod.azurewebsites.net/widgetConfigurations/getData`,
     method: "POST",
     data: {
       shopName: shop,
@@ -85,7 +82,7 @@ async function fetchSwitcherConfig(shop) {
 
 async function fetchCurrencies(shop) {
   const response = await axios({
-    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
+    url: `https://springbackendprod.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
     method: "GET",
   });
 
@@ -107,7 +104,7 @@ async function fetchCurrencies(shop) {
 
 async function fetchAutoRate(shop, currencyCode) {
   const response = await axios({
-    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
+    url: `https://springbackendprod.azurewebsites.net/currency/getCacheData`,
     method: "POST",
     data: {
       shopName: shop,
@@ -122,7 +119,7 @@ async function fetchAutoRate(shop, currencyCode) {
 async function checkUserIp(shop) {
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
+      url: `https://springbackendprod.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
       method: "POST",
     });
     return response.data?.response;
@@ -965,13 +962,13 @@ async function IpPosition(ipOpen, shop, ciwiBlock) {
       const ip = IpData?.ip;
       const currencyCode = IpData?.currency?.code;
       const countryCode = IpData?.country_code;
-      // await FrontEndPrinting({
+      // await FrontEndPrinting(
       //   shop,
       //   ip,
       //   detectedLanguage,
       //   currencyCode,
       //   countryCode,
-      // });
+      // );
       if (currencyCode) {
         localStorage.setItem("selectedCurrency", currencyCode);
       }
