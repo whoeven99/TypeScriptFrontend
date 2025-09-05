@@ -670,9 +670,16 @@
   "Activate your free trial to start translating instantly:": "开启免费试用后，即可进行翻译",
   "✅ 1,000,000 free credits for translation": "✅ 免费获得 1,000,000 Credits用于翻译",
   "✅ Automatic translation for store content": "✅ 自动翻译功能",
-  "✅ Image & alt-text translation" : "✅ 图片翻译功能",
+  "✅ Image & alt-text translation": "✅ 图片翻译功能",
   "✅ IP-based language & currency switching": "✅ 基于 IP 自动切换语言和货币",
   "✅ Glossary support for brand consistency": "✅ 术语表",
   "✅ Live human support when needed": "✅ 人工支持",
-  "Start Free Trial": "立即试用"
+  "Start Free Trial": "立即试用",
+  "1000 points": "1000分",
+  "Source Language": "源语言",
+  "Target Language": "目标语言",
+  "Image translation failed": "图片翻译失败",
+  "Image translated successfully": "图片翻译成功",
+  "The current language does not support image translation": "当前语言不支持图片翻译",
+  "1000 credits": "1000积分"
 }

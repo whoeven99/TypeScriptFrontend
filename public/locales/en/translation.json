@@ -673,10 +673,10 @@
   "✅ Live human support when needed": "✅ Live human support when needed",
   "Start Free Trial": "Start Free Trial",
   "1000 points":"1000 points",
-  "source Language":"source Language",
-  "target Language":"target Language",
+  "Source Language":"source Language",
+  "Target Language":"target Language",
   "Image translation failed":"Image translation failed",
-  "Image translation successful":"Image translation successful",
-  "Image uploaded successfully!":"Image uploaded successfully!",
-  "Image upload failed":"Image upload failed"
+  "Image translated successfully":"Image translated successfully",
+  "The current language does not support image translation":"The current language does not support image translation",
+  "1000 credits":"1000 credits"
 }

@@ -668,11 +668,16 @@
   "Activate your free trial to start translating instantly:": "무료 시험판을 활성화하여 즉시 번역을 시작하세요:",
   "✅ 1,000,000 free credits for translation": "✅ 1,000,000 무료 크레딧이 번역에 사용됩니다",
   "✅ Automatic translation for store content": "✅ 매장 콘텐츠의 자동 번역",
-  "✅ Image & alt-text translation" : "✅ 이미지 및 대체 텍스트 번역",
+  "✅ Image & alt-text translation": "✅ 이미지 및 대체 텍스트 번역",
   "✅ IP-based language & currency switching": "✅ IP 기반 언어 및 통화 전환",
   "✅ Glossary support for brand consistency": "✅ 브랜드 일관성 지원",
   "✅ Live human support when needed": "✅ 필요한 경우 실시간 인간 지원",
-  "Start Free Trial": "무료 시험판 시작"
-
-
+  "Start Free Trial": "무료 시험판 시작",
+  "1000 points": "1000포인트",
+  "Source Language": "소스 언어",
+  "Target Language": "대상 언어",
+  "Image translation failed": "이미지 번역에 실패했습니다",
+  "Image translated successfully": "이미지가 성공적으로 번역되었습니다.",
+  "The current language does not support image translation": "현재 언어는 이미지 번역을 지원하지 않습니다.",
+  "1000 credits": "1000 크레딧"
 }

@@ -576,7 +576,7 @@ const Index = () => {
   const [translatrImageactive, setTranslatrImageactive] = useState(false);
   const sourceLanguages = [
     { label: "English", value: "en" },
-    { label: "中文", value: "zh" },
+    { label: "Chinese (Simplified)", value: "zh" },
     // 根据需要添加更多语言
   ];
   const [targetLanguages, setTargetLanguages] = useState<any[]>();
@@ -584,7 +584,7 @@ const Index = () => {
     useState<any>("");
   const languageFullNames: { [key: string]: string } = {
     en: "English",
-    zh: "Chinese",
+    zh: "Chinese (Simplified)",
     ru: "Russian",
     es: "Spanish",
     fr: "French",
@@ -595,7 +595,7 @@ const Index = () => {
     vi: "Vietnamese",
     tr: "Turkish",
     ms: "Malay",
-    "zh-tw": "Traditional Chinese",
+    "zh-tw": "Chinese (Traditional)",
     th: "Thai",
     pl: "Polish",
     id: "Indonesian",
@@ -641,7 +641,7 @@ const Index = () => {
     ],
   } as any;
   const [sourceLanguage, setSourceLanguage] = useState("zh");
-  const [targetLanguage, setTargetLanguage] = useState("en");
+  const [targetLanguage, setTargetLanguage] = useState(selectedLanguage);
   useEffect(() => {
     const mappedValues = languageMapping[sourceLanguage] || [];
     const filteredOptions = mappedValues.map((value: string) => ({
@@ -650,13 +650,23 @@ const Index = () => {
     }));
     // 自动切换 targetLanguage 为第一个可选项
     if (filteredOptions.length > 0) {
-      setTargetLanguage(filteredOptions[0].value);
-    } else {
-      setTargetLanguage("");
+      // setTargetLanguage(filteredOptions[0].value);
     }
     // 重置目标语言选择
     setTargetLanguages(filteredOptions);
   }, [sourceLanguage]);
+  useEffect(() => {
+    setTargetLanguage(selectedLanguage);
+    if (selectedLanguage === "zh-CN") {
+      setSourceLanguage("en");
+      setTargetLanguage("zh");
+    } else if (selectedLanguage === "zh-TW") {
+      setSourceLanguage("zh");
+      setTargetLanguage("zh-tw");
+    } else if (selectedLanguage === "pt-BR" || selectedLanguage === "pt-PT") {
+      setTargetLanguage("pt");
+    }
+  }, [selectedLanguage]);
   // 图片翻译
   const handleTranslate = async () => {
     translateImageFetcher.submit(
@@ -676,15 +686,32 @@ const Index = () => {
     setTranslatrImageactive(false);
   };
   const handleImageTranslate = (record: any) => {
+    let mappedLanguage =
+      selectedLanguage === "zh-CN"
+        ? "zh"
+        : selectedLanguage === "zh-TW"
+          ? "zh-tw"
+          : selectedLanguage;
+    if (selectedLanguage === "pt-BR" || selectedLanguage === "pt-PT") {
+      mappedLanguage = "pt";
+    }
+    if (
+      !languageMapping["en"].includes(mappedLanguage) &&
+      !languageMapping["zh"].includes(mappedLanguage)
+    ) {
+      shopify.toast.show(
+        t("The current language does not support image translation"),
+      );
+      return;
+    }
     setTranslatrImageactive(true);
     serCurrentTranslatingImage(record);
-    // sourceLanguage === "zh" ? setTargetLanguage("en") : setTargetLanguage("zh");
   };
 
   useEffect(() => {
     if (translateImageFetcher.data) {
       if (translateImageFetcher.data.success) {
-        shopify.toast.show(t("Image translation successful"));
+        shopify.toast.show(t("Image translated successfully"));
         setProductImageData(
           productImageData.map((item: any) => {
             if (item.imageUrl === currentTranslatingImage.imageUrl) {
@@ -720,15 +747,16 @@ const Index = () => {
       }
     }
   }, [translateImageFetcher.data]);
-  useEffect(() => {
-    if (replaceTranslateImageFetcher.data) {
-      if (replaceTranslateImageFetcher.data?.success) {
-        shopify.toast.show(t("Image uploaded successfully!"));
-      } else {
-        shopify.toast.show(t("Image upload failed"));
-      }
-    }
-  }, [replaceTranslateImageFetcher.data]);
+  // useEffect(() => {
+  //   if (replaceTranslateImageFetcher.data) {
+  //     if (replaceTranslateImageFetcher.data.success) {
+
+  //     }
+  //     else {
+
+  //     }
+  //   }
+  // }, [replaceTranslateImageFetcher.data]);
   useEffect(() => {
     loadFetcher.submit({ loading: true }, { method: "post" });
     if (languageTableData.length === 0) {
@@ -915,7 +943,8 @@ const Index = () => {
           />
         ) : (
           <>
-            {translateImageFetcher.state === "submitting" ? (
+            {record.imageId === currentTranslatingImage.imageId &&
+            translateImageFetcher.state === "submitting" ? (
               <Spinner accessibilityLabel="Loading thumbnail" size="large" />
             ) : (
               <Thumbnail source={NoteIcon} size="large" alt="Small document" />
@@ -932,7 +961,10 @@ const Index = () => {
         return (
           <Space direction="vertical">
             <Button
-              loading={translateImageFetcher.state === "submitting"}
+              loading={
+                record.imageId === currentTranslatingImage.imageId &&
+                translateImageFetcher.state === "submitting"
+              }
               onClick={() => handleImageTranslate(record)}
             >
               {t("Translate")}
@@ -1667,24 +1699,24 @@ const Index = () => {
           open={translatrImageactive}
           onCancel={onClose}
           footer={[
-            <Button key="cancel" onClick={onClose}>
-              {t("Cancel")}
-            </Button>,
-            <Button key="translate" type="primary" onClick={handleTranslate}>
-              {t("1000 points")}
-            </Button>,
+            <Space direction="vertical" style={{ textAlign: "center" }}>
+              <Button key="translate" type="primary" onClick={handleTranslate}>
+                {t("Image Translation")}
+              </Button>
+              <span>{t("1000 credits")}</span>
+            </Space>,
           ]}
           centered
         >
           <div style={{ padding: "15px 0" }}>
-            <p style={{ marginBottom: "10px" }}>{t("source Language")}</p>
+            <p style={{ marginBottom: "10px" }}>{t("Source Language")}</p>
             <SelectAnt
               style={{ width: "100%", marginBottom: "20px" }}
               value={sourceLanguage}
               onChange={setSourceLanguage}
               options={sourceLanguages}
             />
-            <span>{t("target Language")}</span>
+            <span>{t("Target Language")}</span>
             <SelectAnt
               style={{ width: "100%", marginTop: "10px" }}
               value={targetLanguage}

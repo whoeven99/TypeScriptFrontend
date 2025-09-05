@@ -668,10 +668,16 @@
   "Activate your free trial to start translating instantly:": "Aktivera din gratis provperiod för att börja översätta direkt:",
   "✅ 1,000,000 free credits for translation": "✅ 1M gratis krediter för översättning",
   "✅ Automatic translation for store content": "✅ Automatisk översättning för butiksinnehåll",
-  "✅ Image & alt-text translation" : "✅ Bild och alt-textoversättning",
+  "✅ Image & alt-text translation": "✅ Bild och alt-textoversättning",
   "✅ IP-based language & currency switching": "✅ IP-baserat språk- och valuta växel",
   "✅ Glossary support for brand consistency": "✅ Terminologisupport för markekonsistens",
   "✅ Live human support when needed": "✅ Live mänsklig support när det behövs",
-  "Start Free Trial": "Starta gratis provperiod"
-
+  "Start Free Trial": "Starta gratis provperiod",
+  "1000 points": "1000 poäng",
+  "Source Language": "källspråk",
+  "Target Language": "målspråk",
+  "Image translation failed": "Bildöversättning misslyckades",
+  "Image translated successfully": "Bilden har översatts",
+  "The current language does not support image translation": "Det aktuella språket stöder inte bildöversättning",
+  "1000 credits": "1000 poäng"
 }
