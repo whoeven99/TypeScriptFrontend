@@ -1,10 +1,28 @@
-async function GetProductImageData({ shopName, productId, languageCode }) {
+async function FrontEndPrinting({
+  shop,
+  ip,
+  languageCode,
+  countryCode,
+  currencyCode,
+}) {
+  try {
+    await axios({
+      url: `https://springbackendprod.azurewebsites.net/frontEndPrinting`,
+      method: "GET",
+      data: `语言代码`,
+    });
+  } catch (error) {
+    console.error("Error FrontEndPrinting:", error);
+  }
+}
+
+async function GetProductImageData({ shop, productId, languageCode }) {
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
+      url: `https://springbackendprod.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shop}`,
       method: "POST",
       data: {
-        shopName: shopName,
+        shopName: shop,
         imageId: `gid://shopify/Product/${productId}`,
         languageCode: languageCode,
       },
@@ -17,13 +35,17 @@ async function GetProductImageData({ shopName, productId, languageCode }) {
 }
 
 async function fetchSwitcherConfig(shop) {
+  console.log("fetchSwitcherConfig start");
+
   const response = await axios({
-    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/widgetConfigurations/getData`,
+    url: `https://springbackendprod.azurewebsites.net/widgetConfigurations/getData`,
     method: "POST",
     data: {
       shopName: shop,
     },
   });
+
+  console.log("fetchSwitcherConfig end");
 
   const data = response.data;
   const initData = {
@@ -60,7 +82,7 @@ async function fetchSwitcherConfig(shop) {
 
 async function fetchCurrencies(shop) {
   const response = await axios({
-    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
+    url: `https://springbackendprod.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
     method: "GET",
   });
 
@@ -82,7 +104,7 @@ async function fetchCurrencies(shop) {
 
 async function fetchAutoRate(shop, currencyCode) {
   const response = await axios({
-    url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/currency/getCacheData`,
+    url: `https://springbackendprod.azurewebsites.net/currency/getCacheData`,
     method: "POST",
     data: {
       shopName: shop,
@@ -97,7 +119,7 @@ async function fetchAutoRate(shop, currencyCode) {
 async function checkUserIp(shop) {
   try {
     const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
+      url: `https://springbackendprod.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
       method: "POST",
     });
     return response.data?.response;
@@ -109,9 +131,11 @@ async function checkUserIp(shop) {
 
 async function fetchUserCountryInfo(access_key) {
   try {
+    console.log("fetchUserCountryInfo start");
     const response = await axios.get(
       `http://api.ipapi.com/api/check?access_key=${access_key}`,
     );
+    console.log("fetchUserCountryInfo end");
     return response.data;
   } catch (error) {
     console.error("Error fetchUserCountryInfo:", error);
@@ -120,26 +144,24 @@ async function fetchUserCountryInfo(access_key) {
 }
 
 async function fetchLanguageLocaleInfo(locale) {
-  // 使用 map 方法遍历数组并替换每个字符串中的 '-' 为 '_'
-  const updatedLocales = locale.map((item) => item.replace(/-/g, "_"));
   try {
-    const response = await axios({
-      url: `https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net/shopify/getImageInfo`,
-      method: "POST",
-      data: updatedLocales,
+    // 从本地 languageLocaleData.json 文件获取数据
+    const response = await fetch("./");
+    const languageLocaleData = await response.json();
+
+    // 过滤出请求的语言区域数据
+    const res = {};
+    locale.forEach((loc) => {
+      // 尝试直接匹配
+      if (languageLocaleData[loc]) {
+        res[loc] = languageLocaleData[loc];
+      }
     });
-    const data = response.data.response;
-    console.log("Fetched language locale info:", data);
-    const res = Object.keys(data).reduce((acc, key) => {
-      // 将 key 中的 "_" 替换为 "-"
-      const newKey = key.replace("_", "-");
-      // 保持原来的值，重新赋值给新键
-      acc[newKey] = data[key];
-      return acc;
-    }, {});
+
     return res;
   } catch (error) {
-    console.error("Error occurred in the languageData:", error);
+    console.error("Error fetchLanguageLocaleInfo:", error);
+    return {};
   }
 }
 
@@ -147,12 +169,7 @@ async function initializeCurrency(data, shop, ciwiBlock) {
   let value = localStorage.getItem("selectedCurrency");
   let moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat").value;
 
-  console.log("moneyFormat: ", moneyFormat);
-
-  const selectedCurrency = data.find(
-    (currency) => currency?.currencyCode === value,
-  );
-  console.log("selectedCurrency: ", selectedCurrency);
+  const selectedCurrency = data?.find((item) => item?.currencyCode == value);
 
   const isValueInCurrencies =
     selectedCurrency && !selectedCurrency.primaryStatus;
@@ -169,7 +186,7 @@ async function initializeCurrency(data, shop, ciwiBlock) {
     customSelector.style.display = "block";
     let rate = selectedCurrency.exchangeRate;
     if (selectedCurrency.exchangeRate == "Auto") {
-      rate = await fetchAutoRate(shop.value, selectedCurrency.currencyCode);
+      rate = await fetchAutoRate(shop, selectedCurrency.currencyCode);
       if (typeof rate != "number") {
         rate = 1;
       }
@@ -193,7 +210,6 @@ async function initializeCurrency(data, shop, ciwiBlock) {
         price.innerHTML = transformedPrice;
       }
     });
-
     // 更新输入值和选中项
     currencyInput.value = value;
 
@@ -286,12 +302,12 @@ function updateDisplayText(lang, cur, ciwiBlock) {
   }
 
   if (cur) {
-    const currencySelector = ciwiBlock.querySelector(
-      '.custom-selector[data-type="currency"]',
-    );
+    const currencyCode = ciwiBlock.querySelector('input[name="currency_code"]');
+    const storedCurrency = localStorage.getItem("selectedCurrency");
     selectedCurrencyText =
-      currencySelector?.querySelector(".selected-text")?.textContent ||
-      "undefined";
+      storedCurrency && typeof storedCurrency == "string"
+        ? storedCurrency
+        : currencyCode?.value;
   }
   // 更新显示文本
   const displayTextElement = ciwiBlock.querySelector("#display-text");
@@ -358,40 +374,6 @@ function transform(
 
 function convertToNumberFromMoneyFormat(moneyFormat, formattedPrice) {
   let number = formattedPrice;
-
-  // console.log(moneyFormat);
-  // console.log(
-  //   "moneyFormat.includes('amount'): ",
-  //   moneyFormat.includes("amount"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_no_decimals'): ",
-  //   moneyFormat.includes("amount_no_decimals"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_with_comma_separator'): ",
-  //   moneyFormat.includes("amount_with_comma_separator"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_no_decimals_with_comma_separator'): ",
-  //   moneyFormat.includes("amount_no_decimals_with_comma_separator"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_with_apostrophe_separator'): ",
-  //   moneyFormat.includes("amount_with_apostrophe_separator"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_no_decimals_with_space_separator'): ",
-  //   moneyFormat.includes("amount_no_decimals_with_space_separator"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_with_space_separator'): ",
-  //   moneyFormat.includes("amount_with_space_separator"),
-  // );
-  // console.log(
-  //   "moneyFormat.includes('amount_with_period_and_space_separator'): ",
-  //   moneyFormat.includes("amount_with_period_and_space_separator"),
-  // );
 
   switch (true) {
     case moneyFormat.includes("amount_with_comma_separator"):
@@ -608,11 +590,6 @@ function formatWithSpaceAndPeriod(integerPart, decimalPart) {
   return integerPart;
 }
 
-function isInThemeEditor() {
-  const url = window.location.href;
-  return null;
-}
-
 function updateLocalization({ country, language }) {
   const formId = crypto.randomUUID();
   const formHtml = `
@@ -747,8 +724,6 @@ class CiwiswitcherForm extends HTMLElement {
       ".selected-option .option-country-flag",
     );
     const option = event.currentTarget;
-    console.log("option", option);
-
     const value = option.dataset.value;
     const text = option.querySelector(".option-text")?.textContent;
     const flag = option.querySelector(".option-country-flag")?.src;
@@ -855,7 +830,6 @@ class CiwiswitcherForm extends HTMLElement {
       }
     }
     const form = this.querySelector("form");
-    localStorage.setItem("selectedLanguage", this.elements.languageInput.value);
     localStorage.setItem("selectedCurrency", this.elements.currencyInput.value);
 
     // 提交表单
@@ -928,8 +902,227 @@ class CiwiswitcherForm extends HTMLElement {
 
 // Define the custom element
 customElements.define("ciwiswitcher-form", CiwiswitcherForm);
+
+async function IpPosition(ipOpen, shop, ciwiBlock) {
+  if (!ipOpen) {
+    console.log("ip function false");
+    return;
+  }
+
+  const iptokenInput = ciwiBlock.querySelector('input[name="iptoken"]');
+  const iptokenValue = iptokenInput.value;
+  if (!iptokenValue) {
+    console.log("iptoken desappeared!");
+    return;
+  }
+  const storedCountry = localStorage.getItem("selectedCountry");
+  const storedCurrency = localStorage.getItem("selectedCurrency");
+  const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
+  const language = languageInput.value;
+
+  const countryInput = ciwiBlock.querySelector('input[name="country_code"]');
+  const country = countryInput.value;
+
+  const currencyInput = ciwiBlock.querySelector('input[name="currency_code"]');
+  const availableLanguages = Array.from(
+    ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
+  ).map((option) => option.dataset.value);
+  const availableCountries = Array.from(
+    ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
+  ).map((link) => link.getAttribute("data-value"));
+
+  const browserLanguage = navigator.language;
+  let detectedLanguage;
+  // 获取匹配的语言或默认为英语
+  if (browserLanguage.includes("zh")) {
+    detectedLanguage = browserLanguage || "en";
+  } else {
+    detectedLanguage = browserLanguage.split("-")[0] || "en";
+  }
+  if (
+    languageInput.value !== detectedLanguage &&
+    availableLanguages.includes(detectedLanguage)
+  ) {
+    languageInput.value = detectedLanguage;
+  }
+  if (storedCountry && storedCurrency) {
+    if (
+      countryInput.value !== storedCountry &&
+      availableCountries.includes(storedCountry)
+    ) {
+      countryInput.value = storedCountry;
+    }
+    if (currencyInput.value !== storedCurrency) {
+      currencyInput.value = storedCurrency;
+    }
+  } else {
+    const userIp = checkUserIp(shop);
+    if (userIp) {
+      const IpData = await fetchUserCountryInfo(iptokenValue);
+      const ip = IpData?.ip;
+      const currencyCode = IpData?.currency?.code;
+      const countryCode = IpData?.country_code;
+      await FrontEndPrinting(
+        shop,
+        ip,
+        detectedLanguage,
+        currencyCode,
+        countryCode,
+      );
+      if (currencyCode) {
+        localStorage.setItem("selectedCurrency", currencyCode);
+      }
+      if (countryCode && availableCountries.includes(countryCode)) {
+        countryInput.value = countryCode;
+        localStorage.setItem("selectedCountry", countryCode);
+        console.log(
+          "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
+        );
+      } else {
+        localStorage.setItem("selectedCountry", false);
+        console.log(
+          "该商店不包含您目前所在市场(The store does not include the market you are currently in)",
+        );
+      }
+      const isInThemeEditor = document.documentElement.classList.contains(
+        "shopify-design-mode",
+      );
+      if (
+        (countryInput.value !== country || languageInput.value !== language) &&
+        countryInput.value &&
+        languageInput.value &&
+        !isInThemeEditor
+      ) {
+        // updateLocalization({
+        //   country: countryInput.value,
+        //   language: languageInput.value,
+        // });
+      }
+    }
+  }
+}
+
+async function CurrencySelectorTakeEffect(
+  isCurrencySelectorTakeEffect,
+  shop,
+  data,
+  ciwiBlock,
+) {
+  if (!isCurrencySelectorTakeEffect) {
+    console.log("currencySelector function false");
+    return;
+  }
+  const currencyData = await fetchCurrencies(shop);
+  if (currencyData) {
+    initializeCurrency(currencyData, shop, ciwiBlock);
+  }
+  const currencySelector = ciwiBlock.querySelector(
+    "#currency-switcher-container",
+  );
+  const currencySelectorHeader = ciwiBlock.querySelector(
+    ".selector-header[data-type='currency']",
+  );
+  currencySelectorHeader.style.backgroundColor = data.backgroundColor;
+  currencySelectorHeader.style.border = `1px solid ${data.optionBorderColor}`;
+  const currencySelectorSelectedOption = ciwiBlock.querySelector(
+    ".options-container[data-type='currency']",
+  );
+  currencySelectorSelectedOption.style.backgroundColor = data.backgroundColor;
+  currencySelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
+  currencySelector.style.display = "block";
+}
+
+async function LanguageSelectorTakeEffect(
+  isLanguageSelectorTakeEffect,
+  data,
+  ciwiBlock,
+) {
+  if (!isLanguageSelectorTakeEffect) {
+    console.log("languageSelector function false");
+    return;
+  }
+  const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
+  const language = languageInput.value;
+  const languageSelector = ciwiBlock.querySelector(
+    "#language-switcher-container",
+  );
+  languageSelector.style.display = "block";
+  const languageSelectorHeader = ciwiBlock.querySelector(
+    ".selector-header[data-type='language']",
+  );
+  languageSelectorHeader.style.backgroundColor = data.backgroundColor;
+  languageSelectorHeader.style.border = `1px solid ${data.optionBorderColor}`;
+  const languageSelectorSelectedOption = ciwiBlock.querySelector(
+    ".options-container[data-type='language']",
+  );
+  languageSelectorSelectedOption.style.backgroundColor = data.backgroundColor;
+  languageSelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
+
+  const mainLanguageFlag = ciwiBlock.querySelector("#main-language-flag");
+  const translateFloatBtnIcon = ciwiBlock.querySelector(
+    "#translate-float-btn-icon",
+  );
+  if (data?.includedFlag) {
+    //获取所有语言代码
+    const languageLocaleData = window.languageLocaleData
+      ? window.languageLocaleData
+      : null;
+    const languageOptions = ciwiBlock.querySelectorAll(
+      ".option-item[data-type='language']",
+    );
+    languageOptions.forEach((option) => {
+      const langCode = option.dataset.value;
+      const countryCode = languageLocaleData[langCode]?.countries[0];
+      if (countryCode) {
+        // 创建并插入国旗图片
+        const flagImg = document.createElement("img");
+        flagImg.className = "option-country-flag";
+        flagImg.src = countryCode;
+        flagImg.alt = "";
+        // 将图片插入到选项的最前面
+        option.insertBefore(flagImg, option.firstChild);
+      }
+    });
+    // 为当前选中的语言添加国旗
+    const selectedOption = ciwiBlock.querySelector(
+      ".selector-header[data-type='language'] .selected-option",
+    );
+    if (selectedOption) {
+      const countryCode = languageLocaleData[language]?.countries[0];
+      const optionFlagImg = document.createElement("img");
+      optionFlagImg.className = "option-country-flag";
+      optionFlagImg.src = countryCode;
+      optionFlagImg.alt = "";
+      if (countryCode) {
+        selectedOption.insertBefore(optionFlagImg, selectedOption.firstChild);
+      }
+      if (
+        mainLanguageFlag &&
+        (data.languageSelector || data.currencySelector)
+      ) {
+        mainLanguageFlag.src = countryCode;
+        mainLanguageFlag.hidden = false;
+      }
+      if (
+        translateFloatBtnIcon &&
+        !data.languageSelector &&
+        !data.currencySelector
+      ) {
+        translateFloatBtnIcon.src = countryCode;
+        translateFloatBtnIcon.hidden = false;
+      }
+    }
+    const mainBoxText = ciwiBlock.querySelector(".main_box_text");
+    if (mainBoxText) {
+      mainBoxText.style.margin = "0 20px 0px 35px";
+    }
+  }
+}
+
 // Page load handling
 window.onload = async function () {
+  console.log("onload start");
+
   const blockId = document.querySelector('input[name="block_id"]');
   console.log("blockId", blockId);
   const ciwiBlock = document.querySelector(`#shopify-block-${blockId.value}`);
@@ -940,11 +1133,9 @@ window.onload = async function () {
 
   const switcher = ciwiBlock.querySelector("#ciwi-container");
   const shop = ciwiBlock.querySelector("#queryCiwiId");
-
   const mainBox = ciwiBlock.querySelector("#main-box");
-  const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
-  const language = languageInput.value;
-  const productId = ciwiBlock.querySelector('input[name="product_id"]');
+  const productIdInput = ciwiBlock.querySelector('input[name="product_id"]');
+  const productId = productIdInput.value;
   const selectedLanguageText = ciwiBlock.querySelector(
     "#translate-float-btn-text",
   );
@@ -970,190 +1161,151 @@ window.onload = async function () {
   ];
   const isRtlLanguage = rtlLanguages.includes(currentSelectedLanguage);
   const data = await fetchSwitcherConfig(shop.value);
+  const isCurrencySelectorTakeEffect =
+    data.currencySelector || (!data.languageSelector && !data.currencySelector);
+  const isLanguageSelectorTakeEffect =
+    data.languageSelector || (!data.languageSelector && !data.currencySelector);
 
   console.log("加载中...");
 
-  if (data.ipOpen) {
-    const iptoken = ciwiBlock.querySelector('input[name="iptoken"]');
-    console.log("iptoken", iptoken);
-    
-    const iptokenValue = iptoken.value;
-    if (iptokenValue) iptoken.remove();
-    const storedLanguage = localStorage.getItem("selectedLanguage");
-    const storedCountry = localStorage.getItem("selectedCountry");
-    const storedCurrency = localStorage.getItem("selectedCurrency");
-    const countryInput = ciwiBlock.querySelector('input[name="country_code"]');
-    const country = countryInput.value;
-    const currencyInput = ciwiBlock.querySelector(
-      'input[name="currency_code"]',
+  IpPosition(data.ipOpen, shop.value, ciwiBlock);
+  if (switcher) {
+    if (data?.isTransparent) {
+      console.log("switcher is transparent");
+      return;
+    }
+    const selectorBox = ciwiBlock.querySelector("#selector-box");
+    const confirmButton = ciwiBlock.querySelector(
+      ".ciwi_switcher_confirm_button",
     );
-    const currency = currencyInput.value;
-    const availableLanguages = Array.from(
-      ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
-    ).map((option) => option.dataset.value);
-    const availableCountries = Array.from(
-      ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
-    ).map((link) => link.getAttribute("data-value"));
+    const cancelButton = ciwiBlock.querySelector(
+      ".ciwi_switcher_cancel_button",
+    );
+    const translateFloatBtn = ciwiBlock.querySelector("#translate-float-btn");
+    const translateFloatBtnText = ciwiBlock.querySelector(
+      "#translate-float-btn-text",
+    );
+    const translateFloatBtnIcon = ciwiBlock.querySelector(
+      "#translate-float-btn-icon",
+    );
+    confirmButton.style.backgroundColor = data.buttonBackgroundColor;
+    confirmButton.style.color = data.buttonColor;
+    cancelButton.style.backgroundColor = data.buttonBackgroundColor;
+    cancelButton.style.color = data.buttonColor;
+    selectorBox.style.backgroundColor = data.backgroundColor;
+    switcher.style.color = data.fontColor;
 
-    if (storedLanguage) {
-      if (
-        storedLanguage !== languageInput.value &&
-        availableLanguages.includes(storedLanguage)
-      ) {
-        // 存储到 localStorage
-        languageInput.value = storedLanguage;
+    if (data.selectorPosition === "top_left") {
+      switcher.style.top = data?.positionData.toString() + "%" || "10%";
+      switcher.style.bottom = "auto";
+      translateFloatBtnText.style.borderRadius = "8px 8px 0px 0px";
+      translateFloatBtn.style.justifyContent = "flex-end";
+      translateFloatBtnIcon.style.bottom = "20px";
+      translateFloatBtnIcon.style.left = "10px";
+      selectorBox.style.left = "0";
+      selectorBox.style.top = "100%"; // 设置顶部距离为主框高度
+      selectorBox.style.bottom = "auto";
+      selectorBox.style.transform = "none"; // 清除transform
+      if (isRtlLanguage) {
+        translateFloatBtn.style.top = "-80px";
+        selectorBox.style.top = translateFloatBtn.style.top;
       }
+    }
+    if (data.selectorPosition === "bottom_left") {
+      switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
+      switcher.style.right = "auto";
+      switcher.style.top = "auto";
+      translateFloatBtnText.style.borderRadius = "8px 8px 0px 0px";
+      translateFloatBtn.style.justifyContent = "flex-end";
+      translateFloatBtnIcon.style.bottom = "20px";
+      translateFloatBtnIcon.style.left = "10px";
+      selectorBox.style.left = "0";
+      if (isRtlLanguage) {
+        translateFloatBtn.style.top = "-166px";
+        selectorBox.style.top = translateFloatBtn.style.top;
+      }
+      selectorBox.style.bottom = "100%"; // 设置底部距离为主框高度
+      selectorBox.style.top = "auto";
+      selectorBox.style.transform = "none";
+    }
+    if (data.selectorPosition === "top_right") {
+      switcher.style.top = data?.positionData.toString() + "%" || "10%";
+      switcher.style.right = "0";
+      switcher.style.bottom = "auto";
+      translateFloatBtnText.style.borderRadius = "0px 0px 8px 8px";
+      translateFloatBtn.style.justifyContent = "flex-start";
+      translateFloatBtnIcon.style.bottom = "20px";
+      translateFloatBtnIcon.style.left = "55px";
+      selectorBox.style.right = "0";
+      selectorBox.style.top = "100%"; // 设置顶部距离为主框高度
+      selectorBox.style.bottom = "auto";
+      selectorBox.style.transform = "none"; // 清除transform
+    }
+    if (data.selectorPosition === "bottom_right") {
+      switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
+      switcher.style.right = "0";
+      switcher.style.top = "auto";
+      translateFloatBtnText.style.borderRadius = "0px 0px 8px 8px";
+      translateFloatBtn.style.justifyContent = "flex-start";
+      translateFloatBtnIcon.style.bottom = "20px";
+      translateFloatBtnIcon.style.left = "55px";
+      selectorBox.style.right = "0";
+      selectorBox.style.bottom = "100%"; // 设置底部距离为主框高度
+      selectorBox.style.top = "auto";
+      selectorBox.style.transform = "none";
+    }
+    if (
+      data.selectorPosition === "top_left" ||
+      data.selectorPosition === "bottom_left"
+    ) {
+      if (isRtlLanguage) {
+        selectedLanguageText.style.transform = "rotate(-90deg)";
+        selectedLanguageText.style.right = "30px";
+        translateFloatBtnIcon.style.right = "10px";
+        translateFloatBtnIcon.style.bottom = "-90px";
+      }
+    }
+    if (data.languageSelector || data.currencySelector) {
+      selectorBox.style.border = `1px solid ${data.optionBorderColor}`;
+      mainBox.style.backgroundColor = data.backgroundColor;
+      updateDisplayText(
+        data.languageSelector,
+        data.currencySelector,
+        ciwiBlock,
+      );
+      mainBox.style.display = "flex";
+      mainBox.style.border = `1px solid ${data.optionBorderColor}`;
+      console.log("onload end");
     } else {
-      const browserLanguage = navigator.language;
-      console.log(browserLanguage);
-
-      let detectedLanguage;
-      // 获取匹配的语言或默认为英语
-      if (browserLanguage.includes("zh")) {
-        detectedLanguage = browserLanguage || "en";
-        localStorage.setItem("selectedLanguage", detectedLanguage);
-      } else {
-        detectedLanguage = browserLanguage.split("-")[0] || "en";
-        localStorage.setItem("selectedLanguage", detectedLanguage);
-      }
+      switcher.style.width = "200px";
       if (
-        languageInput.value !== detectedLanguage &&
-        availableLanguages.includes(detectedLanguage)
+        data.selectorPosition === "top_right" ||
+        data.selectorPosition === "bottom_right"
       ) {
-        languageInput.value = detectedLanguage;
+        translateFloatBtn.style.right = "35%";
       }
-    }
-
-    console.log("storedCountry:", storedCountry);
-    console.log("storedCurrency:", storedCurrency);
-    console.log("storedLanguage:", storedLanguage);
-
-    console.log("storedCountry:", !storedCountry);
-    console.log("storedCurrency:", !storedCurrency);
-    console.log("storedLanguage:", !storedLanguage);
-
-    if (storedCountry && storedCurrency) {
-      if (
-        countryInput.value !== storedCountry &&
-        availableCountries.includes(storedCountry)
-      ) {
-        countryInput.value = storedCountry;
-      }
-      if (currencyInput.value !== storedCurrency) {
-        currencyInput.value = storedCurrency;
-      }
-    } else {
-      const userIp = await checkUserIp(shop.value);
-      if (userIp) {
-        const IpData = await fetchUserCountryInfo(iptokenValue);
-
-        if (IpData?.currency?.code) {
-          localStorage.setItem("selectedCurrency", IpData.currency.code);
-        }
-
-        if (
-          IpData?.country_code &&
-          availableCountries.includes(IpData.country_code)
-        ) {
-          if (countryInput.value !== IpData.country_code) {
-            countryInput.value = IpData.country_code;
-          }
-          localStorage.setItem("selectedCountry", countryInput.value);
-          console.log(
-            "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
-          );
-        } else {
-          localStorage.setItem("selectedCountry", false);
-          console.log(
-            "该商店不包含您目前所在市场(The store does not include the market you are currently in)",
-          );
-        }
-        const isInThemeEditor = document.documentElement.classList.contains(
-          "shopify-design-mode",
-        );
-        console.log("isInThemeEditor:", isInThemeEditor);
-
-        if (
-          (countryInput.value !== country ||
-            languageInput.value !== language) &&
-          countryInput.value &&
-          languageInput.value &&
-          !isInThemeEditor
-        ) {
-          updateLocalization({
-            country: countryInput.value,
-            language: languageInput.value,
-          });
-        }
-      }
-    }
-
-    // if (!storedCountry && !storedCurrency && !storedLanguage) {
-    //   // 判断是否在主题编辑器中
-    //   const isInThemeEditor = document.documentElement.classList.contains(
-    //     "shopify-design-mode",
-    //   );
-    //   console.log("isInThemeEditor:", isInThemeEditor);
-
-    //   if (
-    //     (countryInput.value !== country || languageInput.value !== language) &&
-    //     countryInput.value &&
-    //     languageInput.value &&
-    //     !isInThemeEditor
-    //   ) {
-    //     updateLocalization({
-    //       country: countryInput.value,
-    //       language: languageInput.value,
-    //     });
-    //   }
-    // }
-  }
-
-  if (
-    data.currencySelector ||
-    (!data.languageSelector && !data.currencySelector)
-  ) {
-    const currencySelector = ciwiBlock.querySelector(
-      "#currency-switcher-container",
-    );
-    currencySelector.style.display = "block";
-    const currencySelectorHeader = ciwiBlock.querySelector(
-      ".selector-header[data-type='currency']",
-    );
-    currencySelectorHeader.style.backgroundColor = data.backgroundColor;
-    currencySelectorHeader.style.border = `1px solid ${data.optionBorderColor}`;
-    const currencySelectorSelectedOption = ciwiBlock.querySelector(
-      ".options-container[data-type='currency']",
-    );
-    currencySelectorSelectedOption.style.backgroundColor = data.backgroundColor;
-    currencySelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
-    // 在页面加载时执行初始化
-    const currencyData = await fetchCurrencies(shop.value);
-
-    if (currencyData) {
-      await initializeCurrency(currencyData, shop, ciwiBlock);
-    }
-    if (!data.languageSelector) {
-      const mainLanguageFlag = ciwiBlock.querySelector("#main-language-flag");
-      if (mainLanguageFlag) {
-        mainLanguageFlag.hidden = true;
-      }
-      const mainBox = ciwiBlock.querySelector("#main-box");
-      if (mainBox) {
-        mainBox.style.justifyContent = "center";
-      }
+      translateFloatBtnText.style.backgroundColor = data.backgroundColor;
+      translateFloatBtn.style.display = "flex";
     }
   }
 
-  if (data.isTransparent) {
-    return;
-  }
+  CurrencySelectorTakeEffect(
+    isCurrencySelectorTakeEffect,
+    shop.value,
+    data,
+    ciwiBlock,
+  );
+
+  LanguageSelectorTakeEffect(isLanguageSelectorTakeEffect, data, ciwiBlock);
 
   if (productId) {
-    const productIdValue = productId.value;
+    const languageInput = ciwiBlock.querySelector(
+      'input[name="language_code"]',
+    );
+    const language = languageInput.value;
     const productImageData = await GetProductImageData({
-      shopName: shop.value,
-      productId: productIdValue,
+      shop: shop.value,
+      productId: productId,
       languageCode: language,
     });
 
@@ -1186,83 +1338,6 @@ window.onload = async function () {
     data.languageSelector ||
     (!data.languageSelector && !data.currencySelector)
   ) {
-    const languageSelector = ciwiBlock.querySelector(
-      "#language-switcher-container",
-    );
-    languageSelector.style.display = "block";
-    const languageSelectorHeader = ciwiBlock.querySelector(
-      ".selector-header[data-type='language']",
-    );
-    languageSelectorHeader.style.backgroundColor = data.backgroundColor;
-    languageSelectorHeader.style.border = `1px solid ${data.optionBorderColor}`;
-    const languageSelectorSelectedOption = ciwiBlock.querySelector(
-      ".options-container[data-type='language']",
-    );
-    languageSelectorSelectedOption.style.backgroundColor = data.backgroundColor;
-    languageSelectorSelectedOption.style.border = `1px solid ${data.optionBorderColor}`;
-
-    const mainLanguageFlag = ciwiBlock.querySelector("#main-language-flag");
-    const translateFloatBtnIcon = ciwiBlock.querySelector(
-      "#translate-float-btn-icon",
-    );
-
-    if (data.includedFlag) {
-      //获取所有语言代码
-      const languageCodes = Array.from(
-        ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
-      ).map((option) => option.dataset.value);
-
-      const languageLocaleData = await fetchLanguageLocaleInfo(languageCodes);
-      const languageOptions = ciwiBlock.querySelectorAll(
-        ".option-item[data-type='language']",
-      );
-      languageOptions.forEach((option) => {
-        const langCode = option.dataset.value;
-        const countryCode = languageLocaleData[langCode]?.countries[0];
-        if (countryCode) {
-          // 创建并插入国旗图片
-          const flagImg = document.createElement("img");
-          flagImg.className = "option-country-flag";
-          flagImg.src = countryCode;
-          flagImg.alt = "";
-          // 将图片插入到选项的最前面
-          option.insertBefore(flagImg, option.firstChild);
-        }
-      });
-      // 为当前选中的语言添加国旗
-      const selectedOption = ciwiBlock.querySelector(
-        ".selector-header[data-type='language'] .selected-option",
-      );
-      if (selectedOption) {
-        const countryCode = languageLocaleData[language]?.countries[0];
-        const optionFlagImg = document.createElement("img");
-        optionFlagImg.className = "option-country-flag";
-        optionFlagImg.src = countryCode;
-        optionFlagImg.alt = "";
-        if (countryCode) {
-          selectedOption.insertBefore(optionFlagImg, selectedOption.firstChild);
-        }
-        if (
-          mainLanguageFlag &&
-          (data.languageSelector || data.currencySelector)
-        ) {
-          mainLanguageFlag.src = countryCode;
-          mainLanguageFlag.hidden = false;
-        }
-        if (
-          translateFloatBtnIcon &&
-          !data.languageSelector &&
-          !data.currencySelector
-        ) {
-          translateFloatBtnIcon.src = countryCode;
-          translateFloatBtnIcon.hidden = false;
-        }
-      }
-      const mainBoxText = ciwiBlock.querySelector(".main_box_text");
-      if (mainBoxText) {
-        mainBoxText.style.margin = "0 20px 0px 35px";
-      }
-    }
   }
 
   // 修改RTL和LTR的组件布局
@@ -1272,123 +1347,6 @@ window.onload = async function () {
       selectedLanguageText.style.right = "0";
       translateFloatBtnIcon.style.right = "10px";
       selectionBox.style.right = "0";
-    }
-  }
-
-  if (switcher) {
-    const selectorBox = ciwiBlock.querySelector("#selector-box");
-    const confirmButton = ciwiBlock.querySelector(
-      ".ciwi_switcher_confirm_button",
-    );
-    const cancelButton = ciwiBlock.querySelector(
-      ".ciwi_switcher_cancel_button",
-    );
-    const translateFloatBtn = ciwiBlock.querySelector("#translate-float-btn");
-    const translateFloatBtnText = ciwiBlock.querySelector(
-      "#translate-float-btn-text",
-    );
-    const translateFloatBtnIcon = ciwiBlock.querySelector(
-      "#translate-float-btn-icon",
-    );
-    confirmButton.style.backgroundColor = data.buttonBackgroundColor;
-    confirmButton.style.color = data.buttonColor;
-    cancelButton.style.backgroundColor = data.buttonBackgroundColor;
-    cancelButton.style.color = data.buttonColor;
-    selectorBox.style.backgroundColor = data.backgroundColor;
-    switcher.style.color = data.fontColor;
-    if (
-      data.selectorPosition === "top_left" ||
-      data.selectorPosition === "top_right"
-    ) {
-      // 当位置在顶部时，选择器框在下方展开
-      selectorBox.style.top = "100%"; // 设置顶部距离为主框高度
-      selectorBox.style.bottom = "auto";
-      selectorBox.style.transform = "none"; // 清除transform
-    } else {
-      // 当位置在底部时，选择器框在上方展开
-      selectorBox.style.bottom = "100%"; // 设置底部距离为主框高度
-      selectorBox.style.top = "auto";
-      selectorBox.style.transform = "none";
-    }
-
-    if (data.selectorPosition === "top_left") {
-      switcher.style.top = data?.positionData.toString() + "%" || "10%";
-      switcher.style.bottom = "auto";
-      translateFloatBtnText.style.borderRadius = "8px 8px 0px 0px";
-      translateFloatBtn.style.justifyContent = "flex-end";
-      translateFloatBtnIcon.style.bottom = "20px";
-      translateFloatBtnIcon.style.left = "10px";
-      selectorBox.style.left = "0";
-      if (isRtlLanguage) {
-        translateFloatBtn.style.top = "-80px";
-        selectorBox.style.top = translateFloatBtn.style.top;
-      }
-    }
-    if (data.selectorPosition === "bottom_left") {
-      switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
-      switcher.style.right = "auto";
-      switcher.style.top = "auto";
-      translateFloatBtnText.style.borderRadius = "8px 8px 0px 0px";
-      translateFloatBtn.style.justifyContent = "flex-end";
-      translateFloatBtnIcon.style.bottom = "20px";
-      translateFloatBtnIcon.style.left = "10px";
-      selectorBox.style.left = "0";
-      if (isRtlLanguage) {
-        translateFloatBtn.style.top = "-166px";
-        selectorBox.style.top = translateFloatBtn.style.top;
-      }
-    }
-    if (data.selectorPosition === "top_right") {
-      switcher.style.top = data?.positionData.toString() + "%" || "10%";
-      switcher.style.right = "0";
-      switcher.style.bottom = "auto";
-      translateFloatBtnText.style.borderRadius = "0px 0px 8px 8px";
-      translateFloatBtn.style.justifyContent = "flex-start";
-      translateFloatBtnIcon.style.bottom = "20px";
-      translateFloatBtnIcon.style.left = "55px";
-      selectorBox.style.right = "0";
-    }
-    if (data.selectorPosition === "bottom_right") {
-      switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
-      switcher.style.right = "0";
-      switcher.style.top = "auto";
-      translateFloatBtnText.style.borderRadius = "0px 0px 8px 8px";
-      translateFloatBtn.style.justifyContent = "flex-start";
-      translateFloatBtnIcon.style.bottom = "20px";
-      translateFloatBtnIcon.style.left = "55px";
-      selectorBox.style.right = "0";
-    }
-    if (data.languageSelector || data.currencySelector) {
-      mainBox.style.backgroundColor = data.backgroundColor;
-      updateDisplayText(
-        data.languageSelector,
-        data.currencySelector,
-        ciwiBlock,
-      );
-      mainBox.style.display = "flex";
-      mainBox.style.border = `1px solid ${data.optionBorderColor}`;
-      selectorBox.style.border = `1px solid ${data.optionBorderColor}`;
-    } else {
-      switcher.style.width = "200px";
-      if (
-        data.selectorPosition === "top_right" ||
-        data.selectorPosition === "bottom_right"
-      ) {
-        translateFloatBtn.style.right = "35%";
-      }
-      translateFloatBtnText.style.backgroundColor = data.backgroundColor;
-      translateFloatBtn.style.display = "flex";
-    }
-    if (
-      data.selectorPosition === "top_left" ||
-      data.selectorPosition === "bottom_left"
-    ) {
-      if (isRtlLanguage) {
-        selectedLanguageText.style.transform = "rotate(-90deg)";
-        selectedLanguageText.style.right = "30px";
-        translateFloatBtnIcon.style.right = "10px";
-        translateFloatBtnIcon.style.bottom = "-90px";
-      }
     }
   }
 };
