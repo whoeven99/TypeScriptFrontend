@@ -1172,120 +1172,120 @@ window.onload = async function () {
   if (switcher) {
     if (data?.isTransparent) {
       console.log("switcher is transparent");
-      return;
-    }
-    const selectorBox = ciwiBlock.querySelector("#selector-box");
-    const confirmButton = ciwiBlock.querySelector(
-      ".ciwi_switcher_confirm_button",
-    );
-    const cancelButton = ciwiBlock.querySelector(
-      ".ciwi_switcher_cancel_button",
-    );
-    const translateFloatBtn = ciwiBlock.querySelector("#translate-float-btn");
-    const translateFloatBtnText = ciwiBlock.querySelector(
-      "#translate-float-btn-text",
-    );
-    const translateFloatBtnIcon = ciwiBlock.querySelector(
-      "#translate-float-btn-icon",
-    );
-    confirmButton.style.backgroundColor = data.buttonBackgroundColor;
-    confirmButton.style.color = data.buttonColor;
-    cancelButton.style.backgroundColor = data.buttonBackgroundColor;
-    cancelButton.style.color = data.buttonColor;
-    selectorBox.style.backgroundColor = data.backgroundColor;
-    switcher.style.color = data.fontColor;
-
-    if (data.selectorPosition === "top_left") {
-      switcher.style.top = data?.positionData.toString() + "%" || "10%";
-      switcher.style.bottom = "auto";
-      translateFloatBtnText.style.borderRadius = "8px 8px 0px 0px";
-      translateFloatBtn.style.justifyContent = "flex-end";
-      translateFloatBtnIcon.style.bottom = "20px";
-      translateFloatBtnIcon.style.left = "10px";
-      selectorBox.style.left = "0";
-      selectorBox.style.top = "100%"; // 设置顶部距离为主框高度
-      selectorBox.style.bottom = "auto";
-      selectorBox.style.transform = "none"; // 清除transform
-      if (isRtlLanguage) {
-        translateFloatBtn.style.top = "-80px";
-        selectorBox.style.top = translateFloatBtn.style.top;
-      }
-    }
-    if (data.selectorPosition === "bottom_left") {
-      switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
-      switcher.style.right = "auto";
-      switcher.style.top = "auto";
-      translateFloatBtnText.style.borderRadius = "8px 8px 0px 0px";
-      translateFloatBtn.style.justifyContent = "flex-end";
-      translateFloatBtnIcon.style.bottom = "20px";
-      translateFloatBtnIcon.style.left = "10px";
-      selectorBox.style.left = "0";
-      if (isRtlLanguage) {
-        translateFloatBtn.style.top = "-166px";
-        selectorBox.style.top = translateFloatBtn.style.top;
-      }
-      selectorBox.style.bottom = "100%"; // 设置底部距离为主框高度
-      selectorBox.style.top = "auto";
-      selectorBox.style.transform = "none";
-    }
-    if (data.selectorPosition === "top_right") {
-      switcher.style.top = data?.positionData.toString() + "%" || "10%";
-      switcher.style.right = "0";
-      switcher.style.bottom = "auto";
-      translateFloatBtnText.style.borderRadius = "0px 0px 8px 8px";
-      translateFloatBtn.style.justifyContent = "flex-start";
-      translateFloatBtnIcon.style.bottom = "20px";
-      translateFloatBtnIcon.style.left = "55px";
-      selectorBox.style.right = "0";
-      selectorBox.style.top = "100%"; // 设置顶部距离为主框高度
-      selectorBox.style.bottom = "auto";
-      selectorBox.style.transform = "none"; // 清除transform
-    }
-    if (data.selectorPosition === "bottom_right") {
-      switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
-      switcher.style.right = "0";
-      switcher.style.top = "auto";
-      translateFloatBtnText.style.borderRadius = "0px 0px 8px 8px";
-      translateFloatBtn.style.justifyContent = "flex-start";
-      translateFloatBtnIcon.style.bottom = "20px";
-      translateFloatBtnIcon.style.left = "55px";
-      selectorBox.style.right = "0";
-      selectorBox.style.bottom = "100%"; // 设置底部距离为主框高度
-      selectorBox.style.top = "auto";
-      selectorBox.style.transform = "none";
-    }
-    if (
-      data.selectorPosition === "top_left" ||
-      data.selectorPosition === "bottom_left"
-    ) {
-      if (isRtlLanguage) {
-        selectedLanguageText.style.transform = "rotate(-90deg)";
-        selectedLanguageText.style.right = "30px";
-        translateFloatBtnIcon.style.right = "10px";
-        translateFloatBtnIcon.style.bottom = "-90px";
-      }
-    }
-    if (data.languageSelector || data.currencySelector) {
-      selectorBox.style.border = `1px solid ${data.optionBorderColor}`;
-      mainBox.style.backgroundColor = data.backgroundColor;
-      updateDisplayText(
-        data.languageSelector,
-        data.currencySelector,
-        ciwiBlock,
-      );
-      mainBox.style.display = "flex";
-      mainBox.style.border = `1px solid ${data.optionBorderColor}`;
-      console.log("onload end");
     } else {
-      switcher.style.width = "200px";
-      if (
-        data.selectorPosition === "top_right" ||
-        data.selectorPosition === "bottom_right"
-      ) {
-        translateFloatBtn.style.right = "35%";
+      const selectorBox = ciwiBlock.querySelector("#selector-box");
+      const confirmButton = ciwiBlock.querySelector(
+        ".ciwi_switcher_confirm_button",
+      );
+      const cancelButton = ciwiBlock.querySelector(
+        ".ciwi_switcher_cancel_button",
+      );
+      const translateFloatBtn = ciwiBlock.querySelector("#translate-float-btn");
+      const translateFloatBtnText = ciwiBlock.querySelector(
+        "#translate-float-btn-text",
+      );
+      const translateFloatBtnIcon = ciwiBlock.querySelector(
+        "#translate-float-btn-icon",
+      );
+      confirmButton.style.backgroundColor = data.buttonBackgroundColor;
+      confirmButton.style.color = data.buttonColor;
+      cancelButton.style.backgroundColor = data.buttonBackgroundColor;
+      cancelButton.style.color = data.buttonColor;
+      selectorBox.style.backgroundColor = data.backgroundColor;
+      switcher.style.color = data.fontColor;
+
+      if (data.selectorPosition === "top_left") {
+        switcher.style.top = data?.positionData.toString() + "%" || "10%";
+        switcher.style.bottom = "auto";
+        translateFloatBtnText.style.borderRadius = "8px 8px 0px 0px";
+        translateFloatBtn.style.justifyContent = "flex-end";
+        translateFloatBtnIcon.style.bottom = "20px";
+        translateFloatBtnIcon.style.left = "10px";
+        selectorBox.style.left = "0";
+        selectorBox.style.top = "100%"; // 设置顶部距离为主框高度
+        selectorBox.style.bottom = "auto";
+        selectorBox.style.transform = "none"; // 清除transform
+        if (isRtlLanguage) {
+          translateFloatBtn.style.top = "-80px";
+          selectorBox.style.top = translateFloatBtn.style.top;
+        }
       }
-      translateFloatBtnText.style.backgroundColor = data.backgroundColor;
-      translateFloatBtn.style.display = "flex";
+      if (data.selectorPosition === "bottom_left") {
+        switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
+        switcher.style.right = "auto";
+        switcher.style.top = "auto";
+        translateFloatBtnText.style.borderRadius = "8px 8px 0px 0px";
+        translateFloatBtn.style.justifyContent = "flex-end";
+        translateFloatBtnIcon.style.bottom = "20px";
+        translateFloatBtnIcon.style.left = "10px";
+        selectorBox.style.left = "0";
+        if (isRtlLanguage) {
+          translateFloatBtn.style.top = "-166px";
+          selectorBox.style.top = translateFloatBtn.style.top;
+        }
+        selectorBox.style.bottom = "100%"; // 设置底部距离为主框高度
+        selectorBox.style.top = "auto";
+        selectorBox.style.transform = "none";
+      }
+      if (data.selectorPosition === "top_right") {
+        switcher.style.top = data?.positionData.toString() + "%" || "10%";
+        switcher.style.right = "0";
+        switcher.style.bottom = "auto";
+        translateFloatBtnText.style.borderRadius = "0px 0px 8px 8px";
+        translateFloatBtn.style.justifyContent = "flex-start";
+        translateFloatBtnIcon.style.bottom = "20px";
+        translateFloatBtnIcon.style.left = "55px";
+        selectorBox.style.right = "0";
+        selectorBox.style.top = "100%"; // 设置顶部距离为主框高度
+        selectorBox.style.bottom = "auto";
+        selectorBox.style.transform = "none"; // 清除transform
+      }
+      if (data.selectorPosition === "bottom_right") {
+        switcher.style.bottom = data?.positionData.toString() + "%" || "10%";
+        switcher.style.right = "0";
+        switcher.style.top = "auto";
+        translateFloatBtnText.style.borderRadius = "0px 0px 8px 8px";
+        translateFloatBtn.style.justifyContent = "flex-start";
+        translateFloatBtnIcon.style.bottom = "20px";
+        translateFloatBtnIcon.style.left = "55px";
+        selectorBox.style.right = "0";
+        selectorBox.style.bottom = "100%"; // 设置底部距离为主框高度
+        selectorBox.style.top = "auto";
+        selectorBox.style.transform = "none";
+      }
+      if (
+        data.selectorPosition === "top_left" ||
+        data.selectorPosition === "bottom_left"
+      ) {
+        if (isRtlLanguage) {
+          selectedLanguageText.style.transform = "rotate(-90deg)";
+          selectedLanguageText.style.right = "30px";
+          translateFloatBtnIcon.style.right = "10px";
+          translateFloatBtnIcon.style.bottom = "-90px";
+        }
+      }
+      if (data.languageSelector || data.currencySelector) {
+        selectorBox.style.border = `1px solid ${data.optionBorderColor}`;
+        mainBox.style.backgroundColor = data.backgroundColor;
+        updateDisplayText(
+          data.languageSelector,
+          data.currencySelector,
+          ciwiBlock,
+        );
+        mainBox.style.display = "flex";
+        mainBox.style.border = `1px solid ${data.optionBorderColor}`;
+        console.log("onload end");
+      } else {
+        switcher.style.width = "200px";
+        if (
+          data.selectorPosition === "top_right" ||
+          data.selectorPosition === "bottom_right"
+        ) {
+          translateFloatBtn.style.right = "35%";
+        }
+        translateFloatBtnText.style.backgroundColor = data.backgroundColor;
+        translateFloatBtn.style.display = "flex";
+      }
     }
   }
 
