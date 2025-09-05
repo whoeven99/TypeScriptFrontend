@@ -993,10 +993,10 @@ async function IpPosition(ipOpen, shop, ciwiBlock) {
         languageInput.value &&
         !isInThemeEditor
       ) {
-        // updateLocalization({
-        //   country: countryInput.value,
-        //   language: languageInput.value,
-        // });
+        updateLocalization({
+          country: countryInput.value,
+          language: languageInput.value,
+        });
       }
     }
   }
@@ -1310,7 +1310,7 @@ window.onload = async function () {
     });
 
     if (productImageData.response.length > 0) {
-      const imageDomList = ciwiBlock.querySelectorAll("img");
+      const imageDomList = document.querySelectorAll("img");
 
       // 遍历所有img
       imageDomList.forEach((img) => {
@@ -1318,6 +1318,7 @@ window.onload = async function () {
         const match = productImageData.response.find((item) =>
           img.src.includes(item.imageBeforeUrl.split("/files/")[2]),
         );
+
         if (match) {
           // 如果imageAfterUrl或altBeforeTranslation存在，则替换
           if (match.imageAfterUrl || match.altBeforeTranslation) {
