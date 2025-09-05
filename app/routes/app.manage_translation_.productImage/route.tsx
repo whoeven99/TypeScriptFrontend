@@ -14,6 +14,8 @@ import {
   Card,
   Divider,
   Skeleton,
+  Modal,
+  Select as SelectAnt,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
@@ -24,19 +26,25 @@ import {
   useNavigate,
   useSearchParams,
 } from "@remix-run/react";
-import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
-import { Page, Pagination, Select } from "@shopify/polaris";
-import { useEffect, useRef, useState } from "react";
+import { SaveBar, TitleBar } from "@shopify/app-bridge-react";
+import { NoteIcon } from "@shopify/polaris-icons";
+import { Page, Pagination, Select, Thumbnail, Spinner } from "@shopify/polaris";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
 import { ShopLocalesType } from "../app.language/route";
+import { setLocale } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
 import { DeleteProductImageData, GetProductImageData } from "~/api/JavaServer";
-import { setLocale } from "~/store/modules/userConfig";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
+
+interface LanguageOption {
+  label: string;
+  value: string;
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -563,7 +571,192 @@ const Index = () => {
   const languageFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
   const imageFetcher = useFetcher<any>();
+  const translateImageFetcher = useFetcher<any>();
+  const replaceTranslateImageFetcher = useFetcher<any>();
+  const [translatrImageactive, setTranslatrImageactive] = useState(false);
+  const sourceLanguages = [
+    { label: "English", value: "en" },
+    { label: "Chinese (Simplified)", value: "zh" },
+    // 根据需要添加更多语言
+  ];
+  const [targetLanguages, setTargetLanguages] = useState<any[]>();
+  const [currentTranslatingImage, serCurrentTranslatingImage] =
+    useState<any>("");
+  const languageFullNames: { [key: string]: string } = {
+    en: "English",
+    zh: "Chinese (Simplified)",
+    ru: "Russian",
+    es: "Spanish",
+    fr: "French",
+    de: "German",
+    it: "Italian",
+    nl: "Dutch",
+    pt: "Portuguese",
+    vi: "Vietnamese",
+    tr: "Turkish",
+    ms: "Malay",
+    "zh-tw": "Chinese (Traditional)",
+    th: "Thai",
+    pl: "Polish",
+    id: "Indonesian",
+    ja: "Japanese",
+    ko: "Korean",
+  };
+  const languageMapping = {
+    zh: [
+      "en",
+      "ru",
+      "es",
+      "fr",
+      "de",
+      "it",
+      "nl",
+      "pt",
+      "vi",
+      "tr",
+      "ms",
+      "zh-tw",
+      "th",
+      "pl",
+      "id",
+      "ja",
+      "ko",
+    ],
+    en: [
+      "zh",
+      "ru",
+      "es",
+      "fr",
+      "de",
+      "it",
+      "pt",
+      "vi",
+      "tr",
+      "ms",
+      "th",
+      "pl",
+      "id",
+      "ja",
+      "ko",
+    ],
+  } as any;
+  const [sourceLanguage, setSourceLanguage] = useState("zh");
+  const [targetLanguage, setTargetLanguage] = useState(selectedLanguage);
+  useEffect(() => {
+    const mappedValues = languageMapping[sourceLanguage] || [];
+    const filteredOptions = mappedValues.map((value: string) => ({
+      label: languageFullNames[value] || value,
+      value: value,
+    }));
+    // 自动切换 targetLanguage 为第一个可选项
+    if (filteredOptions.length > 0) {
+      // setTargetLanguage(filteredOptions[0].value);
+    }
+    // 重置目标语言选择
+    setTargetLanguages(filteredOptions);
+  }, [sourceLanguage]);
+  useEffect(() => {
+    setTargetLanguage(selectedLanguage);
+    if (selectedLanguage === "zh-CN") {
+      setSourceLanguage("en");
+      setTargetLanguage("zh");
+    } else if (selectedLanguage === "zh-TW") {
+      setSourceLanguage("zh");
+      setTargetLanguage("zh-tw");
+    } else if (selectedLanguage === "pt-BR" || selectedLanguage === "pt-PT") {
+      setTargetLanguage("pt");
+    }
+  }, [selectedLanguage]);
+  // 图片翻译
+  const handleTranslate = async () => {
+    translateImageFetcher.submit(
+      {
+        translateImage: JSON.stringify({
+          sourceLanguage,
+          targetLanguage,
+          imageUrl: currentTranslatingImage.imageUrl,
+          imageId: currentTranslatingImage?.productId,
+        }),
+      },
+      { method: "post", action: "/app/manage_translation" },
+    );
+    setTranslatrImageactive(false);
+  };
+  const onClose = () => {
+    setTranslatrImageactive(false);
+  };
+  const handleImageTranslate = (record: any) => {
+    let mappedLanguage =
+      selectedLanguage === "zh-CN"
+        ? "zh"
+        : selectedLanguage === "zh-TW"
+          ? "zh-tw"
+          : selectedLanguage;
+    if (selectedLanguage === "pt-BR" || selectedLanguage === "pt-PT") {
+      mappedLanguage = "pt";
+    }
+    if (
+      !languageMapping["en"].includes(mappedLanguage) &&
+      !languageMapping["zh"].includes(mappedLanguage)
+    ) {
+      shopify.toast.show(
+        t("The current language does not support image translation"),
+      );
+      return;
+    }
+    setTranslatrImageactive(true);
+    serCurrentTranslatingImage(record);
+  };
 
+  useEffect(() => {
+    if (translateImageFetcher.data) {
+      if (translateImageFetcher.data.success) {
+        shopify.toast.show(t("Image translated successfully"));
+        setProductImageData(
+          productImageData.map((item: any) => {
+            if (item.imageUrl === currentTranslatingImage.imageUrl) {
+              return {
+                ...item,
+                targetImageUrl: translateImageFetcher.data.response,
+              };
+            }
+            return item;
+          }),
+        );
+        const replaceTranslateImage = {
+          url: translateImageFetcher.data.response,
+          userPicturesDoJson: {
+            imageId: currentTranslatingImage?.productId,
+            imageBeforeUrl: currentTranslatingImage?.imageUrl,
+            altBeforeTranslation: "",
+            altAfterTranslation: "",
+            languageCode: selectedLanguage,
+          },
+        };
+        const formData = new FormData();
+        formData.append(
+          "replaceTranslateImage",
+          JSON.stringify(replaceTranslateImage),
+        );
+        replaceTranslateImageFetcher.submit(formData, {
+          method: "post",
+          action: "/app/manage_translation",
+        });
+      } else {
+        shopify.toast.show(t("Image translation failed"));
+      }
+    }
+  }, [translateImageFetcher.data]);
+  // useEffect(() => {
+  //   if (replaceTranslateImageFetcher.data) {
+  //     if (replaceTranslateImageFetcher.data.success) {
+
+  //     }
+  //     else {
+
+  //     }
+  //   }
+  // }, [replaceTranslateImageFetcher.data]);
   useEffect(() => {
     loadFetcher.submit({ loading: true }, { method: "post" });
     if (languageTableData.length === 0) {
@@ -749,113 +942,14 @@ const Index = () => {
             height={"auto"}
           />
         ) : (
-          <Upload
-            pastable={false}
-            maxCount={1}
-            accept="image/*"
-            name="file"
-            action={`${server}/picture/insertPictureToDbAndCloud`}
-            beforeUpload={(file) => {
-              const isImage = file.type.startsWith("image/");
-              const isLt20M = file.size / 1024 / 1024 < 20;
-
-              // 检查文件格式
-              const supportedFormats = [
-                "image/jpeg",
-                "image/png",
-                "image/webp",
-                "image/heic",
-                "image/gif",
-              ];
-              const isSupportedFormat = supportedFormats.includes(file.type);
-
-              if (!isImage) {
-                shopify.toast.show(t("Only images can be uploaded"));
-                return false;
-              }
-
-              if (!isSupportedFormat) {
-                shopify.toast.show(
-                  t("Only JPEG, PNG, WEBP, HEIC and GIF formats are supported"),
-                );
-                return false;
-              }
-
-              if (!isLt20M) {
-                shopify.toast.show(t("File must be less than 20MB"));
-                return false;
-              }
-
-              // 检查图片像素大小
-              return new Promise((resolve) => {
-                const img = new window.Image();
-                img.onload = () => {
-                  const pixelCount = img.width * img.height;
-                  const maxPixels = 20000000; // 2000万像素
-
-                  if (pixelCount > maxPixels) {
-                    shopify.toast.show(
-                      t("Image pixel size cannot exceed 20 million pixels"),
-                    );
-                    resolve(false);
-                  } else {
-                    resolve(true);
-                  }
-                };
-                img.onerror = () => {
-                  shopify.toast.show(t("Failed to read image dimensions"));
-                  resolve(false);
-                };
-                img.src = URL.createObjectURL(file);
-              });
-            }}
-            data={(file) => {
-              return {
-                shopName: shop,
-                file: file,
-                userPicturesDoJson: JSON.stringify({
-                  shopName: shop,
-                  imageId: record?.productId,
-                  imageBeforeUrl: record?.imageUrl,
-                  altBeforeTranslation: "",
-                  altAfterTranslation: "",
-                  languageCode: selectedLanguage,
-                }),
-              };
-            }}
-            onChange={(info) => {
-              if (info.file.status !== "uploading") {
-              }
-              if (info.file.status === "done") {
-                setProductImageData(
-                  productImageData.map((item: any) => {
-                    if (
-                      item.imageUrl ===
-                      info.fileList[0].response.response?.imageBeforeUrl
-                    ) {
-                      return {
-                        ...item,
-                        targetImageUrl:
-                          info.fileList[0].response.response.imageAfterUrl,
-                      };
-                    }
-                    return item;
-                  }),
-                );
-                if (info.fileList[0].response?.success) {
-                  shopify.toast.show(
-                    `${info.file.name} ${t("Upload Success")}`,
-                  );
-                } else {
-                  shopify.toast.show(`${info.file.name} ${t("Upload Failed")}`);
-                }
-              } else if (info.file.status === "error") {
-                shopify.toast.show(`${info.file.name} ${t("Upload Failed")}`);
-              }
-            }}
-          >
-            <Button icon={<UploadOutlined />}>{t("Click to Upload")}</Button>
-          </Upload>
+          <>
+            {record.imageId === currentTranslatingImage.imageId &&
+            translateImageFetcher.state === "submitting" ? (
+              <Spinner accessibilityLabel="Loading thumbnail" size="large" />
+            ) : (
+              <Thumbnail source={NoteIcon} size="large" alt="Small document" />
+            )}
+          </>
         );
       },
     },
@@ -865,16 +959,136 @@ const Index = () => {
       width: "10%",
       render: (_: any, record: any) => {
         return (
-          // <Space>
-          //   <Button>{t("Translate")}</Button>
-          <Button
-            disabled={!record?.targetImageUrl}
-            loading={isDeleteLoading}
-            onClick={() => handleDelete(record?.productId, record?.imageUrl)}
-          >
-            {t("Delete")}
-          </Button>
-          // </Space>
+          <Space direction="vertical">
+            <Button
+              loading={
+                record.imageId === currentTranslatingImage.imageId &&
+                translateImageFetcher.state === "submitting"
+              }
+              onClick={() => handleImageTranslate(record)}
+            >
+              {t("Translate")}
+            </Button>
+            <Upload
+              disabled={translateImageFetcher.state === "submitting"}
+              pastable={false}
+              maxCount={1}
+              accept="image/*"
+              name="file"
+              action={`${server}/picture/insertPictureToDbAndCloud`}
+              beforeUpload={(file) => {
+                const isImage = file.type.startsWith("image/");
+                const isLt20M = file.size / 1024 / 1024 < 20;
+
+                // 检查文件格式
+                const supportedFormats = [
+                  "image/jpeg",
+                  "image/png",
+                  "image/webp",
+                  "image/heic",
+                  "image/gif",
+                ];
+                const isSupportedFormat = supportedFormats.includes(file.type);
+
+                if (!isImage) {
+                  shopify.toast.show(t("Only images can be uploaded"));
+                  return false;
+                }
+
+                if (!isSupportedFormat) {
+                  shopify.toast.show(
+                    t(
+                      "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported",
+                    ),
+                  );
+                  return false;
+                }
+
+                if (!isLt20M) {
+                  shopify.toast.show(t("File must be less than 20MB"));
+                  return false;
+                }
+
+                // 检查图片像素大小
+                return new Promise((resolve) => {
+                  const img = new window.Image();
+                  img.onload = () => {
+                    const pixelCount = img.width * img.height;
+                    const maxPixels = 20000000; // 2000万像素
+
+                    if (pixelCount > maxPixels) {
+                      shopify.toast.show(
+                        t("Image pixel size cannot exceed 20 million pixels"),
+                      );
+                      resolve(false);
+                    } else {
+                      resolve(true);
+                    }
+                  };
+                  img.onerror = () => {
+                    shopify.toast.show(t("Failed to read image dimensions"));
+                    resolve(false);
+                  };
+                  img.src = URL.createObjectURL(file);
+                });
+              }}
+              data={(file) => {
+                return {
+                  shopName: shop,
+                  file: file,
+                  userPicturesDoJson: JSON.stringify({
+                    shopName: shop,
+                    imageId: record?.productId,
+                    imageBeforeUrl: record?.imageUrl,
+                    altBeforeTranslation: "",
+                    altAfterTranslation: "",
+                    languageCode: selectedLanguage,
+                  }),
+                };
+              }}
+              onChange={(info) => {
+                if (info.file.status !== "uploading") {
+                }
+                if (info.file.status === "done") {
+                  setProductImageData(
+                    productImageData.map((item: any) => {
+                      if (
+                        item.imageUrl ===
+                        info.fileList[0].response.response?.imageBeforeUrl
+                      ) {
+                        return {
+                          ...item,
+                          targetImageUrl:
+                            info.fileList[0].response.response.imageAfterUrl,
+                        };
+                      }
+                      return item;
+                    }),
+                  );
+                  if (info.fileList[0].response?.success) {
+                    shopify.toast.show(
+                      `${info.file.name} ${t("Upload Success")}`,
+                    );
+                  } else {
+                    shopify.toast.show(
+                      `${info.file.name} ${t("Upload Failed")}`,
+                    );
+                  }
+                } else if (info.file.status === "error") {
+                  shopify.toast.show(`${info.file.name} ${t("Upload Failed")}`);
+                }
+              }}
+            >
+              <Button icon={<UploadOutlined />}>{t("Click to Upload")}</Button>
+            </Upload>
+            <Button
+              disabled={!record?.targetImageUrl}
+              loading={isDeleteLoading}
+              onClick={() => handleDelete(record?.productId, record?.imageUrl)}
+            >
+              {t("Delete")}
+            </Button>
+          </Space>
         );
       },
     },
@@ -1480,6 +1694,37 @@ const Index = () => {
               }
               />
             )} */}
+        <Modal
+          title={t("Image Translation")}
+          open={translatrImageactive}
+          onCancel={onClose}
+          footer={[
+            <Space direction="vertical" style={{ textAlign: "center" }}>
+              <Button key="translate" type="primary" onClick={handleTranslate}>
+                {t("Image Translation")}
+              </Button>
+              <span>{t("1000 credits")}</span>
+            </Space>,
+          ]}
+          centered
+        >
+          <div style={{ padding: "15px 0" }}>
+            <p style={{ marginBottom: "10px" }}>{t("Source Language")}</p>
+            <SelectAnt
+              style={{ width: "100%", marginBottom: "20px" }}
+              value={sourceLanguage}
+              onChange={setSourceLanguage}
+              options={sourceLanguages}
+            />
+            <span>{t("Target Language")}</span>
+            <SelectAnt
+              style={{ width: "100%", marginTop: "10px" }}
+              value={targetLanguage}
+              onChange={setTargetLanguage}
+              options={targetLanguages}
+            />
+          </div>
+        </Modal>
       </Layout>
     </Page>
   );
