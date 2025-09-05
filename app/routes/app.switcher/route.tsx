@@ -633,10 +633,10 @@ const Index = () => {
   };
 
   const handleIpOpenChange = (checked: boolean) => {
-    if (!plan) {
+    if (!plan?.id) {
       return;
     }
-    if (plan > 3 || !checked) {
+    if (plan?.id > 3 || !checked) {
       setIsGeoLocationEnabled(checked);
       setEditData((prev) => ({
         ...prev,
@@ -787,7 +787,8 @@ const Index = () => {
                     <Title level={5}>
                       {t("Selector Auto IP position configuration:")}
                     </Title>
-                    {(Number(plan) <= 3 || typeof plan === "undefined") && (
+                    {(Number(plan?.id) <= 3 ||
+                      typeof plan?.id === "undefined") && (
                       <Popconfirm
                         title=""
                         description={t(
@@ -809,8 +810,8 @@ const Index = () => {
                     <Text>{t("Geolocation: ")}</Text>
                     <Switch
                       className={
-                        (typeof plan === "number" && plan <= 3) ||
-                        typeof plan === "undefined"
+                        (typeof plan?.id === "number" && plan?.id <= 3) ||
+                        typeof plan?.id === "undefined"
                           ? defaultStyles.Switch_disable
                           : ""
                       }

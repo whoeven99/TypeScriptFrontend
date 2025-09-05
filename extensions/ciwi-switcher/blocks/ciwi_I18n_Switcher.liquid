@@ -132,8 +132,7 @@
             position: absolute;
             height: 140px;
             align-items: center;
-            justify-content: flex-end;
-            z-index: 1;
+            z-index: 9999999999;
             transition:
             opacity 0.3s,
             transform 0.3s;
@@ -179,7 +178,7 @@
       </div>
       <input id="queryCiwiId" type="hidden" value="{{ shop.permanent_domain }}">
       <input id="queryMoneyFormat" type="hidden" value="{{ shop.money_format | strip_html }}">
-      <input type="hidden" name="currency_code" value="">
+      <input type="hidden" name="currency_code" value="{{ localization.country.currency.iso_code }}">
       <input type="hidden" name="language_code" value="{{ localization.language.iso_code }}">
       <input type="hidden" name="country_code" value="{{ localization.country.iso_code }}">
       <input type="hidden" name="iptoken" value="45dd8c7bcfaf8b0f38609addfe368a78">
@@ -213,6 +212,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" async></script>
   <script src="{{ 'currency-format-config.js' | asset_url }}" async></script>
+  <script src="{{ 'language-locale-data.js' | asset_url }}" async></script>
   <script src="{{ 'switcher.js' | asset_url }}" async></script>
 </div>
 
