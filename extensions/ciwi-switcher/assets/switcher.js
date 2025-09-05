@@ -976,7 +976,7 @@ window.onload = async function () {
   if (data.ipOpen) {
     const iptoken = ciwiBlock.querySelector('input[name="iptoken"]');
     console.log("iptoken", iptoken);
-    
+
     const iptokenValue = iptoken.value;
     if (iptokenValue) iptoken.remove();
     const storedLanguage = localStorage.getItem("selectedLanguage");
@@ -1158,7 +1158,7 @@ window.onload = async function () {
     });
 
     if (productImageData.response.length > 0) {
-      const imageDomList = ciwiBlock.querySelectorAll("img");
+      const imageDomList = document.querySelectorAll("img");
 
       // 遍历所有img
       imageDomList.forEach((img) => {
