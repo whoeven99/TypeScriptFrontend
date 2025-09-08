@@ -9,7 +9,7 @@ async function GetProductImageData({
       url: `${switchUrl(blockId)}/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
       method: "POST",
       data: {
-        shopName: shop,
+        shopName: shopName,
         imageId: `gid://shopify/Product/${productId}`,
         languageCode: languageCode,
       },
@@ -128,28 +128,6 @@ async function fetchUserCountryInfo(access_key) {
   }
 }
 
-async function fetchLanguageLocaleInfo(locale) {
-  try {
-    // 从本地 languageLocaleData.json 文件获取数据
-    const response = await fetch("./");
-    const languageLocaleData = await response.json();
-
-    // 过滤出请求的语言区域数据
-    const res = {};
-    locale.forEach((loc) => {
-      // 尝试直接匹配
-      if (languageLocaleData[loc]) {
-        res[loc] = languageLocaleData[loc];
-      }
-    });
-
-    return res;
-  } catch (error) {
-    console.error("Error fetchLanguageLocaleInfo:", error);
-    return {};
-  }
-}
-
 function switchUrl(blockId) {
   if (blockId === "AZnlHVkxkZDMwNDg2Q__13411448604249213220") {
     return "https://springbackendprod.azurewebsites.net";
@@ -158,7 +136,7 @@ function switchUrl(blockId) {
   }
 }
 
-async function initializeCurrency(data, shop, ciwiBlock) {
+async function initializeCurrency(blockId, data, shop, ciwiBlock) {
   let value = localStorage.getItem("selectedCurrency");
   let moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat").value;
 
@@ -181,7 +159,7 @@ async function initializeCurrency(data, shop, ciwiBlock) {
     if (selectedCurrency.exchangeRate == "Auto") {
       rate = await fetchAutoRate({
         blockId,
-        shop: shop.value,
+        shop: shop,
         currencyCode: selectedCurrency.currencyCode,
       });
       if (typeof rate != "number") {
@@ -900,7 +878,7 @@ class CiwiswitcherForm extends HTMLElement {
 // Define the custom element
 customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
-async function IpPosition(ipOpen, shop, ciwiBlock) {
+async function IpPosition(blockId, ipOpen, shop, ciwiBlock) {
   if (!ipOpen) {
     console.log("ip function false");
     return;
@@ -953,7 +931,7 @@ async function IpPosition(ipOpen, shop, ciwiBlock) {
       currencyInput.value = storedCurrency;
     }
   } else {
-    const userIp = checkUserIp(shop);
+    const userIp = checkUserIp({ blockId, shop: shop });
     if (userIp) {
       const IpData = await fetchUserCountryInfo(iptokenValue);
       const ip = IpData?.ip;
@@ -1000,6 +978,7 @@ async function IpPosition(ipOpen, shop, ciwiBlock) {
 }
 
 async function CurrencySelectorTakeEffect(
+  blockId,
   isCurrencySelectorTakeEffect,
   shop,
   data,
@@ -1009,9 +988,9 @@ async function CurrencySelectorTakeEffect(
     console.log("currencySelector function false");
     return;
   }
-  const currencyData = await fetchCurrencies(shop);
+  const currencyData = await fetchCurrencies({ blockId, shop: shop });
   if (currencyData) {
-    initializeCurrency(currencyData, shop, ciwiBlock);
+    initializeCurrency(blockId, currencyData, shop, ciwiBlock);
   }
   const currencySelector = ciwiBlock.querySelector(
     "#currency-switcher-container",
@@ -1165,7 +1144,8 @@ window.onload = async function () {
 
   console.log("加载中...");
 
-  IpPosition(data.ipOpen, shop.value, ciwiBlock);
+  IpPosition(blockId, data.ipOpen, shop.value, ciwiBlock);
+
   if (switcher) {
     if (data?.isTransparent) {
       console.log("switcher is transparent");
@@ -1287,6 +1267,7 @@ window.onload = async function () {
   }
 
   CurrencySelectorTakeEffect(
+    blockId,
     isCurrencySelectorTakeEffect,
     shop.value,
     data,
@@ -1303,7 +1284,7 @@ window.onload = async function () {
     const productImageData = await GetProductImageData({
       blockId,
       shopName: shop.value,
-      productId: productIdValue,
+      productId: productId,
       languageCode: language,
     });
 
