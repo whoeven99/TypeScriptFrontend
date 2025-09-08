@@ -1,25 +1,12 @@
-// async function FrontEndPrinting({
-//   shop,
-//   ip,
-//   languageCode,
-//   countryCode,
-//   currencyCode,
-// }) {
-//   try {
-//     await axios({
-//       url: `https://springbackendprod.azurewebsites.net/frontEndPrinting`,
-//       method: "GET",
-//       data: `语言代码`,
-//     });
-//   } catch (error) {
-//     console.error("Error FrontEndPrinting:", error);
-//   }
-// }
-
-async function GetProductImageData({ shop, productId, languageCode }) {
+async function GetProductImageData({
+  blockId,
+  shopName,
+  productId,
+  languageCode,
+}) {
   try {
     const response = await axios({
-      url: `https://springbackendprod.azurewebsites.net/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shop}`,
+      url: `${switchUrl(blockId)}/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
       method: "POST",
       data: {
         shopName: shop,
@@ -34,11 +21,9 @@ async function GetProductImageData({ shop, productId, languageCode }) {
   }
 }
 
-async function fetchSwitcherConfig(shop) {
-  console.log("fetchSwitcherConfig start");
-
+async function fetchSwitcherConfig({ blockId, shop }) {
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/widgetConfigurations/getData`,
+    url: `${switchUrl(blockId)}/widgetConfigurations/getData`,
     method: "POST",
     data: {
       shopName: shop,
@@ -80,9 +65,9 @@ async function fetchSwitcherConfig(shop) {
   }
 }
 
-async function fetchCurrencies(shop) {
+async function fetchCurrencies({ blockId, shop }) {
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/currency/getCurrencyByShopName?shopName=${shop}`,
+    url: `${switchUrl(blockId)}/currency/getCurrencyByShopName?shopName=${shop}`,
     method: "GET",
   });
 
@@ -102,9 +87,9 @@ async function fetchCurrencies(shop) {
   }
 }
 
-async function fetchAutoRate(shop, currencyCode) {
+async function fetchAutoRate({ blockId, shop, currencyCode }) {
   const response = await axios({
-    url: `https://springbackendprod.azurewebsites.net/currency/getCacheData`,
+    url: `${switchUrl(blockId)}/currency/getCacheData`,
     method: "POST",
     data: {
       shopName: shop,
@@ -116,10 +101,10 @@ async function fetchAutoRate(shop, currencyCode) {
   return res.exchangeRate;
 }
 
-async function checkUserIp(shop) {
+async function checkUserIp({ blockId, shop }) {
   try {
     const response = await axios({
-      url: `https://springbackendprod.azurewebsites.net/userIp/checkUserIp?shopName=${shop}`,
+      url: `${switchUrl(blockId)}/userIp/checkUserIp?shopName=${shop}`,
       method: "POST",
     });
     return response.data?.response;
@@ -165,6 +150,14 @@ async function fetchLanguageLocaleInfo(locale) {
   }
 }
 
+function switchUrl(blockId) {
+  if (blockId === "AZnlHVkxkZDMwNDg2Q__13411448604249213220") {
+    return "https://springbackendprod.azurewebsites.net";
+  } else {
+    return "https://springbackendservice-e3hgbjgqafb9cpdh.canadacentral-01.azurewebsites.net";
+  }
+}
+
 async function initializeCurrency(data, shop, ciwiBlock) {
   let value = localStorage.getItem("selectedCurrency");
   let moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat").value;
@@ -186,7 +179,11 @@ async function initializeCurrency(data, shop, ciwiBlock) {
     customSelector.style.display = "block";
     let rate = selectedCurrency.exchangeRate;
     if (selectedCurrency.exchangeRate == "Auto") {
-      rate = await fetchAutoRate(shop, selectedCurrency.currencyCode);
+      rate = await fetchAutoRate({
+        blockId,
+        shop: shop.value,
+        currencyCode: selectedCurrency.currencyCode,
+      });
       if (typeof rate != "number") {
         rate = 1;
       }
@@ -1160,7 +1157,7 @@ window.onload = async function () {
     "ئۇيغۇرچە",
   ];
   const isRtlLanguage = rtlLanguages.includes(currentSelectedLanguage);
-  const data = await fetchSwitcherConfig(shop.value);
+  const data = await fetchSwitcherConfig({ blockId, shop: shop.value });
   const isCurrencySelectorTakeEffect =
     data.currencySelector || (!data.languageSelector && !data.currencySelector);
   const isLanguageSelectorTakeEffect =
@@ -1304,8 +1301,9 @@ window.onload = async function () {
     );
     const language = languageInput.value;
     const productImageData = await GetProductImageData({
-      shop: shop.value,
-      productId: productId,
+      blockId,
+      shopName: shop.value,
+      productId: productIdValue,
       languageCode: language,
     });
 
