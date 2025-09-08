@@ -44,4 +44,5 @@ jobs:
       run: |
         # 确保CLI使用非交互模式
         shopify config set ci true
+        shopify app info -c shopify.app.test.toml
         # 可能需要根据你的CLI版本和项目类型进行其他配置
