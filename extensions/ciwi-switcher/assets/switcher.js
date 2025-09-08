@@ -66,8 +66,6 @@ async function fetchSwitcherConfig({ blockId, shop }) {
 }
 
 async function fetchCurrencies({ blockId, shop }) {
-  console.log("fetchCurrencies start");
-
   const response = await axios({
     url: `${switchUrl(blockId)}/currency/getCurrencyByShopName?shopName=${shop}`,
     method: "GET",
