@@ -1278,7 +1278,7 @@ window.onload = async function () {
 
   if (productId) {
     const languageInput = ciwiBlock.querySelector(
-      'input[name="language_code"]',
+      'input[name="current_language_code"]',
     );
     const language = languageInput.value;
     const productImageData = await GetProductImageData({
@@ -1290,12 +1290,13 @@ window.onload = async function () {
 
     if (productImageData.response.length > 0) {
       const imageDomList = document.querySelectorAll("img");
-
       // 遍历所有img
       imageDomList.forEach((img) => {
         // 在response数组中查找匹配项
-        const match = productImageData.response.find((item) =>
-          img.src.includes(item.imageBeforeUrl.split("/files/")[2]),
+        const match = productImageData.response.find(
+          (item) =>
+            img.src.includes(item.imageBeforeUrl.split("/files/")[2]) &&
+            item.languageCode === language,
         );
 
         if (match) {
