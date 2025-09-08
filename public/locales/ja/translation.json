@@ -668,11 +668,16 @@
   "Activate your free trial to start translating instantly:": "無料試用版をアクティブにして、即座に翻訳を開始します:",
   "✅ 1,000,000 free credits for translation": "✅ 1,000,000 無料クレジットが翻訳に使用されます",
   "✅ Automatic translation for store content": "✅ 店舗コンテンツの自動翻訳",
-  "✅ Image & alt-text translation" : "✅ 画像と代替テキストの翻訳",
+  "✅ Image & alt-text translation": "✅ 画像と代替テキストの翻訳",
   "✅ IP-based language & currency switching": "✅ IPに基づいた言語と通貨の切り替え",
   "✅ Glossary support for brand consistency": "✅ ブランド一貫性のためのガロシアサポート",
   "✅ Live human support when needed": "✅ 必要に応じたライブ人間サポート",
-  "Start Free Trial": "無料試用版を開始する"
-
-
+  "Start Free Trial": "無料試用版を開始する",
+  "1000 points": "1000ポイント",
+  "Source Language": "ソース言語",
+  "Target Language": "対象言語",
+  "Image translation failed": "画像の翻訳に失敗しました",
+  "Image translated successfully": "画像の翻訳に成功しました",
+  "The current language does not support image translation": "現在の言語は画像翻訳をサポートしていません",
+  "1000 credits": "1000クレジット"
 }

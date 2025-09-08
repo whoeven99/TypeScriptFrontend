@@ -668,11 +668,16 @@
   "Activate your free trial to start translating instantly:": "Activeer uw gratis proefperiode om te beginnen met vertalen:",
   "✅ 1,000,000 free credits for translation": "✅ 1 miljoen gratis credits voor vertaling",
   "✅ Automatic translation for store content": "✅ Automatische vertaling voor winkelinhoud",
-  "✅ Image & alt-text translation" : "✅ Afbeelding en alt-tekst vertaling",
+  "✅ Image & alt-text translation": "✅ Afbeelding en alt-tekst vertaling",
   "✅ IP-based language & currency switching": "✅ IP-basierter Sprachoort & Wisselval",
   "✅ Glossary support for brand consistency": "✅ Glosariumondersteuning voor merkconsistentie",
   "✅ Live human support when needed": "✅ Live menselijke ondersteuning wanneer nodig",
-  "Start Free Trial": "Gratis proefperiode starten"
-
-
+  "Start Free Trial": "Gratis proefperiode starten",
+  "1000 points": "1000 punten",
+  "Source Language": "brontaal",
+  "Target Language": "doeltaal",
+  "Image translation failed": "Vertaling van afbeelding mislukt",
+  "Image translated successfully": "Afbeelding succesvol vertaald",
+  "The current language does not support image translation": "De huidige taal ondersteunt geen beeldvertaling",
+  "1000 credits": "1000 studiepunten"
 }

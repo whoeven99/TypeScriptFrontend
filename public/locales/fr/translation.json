@@ -668,9 +668,16 @@
   "Activate your free trial to start translating instantly:": "Activer votre essai gratuit pour commencer à traduire instantanément:",
   "✅ 1,000,000 free credits for translation": "✅ 1,000,000 crédits gratuits pour la traduction",
   "✅ Automatic translation for store content": "✅ Traduction automatique pour le contenu de la boutique",
-  "✅ Image & alt-text translation" : "✅ Traduction d'images et de texte alternatif",
+  "✅ Image & alt-text translation": "✅ Traduction d'images et de texte alternatif",
   "✅ IP-based language & currency switching": "✅ Changement basé sur l'IP pour la langue et la monnaie",
   "✅ Glossary support for brand consistency": "✅ Support de glosaire pour la cohérence de la marque",
   "✅ Live human support when needed": "✅ Support humain en temps réel quand nécessaire",
-  "Start Free Trial": "Démarrer l'essai gratuit"
+  "Start Free Trial": "Démarrer l'essai gratuit",
+  "1000 points": "1000 points",
+  "Source Language": "langue source",
+  "Target Language": "langue cible",
+  "Image translation failed": "Échec de la traduction de l'image",
+  "Image translated successfully": "Image traduite avec succès",
+  "The current language does not support image translation": "La langue actuelle ne prend pas en charge la traduction d'images",
+  "1000 credits": "1000 crédits"
 }
