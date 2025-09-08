@@ -9,7 +9,7 @@ async function GetProductImageData({
       url: `${switchUrl(blockId)}/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
       method: "POST",
       data: {
-        shopName: shop,
+        shopName: shopName,
         imageId: `gid://shopify/Product/${productId}`,
         languageCode: languageCode,
       },
@@ -1284,7 +1284,7 @@ window.onload = async function () {
     const productImageData = await GetProductImageData({
       blockId,
       shopName: shop.value,
-      productId: productIdValue,
+      productId: productId,
       languageCode: language,
     });
 
