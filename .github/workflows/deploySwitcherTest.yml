@@ -28,6 +28,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Install dependencies
+      run: npm install shopify-cli
+
     - name: Get PR title (if applicable)
       id: pr-title
       # 尝试从合并提交的日志信息中提取PR标题
