@@ -128,6 +128,7 @@ async function fetchUserCountryInfo(access_key) {
   }
 }
 
+//判断插件id，根据id返回不同环境的url
 function switchUrl(blockId) {
   if (blockId === "AZnlHVkxkZDMwNDg2Q__13411448604249213220") {
     return "https://springbackendprod.azurewebsites.net";
@@ -1099,9 +1100,10 @@ async function LanguageSelectorTakeEffect(
 window.onload = async function () {
   console.log("onload start");
 
-  const blockId = document.querySelector('input[name="block_id"]');
-  console.log("blockId", blockId);
-  const ciwiBlock = document.querySelector(`#shopify-block-${blockId.value}`);
+  const blockId = document.querySelector('input[name="block_id"]')?.value;
+  console.log("blockId: ", blockId);
+
+  const ciwiBlock = document.querySelector(`#shopify-block-${blockId}`);
   if (!ciwiBlock) {
     console.log("ciwiBlock not found");
     return;
