@@ -35,6 +35,17 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const language =
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   const languageCode = language.split("-")[0];
+  const scopes = adminAuthResult.session.scope
+    ? adminAuthResult.session.scope.split(",")
+    : [];
+  console.log("aaaaascopes", scopes);
+
+  const optionalScopes = process.env.OPTIONAL_SCOPES;
+  const missScopes = optionalScopes
+    ?.split(",")
+    .filter((s) => !scopes.includes(s)) as string[];
+
+  const hasRequiresScopes = missScopes?.length === 0;
   if (languageCode === "zh" || languageCode === "zh-CN") {
     return {
       language,
@@ -44,6 +55,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         .SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
       server: process.env.SERVER_URL,
       shop: shop,
+      hasRequiresScopes,
+      missScopes,
     };
   } else {
     return {
@@ -54,6 +67,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         .SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
       server: process.env.SERVER_URL,
       shop: shop,
+      hasRequiresScopes,
+      missScopes,
     };
   }
 };
@@ -66,6 +81,8 @@ const Index = () => {
     shop,
     ciwiSwitcherBlocksId,
     ciwiSwitcherId,
+    hasRequiresScopes,
+    missScopes,
   } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -83,6 +100,7 @@ const Index = () => {
 
   const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
+  const graphqlFetcher = useFetcher<any>();
   const { reportClick, report } = useReport();
   useEffect(() => {
     setIsLoading(false);
@@ -256,6 +274,27 @@ const Index = () => {
     );
   };
 
+  const handleTestGraphqlData = async () => {
+    // await shopify.scopes.revoke(['read_analytics','read_reports','read_orders']);
+    console.log(missScopes);
+    
+    const response = await shopify.scopes.request(missScopes as string[]);
+    console.log("add scopes", response);
+    const formData = new FormData();
+    formData.append("quailtyEvaluation", JSON.stringify({}));
+    graphqlFetcher.submit(formData, {
+      method: "post",
+      action: "/app",
+    });
+    console.log(hasRequiresScopes, missScopes);
+  };
+  useEffect(()=>{
+    if (graphqlFetcher.data) {
+      console.log(graphqlFetcher.data);
+    }else {
+      
+    }
+  },[graphqlFetcher.data])
   return (
     <Page>
       <TitleBar title={t("Dashboard")} />
@@ -284,6 +323,8 @@ const Index = () => {
             <Title level={3}>{t("dashboard.title1")}</Title>
             <Text strong>{t("dashboard.description1")}</Text>
           </div>
+          <Button onClick={handleTestGraphqlData}>数据评估和报告页面</Button>
+          <span>{hasRequiresScopes ? "有改权限" : "需要请求权限"}</span>
           <div>
             <Card
               style={

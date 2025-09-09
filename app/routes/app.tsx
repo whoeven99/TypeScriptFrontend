@@ -72,7 +72,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
-
+  const { admin } = adminAuthResult;
   try {
     const formData = await request.formData();
     const init = JSON.parse(formData.get("init") as string);
@@ -88,7 +88,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
     const stopTranslate = JSON.parse(formData.get("stopTranslate") as string);
-    const googleAnalytics = JSON.parse(formData.get("googleAnalytics") as string);
+    const googleAnalytics = JSON.parse(
+      formData.get("googleAnalytics") as string,
+    );
+    const quailtyEvaluation = JSON.parse(
+      formData.get("quailtyEvaluation") as string,
+    );
     if (init) {
       try {
         const init = await InitializationDetection({ shop });
@@ -349,10 +354,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         const { data, eventType, timestamp, name } = googleAnalytics;
         const response = await GoogleAnalyticClickReport(
-          { ...data, eventType, timestamp, shopName:shop },
-          name
+          { ...data, eventType, timestamp, shopName: shop },
+          name,
         );
-        return json({ data: { success: response, message: `${name} ${eventType} success googleAnalytics` } });
+        return json({
+          data: {
+            success: response,
+            message: `${name} ${eventType} success googleAnalytics`,
+          },
+        });
       } catch (error) {
         console.error("Error googleAnalytics app:", error);
         return json({
@@ -361,6 +371,50 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             message: "Error googleAnalytics app",
           },
         });
+      }
+    }
+
+    if (quailtyEvaluation) {
+      try {
+        console.log("quailtyEvaluation1");
+        const mutationResponse = await admin.graphql(
+          `#graphql
+            mutation webPixelCreate($webPixel: WebPixelInput!) {
+              webPixelCreate(webPixel: $webPixel) {
+                userErrors {
+                  field
+                  message
+                  code
+                }
+                webPixel {
+                  id
+                  settings
+                }
+              }
+            }`,
+          {
+            variables: {
+              webPixel: {
+                settings: {
+                  trackingId: "GA-TRACKING-ID-123",
+                },
+              },
+            },
+          },
+        );
+
+        if (!mutationResponse.ok) {
+          console.error("Request failed", mutationResponse);
+          return;
+        }
+
+        const data = await mutationResponse.json();
+        console.log('sdaddadasdata:',data);
+
+        return data;
+      } catch (error) {
+        console.log("getOrderData failed", error);
+        return error;
       }
     }
 
