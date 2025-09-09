@@ -17,23 +17,28 @@ const languageTableDataSlice = createSlice({
       state.rows = action.payload;
     },
     updateTableData: (state, action: PayloadAction<LanguagesDataType[]>) => {
-      action.payload.forEach((newData, index: number) => {
-        // 检查新数据是否已经存在于 state.rows 中
-        const data = state.rows.findIndex(
+      // 计算当前最大 key，一次就好
+      let nextKey =
+        state.rows.reduce((max, r) => {
+          const k = typeof r.key === "number" ? r.key : -1;
+          return k > max ? k : max;
+        }, -1) + 1;
+
+      action.payload.forEach((newData) => {
+        const idx = state.rows.findIndex(
           (row) => row.locale === newData.locale,
         );
 
-        if (data !== -1) {
-          // 如果已存在，更新该行的数据
-          state.rows[data] = newData;
+        if (idx !== -1) {
+          // 已存在：保留原有 key，更新数据
+          const oldKey = state.rows[idx].key;
+          state.rows[idx] = { ...state.rows[idx], ...newData, key: oldKey };
         } else {
-          // 如果不存在，新增数据
-          const dataWithKey = {
+          // 不存在：分配全局唯一递增 key
+          state.rows.unshift({
             ...newData,
-            key: state.rows.slice(-1)[0]?.key + index + 1 || 0,
-          };
-          // 将包含 key 的 newData 添加到 rows
-          state.rows.unshift(dataWithKey);
+            key: nextKey++,
+          });
         }
       });
     },

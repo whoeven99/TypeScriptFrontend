@@ -1686,6 +1686,10 @@ export const mutationShopLocalePublish = async ({
               name
               locale
             }
+            userErrors {
+              field
+              message
+            }
           }
         }
       `;
@@ -1702,6 +1706,14 @@ export const mutationShopLocalePublish = async ({
     });
     console.log(`${shop} mutationShopLocalePublish:`, response.data);
 
+    const userErrors = response.data?.data?.shopLocaleUpdate?.userErrors;
+    if (userErrors?.length) {
+      console.error(
+        `${shop} mutationShopLocalePublish userErrors:`,
+        userErrors,
+      );
+    }
+
     const res = response.data?.data?.shopLocaleUpdate?.shopLocale;
 
     return res;
@@ -1713,16 +1725,15 @@ export const mutationShopLocalePublish = async ({
 export const mutationShopLocaleUnpublish = async ({
   shop,
   accessToken,
-  publishInfos,
+  publishInfo,
 }: {
   shop: string;
   accessToken: string;
-  publishInfos: UnpublishInfoType[]; // 接受语言数组
+  publishInfo: UnpublishInfoType; // 接受语言数组
 }) => {
   try {
     // 遍历语言数组并逐个执行 GraphQL mutation
-    for (const publishInfo of publishInfos) {
-      const confirmMutation = `
+    const confirmMutation = `
         mutation {
           shopLocaleUpdate(
             locale: "${publishInfo.locale}"
@@ -1736,23 +1747,28 @@ export const mutationShopLocaleUnpublish = async ({
               name
               locale
             }
+            userErrors {
+              field
+              message
+            }
           }
         }
       `;
 
-      // 执行 API 请求
-      const response = await axios({
-        url: `https://${shop}/admin/api/2025-04/graphql.json`,
-        method: "POST",
-        headers: {
-          "X-Shopify-Access-Token": accessToken,
-          "Content-Type": "application/json",
-        },
-        data: JSON.stringify({ query: confirmMutation }),
-      });
-      const res = response.data.data.shopLocaleUpdate.shopLocale;
-      return res;
-    }
+    // 执行 API 请求
+    const response = await axios({
+      url: `https://${shop}/admin/api/2025-04/graphql.json`,
+      method: "POST",
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+        "Content-Type": "application/json",
+      },
+      data: JSON.stringify({ query: confirmMutation }),
+    });
+    console.log(`${shop} mutationShopLocaleUnpublish:`, response.data);
+
+    const res = response.data.data.shopLocaleUpdate.shopLocale;
+    return res;
   } catch (error) {
     console.error("Error mutationShopLocaleUnpublish:", error);
   }

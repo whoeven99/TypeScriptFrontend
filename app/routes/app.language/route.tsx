@@ -369,6 +369,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
 
     case !!publishInfo:
+      console.log("publishInfo: ", publishInfo);
+
       try {
         const response = await mutationShopLocalePublish({
           shop,
@@ -392,14 +394,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
 
     case !!unPublishInfo:
+      console.log("unPublishInfo: ", unPublishInfo);
+
       try {
         const response = await mutationShopLocaleUnpublish({
           shop,
           accessToken: accessToken as string,
-          publishInfos: [unPublishInfo],
+          publishInfo: unPublishInfo,
         });
         return {
-          data: response,
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response,
         };
       } catch (error) {
         console.error("Error unPublishInfo language:", error);
@@ -681,22 +688,8 @@ const Index = () => {
 
   useEffect(() => {
     if (publishFetcher.data) {
-      if (publishFetcher.data?.data?.published) {
-        const response = publishFetcher.data.data;
-        dispatch(
-          setPublishLoadingState({ locale: response.locale, loading: false }),
-        );
-        dispatch(
-          setPublishState({
-            locale: response.locale,
-            published: response.published,
-          }),
-        );
-        shopify.toast.show(
-          t("{{ locale }} is published", { locale: response.name }),
-        );
-      } else {
-        const response = publishFetcher.data?.data;
+      if (publishFetcher.data?.success) {
+        const response = publishFetcher.data?.response;
         dispatch(
           setPublishLoadingState({ locale: response?.locale, loading: false }),
         );
