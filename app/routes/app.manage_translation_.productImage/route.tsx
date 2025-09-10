@@ -1699,7 +1699,11 @@ const Index = () => {
           open={translatrImageactive}
           onCancel={onClose}
           footer={[
-            <Space direction="vertical" style={{ textAlign: "center" }}>
+            <Space
+              key="manage-translation-product-image-footer"
+              direction="vertical"
+              style={{ textAlign: "center" }}
+            >
               <Button key="translate" type="primary" onClick={handleTranslate}>
                 {t("Image Translation")}
               </Button>
