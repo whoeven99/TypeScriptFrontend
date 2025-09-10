@@ -7,7 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-      # 假设你的部署命令需要商店地址和API访问令牌
+    environment: ShopifyDev  # 指定环境
 
     steps:
     - name: Checkout code
@@ -30,6 +30,6 @@ jobs:
 
     - name: Deploy
       env:
-        SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_ACCESS_TOKEN }}
+        SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
         SHOPIFY_API_KEY: "dec512b68e658e4f21588e3d4de0e748"
       run: shopify app deploy -c shopify.app.test.toml -f
