@@ -9,7 +9,7 @@ async function FrontEndPrinting({
   try {
     const response = await axios({
       url: `${switchUrl(blockId)}/frontEndPrinting`,
-      method: "GET",
+      method: "POST",
       data: {
         data: `${shop} 客户ip定位: ${ip}, 语言代码${languageCode}, 货币代码${currencyCode}, 国家代码${countryCode}`,
       },
@@ -1168,14 +1168,6 @@ async function ProductImgTranslate(blockId, shop, ciwiBlock) {
 
 // Page load handling
 window.onload = async function () {
-  FrontEndPrinting({
-    blockId: "123",
-    shop: "123",
-    ip: "123",
-    languageCode: "123",
-    countryCode: "123",
-    currencyCode: "123",
-  });
   console.log("onload start");
 
   const blockId = document.querySelector('input[name="block_id"]')?.value;
@@ -1289,9 +1281,17 @@ window.onload = async function () {
       if (userIp) {
         const IpData = await fetchUserCountryInfo(iptokenValue);
         console.log("IpData: ", IpData);
-
+        const ip = IpData?.ip;
         const currencyCode = IpData?.currency?.code;
         const countryCode = IpData?.country_code;
+        FrontEndPrinting({
+          blockId,
+          shop: shop.value,
+          ip: ip,
+          languageCode: detectedLanguage,
+          countryCode,
+          currencyCode
+        });
         if (currencyCode) {
           localStorage.setItem("ciwi_selected_currency", currencyCode);
         }
