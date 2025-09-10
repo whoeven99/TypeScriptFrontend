@@ -94,6 +94,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const quailtyEvaluation = JSON.parse(
       formData.get("quailtyEvaluation") as string,
     );
+    const findWebPixelId = JSON.parse(formData.get("findWebPixelId") as string);
     if (init) {
       try {
         const init = await InitializationDetection({ shop });
@@ -377,31 +378,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (quailtyEvaluation) {
       try {
         console.log("quailtyEvaluation1");
-        const mutationResponse = await admin.graphql(
-          `#graphql
-            mutation webPixelCreate($webPixel: WebPixelInput!) {
-              webPixelCreate(webPixel: $webPixel) {
-                userErrors {
-                  field
-                  message
-                  code
-                }
-                webPixel {
-                  id
-                  settings
-                }
-              }
-            }`,
-          {
-            variables: {
+        const mutation = `
+          mutation {
+            webPixelCreate(
               webPixel: {
-                settings: {
-                  trackingId: "GA-TRACKING-ID-123",
-                },
-              },
-            },
-          },
-        );
+                settings: "{\\"accountID\\":\\"123\\"}"
+              }
+            ) {
+              userErrors {
+                code
+                field
+                message
+              }
+              webPixel {
+                id
+                settings
+              }
+            }
+          }
+        `;
+        const mutationResponse = await admin.graphql(mutation);
 
         if (!mutationResponse.ok) {
           console.error("Request failed", mutationResponse);
@@ -409,11 +405,31 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         }
 
         const data = await mutationResponse.json();
-        console.log('sdaddadasdata:',data);
+        console.log("sdaddadasdata:", data);
 
         return data;
       } catch (error) {
         console.log("getOrderData failed", error);
+        return error;
+      }
+    }
+
+    if (findWebPixelId) {
+      try {
+        const query = `
+          query {
+            webPixel {
+              id
+              settings
+            }
+          }
+        `
+        const response = await admin.graphql(query);
+        console.log('findWebPixelId',response);
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.log("findWebPixel failed", error);
         return error;
       }
     }

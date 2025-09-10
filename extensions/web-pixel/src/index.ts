@@ -2,7 +2,6 @@ import { register } from "@shopify/web-pixels-extension";
 
 register(({ analytics, browser, init, settings }) => {
   const serverUrl = "https://3000/track";
-
   // 页面浏览事件
   analytics.subscribe("page_viewed", async (event) => {
     console.log("Page Viewed:", event);

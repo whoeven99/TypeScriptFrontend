@@ -38,7 +38,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const scopes = adminAuthResult.session.scope
     ? adminAuthResult.session.scope.split(",")
     : [];
-  console.log("aaaaascopes", scopes);
+  console.log("dsdadasd", adminAuthResult.session.scope?.split(","));
+
+  console.log("aaaaascopes", scopes.length);
 
   const optionalScopes = process.env.OPTIONAL_SCOPES;
   const missScopes = optionalScopes
@@ -46,6 +48,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     .filter((s) => !scopes.includes(s)) as string[];
 
   const hasRequiresScopes = missScopes?.length === 0;
+  console.log("hasRequiresScopes", hasRequiresScopes);
+
   if (languageCode === "zh" || languageCode === "zh-CN") {
     return {
       language,
@@ -101,6 +105,9 @@ const Index = () => {
   const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
   const graphqlFetcher = useFetcher<any>();
+  const findWebPixelFetcher = useFetcher<any>();
+  const [showRequireScopeBtn, setShowRequireScopeBtn] =
+    useState(!hasRequiresScopes);
   const { reportClick, report } = useReport();
   useEffect(() => {
     setIsLoading(false);
@@ -277,7 +284,8 @@ const Index = () => {
   const handleTestGraphqlData = async () => {
     // await shopify.scopes.revoke(['read_analytics','read_reports','read_orders']);
     console.log(missScopes);
-    
+    console.log(hasRequiresScopes);
+
     const response = await shopify.scopes.request(missScopes as string[]);
     console.log("add scopes", response);
     const formData = new FormData();
@@ -288,13 +296,38 @@ const Index = () => {
     });
     console.log(hasRequiresScopes, missScopes);
   };
-  useEffect(()=>{
+  const handleFindWebPixel = async () => {
+    const formData = new FormData();
+    formData.append("findWebPixelId", JSON.stringify({}));
+    findWebPixelFetcher.submit(formData, {
+      method: "post",
+      action: "/app",
+    });
+  };
+  useEffect(() => {
+    const checkScopes  = async () => {
+      console.log('aaaa');
+      
+      const { granted } = await shopify.scopes.query();
+      console.log("exit", granted);
+      const missingScopes = ['read_customer_events','write_pixels'].filter(s=>!granted.includes(s));
+      setShowRequireScopeBtn(missingScopes.length !== 0);
+      console.log(showRequireScopeBtn);
+    };
+    checkScopes();
+  }, []);
+  useEffect(() => {
     if (graphqlFetcher.data) {
       console.log(graphqlFetcher.data);
-    }else {
-      
+    } else {
     }
-  },[graphqlFetcher.data])
+  }, [graphqlFetcher.data]);
+  useEffect(() => {
+    if (findWebPixelFetcher.data) {
+      console.log(findWebPixelFetcher.data);
+    } else {
+    }
+  }, [findWebPixelFetcher.data]);
   return (
     <Page>
       <TitleBar title={t("Dashboard")} />
@@ -323,7 +356,10 @@ const Index = () => {
             <Title level={3}>{t("dashboard.title1")}</Title>
             <Text strong>{t("dashboard.description1")}</Text>
           </div>
-          <Button onClick={handleTestGraphqlData}>数据评估和报告页面</Button>
+          {showRequireScopeBtn && (
+            <Button onClick={handleTestGraphqlData}>数据评估和报告页面</Button>
+          )}
+          <Button onClick={handleFindWebPixel}>查询当前配置Web Pixel</Button>
           <span>{hasRequiresScopes ? "有改权限" : "需要请求权限"}</span>
           <div>
             <Card
