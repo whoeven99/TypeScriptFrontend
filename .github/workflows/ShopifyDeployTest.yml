@@ -6,7 +6,7 @@ on:
   workflow_dispatch:  # 手动触发
 
 jobs:
-  deploy:
+  deploy_shopify_switcher:
     runs-on: ubuntu-latest
     environment: ShopifyConfig  # CLI token都在这个Environment下
 
@@ -15,7 +15,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0  # 获取所有历史记录以便查找PR提交
-        
+
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
@@ -35,3 +35,26 @@ jobs:
         # app的客户端id
         SHOPIFY_API_KEY: "dec512b68e658e4f21588e3d4de0e748"
       run: shopify app deploy -c shopify.app.test.toml -f
+
+  deploy_render:
+    runs-on: ubuntu-latest
+    environment: ShopifyConfig
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.inputs.branch }} # 使用用户选择的分支
+
+    - name: Deploy to Render
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }} # 这是整个render的apikey
+        RENDER_SERVICE_ID: ${{ secrets.RENDER_TEST_SERVICE_ID }} # 这是test service id
+      run: |
+        echo "Deploying branch: ${{ github.event.inputs.branch }} to Render TypescriptFD Test"
+        curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"branch\": \"${{ github.event.inputs.branch }}\"
+          }"
