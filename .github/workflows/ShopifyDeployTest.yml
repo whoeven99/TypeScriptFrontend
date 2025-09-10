@@ -6,7 +6,7 @@ on:
   workflow_dispatch:  # 手动触发
 
 jobs:
-  deploy:
+  deploy_shopify_switcher:
     runs-on: ubuntu-latest
     environment: ShopifyConfig  # CLI token都在这个Environment下
 
@@ -38,7 +38,7 @@ jobs:
 
   deploy_render:
     runs-on: ubuntu-latest
-    environment: ShopifyConfig  # CLI token都在这个Environment下
+    environment: ShopifyConfig
 
     steps:
     - name: Checkout code
@@ -51,7 +51,7 @@ jobs:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }} // 这是整个render的apikey
         RENDER_SERVICE_ID: ${{ secrets.RENDER_TEST_SERVICE_ID }} // 这是test service id
       run: |
-        echo "Deploying branch: ${{ github.event.inputs.branch }}"
+        echo "Deploying branch: ${{ github.event.inputs.branch }} to Render TypescriptFD Test"
         curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
           -H "Authorization: Bearer $RENDER_API_KEY" \
           -H "Content-Type: application/json" \
