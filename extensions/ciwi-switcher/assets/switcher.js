@@ -293,8 +293,6 @@ async function initializeCurrency({ blockId, currencyData, shop, ciwiBlock }) {
 function transformPrices(rate, moneyFormat, selectedCurrency) {
   const pricesDoc = document.querySelectorAll(".ciwi-money");
 
-  console.log("pricesDoc: ", pricesDoc);
-
   pricesDoc.forEach((price) => {
     const priceText = price.innerText;
     const transformedPrice = transform(
@@ -315,8 +313,6 @@ function transformPrices(rate, moneyFormat, selectedCurrency) {
 // 监听懒加载 / 动态插入的节点
 function initPriceObserver(rate, moneyFormat, selectedCurrency) {
   const observer = new MutationObserver((mutationsList) => {
-    console.log("mutationsList: ", mutationsList);
-
     for (const mutation of mutationsList) {
       if (mutation.type === "childList") {
         mutation.addedNodes.forEach((node) => {
@@ -1078,7 +1074,6 @@ async function CurrencySelectorTakeEffect(
     currencyData = await fetchCurrencies({ blockId, shop: shop });
     localStorage.setItem("ciwi_currency_data", JSON.stringify(currencyData));
   }
-  console.log("currencyData: ", currencyData);
 
   const currencySelector = ciwiBlock.querySelector(
     "#currency-switcher-container",
