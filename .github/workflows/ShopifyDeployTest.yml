@@ -48,8 +48,8 @@ jobs:
 
     - name: Deploy to Render
       env:
-        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }} // 这是整个render的apikey
-        RENDER_SERVICE_ID: ${{ secrets.RENDER_TEST_SERVICE_ID }} // 这是test service id
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }} # 这是整个render的apikey
+        RENDER_SERVICE_ID: ${{ secrets.RENDER_TEST_SERVICE_ID }} # 这是test service id
       run: |
         echo "Deploying branch: ${{ github.event.inputs.branch }}"
         curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
