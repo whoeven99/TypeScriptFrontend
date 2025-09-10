@@ -5,8 +5,6 @@ async function GetProductImageData({
   languageCode,
 }) {
   try {
-    console.log("GetProductImageData start");
-
     const response = await axios({
       url: `${switchUrl(blockId)}/picture/getPictureDataByShopNameAndResourceIdAndPictureId?shopName=${shopName}`,
       method: "POST",
@@ -17,8 +15,6 @@ async function GetProductImageData({
       },
     });
 
-    console.log("GetProductImageData end");
-
     return response.data;
   } catch (error) {
     console.error("Error GetProductImageData:", error);
@@ -26,8 +22,6 @@ async function GetProductImageData({
 }
 
 async function fetchSwitcherConfig({ blockId, shop }) {
-  console.log("fetchSwitcherConfig start");
-
   const response = await axios({
     url: `${switchUrl(blockId)}/widgetConfigurations/getData`,
     method: "POST",
@@ -35,9 +29,6 @@ async function fetchSwitcherConfig({ blockId, shop }) {
       shopName: shop,
     },
   });
-
-  console.log("fetchSwitcherConfig end");
-
   const data = response.data;
   const initData = {
     shopName: shop,
@@ -73,14 +64,10 @@ async function fetchSwitcherConfig({ blockId, shop }) {
 
 async function fetchCurrencies({ blockId, shop }) {
   try {
-    console.log("fetchCurrencies start");
-
     const response = await axios({
       url: `${switchUrl(blockId)}/currency/getCurrencyByShopName?shopName=${shop}`,
       method: "GET",
     });
-
-    console.log("fetchCurrencies end");
 
     if (response.data?.success) {
       const res = response.data.response;
@@ -111,7 +98,6 @@ async function fetchAutoRate({ blockId, shop, currencyCode }) {
       currencyCode: currencyCode,
     },
   });
-  console.log("fetchAutoRate: ", response.data);
 
   const res = response.data.response;
   return res.exchangeRate;
@@ -132,11 +118,9 @@ async function checkUserIp({ blockId, shop }) {
 
 async function fetchUserCountryInfo(access_key) {
   try {
-    console.log("fetchUserCountryInfo start");
     const response = await axios.get(
       `http://api.ipapi.com/api/check?access_key=${access_key}`,
     );
-    console.log("fetchUserCountryInfo end: ", response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetchUserCountryInfo:", error);
@@ -255,18 +239,26 @@ async function initializeCurrency({ blockId, currencyData, shop, ciwiBlock }) {
         }
       });
     }
+    const autoRate = await fetchAutoRate({
+      blockId,
+      shop: shop,
+      currencyCode: selectedCurrencyCode,
+    });
+    localStorage.setItem(
+      "ciwi_selected_currency_rate",
+      JSON.stringify({
+        currencyCode: selectedCurrencyCode,
+        exchangeRate: autoRate,
+      }),
+    );
   } else if (currencyData?.length) {
-    const primaryCurrency =
-      currencyData?.find((currency) => currency.primaryStatus) ||
-      currencyData[0];
-    currencyInput.value = primaryCurrency.currencyCode;
-
-    // 清空并重新生成选项
+    //货币选择器数据
     if (optionsList) {
       optionsList.innerHTML = "";
       currencyData?.forEach((currency) => {
         const optionItem = document.createElement("div");
-        optionItem.className = `option-item ${currency?.primaryStatus ? "selected" : ""}`;
+        optionItem.className = `option-item ${currency?.currencyCode === currencyInput.value ? "selected" : ""}`;
+
         optionItem.dataset.value = currency?.currencyCode;
         optionItem.dataset.type = "currency";
         optionItem.innerHTML = `
@@ -283,30 +275,30 @@ async function initializeCurrency({ blockId, currencyData, shop, ciwiBlock }) {
         });
 
         optionsList.appendChild(optionItem);
-
-        // 如果是主要货币，更新选择器头部显示
-        if (currency?.primaryStatus && selectedOption) {
-          selectedOption.innerHTML = `
-            <span class="selected-text" data-type="currency">${currency?.currencyCode}</span>
-            <span class="currency-symbol">(${currency?.symbol})</span>
-          `;
-        }
       });
     }
-  }
 
-  const autoRate = await fetchAutoRate({
-    blockId,
-    shop: shop,
-    currencyCode: selectedCurrencyCode,
-  });
-  localStorage.setItem(
-    "ciwi_selected_currency_rate",
-    JSON.stringify({
-      currencyCode: selectedCurrencyCode,
-      exchangeRate: autoRate,
-    }),
-  );
+    //货币选择器选项框数据
+    const currencyInclude = currencyData?.find(
+      (currency) => currency.currencyCode === currencyInput.value,
+    );
+    if (currencyInclude) {
+      currencyInput.value = currencyInclude.currencyCode;
+      selectedOption.innerHTML = `
+            <span class="selected-text" data-type="currency">${currencyInclude?.currencyCode}</span>
+            <span class="currency-symbol">(${currencyInclude?.symbol})</span>
+          `;
+    } else {
+      const primaryCurrency =
+        currencyData?.find((currency) => currency.primaryStatus) ||
+        currencyData[0];
+      currencyInput.value = primaryCurrency.currencyCode;
+      selectedOption.innerHTML = `
+            <span class="selected-text" data-type="currency">${primaryCurrency?.currencyCode}</span>
+            <span class="currency-symbol">(${primaryCurrency?.symbol})</span>
+          `;
+    }
+  }
 }
 
 // Function to update the display text
@@ -354,8 +346,6 @@ function transform(
   rounding,
 ) {
   const formattedPrice = price.replace(/[^0-9,. ]/g, "").trim();
-
-  console.log("formattedPrice: ", formattedPrice);
 
   if (!formattedPrice || exchangeRate == "Auto") {
     return price;
@@ -1033,17 +1023,18 @@ async function CurrencySelectorTakeEffect(
   }
   const localStorageCurrencyDataJSON =
     localStorage.getItem("ciwi_currency_data");
+  const localStorageCurrencyData = JSON.parse(localStorageCurrencyDataJSON);
+
   let currencyData = [];
 
-  if (localStorageCurrencyDataJSON) {
-    const localStorageCurrencyData = JSON.parse(localStorageCurrencyDataJSON);
-    if (Array.isArray(localStorageCurrencyData)) {
-      currencyData = localStorageCurrencyData;
-    } else {
-      currencyData = await fetchCurrencies({ blockId, shop: shop });
-      localStorage.setItem("ciwi_currency_data", JSON.stringify(currencyData));
-    }
+  if (localStorageCurrencyDataJSON && Array.isArray(localStorageCurrencyData)) {
+    currencyData = localStorageCurrencyData;
+  } else {
+    currencyData = await fetchCurrencies({ blockId, shop: shop });
+    localStorage.setItem("ciwi_currency_data", JSON.stringify(currencyData));
   }
+  console.log("currencyData: ", currencyData);
+
   const currencySelector = ciwiBlock.querySelector(
     "#currency-switcher-container",
   );
@@ -1257,8 +1248,6 @@ window.onload = async function () {
   const isLanguageSelectorTakeEffect =
     configData.languageSelector ||
     (!configData.languageSelector && !configData.currencySelector);
-
-  console.log("加载中...");
 
   IpPosition(blockId, configData.ipOpen, shop.value, ciwiBlock);
 
