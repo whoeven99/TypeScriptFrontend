@@ -185,10 +185,11 @@ async function initializeCurrency({ blockId, currencyData, shop, ciwiBlock }) {
       rate = selectedCurrency.exchangeRate;
     }
 
-    // 更新价格显示
-    const prices = document.querySelectorAll("span.ciwi-money");
+    // 获取页面上所有的价格元素
+    const pricesDoc = document.querySelectorAll(".ciwi-money");
+    console.log("pricesDoc: ", pricesDoc);
 
-    prices.forEach((price) => {
+    pricesDoc?.forEach((price) => {
       const priceText = price.innerText;
       const transformedPrice = transform(
         priceText,
