@@ -1181,7 +1181,7 @@ async function ProductImgTranslate(blockId, shop, ciwiBlock) {
           if (match.imageAfterUrl || match.altBeforeTranslation) {
             if (match.imageAfterUrl) {
               img.src = match?.imageAfterUrl;
-              img.srcset = "";
+              img.srcset = match?.imageAfterUrl;
             }
             if (match.altBeforeTranslation) {
               img.alt = match?.altBeforeTranslation;
