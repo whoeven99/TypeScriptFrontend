@@ -987,20 +987,21 @@ async function IpPosition(blockId, ipOpen, shop, ciwiBlock) {
     ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
   ).map((link) => link.getAttribute("data-value"));
 
-  const browserLanguage = navigator.language;
+  let browserLanguage = navigator.language;
   let detectedLanguage;
   // 获取匹配的语言或默认为英语
-  if (browserLanguage.includes("zh")) {
-    detectedLanguage = browserLanguage || "en";
-  } else {
-    detectedLanguage = browserLanguage.split("-")[0] || "en";
+
+  if (!browserLanguage.includes("zh")) {
+    browserLanguage = browserLanguage.split("-")[0];
   }
+
   if (
-    languageInput.value !== detectedLanguage &&
-    availableLanguages.includes(detectedLanguage)
+    languageInput.value !== browserLanguage &&
+    availableLanguages.includes(browserLanguage)
   ) {
-    languageInput.value = detectedLanguage;
+    detectedLanguage = browserLanguage;
   }
+  
   if (storedCountry && storedCurrency) {
     if (
       countryInput.value !== storedCountry &&
@@ -1021,8 +1022,9 @@ async function IpPosition(blockId, ipOpen, shop, ciwiBlock) {
       if (currencyCode) {
         localStorage.setItem("ciwi_selected_currency", currencyCode);
       }
+      let detectedCountry;
       if (countryCode && availableCountries.includes(countryCode)) {
-        countryInput.value = countryCode;
+        detectedCountry = countryCode;
         localStorage.setItem("ciwi_selected_country", countryCode);
         console.log(
           "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
@@ -1036,15 +1038,16 @@ async function IpPosition(blockId, ipOpen, shop, ciwiBlock) {
       const isInThemeEditor = document.documentElement.classList.contains(
         "shopify-design-mode",
       );
+
       if (
-        (countryInput.value !== country || languageInput.value !== language) &&
-        countryInput.value &&
-        languageInput.value &&
+        (detectedCountry !== country || detectedLanguage !== language) &&
+        detectedCountry &&
+        detectedLanguage &&
         !isInThemeEditor
       ) {
         updateLocalization({
-          country: countryInput.value,
-          language: languageInput.value,
+          country: detectedCountry,
+          language: detectedLanguage,
         });
       }
     }
@@ -1111,7 +1114,7 @@ async function LanguageSelectorTakeEffect(
     return;
   }
   const languageInput = ciwiBlock.querySelector(
-    'input[name="current_language_code"]',
+    'input[name="language_code"]',
   );
   const language = languageInput.value;
   const languageSelector = ciwiBlock.querySelector(
@@ -1195,7 +1198,7 @@ async function ProductImgTranslate(blockId, shop, ciwiBlock) {
   const productId = productIdInput.value;
   if (productId) {
     const languageInput = ciwiBlock.querySelector(
-      'input[name="current_language_code"]',
+      'input[name="language_code"]',
     );
     const language = languageInput.value;
     const productImageData = await GetProductImageData({
