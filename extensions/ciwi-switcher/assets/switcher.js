@@ -959,100 +959,9 @@ class CiwiswitcherForm extends HTMLElement {
 // Define the custom element
 customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
-async function IpPosition(blockId, ipOpen, shop, ciwiBlock) {
-  if (!ipOpen) {
-    console.log("ip function false");
-    return;
-  }
+// function IpPosition(blockId, ipOpen, shop, ciwiBlock) {
 
-  const iptokenInput = ciwiBlock.querySelector('input[name="iptoken"]');
-  const iptokenValue = iptokenInput.value;
-  if (!iptokenValue) {
-    console.log("iptoken desappeared!");
-    return;
-  }
-  const storedCountry = localStorage.getItem("ciwi_selected_country");
-  const storedCurrency = localStorage.getItem("ciwi_selected_currency");
-  const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
-  const language = languageInput.value;
-
-  const countryInput = ciwiBlock.querySelector('input[name="country_code"]');
-  const country = countryInput.value;
-
-  const currencyInput = ciwiBlock.querySelector('input[name="currency_code"]');
-  const availableLanguages = Array.from(
-    ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
-  ).map((option) => option.dataset.value);
-  const availableCountries = Array.from(
-    ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
-  ).map((link) => link.getAttribute("data-value"));
-
-  let browserLanguage = navigator.language;
-  let detectedLanguage;
-  // 获取匹配的语言或默认为英语
-
-  if (!browserLanguage.includes("zh")) {
-    browserLanguage = browserLanguage.split("-")[0];
-  }
-
-  if (
-    languageInput.value !== browserLanguage &&
-    availableLanguages.includes(browserLanguage)
-  ) {
-    detectedLanguage = browserLanguage;
-  }
-  
-  if (storedCountry && storedCurrency) {
-    if (
-      countryInput.value !== storedCountry &&
-      availableCountries.includes(storedCountry)
-    ) {
-      countryInput.value = storedCountry;
-    }
-    if (currencyInput.value !== storedCurrency) {
-      currencyInput.value = storedCurrency;
-    }
-  } else {
-    const userIp = checkUserIp({ blockId, shop: shop });
-    if (userIp) {
-      const IpData = await fetchUserCountryInfo(iptokenValue);
-      const ip = IpData?.ip;
-      const currencyCode = IpData?.currency?.code;
-      const countryCode = IpData?.country_code;
-      if (currencyCode) {
-        localStorage.setItem("ciwi_selected_currency", currencyCode);
-      }
-      let detectedCountry;
-      if (countryCode && availableCountries.includes(countryCode)) {
-        detectedCountry = countryCode;
-        localStorage.setItem("ciwi_selected_country", countryCode);
-        console.log(
-          "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
-        );
-      } else {
-        localStorage.setItem("ciwi_selected_country", false);
-        console.log(
-          "该商店不包含您目前所在市场(The store does not include the market you are currently in)",
-        );
-      }
-      const isInThemeEditor = document.documentElement.classList.contains(
-        "shopify-design-mode",
-      );
-
-      if (
-        (detectedCountry !== country || detectedLanguage !== language) &&
-        detectedCountry &&
-        detectedLanguage &&
-        !isInThemeEditor
-      ) {
-        updateLocalization({
-          country: detectedCountry,
-          language: detectedLanguage,
-        });
-      }
-    }
-  }
-}
+// }
 
 async function CurrencySelectorTakeEffect(
   blockId,
@@ -1113,9 +1022,7 @@ async function LanguageSelectorTakeEffect(
     console.log("languageSelector function false");
     return;
   }
-  const languageInput = ciwiBlock.querySelector(
-    'input[name="language_code"]',
-  );
+  const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
   const language = languageInput.value;
   const languageSelector = ciwiBlock.querySelector(
     "#language-switcher-container",
@@ -1292,18 +1199,113 @@ window.onload = async function () {
     configData.languageSelector ||
     (!configData.languageSelector && !configData.currencySelector);
 
-  IpPosition(blockId, configData.ipOpen, shop.value, ciwiBlock);
+  if (configData?.ipOpen) {
+    const iptokenInput = ciwiBlock.querySelector('input[name="iptoken"]');
+    const iptokenValue = iptokenInput.value;
+    if (!iptokenValue) {
+      console.log("iptoken desappeared!");
+      return;
+    }
+    const storedCountry = localStorage.getItem("ciwi_selected_country");
+    const storedCurrency = localStorage.getItem("ciwi_selected_currency");
+    const languageInput = ciwiBlock.querySelector(
+      'input[name="language_code"]',
+    );
+    const language = languageInput.value;
+
+    const countryInput = ciwiBlock.querySelector('input[name="country_code"]');
+    const country = countryInput.value;
+
+    const currencyInput = ciwiBlock.querySelector(
+      'input[name="currency_code"]',
+    );
+    const availableLanguages = Array.from(
+      ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
+    ).map((option) => option.dataset.value);
+    const availableCountries = Array.from(
+      ciwiBlock.querySelectorAll('ul[role="list"] a[data-value]'),
+    ).map((link) => link.getAttribute("data-value"));
+
+    let browserLanguage = navigator.language;
+    let detectedLanguage;
+    // 获取匹配的语言或默认为英语
+
+    if (!browserLanguage.includes("zh")) {
+      browserLanguage = browserLanguage.split("-")[0];
+    }
+
+    if (
+      languageInput.value !== browserLanguage &&
+      availableLanguages.includes(browserLanguage)
+    ) {
+      detectedLanguage = browserLanguage;
+    }
+
+    if (storedCountry && storedCurrency) {
+      if (
+        countryInput.value !== storedCountry &&
+        availableCountries.includes(storedCountry)
+      ) {
+        countryInput.value = storedCountry;
+      }
+      if (currencyInput.value !== storedCurrency) {
+        currencyInput.value = storedCurrency;
+      }
+    } else {
+      const userIp = await checkUserIp({ blockId, shop: shop.value });
+      console.log("userIp: ", userIp);
+
+      if (userIp) {
+        const IpData = await fetchUserCountryInfo(iptokenValue);
+        console.log("IpData: ", IpData);
+
+        const currencyCode = IpData?.currency?.code;
+        const countryCode = IpData?.country_code;
+        if (currencyCode) {
+          localStorage.setItem("ciwi_selected_currency", currencyCode);
+        }
+        let detectedCountry;
+        if (countryCode && availableCountries.includes(countryCode)) {
+          detectedCountry = countryCode;
+          localStorage.setItem("ciwi_selected_country", countryCode);
+          console.log(
+            "若市场跳转不正确则清除缓存并手动设置selectedCountry字段(If the market jump is incorrect, clear the cache and manually set the selectedCountry field)",
+          );
+        } else {
+          localStorage.setItem("ciwi_selected_country", false);
+          console.log(
+            "该商店不包含您目前所在市场(The store does not include the market you are currently in)",
+          );
+        }
+        const isInThemeEditor = document.documentElement.classList.contains(
+          "shopify-design-mode",
+        );
+
+        if (
+          (detectedCountry !== country || detectedLanguage !== language) &&
+          detectedCountry &&
+          detectedLanguage &&
+          !isInThemeEditor
+        ) {
+          updateLocalization({
+            country: detectedCountry,
+            language: detectedLanguage,
+          });
+        }
+      }
+    }
+  }
+
+  LanguageSelectorTakeEffect(
+    isLanguageSelectorTakeEffect,
+    configData,
+    ciwiBlock,
+  );
 
   CurrencySelectorTakeEffect(
     blockId,
     isCurrencySelectorTakeEffect,
     shop.value,
-    configData,
-    ciwiBlock,
-  );
-
-  LanguageSelectorTakeEffect(
-    isLanguageSelectorTakeEffect,
     configData,
     ciwiBlock,
   );
