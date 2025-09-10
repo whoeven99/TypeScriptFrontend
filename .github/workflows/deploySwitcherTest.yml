@@ -10,6 +10,11 @@ jobs:
       # 假设你的部署命令需要商店地址和API访问令牌
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # 获取所有历史记录以便查找PR提交
+        
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
