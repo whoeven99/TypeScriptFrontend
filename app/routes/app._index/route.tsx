@@ -26,7 +26,7 @@ import useReport from "scripts/eventReport";
 import { useSelector } from "react-redux";
 import CorrectIcon from "~/components/icon/correctIcon";
 import GiftIcon from "~/components/icon/giftIcon";
-
+import axios from 'axios'
 const { Title, Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -297,12 +297,21 @@ const Index = () => {
     console.log(hasRequiresScopes, missScopes);
   };
   const handleFindWebPixel = async () => {
-    const formData = new FormData();
-    formData.append("findWebPixelId", JSON.stringify({}));
-    findWebPixelFetcher.submit(formData, {
-      method: "post",
-      action: "/app",
-    });
+    const data = await axios({
+      method:'post',
+      url:"http://localhost:3000/track",
+      data:{
+        eventData:'1111'
+      }
+    })
+    console.log('data',data);
+    
+    // const formData = new FormData();
+    // formData.append("findWebPixelId", JSON.stringify({}));
+    // findWebPixelFetcher.submit(formData, {
+    //   method: "post",
+    //   action: "/app",
+    // });
   };
   useEffect(() => {
     const checkScopes  = async () => {
@@ -356,7 +365,7 @@ const Index = () => {
             <Title level={3}>{t("dashboard.title1")}</Title>
             <Text strong>{t("dashboard.description1")}</Text>
           </div>
-          {showRequireScopeBtn && (
+          {!showRequireScopeBtn && (
             <Button onClick={handleTestGraphqlData}>数据评估和报告页面</Button>
           )}
           <Button onClick={handleFindWebPixel}>查询当前配置Web Pixel</Button>

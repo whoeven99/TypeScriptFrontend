@@ -1,7 +1,8 @@
 import { register } from "@shopify/web-pixels-extension";
-
+console.log("dsadasda");
+import axios from "axios";
 register(({ analytics, browser, init, settings }) => {
-  const serverUrl = "https://3000/track";
+  const serverUrl = "http://localhost:3000/track";
   // 页面浏览事件
   analytics.subscribe("page_viewed", async (event) => {
     console.log("Page Viewed:", event);
@@ -19,10 +20,10 @@ register(({ analytics, browser, init, settings }) => {
       };
 
       // Example for sending event data to third party servers
-      const response = await fetch(serverUrl, {
+      const response = await axios({
+        url: serverUrl,
         method: "POST",
-        body: JSON.stringify(payload),
-        keepalive: true,
+        data: JSON.stringify(payload),
       });
       console.log("page_viewed success", response);
     } catch (error) {
@@ -54,14 +55,64 @@ register(({ analytics, browser, init, settings }) => {
       };
 
       // Example for sending event to third party servers
-      const response = await fetch(serverUrl, {
+      const response = await axios({
+        url: serverUrl,
         method: "POST",
-        body: JSON.stringify(payload),
-        keepalive: true,
+        data: JSON.stringify(payload),
       });
       console.log("product_added_to_cart success", response);
     } catch (error) {
       console.error("Failed to send product_added_to_cart event:", error);
     }
+  });
+  register(({ analytics }) => {
+    analytics.subscribe("cart_viewed", (event: any) => {
+      // Example for accessing event data
+      const totalCartCost = event.data.cart.cost.totalAmount.amount;
+
+      const firstCartLineItemName =
+        event.data.cart.lines[0]?.merchandise.product.title;
+
+      const payload = {
+        event_name: event.name,
+        event_data: {
+          cartCost: totalCartCost,
+          firstCartItemName: firstCartLineItemName,
+        },
+      };
+
+      // Example for sending event data to third party servers
+      fetch(serverUrl, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        keepalive: true,
+      });
+    });
+  });
+  register(({ analytics }) => {
+    analytics.subscribe("clicked", (event) => {
+      // Example for accessing event data
+      const element = event.data.element;
+
+      const elementId = element.id;
+      const elementValue = element.value;
+      const elementHref = element.href;
+
+      const payload = {
+        event_name: event.name,
+        event_data: {
+          id: elementId,
+          value: elementValue,
+          url: elementHref,
+        },
+      };
+
+      // Example for sending event to third party servers
+      fetch(serverUrl, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        keepalive: true,
+      });
+    });
   });
 });
