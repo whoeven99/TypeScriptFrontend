@@ -6,7 +6,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ShopifyDev  # CLI token都在这个Environment下
+    environment: ShopifyConfig  # CLI token都在这个Environment下
 
     steps:
     - name: Checkout code
