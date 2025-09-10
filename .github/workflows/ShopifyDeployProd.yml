@@ -1,0 +1,35 @@
+name: Shopify App Deploy to PROD
+
+on:
+  workflow_dispatch:  # 手动触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ShopifyConfig  # CLI token都在这个Environment下
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # 获取所有历史记录以便查找PR提交
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install dependencies
+      run: npm install -g @shopify/cli@latest
+
+    - name: Deploy
+      env:
+        # 去github的Environment下的ShopifyDev里配置
+        SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
+        # app的客户端id
+        SHOPIFY_API_KEY: "fb9fc15cbec02bd735e2a5b491cf8409"
+      run: shopify app deploy -c shopify.app.prod.toml -f
