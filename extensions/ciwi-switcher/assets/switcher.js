@@ -184,28 +184,13 @@ async function initializeCurrency({ blockId, currencyData, shop, ciwiBlock }) {
     } else {
       rate = selectedCurrency.exchangeRate;
     }
+    console.log("selectedCurrency: ", selectedCurrency);
 
-    // 获取页面上所有的价格元素
-    const pricesDoc = document.querySelectorAll(".ciwi-money");
-    console.log("pricesDoc: ", pricesDoc);
+    // 初始执行一次
+    transformPrices(rate, moneyFormat, selectedCurrency);
 
-    pricesDoc?.forEach((price) => {
-      const priceText = price.innerText;
-      const transformedPrice = transform(
-        priceText,
-        rate,
-        moneyFormat,
-        selectedCurrency.symbol,
-        selectedCurrency.currencyCode,
-        selectedCurrency.rounding,
-      );
-
-      if (transformedPrice) {
-        price.innerHTML = transformedPrice;
-      }
-    });
-    // 更新输入值和选中项
-    currencyInput.value = selectedCurrencyCode;
+    // 开始观察整个文档 body
+    initPriceObserver(rate, moneyFormat, selectedCurrency);
 
     // 清空并重新生成选项
     if (optionsList) {
@@ -240,11 +225,13 @@ async function initializeCurrency({ blockId, currencyData, shop, ciwiBlock }) {
         }
       });
     }
+
     const autoRate = await fetchAutoRate({
       blockId,
       shop: shop,
       currencyCode: selectedCurrencyCode,
     });
+
     localStorage.setItem(
       "ciwi_selected_currency_rate",
       JSON.stringify({
@@ -302,7 +289,60 @@ async function initializeCurrency({ blockId, currencyData, shop, ciwiBlock }) {
   }
 }
 
-// Function to update the display text
+//转换页面价格方法
+function transformPrices(rate, moneyFormat, selectedCurrency) {
+  const pricesDoc = document.querySelectorAll(".ciwi-money");
+
+  console.log("pricesDoc: ", pricesDoc);
+
+  pricesDoc.forEach((price) => {
+    const priceText = price.innerText;
+    const transformedPrice = transform(
+      priceText,
+      rate,
+      moneyFormat,
+      selectedCurrency.symbol,
+      selectedCurrency.currencyCode,
+      selectedCurrency.rounding,
+    );
+
+    if (transformedPrice) {
+      price.innerHTML = transformedPrice;
+    }
+  });
+}
+
+// 监听懒加载 / 动态插入的节点
+function initPriceObserver(rate, moneyFormat, selectedCurrency) {
+  const observer = new MutationObserver((mutationsList) => {
+    console.log("mutationsList: ", mutationsList);
+
+    for (const mutation of mutationsList) {
+      if (mutation.type === "childList") {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1 && node.matches?.(".ciwi-money")) {
+            transformPrices(rate, moneyFormat, selectedCurrency);
+          } else if (node.querySelectorAll) {
+            if (node.querySelectorAll(".ciwi-money").length > 0) {
+              transformPrices(rate, moneyFormat, selectedCurrency);
+            }
+          }
+        });
+      }
+    }
+  });
+
+  // 初始执行一次
+  transformPrices(rate, moneyFormat, selectedCurrency);
+
+  // 开始观察
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+}
+
+// 更新mainBox文本
 function updateDisplayText(lang, cur, ciwiBlock) {
   let selectedLanguageText = "";
   let selectedCurrencyText = "";
@@ -348,7 +388,11 @@ function transform(
 ) {
   const formattedPrice = price.replace(/[^0-9,. ]/g, "").trim();
 
-  if (!formattedPrice || exchangeRate == "Auto") {
+  if (
+    !formattedPrice ||
+    exchangeRate == "Auto" ||
+    price.includes(currencyCode) //防止重复计算
+  ) {
     return price;
   }
 
