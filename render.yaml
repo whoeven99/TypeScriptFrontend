@@ -1,0 +1,47 @@
+# Optional Render.com configuration file
+# This file can be used to configure your Render service automatically
+# Place this file in the root of your repository if you want to use Render's Blueprint feature
+
+services:
+  # Web Service Configuration (for Node.js applications)
+  - type: web
+    name: typescript-frontend-app
+    env: node
+    plan: free  # Change to starter or higher for production
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        fromService:
+          type: web
+          name: typescript-frontend-app
+          property: port
+    # Add additional environment variables here
+    # - key: DATABASE_URL
+    #   fromDatabase:
+    #     name: your-database-name
+    #     property: connectionString
+
+  # Static Site Configuration (alternative to web service)
+  # - type: static
+  #   name: typescript-frontend-static
+  #   buildCommand: npm ci && npm run build
+  #   staticPublishPath: ./build
+  #   envVars:
+  #     - key: NODE_ENV
+  #       value: production
+
+# Database Configuration (optional)
+# databases:
+#   - name: typescript-frontend-db
+#     databaseName: app_db
+#     user: app_user
+#     plan: free  # Change to starter or higher for production
+
+# Redis Configuration (optional)
+# redis:
+#   - name: typescript-frontend-redis
+#     plan: free  # Change to starter or higher for production

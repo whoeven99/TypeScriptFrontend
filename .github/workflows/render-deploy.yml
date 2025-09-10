@@ -1,0 +1,95 @@
+name: Deploy to Render.com
+
+on:
+  push:
+    branches: [ main, deploy ]  # Trigger on push to main or deploy branches
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: RenderConfig  # Environment for storing Render secrets
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        npm config set registry https://registry.npmjs.org/
+        npm ci
+
+    - name: Build application
+      run: npm run build
+      env:
+        NODE_ENV: production
+
+    - name: Deploy to Render
+      env:
+        RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      run: |
+        echo "Starting deployment to Render.com..."
+        
+        # Option 1: Using Deploy Hook (Recommended)
+        if [ ! -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+          echo "Triggering deployment via Deploy Hook..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$RENDER_DEPLOY_HOOK_URL")
+          if [ $response -eq 200 ] || [ $response -eq 201 ]; then
+            echo "✅ Deploy hook triggered successfully"
+          else
+            echo "❌ Deploy hook failed with status code: $response"
+            exit 1
+          fi
+        # Option 2: Using Render API (Alternative)
+        elif [ ! -z "$RENDER_API_KEY" ] && [ ! -z "$RENDER_SERVICE_ID" ]; then
+          echo "Triggering deployment via Render API..."
+          response=$(curl -s -w "%{http_code}" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -X POST \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -d '{}')
+          
+          status_code=$(echo "$response" | tail -n1)
+          if [ $status_code -eq 200 ] || [ $status_code -eq 201 ]; then
+            echo "✅ Render API deployment triggered successfully"
+          else
+            echo "❌ Render API deployment failed with status code: $status_code"
+            echo "Response: $(echo "$response" | head -n -1)"
+            exit 1
+          fi
+        else
+          echo "❌ No deployment method configured. Please set either RENDER_DEPLOY_HOOK_URL or both RENDER_API_KEY and RENDER_SERVICE_ID"
+          exit 1
+        fi
+        
+        echo "🚀 Deployment initiated. Check your Render dashboard for progress."
+
+    - name: Notify deployment status
+      if: success()
+      run: |
+        echo "✅ Deployment workflow completed successfully!"
+        echo "📊 Check your Render.com dashboard to monitor the deployment progress."
+        echo "🌐 Your application will be available at your Render service URL once deployment is complete."
+
+    - name: Handle deployment failure
+      if: failure()
+      run: |
+        echo "❌ Deployment workflow failed!"
+        echo "🔍 Please check the logs above for error details."
+        echo "💡 Common issues:"
+        echo "   - Incorrect Render API Key or Service ID"
+        echo "   - Invalid Deploy Hook URL"
+        echo "   - Build failures"
+        echo "   - Network connectivity issues"
