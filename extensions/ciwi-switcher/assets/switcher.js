@@ -3,15 +3,19 @@ async function FrontEndPrinting({
   shop,
   ip,
   languageCode,
+  langInclude,
   countryCode,
+  counInclude,
   currencyCode,
+  checkUserIpCostTime,
+  fetchUserCountryInfoCostTime,
 }) {
   try {
     const response = await axios({
       url: `${switchUrl(blockId)}/frontEndPrinting`,
       method: "POST",
       data: {
-        data: `${shop} 客户ip定位: ${ip}, 语言代码${languageCode}, 货币代码${currencyCode}, 国家代码${countryCode}`,
+        data: `${shop} 客户ip定位: ${ip}, 语言代码: ${languageCode}, ${!langInclude ? "不" : ""}包含该语言, 货币代码: ${currencyCode}, 国家代码: ${countryCode}, ${!counInclude ? "不" : ""}包含该市场, checkUserIp接口花费时间: ${checkUserIpCostTime}ms, ipapi接口花费时间: ${fetchUserCountryInfoCostTime}ms`,
       },
     });
 
@@ -1253,9 +1257,7 @@ window.onload = async function () {
       browserLanguage = browserLanguage.split("-")[0];
     }
 
-    if (
-      availableLanguages.includes(browserLanguage)
-    ) {
+    if (availableLanguages.includes(browserLanguage)) {
       detectedLanguage = browserLanguage;
     }
 
@@ -1270,12 +1272,17 @@ window.onload = async function () {
         currencyInput.value = storedCurrency;
       }
     } else {
+      const checkUserIpStartTime = new Date().getTime();
       const userIp = await checkUserIp({ blockId, shop: shop.value });
-      console.log("userIp: ", userIp);
+      const checkUserIpEndTime = new Date().getTime();
+      const checkUserIpCostTime = checkUserIpEndTime - checkUserIpStartTime;
 
       if (userIp) {
+        const fetchUserCountryInfoStartTime = new Date().getTime();
         const IpData = await fetchUserCountryInfo(iptokenValue);
-        console.log("IpData: ", IpData);
+        const fetchUserCountryInfoEndTime = new Date().getTime();
+        const fetchUserCountryInfoCostTime =
+          fetchUserCountryInfoEndTime - fetchUserCountryInfoStartTime;
         const ip = IpData?.ip;
         const currencyCode = IpData?.currency?.code;
         const countryCode = IpData?.country_code;
@@ -1283,9 +1290,13 @@ window.onload = async function () {
           blockId,
           shop: shop.value,
           ip: ip,
-          languageCode: detectedLanguage,
+          languageCode: browserLanguage,
+          langInclude: availableLanguages.includes(browserLanguage),
           countryCode,
-          currencyCode
+          counInclude: availableCountries.includes(IpData?.country_code),
+          currencyCode,
+          checkUserIpCostTime,
+          fetchUserCountryInfoCostTime,
         });
         if (currencyCode) {
           localStorage.setItem("ciwi_selected_currency", currencyCode);
