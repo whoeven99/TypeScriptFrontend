@@ -1,6 +1,17 @@
 import React, { useState } from "react";
-import { Card, DataTable, Select, Text, InlineStack } from "@shopify/polaris";
-
+import {
+  Card,
+  DataTable,
+  Select,
+  Text,
+  InlineStack,
+  Page,
+  Icon,
+  Box,
+} from "@shopify/polaris";
+import { TitleBar } from "@shopify/app-bridge-react";
+import { ChartVerticalFilledIcon } from "@shopify/polaris-icons";
+import { Flex, Button } from "antd";
 const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState("all");
 
@@ -46,7 +57,20 @@ const Index = () => {
   ];
 
   return (
-    <InlineStack>
+    <Page>
+      <TitleBar>转换率</TitleBar>
+      <Flex
+        gap="small"
+        style={{ padding: "20px 0", height: "30px" }}
+        align="center"
+      >
+        <div style={{ maxWidth: "20px" }}>
+          <Icon source={ChartVerticalFilledIcon} tone="base" />
+        </div>
+        <Text variant="headingMd" as="h2">
+          转换率
+        </Text>
+      </Flex>
       <Card>
         <InlineStack>
           <Text variant="headingMd" as="h2">
@@ -141,7 +165,7 @@ const Index = () => {
           rows={locationData}
         />
       </Card>
-    </InlineStack>
+    </Page>
   );
 };
 
