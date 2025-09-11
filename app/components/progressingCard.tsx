@@ -41,7 +41,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   const stopTranslateFetcher = useFetcher<any>();
   const stopTranslateReport = useFetcher<any>();
   const { reportClick, report, trackExposure, fetcherState } = useReport();
-  const stopTranslateButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleReTranslateReport = () => {
     navigate("/app/translate");
@@ -393,18 +392,18 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
     );
   };
 
-  useEffect(() => {
-    if (status === 2 && stopTranslateButtonRef.current) {
-      trackExposure(
-        stopTranslateButtonRef.current,
-        {
-          stopTranslate: JSON.stringify({ source, target: target[index] }),
-        },
-        { method: "post", action: "/app", eventType: "exposure" },
-        "dashboard_translation_task_stop",
-      );
-    }
-  }, [status]);
+  // useEffect(() => {
+  //   if (status === 2 && stopTranslateButtonRef.current) {
+  //     trackExposure(
+  //       stopTranslateButtonRef.current,
+  //       {
+  //         stopTranslate: JSON.stringify({ source, target: target[index] }),
+  //       },
+  //       { method: "post", action: "/app", eventType: "exposure" },
+  //       "dashboard_translation_task_stop",
+  //     );
+  //   }
+  // }, [status]);
 
   const handleReTranslate = () => {
     translateFetcher.submit(
@@ -692,7 +691,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   )}
                   {status === 2 && (
                     <Button
-                      ref={stopTranslateButtonRef}
                       block
                       onClick={handleStopTranslate}
                       loading={stopTranslateFetcher.state === "submitting"}
