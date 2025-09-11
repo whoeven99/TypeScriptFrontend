@@ -32,7 +32,7 @@ const AnalyticsCard = ({ analyticsData }: any) => {
             <Button
               type="default"
               onClick={() =>
-                Navigate("/app/translateReport", {
+                Navigate("/app/translate_report", {
                   state: {
                     analyticsData,
                   },
@@ -89,7 +89,7 @@ const AnalyticsCard = ({ analyticsData }: any) => {
             </Flex>
             <Button
               type="default"
-              onClick={() => Navigate("/app/translateReport")}
+              onClick={() => Navigate("/app/conversion_rate")}
             >
               Details
             </Button>
