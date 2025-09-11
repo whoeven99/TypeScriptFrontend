@@ -1254,7 +1254,6 @@ window.onload = async function () {
     }
 
     if (
-      languageInput.value !== browserLanguage &&
       availableLanguages.includes(browserLanguage)
     ) {
       detectedLanguage = browserLanguage;
