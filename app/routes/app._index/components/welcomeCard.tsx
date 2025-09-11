@@ -2,9 +2,6 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { Button, Card, ConfigProvider, Flex, Skeleton, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import useReport from "scripts/eventReport";
-// import {LoaderFunctionArgs} from  '@remix-run/node'
-// import { authenticate } from "~/shopify.server";
-// import {json} from '@remix-run/node'
 const { Text } = Typography;
 
 interface WelcomeCardProps {
@@ -12,29 +9,6 @@ interface WelcomeCardProps {
   blockUrl: string;
   shop: string;
 }
-
-// export const loader = async ({ request }: any) => {
-//   const { session } = await authenticate.admin(request);
-//   console.log("qualityEvaluation");
-//   const scopes = session.scope ? session.scope.split(",") : [];
-//   const optionalScopes = process.env.OPTIONAL_SCOPES;
-//   const missScopes = optionalScopes
-//     ?.split(",")
-//     .filter((s) => !scopes.includes(s));
-//   const hasRequiresScopes = missScopes?.length === 0;
-//   return {hasRequiresScopes};
-// };
-
-// export const loader = async ({ request }: LoaderFunctionArgs) => {
-//   const adminAuthResult = await authenticate.admin(request);
-//   const { shop } = adminAuthResult.session;
-
-//   return json({
-//     shop,
-//     server: process.env.SERVER_URL,
-//     apiKey: process.env.SHOPIFY_API_KEY || "",
-//   });
-// };
 
 const WelcomeCard: React.FC<WelcomeCardProps> = ({
   switcherOpen,
@@ -46,7 +20,6 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
   const fetcher = useFetcher<any>();
   const graphqlFetcher = useFetcher<any>();
   const { report, trackExposure, fetcherState } = useReport();
-  // const {server,apiKey} = useLoaderData<typeof loader>()
   const handleSetting = () => {
     if (!switcherOpen) {
       // TODO: Disable App
@@ -122,8 +95,6 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
         >
           {!switcherOpen ? t("Disable App") : t("Setup App")}
         </Button>
-        <Button onClick={handleTestGraphqlData}>数据评估和报告页面</Button>
-        {/* <span>{hasRequiresScopes}?'需要请求权限':'有改权限'</span> */}
       </Flex>
     </Card>
   );

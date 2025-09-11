@@ -20,13 +20,14 @@ import PreviewCard from "./components/previewCard";
 import ScrollNotice from "~/components/ScrollNotice";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import ProgressingCard from "~/components/progressingCard";
+import AnalyticsCard from "./components/AnalyticsCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
 import useReport from "scripts/eventReport";
 import { useSelector } from "react-redux";
 import CorrectIcon from "~/components/icon/correctIcon";
 import GiftIcon from "~/components/icon/giftIcon";
-import axios from 'axios'
+import axios from "axios";
 const { Title, Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -109,6 +110,21 @@ const Index = () => {
   const [showRequireScopeBtn, setShowRequireScopeBtn] =
     useState(!hasRequiresScopes);
   const { reportClick, report } = useReport();
+
+  // 翻译得分
+  const [translationScore, setTranslationScore] = useState<number>(0);
+  const [analyticsData, setAnalyticsData] = useState<any>({});
+  const [translatedLanguages, setTranslatedLanguages] = useState<number>(0);
+  useEffect(() => {
+    setAnalyticsData({
+      totalScore: 88,
+      notTransLanguage: 5,
+      incompatibleStyles: 1,
+      notEnabled: 4,
+      notSEOFriendly: 4,
+      notOnBrand: 1,
+    });
+  }, []);
   useEffect(() => {
     setIsLoading(false);
     themeFetcher.submit(
@@ -298,14 +314,14 @@ const Index = () => {
   };
   const handleFindWebPixel = async () => {
     const data = await axios({
-      method:'post',
-      url:"http://localhost:3000/track",
-      data:{
-        eventData:'1111'
-      }
-    })
-    console.log('data',data);
-    
+      method: "post",
+      url: "http://localhost:3000/track",
+      data: {
+        eventData: "1111",
+      },
+    });
+    console.log("data", data);
+
     // const formData = new FormData();
     // formData.append("findWebPixelId", JSON.stringify({}));
     // findWebPixelFetcher.submit(formData, {
@@ -314,12 +330,12 @@ const Index = () => {
     // });
   };
   useEffect(() => {
-    const checkScopes  = async () => {
-      console.log('aaaa');
-      
+    const checkScopes = async () => {
       const { granted } = await shopify.scopes.query();
       console.log("exit", granted);
-      const missingScopes = ['read_customer_events','write_pixels'].filter(s=>!granted.includes(s));
+      const missingScopes = ["read_customer_events", "write_pixels"].filter(
+        (s) => !granted.includes(s),
+      );
       setShowRequireScopeBtn(missingScopes.length !== 0);
       console.log(showRequireScopeBtn);
     };
@@ -361,15 +377,7 @@ const Index = () => {
           // handleReload={handleReload}
         />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>{t("dashboard.title1")}</Title>
-            <Text strong>{t("dashboard.description1")}</Text>
-          </div>
-          {!showRequireScopeBtn && (
-            <Button onClick={handleTestGraphqlData}>数据评估和报告页面</Button>
-          )}
-          <Button onClick={handleFindWebPixel}>查询当前配置Web Pixel</Button>
-          <span>{hasRequiresScopes ? "有改权限" : "需要请求权限"}</span>
+          <AnalyticsCard analyticsData={analyticsData}></AnalyticsCard>
           <div>
             <Card
               style={

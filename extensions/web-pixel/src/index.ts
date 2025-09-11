@@ -1,17 +1,29 @@
 import { register } from "@shopify/web-pixels-extension";
 console.log("dsadasda");
 import axios from "axios";
-register(({ analytics, browser, init, settings }) => {
-  const serverUrl = "http://localhost:3000/track";
+import { v4 as uuidv4 } from "uuid";
+register(async ({ analytics, browser, init, settings }) => {
+  const serverUrl = "https://typescriptfrontend.onrender.com";
   // 页面浏览事件
+  const id = await browser.localStorage.getItem("ciwi_user_id");
+  if (!id) {
+    browser.localStorage.setItem("ciwi_user_id", uuidv4());
+  }
+  const userId = await browser.localStorage.getItem("ciwi_user_id");
+  console.log("userid", userId);
+  const { storefrontUrl } = init?.data?.shop as any;
+  const parts = new URL(storefrontUrl).pathname.split("/").filter(Boolean);
+  let stoteLanguage = parts.length > 0 ? parts[parts.length - 1] : "en";
+
   analytics.subscribe("page_viewed", async (event) => {
-    console.log("Page Viewed:", event);
     try {
       const timeStamp = event.timestamp;
 
       const pageEventId = event.id;
 
       const payload = {
+        userId,
+        stoteLanguage,
         event_name: event.name,
         event_data: {
           pageEventId: pageEventId,
@@ -25,7 +37,7 @@ register(({ analytics, browser, init, settings }) => {
         method: "POST",
         data: JSON.stringify(payload),
       });
-      console.log("page_viewed success", response);
+      console.log("page_viewed success: ", response);
     } catch (error) {
       console.error("Failed to send page_viewed event:", error);
     }
