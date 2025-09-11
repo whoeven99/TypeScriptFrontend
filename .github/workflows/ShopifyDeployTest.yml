@@ -50,11 +50,16 @@ jobs:
       env:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }} # 这是整个render的apikey
         RENDER_SERVICE_ID: ${{ secrets.RENDER_TEST_SERVICE_ID }} # 这是test service id
-      run: |
+      run: | # action 非0退出码表示失败
         echo "Deploying branch: ${{ github.event.inputs.branch }} to Render TypescriptFD Test"
-        curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+        RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
           -H "Authorization: Bearer $RENDER_API_KEY" \
           -H "Content-Type: application/json" \
-          -d "{
-            \"branch\": \"${{ github.event.inputs.branch }}\"
-          }"
+          -d "{\"branch\": \"${{ github.event.inputs.branch }}\"}")
+        if [ "$RESPONSE" -eq 200 ]; then
+          echo "Deploy to test Render triggered successfully."
+        else
+          echo "Failed to trigger deployment. HTTP status: $RESPONSE"
+          cat response.json
+          exit 1
+        fi
