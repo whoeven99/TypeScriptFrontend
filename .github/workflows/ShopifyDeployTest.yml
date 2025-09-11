@@ -44,18 +44,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
       with:
-        ref: ${{ github.event.inputs.branch }} # 使用用户选择的分支
+        fetch-depth: 0  # 获取所有历史记录以便查找PR提交
 
     - name: Deploy to Render
       env:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }} # 这是整个render的apikey
         RENDER_SERVICE_ID: ${{ secrets.RENDER_TEST_SERVICE_ID }} # 这是test service id
       run: | # action 非0退出码表示失败
-        echo "Deploying branch: ${{ github.event.inputs.branch }} to Render TypescriptFD Test"
+        BRANCH=${{ github.event.inputs.branch }}
+        if [ -z "$BRANCH" ]; then
+          BRANCH="master"
+        fi
+        echo "Deploying branch: $BRANCH to Render TypescriptFD Test"
         RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
           -H "Authorization: Bearer $RENDER_API_KEY" \
           -H "Content-Type: application/json" \
-          -d "{\"branch\": \"${{ github.event.inputs.branch }}\"}")
+          -d "{\"branch\": \"$BRANCH\"}")
         if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
           echo "Deploy to test Render triggered successfully. HTTP status: $RESPONSE"
         else
