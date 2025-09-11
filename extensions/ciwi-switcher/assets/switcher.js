@@ -986,6 +986,10 @@ class CiwiswitcherForm extends HTMLElement {
 // Define the custom element
 customElements.define("ciwiswitcher-form", CiwiswitcherForm);
 
+// function IpPosition(blockId, ipOpen, shop, ciwiBlock) {
+
+// }
+
 async function CurrencySelectorTakeEffect(
   blockId,
   isCurrencySelectorTakeEffect,
