@@ -56,8 +56,8 @@ jobs:
           -H "Authorization: Bearer $RENDER_API_KEY" \
           -H "Content-Type: application/json" \
           -d "{\"branch\": \"${{ github.event.inputs.branch }}\"}")
-        if [ "$RESPONSE" -eq 200 ]; then
-          echo "Deploy to test Render triggered successfully."
+        if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
+          echo "Deploy to test Render triggered successfully. HTTP status: $RESPONSE"
         else
           echo "Failed to trigger deployment. HTTP status: $RESPONSE"
           cat response.json
