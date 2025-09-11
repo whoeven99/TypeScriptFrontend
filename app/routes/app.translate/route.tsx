@@ -1835,29 +1835,6 @@ const Index = () => {
         >
           <Text>{t("This feature is available only with the paid plan.")}</Text>
         </Modal>
-        <PolarisModal
-          open={isApiKeyModalOpen}
-          onClose={handleApiKeyModalClose}
-          title={modalTypeObject[currentModal].Title}
-          primaryAction={{
-            content: `${modalTypeObject[currentModal].Button}`,
-            onAction: handleConfigureQuota,
-          }}
-          secondaryActions={[
-            {
-              content: `${t("Cancel")}`,
-              onAction: handleApiKeyModalClose,
-            },
-          ]}
-        >
-          <PolarisModal.Section>
-            <BlockStack gap="200">
-              <PolarisText variant="bodyMd" as="p">
-                {modalTypeObject[currentModal].Body}
-              </PolarisText>
-            </BlockStack>
-          </PolarisModal.Section>
-        </PolarisModal>
       </Space>
       {showPaymentModal && (
         <PaymentModal
