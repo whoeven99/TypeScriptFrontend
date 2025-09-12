@@ -35,7 +35,10 @@ import { useFetcher, useLoaderData } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
 import { CheckOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import "./style.css";
-import { mutationAppSubscriptionCreate } from "~/api/admin";
+import {
+  mutationAppPurchaseOneTimeCreate,
+  mutationAppSubscriptionCreate,
+} from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import { handleContactSupport } from "../app._index/route";
 import { setPlan, setUpdateTime } from "~/store/modules/userConfig";
@@ -57,9 +60,41 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { admin } = adminAuthResult;
 
   const formData = await request.formData();
+  const payInfo = JSON.parse(formData.get("payInfo") as string);
   const payForPlan = JSON.parse(formData.get("payForPlan") as string);
   const cancelId = JSON.parse(formData.get("cancelId") as string);
   switch (true) {
+    case !!payInfo:
+      try {
+        const returnUrl = new URL(
+          `https://admin.shopify.com/store/${shop.split(".")[0]}/apps/${process.env.HANDLE}/app/pricing`,
+        );
+        const res = await mutationAppPurchaseOneTimeCreate({
+          shop,
+          accessToken: accessToken as string,
+          name: payInfo.name,
+          price: payInfo.price,
+          returnUrl,
+          test:
+            process.env.NODE_ENV === "development" ||
+            process.env.NODE_ENV === "test",
+        });
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: res?.data,
+        };
+      } catch (error) {
+        console.error("Error payInfo app:", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
+      }
+
     case !!payForPlan:
       try {
         const returnUrl = new URL(
@@ -82,20 +117,32 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             process.env.NODE_ENV === "development" ||
             process.env.NODE_ENV === "test",
         });
+
         return {
-          ...res,
-          appSubscription: {
-            ...res.appSubscription,
-            price: {
-              amount: payForPlan.yearly
-                ? payForPlan.yearlyPrice
-                : payForPlan.monthlyPrice,
-              currencyCode: "USD",
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            ...res,
+            appSubscription: {
+              ...res.appSubscription,
+              price: {
+                amount: payForPlan.yearly
+                  ? payForPlan.yearlyPrice
+                  : payForPlan.monthlyPrice,
+                currencyCode: "USD",
+              },
             },
           },
         };
       } catch (error) {
         console.error("Error payForPlan action:", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
       }
     case !!cancelId:
       try {
@@ -282,6 +329,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
   const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
+  const [isNewModalVisible, setIsNewModalVisible] = useState(false);
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [payForPlanButtonLoading, setPayForPlanButtonLoading] =
     useState<string>("");
@@ -322,6 +370,7 @@ const Index = () => {
       "pricing_plan_yearly_switcher",
     );
   };
+
   useEffect(() => {
     setIsLoading(false);
     fetcher.submit(
@@ -336,21 +385,20 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (payFetcher.data || payForPlanFetcher.data) {
-      if (
-        (payFetcher.data?.data?.data?.appPurchaseOneTimeCreate
-          ?.appPurchaseOneTime &&
-          payFetcher.data?.data?.data?.appPurchaseOneTimeCreate
-            ?.confirmationUrl) ||
-        (payForPlanFetcher.data?.appSubscription &&
-          payForPlanFetcher.data?.confirmationUrl)
-      ) {
+    if (!isNew && isNew !== null) {
+      GetNewModalHasShow();
+    }
+  }, [isNew]);
+
+  useEffect(() => {
+    if (payFetcher.data) {
+      if (payFetcher.data?.success) {
+        console.log(payFetcher.data?.response);
         const order =
-          payFetcher.data?.data?.data?.appPurchaseOneTimeCreate
-            ?.appPurchaseOneTime || payForPlanFetcher.data?.appSubscription;
+          payFetcher.data?.response?.appPurchaseOneTimeCreate
+            ?.appPurchaseOneTime;
         const confirmationUrl =
-          payFetcher.data?.data?.data?.appPurchaseOneTimeCreate
-            ?.confirmationUrl || payForPlanFetcher.data?.confirmationUrl;
+          payFetcher.data?.response?.appPurchaseOneTimeCreate?.confirmationUrl;
         const orderInfo = {
           id: order.id,
           amount: order.price.amount,
@@ -366,16 +414,38 @@ const Index = () => {
           action: "/app",
         });
         open(confirmationUrl, "_top");
-      }
-      if (
-        payFetcher.data?.data?.data?.appPurchaseOneTimeCreate?.userErrors
-          ?.length ||
-        payForPlanFetcher.data?.userErrors?.length
-      ) {
+      } else {
         setBuyButtonLoading(false);
       }
     }
-  }, [payFetcher.data, payForPlanFetcher.data]);
+  }, [payFetcher.data]);
+
+  useEffect(() => {
+    if (payForPlanFetcher.data) {
+      if (payForPlanFetcher.data?.success) {
+        const order = payForPlanFetcher.data?.response?.appSubscription;
+        const confirmationUrl =
+          payForPlanFetcher.data?.response?.confirmationUrl;
+        const orderInfo = {
+          id: order.id,
+          amount: order.price.amount,
+          name: order.name,
+          createdAt: order.createdAt,
+          status: order.status,
+          confirmationUrl: confirmationUrl,
+        };
+        const formData = new FormData();
+        formData.append("orderInfo", JSON.stringify(orderInfo));
+        orderFetcher.submit(formData, {
+          method: "post",
+          action: "/app",
+        });
+        open(confirmationUrl, "_top");
+      } else {
+        setPayForPlanButtonLoading("");
+      }
+    }
+  }, [payForPlanFetcher.data]);
 
   useEffect(() => {
     if (planCancelFetcher.data) {
@@ -786,8 +856,7 @@ const Index = () => {
     const formData = new FormData();
     formData.append("payInfo", JSON.stringify(payInfo));
     payFetcher.submit(formData, {
-      method: "post",
-      action: "/app",
+      method: "POST",
     });
   };
 
@@ -803,6 +872,33 @@ const Index = () => {
         },
         { method: "POST" },
       );
+    }
+  };
+
+  const GetNewModalHasShow = async () => {
+    try {
+      const response = {
+        data: {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: true,
+        },
+      };
+
+      const res = response.data;
+
+      if (res?.success && res?.response) {
+        setIsNewModalVisible(true);
+      }
+    } catch (error) {
+      console.error(`${shop} GetLatestActiveSubscribeId error:`, error);
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: "",
+      };
     }
   };
 
@@ -1445,6 +1541,22 @@ const Index = () => {
           </Form.Item>
         </Form>
       </Modal> */}
+      <Modal
+        centered
+        title={
+          <span style={{ fontSize: "24px", fontWeight: 700 }}>
+            {t("Shared Plan: How to Set Up")}
+          </span>
+        } // 标题加粗
+        open={isModalVisible}
+        onCancel={handleCancel}
+        width={800}
+        style={{ top: 50 }}
+        footer={null} // 移除 OK 和 Cancel 按钮
+        className="custom-modal" // 自定义类名
+      >
+        
+      </Modal>
       <Modal
         centered
         title={

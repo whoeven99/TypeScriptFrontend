@@ -1910,5 +1910,6 @@ export const mutationAppSubscriptionCreate = async ({
     return res;
   } catch (error) {
     console.error("Error mutationAppSubscriptionCreate:", error);
+    return undefined;
   }
 };
