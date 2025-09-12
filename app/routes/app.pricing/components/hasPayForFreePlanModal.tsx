@@ -1,29 +1,65 @@
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { Button, ConfigProvider, Flex, Modal, Space, Typography } from "antd";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 const { Title, Text } = Typography;
 
-interface HasPayForFreePlanModalProps {
-  show: boolean;
-  setShow: (show: boolean) => void;
-}
+interface HasPayForFreePlanModalProps {}
 
-const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({
-  show,
-  setShow,
-}) => {
+const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({}) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { isNew } = useSelector((state: any) => state.userConfig);
+
+  const [content, setContent] = useState<any>({
+    show: false,
+    plan: "",
+  });
+
+  const { shop, plan, isNew } = useSelector((state: any) => state.userConfig);
+
+  useEffect(() => {
+    GetOrderStatus();
+  }, []);
+
+  const GetOrderStatus = async () => {
+    if (!isNew) {
+      const hasShowModal = localStorage.getItem("ciwi-freetrial-hasShow");
+      if (hasShowModal) {
+        return;
+      } else {
+        const hasShowModalResponse = {
+          data: {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response: false,
+          },
+        };
+        const hasShowModalRes = hasShowModalResponse.data;
+        if (hasShowModalRes?.success) {
+          if (!hasShowModalRes?.response) {
+            setContent({
+              show: true,
+              success: true,
+            });
+          }
+        }
+        localStorage.setItem("ciwi-freetrial-hasShow", "1");
+      }
+    }
+  };
 
   return (
     // 添加 Modal 组件
     <Modal
-      open={show}
-      onCancel={() => setShow(false)}
+      open={content.show}
+      onCancel={() =>
+        setContent({
+          ...content,
+          show: false,
+        })
+      }
       footer={null}
       centered
       width={600}
@@ -41,10 +77,21 @@ const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({
             marginBottom: 24,
           }}
         >
-          {t("No Translation Credits Available")}
+          {t(
+            content.success
+              ? "Got a 5-day free trial"
+              : "You haven't started your 5-day free trial yet",
+          )}
         </Title>
         <Text>
-          {t("Activate your free trial to start translating instantly:")}
+          {t(
+            content.success
+              ? "You have received {{ plan }} Plan benefits"
+              : "Start a free trial and get {{ plan }} Plan benefits instantly",
+            {
+              plan: plan,
+            },
+          )}
         </Text>
         <Space
           direction="vertical"
@@ -56,12 +103,27 @@ const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({
           }}
         >
           <Text>{t("✅ 1,000,000 free credits for translation")}</Text>
-          <Text>{t("✅ Automatic translation for store content")}</Text>
-          <Text>{t("✅ Image & alt-text translation")}</Text>
           <Text>{t("✅ IP-based language & currency switching")}</Text>
           <Text>{t("✅ Glossary support for brand consistency")}</Text>
-          <Text>{t("✅ Live human support when needed")}</Text>
         </Space>
+        <Flex justify="center">
+          <Button
+            type="primary"
+            onClick={() =>
+              setContent({
+                ...content,
+                show: false,
+              })
+            }
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginTop: 10,
+            }}
+          >
+            {t("Got it")}
+          </Button>
+        </Flex>
       </Space>
     </Modal>
   );

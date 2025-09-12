@@ -43,6 +43,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { handleContactSupport } from "../app._index/route";
 import { setPlan, setUpdateTime } from "~/store/modules/userConfig";
 import useReport from "scripts/eventReport";
+import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 const { Title, Text, Paragraph } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -329,7 +330,6 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [addCreditsModalOpen, setAddCreditsModalOpen] = useState(false);
   const [cancelPlanWarnModal, setCancelPlanWarnModal] = useState(false);
-  const [isNewModalVisible, setIsNewModalVisible] = useState(false);
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [payForPlanButtonLoading, setPayForPlanButtonLoading] =
     useState<string>("");
@@ -385,15 +385,8 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (!isNew && isNew !== null) {
-      GetNewModalHasShow();
-    }
-  }, [isNew]);
-
-  useEffect(() => {
     if (payFetcher.data) {
       if (payFetcher.data?.success) {
-        console.log(payFetcher.data?.response);
         const order =
           payFetcher.data?.response?.appPurchaseOneTimeCreate
             ?.appPurchaseOneTime;
@@ -875,33 +868,6 @@ const Index = () => {
     }
   };
 
-  const GetNewModalHasShow = async () => {
-    try {
-      const response = {
-        data: {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: true,
-        },
-      };
-
-      const res = response.data;
-
-      if (res?.success && res?.response) {
-        setIsNewModalVisible(true);
-      }
-    } catch (error) {
-      console.error(`${shop} GetLatestActiveSubscribeId error:`, error);
-      return {
-        success: false,
-        errorCode: 10001,
-        errorMsg: "SERVER_ERROR",
-        response: "",
-      };
-    }
-  };
-
   const handlePayForPlan = ({
     plan,
     trialDays,
@@ -1366,6 +1332,7 @@ const Index = () => {
           </Col>
         </Row>
       </Space>
+      <HasPayForFreePlanModal />
       <Modal
         title={t("Buy Credits")}
         open={addCreditsModalOpen}
@@ -1554,9 +1521,7 @@ const Index = () => {
         style={{ top: 50 }}
         footer={null} // 移除 OK 和 Cancel 按钮
         className="custom-modal" // 自定义类名
-      >
-        
-      </Modal>
+      ></Modal>
       <Modal
         centered
         title={
