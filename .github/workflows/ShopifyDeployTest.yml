@@ -46,10 +46,10 @@ jobs:
       with:
         fetch-depth: 0  # 获取所有历史记录以便查找PR提交
 
-    - name: Deploy to Render
+    - name: Deploy to Render Test
       env:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }} # 这是整个render的apikey
-        RENDER_SERVICE_ID: ${{ secrets.RENDER_TEST_SERVICE_ID }} # 这是test service id
+        RENDER_SERVICE_ID: ${{ secrets.RENDER_TEST_SERVICE_ID }} # 这是 test service id
       run: | # action 非0退出码表示失败
         BRANCH=${{ github.event.inputs.branch }}
         if [ -z "$BRANCH" ]; then
