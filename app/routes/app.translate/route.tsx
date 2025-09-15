@@ -384,10 +384,7 @@ const Index = () => {
     if (languageCardWarnText) {
       setLanguageCardWarnText("");
     }
-    // if (e.length > 5) {
-    //   shopify.toast.show(t("You can select up to 5 languages at once."));
-    //   return;
-    // }
+
     setSelectedLanguageCode(e);
   };
 
@@ -570,13 +567,6 @@ const Index = () => {
       } else if (data.response?.every((item: any) => item?.status == 0)) {
         error = 3;
       }
-      // if (data.response.length > 0 && type == "glossary") {
-      //   setGlossaryOpen(!glossaryOpen);
-      // } else if (data.response.length > 0 && type == "brand") {
-      //   setBrandWordOpen(!brandWordOpen);
-      // } else if (data.response.length == 0) {
-      //   shopify.toast.show(t("No available glossary found"));
-      // }
     } else {
       error = 1;
     }
@@ -714,40 +704,6 @@ const Index = () => {
               loadingArray={loadingArray}
               handleAdvanceSettingChange={handleAdvanceSettingChange}
             />
-            {/* <Card
-              title={t("Advance Setting")}
-              extra={
-                <Button type="text" onClick={() => setRotate(!rotate)}>
-                  <CaretDownOutlined rotate={rotate ? 180 : 0} />
-                </Button>
-              }
-              style={{
-                width: "100%",
-                marginBottom: "16px",
-              }}
-              styles={{
-                body: {
-                  padding: rotate ? "24px" : "0",
-                },
-              }}
-            >
-              {rotate && (
-                <Space
-                  direction="vertical"
-                  size="large"
-                  style={{ display: "flex", width: "100%" }}
-                >
-                  <Flex gap={8} align="center" justify="space-between">
-                    <Text>{t("Glossary")}</Text>
-                    <Switch
-                      checked={glossaryOpen}
-                      loading={loadingArray.includes("glossary")}
-                      onClick={() => handleAdvanceSettingChange("glossary")}
-                    />
-                  </Flex>
-                </Space>
-              )}
-            </Card> */}
           </Space>
         ) : (
           <NoLanguageSetCard />
@@ -784,12 +740,10 @@ const Index = () => {
           <Text>{t("This feature is available only with the paid plan.")}</Text>
         </Modal>
       </Space>
-      {/* {showPaymentModal && ( */}
       <PaymentModal
         visible={showPaymentModal}
         setVisible={setShowPaymentModal}
       />
-      {/* )} */}
     </Page>
   );
 };
