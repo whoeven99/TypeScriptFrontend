@@ -41,6 +41,7 @@ import TranslateAffix from "./components/translateAffix";
 import LanguageSelectorCard from "./components/languageSelectorCard";
 import TransalteSettingCard from "./components/transalteSettingCard";
 import ToneSettingCard from "./components/toneSettingCard";
+import AdvanceSettingCard from "./components/advanceSettingCard";
 
 const { Title, Text } = Typography;
 
@@ -706,7 +707,14 @@ const Index = () => {
               translateSettings4={translateSettings4}
               setTranslateSettings4={setTranslateSettings4}
             />
-            <Card
+            <AdvanceSettingCard
+              rotate={rotate}
+              setRotate={setRotate}
+              glossaryOpen={glossaryOpen}
+              loadingArray={loadingArray}
+              handleAdvanceSettingChange={handleAdvanceSettingChange}
+            />
+            {/* <Card
               title={t("Advance Setting")}
               extra={
                 <Button type="text" onClick={() => setRotate(!rotate)}>
@@ -737,18 +745,9 @@ const Index = () => {
                       onClick={() => handleAdvanceSettingChange("glossary")}
                     />
                   </Flex>
-                  {/* <Flex gap={8} align="center" justify="space-between">
-                    <Text>{t("Brand-First Sentence Structure")}</Text>
-
-                    <Switch
-                      checked={brandWordOpen}
-                      loading={loadingArray.includes("brand")}
-                      onClick={() => handleAdvanceSettingChange("brand")}
-                    />
-                  </Flex> */}
                 </Space>
               )}
-            </Card>
+            </Card> */}
           </Space>
         ) : (
           <NoLanguageSetCard />

@@ -50,7 +50,7 @@ const ToneSettingCard = ({
   setTranslateSettings2,
   translateSettings4,
   setTranslateSettings4,
-}: any) => {
+}: ToneSettingCardProps) => {
   if (!toneSettingCardShow) return;
 
   const { t } = useTranslation();
