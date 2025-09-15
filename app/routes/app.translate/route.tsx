@@ -1,16 +1,12 @@
-import { Icon, Page } from "@shopify/polaris";
+import { Page } from "@shopify/polaris";
 import { useEffect, useRef, useState } from "react";
 import {
-  Badge,
   Button,
   Card,
   Checkbox,
   Divider,
   Flex,
   Modal,
-  Popconfirm,
-  Popover,
-  Radio,
   Select,
   Skeleton,
   Space,
@@ -31,16 +27,9 @@ import { setTableData } from "~/store/modules/languageTableData";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import PaymentModal from "~/components/paymentModal";
 import ScrollNotice from "~/components/ScrollNotice";
-import {
-  CaretDownOutlined,
-  ExclamationCircleOutlined,
-  InfoCircleOutlined,
-} from "@ant-design/icons";
+import { CaretDownOutlined } from "@ant-design/icons";
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { PlusIcon } from "@shopify/polaris-icons";
-import defaultStyles from "../styles/defaultStyles.module.css";
-import EasyTranslateIcon from "~/components/easyTranslateIcon";
 import {
   GetGlossaryByShopName,
   GetLanguageList,
@@ -50,6 +39,7 @@ import useReport from "scripts/eventReport";
 import FirstTranslationModal from "~/components/firstTranslationModal";
 import TranslateAffix from "./components/translateAffix";
 import LanguageSelectorCard from "./components/languageSelectorCard";
+import TransalteSettingCard from "./components/transalteSettingCard";
 
 const { Title, Text } = Typography;
 
@@ -58,7 +48,7 @@ interface LanguageSettingType {
   primaryLanguageCode: string;
 }
 
-interface apiKeyConfiguration {
+export interface apiKeyConfiguration {
   apiModel: string;
   apiName: Number;
   apiStatus: boolean;
@@ -203,15 +193,15 @@ const Index = () => {
     }
   };
 
-  function checkApiKeyConfiguration(
+  const checkApiKeyConfiguration = (
     customApikeyData: apiKeyConfiguration[],
     apiName: 0 | 1,
-  ): apiKeyConfiguration | null {
+  ): apiKeyConfiguration | null => {
     const matchedItem = customApikeyData.find(
       (item) => item.apiName === apiName,
     );
     return matchedItem || null;
-  }
+  };
 
   useEffect(() => {
     loadingLanguageFetcher.submit(
@@ -380,37 +370,6 @@ const Index = () => {
     }
   }, [translateFetcher.data]);
 
-  const translateSettings1Options = [
-    {
-      label: t("ChatGPT 4.1"),
-      description: t("translateSettings1.description1"),
-      speed: 2,
-      price: 5,
-      value: "2",
-    },
-    {
-      label: t("DeepL"),
-      description: t("translateSettings1.description2"),
-      speed: 2,
-      price: 4,
-      value: "3",
-    },
-    {
-      label: t("DeepSeek"),
-      description: t("translateSettings1.description3"),
-      speed: 1,
-      price: 2,
-      value: "1",
-    },
-    {
-      label: t("Google Translation"),
-      description: t("translateSettings1.description4"),
-      speed: 1,
-      price: 4,
-      value: "4",
-    },
-  ];
-
   const translateSettings2Options = [
     {
       label: t("General"),
@@ -475,86 +434,6 @@ const Index = () => {
     {
       label: t("Automotive Parts"),
       value: "16",
-    },
-  ];
-
-  const translateSettings3Options = [
-    {
-      label: t("Products"),
-      value: "products",
-    },
-    {
-      label: t("Collections"),
-      value: "collection",
-    },
-    {
-      label: t("Articles"),
-      value: "article",
-    },
-    {
-      label: t("Blog titles"),
-      value: "blog_titles",
-    },
-    {
-      label: t("Pages"),
-      value: "pages",
-    },
-    {
-      label: t("Filters"),
-      value: "filters",
-    },
-    {
-      label: t("Metaobjects"),
-      value: "metaobjects",
-    },
-    {
-      label: t("Store metadata"),
-      value: "metadata",
-    },
-    // {
-    //   label: t("Email"),
-    //   value: "notifications",
-    // },
-    {
-      label: t("Policies"),
-      value: "policies",
-    },
-    {
-      label: t("Navigation"),
-      value: "navigation",
-    },
-    {
-      label: t("Shop"),
-      value: "shop",
-    },
-    {
-      label: t("Theme"),
-      value: "theme",
-    },
-    {
-      label: t("Delivery"),
-      value: "delivery",
-    },
-    {
-      label: t("Shipping"),
-      value: "shipping",
-    },
-    {
-      label: "Handle(URL)",
-      value: "handle",
-    },
-  ];
-
-  const translateSettings5Options = [
-    {
-      label: t("Full Translation"),
-      description: t("translateSettings5.description1"),
-      value: true,
-    },
-    {
-      label: t("Update Translation"),
-      description: t("translateSettings5.description2"),
-      value: false,
     },
   ];
 
@@ -736,15 +615,6 @@ const Index = () => {
     setTranslateSettings2(value);
   };
 
-  const handleTranslateSettings3Change = (value: string[]) => {
-    if (!value.length) {
-      shopify.toast.show(t("Select at least one translation item"));
-      return;
-    } else {
-      setTranslateSettings3(value);
-    }
-  };
-
   const handleAdvanceSettingChange = async (type: "glossary" | "brand") => {
     if (loadingArray.some((item) => ["glossary", "brand"].includes(item)))
       return;
@@ -864,318 +734,19 @@ const Index = () => {
                 {t("translateSettings.title2")}
               </Title>
             </div>
-            <Card
-              style={{
-                width: "100%",
-                minHeight: "222px",
-                marginBottom: "16px",
-              }}
-            >
-              <Space
-                direction="vertical"
-                size="large"
-                style={{ display: "flex" }}
-              >
-                <Space
-                  direction="vertical"
-                  size={16}
-                  style={{ display: "flex" }}
-                >
-                  <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                    {t("translateSettings3.title")}
-                  </Title>
-                  <Checkbox
-                    indeterminate={
-                      translateSettings3.length > 0 &&
-                      translateSettings3.length <
-                        translateSettings3Options.length
-                    }
-                    onChange={(e) =>
-                      setTranslateSettings3(
-                        e.target.checked
-                          ? translateSettings3Options.map((item) => item.value)
-                          : [],
-                      )
-                    }
-                    checked={
-                      translateSettings3.length ==
-                      translateSettings3Options.length
-                    }
-                  >
-                    {t("Check all")}
-                  </Checkbox>
-                  <Divider style={{ margin: "0" }} />
-                  <Checkbox.Group
-                    value={translateSettings3}
-                    options={translateSettings3Options}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(200px, 1fr))",
-                      width: "100%",
-                    }}
-                    onChange={(e) => handleTranslateSettings3Change(e)}
-                  />
-                </Space>
-                <Space
-                  direction="vertical"
-                  size={16}
-                  style={{ display: "flex" }}
-                >
-                  <Space
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                      {t("translateSettings5.title")}
-                    </Title>
-                  </Space>
-                  {/* <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr", // 每行只一列，自动换行
-                      gap: "16px",
-                      width: "100%",
-                    }}
-                  > */}
-                  {translateSettings5Options.map((item, index) => (
-                    <Flex
-                      key={index}
-                      style={{
-                        width: "100%",
-                        marginRight: 0,
-                        padding: "8px 12px",
-                        border: "1px solid #f0f0f0",
-                        borderRadius: "4px",
-                        alignItems: "center",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => setTranslateSettings5(item.value)}
-                    >
-                      <Radio
-                        key={index}
-                        value={item.value}
-                        checked={translateSettings5 === item.value}
-                      />
-
-                      <Text>{item.label}</Text>
-                      {!isMobile && (
-                        <Text type="secondary">: {item.description}</Text>
-                      )}
-                    </Flex>
-                  ))}
-                </Space>
-                <Space
-                  direction="vertical"
-                  size={16}
-                  style={{ display: "flex" }}
-                >
-                  <Space
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                      {t("translateSettings1.title")}
-                    </Title>
-                    {(typeof plan?.id === "number" && plan?.id <= 2) ||
-                    typeof plan?.id === "undefined" ? (
-                      <Flex align="center" gap="middle">
-                        <Popconfirm
-                          title=""
-                          description={t(
-                            "This feature is available only with the paid plan.",
-                          )}
-                          trigger="hover"
-                          showCancel={false}
-                          okText={t("Upgrade")}
-                          onConfirm={() => navigate("/app/pricing")}
-                        >
-                          <InfoCircleOutlined />
-                        </Popconfirm>
-                        <Button
-                          className={defaultStyles.Button_disable}
-                          icon={<Icon source={PlusIcon} />}
-                          onClick={() => handleUsePrivateApi()}
-                        >
-                          {t("Use private api to translate")}
-                        </Button>
-                      </Flex>
-                    ) : (
-                      <Button
-                        icon={<Icon source={PlusIcon} />}
-                        onClick={() => handleUsePrivateApi()}
-                      >
-                        {t("Use private api to translate")}
-                      </Button>
-                    )}
-                  </Space>
-                  {/* <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr", // 每行只一列，自动换行
-                      gap: "16px",
-                      width: "100%",
-                    }}
-                  > */}
-                  {translateSettings1Options.map((item, index) => (
-                    <Flex
-                      key={index}
-                      style={{
-                        width: "100%",
-                        marginRight: 0,
-                        padding: "8px 12px",
-                        border: "1px solid #f0f0f0",
-                        borderRadius: "4px",
-                        alignItems: "center",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => setTranslateSettings1(item.value)}
-                    >
-                      <Radio
-                        key={index}
-                        value={item.value}
-                        checked={translateSettings1 === item.value}
-                      />
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          width: "95%",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: !isMobile ? "65%" : "",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          <Text>{item.label}</Text>
-                          <Popover content={item.description}>
-                            {!isMobile && (
-                              <Text type="secondary">: {item.description}</Text>
-                            )}{" "}
-                          </Popover>
-                        </div>
-                        <Space
-                          style={{
-                            justifyContent: "flex-end",
-                          }}
-                        >
-                          <Text>
-                            {t("Speed")}:{" "}
-                            {item.speed === 2 ? t("Medium") : t("Fast")}
-                          </Text>
-                          {/* <Text>
-                            |
-                          </Text>
-                          <Text>{t("Rates", { price: item.price })}</Text> */}
-                        </Space>
-                      </div>
-                    </Flex>
-                  ))}
-                  {customApikeyData &&
-                    checkApiKeyConfiguration(customApikeyData, 0) && (
-                      <Badge.Ribbon
-                        text={t("Private")}
-                        color="red"
-                        style={{ top: -2, right: -8 }}
-                      >
-                        <div
-                          key={8}
-                          style={{
-                            display: "flex", // 关键
-                            width: "100%",
-                            marginRight: 0,
-                            padding: "8px 12px",
-                            border: "1px solid #f0f0f0",
-                            borderRadius: "4px",
-                            alignItems: "center",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => setTranslateSettings1("8")}
-                        >
-                          <Radio
-                            key={8}
-                            value={"8"}
-                            checked={translateSettings1 === "8"}
-                          />
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              width: "100%",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "50%",
-                              }}
-                            >
-                              <Text>{t("Google Translation")}</Text>
-                            </div>
-                          </div>
-                        </div>
-                      </Badge.Ribbon>
-                    )}
-                  {customApikeyData &&
-                    checkApiKeyConfiguration(customApikeyData, 1) && (
-                      <Badge.Ribbon
-                        text={t("Private")}
-                        color="red"
-                        style={{ top: -2, right: -8 }}
-                      >
-                        <div
-                          key={9}
-                          style={{
-                            display: "flex", // 关键
-                            width: "100%",
-                            marginRight: 0,
-                            padding: "8px 12px",
-                            border: "1px solid #f0f0f0",
-                            borderRadius: "4px",
-                            alignItems: "center",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => setTranslateSettings1("9")}
-                        >
-                          <Radio
-                            key={9}
-                            value={"9"}
-                            checked={translateSettings1 === "9"}
-                          />
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              width: "100%",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "50%",
-                              }}
-                            >
-                              <Text>{`Open AI/ChatGPT(${checkApiKeyConfiguration(customApikeyData, 1)?.apiModel.replace("gpt", "GPT")})`}</Text>
-                            </div>
-                          </div>
-                        </div>
-                      </Badge.Ribbon>
-                    )}
-                  {/* </div> */}
-                </Space>
-              </Space>
-            </Card>
+            <TransalteSettingCard
+              translateSettings1={translateSettings1}
+              setTranslateSettings1={setTranslateSettings1}
+              customApikeyData={customApikeyData}
+              checkApiKeyConfiguration={checkApiKeyConfiguration}
+              translateSettings3={translateSettings3}
+              setTranslateSettings3={setTranslateSettings3}
+              translateSettings5={translateSettings5}
+              setTranslateSettings5={setTranslateSettings5}
+              handleUsePrivateApi={handleUsePrivateApi}
+              isMobile={isMobile}
+              plan={plan}
+            />
             {(translateSettings1 == "1" || translateSettings1 == "2") && (
               <>
                 <div
