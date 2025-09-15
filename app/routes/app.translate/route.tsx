@@ -39,7 +39,6 @@ import {
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { PlusIcon } from "@shopify/polaris-icons";
-import styles from "./styles.module.css";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import EasyTranslateIcon from "~/components/easyTranslateIcon";
 import {
@@ -50,6 +49,7 @@ import {
 import useReport from "scripts/eventReport";
 import FirstTranslationModal from "~/components/firstTranslationModal";
 import TranslateAffix from "./components/translateAffix";
+import LanguageSelectorCard from "./components/languageSelectorCard";
 
 const { Title, Text } = Typography;
 
@@ -833,87 +833,21 @@ const Index = () => {
             </Title>
             <div style={{ paddingLeft: "8px" }}>
               <Text>{t("Your store's default language:")}</Text>{" "}
-              {languageSetting && (
-                <Text strong>
-                  {languageSetting?.primaryLanguage ? (
-                    languageSetting?.primaryLanguage
-                  ) : (
-                    <Skeleton active paragraph={{ rows: 0 }} />
-                  )}
-                </Text>
-              )}
-            </div>
-            <Card
-              ref={languageCardRef}
-              style={{
-                width: "100%",
-              }}
-            >
-              <Checkbox.Group
-                value={selectedLanguageCode}
-                onChange={onChange}
-                style={{ width: "100%" }}
-              >
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(289px, 1fr)",
-                    gap: "16px",
-                    width: "100%",
-                  }}
-                >
-                  {languageData.map((lang) => (
-                    <Checkbox
-                      key={lang.locale}
-                      value={lang.locale}
-                      className={
-                        styles.languageCheckbox +
-                        " " +
-                        (selectedLanguageCode.includes(lang.locale)
-                          ? styles.languageCheckboxChecked
-                          : "")
-                      }
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "8px",
-                          width: "100%",
-                        }}
-                      >
-                        <img
-                          src={lang?.src?.[0] || ""}
-                          alt={lang?.language}
-                          style={{
-                            width: "30px",
-                            height: "auto",
-                            justifyContent: "center",
-                            border: "1px solid #888",
-                            borderRadius: "2px",
-                          }}
-                        />
-                        <span>{lang?.language}</span>
-                        <EasyTranslateIcon status={lang?.status || 0} />
-                      </div>
-                    </Checkbox>
-                  ))}
-                </div>
-              </Checkbox.Group>
-              <Text
-                type="danger"
-                style={{ display: "block", marginTop: "12px" }}
-              >
-                <ExclamationCircleOutlined
-                  style={{
-                    display: languageCardWarnText ? "inline-block" : "none",
-                    marginRight: "4px",
-                  }}
-                />
-                {t(languageCardWarnText)}
+              <Text strong>
+                {languageSetting?.primaryLanguage ? (
+                  languageSetting?.primaryLanguage
+                ) : (
+                  <Skeleton active paragraph={{ rows: 0 }} />
+                )}
               </Text>
-            </Card>
+            </div>
+            <LanguageSelectorCard
+              ref={languageCardRef}
+              selectedLanguageCode={selectedLanguageCode}
+              onChange={onChange}
+              languageData={languageData}
+              languageCardWarnText={languageCardWarnText}
+            />
             <Link to={"/app/language"} style={{ paddingLeft: "8px" }}>
               {t(
                 "Can't find the language you want to translate into? Click here to add a language.",
