@@ -683,13 +683,13 @@ const Index = () => {
       setModel(modalSetting);
       handleTranslate();
     } else {
-      // shopify.toast.show(
-      //   t(
-      //     "The translation task is in progress. Please try translating again later.",
-      //   ),
-      // );
-      setCurrentModal("interfaceIsOccupied");
-      setIsApiKeyModalOpen(true);
+      shopify.toast.show(
+        t(
+          "The translation task is in progress. Please try translating again later.",
+        ),
+      );
+      // setCurrentModal("interfaceIsOccupied");
+      // setIsApiKeyModalOpen(true);
     }
   };
 
