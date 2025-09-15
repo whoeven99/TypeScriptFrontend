@@ -80,18 +80,37 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const Index = () => {
   const { shop, server } = useLoaderData<typeof loader>();
-
+  const dispatch = useDispatch();
+  const languageCardRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const fetcher = useFetcher<any>();
+  const translateFetcher = useFetcher<any>();
+  const loadingLanguageFetcher = useFetcher<any>();
+  const customApiKeyFetcher = useFetcher<any>();
+  //用户语言数据
   const languageData: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
 
+  //用户基础数据
   const { plan, isNew } = useSelector((state: any) => state.userConfig);
+
+  //默认语言数据
   const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
+
+  //选择的语言数据
   const [selectedLanguageCode, setSelectedLanguageCode] = useState<string[]>(
     [],
   );
+
+  //选择的配置数据
+  //模型配置
   const [translateSettings1, setTranslateSettings1] = useState<string>("2");
+  //语言包配置
   const [translateSettings2, setTranslateSettings2] = useState<string[]>(["1"]);
+  //翻译项配置
   const [translateSettings3, setTranslateSettings3] = useState<string[]>([
     "products",
     "collection",
@@ -107,6 +126,7 @@ const Index = () => {
     "delivery",
     "shipping",
   ]);
+  //翻译提示词配置
   const [translateSettings4, setTranslateSettings4] = useState<{
     option1: string;
     option2: string;
@@ -120,39 +140,35 @@ const Index = () => {
     option4: "",
     option5: "",
   });
+  //术语表配置
   const [translateSettings5, setTranslateSettings5] = useState<boolean>(false);
+  //术语表card开关
+  const [rotate, setRotate] = useState<boolean>(false);
+  //术语表switch开关
   const [glossaryOpen, setGlossaryOpen] = useState<boolean>(false);
-  const [brandWordOpen, setBrandWordOpen] = useState<boolean>(false);
-  const [model, setModel] = useState<any>("");
-  // const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  //私有key数据
   const [customApikeyData, setCustomApikeyData] =
     useState<apiKeyConfiguration[]>();
-  const [needPay, setNeedPay] = useState<boolean>(false);
-  const [source, setSource] = useState("");
-  const [target, setTarget] = useState<string[]>([]);
+  //选择语言卡片报错信息
   const [languageCardWarnText, setLanguageCardWarnText] = useState<string>("");
-  const [rotate, setRotate] = useState<boolean>(false);
-  const [loadingArray, setLoadingArray] = useState<string[]>(["loading"]);
-
-  const [isMobile, setIsMobile] = useState<boolean>(false);
+  //暂时不使用,品牌词switch开关
+  const [brandWordOpen, setBrandWordOpen] = useState<boolean>(false);
+  //付费表单开关
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  //免费计划使用私有key表单开关
   const [showWarnModal, setShowWarnModal] = useState(false);
+  //新人表单开关
   const [firstTranslationModalShow, setFirstTranslationModalShow] =
     useState(false);
-
-  const dispatch = useDispatch();
-  const languageCardRef = useRef<HTMLDivElement>(null);
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const fetcher = useFetcher<any>();
-  const translateFetcher = useFetcher<any>();
-  const loadingLanguageFetcher = useFetcher<any>();
-  const customApiKeyFetcher = useFetcher<any>();
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  //移动端配置
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  //加载状态管理
+  const [loadingArray, setLoadingArray] = useState<string[]>(["loading"]);
+  //私有key相关报错管理以及开关管理
   const [currentModal, setCurrentModal] = useState<
-    "limitExceeded" | "outOfRange" | "interfaceIsOccupied"
+    "limitExceeded" | "outOfRange" | "interfaceIsOccupied" | ""
   >("limitExceeded");
+
   const modalTypeObject = {
     limitExceeded: {
       Title: `${t("Insufficient private API quota")}`,
@@ -176,19 +192,15 @@ const Index = () => {
     switch (currentModal) {
       case "limitExceeded":
         navigate("/app/apikeySetting");
-        setIsApiKeyModalOpen(false);
+        setCurrentModal("");
         break;
       case "outOfRange":
-        setIsApiKeyModalOpen(false);
+        setCurrentModal("");
         break;
       case "interfaceIsOccupied":
-        setIsApiKeyModalOpen(false);
+        setCurrentModal("");
         break;
     }
-  };
-
-  const handleApiKeyModalClose = () => {
-    setIsApiKeyModalOpen(false);
   };
 
   function checkApiKeyConfiguration(
@@ -355,17 +367,14 @@ const Index = () => {
           if (isNew) {
             setFirstTranslationModalShow(true);
           } else {
-            setNeedPay(true);
             setShowPaymentModal(true);
           }
         }
         if (translateFetcher?.data?.errorCode === 10014) {
           setCurrentModal("outOfRange");
-          setIsApiKeyModalOpen(true);
         }
         if (translateFetcher?.data?.errorCode === 10015) {
           setCurrentModal("interfaceIsOccupied");
-          setIsApiKeyModalOpen(true);
         }
       }
     }
@@ -642,7 +651,6 @@ const Index = () => {
           if (useData && useData?.usedToken >= useData?.tokenLimit) {
             // 如果私有key的额度超限，弹出提示框
             setCurrentModal("limitExceeded");
-            setIsApiKeyModalOpen(true);
             return false;
           }
         }
@@ -653,7 +661,6 @@ const Index = () => {
           if (useData && useData?.usedToken >= useData?.tokenLimit) {
             // 如果私有key的额度超限，弹出提示框
             setCurrentModal("limitExceeded");
-            setIsApiKeyModalOpen(true);
             return false;
           }
         }
@@ -675,12 +682,6 @@ const Index = () => {
     );
 
     if (selectedItems && !selectedTranslatingItem) {
-      setSource(languageSetting?.primaryLanguageCode);
-      setTarget(selectedLanguageCode);
-      const modalSetting = translateSettings1Options.find(
-        (option) => option.value === translateSettings1,
-      );
-      setModel(modalSetting);
       handleTranslate();
     } else {
       shopify.toast.show(
@@ -1727,17 +1728,17 @@ const Index = () => {
           setShow={setFirstTranslationModalShow}
         />
         <Modal
-          open={isApiKeyModalOpen}
-          onCancel={handleApiKeyModalClose}
-          title={modalTypeObject[currentModal].Title}
+          open={!!currentModal}
+          onCancel={() => setCurrentModal("")}
+          title={currentModal && modalTypeObject[currentModal].Title}
           centered
           footer={
             <Button type="primary" onClick={handleConfigureQuota}>
-              {modalTypeObject[currentModal].Button}
+              {currentModal && modalTypeObject[currentModal].Button}
             </Button>
           }
         >
-          <Text>{modalTypeObject[currentModal].Body}</Text>
+          <Text>{currentModal && modalTypeObject[currentModal].Body}</Text>
         </Modal>
         <Modal
           title={t("Feature Unavailable")}
