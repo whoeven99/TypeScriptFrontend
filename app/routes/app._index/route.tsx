@@ -187,10 +187,17 @@ const Index = () => {
     reportClick("dashboard_footer_help_center");
   };
   const navigateToTranslate = () => {
+    console.log(1);
+
     reportClick("dashboard_translate_button");
+
+    console.log(2);
+
     navigate("/app/translate", {
       state: { from: "/app", selectedLanguageCode: "" },
     });
+
+    
     fetcher.submit(
       {
         log: `${shop} 前往翻译页面, 从主页面点击`,

@@ -1,25 +1,16 @@
-import {
-  Icon,
-  Page,
-  BlockStack,
-  Text as PolarisText,
-  Modal as PolarisModal,
-} from "@shopify/polaris";
+import { Icon, Page } from "@shopify/polaris";
 import { useEffect, useRef, useState } from "react";
 import {
-  Affix,
   Badge,
   Button,
   Card,
   Checkbox,
   Divider,
   Flex,
-  Input,
   Modal,
   Popconfirm,
   Popover,
   Radio,
-  RadioChangeEvent,
   Select,
   Skeleton,
   Space,
@@ -47,7 +38,7 @@ import {
 } from "@ant-design/icons";
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { ArrowLeftIcon, PlusIcon } from "@shopify/polaris-icons";
+import { PlusIcon } from "@shopify/polaris-icons";
 import styles from "./styles.module.css";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import EasyTranslateIcon from "~/components/easyTranslateIcon";
@@ -55,21 +46,12 @@ import {
   GetGlossaryByShopName,
   GetLanguageList,
   GetLanguageLocaleInfo,
-  GetUserWords,
 } from "~/api/JavaServer";
 import useReport from "scripts/eventReport";
 import FirstTranslationModal from "~/components/firstTranslationModal";
+import TranslateAffix from "./components/translateAffix";
 
 const { Title, Text } = Typography;
-interface LanguageDataType {
-  key: number;
-  src: string[];
-  name: string;
-  locale: string;
-  localeName: string;
-  status: number;
-  published: boolean;
-}
 
 interface LanguageSettingType {
   primaryLanguage: string;
@@ -98,7 +80,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const Index = () => {
   const { shop, server } = useLoaderData<typeof loader>();
-  const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
+
+  const languageData: LanguagesDataType[] = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
+
+  const { plan, isNew } = useSelector((state: any) => state.userConfig);
   const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
   const [selectedLanguageCode, setSelectedLanguageCode] = useState<string[]>(
     [],
@@ -137,7 +124,7 @@ const Index = () => {
   const [glossaryOpen, setGlossaryOpen] = useState<boolean>(false);
   const [brandWordOpen, setBrandWordOpen] = useState<boolean>(false);
   const [model, setModel] = useState<any>("");
-  const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
+  // const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [customApikeyData, setCustomApikeyData] =
     useState<apiKeyConfiguration[]>();
@@ -146,7 +133,7 @@ const Index = () => {
   const [target, setTarget] = useState<string[]>([]);
   const [languageCardWarnText, setLanguageCardWarnText] = useState<string>("");
   const [rotate, setRotate] = useState<boolean>(false);
-  const [loadingArray, setLoadingArray] = useState<string[]>([]);
+  const [loadingArray, setLoadingArray] = useState<string[]>(["loading"]);
 
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showWarnModal, setShowWarnModal] = useState(false);
@@ -203,11 +190,6 @@ const Index = () => {
   const handleApiKeyModalClose = () => {
     setIsApiKeyModalOpen(false);
   };
-  const dataSource: LanguagesDataType[] = useSelector(
-    (state: any) => state.languageTableData.rows,
-  );
-
-  const { plan, isNew } = useSelector((state: any) => state.userConfig);
 
   function checkApiKeyConfiguration(
     customApikeyData: apiKeyConfiguration[],
@@ -295,21 +277,24 @@ const Index = () => {
             source: shopPrimaryLanguage[0]?.locale,
           });
 
-          setLanguageData(
-            data.map((item: any) => ({
-              ...item, // 展开原对象
-              ["src"]: languageLocaleInfo?.response
-                ? languageLocaleInfo?.response[item?.locale]?.countries
-                : [], // 插入新字段
-              ["localeName"]: languageLocaleInfo?.response
-                ? languageLocaleInfo?.response[item?.locale]?.Local
-                : "", // 插入新字段
-              ["status"]: languageList?.response
-                ? languageList?.response.find(
-                    (language: any) => language.target === item.locale,
-                  )?.status
-                : 0,
-            })),
+          dispatch(
+            setTableData(
+              data.map((item: any) => ({
+                ...item, // 展开原对象
+                language: item.name,
+                src: languageLocaleInfo?.response
+                  ? languageLocaleInfo?.response[item?.locale]?.countries
+                  : [], // 插入新字段
+                localeName: languageLocaleInfo?.response
+                  ? languageLocaleInfo?.response[item?.locale]?.Local
+                  : "", // 插入新字段
+                status: languageList?.response
+                  ? languageList?.response.find(
+                      (language: any) => language.target === item.locale,
+                    )?.status
+                  : 0,
+              })),
+            ),
           );
 
           fetcher.submit(
@@ -322,7 +307,7 @@ const Index = () => {
             },
           );
 
-          setLoadingLanguage(false);
+          setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
         };
         GetLanguageDataFront();
       }
@@ -385,23 +370,6 @@ const Index = () => {
       }
     }
   }, [translateFetcher.data]);
-
-  useEffect(() => {
-    if (languageData.length) {
-      const data = languageData.map((lang) => ({
-        key: lang.key,
-        language: lang.name,
-        localeName: lang.localeName,
-        locale: lang.locale,
-        primary: false,
-        status: lang.status || 0,
-        auto_update_translation: false,
-        published: lang.published,
-        loading: false,
-      }));
-      dispatch(setTableData(data)); // 只在组件首次渲染时触发
-    }
-  }, [languageData]);
 
   const translateSettings1Options = [
     {
@@ -595,7 +563,7 @@ const Index = () => {
     setSelectedLanguageCode(e);
   };
 
-  const handleNavigate = () => {
+  const handleNavigateBack = () => {
     try {
       // 尝试获取浏览历史长度
       if (location.state.from) {
@@ -655,36 +623,6 @@ const Index = () => {
       );
       return;
     }
-    // if (!checkCanTranslate()) {
-    //   return;
-    // }
-    const selectedItems = dataSource.find((item: LanguagesDataType) =>
-      selectedLanguageCode.includes(item.locale),
-    );
-    const selectedTranslatingItem = dataSource.find(
-      (item: LanguagesDataType) => item.status === 2,
-    );
-
-    if (selectedItems && !selectedTranslatingItem) {
-      setSource(languageSetting?.primaryLanguageCode);
-      setTarget(selectedLanguageCode);
-      const modalSetting = translateSettings1Options.find(
-        (option) => option.value === translateSettings1,
-      );
-      setModel(modalSetting);
-      handleTranslate();
-    } else {
-      // shopify.toast.show(
-      //   t(
-      //     "The translation task is in progress. Please try translating again later.",
-      //   ),
-      // );
-      setCurrentModal("interfaceIsOccupied");
-      setIsApiKeyModalOpen(true);
-    }
-  };
-
-  const checkCanTranslate = () => {
     if (
       (translateSettings1 === "8" || translateSettings1 === "9") &&
       selectedLanguageCode.length >= 2
@@ -694,7 +632,7 @@ const Index = () => {
           "Select a private key for translation. Only one target language can be selected.",
         ),
       );
-      return false;
+      return;
     }
     switch (translateSettings1) {
       case "8":
@@ -726,12 +664,36 @@ const Index = () => {
         );
         break;
     }
-    return true;
-  };
-  const handleTranslate = async () => {
-    if (!checkCanTranslate()) {
-      return;
+    // if (!checkCanTranslate()) {
+    //   return;
+    // }
+    const selectedItems = languageData.find((item: LanguagesDataType) =>
+      selectedLanguageCode.includes(item.locale),
+    );
+    const selectedTranslatingItem = languageData.find(
+      (item: LanguagesDataType) => item.status === 2,
+    );
+
+    if (selectedItems && !selectedTranslatingItem) {
+      setSource(languageSetting?.primaryLanguageCode);
+      setTarget(selectedLanguageCode);
+      const modalSetting = translateSettings1Options.find(
+        (option) => option.value === translateSettings1,
+      );
+      setModel(modalSetting);
+      handleTranslate();
+    } else {
+      // shopify.toast.show(
+      //   t(
+      //     "The translation task is in progress. Please try translating again later.",
+      //   ),
+      // );
+      setCurrentModal("interfaceIsOccupied");
+      setIsApiKeyModalOpen(true);
     }
+  };
+
+  const handleTranslate = async () => {
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
     translateFetcher.submit(
       {
@@ -843,62 +805,18 @@ const Index = () => {
           display: "flex",
         }}
       >
-        <Affix offsetTop={0}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              zIndex: 10,
-              backgroundColor: "rgb(241, 241, 241)",
-              padding: "16px 0",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Button
-                type="text"
-                variant="outlined"
-                onClick={handleNavigate}
-                style={{ padding: "4px" }}
-              >
-                <Icon source={ArrowLeftIcon} tone="base" />
-              </Button>
-              <Title
-                style={{
-                  margin: "0",
-                  fontSize: "1.25rem",
-                  fontWeight: 700,
-                }}
-              >
-                {t("Translate Store")}
-              </Title>
-            </div>
-            {loadingLanguage ? (
-              <Skeleton.Button active />
-            ) : (
-              <Button
-                type="primary"
-                onClick={() => checkIfNeedPay()}
-                style={{
-                  visibility: languageData.length != 0 ? "visible" : "hidden",
-                }}
-                loading={translateFetcher.state === "submitting"}
-              >
-                {selectedLanguageCode.length > 0 &&
-                selectedLanguageCode.every(
-                  (item) =>
-                    languageData.find((lang) => lang.locale === item)
-                      ?.status === 1,
-                )
-                  ? t("Update")
-                  : t("Translate")}
-              </Button>
-            )}
-          </div>
-        </Affix>
+        <TranslateAffix
+          loading={loadingArray.includes("loading")}
+          languageData={languageData}
+          selectedLanguageCode={selectedLanguageCode}
+          translateFetcher={translateFetcher}
+          handleNavigateBack={handleNavigateBack}
+          checkIfNeedPay={checkIfNeedPay}
+        />
+
         <Divider style={{ margin: "0" }} />
 
-        {loadingLanguage ? (
+        {loadingArray.includes("loading") ? (
           <Skeleton.Button active style={{ height: 600 }} block />
         ) : languageData.length != 0 ? (
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
@@ -965,8 +883,8 @@ const Index = () => {
                         }}
                       >
                         <img
-                          src={lang?.src[0]}
-                          alt={lang?.name}
+                          src={lang?.src?.[0] || ""}
+                          alt={lang?.language}
                           style={{
                             width: "30px",
                             height: "auto",
@@ -975,8 +893,8 @@ const Index = () => {
                             borderRadius: "2px",
                           }}
                         />
-                        <span>{lang?.name}</span>
-                        <EasyTranslateIcon status={lang?.status} />
+                        <span>{lang?.language}</span>
+                        <EasyTranslateIcon status={lang?.status || 0} />
                       </div>
                     </Checkbox>
                   ))}
@@ -1836,20 +1754,12 @@ const Index = () => {
           <Text>{t("This feature is available only with the paid plan.")}</Text>
         </Modal>
       </Space>
-      {showPaymentModal && (
-        <PaymentModal
-          shop={shop}
-          server={server as string}
-          visible={showPaymentModal}
-          setVisible={setShowPaymentModal}
-          source={source}
-          target={target}
-          model={model}
-          translateSettings3={translateSettings3 || []}
-          handleTranslate={handleTranslate}
-          needPay={needPay}
-        />
-      )}
+      {/* {showPaymentModal && ( */}
+      <PaymentModal
+        visible={showPaymentModal}
+        setVisible={setShowPaymentModal}
+      />
+      {/* )} */}
     </Page>
   );
 };
