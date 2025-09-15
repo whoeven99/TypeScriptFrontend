@@ -167,7 +167,7 @@ const Index = () => {
   //私有key相关报错管理以及开关管理
   const [currentModal, setCurrentModal] = useState<
     "limitExceeded" | "outOfRange" | "interfaceIsOccupied" | ""
-  >("limitExceeded");
+  >("");
 
   const modalTypeObject = {
     limitExceeded: {
