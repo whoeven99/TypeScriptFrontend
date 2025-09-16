@@ -671,7 +671,7 @@ const Index = () => {
           </Link>
           {t("by")}
           <Link
-            to={" https://ciwi.ai"}
+            to={"https://ciwi.ai"}
             target="_blank"
             style={{ margin: "0 5px" }}
           >
