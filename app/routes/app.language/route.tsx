@@ -70,6 +70,7 @@ export interface AllLanguagesType {
 export interface LanguagesDataType {
   key: number;
   language: string;
+  src?: string[];
   localeName?: string;
   locale: string;
   primary: boolean;

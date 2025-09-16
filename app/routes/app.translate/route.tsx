@@ -1,25 +1,12 @@
+import { Page } from "@shopify/polaris";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Icon,
-  Page,
-  BlockStack,
-  Text as PolarisText,
-  Modal as PolarisModal,
-} from "@shopify/polaris";
-import { useEffect, useRef, useState } from "react";
-import {
-  Affix,
-  Badge,
   Button,
   Card,
   Checkbox,
   Divider,
   Flex,
-  Input,
   Modal,
-  Popconfirm,
-  Popover,
-  Radio,
-  RadioChangeEvent,
   Select,
   Skeleton,
   Space,
@@ -40,43 +27,30 @@ import { setTableData } from "~/store/modules/languageTableData";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import PaymentModal from "~/components/paymentModal";
 import ScrollNotice from "~/components/ScrollNotice";
-import {
-  CaretDownOutlined,
-  ExclamationCircleOutlined,
-  InfoCircleOutlined,
-} from "@ant-design/icons";
+import { CaretDownOutlined } from "@ant-design/icons";
 import { authenticate } from "~/shopify.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { ArrowLeftIcon, PlusIcon } from "@shopify/polaris-icons";
-import styles from "./styles.module.css";
-import defaultStyles from "../styles/defaultStyles.module.css";
-import EasyTranslateIcon from "~/components/easyTranslateIcon";
 import {
   GetGlossaryByShopName,
   GetLanguageList,
   GetLanguageLocaleInfo,
-  GetUserWords,
 } from "~/api/JavaServer";
 import useReport from "scripts/eventReport";
 import FirstTranslationModal from "~/components/firstTranslationModal";
+import TranslateAffix from "./components/translateAffix";
+import LanguageSelectorCard from "./components/languageSelectorCard";
+import TransalteSettingCard from "./components/transalteSettingCard";
+import ToneSettingCard from "./components/toneSettingCard";
+import AdvanceSettingCard from "./components/advanceSettingCard";
 
 const { Title, Text } = Typography;
-interface LanguageDataType {
-  key: number;
-  src: string[];
-  name: string;
-  locale: string;
-  localeName: string;
-  status: number;
-  published: boolean;
-}
 
 interface LanguageSettingType {
   primaryLanguage: string;
   primaryLanguageCode: string;
 }
 
-interface apiKeyConfiguration {
+export interface apiKeyConfiguration {
   apiModel: string;
   apiName: Number;
   apiStatus: boolean;
@@ -98,13 +72,37 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const Index = () => {
   const { shop, server } = useLoaderData<typeof loader>();
-  const [languageData, setLanguageData] = useState<LanguageDataType[]>([]);
+  const dispatch = useDispatch();
+  const languageCardRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const fetcher = useFetcher<any>();
+  const translateFetcher = useFetcher<any>();
+  const loadingLanguageFetcher = useFetcher<any>();
+  const customApiKeyFetcher = useFetcher<any>();
+  //用户语言数据
+  const languageData: LanguagesDataType[] = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
+
+  //用户基础数据
+  const { plan, isNew } = useSelector((state: any) => state.userConfig);
+
+  //默认语言数据
   const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
+
+  //选择的语言数据
   const [selectedLanguageCode, setSelectedLanguageCode] = useState<string[]>(
     [],
   );
+
+  //选择的配置数据
+  //模型配置
   const [translateSettings1, setTranslateSettings1] = useState<string>("2");
+  //语言包配置
   const [translateSettings2, setTranslateSettings2] = useState<string[]>(["1"]);
+  //翻译项配置
   const [translateSettings3, setTranslateSettings3] = useState<string[]>([
     "products",
     "collection",
@@ -120,6 +118,7 @@ const Index = () => {
     "delivery",
     "shipping",
   ]);
+  //翻译提示词配置
   const [translateSettings4, setTranslateSettings4] = useState<{
     option1: string;
     option2: string;
@@ -133,39 +132,35 @@ const Index = () => {
     option4: "",
     option5: "",
   });
+  //术语表配置
   const [translateSettings5, setTranslateSettings5] = useState<boolean>(false);
+  //术语表card开关
+  const [rotate, setRotate] = useState<boolean>(false);
+  //术语表switch开关
   const [glossaryOpen, setGlossaryOpen] = useState<boolean>(false);
-  const [brandWordOpen, setBrandWordOpen] = useState<boolean>(false);
-  const [model, setModel] = useState<any>("");
-  const [loadingLanguage, setLoadingLanguage] = useState<boolean>(true);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  //私有key数据
   const [customApikeyData, setCustomApikeyData] =
     useState<apiKeyConfiguration[]>();
-  const [needPay, setNeedPay] = useState<boolean>(false);
-  const [source, setSource] = useState("");
-  const [target, setTarget] = useState<string[]>([]);
+  //选择语言卡片报错信息
   const [languageCardWarnText, setLanguageCardWarnText] = useState<string>("");
-  const [rotate, setRotate] = useState<boolean>(false);
-  const [loadingArray, setLoadingArray] = useState<string[]>([]);
-
-  const [isMobile, setIsMobile] = useState<boolean>(false);
+  //暂时不使用,品牌词switch开关
+  const [brandWordOpen, setBrandWordOpen] = useState<boolean>(false);
+  //付费表单开关
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  //免费计划使用私有key表单开关
   const [showWarnModal, setShowWarnModal] = useState(false);
+  //新人表单开关
   const [firstTranslationModalShow, setFirstTranslationModalShow] =
     useState(false);
-
-  const dispatch = useDispatch();
-  const languageCardRef = useRef<HTMLDivElement>(null);
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const fetcher = useFetcher<any>();
-  const translateFetcher = useFetcher<any>();
-  const loadingLanguageFetcher = useFetcher<any>();
-  const customApiKeyFetcher = useFetcher<any>();
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  //移动端配置
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  //加载状态管理
+  const [loadingArray, setLoadingArray] = useState<string[]>(["loading"]);
+  //私有key相关报错管理以及开关管理
   const [currentModal, setCurrentModal] = useState<
-    "limitExceeded" | "outOfRange" | "interfaceIsOccupied"
-  >("limitExceeded");
+    "limitExceeded" | "outOfRange" | "interfaceIsOccupied" | ""
+  >("");
+
   const modalTypeObject = {
     limitExceeded: {
       Title: `${t("Insufficient private API quota")}`,
@@ -183,41 +178,37 @@ const Index = () => {
       Button: `${t("OK")}`,
     },
   };
+
+  const toneSettingCardShow = useMemo(() => {
+    return translateSettings1 == "1" || translateSettings1 == "2";
+  }, [translateSettings1]);
+
   const { report, trackExposure, fetcherState } = useReport();
 
   const handleConfigureQuota = () => {
     switch (currentModal) {
       case "limitExceeded":
         navigate("/app/apikeySetting");
-        setIsApiKeyModalOpen(false);
+        setCurrentModal("");
         break;
       case "outOfRange":
-        setIsApiKeyModalOpen(false);
+        setCurrentModal("");
         break;
       case "interfaceIsOccupied":
-        setIsApiKeyModalOpen(false);
+        setCurrentModal("");
         break;
     }
   };
 
-  const handleApiKeyModalClose = () => {
-    setIsApiKeyModalOpen(false);
-  };
-  const dataSource: LanguagesDataType[] = useSelector(
-    (state: any) => state.languageTableData.rows,
-  );
-
-  const { plan, isNew } = useSelector((state: any) => state.userConfig);
-
-  function checkApiKeyConfiguration(
+  const checkApiKeyConfiguration = (
     customApikeyData: apiKeyConfiguration[],
     apiName: 0 | 1,
-  ): apiKeyConfiguration | null {
+  ): apiKeyConfiguration | null => {
     const matchedItem = customApikeyData.find(
       (item) => item.apiName === apiName,
     );
     return matchedItem || null;
-  }
+  };
 
   useEffect(() => {
     loadingLanguageFetcher.submit(
@@ -295,21 +286,24 @@ const Index = () => {
             source: shopPrimaryLanguage[0]?.locale,
           });
 
-          setLanguageData(
-            data.map((item: any) => ({
-              ...item, // 展开原对象
-              ["src"]: languageLocaleInfo?.response
-                ? languageLocaleInfo?.response[item?.locale]?.countries
-                : [], // 插入新字段
-              ["localeName"]: languageLocaleInfo?.response
-                ? languageLocaleInfo?.response[item?.locale]?.Local
-                : "", // 插入新字段
-              ["status"]: languageList?.response
-                ? languageList?.response.find(
-                    (language: any) => language.target === item.locale,
-                  )?.status
-                : 0,
-            })),
+          dispatch(
+            setTableData(
+              data.map((item: any) => ({
+                ...item, // 展开原对象
+                language: item.name,
+                src: languageLocaleInfo?.response
+                  ? languageLocaleInfo?.response[item?.locale]?.countries
+                  : [], // 插入新字段
+                localeName: languageLocaleInfo?.response
+                  ? languageLocaleInfo?.response[item?.locale]?.Local
+                  : "", // 插入新字段
+                status: languageList?.response
+                  ? languageList?.response.find(
+                      (language: any) => language.target === item.locale,
+                    )?.status
+                  : 0,
+              })),
+            ),
           );
 
           fetcher.submit(
@@ -322,7 +316,7 @@ const Index = () => {
             },
           );
 
-          setLoadingLanguage(false);
+          setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
         };
         GetLanguageDataFront();
       }
@@ -370,216 +364,18 @@ const Index = () => {
           if (isNew) {
             setFirstTranslationModalShow(true);
           } else {
-            setNeedPay(true);
             setShowPaymentModal(true);
           }
         }
         if (translateFetcher?.data?.errorCode === 10014) {
           setCurrentModal("outOfRange");
-          setIsApiKeyModalOpen(true);
         }
         if (translateFetcher?.data?.errorCode === 10015) {
           setCurrentModal("interfaceIsOccupied");
-          setIsApiKeyModalOpen(true);
         }
       }
     }
   }, [translateFetcher.data]);
-
-  useEffect(() => {
-    if (languageData.length) {
-      const data = languageData.map((lang) => ({
-        key: lang.key,
-        language: lang.name,
-        localeName: lang.localeName,
-        locale: lang.locale,
-        primary: false,
-        status: lang.status || 0,
-        auto_update_translation: false,
-        published: lang.published,
-        loading: false,
-      }));
-      dispatch(setTableData(data)); // 只在组件首次渲染时触发
-    }
-  }, [languageData]);
-
-  const translateSettings1Options = [
-    {
-      label: t("ChatGPT 4.1"),
-      description: t("translateSettings1.description1"),
-      speed: 2,
-      price: 5,
-      value: "2",
-    },
-    {
-      label: t("DeepL"),
-      description: t("translateSettings1.description2"),
-      speed: 2,
-      price: 4,
-      value: "3",
-    },
-    {
-      label: t("DeepSeek"),
-      description: t("translateSettings1.description3"),
-      speed: 1,
-      price: 2,
-      value: "1",
-    },
-    {
-      label: t("Google Translation"),
-      description: t("translateSettings1.description4"),
-      speed: 1,
-      price: 4,
-      value: "4",
-    },
-  ];
-
-  const translateSettings2Options = [
-    {
-      label: t("General"),
-      value: "1",
-    },
-    {
-      label: t("Fashion & Apparel"),
-      value: "2",
-    },
-    {
-      label: t("Electronics & Technology"),
-      value: "3",
-    },
-    {
-      label: t("Home Goods & Daily Essentials"),
-      value: "4",
-    },
-    {
-      label: t("Pet Supplies"),
-      value: "5",
-    },
-    {
-      label: t("Beauty & Personal Care"),
-      value: "6",
-    },
-    {
-      label: t("Furniture & Gardening"),
-      value: "7",
-    },
-    {
-      label: t("Hardware & Tools"),
-      value: "8",
-    },
-    {
-      label: t("Baby & Toddler Products"),
-      value: "9",
-    },
-    {
-      label: t("Toys & Games"),
-      value: "10",
-    },
-    {
-      label: t("Luggage & Accessories"),
-      value: "11",
-    },
-    {
-      label: t("Health & Nutrition"),
-      value: "12",
-    },
-    {
-      label: t("Outdoor & Sports"),
-      value: "13",
-    },
-    {
-      label: t("Crafts & Small Goods"),
-      value: "14",
-    },
-    {
-      label: t("Home Appliances"),
-      value: "15",
-    },
-    {
-      label: t("Automotive Parts"),
-      value: "16",
-    },
-  ];
-
-  const translateSettings3Options = [
-    {
-      label: t("Products"),
-      value: "products",
-    },
-    {
-      label: t("Collections"),
-      value: "collection",
-    },
-    {
-      label: t("Articles"),
-      value: "article",
-    },
-    {
-      label: t("Blog titles"),
-      value: "blog_titles",
-    },
-    {
-      label: t("Pages"),
-      value: "pages",
-    },
-    {
-      label: t("Filters"),
-      value: "filters",
-    },
-    {
-      label: t("Metaobjects"),
-      value: "metaobjects",
-    },
-    {
-      label: t("Store metadata"),
-      value: "metadata",
-    },
-    // {
-    //   label: t("Email"),
-    //   value: "notifications",
-    // },
-    {
-      label: t("Policies"),
-      value: "policies",
-    },
-    {
-      label: t("Navigation"),
-      value: "navigation",
-    },
-    {
-      label: t("Shop"),
-      value: "shop",
-    },
-    {
-      label: t("Theme"),
-      value: "theme",
-    },
-    {
-      label: t("Delivery"),
-      value: "delivery",
-    },
-    {
-      label: t("Shipping"),
-      value: "shipping",
-    },
-    {
-      label: "Handle(URL)",
-      value: "handle",
-    },
-  ];
-
-  const translateSettings5Options = [
-    {
-      label: t("Full Translation"),
-      description: t("translateSettings5.description1"),
-      value: true,
-    },
-    {
-      label: t("Update Translation"),
-      description: t("translateSettings5.description2"),
-      value: false,
-    },
-  ];
 
   const onChange = (e: string[]) => {
     if (languageCardRef.current) {
@@ -588,14 +384,11 @@ const Index = () => {
     if (languageCardWarnText) {
       setLanguageCardWarnText("");
     }
-    // if (e.length > 5) {
-    //   shopify.toast.show(t("You can select up to 5 languages at once."));
-    //   return;
-    // }
+
     setSelectedLanguageCode(e);
   };
 
-  const handleNavigate = () => {
+  const handleNavigateBack = () => {
     try {
       // 尝试获取浏览历史长度
       if (location.state.from) {
@@ -655,36 +448,6 @@ const Index = () => {
       );
       return;
     }
-    // if (!checkCanTranslate()) {
-    //   return;
-    // }
-    const selectedItems = dataSource.find((item: LanguagesDataType) =>
-      selectedLanguageCode.includes(item.locale),
-    );
-    const selectedTranslatingItem = dataSource.find(
-      (item: LanguagesDataType) => item.status === 2,
-    );
-
-    if (selectedItems && !selectedTranslatingItem) {
-      setSource(languageSetting?.primaryLanguageCode);
-      setTarget(selectedLanguageCode);
-      const modalSetting = translateSettings1Options.find(
-        (option) => option.value === translateSettings1,
-      );
-      setModel(modalSetting);
-      handleTranslate();
-    } else {
-      // shopify.toast.show(
-      //   t(
-      //     "The translation task is in progress. Please try translating again later.",
-      //   ),
-      // );
-      setCurrentModal("interfaceIsOccupied");
-      setIsApiKeyModalOpen(true);
-    }
-  };
-
-  const checkCanTranslate = () => {
     if (
       (translateSettings1 === "8" || translateSettings1 === "9") &&
       selectedLanguageCode.length >= 2
@@ -694,7 +457,7 @@ const Index = () => {
           "Select a private key for translation. Only one target language can be selected.",
         ),
       );
-      return false;
+      return;
     }
     switch (translateSettings1) {
       case "8":
@@ -704,7 +467,6 @@ const Index = () => {
           if (useData && useData?.usedToken >= useData?.tokenLimit) {
             // 如果私有key的额度超限，弹出提示框
             setCurrentModal("limitExceeded");
-            setIsApiKeyModalOpen(true);
             return false;
           }
         }
@@ -715,7 +477,6 @@ const Index = () => {
           if (useData && useData?.usedToken >= useData?.tokenLimit) {
             // 如果私有key的额度超限，弹出提示框
             setCurrentModal("limitExceeded");
-            setIsApiKeyModalOpen(true);
             return false;
           }
         }
@@ -726,12 +487,30 @@ const Index = () => {
         );
         break;
     }
-    return true;
-  };
-  const handleTranslate = async () => {
-    if (!checkCanTranslate()) {
-      return;
+    // if (!checkCanTranslate()) {
+    //   return;
+    // }
+    const selectedItems = languageData.find((item: LanguagesDataType) =>
+      selectedLanguageCode.includes(item.locale),
+    );
+    const selectedTranslatingItem = languageData.find(
+      (item: LanguagesDataType) => item.status === 2,
+    );
+
+    if (selectedItems && !selectedTranslatingItem) {
+      handleTranslate();
+    } else {
+      shopify.toast.show(
+        t(
+          "The translation task is in progress. Please try translating again later.",
+        ),
+      );
+      // setCurrentModal("interfaceIsOccupied");
+      // setIsApiKeyModalOpen(true);
     }
+  };
+
+  const handleTranslate = async () => {
     const customKey = `${translateSettings4.option2 && `in the style of ${translateSettings4.option2}, `}${translateSettings4.option1 && `with a ${translateSettings4.option1} tone, `}${translateSettings4.option4 && `with a ${translateSettings4.option4} format, `}${translateSettings4.option3 && `with a ${translateSettings4.option3} focus. `}`;
     translateFetcher.submit(
       {
@@ -769,19 +548,6 @@ const Index = () => {
     );
   };
 
-  const handleTranslateSettings2Change = (value: string[]) => {
-    setTranslateSettings2(value);
-  };
-
-  const handleTranslateSettings3Change = (value: string[]) => {
-    if (!value.length) {
-      shopify.toast.show(t("Select at least one translation item"));
-      return;
-    } else {
-      setTranslateSettings3(value);
-    }
-  };
-
   const handleAdvanceSettingChange = async (type: "glossary" | "brand") => {
     if (loadingArray.some((item) => ["glossary", "brand"].includes(item)))
       return;
@@ -801,13 +567,6 @@ const Index = () => {
       } else if (data.response?.every((item: any) => item?.status == 0)) {
         error = 3;
       }
-      // if (data.response.length > 0 && type == "glossary") {
-      //   setGlossaryOpen(!glossaryOpen);
-      // } else if (data.response.length > 0 && type == "brand") {
-      //   setBrandWordOpen(!brandWordOpen);
-      // } else if (data.response.length == 0) {
-      //   shopify.toast.show(t("No available glossary found"));
-      // }
     } else {
       error = 1;
     }
@@ -843,62 +602,18 @@ const Index = () => {
           display: "flex",
         }}
       >
-        <Affix offsetTop={0}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              zIndex: 10,
-              backgroundColor: "rgb(241, 241, 241)",
-              padding: "16px 0",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Button
-                type="text"
-                variant="outlined"
-                onClick={handleNavigate}
-                style={{ padding: "4px" }}
-              >
-                <Icon source={ArrowLeftIcon} tone="base" />
-              </Button>
-              <Title
-                style={{
-                  margin: "0",
-                  fontSize: "1.25rem",
-                  fontWeight: 700,
-                }}
-              >
-                {t("Translate Store")}
-              </Title>
-            </div>
-            {loadingLanguage ? (
-              <Skeleton.Button active />
-            ) : (
-              <Button
-                type="primary"
-                onClick={() => checkIfNeedPay()}
-                style={{
-                  visibility: languageData.length != 0 ? "visible" : "hidden",
-                }}
-                loading={translateFetcher.state === "submitting"}
-              >
-                {selectedLanguageCode.length > 0 &&
-                selectedLanguageCode.every(
-                  (item) =>
-                    languageData.find((lang) => lang.locale === item)
-                      ?.status === 1,
-                )
-                  ? t("Update")
-                  : t("Translate")}
-              </Button>
-            )}
-          </div>
-        </Affix>
+        <TranslateAffix
+          loading={loadingArray.includes("loading")}
+          languageData={languageData}
+          selectedLanguageCode={selectedLanguageCode}
+          translateFetcher={translateFetcher}
+          handleNavigateBack={handleNavigateBack}
+          checkIfNeedPay={checkIfNeedPay}
+        />
+
         <Divider style={{ margin: "0" }} />
 
-        {loadingLanguage ? (
+        {loadingArray.includes("loading") ? (
           <Skeleton.Button active style={{ height: 600 }} block />
         ) : languageData.length != 0 ? (
           <Space direction="vertical" size="middle" style={{ display: "flex" }}>
@@ -914,87 +629,21 @@ const Index = () => {
             </Title>
             <div style={{ paddingLeft: "8px" }}>
               <Text>{t("Your store's default language:")}</Text>{" "}
-              {languageSetting && (
-                <Text strong>
-                  {languageSetting?.primaryLanguage ? (
-                    languageSetting?.primaryLanguage
-                  ) : (
-                    <Skeleton active paragraph={{ rows: 0 }} />
-                  )}
-                </Text>
-              )}
-            </div>
-            <Card
-              ref={languageCardRef}
-              style={{
-                width: "100%",
-              }}
-            >
-              <Checkbox.Group
-                value={selectedLanguageCode}
-                onChange={onChange}
-                style={{ width: "100%" }}
-              >
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(289px, 1fr)",
-                    gap: "16px",
-                    width: "100%",
-                  }}
-                >
-                  {languageData.map((lang) => (
-                    <Checkbox
-                      key={lang.locale}
-                      value={lang.locale}
-                      className={
-                        styles.languageCheckbox +
-                        " " +
-                        (selectedLanguageCode.includes(lang.locale)
-                          ? styles.languageCheckboxChecked
-                          : "")
-                      }
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "8px",
-                          width: "100%",
-                        }}
-                      >
-                        <img
-                          src={lang?.src[0]}
-                          alt={lang?.name}
-                          style={{
-                            width: "30px",
-                            height: "auto",
-                            justifyContent: "center",
-                            border: "1px solid #888",
-                            borderRadius: "2px",
-                          }}
-                        />
-                        <span>{lang?.name}</span>
-                        <EasyTranslateIcon status={lang?.status} />
-                      </div>
-                    </Checkbox>
-                  ))}
-                </div>
-              </Checkbox.Group>
-              <Text
-                type="danger"
-                style={{ display: "block", marginTop: "12px" }}
-              >
-                <ExclamationCircleOutlined
-                  style={{
-                    display: languageCardWarnText ? "inline-block" : "none",
-                    marginRight: "4px",
-                  }}
-                />
-                {t(languageCardWarnText)}
+              <Text strong>
+                {languageSetting?.primaryLanguage ? (
+                  languageSetting?.primaryLanguage
+                ) : (
+                  <Skeleton active paragraph={{ rows: 0 }} />
+                )}
               </Text>
-            </Card>
+            </div>
+            <LanguageSelectorCard
+              ref={languageCardRef}
+              selectedLanguageCode={selectedLanguageCode}
+              onChange={onChange}
+              languageData={languageData}
+              languageCardWarnText={languageCardWarnText}
+            />
             <Link to={"/app/language"} style={{ paddingLeft: "8px" }}>
               {t(
                 "Can't find the language you want to translate into? Click here to add a language.",
@@ -1011,795 +660,50 @@ const Index = () => {
                 {t("translateSettings.title2")}
               </Title>
             </div>
-            <Card
-              style={{
-                width: "100%",
-                minHeight: "222px",
-                marginBottom: "16px",
-              }}
-            >
-              <Space
-                direction="vertical"
-                size="large"
-                style={{ display: "flex" }}
+            <TransalteSettingCard
+              translateSettings1={translateSettings1}
+              setTranslateSettings1={setTranslateSettings1}
+              customApikeyData={customApikeyData}
+              checkApiKeyConfiguration={checkApiKeyConfiguration}
+              translateSettings3={translateSettings3}
+              setTranslateSettings3={setTranslateSettings3}
+              translateSettings5={translateSettings5}
+              setTranslateSettings5={setTranslateSettings5}
+              handleUsePrivateApi={handleUsePrivateApi}
+              isMobile={isMobile}
+              plan={plan}
+            />
+            {toneSettingCardShow && (
+              <div
+                style={{
+                  paddingLeft: "8px",
+                }}
               >
-                <Space
-                  direction="vertical"
-                  size={16}
-                  style={{ display: "flex" }}
-                >
-                  <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                    {t("translateSettings3.title")}
-                  </Title>
-                  <Checkbox
-                    indeterminate={
-                      translateSettings3.length > 0 &&
-                      translateSettings3.length <
-                        translateSettings3Options.length
-                    }
-                    onChange={(e) =>
-                      setTranslateSettings3(
-                        e.target.checked
-                          ? translateSettings3Options.map((item) => item.value)
-                          : [],
-                      )
-                    }
-                    checked={
-                      translateSettings3.length ==
-                      translateSettings3Options.length
-                    }
-                  >
-                    {t("Check all")}
-                  </Checkbox>
-                  <Divider style={{ margin: "0" }} />
-                  <Checkbox.Group
-                    value={translateSettings3}
-                    options={translateSettings3Options}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(200px, 1fr))",
-                      width: "100%",
-                    }}
-                    onChange={(e) => handleTranslateSettings3Change(e)}
-                  />
-                </Space>
-                <Space
-                  direction="vertical"
-                  size={16}
-                  style={{ display: "flex" }}
-                >
-                  <Space
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                      {t("translateSettings5.title")}
-                    </Title>
-                  </Space>
-                  {/* <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr", // 每行只一列，自动换行
-                      gap: "16px",
-                      width: "100%",
-                    }}
-                  > */}
-                  {translateSettings5Options.map((item, index) => (
-                    <Flex
-                      key={index}
-                      style={{
-                        width: "100%",
-                        marginRight: 0,
-                        padding: "8px 12px",
-                        border: "1px solid #f0f0f0",
-                        borderRadius: "4px",
-                        alignItems: "center",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => setTranslateSettings5(item.value)}
-                    >
-                      <Radio
-                        key={index}
-                        value={item.value}
-                        checked={translateSettings5 === item.value}
-                      />
-
-                      <Text>{item.label}</Text>
-                      {!isMobile && (
-                        <Text type="secondary">: {item.description}</Text>
-                      )}
-                    </Flex>
-                  ))}
-                </Space>
-                <Space
-                  direction="vertical"
-                  size={16}
-                  style={{ display: "flex" }}
-                >
-                  <Space
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
-                      {t("translateSettings1.title")}
-                    </Title>
-                    {(typeof plan?.id === "number" && plan?.id <= 2) ||
-                    typeof plan?.id === "undefined" ? (
-                      <Flex align="center" gap="middle">
-                        <Popconfirm
-                          title=""
-                          description={t(
-                            "This feature is available only with the paid plan.",
-                          )}
-                          trigger="hover"
-                          showCancel={false}
-                          okText={t("Upgrade")}
-                          onConfirm={() => navigate("/app/pricing")}
-                        >
-                          <InfoCircleOutlined />
-                        </Popconfirm>
-                        <Button
-                          className={defaultStyles.Button_disable}
-                          icon={<Icon source={PlusIcon} />}
-                          onClick={() => handleUsePrivateApi()}
-                        >
-                          {t("Use private api to translate")}
-                        </Button>
-                      </Flex>
-                    ) : (
-                      <Button
-                        icon={<Icon source={PlusIcon} />}
-                        onClick={() => handleUsePrivateApi()}
-                      >
-                        {t("Use private api to translate")}
-                      </Button>
-                    )}
-                  </Space>
-                  {/* <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr", // 每行只一列，自动换行
-                      gap: "16px",
-                      width: "100%",
-                    }}
-                  > */}
-                  {translateSettings1Options.map((item, index) => (
-                    <Flex
-                      key={index}
-                      style={{
-                        width: "100%",
-                        marginRight: 0,
-                        padding: "8px 12px",
-                        border: "1px solid #f0f0f0",
-                        borderRadius: "4px",
-                        alignItems: "center",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => setTranslateSettings1(item.value)}
-                    >
-                      <Radio
-                        key={index}
-                        value={item.value}
-                        checked={translateSettings1 === item.value}
-                      />
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          width: "95%",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: !isMobile ? "65%" : "",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          <Text>{item.label}</Text>
-                          <Popover content={item.description}>
-                            {!isMobile && (
-                              <Text type="secondary">: {item.description}</Text>
-                            )}{" "}
-                          </Popover>
-                        </div>
-                        <Space
-                          style={{
-                            justifyContent: "flex-end",
-                          }}
-                        >
-                          <Text>
-                            {t("Speed")}:{" "}
-                            {item.speed === 2 ? t("Medium") : t("Fast")}
-                          </Text>
-                          {/* <Text>
-                            |
-                          </Text>
-                          <Text>{t("Rates", { price: item.price })}</Text> */}
-                        </Space>
-                      </div>
-                    </Flex>
-                  ))}
-                  {customApikeyData &&
-                    checkApiKeyConfiguration(customApikeyData, 0) && (
-                      <Badge.Ribbon
-                        text={t("Private")}
-                        color="red"
-                        style={{ top: -2, right: -8 }}
-                      >
-                        <div
-                          key={8}
-                          style={{
-                            display: "flex", // 关键
-                            width: "100%",
-                            marginRight: 0,
-                            padding: "8px 12px",
-                            border: "1px solid #f0f0f0",
-                            borderRadius: "4px",
-                            alignItems: "center",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => setTranslateSettings1("8")}
-                        >
-                          <Radio
-                            key={8}
-                            value={"8"}
-                            checked={translateSettings1 === "8"}
-                          />
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              width: "100%",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "50%",
-                              }}
-                            >
-                              <Text>{t("Google Translation")}</Text>
-                            </div>
-                          </div>
-                        </div>
-                      </Badge.Ribbon>
-                    )}
-                  {customApikeyData &&
-                    checkApiKeyConfiguration(customApikeyData, 1) && (
-                      <Badge.Ribbon
-                        text={t("Private")}
-                        color="red"
-                        style={{ top: -2, right: -8 }}
-                      >
-                        <div
-                          key={9}
-                          style={{
-                            display: "flex", // 关键
-                            width: "100%",
-                            marginRight: 0,
-                            padding: "8px 12px",
-                            border: "1px solid #f0f0f0",
-                            borderRadius: "4px",
-                            alignItems: "center",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => setTranslateSettings1("9")}
-                        >
-                          <Radio
-                            key={9}
-                            value={"9"}
-                            checked={translateSettings1 === "9"}
-                          />
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              width: "100%",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "50%",
-                              }}
-                            >
-                              <Text>{`Open AI/ChatGPT(${checkApiKeyConfiguration(customApikeyData, 1)?.apiModel.replace("gpt", "GPT")})`}</Text>
-                            </div>
-                          </div>
-                        </div>
-                      </Badge.Ribbon>
-                    )}
-                  {/* </div> */}
-                </Space>
-              </Space>
-            </Card>
-            {(translateSettings1 == "1" || translateSettings1 == "2") && (
-              <>
-                <div
+                <Title
                   style={{
-                    paddingLeft: "8px",
+                    margin: "0",
+                    fontSize: "1.25rem",
+                    fontWeight: 700,
                   }}
                 >
-                  <Title
-                    style={{
-                      margin: "0",
-                      fontSize: "1.25rem",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {t("translateSettings.title3")}
-                  </Title>
-                </div>
-                <Card
-                  style={{
-                    width: "100%",
-                    minHeight: "222px",
-                    marginBottom: "16px",
-                  }}
-                >
-                  <Space
-                    direction="vertical"
-                    size="large"
-                    style={{ display: "flex" }}
-                  >
-                    <Space
-                      direction="vertical"
-                      size={16}
-                      style={{ display: "flex" }}
-                    >
-                      <div>
-                        <Title
-                          level={5}
-                          style={{ fontSize: "1rem", margin: "0" }}
-                        >
-                          {t("translateSettings4.title")}
-                        </Title>
-                        <Text type="secondary">
-                          {t("translateSettings4.description")}
-                        </Text>
-                      </div>
-                      <Space direction="vertical" style={{ width: "100%" }}>
-                        <div>
-                          <Text>{t("translateSettings4.title1")}</Text>
-                          <Select
-                            defaultActiveFirstOption={true}
-                            options={[
-                              {
-                                label: "",
-                                value: "",
-                              },
-                              {
-                                label: t("Formal"),
-                                value: "Formal",
-                              },
-                              {
-                                label: t("Neutral"),
-                                value: "Neutral",
-                              },
-                              {
-                                label: t("Casual"),
-                                value: "Casual",
-                              },
-                              {
-                                label: t("Youthful"),
-                                value: "Youthful",
-                              },
-                              {
-                                label: t("Luxury"),
-                                value: "Luxury",
-                              },
-                            ]}
-                            style={{
-                              width: "100%",
-                            }}
-                            onSelect={(e) =>
-                              setTranslateSettings4({
-                                ...translateSettings4,
-                                option1: e,
-                              })
-                            }
-                          />
-                        </div>
-                        <div>
-                          <Text>{t("translateSettings4.title2")}</Text>
-                          <Select
-                            defaultActiveFirstOption={true}
-                            options={[
-                              {
-                                label: "",
-                                value: "",
-                              },
-                              {
-                                label: t(
-                                  "Apple – Minimal & premium (Tech/design)",
-                                ),
-                                value:
-                                  "Apple – Minimal & premium (Tech/design)",
-                              },
-                              {
-                                label: t(
-                                  "Samsung – Innovative & versatile (Electronics)",
-                                ),
-                                value:
-                                  "Samsung – Innovative & versatile (Electronics)",
-                              },
-                              {
-                                label: t(
-                                  "Nike – Bold & empowering (Sportswear)",
-                                ),
-                                value: "Nike – Bold & empowering (Sportswear)",
-                              },
-                              {
-                                label: t(
-                                  "Adidas – Dynamic & inclusive (Activewear)",
-                                ),
-                                value:
-                                  "Adidas – Dynamic & inclusive (Activewear)",
-                              },
-                              {
-                                label: t(
-                                  "Patagonia – Ethical & adventurous (Outdoor gear)",
-                                ),
-                                value:
-                                  "Patagonia – Ethical & adventurous (Outdoor gear)",
-                              },
-                              {
-                                label: t("Zara – Modern & chic (Womenswear)"),
-                                value: "Zara – Modern & chic (Womenswear)",
-                              },
-                              {
-                                label: t(
-                                  "H&M – Trendy & casual (Fast fashion)",
-                                ),
-                                value: "H&M – Trendy & casual (Fast fashion)",
-                              },
-                              {
-                                label: t(
-                                  "Dior – Feminine & luxurious (High fashion)",
-                                ),
-                                value:
-                                  "Dior – Feminine & luxurious (High fashion)",
-                              },
-                              {
-                                label: t(
-                                  "Uniqlo – Simple & comfortable (Everyday basics)",
-                                ),
-                                value:
-                                  "Uniqlo – Simple & comfortable (Everyday basics)",
-                              },
-                              {
-                                label: t(
-                                  "Ralph Lauren – Timeless & masculine (Menswear)",
-                                ),
-                                value:
-                                  "Ralph Lauren – Timeless & masculine (Menswear)",
-                              },
-                              {
-                                label: t(
-                                  "Uniqlo – Clean & functional (Essentials)",
-                                ),
-                                value:
-                                  "Uniqlo – Clean & functional (Essentials)",
-                              },
-                              {
-                                label: t(
-                                  "Tommy Hilfiger – Classic & youthful (Men's fashion)",
-                                ),
-                                value:
-                                  "Tommy Hilfiger – Classic & youthful (Men's fashion)",
-                              },
-                              {
-                                label: t(
-                                  "Tiffany – Elegant & romantic (Jewelry)",
-                                ),
-                                value: "Tiffany – Elegant & romantic (Jewelry)",
-                              },
-                              {
-                                label: t(
-                                  "Cartier – Luxurious & timeless (Fine jewelry)",
-                                ),
-                                value:
-                                  "Cartier – Luxurious & timeless (Fine jewelry)",
-                              },
-                              {
-                                label: t(
-                                  "Swarovski – Sparkling & accessible (Fashion jewelry)",
-                                ),
-                                value:
-                                  "Swarovski – Sparkling & accessible (Fashion jewelry)",
-                              },
-                              {
-                                label: t(
-                                  "L'Oréal – Confident & universal (Beauty)",
-                                ),
-                                value:
-                                  "L'Oréal – Confident & universal (Beauty)",
-                              },
-                              {
-                                label: t(
-                                  "Estée Lauder – Elegant & premium (Skincare)",
-                                ),
-                                value:
-                                  "Estée Lauder – Elegant & premium (Skincare)",
-                              },
-                              {
-                                label: t(
-                                  "Fenty Beauty – Bold & inclusive (Cosmetics)",
-                                ),
-                                value:
-                                  "Fenty Beauty – Bold & inclusive (Cosmetics)",
-                              },
-                              {
-                                label: t(
-                                  "Pampers – Caring & reassuring (Baby care)",
-                                ),
-                                value:
-                                  "Pampers – Caring & reassuring (Baby care)",
-                              },
-                              {
-                                label: t(
-                                  "Mustela – Gentle & safe (Baby skincare)",
-                                ),
-                                value:
-                                  "Mustela – Gentle & safe (Baby skincare)",
-                              },
-                              {
-                                label: t(
-                                  "IKEA – Practical & family-friendly (Home)",
-                                ),
-                                value:
-                                  "IKEA – Practical & family-friendly (Home)",
-                              },
-                              {
-                                label: t(
-                                  "Dyson – Innovative & sleek (Appliances)",
-                                ),
-                                value:
-                                  "Dyson – Innovative & sleek (Appliances)",
-                              },
-                              {
-                                label: t(
-                                  "Philips – Smart & reliable (Home tech)",
-                                ),
-                                value: "Philips – Smart & reliable (Home tech)",
-                              },
-                              {
-                                label: t(
-                                  "Royal Canin – Scientific & premium (Pet food)",
-                                ),
-                                value:
-                                  "Royal Canin – Scientific & premium (Pet food)",
-                              },
-                              {
-                                label: t(
-                                  "Pedigree – Friendly & caring (Pet care)",
-                                ),
-                                value:
-                                  "Pedigree – Friendly & caring (Pet care)",
-                              },
-                              {
-                                label: t(
-                                  "Unilever – Mass-market & trusted (FMCG)",
-                                ),
-                                value:
-                                  "Unilever – Mass-market & trusted (FMCG)",
-                              },
-                              {
-                                label: t(
-                                  "P&G – Reliable & practical (Household)",
-                                ),
-                                value: "P&G – Reliable & practical (Household)",
-                              },
-                              {
-                                label: t(
-                                  "Starbucks – Warm & lifestyle-driven (Coffee & culture)",
-                                ),
-                                value:
-                                  "Starbucks – Warm & lifestyle-driven (Coffee & culture)",
-                              },
-                              {
-                                label: t(
-                                  "Red Bull – Energetic & bold (Energy drinks)",
-                                ),
-                                value:
-                                  "Red Bull – Energetic & bold (Energy drinks)",
-                              },
-                              {
-                                label: t(
-                                  "Nestlé – Family-oriented & global (Food & beverage)",
-                                ),
-                                value:
-                                  "Nestlé – Family-oriented & global (Food & beverage)",
-                              },
-                              {
-                                label: t(
-                                  "Centrum – Scientific & trustworthy (Supplements)",
-                                ),
-                                value:
-                                  "Centrum – Scientific & trustworthy (Supplements)",
-                              },
-                            ]}
-                            style={{
-                              width: "100%",
-                            }}
-                            onSelect={(e) =>
-                              setTranslateSettings4({
-                                ...translateSettings4,
-                                option2: e,
-                              })
-                            }
-                          />
-                        </div>
-                        <div>
-                          <Text>{t("translateSettings4.title3")}</Text>
-                          <Select
-                            defaultActiveFirstOption={true}
-                            options={[
-                              {
-                                label: "",
-                                value: "",
-                              },
-                              {
-                                label: t("Informational – Just the facts"),
-                                value: "Informational – Just the facts",
-                              },
-                              {
-                                label: t("Soft CTA – Gentle encouragement"),
-                                value: "Soft CTA – Gentle encouragement",
-                              },
-                              {
-                                label: t("Strong CTA – Clear call to buy"),
-                                value: "Strong CTA – Clear call to buy",
-                              },
-                            ]}
-                            style={{
-                              width: "100%",
-                            }}
-                            onSelect={(e) =>
-                              setTranslateSettings4({
-                                ...translateSettings4,
-                                option3: e,
-                              })
-                            }
-                          />
-                        </div>
-                        <div>
-                          <Text>{t("translateSettings4.title4")}</Text>
-                          <Select
-                            defaultActiveFirstOption={true}
-                            options={[
-                              {
-                                label: "",
-                                value: "",
-                              },
-                              {
-                                label: t("SEO-friendly"),
-                                value: "SEO-friendly",
-                              },
-                              {
-                                label: t("Minimalist"),
-                                value: "Minimalist",
-                              },
-                              {
-                                label: t("Storytelling"),
-                                value: "Storytelling",
-                              },
-                              {
-                                label: t("Feature-first"),
-                                value: "Feature-first",
-                              },
-                              {
-                                label: t("Call-to-action"),
-                                value: "Call-to-action",
-                              },
-                            ]}
-                            style={{
-                              width: "100%",
-                            }}
-                            onSelect={(e) =>
-                              setTranslateSettings4({
-                                ...translateSettings4,
-                                option4: e,
-                              })
-                            }
-                          />
-                        </div>
-                        {/* <div>
-                      <Text>{t("translateSettings4.title5")}</Text>
-                      <Input
-                        style={{ width: "100%" }}
-                        value={translateSettings4.option5}
-                        onChange={(e) =>
-                          setTranslateSettings4({
-                            ...translateSettings4,
-                            option5: e.target.value,
-                          })
-                        }
-                        placeholder={t("translateSettings4.placeholder5")}
-                      />
-                    </div> */}
-                      </Space>
-                    </Space>
-                    <Space
-                      direction="vertical"
-                      size={16}
-                      style={{ display: "flex" }}
-                    >
-                      <Title
-                        level={5}
-                        style={{ fontSize: "1rem", margin: "0" }}
-                      >
-                        {t("translateSettings2.title")}
-                      </Title>
-                      <Checkbox.Group
-                        value={translateSettings2}
-                        options={translateSettings2Options}
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns:
-                            "repeat(auto-fill, minmax(200px, 1fr))",
-                          width: "100%",
-                        }}
-                        onChange={(e) => handleTranslateSettings2Change(e)}
-                      />
-                    </Space>
-                  </Space>
-                </Card>
-              </>
+                  {t("translateSettings.title3")}
+                </Title>
+              </div>
             )}
-            <Card
-              title={t("Advance Setting")}
-              extra={
-                <Button type="text" onClick={() => setRotate(!rotate)}>
-                  <CaretDownOutlined rotate={rotate ? 180 : 0} />
-                </Button>
-              }
-              style={{
-                width: "100%",
-                marginBottom: "16px",
-              }}
-              styles={{
-                body: {
-                  padding: rotate ? "24px" : "0",
-                },
-              }}
-            >
-              {rotate && (
-                <Space
-                  direction="vertical"
-                  size="large"
-                  style={{ display: "flex", width: "100%" }}
-                >
-                  <Flex gap={8} align="center" justify="space-between">
-                    <Text>{t("Glossary")}</Text>
-                    <Switch
-                      checked={glossaryOpen}
-                      loading={loadingArray.includes("glossary")}
-                      onClick={() => handleAdvanceSettingChange("glossary")}
-                    />
-                  </Flex>
-                  {/* <Flex gap={8} align="center" justify="space-between">
-                    <Text>{t("Brand-First Sentence Structure")}</Text>
-
-                    <Switch
-                      checked={brandWordOpen}
-                      loading={loadingArray.includes("brand")}
-                      onClick={() => handleAdvanceSettingChange("brand")}
-                    />
-                  </Flex> */}
-                </Space>
-              )}
-            </Card>
+            <ToneSettingCard
+              toneSettingCardShow={toneSettingCardShow}
+              translateSettings2={translateSettings2}
+              setTranslateSettings2={setTranslateSettings2}
+              translateSettings4={translateSettings4}
+              setTranslateSettings4={setTranslateSettings4}
+            />
+            <AdvanceSettingCard
+              rotate={rotate}
+              setRotate={setRotate}
+              glossaryOpen={glossaryOpen}
+              loadingArray={loadingArray}
+              handleAdvanceSettingChange={handleAdvanceSettingChange}
+            />
           </Space>
         ) : (
           <NoLanguageSetCard />
@@ -1809,17 +713,17 @@ const Index = () => {
           setShow={setFirstTranslationModalShow}
         />
         <Modal
-          open={isApiKeyModalOpen}
-          onCancel={handleApiKeyModalClose}
-          title={modalTypeObject[currentModal].Title}
+          open={!!currentModal}
+          onCancel={() => setCurrentModal("")}
+          title={currentModal && modalTypeObject[currentModal].Title}
           centered
           footer={
             <Button type="primary" onClick={handleConfigureQuota}>
-              {modalTypeObject[currentModal].Button}
+              {currentModal && modalTypeObject[currentModal].Button}
             </Button>
           }
         >
-          <Text>{modalTypeObject[currentModal].Body}</Text>
+          <Text>{currentModal && modalTypeObject[currentModal].Body}</Text>
         </Modal>
         <Modal
           title={t("Feature Unavailable")}
@@ -1836,20 +740,10 @@ const Index = () => {
           <Text>{t("This feature is available only with the paid plan.")}</Text>
         </Modal>
       </Space>
-      {showPaymentModal && (
-        <PaymentModal
-          shop={shop}
-          server={server as string}
-          visible={showPaymentModal}
-          setVisible={setShowPaymentModal}
-          source={source}
-          target={target}
-          model={model}
-          translateSettings3={translateSettings3 || []}
-          handleTranslate={handleTranslate}
-          needPay={needPay}
-        />
-      )}
+      <PaymentModal
+        visible={showPaymentModal}
+        setVisible={setShowPaymentModal}
+      />
     </Page>
   );
 };
