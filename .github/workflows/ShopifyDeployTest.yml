@@ -1,6 +1,8 @@
 name: Shopify App Deploy to Test
 
 on:
+  push:
+    branches: [ master ] # push 到 master 分支时触发
   workflow_dispatch:  # 手动触发
 
 jobs:
