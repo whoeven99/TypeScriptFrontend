@@ -51,6 +51,7 @@ jobs:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }} # 这是整个render的apikey
         RENDER_SERVICE_ID: ${{ secrets.RENDER_TEST_SERVICE_ID }} # 这是 test service id
       run: | # action 非0退出码表示失败
+        echo "inputs: ${{ github.event.inputs.branch }}"
         BRANCH=${{ github.event.inputs.branch }}
         if [ -z "$BRANCH" ]; then
           BRANCH="master"
