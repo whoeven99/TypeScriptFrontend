@@ -662,7 +662,7 @@ const Index = () => {
         >
           {t("Learn more in")}
           <Link
-            to="https://ciwi.bogdatech.com/help"
+            to="https://ciwi.ai/help-center/ShopifyApp/about-ciwi-ai-translator-shopify-app"
             target="_blank"
             style={{ margin: "0 5px" }}
             onClick={handleReportCiwiHelpCenter}
@@ -671,7 +671,7 @@ const Index = () => {
           </Link>
           {t("by")}
           <Link
-            to={"https://ciwi.bogdatech.com/"}
+            to={" https://ciwi.ai"}
             target="_blank"
             style={{ margin: "0 5px" }}
           >
