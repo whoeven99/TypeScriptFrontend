@@ -45,7 +45,7 @@ jobs:
         fetch-depth: 0  # 获取所有历史记录以便查找PR提交
         
     - name: Dump GitHub event context
-      run: echo "${{ toJSON(github.event) }}"
+      run: echo "${{ github.ref_name }}"
 
     - name: Deploy to Render Test
       env:
