@@ -37,6 +37,7 @@ import { ShopLocalesType } from "../app.language/route";
 import { setLocale } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
 import { DeleteProductImageData, GetProductImageData } from "~/api/JavaServer";
+import { globalStore } from "~/globalStore";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -49,12 +50,8 @@ interface LanguageOption {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
 
   return {
-    shop,
-    server: process.env.SERVER_URL,
     searchTerm,
   };
 };
@@ -491,7 +488,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { searchTerm, shop, server } = useLoaderData<typeof loader>();
+  const { searchTerm } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -772,7 +769,7 @@ const Index = () => {
     }
     fetcher.submit(
       {
-        log: `${shop} 目前在翻译管理-产品图片页面`,
+        log: `${globalStore?.shop} 目前在翻译管理-产品图片页面`,
       },
       {
         method: "POST",
@@ -852,8 +849,8 @@ const Index = () => {
         )[0] || [];
       const getTargetData = async () => {
         const targetData = await GetProductImageData({
-          server: server || "",
-          shopName: shop,
+          server: globalStore?.server || "",
+          shopName: globalStore?.shop || "",
           productId: selectedKey,
           languageCode: selectedLanguage,
         });
@@ -975,7 +972,7 @@ const Index = () => {
               maxCount={1}
               accept="image/*"
               name="file"
-              action={`${server}/picture/insertPictureToDbAndCloud`}
+              action={`${globalStore?.server}/picture/insertPictureToDbAndCloud`}
               beforeUpload={(file) => {
                 const isImage = file.type.startsWith("image/");
                 const isLt20M = file.size / 1024 / 1024 < 20;
@@ -1034,10 +1031,10 @@ const Index = () => {
               }}
               data={(file) => {
                 return {
-                  shopName: shop,
+                  shopName: globalStore?.shop,
                   file: file,
                   userPicturesDoJson: JSON.stringify({
-                    shopName: shop,
+                    shopName: globalStore?.shop,
                     imageId: record?.productId,
                     imageBeforeUrl: record?.imageUrl,
                     altBeforeTranslation: "",
@@ -1180,8 +1177,8 @@ const Index = () => {
   const handleDelete = async (productId: string, imageUrl: string) => {
     setIsDeleteLoading(true);
     const res = await DeleteProductImageData({
-      server: server || "",
-      shopName: shop,
+      server: globalStore?.server || "",
+      shopName: globalStore?.shop || "",
       productId: productId,
       imageUrl: imageUrl,
       languageCode: selectedLanguage,
@@ -1429,7 +1426,7 @@ const Index = () => {
                                   maxCount={1}
                                   accept="image/*"
                                   name="file"
-                                  action={`${server}/picture/insertPictureToDbAndCloud`}
+                                  action={`${globalStore?.server}/picture/insertPictureToDbAndCloud`}
                                   beforeUpload={(file) => {
                                     const isImage =
                                       file.type.startsWith("image/");
@@ -1500,10 +1497,10 @@ const Index = () => {
                                   }}
                                   data={(file) => {
                                     return {
-                                      shopName: shop,
+                                      shopName: globalStore?.shop,
                                       file: file,
                                       userPicturesDoJson: JSON.stringify({
-                                        shopName: shop,
+                                        shopName: globalStore?.shop,
                                         imageId: item?.productId,
                                         imageBeforeUrl: item?.imageUrl,
                                         altBeforeTranslation: "",
