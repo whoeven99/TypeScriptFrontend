@@ -1506,12 +1506,12 @@ const Index = () => {
         {
           endCursor: JSON.stringify({
             cursor: "",
-            searchTerm: searchTerm,
+            searchTerm: language,
           }),
         },
         {
           method: "post",
-          action: `/app/manage_translation/product?language=${searchTerm}`,
+          action: `/app/manage_translation/product?language=${language}`,
         },
       );
       isManualChangeRef.current = true;
