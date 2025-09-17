@@ -44,6 +44,7 @@ import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import useReport from "scripts/eventReport";
+import { globalStore } from "~/globalStore";
 const { Sider, Content } = Layout;
 
 const { Text, Title } = Typography;
@@ -89,16 +90,10 @@ const modelOptions = [
 ];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
   return json({
-    shop,
-    server: process.env.SERVER_URL,
-    shopName: shop,
     searchTerm,
   });
 };
@@ -388,7 +383,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { shop, searchTerm, server, shopName } = useLoaderData<typeof loader>();
+  const { searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
@@ -552,7 +547,7 @@ const Index = () => {
     );
     fetcher.submit(
       {
-        log: `${shop} 目前在翻译管理-产品页面`,
+        log: `${globalStore?.shop} 目前在翻译管理-产品页面`,
       },
       {
         method: "POST",
@@ -889,7 +884,7 @@ const Index = () => {
         shopify.toast.show(t("Saved successfully"));
         fetcher.submit(
           {
-            log: `${shop} 翻译管理-产品页面修改数据保存成功`,
+            log: `${globalStore?.shop} 翻译管理-产品页面修改数据保存成功`,
           },
           {
             method: "POST",
@@ -1457,7 +1452,7 @@ const Index = () => {
     }
     fetcher.submit(
       {
-        log: `${shop} 从翻译管理-产品页面点击单行翻译`,
+        log: `${globalStore?.shop} 从翻译管理-产品页面点击单行翻译`,
       },
       {
         method: "POST",
@@ -1467,14 +1462,14 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
 
     const data = await SingleTextTranslate({
-      shopName: shopName,
+      shopName: globalStore?.shop || "",
       source: productBaseData[0]?.locale,
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
       key: key,
       type: type,
-      server: server || "",
+      server: globalStore?.server || "",
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
@@ -1482,7 +1477,7 @@ const Index = () => {
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
-            log: `${shop} 从翻译管理-产品页面点击单行翻译返回结果 ${data?.response}`,
+            log: `${globalStore?.shop} 从翻译管理-产品页面点击单行翻译返回结果 ${data?.response}`,
           },
           {
             method: "POST",
@@ -1659,7 +1654,7 @@ const Index = () => {
     }); // 提交表单请求
     fetcher.submit(
       {
-        log: `${shop} 提交翻译管理-产品页面修改数据`,
+        log: `${globalStore?.shop} 提交翻译管理-产品页面修改数据`,
       },
       {
         method: "POST",
