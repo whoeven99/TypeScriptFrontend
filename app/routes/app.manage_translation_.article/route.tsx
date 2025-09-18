@@ -198,7 +198,6 @@ const Index = () => {
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
-  const submit = useSubmit(); // 使用 useSubmit 钩子
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
@@ -799,13 +798,18 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      const formData = new FormData();
-      const startCursor = articlesData.pageInfo.startCursor;
-      formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-      submit(formData, {
-        method: "post",
-        action: `/app/manage_translation/article?language=${searchTerm}`,
-      }); // 提交表单请求
+      dataFetcher.submit(
+        {
+          startCursor: JSON.stringify({
+            cursor: articlesData.pageInfo.startCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/article?language=${searchTerm}`,
+        },
+      ); // 提交表单请求
     }
   };
 
@@ -814,13 +818,18 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      const formData = new FormData();
-      const endCursor = articlesData.pageInfo.endCursor;
-      formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-      submit(formData, {
-        method: "post",
-        action: `/app/manage_translation/article?language=${searchTerm}`,
-      }); // 提交表单请求
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: articlesData.pageInfo.endCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/article?language=${searchTerm}`,
+        },
+      ); // 提交表单请求
     }
   };
 
