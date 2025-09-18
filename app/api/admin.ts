@@ -1130,7 +1130,7 @@ export const queryNextTransType = async ({
 }) => {
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, first: 2 ${endCursor ? `, after: "${endCursor}"` : ""}) {
+      translatableResources(resourceType: ${resourceType}, first: 20 ${endCursor ? `, after: "${endCursor}"` : ""}) {
         nodes {
           resourceId
           translatableContent {
@@ -1185,7 +1185,7 @@ export const queryPreviousTransType = async ({
 }) => {
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, last: 2 ${startCursor ? `, before: "${startCursor}"` : ""}) {
+      translatableResources(resourceType: ${resourceType}, last: 20 ${startCursor ? `, before: "${startCursor}"` : ""}) {
         nodes {
           resourceId
           translatableContent {
