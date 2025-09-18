@@ -25,6 +25,22 @@ async function FrontEndPrinting({
   }
 }
 
+async function CrawlerDDetectionReport({ shop, blockId, ua }) {
+  try {
+    const response = await axios({
+      url: `${switchUrl(blockId)}/frontEndPrinting`,
+      method: "POST",
+      data: {
+        data: `${shop} 检测到爬虫 ${ua}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error FrontEndPrinting:", error);
+  }
+}
+
 async function GetProductImageData({
   blockId,
   shopName,
@@ -1213,13 +1229,6 @@ function isLikelyBotByUA() {
 
 // Page load handling
 window.onload = async function () {
-  // 使用示例
-  if (isLikelyBotByUA()) {
-    console.warn("⚠️ 疑似爬虫访问");
-    return;
-  } else {
-    console.log("✅ 正常用户访问");
-  }
   console.log("onload start");
 
   const blockId = document.querySelector('input[name="block_id"]')?.value;
@@ -1231,8 +1240,19 @@ window.onload = async function () {
     return;
   }
 
-  const switcher = ciwiBlock.querySelector("#ciwi-container");
   const shop = ciwiBlock.querySelector("#queryCiwiId");
+
+  // 使用示例
+  if (isLikelyBotByUA()) {
+    console.warn("⚠️ 疑似爬虫访问");
+    const ua = navigator.userAgent.toLowerCase();
+    CrawlerDDetectionReport({ shop: shop.value, blockId, ua });
+    return;
+  } else {
+    console.log("✅ 正常用户访问");
+  }
+
+  const switcher = ciwiBlock.querySelector("#ciwi-container");
   const mainBox = ciwiBlock.querySelector("#main-box");
   const selectedLanguageText = ciwiBlock.querySelector(
     "#translate-float-btn-text",
