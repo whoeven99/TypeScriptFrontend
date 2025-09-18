@@ -169,7 +169,6 @@ const Index = () => {
   );
 
   const { searchTerm } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
@@ -279,19 +278,7 @@ const Index = () => {
       );
     }
   }, [languageTableData]);
-
-  // useEffect(() => {
-  //   if (blogs && isManualChangeRef.current) {
-  //     setBlogsData(blogs);
-  //     setMenuData(exMenuData(blogs));
-  //     setSelectBlogKey(blogs.nodes[0]?.resourceId);
-  //     setTimeout(() => {
-  //       setIsLoading(false);
-  //     }, 100);
-  //     isManualChangeRef.current = false; // 重置
-  //   }
-  // }, [blogs]);
-
+  
   useEffect(() => {
     if (blogsData) {
       const data = transBeforeData({
