@@ -25,6 +25,22 @@ async function FrontEndPrinting({
   }
 }
 
+async function CrawlerDDetectionReport({ shop, blockId, ua }) {
+  try {
+    const response = await axios({
+      url: `${switchUrl(blockId)}/frontEndPrinting`,
+      method: "POST",
+      data: {
+        data: `${shop} 检测到爬虫 ${ua}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error FrontEndPrinting:", error);
+  }
+}
+
 async function GetProductImageData({
   blockId,
   shopName,
@@ -1170,6 +1186,47 @@ async function ProductImgTranslate(blockId, shop, ciwiBlock) {
   }
 }
 
+function isLikelyBotByUA() {
+  const ua = navigator.userAgent.toLowerCase();
+
+  // 常见爬虫 UA 关键词
+  const botKeywords = [
+    "bot",
+    "spider",
+    "crawl",
+    "slurp", // :contentReference[oaicite:1]{index=1}
+    "bingpreview", // :contentReference[oaicite:2]{index=2}
+    "facebookexternalhit", // :contentReference[oaicite:3]{index=3}
+    "monitor",
+    "headless",
+    "wget",
+    "curl",
+    "python-requests",
+  ];
+
+  // 检查 UA 关键词
+  if (botKeywords.some((keyword) => ua.includes(keyword))) {
+    return true;
+  }
+
+  // 检测是否为无头浏览器环境
+  if (navigator.webdriver) {
+    return true;
+  }
+
+  // 一些真实浏览器会有的特征（爬虫环境可能缺失）
+  if (!(navigator.languages && navigator.languages.length > 0)) {
+    return true;
+  }
+
+  if (window.outerWidth === 0 || window.outerHeight === 0) return true;
+
+  // 🆕 检测 JS 是否执行
+  if (!window.__JS_EXECUTED__) return true;
+
+  return false;
+}
+
 // Page load handling
 window.onload = async function () {
   console.log("onload start");
@@ -1183,8 +1240,19 @@ window.onload = async function () {
     return;
   }
 
-  const switcher = ciwiBlock.querySelector("#ciwi-container");
   const shop = ciwiBlock.querySelector("#queryCiwiId");
+
+  // 使用示例
+  if (isLikelyBotByUA()) {
+    console.warn("⚠️ 疑似爬虫访问");
+    const ua = navigator.userAgent.toLowerCase();
+    CrawlerDDetectionReport({ shop: shop.value, blockId, ua });
+    return;
+  } else {
+    console.log("✅ 正常用户访问");
+  }
+
+  const switcher = ciwiBlock.querySelector("#ciwi-container");
   const mainBox = ciwiBlock.querySelector("#main-box");
   const selectedLanguageText = ciwiBlock.querySelector(
     "#translate-float-btn-text",
