@@ -580,7 +580,9 @@ const Index = () => {
         setStartCursor(dataFetcher.data.response.pageInfo.startCursor);
         setEndCursor(dataFetcher.data.response.pageInfo.endCursor);
         setProductsData(dataFetcher.data.response.data);
-        setIsLoading(false);
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 100);
       }
     }
   }, [dataFetcher.data]);
@@ -1506,7 +1508,7 @@ const Index = () => {
         },
         {
           method: "post",
-          action: `/app/manage_translation/product?language=${searchTerm}`,
+          action: `/app/manage_translation/product?language=${language}`,
         },
       );
       isManualChangeRef.current = true;

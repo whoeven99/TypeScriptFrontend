@@ -839,6 +839,18 @@ const Index = () => {
     } else {
       shopify.saveBar.hide("save-bar");
       setIsLoading(true);
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: "",
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "POST",
+          action: `/app/manage_translation/article?language=${language}`
+        },
+      );
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
       navigate(`/app/manage_translation/article?language=${language}`);
