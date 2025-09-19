@@ -3,6 +3,9 @@ import { Button, ConfigProvider, Flex, Modal, Space, Typography } from "antd";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import { IsShowFreePlan } from "~/api/JavaServer";
+import { globalStore } from "~/globalStore";
+import { planNum } from "../route";
 
 const { Title, Text } = Typography;
 
@@ -16,7 +19,7 @@ const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({}) => {
     plan: "",
   });
 
-  const { shop, plan, isNew } = useSelector((state: any) => state.userConfig);
+  const { plan, isNew } = useSelector((state: any) => state.userConfig);
 
   useEffect(() => {
     GetOrderStatus();
@@ -28,24 +31,21 @@ const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({}) => {
       if (hasShowModal) {
         return;
       } else {
-        const hasShowModalResponse = {
-          data: {
-            success: true,
-            errorCode: 0,
-            errorMsg: "",
-            response: false,
-          },
-        };
-        const hasShowModalRes = hasShowModalResponse.data;
-        if (hasShowModalRes?.success) {
-          if (!hasShowModalRes?.response) {
-            setContent({
-              show: true,
-              success: true,
-            });
+        setTimeout(async () => {
+          const hasShowModalResponse = await IsShowFreePlan({
+            shop: globalStore?.shop || "",
+            server: globalStore?.server || "",
+          });
+          if (hasShowModalResponse?.success) {
+            if (hasShowModalResponse?.response) {
+              setContent({
+                show: true,
+                success: true,
+              });
+            }
           }
-        }
-        localStorage.setItem("ciwi-freetrial-hasShow", "1");
+          localStorage.setItem("ciwi-freetrial-hasShow", "1");
+        }, 100);
       }
     }
   };
@@ -77,21 +77,12 @@ const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({}) => {
             marginBottom: 24,
           }}
         >
-          {t(
-            content.success
-              ? "Got a 5-day free trial"
-              : "You haven't started your 5-day free trial yet",
-          )}
+          {t("Got a 5-day free trial")}
         </Title>
         <Text>
-          {t(
-            content.success
-              ? "You have received {{ plan }} Plan benefits"
-              : "Start a free trial and get {{ plan }} Plan benefits instantly",
-            {
-              plan: plan,
-            },
-          )}
+          {t("You have received {{ plan }} Plan benefits", {
+            plan: planNum(plan?.id),
+          })}
         </Text>
         <Space
           direction="vertical"

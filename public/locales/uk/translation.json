@@ -678,5 +678,7 @@
   "Image translation failed": "Не вдалося перекласти зображення",
   "Image translated successfully": "Зображення успішно перекладено",
   "The current language does not support image translation": "Поточна мова не підтримує переклад зображень",
-  "1000 credits": "1000 кредитів"
+  "1000 credits": "1000 кредитів",
+  "Got a 5-day free trial": "Отримайте 5-денну безкоштовну пробну версію",
+  "You have received {{ plan }} Plan benefits": "Ви отримали переваги плану {{ plan }}"
 }

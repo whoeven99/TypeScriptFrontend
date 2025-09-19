@@ -679,5 +679,7 @@
   "Image translation failed": "Bildöversättning misslyckades",
   "Image translated successfully": "Bilden har översatts",
   "The current language does not support image translation": "Det aktuella språket stöder inte bildöversättning",
-  "1000 credits": "1000 poäng"
+  "1000 credits": "1000 poäng",
+  "Got a 5-day free trial": "Få en 5-dagars gratis provperiod",
+  "You have received {{ plan }} Plan benefits": "Du har fått {{ plan }} Plan-förmåner"
 }

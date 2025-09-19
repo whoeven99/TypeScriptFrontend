@@ -679,5 +679,7 @@
   "Image translation failed": "이미지 번역에 실패했습니다",
   "Image translated successfully": "이미지가 성공적으로 번역되었습니다.",
   "The current language does not support image translation": "현재 언어는 이미지 번역을 지원하지 않습니다.",
-  "1000 credits": "1000 크레딧"
+  "1000 credits": "1000 크레딧",
+  "Got a 5-day free trial": "5일 무료 체험을 받으세요",
+  "You have received {{ plan }} Plan benefits": "{{ plan }} 플랜 혜택을 받았습니다"
 }

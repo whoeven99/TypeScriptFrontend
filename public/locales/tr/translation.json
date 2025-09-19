@@ -679,5 +679,7 @@
   "Image translation failed": "Görüntü çevirisi başarısız oldu",
   "Image translated successfully": "Resim başarıyla çevrildi",
   "The current language does not support image translation": "Mevcut dil resim çevirisini desteklemiyor",
-  "1000 credits": "1000 kredi"
+  "1000 credits": "1000 kredi",
+  "Got a 5-day free trial": "5 günlük ücretsiz deneme sürümü alın",
+  "You have received {{ plan }} Plan benefits": "{{ plan }} Plan avantajlarını aldınız"
 }

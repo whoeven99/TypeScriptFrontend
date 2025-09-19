@@ -679,5 +679,7 @@
   "Image translation failed": "Traduzione dell'immagine non riuscita",
   "Image translated successfully": "Immagine tradotta con successo",
   "The current language does not support image translation": "La lingua corrente non supporta la traduzione delle immagini",
-  "1000 credits": "1000 crediti"
+  "1000 credits": "1000 crediti",
+  "Got a 5-day free trial": "Ottieni una prova gratuita di 5 giorni",
+  "You have received {{ plan }} Plan benefits": "Hai ricevuto i benefici del Piano {{ plan }}"
 }

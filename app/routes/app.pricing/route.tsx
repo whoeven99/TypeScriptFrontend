@@ -1633,3 +1633,10 @@ const Index = () => {
 };
 
 export default Index;
+
+export const planNum = (id: number) => {
+  if (id == 4) return "Basic";
+  if (id == 5) return "Pro";
+  if (id == 6) return "Premium";
+  return "Free";
+};
