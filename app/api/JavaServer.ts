@@ -19,6 +19,33 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const IsShowFreePlan = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/userTrials/isShowFreePlan?shopName=${shop}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} IsShowFreePlan: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} IsShowFreePlan error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: "",
+    };
+  }
+};
+
 export const GetLatestActiveSubscribeId = async ({
   shop,
   server,
