@@ -1351,7 +1351,7 @@ export const GetLanguageStatus = async ({
   }
 };
 
-// //查询语言待翻译字符数
+//查询语言待翻译字符数
 // export const GetTotalWords = async ({
 //   shop,
 //   accessToken,
@@ -1371,11 +1371,18 @@ export const GetLanguageStatus = async ({
 //         target: target,
 //       },
 //     });
+//     console.log("get words: ", response);
 
-//     const res = response.data.response;
+//     const res = response.data;
 //     return res;
 //   } catch (error) {
 //     console.error("Error GetTotalWords:", error);
+//     return {
+//       success: false,
+//       errorCode: 10001,
+//       errorMsg: "SERVER_ERROR",
+//       response: [],
+//     };
 //   }
 // };
 
@@ -1467,7 +1474,7 @@ export const GetTranslate = async ({
 };
 
 // 获取谷歌分析
-export const GoogleAnalyticClickReport = async (params:any,name:string) => {
+export const GoogleAnalyticClickReport = async (params: any, name: string) => {
   try {
     const response = await fetch(
       `https://www.google-analytics.com/mp/collect?measurement_id=${process.env.MEASURE_ID}&api_secret=${process.env.GTM_API_KEY}`,
@@ -1483,12 +1490,164 @@ export const GoogleAnalyticClickReport = async (params:any,name:string) => {
           ],
         }),
       },
-    );    
-    console.log(`${name} ${params.eventType}`,response.status === 204);
+    );
+    console.log(`${name} ${params.eventType}`, response.status === 204);
     return response.status === 204;
   } catch (error) {
     console.log("google analytic error:", error);
     return false;
+  }
+};
+
+// 获取翻译报告分数以及详细报告指标
+export const GetTranslationQualityScore = async () => {
+  try {
+    const response = await new Promise((resolve) => {
+      setTimeout(resolve), 5000;
+    });
+    return {
+      success: true,
+      response: {
+        data: {
+          totalScore: 88,
+        },
+      },
+    };
+  } catch (error) {
+    console.log("get translationQuality score error:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
+  }
+};
+
+// 查询未翻译的字符数
+export const GetUnTranslatedWords = async () => {
+  try {
+    const response = await new Promise((resolve) => {
+      setTimeout(resolve), 2000;
+    });
+    return {
+      success: true,
+      response: {
+        words: 147859,
+      },
+    };
+  } catch (error) {
+    console.log("get unTranslated words failed:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
+  }
+};
+
+// 获取用户商店翻译转换率以及对应的图标数据
+export const GetConversionRate = async () => {
+  try {
+    const response = await new Promise((resolve) => {
+      setTimeout(resolve), 2000;
+    });
+    return {
+      success: true,
+      response: {
+        conversion: "13.54%",
+      },
+    };
+  } catch (error) {
+    console.log("get conversion rate failed:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
+  }
+};
+
+// 获取web pixel事件获得的用户的数据
+export const GetConversionData = async ({
+  shop,
+  storeLanguage,
+  dayData,
+}: {
+  shop: string;
+  storeLanguage: string[];
+  dayData: number;
+}) => {
+  try {
+    const response = await axios({
+      method: "POST",
+      url: `${process.env.SERVER_URL}/getUserDataReport?shopName=${shop}`,
+      data: {
+        storeLanguage,
+        dayData,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    console.log("coversion rate data", response.data);
+    return response.data;
+  } catch (error) {
+    console.log("get conversion data failed:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
+  }
+};
+
+// 获取用户商店翻译的语言
+export const GetStoreLanguage = async ({
+  shop,
+  source,
+}: {
+  shop: string;
+  source: string;
+}) => {
+  try {
+    console.log("sourceaaa: ", source);
+
+    const response = await axios({
+      method: "POST",
+      url: `${process.env.SERVER_URL}/translate/getTranslationStatus?shopName=${shop}&source=${source}`,
+    });
+    console.log("user stroe language data", response.data);
+    return response.data;
+  } catch (error) {
+    console.log("get conversion data failed:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
+  }
+};
+
+// 获取实时翻译指标数据值（四个开关）
+export const GetRealTimeQuotaData = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      method: "POST",
+      url: `${process.env.SERVER_URL}/shopify/getDBConfiguration?shopName=${shop}`,
+    });
+    console.log("user stroe language data", response.data);
+    return response.data;
+  } catch (error) {
+    console.log("get conversion data failed:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 

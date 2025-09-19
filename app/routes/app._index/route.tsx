@@ -10,6 +10,7 @@ import {
   Space,
   Table,
   Typography,
+  Modal,
 } from "antd";
 import { Link, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
@@ -296,6 +297,10 @@ const Index = () => {
       },
     );
   };
+  useEffect(()=>{
+    console.log('app home');
+    
+  },[])
 
   const handleTestGraphqlData = async () => {
     // await shopify.scopes.revoke(['read_analytics','read_reports','read_orders']);
@@ -329,18 +334,18 @@ const Index = () => {
     //   action: "/app",
     // });
   };
-  useEffect(() => {
-    const checkScopes = async () => {
-      const { granted } = await shopify.scopes.query();
-      console.log("exit", granted);
-      const missingScopes = ["read_customer_events", "write_pixels"].filter(
-        (s) => !granted.includes(s),
-      );
-      setShowRequireScopeBtn(missingScopes.length !== 0);
-      console.log(showRequireScopeBtn);
-    };
-    checkScopes();
-  }, []);
+  // useEffect(() => {
+  //   const checkScopes = async () => {
+  //     const { granted } = await shopify.scopes.query();
+  //     console.log("exit", granted);
+  //     const missingScopes = ["read_customer_events", "write_pixels"].filter(
+  //       (s) => !granted.includes(s),
+  //     );
+  //     setShowRequireScopeBtn(missingScopes.length !== 0);
+  //     console.log(showRequireScopeBtn);
+  //   };
+  //   checkScopes();
+  // }, []);
   useEffect(() => {
     if (graphqlFetcher.data) {
       console.log(graphqlFetcher.data);
@@ -377,7 +382,13 @@ const Index = () => {
           // handleReload={handleReload}
         />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <AnalyticsCard analyticsData={analyticsData}></AnalyticsCard>
+          <AnalyticsCard
+            analyticsData={analyticsData}
+            shop={shop}
+            hasRequiresScopes={hasRequiresScopes}
+            missScopes={missScopes}
+            isLoading={isLoading}
+          ></AnalyticsCard>
           <div>
             <Card
               style={

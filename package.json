@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "remix vite:build",
-    "dev": "shopify app dev",
+    "dev": "shopify app dev --port 8080",
     "deployTest": "npx shopify app deploy -c shopify.app.test.toml --force",
     "deployProd": "npx shopify app deploy -c shopify.app.prod.toml --force",
     "translate": "node scripts/translate.js",
@@ -39,6 +39,7 @@
     "@shopify/app-bridge": "^3.7.10",
     "@shopify/app-bridge-react": "^4.1.8",
     "@shopify/polaris": "^12.0.0",
+    "@shopify/polaris-viz": "^16.16.0",
     "@shopify/shopify-app-remix": "^3.8.2",
     "@shopify/shopify-app-session-storage-prisma": "^5.0.2",
     "@tinymce/tinymce-react": "^5.1.1",
