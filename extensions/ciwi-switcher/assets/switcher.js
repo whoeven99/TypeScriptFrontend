@@ -25,13 +25,13 @@ async function FrontEndPrinting({
   }
 }
 
-async function CrawlerDDetectionReport({ shop, blockId, ua }) {
+async function CrawlerDDetectionReport({ shop, blockId, ua, reason }) {
   try {
     const response = await axios({
       url: `${switchUrl(blockId)}/frontEndPrinting`,
       method: "POST",
       data: {
-        data: `${shop} 检测到爬虫 ${ua}`,
+        data: `${shop} 检测到爬虫 ${ua}, 原因: ${reason}`,
       },
     });
 
@@ -1187,6 +1187,8 @@ async function ProductImgTranslate(blockId, shop, ciwiBlock) {
 }
 
 function isLikelyBotByUA() {
+  let error = [];
+
   const ua = navigator.userAgent.toLowerCase();
 
   // 常见爬虫 UA 关键词
@@ -1205,26 +1207,28 @@ function isLikelyBotByUA() {
   ];
 
   // 检查 UA 关键词
-  if (botKeywords.some((keyword) => ua.includes(keyword))) {
-    return true;
+  const matchedKeywords = botKeywords.filter((keyword) => ua.includes(keyword));
+  if (matchedKeywords.length > 0) {
+    return `ua 包含: ${matchedKeywords.join(", ")}`;
   }
 
   // 检测是否为无头浏览器环境
   if (navigator.webdriver) {
-    return true;
+    error.push("webdriver");
   }
 
   // 一些真实浏览器会有的特征（爬虫环境可能缺失）
   if (!(navigator.languages && navigator.languages.length > 0)) {
-    return true;
+    error.push("without languages");
   }
 
-  if (window.outerWidth === 0 || window.outerHeight === 0) return true;
+  if (window.outerWidth === 0 || window.outerHeight === 0)
+    error.push("window undefined");
 
   // 🆕 检测 JS 是否执行
-  if (!window.__JS_EXECUTED__) return true;
+  if (!window.__JS_EXECUTED__) error.push("js not executed");
 
-  return false;
+  return error.length >= 2 ? error.join(",") : undefined;
 }
 
 // Page load handling
@@ -1242,11 +1246,13 @@ window.onload = async function () {
 
   const shop = ciwiBlock.querySelector("#queryCiwiId");
 
+  const reason = isLikelyBotByUA();
+
   // 使用示例
-  if (isLikelyBotByUA()) {
+  if (reason) {
     console.warn("⚠️ 疑似爬虫访问");
     const ua = navigator.userAgent.toLowerCase();
-    CrawlerDDetectionReport({ shop: shop.value, blockId, ua });
+    CrawlerDDetectionReport({ shop: shop.value, blockId, ua, reason });
     return;
   } else {
     console.log("✅ 正常用户访问");
