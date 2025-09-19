@@ -1207,9 +1207,9 @@ function isLikelyBotByUA() {
   ];
 
   // 检查 UA 关键词
-  const hitKeyword = botKeywords.find((keyword) => ua.includes(keyword));
-  if (hitKeyword) {
-    return `ua 包含: ${hitKeyword}`;
+  const matchedKeywords = botKeywords.filter((keyword) => ua.includes(keyword));
+  if (matchedKeywords.length > 0) {
+    return `ua 包含: ${matchedKeywords.join(", ")}`;
   }
 
   // 检测是否为无头浏览器环境
