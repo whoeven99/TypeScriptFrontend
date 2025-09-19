@@ -1,3 +1,46 @@
+async function FrontEndPrinting({
+  blockId,
+  shop,
+  ip,
+  languageCode,
+  langInclude,
+  countryCode,
+  counInclude,
+  currencyCode,
+  checkUserIpCostTime,
+  fetchUserCountryInfoCostTime,
+}) {
+  try {
+    const response = await axios({
+      url: `${switchUrl(blockId)}/frontEndPrinting`,
+      method: "POST",
+      data: {
+        data: `${shop} 客户ip定位: ${ip}, 语言代码: ${languageCode}, ${!langInclude ? "不" : ""}包含该语言, 货币代码: ${currencyCode}, 国家代码: ${countryCode}, ${!counInclude ? "不" : ""}包含该市场, checkUserIp接口花费时间: ${checkUserIpCostTime}ms, ipapi接口花费时间: ${fetchUserCountryInfoCostTime}ms`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error FrontEndPrinting:", error);
+  }
+}
+
+async function CrawlerDDetectionReport({ shop, blockId, ua }) {
+  try {
+    const response = await axios({
+      url: `${switchUrl(blockId)}/frontEndPrinting`,
+      method: "POST",
+      data: {
+        data: `${shop} 检测到爬虫 ${ua}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error FrontEndPrinting:", error);
+  }
+}
+
 async function GetProductImageData({
   blockId,
   shopName,
@@ -1143,6 +1186,47 @@ async function ProductImgTranslate(blockId, shop, ciwiBlock) {
   }
 }
 
+function isLikelyBotByUA() {
+  const ua = navigator.userAgent.toLowerCase();
+
+  // 常见爬虫 UA 关键词
+  const botKeywords = [
+    "bot",
+    "spider",
+    "crawl",
+    "slurp", // :contentReference[oaicite:1]{index=1}
+    "bingpreview", // :contentReference[oaicite:2]{index=2}
+    "facebookexternalhit", // :contentReference[oaicite:3]{index=3}
+    "monitor",
+    "headless",
+    "wget",
+    "curl",
+    "python-requests",
+  ];
+
+  // 检查 UA 关键词
+  if (botKeywords.some((keyword) => ua.includes(keyword))) {
+    return true;
+  }
+
+  // 检测是否为无头浏览器环境
+  if (navigator.webdriver) {
+    return true;
+  }
+
+  // 一些真实浏览器会有的特征（爬虫环境可能缺失）
+  if (!(navigator.languages && navigator.languages.length > 0)) {
+    return true;
+  }
+
+  if (window.outerWidth === 0 || window.outerHeight === 0) return true;
+
+  // 🆕 检测 JS 是否执行
+  if (!window.__JS_EXECUTED__) return true;
+
+  return false;
+}
+
 // Page load handling
 window.onload = async function () {
   console.log("onload start");
@@ -1156,8 +1240,19 @@ window.onload = async function () {
     return;
   }
 
-  const switcher = ciwiBlock.querySelector("#ciwi-container");
   const shop = ciwiBlock.querySelector("#queryCiwiId");
+
+  // 使用示例
+  if (isLikelyBotByUA()) {
+    console.warn("⚠️ 疑似爬虫访问");
+    const ua = navigator.userAgent.toLowerCase();
+    CrawlerDDetectionReport({ shop: shop.value, blockId, ua });
+    return;
+  } else {
+    console.log("✅ 正常用户访问");
+  }
+
+  const switcher = ciwiBlock.querySelector("#ciwi-container");
   const mainBox = ciwiBlock.querySelector("#main-box");
   const selectedLanguageText = ciwiBlock.querySelector(
     "#translate-float-btn-text",
@@ -1234,10 +1329,7 @@ window.onload = async function () {
       browserLanguage = browserLanguage.split("-")[0];
     }
 
-    if (
-      languageInput.value !== browserLanguage &&
-      availableLanguages.includes(browserLanguage)
-    ) {
+    if (availableLanguages.includes(browserLanguage)) {
       detectedLanguage = browserLanguage;
     }
 
@@ -1252,15 +1344,32 @@ window.onload = async function () {
         currencyInput.value = storedCurrency;
       }
     } else {
+      const checkUserIpStartTime = new Date().getTime();
       const userIp = await checkUserIp({ blockId, shop: shop.value });
-      console.log("userIp: ", userIp);
+      const checkUserIpEndTime = new Date().getTime();
+      const checkUserIpCostTime = checkUserIpEndTime - checkUserIpStartTime;
 
       if (userIp) {
+        const fetchUserCountryInfoStartTime = new Date().getTime();
         const IpData = await fetchUserCountryInfo(iptokenValue);
-        console.log("IpData: ", IpData);
-
+        const fetchUserCountryInfoEndTime = new Date().getTime();
+        const fetchUserCountryInfoCostTime =
+          fetchUserCountryInfoEndTime - fetchUserCountryInfoStartTime;
+        const ip = IpData?.ip;
         const currencyCode = IpData?.currency?.code;
         const countryCode = IpData?.country_code;
+        FrontEndPrinting({
+          blockId,
+          shop: shop.value,
+          ip: ip,
+          languageCode: browserLanguage,
+          langInclude: availableLanguages.includes(browserLanguage),
+          countryCode,
+          counInclude: availableCountries.includes(IpData?.country_code),
+          currencyCode,
+          checkUserIpCostTime,
+          fetchUserCountryInfoCostTime,
+        });
         if (currencyCode) {
           localStorage.setItem("ciwi_selected_currency", currencyCode);
         }

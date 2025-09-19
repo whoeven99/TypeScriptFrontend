@@ -20,16 +20,8 @@ import "./styles.css";
 const { Title, Text } = Typography;
 
 interface PaymentModalProps {
-  shop: string;
-  server: string;
   visible: boolean;
   setVisible: (visible: boolean) => void;
-  source: string;
-  target: string[];
-  model: any;
-  translateSettings3: string[];
-  needPay: boolean;
-  handleTranslate: () => void;
 }
 
 export interface OptionType {
@@ -44,24 +36,15 @@ export interface OptionType {
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
-  shop,
-  server,
   visible,
   setVisible,
-  source,
-  target,
-  model,
-  translateSettings3,
-  needPay,
-  handleTranslate,
 }) => {
   const [selectedKey, setSelectedKey] = useState<string>("option-1");
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
   const [credits, setCredits] = useState<number | undefined>(undefined);
-  const [multiple1, setMultiple1] = useState<number>(1);
-  const [multiple2, setMultiple2] = useState<number>(model?.speed || 2);
+  // const [multiple1, setMultiple1] = useState<number>(1);
+  // const [multiple2, setMultiple2] = useState<number>(model?.speed || 2);
   const { t } = useTranslation();
-  const fetcher = useFetcher<any>();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
   const { reportClick } = useReport();
@@ -195,55 +178,16 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     return options.find((item) => item.key == selectedKey) || options[0];
   }, [selectedKey]);
 
-  useEffect(() => {
-    if (credits && !selectedKey) {
-      const matchedOption = options.find(
-        (option) => option?.Credits >= credits * multiple1 * multiple2,
-      ); // 找到第一个符合条件的选项
-      if (matchedOption) {
-        setSelectedKey(matchedOption?.key);
-      }
-    }
-  }, [credits]);
-
   // useEffect(() => {
-  //   fetcher.submit(
-  //     {
-  //       credits: JSON.stringify({
-  //         source: source || "en",
-  //         target: target || "zh-CN",
-  //       }),
-  //     },
-  //     {
-  //       method: "post",
-  //       action: "/app",
-  //     },
-  //   );
-  // }, []);
-
-  // useEffect(() => {
-  //   if (fetcher.data) {
-  //     if (fetcher.data?.success) {
-  //       const { id, translationId, shopName, ...rest } = fetcher.data?.response;
-  //       let credits = 0;
-  //       let submitted = false;
-
-  //       for (const [key, value] of Object.entries(rest)) {
-  //         if (translateSettings3.includes(key as string)) {
-  //           if (value !== null) {
-  //             credits += value as number;
-  //           } else {
-  //             getCreditsFromServer();
-  //             submitted = true; // 标记已提交
-  //             break; // 中断循环
-  //           }
-  //         }
-  //       }
-  //     } else {
-  //       getCreditsFromServer();
+  //   if (credits && !selectedKey) {
+  //     const matchedOption = options.find(
+  //       (option) => option?.Credits >= credits * multiple1 * multiple2,
+  //     ); // 找到第一个符合条件的选项
+  //     if (matchedOption) {
+  //       setSelectedKey(matchedOption?.key);
   //     }
   //   }
-  // }, [fetcher.data]);
+  // }, [credits]);
 
   useEffect(() => {
     if (payFetcher.data) {
@@ -278,7 +222,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       }
     }
   }, [payFetcher.data]);
-  
+
   const onClick = () => {
     setBuyButtonLoading(true);
     const payInfo = {
@@ -329,55 +273,39 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
               {t("Contact support")}
             </Button>
           </div>
-          {needPay ? (
-            <Button
-              key="buy-now"
-              type="primary"
-              onClick={onClick}
-              disabled={buyButtonLoading || !selectedKey}
-              loading={buyButtonLoading}
+          <Button
+            key="buy-now"
+            type="primary"
+            onClick={onClick}
+            disabled={buyButtonLoading || !selectedKey}
+            loading={buyButtonLoading}
+            style={{
+              height: "auto",
+              paddingTop: "4px",
+              paddingBottom: "4px",
+            }}
+          >
+            <div
+              key="button-content"
               style={{
-                height: "auto",
-                paddingTop: "4px",
-                paddingBottom: "4px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
               }}
             >
-              <div
-                key="button-content"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <Text key="price" strong style={{ color: "inherit" }}>
-                  ${selectedOption?.price.currentPrice ?? 0}
-                </Text>
-                <Text key="buy-text" style={{ color: "inherit" }}>
-                  {t("Buy now")}
-                </Text>
-              </div>
-            </Button>
-          ) : (
-            <Button
-              type="primary"
-              loading={buyButtonLoading}
-              disabled={buyButtonLoading}
-              onClick={() => {
-                setBuyButtonLoading(true);
-                handleTranslate();
-              }}
-            >
-              {t("Translate")}
-            </Button>
-          )}
+              <Text key="price" strong style={{ color: "inherit" }}>
+                ${selectedOption?.price.currentPrice ?? 0}
+              </Text>
+              <Text key="buy-text" style={{ color: "inherit" }}>
+                {t("Buy now")}
+              </Text>
+            </div>
+          </Button>
         </div>,
       ]}
     >
       <Title level={4} style={{ textAlign: "center", marginTop: "20px" }}>
-        {needPay
-          ? t("Not enough translation credits. Purchase more to continue")
-          : t("Translation task is about to start")}
+        {t("Not enough translation credits. Purchase more to continue")}
       </Title>
       {/* <Card>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -414,52 +342,49 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
           <Text strong> {credits === undefined ? <Text strong>{t("Calculating...")}</Text> : credits >= 0 ? <Text strong>{Number((credits * multiple1 * multiple2).toFixed(0)).toLocaleString()}</Text> : <Text strong>{t("Calculation failed")}</Text>}</Text>
         </div>
       </Card> */}
-      {needPay && (
-        <>
-          <Divider />
-          <Title level={5}>{t("Buy credits")}</Title>
-          <div className="options_wrapper">
-            <Space direction="vertical">
+
+      <Divider />
+      <Title level={5}>{t("Buy credits")}</Title>
+      <div className="options_wrapper">
+        <Space direction="vertical">
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap", // 允许自动换行
+              gap: "16px",
+              width: "100%",
+            }}
+          >
+            {options.map((option: any) => (
               <div
+                key={option.name}
                 style={{
+                  flex: "0 1 auto", // 允许缩小但不放大
+                  // minWidth: '200px',  // 设置最小宽度
                   display: "flex",
-                  flexWrap: "wrap", // 允许自动换行
-                  gap: "16px",
-                  width: "100%",
+                  justifyContent: "center",
                 }}
               >
-                {options.map((option: any) => (
-                  <div
-                    key={option.name}
-                    style={{
-                      flex: "0 1 auto", // 允许缩小但不放大
-                      // minWidth: '200px',  // 设置最小宽度
-                      display: "flex",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <PaymentOptionSelect
-                      option={option}
-                      selectedOption={selectedOption}
-                      onChange={(e) => setSelectedKey(e.key)}
-                    />
-                  </div>
-                ))}
+                <PaymentOptionSelect
+                  option={option}
+                  selectedOption={selectedOption}
+                  onChange={(e) => setSelectedKey(e.key)}
+                />
               </div>
-            </Space>
+            ))}
           </div>
-          <Divider />
-          <div className="total_payment">
-            <Text style={{ marginRight: "5px" }}>{t("Total Payment:")}</Text>
-            <Text strong>
-              $
-              {selectedOption?.price.currentPrice
-                ? selectedOption?.price.currentPrice
-                : 0}
-            </Text>
-          </div>
-        </>
-      )}
+        </Space>
+      </div>
+      <Divider />
+      <div className="total_payment">
+        <Text style={{ marginRight: "5px" }}>{t("Total Payment:")}</Text>
+        <Text strong>
+          $
+          {selectedOption?.price.currentPrice
+            ? selectedOption?.price.currentPrice
+            : 0}
+        </Text>
+      </div>
     </Modal>
   );
 };

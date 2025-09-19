@@ -4,7 +4,6 @@ import { queryShop, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
 import { withRetry } from "~/utils/retry";
-import { v4 as uuidv4 } from "uuid";
 export interface ConfirmDataType {
   resourceId: string;
   locale: string;
@@ -1475,7 +1474,7 @@ export const GoogleAnalyticClickReport = async (params: any, name: string) => {
       {
         method: "POST",
         body: JSON.stringify({
-          client_id: `${uuidv4()}`, // 生成唯一客户端 ID
+          client_id: `${params.shopName}`, // 用shop作为用户的唯一标识
           events: [
             {
               name: `${name}`,

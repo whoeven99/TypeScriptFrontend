@@ -4,7 +4,7 @@ on:
   workflow_dispatch:  # 手动触发
 
 jobs:
-  deploy:
+  deploy_shopify_switcher:
     runs-on: ubuntu-latest
     environment: ShopifyConfig  # CLI token都在这个Environment下
 
@@ -13,7 +13,7 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0  # 获取所有历史记录以便查找PR提交
-        
+
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
@@ -33,3 +33,31 @@ jobs:
         # app的客户端id
         SHOPIFY_API_KEY: "fb9fc15cbec02bd735e2a5b491cf8409"
       run: shopify app deploy -c shopify.app.prod.toml -f
+
+  deploy_render:
+    runs-on: ubuntu-latest
+    environment: ShopifyConfig
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # 获取所有历史记录以便查找PR提交
+
+    - name: Deploy to Render Prod
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }} # 这是整个render的apikey
+        RENDER_SERVICE_ID: ${{ secrets.RENDER_PROD_SERVICE_ID }} # 这是 prod service id
+      run: | # action 非0退出码表示失败
+        echo "Deploying branch master to Render TypescriptFD PROD"
+        RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d "{\"branch\": \"master\"}")
+        if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 201 ]; then
+          echo "Deploy to prod Render triggered successfully. HTTP status: $RESPONSE"
+        else
+          echo "Failed to trigger deployment. HTTP status: $RESPONSE"
+          cat response.json
+          exit 1
+        fi
