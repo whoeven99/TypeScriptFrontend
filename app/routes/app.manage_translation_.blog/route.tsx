@@ -38,6 +38,7 @@ import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { useDispatch, useSelector } from "react-redux";
 import { setLocale } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
+import { globalStore } from "~/globalStore";
 
 const { Sider, Content } = Layout;
 const { Text, Title } = Typography;
@@ -72,29 +73,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-
-  try {
-    const blogs = await queryNextTransType({
-      shop,
-      accessToken: accessToken as string,
-      resourceType: "BLOG",
-      endCursor: "",
-      locale: searchTerm || "",
-    });
-
-    return json({
-      shop,
-      server: process.env.SERVER_URL,
-      shopName: shop,
-      searchTerm,
-      blogs,
-    });
-  } catch (error) {
-    console.error("Error load blog:", error);
-    throw new Response("Error load blog", { status: 500 });
-  }
+  return json({
+    searchTerm,
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -106,36 +87,62 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const formData = await request.formData();
-    const startCursor: string = JSON.parse(
-      formData.get("startCursor") as string,
-    );
-    const endCursor: string = JSON.parse(formData.get("endCursor") as string);
+    const startCursor = JSON.parse(formData.get("startCursor") as string);
+    const endCursor = JSON.parse(formData.get("endCursor") as string);
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
     switch (true) {
       case !!startCursor:
-        const previousBlogs = await queryPreviousTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "BLOG",
-          startCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
-        console.log(`应用日志: ${shop} 翻译管理-博客页面翻到上一页`);
+        try {
+          const response = await queryPreviousTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "BLOG",
+            startCursor: startCursor.cursor,
+            locale: searchTerm || "",
+          }); // 处理逻辑
+          console.log(`应用日志: ${shop} 翻译管理-博客页面翻到上一页`);
 
-        return json({ previousBlogs: previousBlogs });
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
       case !!endCursor:
-        const nextBlogs = await queryNextTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "BLOG",
-          endCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
-        console.log(`应用日志: ${shop} 翻译管理-博客页面翻到下一页`);
+        try {
+          const response = await queryNextTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "BLOG",
+            endCursor: endCursor.cursor,
+            locale: searchTerm || "",
+          }); // 处理逻辑
+          console.log(`应用日志: ${shop} 翻译管理-博客页面翻到下一页`);
 
-        return json({ nextBlogs: nextBlogs });
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
@@ -161,30 +168,23 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { shop, searchTerm, blogs, server, shopName } =
-    useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  const { searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
-  const submit = useSubmit(); // 使用 useSubmit 钩子
   const fetcher = useFetcher<any>();
+  const dataFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  // const [isVisible, setIsVisible] = useState<
-  //   boolean | string | { language: string } | { item: string }
-  // >(false);
 
   const [menuData, setMenuData] = useState<any[]>([]);
-  const [blogsData, setBlogsData] = useState(blogs);
+  const [blogsData, setBlogsData] = useState<any>();
   const [blogData, setBlogData] = useState<BlogType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [selectBlogKey, setSelectBlogKey] = useState(
-    blogs.nodes[0]?.resourceId,
-  );
+  const [selectBlogKey, setSelectBlogKey] = useState<string>("");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
@@ -216,12 +216,8 @@ const Index = () => {
     searchTerm || "",
   );
   const [selectedItem, setSelectedItem] = useState<string>("blog");
-  const [hasPrevious, setHasPrevious] = useState<boolean>(
-    blogs.pageInfo.hasPreviousPage || false,
-  );
-  const [hasNext, setHasNext] = useState<boolean>(
-    blogs.pageInfo.hasNextPage || false,
-  );
+  const [hasPrevious, setHasPrevious] = useState<boolean>(false);
+  const [hasNext, setHasNext] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -236,9 +232,20 @@ const Index = () => {
         },
       );
     }
+    dataFetcher.submit(
+      {
+        endCursor: JSON.stringify({
+          cursor: "",
+          searchTerm: searchTerm,
+        }),
+      },
+      {
+        method: "POST",
+      },
+    );
     fetcher.submit(
       {
-        log: `${shop} 目前在翻译管理-博客页面`,
+        log: `${globalStore?.shop} 目前在翻译管理-博客页面`,
       },
       {
         method: "POST",
@@ -250,10 +257,6 @@ const Index = () => {
     };
     handleResize();
     window.addEventListener("resize", handleResize);
-    if (blogs) {
-      setMenuData(exMenuData(blogs));
-      setIsLoading(false);
-    }
     return () => {
       window.removeEventListener("resize", handleResize);
     };
@@ -275,28 +278,16 @@ const Index = () => {
       );
     }
   }, [languageTableData]);
-
+  
   useEffect(() => {
-    if (blogs && isManualChangeRef.current) {
-      setBlogsData(blogs);
-      setMenuData(exMenuData(blogs));
-      setSelectBlogKey(blogs.nodes[0]?.resourceId);
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 100);
-      isManualChangeRef.current = false; // 重置
+    if (blogsData) {
+      const data = transBeforeData({
+        blogs: blogsData,
+      });
+      setBlogData(data);
+      setConfirmData([]);
+      setTranslatedValues({});
     }
-  }, [blogs]);
-
-  useEffect(() => {
-    const data = transBeforeData({
-      blogs: blogsData,
-    });
-    setBlogData(data);
-    setConfirmData([]);
-    setTranslatedValues({});
-    setHasPrevious(blogsData.pageInfo.hasPreviousPage);
-    setHasNext(blogsData.pageInfo.hasNextPage);
   }, [selectBlogKey, blogsData]);
 
   useEffect(() => {
@@ -321,22 +312,22 @@ const Index = () => {
   }, [blogData]);
 
   useEffect(() => {
-    if (actionData && "nextBlogs" in actionData) {
-      const nextBlogs = exMenuData(actionData.nextBlogs);
-      // 在这里处理 nextBlogs
-      setMenuData(nextBlogs);
-      setBlogsData(actionData.nextBlogs);
-      setSelectBlogKey(actionData.nextBlogs.nodes[0]?.resourceId);
-    } else if (actionData && "previousBlogs" in actionData) {
-      const previousBlogs = exMenuData(actionData.previousBlogs);
-      // 在这里处理 previousBlogs
-      setMenuData(previousBlogs);
-      setBlogsData(actionData.previousBlogs);
-      setSelectBlogKey(actionData.previousBlogs.nodes[0]?.resourceId);
-    } else {
-      // 如果不存在 nextBlogs，可以执行其他逻辑
+    if (dataFetcher.data) {
+      if (dataFetcher.data?.success) {
+        const menuData = exMenuData(dataFetcher.data.response);
+        // 在这里处理 nextArticles
+        setMenuData(menuData);
+        setBlogsData(dataFetcher.data.response);
+        setSelectBlogKey(dataFetcher.data.response?.nodes[0]?.resourceId);
+        setHasPrevious(dataFetcher.data.response?.pageInfo.hasPreviousPage);
+        setHasNext(dataFetcher.data.response?.pageInfo.hasNextPage);
+        isManualChangeRef.current = false; // 重置
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 100);
+      }
     }
-  }, [actionData]);
+  }, [dataFetcher.data]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -373,7 +364,7 @@ const Index = () => {
       setConfirmData([]);
       fetcher.submit(
         {
-          log: `${shop} 翻译管理-博客页面修改数据保存成功`,
+          log: `${globalStore?.shop} 翻译管理-博客页面修改数据保存成功`,
         },
         {
           method: "POST",
@@ -573,7 +564,7 @@ const Index = () => {
     }
     fetcher.submit(
       {
-        log: `${shop} 从翻译管理-博客页面点击单行翻译`,
+        log: `${globalStore?.shop} 从翻译管理-博客页面点击单行翻译`,
       },
       {
         method: "POST",
@@ -582,7 +573,7 @@ const Index = () => {
     );
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
-      shopName: shopName,
+      shopName: globalStore?.shop || "",
       source: blogsData.nodes
         .find((item: any) => item?.resourceId === selectBlogKey)
         ?.translatableContent.find((item: any) => item.key === key)?.locale,
@@ -591,7 +582,7 @@ const Index = () => {
       context: context,
       key: key,
       type: type,
-      server: server || "",
+      server: globalStore?.server || "",
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
@@ -599,7 +590,7 @@ const Index = () => {
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
-            log: `${shop} 从翻译管理-博客页面点击单行翻译返回结果 ${data?.response}`,
+            log: `${globalStore?.shop} 从翻译管理-博客页面点击单行翻译返回结果 ${data?.response}`,
           },
           {
             method: "POST",
@@ -619,6 +610,18 @@ const Index = () => {
     } else {
       shopify.saveBar.hide("save-bar");
       setIsLoading(true);
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: "",
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "POST",
+          action:`/app/manage_translation/article?language=${language}`
+        },
+      );
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
       navigate(`/app/manage_translation/blog?language=${language}`);
@@ -642,13 +645,18 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      const formData = new FormData();
-      const startCursor = blogsData.pageInfo.startCursor;
-      formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-      submit(formData, {
-        method: "post",
-        action: `/app/manage_translation/blog?language=${searchTerm}`,
-      }); // 提交表单请求
+      dataFetcher.submit(
+        {
+          startCursor: JSON.stringify({
+            cursor: blogsData.pageInfo.startCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/blog?language=${searchTerm}`,
+        },
+      ); // 提交表单请求
     }
   };
 
@@ -657,13 +665,18 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      const formData = new FormData();
-      const endCursor = blogsData.pageInfo.endCursor;
-      formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-      submit(formData, {
-        method: "post",
-        action: `/app/manage_translation/blog?language=${searchTerm}`,
-      }); // 提交表单请求
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: blogsData.pageInfo.endCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/blog?language=${searchTerm}`,
+        },
+      ); // 提交表单请求
     }
   };
 
@@ -685,7 +698,7 @@ const Index = () => {
     }); // 提交表单请求
     fetcher.submit(
       {
-        log: `${shop} 提交翻译管理-博客页面修改数据`,
+        log: `${globalStore?.shop} 提交翻译管理-博客页面修改数据`,
       },
       {
         method: "POST",
@@ -807,7 +820,7 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : blogs.nodes.length ? (
+        ) : blogsData.nodes.length ? (
           <>
             {!isMobile && (
               <Sider

@@ -37,6 +37,7 @@ import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
+import { globalStore } from "~/globalStore";
 
 const { Sider, Content } = Layout;
 
@@ -73,34 +74,12 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  // 如果没有 language 参数，直接返回空数据
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-
-  console.log(`${shop} 目前在翻译管理-电子邮件页面`);
-
-  try {
-    const emails = await queryNextTransType({
-      shop,
-      accessToken: accessToken as string,
-      resourceType: "EMAIL_TEMPLATE",
-      endCursor: "",
-      locale: searchTerm || "",
-    });
-
-    return json({
-      server: process.env.SERVER_URL,
-      shopName: shop,
-      searchTerm,
-      emails,
-    });
-  } catch (error) {
-    console.error("Error load email:", error);
-    throw new Response("Error load email", { status: 500 });
-  }
+  return json({
+    searchTerm,
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -112,32 +91,62 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const formData = await request.formData();
-    const startCursor: string = JSON.parse(
-      formData.get("startCursor") as string,
-    );
-    const endCursor: string = JSON.parse(formData.get("endCursor") as string);
+    const startCursor = JSON.parse(formData.get("startCursor") as string);
+    const endCursor = JSON.parse(formData.get("endCursor") as string);
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
     switch (true) {
       case !!startCursor:
-        const previousEmails = await queryPreviousTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "EMAIL_TEMPLATE",
-          startCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
-        return json({ previousEmails: previousEmails });
+        try {
+          const response = await queryPreviousTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "EMAIL_TEMPLATE",
+            startCursor: startCursor.cursor,
+            locale: searchTerm || "",
+          }); // 处理逻辑
+          console.log(`应用日志: ${shop} 翻译管理-电子邮件页面翻到上一页`);
+
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
       case !!endCursor:
-        const nextEmails = await queryNextTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "EMAIL_TEMPLATE",
-          endCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
-        return json({ nextEmails: nextEmails });
+        try {
+          const response = await queryNextTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "EMAIL_TEMPLATE",
+            endCursor: endCursor.cursor,
+            locale: searchTerm || "",
+          }); // 处理逻辑
+          console.log(`应用日志: ${shop} 翻译管理-电子邮件页面翻到下一页`);
+
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
@@ -163,29 +172,21 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, emails, server, shopName } =
-    useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  const { searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
-  const submit = useSubmit(); // 使用 useSubmit 钩子
+  const dataFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  // const [isVisible, setIsVisible] = useState<
-  //   boolean | string | { language: string } | { item: string }
-  // >(false);
-
   const [menuData, setMenuData] = useState<any[]>([]);
-  const [emailsData, setEmailsData] = useState(emails);
+  const [emailsData, setEmailsData] = useState<any>();
   const [emailData, setEmailData] = useState<EmailType>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [selectEmailKey, setSelectEmailKey] = useState(
-    emails.nodes[0]?.resourceId,
-  );
+  const [selectEmailKey, setSelectEmailKey] = useState<any>("");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
@@ -217,12 +218,8 @@ const Index = () => {
     searchTerm || "",
   );
   const [selectedItem, setSelectedItem] = useState<string>("email");
-  const [hasPrevious, setHasPrevious] = useState<boolean>(
-    emails.pageInfo.hasPreviousPage || false,
-  );
-  const [hasNext, setHasNext] = useState<boolean>(
-    emails.pageInfo.hasNextPage || false,
-  );
+  const [hasPrevious, setHasPrevious] = useState<boolean>(false);
+  const [hasNext, setHasNext] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -237,15 +234,22 @@ const Index = () => {
         },
       );
     }
+    dataFetcher.submit(
+      {
+        endCursor: JSON.stringify({
+          cursor: "",
+          searchTerm: searchTerm,
+        }),
+      },
+      {
+        method: "POST",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
     handleResize();
     window.addEventListener("resize", handleResize);
-    if (emails) {
-      setMenuData(exMenuData(emails));
-      setIsLoading(false);
-    }
     return () => {
       window.removeEventListener("resize", handleResize);
     };
@@ -269,27 +273,15 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
-    if (emails && isManualChangeRef.current) {
-      setEmailsData(emails);
-      setMenuData(exMenuData(emails));
-      setSelectEmailKey(emails.nodes[0]?.resourceId);
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 100);
-      isManualChangeRef.current = false; // 重置
+    if (emailsData) {
+      const data = transBeforeData({
+        emails: emailsData,
+      });
+      setEmailData(data);
+      setConfirmData([]);
+      setTranslatedValues({});
+      setLoadingItems([]);
     }
-  }, [emails]);
-
-  useEffect(() => {
-    const data = transBeforeData({
-      emails: emailsData,
-    });
-    setEmailData(data);
-    setConfirmData([]);
-    setTranslatedValues({});
-    setHasPrevious(emailsData.pageInfo.hasPreviousPage);
-    setHasNext(emailsData.pageInfo.hasNextPage);
-    setLoadingItems([]);
   }, [selectEmailKey, emailsData]);
 
   useEffect(() => {
@@ -314,22 +306,22 @@ const Index = () => {
   }, [emailData]);
 
   useEffect(() => {
-    if (actionData && "nextEmails" in actionData) {
-      const nextEmails = exMenuData(actionData.nextEmails);
-      // 在这里处理 nextEmails
-      setMenuData(nextEmails);
-      setEmailsData(actionData.nextEmails);
-      setSelectEmailKey(actionData.nextEmails.nodes[0]?.resourceId);
-    } else if (actionData && "previousEmails" in actionData) {
-      const previousEmails = exMenuData(actionData.previousEmails);
-      // 在这里处理 previousEmails
-      setMenuData(previousEmails);
-      setEmailsData(actionData.previousEmails);
-      setSelectEmailKey(actionData.previousEmails.nodes[0]?.resourceId);
-    } else {
-      // 如果不存在 nextEmails，可以执行其他逻辑
+    if (dataFetcher.data) {
+      if (dataFetcher.data?.success) {
+        const menuData = exMenuData(dataFetcher.data.response);
+        // 在这里处理 nextArticles
+        setMenuData(menuData);
+        setEmailsData(dataFetcher.data.response);
+        setSelectEmailKey(dataFetcher.data.response?.nodes[0]?.resourceId);
+        setHasPrevious(dataFetcher.data.response?.pageInfo.hasPreviousPage);
+        setHasNext(dataFetcher.data.response?.pageInfo.hasNextPage);
+        isManualChangeRef.current = false; // 重置
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 100);
+      }
     }
-  }, [actionData]);
+  }, [dataFetcher.data]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -577,7 +569,7 @@ const Index = () => {
     }
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
-      shopName: shopName,
+      shopName: globalStore?.shop || "",
       source: emailsData.nodes
         .find((item: any) => item?.resourceId === selectEmailKey)
         ?.translatableContent.find((item: any) => item.key === key)?.locale,
@@ -586,7 +578,7 @@ const Index = () => {
       context: context,
       key: key,
       type: type,
-      server: server || "",
+      server: globalStore?.server || "",
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
@@ -605,6 +597,18 @@ const Index = () => {
     } else {
       shopify.saveBar.hide("save-bar");
       setIsLoading(true);
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: "",
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/email?language=${language}`,
+        },
+      ); // 提交表单请求
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
       navigate(`/app/manage_translation/email?language=${language}`);
@@ -637,13 +641,18 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      const formData = new FormData();
-      const startCursor = emailsData.pageInfo.startCursor;
-      formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-      submit(formData, {
-        method: "post",
-        action: `/app/manage_translation/email?language=${searchTerm}`,
-      }); // 提交表单请求
+      dataFetcher.submit(
+        {
+          startCursor: JSON.stringify({
+            cursor: emailsData.pageInfo.startCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/email?language=${searchTerm}`,
+        },
+      ); // 提交表单请求
     }
   };
 
@@ -652,13 +661,18 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      const formData = new FormData();
-      const endCursor = emailsData.pageInfo.endCursor;
-      formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-      submit(formData, {
-        method: "post",
-        action: `/app/manage_translation/email?language=${searchTerm}`,
-      }); // 提交表单请求
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: emailsData.pageInfo.endCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/email?language=${searchTerm}`,
+        },
+      ); // 提交表单请求
     }
   };
 
@@ -784,7 +798,7 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : emails.nodes.length ? (
+        ) : emailsData.nodes.length ? (
           <>
             {!isMobile && (
               <Sider

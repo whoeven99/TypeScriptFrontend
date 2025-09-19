@@ -37,21 +37,17 @@ import {
   GetProductImageData,
   UpdateProductImageAltData,
 } from "~/api/JavaServer";
+import { globalStore } from "~/globalStore";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const searchParams = new URL(request.url).searchParams;
-  const searchTerm = searchParams.get("language");
-
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
 
   return json({
-    shop,
     searchTerm,
-    server: process.env.SERVER_URL,
   });
 };
 
@@ -495,7 +491,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, shop, server } = useLoaderData<typeof loader>();
+  const { searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(false);
 
@@ -588,7 +584,7 @@ const Index = () => {
     }
     fetcher.submit(
       {
-        log: `${shop} 目前在翻译管理-产品图片描述页面`,
+        log: `${globalStore?.shop} 目前在翻译管理-产品图片描述页面`,
       },
       {
         method: "POST",
@@ -668,8 +664,8 @@ const Index = () => {
         )[0] || [];
       async function getTargetData() {
         const targetData = await GetProductImageData({
-          server: server || "",
-          shopName: shop,
+          server: globalStore?.server || "",
+          shopName: globalStore?.shop || "",
           productId: selectedKey,
           languageCode: selectedLanguage,
         });
@@ -911,8 +907,8 @@ const Index = () => {
     setSaveLoading(true);
     const promises = confirmData.map((item: any) =>
       UpdateProductImageAltData({
-        server: server || "",
-        shopName: shop,
+        server: globalStore?.server || "",
+        shopName: globalStore?.shop || "",
         productId: item.productId,
         imageUrl: item.imageUrl,
         altText: item.altText,

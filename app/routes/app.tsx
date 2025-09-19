@@ -55,6 +55,7 @@ import {
   setUpdateTime,
   setUserConfigIsLoading,
 } from "~/store/modules/userConfig";
+import { globalStore } from "~/globalStore";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -88,7 +89,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const payInfo = JSON.parse(formData.get("payInfo") as string);
     const orderInfo = JSON.parse(formData.get("orderInfo") as string);
     const stopTranslate = JSON.parse(formData.get("stopTranslate") as string);
-    const googleAnalytics = JSON.parse(formData.get("googleAnalytics") as string);
+    const googleAnalytics = JSON.parse(
+      formData.get("googleAnalytics") as string,
+    );
     if (init) {
       try {
         const init = await InitializationDetection({ shop });
@@ -349,10 +352,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         const { data, eventType, timestamp, name } = googleAnalytics;
         const response = await GoogleAnalyticClickReport(
-          { ...data, eventType, timestamp, shopName:shop },
-          name
+          { ...data, eventType, timestamp, shopName: shop },
+          name,
         );
-        return json({ data: { success: response, message: `${name} ${eventType} success googleAnalytics` } });
+        return json({
+          data: {
+            success: response,
+            message: `${name} ${eventType} success googleAnalytics`,
+          },
+        });
       } catch (error) {
         console.error("Error googleAnalytics app:", error);
         return json({
@@ -400,14 +408,9 @@ export default function App() {
         action: "/app",
       },
     );
-    getPlan();
-    getWords();
-    dispatch(setShop({ shop: shop as string }));
     setIsClient(true);
-    const shopName = localStorage.getItem("shop");
-    if (!shopName) {
-      localStorage.setItem("shop", (shop as string) || "");
-    }
+    globalStore.shop = shop as string;
+    globalStore.server = server as string;
   }, []);
 
   useEffect(() => {
