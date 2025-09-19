@@ -1228,7 +1228,7 @@ function isLikelyBotByUA() {
   // 🆕 检测 JS 是否执行
   if (!window.__JS_EXECUTED__) error.push("js not executed");
 
-  return error?.length > 2 ? error.join(",") : undefined;
+  return error.length >= 2 ? error.join(",") : undefined;
 }
 
 // Page load handling
