@@ -36,6 +36,7 @@ import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
+import { globalStore } from "~/globalStore";
 
 const { Content } = Layout;
 
@@ -51,34 +52,12 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  // 如果没有 language 参数，直接返回空数据
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-
-  console.log(`${shop} 目前在翻译管理-筛选器页面`);
-
-  try {
-    const filters = await queryNextTransType({
-      shop,
-      accessToken: accessToken as string,
-      resourceType: "FILTER",
-      endCursor: "",
-      locale: searchTerm || "",
-    });
-
-    return json({
-      server: process.env.SERVER_URL,
-      shopName: shop,
-      searchTerm,
-      filters,
-    });
-  } catch (error) {
-    console.error("Error load filter:", error);
-    throw new Response("Error load filter", { status: 500 });
-  }
+  return json({
+    searchTerm,
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -90,32 +69,62 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const formData = await request.formData();
-    const startCursor: string = JSON.parse(
-      formData.get("startCursor") as string,
-    );
-    const endCursor: string = JSON.parse(formData.get("endCursor") as string);
+    const startCursor = JSON.parse(formData.get("startCursor") as string);
+    const endCursor = JSON.parse(formData.get("endCursor") as string);
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
     switch (true) {
       case !!startCursor:
-        const previousFilters = await queryPreviousTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "FILTER",
-          startCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
-        return json({ data: previousFilters });
+        try {
+          const response = await queryPreviousTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "FILTER",
+            startCursor: startCursor.cursor,
+            locale: searchTerm || "",
+          }); // 处理逻辑
+          console.log(`应用日志: ${shop} 翻译管理-筛选器页面翻到上一页`);
+
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
       case !!endCursor:
-        const nextFilters = await queryNextTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "FILTER",
-          endCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
-        return json({ data: nextFilters });
+        try {
+          const response = await queryNextTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "FILTER",
+            endCursor: endCursor.cursor,
+            locale: searchTerm || "",
+          }); // 处理逻辑
+          console.log(`应用日志: ${shop} 翻译管理-筛选器页面翻到下一页`);
+
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
@@ -141,21 +150,19 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, filters, server, shopName } =
-    useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  const { searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
-  const submit = useSubmit(); // 使用 useSubmit 钩子
+  const dataFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
   // const [isVisible, setIsVisible] = useState<boolean | string | { language: string } | { item: string }>(false);
 
-  const [filtersData, setFiltersData] = useState(filters);
+  const [filtersData, setFiltersData] = useState<any>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
@@ -188,12 +195,8 @@ const Index = () => {
     searchTerm || "",
   );
   const [selectedItem, setSelectedItem] = useState<string>("filter");
-  const [hasPrevious, setHasPrevious] = useState<boolean>(
-    filters?.pageInfo?.hasPreviousPage || false,
-  );
-  const [hasNext, setHasNext] = useState<boolean>(
-    filters?.pageInfo?.hasNextPage || false,
-  );
+  const [hasPrevious, setHasPrevious] = useState<boolean>(false);
+  const [hasNext, setHasNext] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -208,6 +211,17 @@ const Index = () => {
         },
       );
     }
+    dataFetcher.submit(
+      {
+        endCursor: JSON.stringify({
+          cursor: "",
+          searchTerm: searchTerm,
+        }),
+      },
+      {
+        method: "POST",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -223,13 +237,6 @@ const Index = () => {
   }, [loadingItems]);
 
   useEffect(() => {
-    if (filters && isManualChangeRef.current) {
-      setFiltersData(filters);
-      isManualChangeRef.current = false; // 重置
-    }
-  }, [filters]);
-
-  useEffect(() => {
     if (languageTableData) {
       setLanguageOptions(
         languageTableData
@@ -243,23 +250,25 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
-    setHasPrevious(filtersData.pageInfo.hasPreviousPage);
-    setHasNext(filtersData.pageInfo.hasNextPage);
-    const data = generateMenuItemsArray(filtersData);
-    setResourceData(data);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
+    if (filtersData) {
+      setHasPrevious(filtersData.pageInfo.hasPreviousPage);
+      setHasNext(filtersData.pageInfo.hasNextPage);
+      const data = generateMenuItemsArray(filtersData);
+      setResourceData(data);
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+    }
   }, [filtersData]);
 
   useEffect(() => {
-    if (actionData && "data" in actionData) {
+    if (dataFetcher.data) {
+      if (dataFetcher.data?.success) {
+        setFiltersData(dataFetcher.data?.response);
+      }
       setConfirmData([]);
-      setFiltersData(actionData.data);
-    } else {
-      // 如果不存在 nexts，可以执行其他逻辑
     }
-  }, [actionData]);
+  }, [dataFetcher.data]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -425,7 +434,7 @@ const Index = () => {
     }
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
-      shopName: shopName,
+      shopName: globalStore?.shop || "",
       source: filtersData.nodes
         .find((item: any) => item?.resourceId === key)
         ?.translatableContent.find((item: any) => item.key === key)?.locale,
@@ -434,7 +443,7 @@ const Index = () => {
       context: context,
       key: key,
       type: type,
-      server: server || "",
+      server: globalStore?.server || "",
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
@@ -453,6 +462,18 @@ const Index = () => {
     } else {
       shopify.saveBar.hide("save-bar");
       setIsLoading(true);
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: "",
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/filter?language=${language}`,
+        },
+      ); // 提交表单请求
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
       navigate(`/app/manage_translation/filter?language=${language}`);
@@ -476,13 +497,18 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      const formData = new FormData();
-      const startCursor = filtersData.pageInfo.startCursor;
-      formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-      submit(formData, {
-        method: "post",
-        action: `/app/manage_translation/filter?language=${searchTerm}`,
-      }); // 提交表单请求
+      dataFetcher.submit(
+        {
+          startCursor: JSON.stringify({
+            cursor: filtersData.pageInfo.startCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/filter?language=${searchTerm}`,
+        },
+      ); // 提交表单请求
     }
   };
 
@@ -491,13 +517,18 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      const formData = new FormData();
-      const endCursor = filtersData.pageInfo.endCursor;
-      formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-      submit(formData, {
-        method: "post",
-        action: `/app/manage_translation/filter?language=${searchTerm}`,
-      }); // 提交表单请求
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: filtersData.pageInfo.endCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/filter?language=${searchTerm}`,
+        },
+      ); // 提交表单请求
     }
   };
 
@@ -616,7 +647,7 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : filters.nodes.length ? (
+        ) : filtersData.nodes.length ? (
           <Content
             style={{
               paddingLeft: isMobile ? "16px" : "0",
