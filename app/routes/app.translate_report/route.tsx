@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   ActionFunctionArgs,
   HeadersFunction,
@@ -157,8 +157,8 @@ const TranslationDashboard = () => {
     notTransLanguage: number | null;
     optimizationNotEnabled: number | null;
   }>({
-    notTransLanguage: null,
-    optimizationNotEnabled: null,
+    notTransLanguage: 0,
+    optimizationNotEnabled: 0,
   });
   // const languageTranslation = [
   //   { languge: "简体中文", code: "zh-CN", hasTranslated: false },
@@ -167,31 +167,58 @@ const TranslationDashboard = () => {
   //   { languge: "法语", code: "fr", hasTranslated: false },
   // ];
   const [reportTotalData, setReportTotalData] = useState<ReportData>();
-  useEffect(() => {
-    handleRequestReportData();
+  const [tOptimizationLoading, setOptimizationLoading] =
+    useState<boolean>(false);
+  useEffect(
+    () => {
+      handleRequestReportData();
+      // if (
+      //   storeLanguageFetcher.state === "loading" ||
+      //   realTimeQuotaFetcher.state === "loading"
+      // ) {
+      //   return;
+      // }
+      // const length = storeLanguages.filter(
+      //   (item) => item.status === "untranslated",
+      // ).length;
+      // let optimizationNotEnabled = 0;
+      // if (!publishLanguage) {
+      //   optimizationNotEnabled += 1;
+      // }
+      // Object.values(realTimeData).forEach((value) => {
+      //   if (!value) {
+      //     optimizationNotEnabled += 1;
+      //   }
+      // });
+      // setReportIntroduction((prev) => ({
+      //   ...prev,
+      //   notTransLanguage: length,
+      //   optimizationNotEnabled,
+      // }));
+      // setOptimizationLoading(true);
+    },
+    [
+      // publishLanguage,
+      // realTimeData,
+      // storeLanguages,
+      // storeLanguageFetcher.state,
+      // realTimeQuotaFetcher.state,
+    ],
+  );
+  const optimizationNotEnabled = useMemo(() => {
     if (
       storeLanguageFetcher.state === "loading" ||
       realTimeQuotaFetcher.state === "loading"
     ) {
-      return;
+      return null; // 数据没准备好
     }
-    const length = storeLanguages.filter(
-      (item) => item.status === "untranslated",
-    ).length;
-    let optimizationNotEnabled = 0;
-    if (!publishLanguage) {
-      optimizationNotEnabled += 1;
-    }
+
+    let count = 0;
+    if (!publishLanguage) count++;
     Object.values(realTimeData).forEach((value) => {
-      if (!value) {
-        optimizationNotEnabled += 1;
-      }
+      if (!value) count++;
     });
-    setReportIntroduction((prev) => ({
-      ...prev,
-      notTransLanguage: length,
-      optimizationNotEnabled,
-    }));
+    return count;
   }, [
     publishLanguage,
     realTimeData,
@@ -199,6 +226,16 @@ const TranslationDashboard = () => {
     storeLanguageFetcher.state,
     realTimeQuotaFetcher.state,
   ]);
+
+  useEffect(() => {
+    const length = storeLanguages.filter(
+      (item) => item.status === "untranslated",
+    ).length;
+    setReportIntroduction({
+      notTransLanguage: length,
+      optimizationNotEnabled,
+    });
+  }, [storeLanguages, optimizationNotEnabled]);
   const handleNavigate = () => {
     navigate("/app");
   };
@@ -478,7 +515,7 @@ const TranslationDashboard = () => {
                   </li>
 
                   <li>
-                    {reportIntroduction.optimizationNotEnabled === null ? (
+                    {storeLanguageFetcher.state === "submitting" ? (
                       <Spin size="small" />
                     ) : (
                       <>

@@ -37,38 +37,16 @@ import {
 } from "@shopify/polaris-icons";
 import ScrollNotice from "~/components/ScrollNotice";
 import { authenticate } from "../../shopify.server";
-import dynamic from "next/dynamic";
 // import {  BarChart } from "@shopify/polaris-viz";
 import "@shopify/polaris-viz/build/esm/styles.css";
-import PolarisDateFilter from "./components/PolarisDateFilter";
 import { useFetcher } from "@remix-run/react";
 import { GetConversionData, GetStoreLanguage } from "../../api/JavaServer";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
+import LineChartECharts from "./components/LineChartECharts";
 const { Title } = Typography;
 // import { useNavigate } from "react-router";
-let LineChart: any = null;
-let BarChart: any = null;
-if (typeof window !== "undefined") {
-  // 动态 import，避免 SSR 阶段加载
-  import("@shopify/polaris-viz").then((mod) => {
-    LineChart = mod.LineChart;
-    BarChart = mod.BarChart;
-  });
-}
-// const LineChart = dynamic(
-//   () => import("@shopify/polaris-viz").then((mod) => mod.LineChart),
-//   {
-//     ssr: false,
-//   },
-// );
-// const BarChart = dynamic(
-//   () => import("@shopify/polaris-viz").then((mod) => mod.BarChart),
-//   {
-//     ssr: false,
-//   },
-// );
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -206,12 +184,6 @@ const Index = () => {
     setGridColumns(column);
   };
   const [ready, setReady] = useState(false);
-  function ClientOnly({ children }: { children: React.ReactNode }) {
-    const [mounted, setMounted] = React.useState(false);
-    React.useEffect(() => setMounted(true), []);
-    if (!mounted) return null;
-    return <>{children}</>;
-  }
   useEffect(() => {
     const timer = setTimeout(() => setReady(true), 100);
     return () => clearTimeout(timer);
@@ -339,59 +311,6 @@ const Index = () => {
       }
     }
   }, [storeLanguageFetcher.data]);
-
-  // function transformData(raw: any) {
-  //   const languageMap: Record<string, string> = {
-  //     en: "English",
-  //     ja: "日本語",
-  //     zh: "简体中文",
-  //     fr: "Français",
-  //     de: "Deutsch",
-  //     es: "Español",
-  //   };
-
-  //   function formatDateToChinese(dateStr: string) {
-  //     const date = new Date(dateStr);
-  //     if (isNaN(date.getTime())) return dateStr;
-  //     return `${date.getMonth() + 1}月${date.getDate()}日`;
-  //   }
-
-  //   function getDateRangeName(dates: string[]) {
-  //     if (!dates || dates.length === 0) return "未知日期范围";
-  //     if (dates.length === 1) return `2025年${formatDateToChinese(dates[0])}`;
-  //     return `2025年${formatDateToChinese(dates[0])}-${formatDateToChinese(
-  //       dates[dates.length - 1],
-  //     )}`;
-  //   }
-
-  //   const parsed = typeof raw === "string" ? JSON.parse(raw) : (raw ?? {});
-
-  //   return Object.entries(parsed).map(([lang, dates]) => {
-  //     const language = languageMap[lang] || lang;
-
-  //     const sortedDates = Object.keys(dates as any).sort();
-  //     const dateRangeName = getDateRangeName(sortedDates);
-
-  //     const dateData = sortedDates.map((dateStr) => {
-  //       const events = (dates as any)[dateStr];
-  //       const value = Object.values(events).reduce(
-  //         (sum: any, v) => sum + (Number(v) || 0),
-  //         0,
-  //       );
-  //       return { key: formatDateToChinese(dateStr), value };
-  //     });
-
-  //     return {
-  //       language,
-  //       data: [
-  //         {
-  //           name: dateRangeName,
-  //           data: dateData,
-  //         },
-  //       ],
-  //     };
-  //   });
-  // }
 
   function transformData(raw: any) {
     const languageMap: Record<string, string> = {
@@ -598,17 +517,6 @@ const Index = () => {
                 }}
                 icon={LayoutColumns2Icon}
               />
-              {/* <Button
-                variant={gridColumns === 3 ? "primary" : "secondary"}
-                onClick={() => {
-                  if (currentFilterCondition === "last30") {
-                    return;
-                  }
-                  handleSwitcherTime(3);
-                  clickReportGridColumns(3);
-                }}
-                icon={LayoutColumns3Icon}
-              /> */}
             </InlineStack>
           </Flex>
         </Card>
@@ -648,18 +556,7 @@ const Index = () => {
                     }}
                   >
                     {chart.data && chart.data.length > 0 && ready ? (
-                      <ClientOnly>
-                        <LineChart
-                          theme="Light"
-                          data={chart.data}
-                          xAxisOptions={{ labelFormatter: (v: any) => v }}
-                          yAxisOptions={{
-                            labelFormatter: (v: any) =>
-                              `${Math.max(0, Number(v)).toFixed(1)}%`,
-                          }}
-                          showTooltip={false}
-                        />
-                      </ClientOnly>
+                      <LineChartECharts data={chart.data} height={300} />
                     ) : (
                       <Text as="p">无数据可显示</Text>
                     )}
