@@ -356,6 +356,8 @@ const AnalyticsCard = ({
       console.error("解析 conversionRate 响应失败:", e);
       // setConversionRate(null);
     } finally {
+      console.log('web pixel 最终执行了');
+      
       setLoadingGather((prev) => ({
         ...prev,
         conversionRate: { loading: false },

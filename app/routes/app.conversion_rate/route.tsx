@@ -459,9 +459,13 @@ const Index = () => {
         const clicks = Number(events.product_added_to_cart || 0);
 
         // 转换率（百分比）
-        const conversionRate = exposure > 0 ? (clicks / exposure) * 100 : 0;
+        const conversionRate =
+          exposure > 0 ? Math.min((clicks / exposure) * 100, 100) : 0;
 
-        return { key: formatDateToChinese(dateStr), value: conversionRate };
+        return {
+          key: formatDateToChinese(dateStr),
+          value: Number.isFinite(conversionRate) ? conversionRate : 0,
+        };
       });
 
       return {
@@ -599,7 +603,7 @@ const Index = () => {
         <Layout.Section>
           <InlineGrid
             gap="400"
-            columns={`repeat(${gridColumns}, minmax(400px, 1fr))`}
+            columns={`repeat(${gridColumns}, minmax(420px, 1fr))`}
           >
             {isLoading ? (
               SkeletonGrid.map((item: any, index: number) => {
@@ -629,15 +633,7 @@ const Index = () => {
                     }}
                   >
                     {chart.data && chart.data.length > 0 && ready ? (
-                      <LineChart
-                        theme="Light"
-                        data={chart.data}
-                        xAxisOptions={{ labelFormatter: (v: any) => v }}
-                        yAxisOptions={{
-                          labelFormatter: (v: any) =>
-                            `${Math.max(0, Number(v)).toFixed(1)}%`,
-                        }}
-                      />
+                      <LineChart theme="Light" data={chart.data} />
                     ) : (
                       <Text as="p">无数据可显示</Text>
                     )}
