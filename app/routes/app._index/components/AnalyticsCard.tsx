@@ -27,6 +27,7 @@ interface loadingGather {
   unTranslated: LoadingItem;
   conversionRate: LoadingItem;
 }
+type PixelStatus = "loading" | "configured" | "notConfigured";
 const AnalyticsCard = ({
   analyticsData,
   shop,
@@ -40,7 +41,7 @@ const AnalyticsCard = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const graphqlFetcher = useFetcher<any>();
   const queryWebPixelFetcher = useFetcher<any>();
-  const [configCreateWebPixel, setConfigPixel] = useState(false);
+  const [configCreateWebPixel, setConfigPixel] = useState<boolean | null>(null);
   const [showRequireScopeBtn, setShowRequireScopeBtn] =
     useState(!hasRequiresScopes);
   const showModal = () => {
@@ -65,9 +66,10 @@ const AnalyticsCard = ({
   const conversionCateFetcher = useFetcher<any>();
   const [translateScoreData, setTranslateData] = useState<any>();
   const [unTranslateWords, setUnTranslateWords] = useState<any>();
-  const [conversionRate, setConversionRate] = useState<any>();
+  const [conversionRate, setConversionRate] = useState<any>(null);
   const [navigateToRateState, setNavigateToRateState] = useState(false);
   const [improveBtnState, setImproveBtnState] = useState(false);
+  const [pixelStatus, setPixelStatus] = useState<PixelStatus>("loading");
   function calculateConversionRate(
     resp: Record<string, Record<string, Record<string, any>>>,
   ): number {
@@ -128,6 +130,8 @@ const AnalyticsCard = ({
       shopify.toast.show("授权成功");
 
       // 创建 Web Pixel
+      console.log('开始创建 web pixel');
+      
       await createWebPixel();
     } catch (error: any) {
       shopify.toast.show("授权失败");
@@ -149,12 +153,16 @@ const AnalyticsCard = ({
     if (configCreateWebPixel) {
       return; // 已创建，跳过
     }
+    console.log('执行 createWebPixel');
+    
     const formData = new FormData();
     formData.append("qualityEvaluation", JSON.stringify({})); // 修正拼写错误，假设是 qualityEvaluation
     graphqlFetcher.submit(formData, {
       method: "post",
       action: "/app",
     });
+    console.log('提交创建请求，等待完成');
+    
     // 等待提交完成（useFetcher 是异步的，这里用 Promise 包装等待 idle）
     await new Promise((resolve) => {
       const checkIdle = setInterval(() => {
@@ -233,18 +241,48 @@ const AnalyticsCard = ({
     //   method: "post",
     //   action: "/app",
     // });
-    console.log("开始请求转换率");
-
-    const conversionForm = new FormData();
-    conversionForm.append(
-      "polarisVizFetcher",
-      JSON.stringify({ languages: ["en", "ja"], days: 7 }),
-    );
-    conversionCateFetcher.submit(conversionForm, {
-      method: "post",
-      action: "/app/conversion_rate",
-    });
+    // console.log("开始请求转换率");
+    // if (configCreateWebPixel) {
+    //   const conversionForm = new FormData();
+    //   conversionForm.append("polarisVizFetcher", JSON.stringify({ days: 7 }));
+    //   conversionCateFetcher.submit(conversionForm, {
+    //     method: "post",
+    //     action: "/app/conversion_rate",
+    //   });
+    // } else {
+    //   setLoadingGather((prev) => ({
+    //     ...prev,
+    //     conversionRate: {
+    //       loading: false,
+    //     },
+    //   }));
+    //   console.log("未配置 pixel，跳过转换率请求");
+    // }
   }, []);
+  useEffect(() => {
+    if (configCreateWebPixel) {
+      // 开始请求前显示 loading（避免闪烁）
+      setLoadingGather((prev) => ({
+        ...prev,
+        conversionRate: { loading: true },
+      }));
+
+      const conversionForm = new FormData();
+      conversionForm.append("polarisVizFetcher", JSON.stringify({ days: 7 }));
+      conversionCateFetcher.submit(conversionForm, {
+        method: "post",
+        action: "/app/conversion_rate",
+      });
+    } else {
+      // 没配置 Pixel：关掉 loading，但不要显示 "+0%"
+      setLoadingGather((prev) => ({
+        ...prev,
+        conversionRate: { loading: false },
+      }));
+      // setConversionRate(undefined); // 表示“未配置 / 无数据”
+      console.log("未配置 pixel，等待授权/创建后再请求");
+    }
+  }, [configCreateWebPixel]);
   useEffect(() => {
     if (translationScoreFetcher.data && translationScoreFetcher.data.success) {
       // setLoading(false);
@@ -271,32 +309,58 @@ const AnalyticsCard = ({
       }));
     }
   }, [unTranslatedFetcher.data]);
-  useEffect(() => {
-    if (conversionCateFetcher.data && conversionCateFetcher.data.success) {
-      // setLoading(false);
-      console.log("conversionCateFetcher: ", conversionCateFetcher.data);
-      let resp = conversionCateFetcher.data.response;
-      // 如果后端给的是 string，就转成对象
-      if (typeof resp === "string") {
-        try {
-          resp = JSON.parse(resp);
-        } catch (e) {
-          console.error("解析 conversionRate 响应失败:", e, resp);
-          return;
-        }
-      }
-      const finalRateDecimal = calculateConversionRate(resp);
-      const finalRatePercent = Number((finalRateDecimal * 100).toFixed(2));
-      console.log("转换率结果:", finalRatePercent);
+  // useEffect(() => {
+  //   if (conversionCateFetcher.data && conversionCateFetcher.data.success) {
+  //     // setLoading(false);
+  //     console.log("conversionCateFetcher: ", conversionCateFetcher.data);
+  //     let resp = conversionCateFetcher.data.response;
+  //     // 如果后端给的是 string，就转成对象
+  //     if (typeof resp === "string") {
+  //       try {
+  //         resp = JSON.parse(resp);
+  //       } catch (e) {
+  //         console.error("解析 conversionRate 响应失败:", e, resp);
+  //         return;
+  //       }
+  //     }
+  //     const finalRateDecimal = calculateConversionRate(resp);
+  //     const finalRatePercent = Number((finalRateDecimal * 100).toFixed(2));
+  //     console.log("转换率结果:", finalRatePercent);
 
-      // 存百分比（例如 1 → "100%"）
-      setConversionRate(finalRatePercent);
-      // setConversionRate(conversionCateFetcher.data?.response);
+  //     // 存百分比（例如 1 → "100%"）
+  //     setConversionRate(finalRatePercent);
+  //   } else {
+  //     setConversionRate(null);
+  //   }
+
+  //   // setConversionRate(conversionCateFetcher.data?.response);
+  //   setLoadingGather((prev) => ({
+  //     ...prev,
+  //     conversionRate: {
+  //       loading: false,
+  //     },
+  //   }));
+  // }, [conversionCateFetcher.data]);
+  useEffect(() => {
+    if (!conversionCateFetcher.data) return;
+
+    try {
+      if (conversionCateFetcher.data.success) {
+        let resp = conversionCateFetcher.data.response;
+        if (typeof resp === "string") {
+          resp = JSON.parse(resp);
+        }
+        const finalRateDecimal = calculateConversionRate(resp);
+        const finalRatePercent = Number((finalRateDecimal * 100).toFixed(2));
+        setConversionRate(finalRatePercent);
+      }
+    } catch (e) {
+      console.error("解析 conversionRate 响应失败:", e);
+      // setConversionRate(null);
+    } finally {
       setLoadingGather((prev) => ({
         ...prev,
-        conversionRate: {
-          loading: false,
-        },
+        conversionRate: { loading: false },
       }));
     }
   }, [conversionCateFetcher.data]);
@@ -322,10 +386,12 @@ const AnalyticsCard = ({
     if (queryWebPixelFetcher.data) {
       if (queryWebPixelFetcher.data?.success) {
         setConfigPixel(true);
+        setPixelStatus("configured");
         console.log("查询成功");
         console.log(queryWebPixelFetcher.data);
       } else {
         setConfigPixel(false);
+        setPixelStatus("notConfigured");
         console.log("查询失败");
       }
     }
@@ -369,8 +435,22 @@ const AnalyticsCard = ({
               <Progress
                 type="circle"
                 percent={translateScoreData?.totalScore}
-                format={(percent) => `${percent} Score`}
-                size={70}
+                format={(percent) => (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>
+                      {percent}
+                    </span>
+                    <span style={{ fontSize: 12 }}>score</span>
+                  </div>
+                )}
+                size={60}
               />
             )}
             {/* <Progress
@@ -393,7 +473,7 @@ const AnalyticsCard = ({
                 loading={improveBtnState}
                 onClick={handleNavigateDetail}
               >
-                {t("Optimize")}
+                {t("Improve")}
               </Button>
             )}
           </Flex>
@@ -414,7 +494,7 @@ const AnalyticsCard = ({
               style={{ flex: 1 }}
             >
               <Text>{t("Untranslated Words")}</Text>
-              <Flex align="center" justify="center" gap="small">
+              <Flex vertical align="center" justify="center" gap="small">
                 {loadingGather.unTranslated.loading ? (
                   <Skeleton.Node style={{ width: 50, height: 30 }} active />
                 ) : (
@@ -435,15 +515,14 @@ const AnalyticsCard = ({
                     reportClick("dashboard_go_translation");
                   }}
                 >
-                  {t("Go Translate")}
+                  {t("Translate")}
                 </Button>
               )}
             </Flex>
           </Flex>
         </Col>
 
-        <Col xs={24} sm={12} md={8}>
-          {/* CRO Analytics */}
+        {/* <Col xs={24} sm={12} md={8}>
           <Flex
             vertical
             align="center"
@@ -472,6 +551,64 @@ const AnalyticsCard = ({
                 onClick={handleConfigScopes}
               >
                 {t("Details")}
+              </Button>
+            )}
+          </Flex>
+        </Col> */}
+        <Col xs={24} sm={12} md={8}>
+          {/* CRO Analytics */}
+          <Flex
+            vertical
+            align="center"
+            justify="space-between"
+            gap="small"
+            style={{ height: "100%", minWidth: 200 }}
+          >
+            <Text>{t("CRO analytics")}</Text>
+            <Flex vertical align="center" justify="center" gap="small">
+              {loadingGather.conversionRate.loading ||
+              configCreateWebPixel === null ? (
+                <Skeleton.Input style={{ width: 50 }} active size="small" />
+              ) : !configCreateWebPixel ? (
+                // 没配置 Pixel
+                <div style={{ textAlign: "center" }}>
+                  <Text type="secondary">{t("Pixel not configured")}</Text>
+                </div>
+              ) : conversionRate === null ? (
+                // 已配置，但暂时没数据
+                <div style={{ textAlign: "center" }}>
+                  <Text type="secondary">{t("No data available")}</Text>
+                </div>
+              ) : (
+                <>
+                  <Statistic
+                    value={`+${conversionRate}%`}
+                    valueStyle={{ fontWeight: 500 }}
+                  />
+                  <Text>Compared to 7 days ago</Text>
+                </>
+              )}
+            </Flex>
+
+            {/* 按钮：未配置显示 Configure，已配置显示 Details */}
+            {loadingGather.conversionRate.loading ||
+            configCreateWebPixel === null ? (
+              <Skeleton.Button active />
+            ) : configCreateWebPixel ? (
+              <Button
+                type="default"
+                loading={navigateToRateState}
+                onClick={handleConfigScopes}
+              >
+                {t("Details")}
+              </Button>
+            ) : (
+              <Button
+                type="primary"
+                loading={navigateToRateState}
+                onClick={handleConfigScopes}
+              >
+                {t("Configure")}
               </Button>
             )}
           </Flex>

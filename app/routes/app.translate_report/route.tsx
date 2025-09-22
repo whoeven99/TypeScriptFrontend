@@ -21,6 +21,7 @@ import {
   Result,
   Affix,
   Skeleton,
+  Spin,
 } from "antd";
 import { BlockStack, Page } from "@shopify/polaris";
 import { useLocation } from "@remix-run/react";
@@ -152,9 +153,12 @@ const TranslationDashboard = () => {
     glossary: false,
     switch: false,
   });
-  const [reportIntroduction, setReportIntroduction] = useState({
-    notTransLanguage: 0,
-    optimizationNotEnabled: 0,
+  const [reportIntroduction, setReportIntroduction] = useState<{
+    notTransLanguage: number | null;
+    optimizationNotEnabled: number | null;
+  }>({
+    notTransLanguage: null,
+    optimizationNotEnabled: null,
   });
   // const languageTranslation = [
   //   { languge: "简体中文", code: "zh-CN", hasTranslated: false },
@@ -165,19 +169,17 @@ const TranslationDashboard = () => {
   const [reportTotalData, setReportTotalData] = useState<ReportData>();
   useEffect(() => {
     handleRequestReportData();
-    // setReportTotalData({
-    //   totalScore: 45,
-    //   notTransLanguage: ['en','ja','fr','ch-ZH'],
-    //   incompatibleStyles: 9,
-    //   notEnabled: 7,
-    //   notSEOFriendly: 77,
-    //   notOnBrand: 99,
-    // });
+    if (
+      storeLanguageFetcher.state === "loading" ||
+      realTimeQuotaFetcher.state === "loading"
+    ) {
+      return;
+    }
     const length = storeLanguages.filter(
       (item) => item.status === "untranslated",
     ).length;
     let optimizationNotEnabled = 0;
-    if (length !== 1) {
+    if (!publishLanguage) {
       optimizationNotEnabled += 1;
     }
     Object.values(realTimeData).forEach((value) => {
@@ -190,7 +192,13 @@ const TranslationDashboard = () => {
       notTransLanguage: length,
       optimizationNotEnabled,
     }));
-  }, []);
+  }, [
+    publishLanguage,
+    realTimeData,
+    storeLanguages,
+    storeLanguageFetcher.state,
+    realTimeQuotaFetcher.state,
+  ]);
   const handleNavigate = () => {
     navigate("/app");
   };
@@ -225,7 +233,7 @@ const TranslationDashboard = () => {
   }, []);
   useEffect(() => {
     if (storeLanguageFetcher.data) {
-      // console.log(storeLanguageFetcher.data);
+      console.log(storeLanguageFetcher.data);
       if (storeLanguageFetcher.data.success) {
         const languagesObj = { ...storeLanguageFetcher.data.response };
         setPublishLanguage(languagesObj["Published Languages"] === 1);
@@ -434,7 +442,8 @@ const TranslationDashboard = () => {
                   {t("points")}
                 </p>
                 <ul style={{ listStyle: "none", padding: 0, margin: "12px 0" }}>
-                  <li>
+                  {/* <li>
+                    <Spin size="small" />
                     <span style={{ color: "red", fontWeight: "bold" }}>
                       {
                         storeLanguages.filter(
@@ -449,6 +458,35 @@ const TranslationDashboard = () => {
                     <span style={{ color: "red", fontWeight: "bold" }}>
                       {reportIntroduction.optimizationNotEnabled}
                     </span>{" "}
+                    {t("translation optimization features not enabled")}
+                  </li> */}
+                  <li>
+                    {storeLanguages.length === 0 ? (
+                      <Spin size="small" />
+                    ) : (
+                      <>
+                        <span style={{ color: "red", fontWeight: "bold" }}>
+                          {
+                            storeLanguages.filter(
+                              (item) => item.status === "untranslated",
+                            ).length
+                          }
+                        </span>{" "}
+                      </>
+                    )}
+                    {t("languages not translated")}
+                  </li>
+
+                  <li>
+                    {reportIntroduction.optimizationNotEnabled === null ? (
+                      <Spin size="small" />
+                    ) : (
+                      <>
+                        <span style={{ color: "red", fontWeight: "bold" }}>
+                          {reportIntroduction.optimizationNotEnabled}
+                        </span>{" "}
+                      </>
+                    )}
                     {t("translation optimization features not enabled")}
                   </li>
                   {/* <li>

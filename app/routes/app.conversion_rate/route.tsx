@@ -100,6 +100,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             storeLanguage.push(item.locale);
           });
         }
+        console.log("storeLanguage: ", storeLanguage);
+        
         const { days } = polarisVizFetcher;
         console.log("coversion fetcher: ", polarisVizFetcher);
 
@@ -169,25 +171,14 @@ const Index = () => {
   const { report } = useReport();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [selectedCurrency, setSelectedCurrency] = useState("");
   const [gridColumns, setGridColumns] = useState<number>(2); // 默认 2 列
-
-  const [currentLanguages, setCurrentLanguages] = useState<any>([
-    "Chinese(简体中文)",
-    "Japanese(日本語)",
-    "Danish(Dansk)",
-    "French(Français)",
-  ]);
   const polarisVizDataFetcher = useFetcher<any>();
   const storeLanguageFetcher = useFetcher<any>();
   const [isLoading, setIsLoading] = useState(true);
   const [currentFilterCondition, setCondition] = useState("last7");
   const [chartData, setChartData] = useState<any>([]);
   const [filteredChartData, setFilteredChartData] = useState<any>([]);
-  useEffect(() => {
-    setCurrentLanguages(["简体中文", "Japanse", "Danish", "French", "Korean"]);
-    console.log("currentLanguages: ", currentLanguages);
-  }, []);
+  
   const SkeletonGrid = ["1", "2", "3"];
   const getLast24HoursRange = (): { start: Date; end: Date } => {
     const end = new Date(); // 现在
