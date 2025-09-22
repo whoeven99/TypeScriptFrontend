@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import {
+  Form,
+  useActionData,
+  useFetcher,
+  useLoaderData,
+} from "@remix-run/react";
 import {
   AppProvider as PolarisAppProvider,
   Button,
@@ -17,6 +22,7 @@ import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { login } from "../../shopify.server";
 
 import { loginErrorMessage } from "./error.server";
+import { globalStore } from "~/globalStore";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -39,6 +45,19 @@ export default function Auth() {
   const actionData = useActionData<typeof action>();
   const [shop, setShop] = useState("");
   const { errors } = actionData || loaderData;
+  const fetcher = useFetcher<any>();
+
+  useEffect(() => {
+    fetcher.submit(
+      {
+        log: `${globalStore?.shop} 跳转到了Login页面 ( warning )`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+  }, []);
 
   return (
     <PolarisAppProvider i18n={loaderData.polarisTranslations}>
