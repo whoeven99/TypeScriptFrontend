@@ -95,7 +95,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const googleAnalytics = JSON.parse(
       formData.get("googleAnalytics") as string,
     );
-<<<<<<< HEAD
     const qualityEvaluation = JSON.parse(
       formData.get("qualityEvaluation") as string,
     );
@@ -108,8 +107,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const getAssessmentScoreFetcher = JSON.parse(
       formData.get("getAssessmentScoreFetcher") as string,
     );
-=======
->>>>>>> 07a835e2440343e4529ed736cf17798ff9a6267f
     if (init) {
       try {
         const init = await InitializationDetection({ shop });
