@@ -209,6 +209,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     case !!webPresencesUpdate:
       try {
         const promises = webPresencesUpdate.map((item: any) => {
+          console.log("item.alternateLocales: ", item.alternateLocales);
           return admin
             .graphql(
               `#graphql
@@ -242,7 +243,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
 
         // 并发执行所有请求
-        const results = await Promise.allSettled(promises);
+        const results: any = await Promise.allSettled(promises);
+
+        console.log(
+          "results: ",
+          results[0]?.value?.data?.webPresenceUpdate?.userErrors,
+        );
 
         const successRes = results.filter(
           (item: any) =>

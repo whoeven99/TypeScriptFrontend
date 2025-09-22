@@ -1,12 +1,13 @@
 import { useFetcher } from "@remix-run/react";
 import { Button, Modal, Space, Switch, Table } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   setPublishLoadingState,
   setPublishState,
 } from "~/store/modules/languageTableData";
+import isEqual from "lodash/isEqual";
 
 interface MarketType {
   key: string;
@@ -41,12 +42,33 @@ const PublishModal: React.FC<PublishModalProps> = ({
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
+  const languageData = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
+
+  const languageLocaleData = useMemo(() => {
+    return languageData?.map((item: any) => item?.locale) || [];
+  }, [languageData]);
+
+  // 2. 用一个 ref 缓存上一次的值
+  const prevLocaleDataRef = useRef<string[]>();
+
   const fetcher = useFetcher<any>();
   const webPresencesFetcher = useFetcher<any>();
   const webPresencesUpdateFetcher = useFetcher<any>();
   const publishFetcher = useFetcher<any>();
 
   useEffect(() => {
+    // 如果数据和上一次完全一样，就不触发
+    if (
+      isEqual(prevLocaleDataRef.current, languageLocaleData) ||
+      !languageData?.length
+    ) {
+      return;
+    }
+
+    prevLocaleDataRef.current = languageLocaleData;
+
     webPresencesFetcher.submit(
       {
         webPresences: JSON.stringify(true),
@@ -56,10 +78,12 @@ const PublishModal: React.FC<PublishModalProps> = ({
         action: "/app/language",
       },
     );
-  }, []);
+  }, [languageLocaleData]);
 
   useEffect(() => {
     if (webPresencesFetcher.data?.success) {
+      console.log(webPresencesFetcher.data.response);
+
       webPresencesFetcher.data.response?.forEach((market: any) => {
         if (market?.id && market?.domain) {
           setMarkets((prevMarkets) => {
@@ -85,27 +109,36 @@ const PublishModal: React.FC<PublishModalProps> = ({
 
   useEffect(() => {
     if (webPresencesUpdateFetcher.data?.success) {
-      publishFetcher.submit(
-        {
-          publishInfo: JSON.stringify({
-            locale:
-              webPresencesUpdateFetcher.data.response.publishedCode ||
-              languageCode,
-            shopLocale: {
-              marketWebPresenceIds:
-                webPresencesUpdateFetcher.data.response?.webPresencesId || [],
-              published: true,
-            },
-          }),
-        },
-        {
-          method: "POST",
-          action: "/app/language",
-        },
-      );
+      const errorMsg = webPresencesUpdateFetcher.data?.errorMsg;
+      const webPresencesId =
+        webPresencesUpdateFetcher.data.response?.webPresencesId;
+      console.log(errorMsg);
+      console.log(webPresencesId);
+
+      if (errorMsg) {
+        shopify.toast.show(webPresencesUpdateFetcher.data?.errorMsg);
+      }
+      if (webPresencesId?.length) {
+        publishFetcher.submit(
+          {
+            publishInfo: JSON.stringify({
+              locale:
+                webPresencesUpdateFetcher.data.response.publishedCode ||
+                languageCode,
+              shopLocale: {
+                marketWebPresenceIds:
+                  webPresencesUpdateFetcher.data.response?.webPresencesId || [],
+                published: true,
+              },
+            }),
+          },
+          {
+            method: "POST",
+            action: "/app/language",
+          },
+        );
+      }
     }
-    if (webPresencesUpdateFetcher.data?.errorMsg)
-      shopify.toast.show(webPresencesUpdateFetcher.data?.errorMsg);
   }, [webPresencesUpdateFetcher.data]);
 
   useEffect(() => {
