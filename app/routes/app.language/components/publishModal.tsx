@@ -92,7 +92,8 @@ const PublishModal: React.FC<PublishModalProps> = ({
               webPresencesUpdateFetcher.data.response.publishedCode ||
               languageCode,
             shopLocale: {
-              // marketWebPresenceIds: primaryMarketId,
+              marketWebPresenceIds:
+                webPresencesUpdateFetcher.data.response?.webPresencesId || [],
               published: true,
             },
           }),

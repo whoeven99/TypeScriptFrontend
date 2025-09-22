@@ -251,6 +251,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             errorMsg: "",
             response: {
               webPresences: results,
+              webPresencesId: webPresencesUpdate.map((item: any) => item.id),
               publishedCode: webPresencesUpdate[0].publishedCode,
             },
           });
@@ -1021,7 +1022,7 @@ const Index = () => {
           <Title style={{ fontSize: "1.25rem", display: "inline" }}>
             {t("Languages")}
           </Title>
-          <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
+          <PrimaryLanguage shopLanguages={shopPrimaryLanguage} />
         </div>
         <div className="languageTable_action">
           <Flex
