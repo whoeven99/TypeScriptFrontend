@@ -31,9 +31,7 @@ import {
 } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
-import languageItemsData, {
-  updateData,
-} from "~/store/modules/languageItemsData";
+import { updateData } from "~/store/modules/languageItemsData";
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
@@ -42,6 +40,7 @@ import { InfoCircleOutlined } from "@ant-design/icons";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
 import { setLocale } from "~/store/modules/userConfig";
+import { globalStore } from "~/globalStore";
 
 const { Text, Title } = Typography;
 
@@ -63,11 +62,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-
   return json({
-    shop,
     searchTerm: searchTerm || "",
   });
 };
@@ -118,14 +113,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     case !!translateImage:
       try {
-        const { sourceLanguage, targetLanguage, imageUrl,imageId } = translateImage;
+        const { sourceLanguage, targetLanguage, imageUrl, imageId } =
+          translateImage;
         const response = await TranslateImage({
           shop,
           imageUrl,
           sourceCode: sourceLanguage,
           targetCode: targetLanguage,
           accessToken: accessToken as string,
-          imageId
+          imageId,
         });
         return response;
       } catch (error) {
@@ -143,12 +139,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         userPicturesDoJson.shopName = shop;
         const response = await storageTranslateImage({
           shop,
-          imageUrl:url,
+          imageUrl: url,
           userPicturesDoJson,
         });
         return response;
       } catch (error) {
-        console.log('error storageImage',error);
+        console.log("error storageImage", error);
         return {
           success: false,
           errorCode: 10001,
@@ -164,7 +160,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, searchTerm } = useLoaderData<typeof loader>();
+  const { searchTerm } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
@@ -481,7 +477,7 @@ const Index = () => {
     );
     fetcher.submit(
       {
-        log: `${shop} 目前在翻译管理页面`,
+        log: `${globalStore?.shop} 目前在翻译管理页面`,
       },
       {
         method: "POST",
@@ -913,7 +909,7 @@ const Index = () => {
     navigate("/app/pricing");
     fetcher.submit(
       {
-        log: `${shop} 前往付费页面, 从翻译管理页面点击`,
+        log: `${globalStore?.shop} 前往付费页面, 从翻译管理页面点击`,
       },
       {
         method: "POST",
@@ -1062,7 +1058,7 @@ const Index = () => {
                 document.body.removeChild(link);
                 fetcher.submit(
                   {
-                    log: `${shop} 下载批量导入文件`,
+                    log: `${globalStore?.shop} 下载批量导入文件`,
                   },
                   {
                     method: "POST",

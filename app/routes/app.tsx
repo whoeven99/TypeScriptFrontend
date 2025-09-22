@@ -58,6 +58,7 @@ import {
   setUpdateTime,
   setUserConfigIsLoading,
 } from "~/store/modules/userConfig";
+import { globalStore } from "~/globalStore";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -94,6 +95,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const googleAnalytics = JSON.parse(
       formData.get("googleAnalytics") as string,
     );
+<<<<<<< HEAD
     const qualityEvaluation = JSON.parse(
       formData.get("qualityEvaluation") as string,
     );
@@ -106,6 +108,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const getAssessmentScoreFetcher = JSON.parse(
       formData.get("getAssessmentScoreFetcher") as string,
     );
+=======
+>>>>>>> 07a835e2440343e4529ed736cf17798ff9a6267f
     if (init) {
       try {
         const init = await InitializationDetection({ shop });
@@ -560,14 +564,9 @@ export default function App() {
         action: "/app",
       },
     );
-    getPlan();
-    getWords();
-    dispatch(setShop({ shop: shop as string }));
     setIsClient(true);
-    const shopName = localStorage.getItem("shop");
-    if (!shopName) {
-      localStorage.setItem("shop", (shop as string) || "");
-    }
+    globalStore.shop = shop as string;
+    globalStore.server = server as string;
   }, []);
 
   useEffect(() => {

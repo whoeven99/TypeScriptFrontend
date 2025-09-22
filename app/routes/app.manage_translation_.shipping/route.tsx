@@ -34,6 +34,7 @@ import { FullscreenBar, Page, Select } from "@shopify/polaris";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
+import { globalStore } from "~/globalStore";
 
 const { Content } = Layout;
 
@@ -52,42 +53,49 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-
-  try {
-    const shippings = await queryNextTransType({
-      shop,
-      accessToken: accessToken as string,
-      resourceType: "PACKING_SLIP_TEMPLATE",
-      endCursor: "",
-      locale: searchTerm || "",
-    });
-
-    return json({
-      shop,
-      server: process.env.SERVER_URL,
-      shopName: shop,
-      searchTerm,
-      shippings,
-    });
-  } catch (error) {
-    console.error("Error load shipping:", error);
-    throw new Response("Error load shipping", { status: 500 });
-  }
+  return json({
+    searchTerm,
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
+
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
   try {
     const formData = await request.formData();
-
+    const endCursor = JSON.parse(formData.get("endCursor") as string);
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
     switch (true) {
+      case !!endCursor:
+        try {
+          const response = await queryNextTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "PACKING_SLIP_TEMPLATE",
+            endCursor: endCursor.cursor,
+            locale: searchTerm || "",
+          });
+
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
@@ -110,20 +118,18 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { shop, searchTerm, shippings, server, shopName } =
-    useLoaderData<typeof loader>();
+  const { searchTerm } = useLoaderData<typeof loader>();
 
+  const shippingsRef = useRef<any>();
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
   const fetcher = useFetcher<any>();
+  const dataFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  // const [isVisible, setIsVisible] = useState<
-  //   boolean | string | { language: string } | { item: string }
-  // >(false);
 
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
@@ -171,9 +177,20 @@ const Index = () => {
         },
       );
     }
+    dataFetcher.submit(
+      {
+        endCursor: JSON.stringify({
+          cursor: "",
+          searchTerm: searchTerm,
+        }),
+      },
+      {
+        method: "POST",
+      },
+    );
     fetcher.submit(
       {
-        log: `${shop} 目前在翻译管理-配送方式页面`,
+        log: `${globalStore?.shop} 目前在翻译管理-配送方式页面`,
       },
       {
         method: "POST",
@@ -195,22 +212,24 @@ const Index = () => {
   }, [loadingItems]);
 
   useEffect(() => {
-    if (shippings && isManualChangeRef.current) {
-      const Data = shippings.nodes.map((node: any, index: number) => ({
-        key: "body",
-        index: index,
-        resource: "Label",
-        default_language: node?.translatableContent[0].value,
-        translated: node?.translations[0]?.value,
-        type: node?.translatableContent[0]?.type,
-      }));
+    if (shippingsRef.current && isManualChangeRef.current) {
+      const Data = shippingsRef.current?.nodes?.map(
+        (node: any, index: number) => ({
+          key: "body",
+          index: index,
+          resource: "Label",
+          default_language: node?.translatableContent[0].value,
+          translated: node?.translations[0]?.value,
+          type: node?.translatableContent[0]?.type,
+        }),
+      );
       setResourceData(Data);
       isManualChangeRef.current = false;
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
     }
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
-  }, [shippings]);
+  }, [shippingsRef.current]);
 
   useEffect(() => {
     if (languageTableData) {
@@ -226,6 +245,15 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
+    if (dataFetcher.data) {
+      if (dataFetcher.data?.success) {
+        shippingsRef.current = dataFetcher.data?.response;
+      }
+      setConfirmData([]);
+    }
+  }, [dataFetcher.data]);
+
+  useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
       const errorItem = confirmFetcher.data.data.filter(
         (item: any) => item.success === false,
@@ -234,7 +262,7 @@ const Index = () => {
         shopify.toast.show(t("Saved successfully"));
         fetcher.submit(
           {
-            log: `${shop} 翻译管理-配送方式页面修改数据保存成功`,
+            log: `${globalStore?.shop} 翻译管理-配送方式页面修改数据保存成功`,
           },
           {
             method: "POST",
@@ -357,12 +385,13 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: shippings.nodes[index]?.resourceId,
-          locale: shippings.nodes[index]?.translatableContent[0]?.locale,
+          resourceId: shippingsRef.current.nodes[index]?.resourceId,
+          locale:
+            shippingsRef.current.nodes[index]?.translatableContent[0]?.locale,
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest:
-            shippings.nodes[index]?.translatableContent[0]?.digest,
+            shippingsRef.current.nodes[index]?.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
 
@@ -383,7 +412,7 @@ const Index = () => {
     }
     fetcher.submit(
       {
-        log: `${shop} 从翻译管理-配送方式页面点击单行翻译`,
+        log: `${globalStore?.shop} 从翻译管理-配送方式页面点击单行翻译`,
       },
       {
         method: "POST",
@@ -392,8 +421,8 @@ const Index = () => {
     );
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
-      shopName: shopName,
-      source: shippings.nodes
+      shopName: globalStore?.shop || "",
+      source: shippingsRef.current.nodes
         .find((item: any) => item?.resourceId === key)
         ?.translatableContent.find((item: any) => item.key === key)?.locale,
       target: searchTerm || "",
@@ -401,7 +430,7 @@ const Index = () => {
       context: context,
       key: key,
       type: type,
-      server: server || "",
+      server: globalStore?.server || "",
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
@@ -409,7 +438,7 @@ const Index = () => {
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
-            log: `${shop} 从翻译管理-配送方式页面点击单行翻译返回结果 ${data?.response}`,
+            log: `${globalStore?.shop} 从翻译管理-配送方式页面点击单行翻译返回结果 ${data?.response}`,
           },
           {
             method: "POST",
@@ -429,6 +458,18 @@ const Index = () => {
     } else {
       shopify.saveBar.hide("save-bar");
       setIsLoading(true);
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: "",
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "POST",
+          action: `/app/manage_translation/shipping?language=${language}`,
+        },
+      );
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
       navigate(`/app/manage_translation/shipping?language=${language}`);
@@ -456,7 +497,7 @@ const Index = () => {
     }); // 提交表单请求
     fetcher.submit(
       {
-        log: `${shop} 提交翻译管理-配送方式页面修改数据`,
+        log: `${globalStore?.shop} 提交翻译管理-配送方式页面修改数据`,
       },
       {
         method: "POST",
@@ -467,7 +508,7 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("save-bar");
-    const Data = shippings.nodes.map((node: any, index: number) => ({
+    const Data = shippingsRef.current.nodes.map((node: any, index: number) => ({
       key: "body",
       index: index,
       resource: "Label",
@@ -563,7 +604,7 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : shippings.nodes.length ? (
+        ) : shippingsRef.current?.nodes?.length ? (
           <Content
             style={{
               paddingLeft: isMobile ? "16px" : "0",
