@@ -48,18 +48,27 @@ import { useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
 const { Title } = Typography;
 // import { useNavigate } from "react-router";
-const LineChart = dynamic(
-  () => import("@shopify/polaris-viz").then((mod) => mod.LineChart),
-  {
-    ssr: false,
-  },
-);
-const BarChart = dynamic(
-  () => import("@shopify/polaris-viz").then((mod) => mod.BarChart),
-  {
-    ssr: false,
-  },
-);
+let LineChart: any = null;
+let BarChart: any = null;
+if (typeof window !== "undefined") {
+  // 动态 import，避免 SSR 阶段加载
+  import("@shopify/polaris-viz").then((mod) => {
+    LineChart = mod.LineChart;
+    BarChart = mod.BarChart;
+  });
+}
+// const LineChart = dynamic(
+//   () => import("@shopify/polaris-viz").then((mod) => mod.LineChart),
+//   {
+//     ssr: false,
+//   },
+// );
+// const BarChart = dynamic(
+//   () => import("@shopify/polaris-viz").then((mod) => mod.BarChart),
+//   {
+//     ssr: false,
+//   },
+// );
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -633,7 +642,15 @@ const Index = () => {
                     }}
                   >
                     {chart.data && chart.data.length > 0 && ready ? (
-                      <LineChart theme="Light" data={chart.data} />
+                      <LineChart
+                        theme="Light"
+                        data={chart.data}
+                        xAxisOptions={{ labelFormatter: (v: any) => v }}
+                        yAxisOptions={{
+                          labelFormatter: (v: any) =>
+                            `${Math.max(0, Number(v)).toFixed(1)}%`,
+                        }}
+                      />
                     ) : (
                       <Text as="p">无数据可显示</Text>
                     )}

@@ -258,6 +258,8 @@ const AnalyticsCard = ({
     // }
   }, []);
   useEffect(() => {
+    console.log("configCreateWebPixel changed:", configCreateWebPixel);
+    
     if (configCreateWebPixel) {
       // 开始请求前显示 loading（避免闪烁）
       setLoadingGather((prev) => ({
