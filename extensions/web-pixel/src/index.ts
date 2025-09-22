@@ -18,6 +18,8 @@ register(async ({ analytics, browser, init, settings }) => {
   const { storefrontUrl } = init?.data?.shop as any;
   const parts = new URL(storefrontUrl).pathname.split("/").filter(Boolean);
   let storeLanguage = parts.length > 0 ? [parts[parts.length - 1]] : ["en"];
+  console.log("storeLanguage", storeLanguage);
+  
   function isLikelyBotByUA() {
     let ua = "";
 

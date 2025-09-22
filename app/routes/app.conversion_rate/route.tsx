@@ -101,13 +101,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
         }
         console.log("storeLanguage: ", storeLanguage);
-        
+        const updatedStoreLanguage = storeLanguage.map((lang) =>
+          lang === "zh-CN" ? "zh-hans" : lang,
+        );
         const { days } = polarisVizFetcher;
         console.log("coversion fetcher: ", polarisVizFetcher);
+        console.log("updated store language: ", updatedStoreLanguage);
 
         const response = await GetConversionData({
           shop,
-          storeLanguage: storeLanguage,
+          storeLanguage: updatedStoreLanguage,
           dayData: days,
         });
         return response;
@@ -178,28 +181,13 @@ const Index = () => {
   const [currentFilterCondition, setCondition] = useState("last7");
   const [chartData, setChartData] = useState<any>([]);
   const [filteredChartData, setFilteredChartData] = useState<any>([]);
-  
+
   const SkeletonGrid = ["1", "2", "3"];
   const getLast24HoursRange = (): { start: Date; end: Date } => {
     const end = new Date(); // 现在
     const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000); // 一个星期前
     return { start, end };
   };
-  const vixData = [
-    {
-      name: "8月1日-2025年9月15日",
-      data: [
-        { key: "8月17日", value: 6 },
-        { key: "8月21日", value: 2 },
-        { key: "8月25日", value: 8 },
-        { key: "8月29日", value: 3 },
-        { key: "9月2日", value: 9 },
-        { key: "9月6日", value: 5 },
-        { key: "9月10日", value: 1 },
-        { key: "9月15日", value: 7 },
-      ],
-    },
-  ];
   const [selectedDates, setSelectedDates] = useState<{
     start: Date;
     end: Date;
@@ -270,6 +258,7 @@ const Index = () => {
         }),
       };
     });
+    console.log("filled data: ", filled);
 
     setFilteredChartData(filled);
   }, [selectedDates, chartData]);
@@ -388,7 +377,7 @@ const Index = () => {
     const languageMap: Record<string, string> = {
       en: "English",
       ja: "日本語",
-      zh: "简体中文",
+      "zh-hans": "简体中文",
       "zh-TW": "繁體中文",
       fr: "Français",
       de: "Deutsch",
@@ -459,9 +448,7 @@ const Index = () => {
       const dateData = sortedDates.map((dateStr) => {
         const events = (dates as any)[dateStr] || {};
         const exposure = Number(events.page_viewed || 0);
-        const clicks =
-          Number(events.clicked || 0) +
-          Number(events.product_added_to_cart || 0);
+        const clicks = Number(events.product_added_to_cart || 0);
 
         // 转换率（百分比）
         const conversionRate = exposure > 0 ? (clicks / exposure) * 100 : 0;
@@ -603,44 +590,49 @@ const Index = () => {
       <Layout>
         <Layout.Section>
           <InlineGrid gap="400" columns={gridColumns}>
-            {isLoading
-              ? SkeletonGrid.map((item: any, index: number) => {
-                  return (
-                    <Card key={index}>
-                      <Skeleton active paragraph={{ rows: 1 }} />
-                      <Skeleton.Input
-                        block
-                        active
-                        style={{ width: "100%", height: 200, borderRadius: 8 }}
-                      />
-                    </Card>
-                  );
-                })
-              : filteredChartData.map((chart: any, index: number) => {
-                  return (
-                    <Card key={index}>
-                      <Text as="h3" variant="headingSm">
-                        {chart.language}
-                      </Text>
-                      <div
-                        style={{
-                          height: 300,
-                          minWidth: 400,
-                          marginTop: "16px",
+            {isLoading ? (
+              SkeletonGrid.map((item: any, index: number) => {
+                return (
+                  <Card key={index}>
+                    <Skeleton active paragraph={{ rows: 1 }} />
+                    <Skeleton.Input
+                      block
+                      active
+                      style={{ width: "100%", height: 200, borderRadius: 8 }}
+                    />
+                  </Card>
+                );
+              })
+            ) : filteredChartData.length > 0 ? (
+              filteredChartData.map((chart: any, index: number) => (
+                <Card key={index}>
+                  <Text as="h3" variant="headingSm">
+                    {chart.language}
+                  </Text>
+                  <div
+                    style={{ height: 300, minWidth: 400, marginTop: "16px" }}
+                  >
+                    {chart.data && chart.data.length > 0 ? (
+                      <LineChart
+                        theme="Light"
+                        data={chart.data}
+                        xAxisOptions={{ labelFormatter: (v: any) => v }}
+                        yAxisOptions={{
+                          labelFormatter: (v: any) =>
+                            `${Math.max(0, Number(v)).toFixed(1)}%`,
                         }}
-                      >
-                        <LineChart
-                          theme="Light"
-                          data={chart.data}
-                          xAxisOptions={{ labelFormatter: (v: any) => v }}
-                          yAxisOptions={{
-                            labelFormatter: (v: any) => `${v.toFixed(1)}%`,
-                          }}
-                        />
-                      </div>
-                    </Card>
-                  );
-                })}
+                      />
+                    ) : (
+                      <Text as="p">无数据可显示</Text>
+                    )}
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <Text as="p">无图表数据</Text>
+              </Card>
+            )}
           </InlineGrid>
         </Layout.Section>
       </Layout>

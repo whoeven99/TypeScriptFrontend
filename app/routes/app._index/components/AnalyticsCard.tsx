@@ -91,9 +91,7 @@ const AnalyticsCard = ({
         const views = Number(events.page_viewed ?? 0);
 
         if (views > 0) {
-          const clicks =
-            Number(events.clicked ?? 0) +
-            Number(events.product_added_to_cart ?? 0);
+          const clicks = Number(events.product_added_to_cart ?? 0);
 
           // daily rate (0..+inf)
           dailyRates.push(clicks / views);
@@ -130,8 +128,8 @@ const AnalyticsCard = ({
       shopify.toast.show("授权成功");
 
       // 创建 Web Pixel
-      console.log('开始创建 web pixel');
-      
+      console.log("开始创建 web pixel");
+
       await createWebPixel();
     } catch (error: any) {
       shopify.toast.show("授权失败");
@@ -153,16 +151,16 @@ const AnalyticsCard = ({
     if (configCreateWebPixel) {
       return; // 已创建，跳过
     }
-    console.log('执行 createWebPixel');
-    
+    console.log("执行 createWebPixel");
+
     const formData = new FormData();
     formData.append("qualityEvaluation", JSON.stringify({})); // 修正拼写错误，假设是 qualityEvaluation
     graphqlFetcher.submit(formData, {
       method: "post",
       action: "/app",
     });
-    console.log('提交创建请求，等待完成');
-    
+    console.log("提交创建请求，等待完成");
+
     // 等待提交完成（useFetcher 是异步的，这里用 Promise 包装等待 idle）
     await new Promise((resolve) => {
       const checkIdle = setInterval(() => {
@@ -428,7 +426,7 @@ const AnalyticsCard = ({
             align="center"
             style={{ height: "100%", minWidth: 200 }}
           >
-            <Text>{t("Translation Score")}</Text>
+            <Text>{t("Translation score")}</Text>
             {loadingGather.translationScore.loading ? (
               <Skeleton.Node style={{ height: 50 }} active />
             ) : (
@@ -493,7 +491,7 @@ const AnalyticsCard = ({
               gap="small"
               style={{ flex: 1 }}
             >
-              <Text>{t("Untranslated Words")}</Text>
+              <Text>{t("Untranslated")}</Text>
               <Flex vertical align="center" justify="center" gap="small">
                 {loadingGather.unTranslated.loading ? (
                   <Skeleton.Node style={{ width: 50, height: 30 }} active />
