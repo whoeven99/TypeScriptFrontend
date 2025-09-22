@@ -206,6 +206,12 @@ const Index = () => {
     setGridColumns(column);
   };
   const [ready, setReady] = useState(false);
+  function ClientOnly({ children }: { children: React.ReactNode }) {
+    const [mounted, setMounted] = React.useState(false);
+    React.useEffect(() => setMounted(true), []);
+    if (!mounted) return null;
+    return <>{children}</>;
+  }
   useEffect(() => {
     const timer = setTimeout(() => setReady(true), 100);
     return () => clearTimeout(timer);
@@ -642,15 +648,18 @@ const Index = () => {
                     }}
                   >
                     {chart.data && chart.data.length > 0 && ready ? (
-                      <LineChart
-                        theme="Light"
-                        data={chart.data}
-                        xAxisOptions={{ labelFormatter: (v: any) => v }}
-                        yAxisOptions={{
-                          labelFormatter: (v: any) =>
-                            `${Math.max(0, Number(v)).toFixed(1)}%`,
-                        }}
-                      />
+                      <ClientOnly>
+                        <LineChart
+                          theme="Light"
+                          data={chart.data}
+                          xAxisOptions={{ labelFormatter: (v: any) => v }}
+                          yAxisOptions={{
+                            labelFormatter: (v: any) =>
+                              `${Math.max(0, Number(v)).toFixed(1)}%`,
+                          }}
+                          showTooltip={false}
+                        />
+                      </ClientOnly>
                     ) : (
                       <Text as="p">无数据可显示</Text>
                     )}
