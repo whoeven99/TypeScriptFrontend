@@ -104,6 +104,8 @@ const PublishModal: React.FC<PublishModalProps> = ({
         },
       );
     }
+    if (webPresencesUpdateFetcher.data?.errorMsg)
+      shopify.toast.show(webPresencesUpdateFetcher.data?.errorMsg);
   }, [webPresencesUpdateFetcher.data]);
 
   useEffect(() => {
@@ -228,7 +230,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
           <Button onClick={() => setIsModalOpen(false)}>{t("Cancel")}</Button>
           <Button
             type="primary"
-            disabled={dataSource.every((item) => !item.published)}
+            // disabled={dataSource.every((item) => !item.published)}
             loading={
               webPresencesUpdateFetcher.state == "submitting" ||
               publishFetcher.state == "submitting"

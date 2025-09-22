@@ -244,30 +244,103 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         // 并发执行所有请求
         const results = await Promise.allSettled(promises);
 
-        if (results.every((item) => item.status === "fulfilled")) {
-          return json({
-            success: true,
-            errorCode: 0,
-            errorMsg: "",
-            response: {
-              webPresences: results,
-              webPresencesId: webPresencesUpdate.map((item: any) => item.id),
-              publishedCode: webPresencesUpdate[0].publishedCode,
-            },
-          });
+        const successRes = results.filter(
+          (item: any) =>
+            item.status === "fulfilled" &&
+            !item?.value?.data?.webPresenceUpdate?.userErrors?.length,
+        );
+
+        const failRes: any = results.filter(
+          (item: any) =>
+            item.status !== "fulfilled" ||
+            item?.value?.data?.webPresenceUpdate?.userErrors?.length,
+        );
+
+        console.log("successRes: ", successRes);
+        console.log("failRes: ", failRes);
+
+        if (successRes?.length) {
+          if (!failRes?.length) {
+            return json({
+              success: true,
+              errorCode: 0,
+              errorMsg: "",
+              response: {
+                webPresences: successRes,
+                webPresencesId: successRes?.map(
+                  (item: any) =>
+                    item?.value?.data?.webPresenceUpdate?.webPresence?.id,
+                ),
+                publishedCode: webPresencesUpdate[0].publishedCode,
+              },
+            });
+          } else {
+            console.log(
+              `应用日志: ${shop} 语言绑定时报错: ${failRes
+                ?.map(
+                  (item: any) =>
+                    item?.value?.data?.webPresenceUpdate?.userErrors || [],
+                )
+                ?.flat()
+                ?.map((err: any) =>
+                  typeof err === "string" ? err : err.message,
+                ) // 兼容字符串/对象
+                ?.filter(Boolean)
+                ?.join(", ")}`,
+            );
+
+            return json({
+              success: true,
+              errorCode: 10001,
+              errorMsg:
+                "Errors occurred when binding languages ​​to certain domains",
+              response: {
+                webPresences: successRes,
+                webPresencesId: successRes?.map(
+                  (item: any) =>
+                    item?.value?.data?.webPresenceUpdate?.webPresence?.id,
+                ),
+                publishedCode: webPresencesUpdate[0].publishedCode,
+              },
+            });
+          }
         } else {
+          console.log(
+            `应用日志: ${shop} 语言绑定时报错: ${failRes
+              ?.map(
+                (item: any) =>
+                  item?.value?.data?.webPresenceUpdate?.userErrors || [],
+              )
+              ?.flat()
+              ?.map((err: any) => (typeof err === "string" ? err : err.message)) // 兼容字符串/对象
+              ?.filter(Boolean)
+              ?.join(", ")}`,
+          );
+
           return json({
             success: false,
-            errorCode: 0,
-            errorMsg: "",
+            errorCode: 10001,
+            errorMsg:
+              "Errors occurred when binding languages ​​to certain domains",
             response: {
-              webPresences: results,
+              webPresences: [],
+              webPresencesId: [],
               publishedCode: webPresencesUpdate[0].publishedCode,
             },
           });
         }
       } catch (error) {
         console.error("Error webPresencesUpdate language:", error);
+        return json({
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: {
+            webPresences: [],
+            webPresencesId: [],
+            publishedCode: webPresencesUpdate[0].publishedCode,
+          },
+        });
       }
 
     case !!addData:

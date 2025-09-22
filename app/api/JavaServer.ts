@@ -1294,8 +1294,6 @@ export const GetLanguageList = async ({
       method: "GET",
     });
 
-    console.log(`${shop} GetLanguageList: `, response.data);
-
     return response.data;
   } catch (error) {
     console.error("Error occurred in the languageList:", error);
