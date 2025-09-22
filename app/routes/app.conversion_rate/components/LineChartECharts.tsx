@@ -1,67 +1,63 @@
 import React, { useEffect, useRef } from "react";
 import * as echarts from "echarts";
 
-interface LineChartEChartsProps {
+interface Props {
   data: any[];
   height?: number;
 }
 
-export default function LineChartECharts({ data, height = 300 }: LineChartEChartsProps) {
+const LineChartECharts: React.FC<Props> = ({ data, height = 300 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
 
   useEffect(() => {
     if (chartRef.current) {
       chartInstance.current = echarts.init(chartRef.current);
-    }
 
-    return () => {
-      chartInstance.current?.dispose();
-    };
+      // 使用 ResizeObserver 监听父容器尺寸变化
+      const resizeObserver = new ResizeObserver(() => {
+        chartInstance.current?.resize();
+      });
+      resizeObserver.observe(chartRef.current);
+
+      return () => {
+        resizeObserver.disconnect();
+        chartInstance.current?.dispose();
+      };
+    }
   }, []);
 
   useEffect(() => {
     if (!chartInstance.current) return;
 
     const option = {
-      tooltip: {
-        trigger: "axis",
-        formatter: (params: any) => {
-          return params
-            .map(
-              (p: any) =>
-                `${p.seriesName}: ${Number(p.data[1]).toFixed(1)}%`
-            )
-            .join("<br/>");
-        },
-      },
       xAxis: {
         type: "category",
-        data: data[0]?.data.map((d: any) => d.key),
+        data: data[0].data.map((d: any) => d.key),
       },
       yAxis: {
         type: "value",
-        axisLabel: {
-          formatter: "{value}%",
-        },
-        min: 0,
+        max: 100,
+        axisLabel: { formatter: "{value}%" },
+        splitNumber: 2, // 控制纵轴分割线数量，数字越小越稀疏
+        // 或者使用 interval 精确控制间隔
+        // interval: 20,  // 每 20% 一个横线
       },
       series: data.map((series: any) => ({
-        name: series.name,
+        data: series.data.map((d: any) => d.value),
         type: "line",
-        data: series.data.map((d: any) => [d.key, d.value]),
+        name: series.name,
         smooth: true,
+        symbol: "none", // 去掉圆圈
       })),
-      grid: {
-        left: "10%",
-        right: "10%",
-        top: "20%",
-        bottom: "15%",
-      },
+      tooltip: { trigger: "axis" },
     };
 
     chartInstance.current.setOption(option);
+    chartInstance.current.resize();
   }, [data]);
 
   return <div ref={chartRef} style={{ width: "100%", height }} />;
-}
+};
+
+export default LineChartECharts;

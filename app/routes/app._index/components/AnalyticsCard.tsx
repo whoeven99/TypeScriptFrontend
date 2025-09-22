@@ -69,7 +69,6 @@ const AnalyticsCard = ({
   const [conversionRate, setConversionRate] = useState<any>(null);
   const [navigateToRateState, setNavigateToRateState] = useState(false);
   const [improveBtnState, setImproveBtnState] = useState(false);
-  const [pixelStatus, setPixelStatus] = useState<PixelStatus>("loading");
   function calculateConversionRate(
     resp: Record<string, Record<string, Record<string, any>>>,
   ): number {
@@ -259,7 +258,7 @@ const AnalyticsCard = ({
   }, []);
   useEffect(() => {
     console.log("configCreateWebPixel changed:", configCreateWebPixel);
-    
+
     if (configCreateWebPixel) {
       // 开始请求前显示 loading（避免闪烁）
       setLoadingGather((prev) => ({
@@ -358,8 +357,8 @@ const AnalyticsCard = ({
       console.error("解析 conversionRate 响应失败:", e);
       // setConversionRate(null);
     } finally {
-      console.log('web pixel 最终执行了');
-      
+      console.log("web pixel 最终执行了");
+
       setLoadingGather((prev) => ({
         ...prev,
         conversionRate: { loading: false },
@@ -388,14 +387,15 @@ const AnalyticsCard = ({
     if (queryWebPixelFetcher.data) {
       if (queryWebPixelFetcher.data?.success) {
         setConfigPixel(true);
-        setPixelStatus("configured");
         console.log("查询成功");
         console.log(queryWebPixelFetcher.data);
       } else {
         setConfigPixel(false);
-        setPixelStatus("notConfigured");
         console.log("查询失败");
       }
+    } else {
+      setConfigPixel(false);
+      console.log("queryWebPixelFetcher.data 为空");
     }
   }, [queryWebPixelFetcher.data]);
   useEffect(() => {
