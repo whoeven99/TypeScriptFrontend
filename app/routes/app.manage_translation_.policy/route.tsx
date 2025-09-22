@@ -36,6 +36,7 @@ import { FullscreenBar, Page, Select } from "@shopify/polaris";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
+import { globalStore } from "~/globalStore";
 
 const { Sider, Content } = Layout;
 
@@ -50,45 +51,52 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  // 如果没有 language 参数，直接返回空数据
+  const url = new URL(request.url);
+  const searchTerm = url.searchParams.get("language");
+
+  return json({
+    searchTerm,
+  });
+};
+
+export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  console.log(`${shop} 目前在翻译管理-政策页面`);
-
-  try {
-    const policies = await queryNextTransType({
-      shop,
-      accessToken: accessToken as string,
-      resourceType: "SHOP_POLICY",
-      endCursor: "",
-      locale: searchTerm || "",
-    });
-    return json({
-      server: process.env.SERVER_URL,
-      shopName: shop,
-      searchTerm,
-      policies,
-    });
-  } catch (error) {
-    console.error("Error load policy:", error);
-    throw new Response("Error load policy", { status: 500 });
-  }
-};
-
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-
   try {
     const formData = await request.formData();
+    const endCursor = JSON.parse(formData.get("endCursor") as string);
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
     switch (true) {
+      case !!endCursor:
+        try {
+          const response = await queryNextTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "SHOP_POLICY",
+            endCursor: endCursor.cursor,
+            locale: searchTerm || "",
+          });
+
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
@@ -114,36 +122,22 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, policies, server, shopName } =
-    useLoaderData<typeof loader>();
+  const { searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
+  const dataFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  // const [isVisible, setIsVisible] = useState<
-  //   boolean | string | { language: string } | { item: string }
-  // >(false);
 
-  const menuData: any = useMemo(
-    () =>
-      policies.nodes.map((policy: any) => ({
-        key: policy.resourceId,
-        label: policy.translatableContent.find(
-          (item: any) => item.key === "body",
-        ).value,
-      })),
-    [policies],
-  );
-
+  const [menuData, setMenuData] = useState<any[]>([]);
+  const [policiesData, setPoliciesData] = useState<any>();
   const [policyData, setPolicyData] = useState<any>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [selectPolicyKey, setSelectPolicyKey] = useState(
-    policies.nodes[0]?.resourceId,
-  );
+  const [selectPolicyKey, setSelectPolicyKey] = useState<string>("");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
@@ -189,14 +183,22 @@ const Index = () => {
         },
       );
     }
+    dataFetcher.submit(
+      {
+        endCursor: JSON.stringify({
+          cursor: "",
+          searchTerm: searchTerm,
+        }),
+      },
+      {
+        method: "POST",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
     handleResize();
     window.addEventListener("resize", handleResize);
-    if (policies) {
-      setIsLoading(false);
-    }
     return () => {
       window.removeEventListener("resize", handleResize);
     };
@@ -220,25 +222,19 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
-    if (policies && isManualChangeRef.current) {
-      setSelectPolicyKey(policies?.nodes[0]?.resourceId);
-      isManualChangeRef.current = false;
-      setIsLoading(false);
+    if (policiesData) {
+      const data: any = policiesData.nodes.find(
+        (policy: any) => policy.resourceId === selectPolicyKey,
+      );
+      setConfirmData([]);
+      setPolicyData(data);
+      setTranslatedValues({});
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+      setLoadingItems([]);
     }
-  }, [policies]);
-
-  useEffect(() => {
-    const data: any = policies.nodes.find(
-      (policy: any) => policy.resourceId === selectPolicyKey,
-    );
-    setConfirmData([]);
-    setPolicyData(data);
-    setTranslatedValues({});
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
-    setLoadingItems([]);
-  }, [selectPolicyKey, policies]);
+  }, [selectPolicyKey, policiesData]);
 
   useEffect(() => {
     setResourceData([
@@ -253,6 +249,28 @@ const Index = () => {
   }, [policyData]);
 
   useEffect(() => {
+    if (dataFetcher.data) {
+      if (dataFetcher.data?.success) {
+        setPoliciesData(dataFetcher.data?.response);
+        setMenuData(
+          dataFetcher.data?.response?.nodes?.map((policy: any) => ({
+            key: policy.resourceId,
+            label: policy.translatableContent.find(
+              (item: any) => item.key === "body",
+            ).value,
+          })),
+        );
+        setSelectPolicyKey(dataFetcher.data.response?.nodes[0]?.resourceId);
+        isManualChangeRef.current = false; // 重置
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 100);
+      }
+      setConfirmData([]);
+    }
+  }, [dataFetcher.data]);
+
+  useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
       const successfulItem = confirmFetcher.data.data.filter(
         (item: any) => item.success === true,
@@ -262,17 +280,17 @@ const Index = () => {
       );
 
       successfulItem.forEach((item: any) => {
-        const index = policies.nodes.findIndex(
+        const index = policiesData.nodes.findIndex(
           (option: any) => option.resourceId === item.data.resourceId,
         );
         if (index !== -1) {
-          const policy = policies.nodes[index].translations.find(
+          const policy = policiesData.nodes[index].translations.find(
             (option: any) => option.key === item.data.key,
           );
           if (policy) {
             policy.value = item.data.value;
           } else {
-            policies.nodes[index].translations.push({
+            policiesData.nodes[index].translations.push({
               key: item.data.key,
               value: item.data.value,
             });
@@ -418,8 +436,8 @@ const Index = () => {
     }
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
-      shopName: shopName,
-      source: policies.nodes
+      shopName: globalStore?.shop || "",
+      source: policiesData.nodes
         .find((item: any) => item?.resourceId === selectPolicyKey)
         ?.translatableContent.find((item: any) => item.key === key)?.locale,
       target: searchTerm || "",
@@ -427,7 +445,7 @@ const Index = () => {
       context: context,
       key: key,
       type: type,
-      server: server || "",
+      server: globalStore?.server || "",
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
@@ -446,6 +464,18 @@ const Index = () => {
     } else {
       shopify.saveBar.hide("save-bar");
       setIsLoading(true);
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: "",
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "POST",
+          action: `/app/manage_translation/policy?language=${language}`,
+        },
+      );
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
       navigate(`/app/manage_translation/policy?language=${language}`);
@@ -484,7 +514,7 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("save-bar");
-    const data: any = policies.nodes.find(
+    const data: any = policiesData.nodes.find(
       (policy: any) => policy.resourceId === selectPolicyKey,
     );
     setPolicyData(data);
@@ -577,7 +607,7 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : policies.nodes.length ? (
+        ) : policiesData.nodes.length ? (
           <>
             {!isMobile && (
               <Sider

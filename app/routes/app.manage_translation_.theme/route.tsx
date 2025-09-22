@@ -38,6 +38,7 @@ import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import { S } from "node_modules/vite/dist/node/types.d-aGj9QkWt";
+import { globalStore } from "~/globalStore";
 
 const { Text } = Typography;
 
@@ -52,22 +53,12 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  try {
-    return json({
-      shop,
-      server: process.env.SERVER_URL,
-      shopName: shop,
-      searchTerm,
-    });
-  } catch (error) {
-    console.error("Error load theme:", error);
-  }
+  return json({
+    searchTerm,
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -160,7 +151,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { shop, searchTerm, server, shopName } = useLoaderData<typeof loader>();
+  const { searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
@@ -235,7 +226,7 @@ const Index = () => {
     );
     fetcher.submit(
       {
-        log: `${shop} 目前在翻译管理-主题页面`,
+        log: `${globalStore?.shop} 目前在翻译管理-主题页面`,
       },
       {
         method: "POST",
@@ -316,7 +307,7 @@ const Index = () => {
         shopify.toast.show("Saved successfully");
         fetcher.submit(
           {
-            log: `${shop} 翻译管理-主题页面修改数据保存成功`,
+            log: `${globalStore?.shop} 翻译管理-主题页面修改数据保存成功`,
           },
           {
             method: "POST",
@@ -484,7 +475,7 @@ const Index = () => {
     }
     fetcher.submit(
       {
-        log: `${shop} 从翻译管理-主题页面点击单行翻译`,
+        log: `${globalStore?.shop} 从翻译管理-主题页面点击单行翻译`,
       },
       {
         method: "POST",
@@ -493,7 +484,7 @@ const Index = () => {
     );
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
-      shopName: shopName,
+      shopName: globalStore?.shop || "",
       source: themes
         .find((item: any) => item?.resourceId === key)
         ?.translatableContent.find((item: any) => item.key === key)?.locale,
@@ -502,7 +493,7 @@ const Index = () => {
       context: context,
       key: key,
       type: type,
-      server: server || "",
+      server: globalStore?.server || "",
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
@@ -510,7 +501,7 @@ const Index = () => {
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
-            log: `${shop} 从翻译管理-主题页面点击单行翻译返回结果 ${data?.response}`,
+            log: `${globalStore?.shop} 从翻译管理-主题页面点击单行翻译返回结果 ${data?.response}`,
           },
           {
             method: "POST",
@@ -577,7 +568,7 @@ const Index = () => {
     }); // 提交表单请求
     fetcher.submit(
       {
-        log: `${shop} 提交翻译管理-主题页面修改数据`,
+        log: `${globalStore?.shop} 提交翻译管理-主题页面修改数据`,
       },
       {
         method: "POST",

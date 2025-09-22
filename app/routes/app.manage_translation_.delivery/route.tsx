@@ -36,6 +36,7 @@ import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
+import { globalStore } from "~/globalStore";
 
 const { Content } = Layout;
 
@@ -51,32 +52,12 @@ type TableDataType = {
 } | null;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  // 如果没有 language 参数，直接返回空数据
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-  console.log(`${shop} 目前在翻译管理-配送方式页面`);
 
-  try {
-    const deliverys = await queryNextTransType({
-      shop,
-      accessToken: accessToken as string,
-      resourceType: "DELIVERY_METHOD_DEFINITION",
-      endCursor: "",
-      locale: searchTerm || "",
-    });
-
-    return json({
-      server: process.env.SERVER_URL,
-      shopName: shop,
-      searchTerm,
-      deliverys,
-    });
-  } catch (error) {
-    console.error("Error load delivery:", error);
-    throw new Response("Error load delivery", { status: 500 });
-  }
+  return json({
+    searchTerm,
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -87,32 +68,64 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
-    const startCursor: string = JSON.parse(
-      formData.get("startCursor") as string,
-    );
-    const endCursor: string = JSON.parse(formData.get("endCursor") as string);
+    const startCursor = JSON.parse(formData.get("startCursor") as string);
+    const endCursor = JSON.parse(formData.get("endCursor") as string);
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
     switch (true) {
       case !!startCursor:
-        const previousDeliverys = await queryPreviousTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "DELIVERY_METHOD_DEFINITION",
-          startCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
-        return json({ data: previousDeliverys });
+        try {
+          const response = await queryPreviousTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "DELIVERY_METHOD_DEFINITION",
+            startCursor: startCursor.cursor,
+            locale: searchTerm || "",
+          }); // 处理逻辑
+          console.log(`应用日志: ${shop} 翻译管理-配送页面翻到上一页`);
+
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
+
       case !!endCursor:
-        const nextDeliverys = await queryNextTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "DELIVERY_METHOD_DEFINITION",
-          endCursor,
-          locale: searchTerm || "",
-        }); // 处理逻辑
-        return json({ data: nextDeliverys });
+        try {
+          const response = await queryNextTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "DELIVERY_METHOD_DEFINITION",
+            endCursor: endCursor.cursor,
+            locale: searchTerm || "",
+          }); // 处理逻辑
+          console.log(`应用日志: ${shop} 翻译管理-配送页面翻到下一页`);
+
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
+
       case !!confirmData:
         const data = await updateManageTranslation({
           shop,
@@ -138,14 +151,13 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, deliverys, server, shopName } =
-    useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  const { searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
-  const submit = useSubmit(); // 使用 useSubmit 钩子
+  const fetcher = useFetcher<any>();
+  const dataFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
@@ -154,7 +166,7 @@ const Index = () => {
   //   boolean | string | { language: string } | { item: string }
   // >(false);
 
-  const [deliverysData, setDeliverysData] = useState(deliverys);
+  const [deliverysData, setDeliverysData] = useState<any>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
@@ -187,12 +199,8 @@ const Index = () => {
     searchTerm || "",
   );
   const [selectedItem, setSelectedItem] = useState<string>("delivery");
-  const [hasPrevious, setHasPrevious] = useState<boolean>(
-    deliverys.pageInfo.hasPreviousPage || false,
-  );
-  const [hasNext, setHasNext] = useState<boolean>(
-    deliverys.pageInfo.hasNextPage || false,
-  );
+  const [hasPrevious, setHasPrevious] = useState<boolean>(false);
+  const [hasNext, setHasNext] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -207,6 +215,26 @@ const Index = () => {
         },
       );
     }
+    dataFetcher.submit(
+      {
+        endCursor: JSON.stringify({
+          cursor: "",
+          searchTerm: searchTerm,
+        }),
+      },
+      {
+        method: "POST",
+      },
+    );
+    fetcher.submit(
+      {
+        log: `${globalStore?.shop} 目前在翻译管理-配送页面`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -222,13 +250,6 @@ const Index = () => {
   }, [loadingItems]);
 
   useEffect(() => {
-    if (deliverys && isManualChangeRef.current) {
-      setDeliverysData(deliverys);
-      isManualChangeRef.current = false; // 重置
-    }
-  }, [deliverys]);
-
-  useEffect(() => {
     if (languageTableData) {
       setLanguageOptions(
         languageTableData
@@ -242,23 +263,25 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
-    setHasPrevious(deliverysData.pageInfo.hasPreviousPage);
-    setHasNext(deliverysData.pageInfo.hasNextPage);
-    const data = generateMenuItemsArray(deliverysData);
-    setResourceData(data);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
+    if (deliverysData) {
+      setHasPrevious(deliverysData.pageInfo.hasPreviousPage);
+      setHasNext(deliverysData.pageInfo.hasNextPage);
+      const data = generateMenuItemsArray(deliverysData);
+      setResourceData(data);
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+    }
   }, [deliverysData]);
 
   useEffect(() => {
-    if (actionData && "data" in actionData) {
+    if (dataFetcher.data) {
+      if (dataFetcher.data?.success) {
+        setDeliverysData(dataFetcher.data?.response);
+      }
       setConfirmData([]);
-      setDeliverysData(actionData.data);
-    } else {
-      // 如果不存在 nexts，可以执行其他逻辑
     }
-  }, [actionData]);
+  }, [dataFetcher.data]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -267,6 +290,15 @@ const Index = () => {
       );
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
+        fetcher.submit(
+          {
+            log: `${globalStore?.shop} 翻译管理-配送页面修改数据保存成功`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       } else {
         shopify.toast.show(t("Some items saved failed"));
       }
@@ -425,9 +457,18 @@ const Index = () => {
     if (!key || !type || !context) {
       return;
     }
+    fetcher.submit(
+      {
+        log: `${globalStore?.shop} 从翻译管理-配送页面点击单行翻译`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
-      shopName: shopName,
+      shopName: globalStore?.shop || "",
       source: deliverysData.nodes
         .find((item: any) => item?.resourceId === key)
         ?.translatableContent.find((item: any) => item.key === key)?.locale,
@@ -436,12 +477,21 @@ const Index = () => {
       context: context,
       key: key,
       type: type,
-      server: server || "",
+      server: globalStore?.server || "",
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response, index);
         shopify.toast.show(t("Translated successfully"));
+        fetcher.submit(
+          {
+            log: `${globalStore?.shop} 从翻译管理-配送页面点击单行翻译返回结果 ${data?.response}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       }
     } else {
       shopify.toast.show(data.errorMsg);
@@ -455,6 +505,18 @@ const Index = () => {
     } else {
       shopify.saveBar.hide("save-bar");
       setIsLoading(true);
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: "",
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/delivery?language=${language}`,
+        },
+      ); // 提交表单请求
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
       navigate(`/app/manage_translation/delivery?language=${language}`);
@@ -478,13 +540,18 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      const formData = new FormData();
-      const startCursor = deliverysData.pageInfo.startCursor;
-      formData.append("startCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-      submit(formData, {
-        method: "post",
-        action: `/app/manage_translation/delivery?language=${searchTerm}`,
-      }); // 提交表单请求
+      dataFetcher.submit(
+        {
+          startCursor: JSON.stringify({
+            cursor: deliverysData.pageInfo.startCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/delivery?language=${searchTerm}`,
+        },
+      ); // 提交表单请求
     }
   };
 
@@ -493,13 +560,18 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
-      const formData = new FormData();
-      const endCursor = deliverysData.pageInfo.endCursor;
-      formData.append("endCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-      submit(formData, {
-        method: "post",
-        action: `/app/manage_translation/delivery?language=${searchTerm}`,
-      }); // 提交表单请求
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: deliverysData.pageInfo.endCursor,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/delivery?language=${searchTerm}`,
+        },
+      ); // 提交表单请求
     }
   };
 
@@ -510,6 +582,15 @@ const Index = () => {
       method: "post",
       action: `/app/manage_translation/delivery?language=${searchTerm}`,
     }); // 提交表单请求
+    fetcher.submit(
+      {
+        log: `${globalStore?.shop} 提交翻译管理-配送页面修改数据`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
   };
 
   const handleDiscard = () => {
@@ -620,7 +701,7 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : deliverys.nodes.length ? (
+        ) : deliverysData.nodes.length ? (
           <Content
             style={{
               paddingLeft: isMobile ? "16px" : "0",
