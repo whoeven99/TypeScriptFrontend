@@ -196,6 +196,11 @@ const Index = () => {
   const handleSwitcherTime = (column: number) => {
     setGridColumns(column);
   };
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setReady(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
   const generateDateRange = (start: Date, end: Date) => {
     const dates: string[] = [];
     const current = new Date(start);
@@ -421,6 +426,9 @@ const Index = () => {
       "sr-Latn": "Srpski",
       nb: "Norsk Bokmål",
       se: "Davvisámegiella (Northern Sami)",
+      mg: "Malagasy",
+      sw: "Kiswahili",
+      zu: "isiZulu",
     };
 
     function formatDateToChinese(dateStr: string) {
@@ -589,7 +597,10 @@ const Index = () => {
       <div style={{ height: "20px" }}></div>
       <Layout>
         <Layout.Section>
-          <InlineGrid gap="400" columns={gridColumns}>
+          <InlineGrid
+            gap="400"
+            columns={`repeat(${gridColumns}, minmax(400px, 1fr))`}
+          >
             {isLoading ? (
               SkeletonGrid.map((item: any, index: number) => {
                 return (
@@ -610,9 +621,14 @@ const Index = () => {
                     {chart.language}
                   </Text>
                   <div
-                    style={{ height: 300, minWidth: 400, marginTop: "16px" }}
+                    style={{
+                      height: 300,
+                      width: "100%",
+                      minWidth: 400,
+                      marginTop: "16px",
+                    }}
                   >
-                    {chart.data && chart.data.length > 0 ? (
+                    {chart.data && chart.data.length > 0 && ready ? (
                       <LineChart
                         theme="Light"
                         data={chart.data}
