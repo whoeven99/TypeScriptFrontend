@@ -36,29 +36,17 @@ const PublishModal: React.FC<PublishModalProps> = ({
   languageCode,
   languageName,
 }) => {
-  const [primaryMarketId, setPrimaryMarketId] = useState<any>([]);
   const [markets, setMarkets] = useState<MarketType[]>([]);
   const [dataSource, setDataSource] = useState<MarketDataType[]>([]);
-  const [publishedLoading, setPublishedLoading] = useState<boolean>(false);
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const fetcher = useFetcher<any>();
-  const primaryMarketFetcher = useFetcher<any>();
   const webPresencesFetcher = useFetcher<any>();
   const webPresencesUpdateFetcher = useFetcher<any>();
   const publishFetcher = useFetcher<any>();
 
   useEffect(() => {
-    primaryMarketFetcher.submit(
-      {
-        primaryMarket: JSON.stringify(true),
-      },
-      {
-        method: "POST",
-        action: "/app/language",
-      },
-    );
     webPresencesFetcher.submit(
       {
         webPresences: JSON.stringify(true),
@@ -69,14 +57,6 @@ const PublishModal: React.FC<PublishModalProps> = ({
       },
     );
   }, []);
-
-  useEffect(() => {
-    if (primaryMarketFetcher.data?.success) {
-      setPrimaryMarketId(
-        primaryMarketFetcher.data.response?.map((item: any) => item.id),
-      );
-    }
-  }, [primaryMarketFetcher.data]);
 
   useEffect(() => {
     if (webPresencesFetcher.data?.success) {
@@ -112,7 +92,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
               webPresencesUpdateFetcher.data.response.publishedCode ||
               languageCode,
             shopLocale: {
-              marketWebPresenceIds: primaryMarketId,
+              // marketWebPresenceIds: primaryMarketId,
               published: true,
             },
           }),
@@ -154,7 +134,6 @@ const PublishModal: React.FC<PublishModalProps> = ({
       } else {
         shopify.toast.show(t("Publish failed"));
       }
-      setPublishedLoading(false);
     }
   }, [publishFetcher.data]);
 
@@ -168,7 +147,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
         })),
       ),
     );
-  }, [markets, languageCode, isVisible]);
+  }, [markets, languageCode]);
 
   const columns = [
     {
@@ -227,7 +206,6 @@ const PublishModal: React.FC<PublishModalProps> = ({
         publishedCode: languageCode,
       };
     });
-    setPublishedLoading(true);
     webPresencesUpdateFetcher.submit(
       {
         webPresencesUpdate: JSON.stringify(webPresencesData),
@@ -249,11 +227,11 @@ const PublishModal: React.FC<PublishModalProps> = ({
           <Button onClick={() => setIsModalOpen(false)}>{t("Cancel")}</Button>
           <Button
             type="primary"
-            disabled={
-              dataSource.every((item) => !item.published) ||
-              primaryMarketFetcher.data?.response.length === 0
+            disabled={dataSource.every((item) => !item.published)}
+            loading={
+              webPresencesUpdateFetcher.state == "submitting" ||
+              publishFetcher.state == "submitting"
             }
-            loading={publishedLoading}
             onClick={handlePublish}
           >
             {t("Save")}
