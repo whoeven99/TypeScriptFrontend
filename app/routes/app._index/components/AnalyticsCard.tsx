@@ -369,16 +369,18 @@ const AnalyticsCard = ({
   useEffect(() => {
     if (graphqlFetcher.data) {
       console.log("graphqlFetcher.data:", graphqlFetcher.data);
-      
+
       if (graphqlFetcher.data?.success) {
         // 可在此处理创建成功逻辑，如 toast
-        shopify.toast.show("Web Pixel 激活成功");
+        // shopify.toast.show("Web Pixel 激活成功");
+        setNavigateToRateState(true);
         console.log(graphqlFetcher.data);
         // 导航到详情页
         navigate("/app/conversion_rate");
         queryWebPixel(); // 创建后重新查询更新状态
       } else {
-        shopify.toast.show("Web Pixel 激活失败");
+        queryWebPixel();
+        // shopify.toast.show("Web Pixel 激活失败");
         setNavigateToRateState(false);
       }
     }
@@ -395,9 +397,11 @@ const AnalyticsCard = ({
         setConfigPixel(false);
         console.log("查询失败");
       }
-    } else {
-      // setConfigPixel(false);
-      console.log("queryWebPixelFetcher.data 为空");
+    }
+    else{
+      setTimeout(()=>{
+        // setConfigPixel(false);
+      },3000)
     }
   }, [queryWebPixelFetcher.data]);
   useEffect(() => {
@@ -561,7 +565,7 @@ const AnalyticsCard = ({
         </Col> */}
         <Col xs={24} sm={12} md={8}>
           {/* CRO Analytics */}
-          <Flex
+          {/* <Flex
             vertical
             align="center"
             justify="space-between"
@@ -594,7 +598,6 @@ const AnalyticsCard = ({
               )}
             </Flex>
 
-            {/* 按钮：未配置显示 Configure，已配置显示 Details */}
             {loadingGather.conversionRate.loading ||
             configCreateWebPixel === null ? (
               <Skeleton.Button active />
@@ -613,6 +616,73 @@ const AnalyticsCard = ({
                 onClick={handleConfigScopes}
               >
                 {t("Configure")}
+              </Button>
+            )}
+          </Flex> */}
+          <Flex
+            vertical
+            align="center"
+            justify="space-between"
+            gap="small"
+            style={{ height: "100%", minWidth: 200 }}
+          >
+            <Text>{t("CRO analytics")}</Text>
+
+            <Flex vertical align="center" justify="center" gap="small">
+              {configCreateWebPixel === null ? (
+                // 配置状态未知，Skeleton
+                <Skeleton.Input style={{ width: 50 }} active size="small" />
+              ) : !configCreateWebPixel ? (
+                // 未配置 Pixel
+                <div style={{ textAlign: "center" }}>
+                  <Text type="secondary">{t("Pixel not configured")}</Text>
+                </div>
+              ) : conversionRate === null ? (
+                // 已配置 Pixel
+                loadingGather.conversionRate.loading ? (
+                  // 数据请求中
+                  <div style={{ textAlign: "center" }}>
+                    <Text type="secondary">{t("Loading...")}</Text>
+                  </div>
+                ) : (
+                  // 请求结束但无数据
+                  <div style={{ textAlign: "center" }}>
+                    <Text type="secondary">{t("No data available")}</Text>
+                  </div>
+                )
+              ) : (
+                // 有数据
+                <>
+                  <Statistic
+                    value={`+${conversionRate}%`}
+                    valueStyle={{ fontWeight: 500 }}
+                  />
+                  <Text>Compared to 7 days ago</Text>
+                </>
+              )}
+            </Flex>
+
+            {/* 按钮逻辑 */}
+            {configCreateWebPixel === null ? (
+              // 配置状态未知
+              <Skeleton.Button active />
+            ) : !configCreateWebPixel ? (
+              // 未配置 Pixel
+              <Button
+                type="primary"
+                loading={navigateToRateState}
+                onClick={handleConfigScopes}
+              >
+                {t("Configure")}
+              </Button>
+            ) : (
+              // 已配置 Pixel
+              <Button
+                type="default"
+                loading={navigateToRateState}
+                onClick={handleConfigScopes}
+              >
+                {t("Details")}
               </Button>
             )}
           </Flex>

@@ -31,6 +31,13 @@ const LineChartECharts: React.FC<Props> = ({ data, height = 300 }) => {
     if (!chartInstance.current) return;
 
     const option = {
+      grid: {
+        top: 20,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        containLabel: true, // 如果你要完整显示坐标轴文字就留 true，不要的话可以设 false
+      },
       xAxis: {
         type: "category",
         data: data[0].data.map((d: any) => d.key),

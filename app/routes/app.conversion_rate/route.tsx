@@ -457,7 +457,7 @@ const Index = () => {
           商店数据预览
         </Title>
       </div>
-      <Divider style={{ margin: "25px 0" }} />
+      <div style={{height:'20px'}}></div>
       <BlockStack>
         <Card>
           <Flex

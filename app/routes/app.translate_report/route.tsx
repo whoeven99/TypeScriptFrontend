@@ -157,8 +157,8 @@ const TranslationDashboard = () => {
     notTransLanguage: number | null;
     optimizationNotEnabled: number | null;
   }>({
-    notTransLanguage: 0,
-    optimizationNotEnabled: 0,
+    notTransLanguage: null,
+    optimizationNotEnabled: null,
   });
   // const languageTranslation = [
   //   { languge: "简体中文", code: "zh-CN", hasTranslated: false },
@@ -231,6 +231,8 @@ const TranslationDashboard = () => {
     const length = storeLanguages.filter(
       (item) => item.status === "untranslated",
     ).length;
+    console.log('optimizationNotEnabled赋值了: ', length, optimizationNotEnabled);
+    
     setReportIntroduction({
       notTransLanguage: length,
       optimizationNotEnabled,
@@ -504,9 +506,10 @@ const TranslationDashboard = () => {
                       <>
                         <span style={{ color: "red", fontWeight: "bold" }}>
                           {
-                            storeLanguages.filter(
-                              (item) => item.status === "untranslated",
-                            ).length
+                            // storeLanguages.filter(
+                            //   (item) => item.status === "untranslated",
+                            // ).length
+                            reportIntroduction.notTransLanguage
                           }
                         </span>{" "}
                       </>
@@ -515,7 +518,8 @@ const TranslationDashboard = () => {
                   </li>
 
                   <li>
-                    {storeLanguageFetcher.state === "submitting" ? (
+                    {storeLanguageFetcher.state === "submitting" ||
+                    reportIntroduction.optimizationNotEnabled === null ? (
                       <Spin size="small" />
                     ) : (
                       <>
