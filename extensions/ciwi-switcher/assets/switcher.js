@@ -9,6 +9,7 @@ async function FrontEndPrinting({
   currencyCode,
   checkUserIpCostTime,
   fetchUserCountryInfoCostTime,
+  status,
   error,
 }) {
   try {
@@ -16,7 +17,7 @@ async function FrontEndPrinting({
       url: `${switchUrl(blockId)}/frontEndPrinting`,
       method: "POST",
       data: {
-        data: `${shop} 客户ip定位: ${ip}, 语言代码: ${languageCode}, ${!langInclude ? "不" : ""}包含该语言, 货币代码: ${currencyCode}, 国家代码: ${countryCode}, ${!counInclude ? "不" : ""}包含该市场, checkUserIp接口花费时间: ${checkUserIpCostTime}ms, ipapi接口花费时间: ${fetchUserCountryInfoCostTime}ms${error ? `, ipapi 存在错误返回: ${error}` : ""}`,
+        data: `状态码: ${status}, ${shop} 客户ip定位: ${ip}, 语言代码: ${languageCode}, ${!langInclude ? "不" : ""}包含该语言, 货币代码: ${currencyCode}, 国家代码: ${countryCode}, ${!counInclude ? "不" : ""}包含该市场, checkUserIp接口花费时间: ${checkUserIpCostTime}ms, ipapi接口花费时间: ${fetchUserCountryInfoCostTime}ms${error ? `, ipapi 存在错误返回: ${error}` : ""}`,
       },
     });
 
@@ -163,9 +164,9 @@ async function checkUserIp({ blockId, shop }) {
 async function fetchUserCountryInfo(access_key) {
   try {
     const response = await axios.get(
-      `http://api.ipapi.com/api/check?access_key=${access_key}`,
+      `https://api.ipapi.com/api/check?access_key=${access_key}`,
     );
-    return response.data;
+    return { ...response.data, status: response.status };
   } catch (error) {
     console.error("Error fetchUserCountryInfo:", error);
     return null;
@@ -1376,6 +1377,7 @@ window.onload = async function () {
           currencyCode,
           checkUserIpCostTime,
           fetchUserCountryInfoCostTime,
+          status: IpData.status,
           error: IpData?.ip ? "" : JSON.stringify(IpData),
         });
         if (currencyCode) {
