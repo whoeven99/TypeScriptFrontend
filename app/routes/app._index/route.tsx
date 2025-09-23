@@ -29,6 +29,7 @@ import { useSelector } from "react-redux";
 import CorrectIcon from "~/components/icon/correctIcon";
 import GiftIcon from "~/components/icon/giftIcon";
 import axios from "axios";
+import TranslationPanel from "./components/TranslationPanel";
 const { Title, Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -114,18 +115,7 @@ const Index = () => {
 
   // 翻译得分
   const [translationScore, setTranslationScore] = useState<number>(0);
-  const [analyticsData, setAnalyticsData] = useState<any>({});
   const [translatedLanguages, setTranslatedLanguages] = useState<number>(0);
-  useEffect(() => {
-    setAnalyticsData({
-      totalScore: 88,
-      notTransLanguage: 5,
-      incompatibleStyles: 1,
-      notEnabled: 4,
-      notSEOFriendly: 4,
-      notOnBrand: 1,
-    });
-  }, []);
   useEffect(() => {
     setIsLoading(false);
     themeFetcher.submit(
@@ -383,12 +373,10 @@ const Index = () => {
         />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <AnalyticsCard
-            analyticsData={analyticsData}
-            shop={shop}
             hasRequiresScopes={hasRequiresScopes}
             missScopes={missScopes}
-            isLoading={isLoading}
           ></AnalyticsCard>
+          {/* <TranslationPanel /> */}
           <div>
             <Card
               style={

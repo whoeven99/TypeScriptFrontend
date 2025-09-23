@@ -29,11 +29,8 @@ interface loadingGather {
 }
 type PixelStatus = "loading" | "configured" | "notConfigured";
 const AnalyticsCard = ({
-  analyticsData,
-  shop,
   hasRequiresScopes,
   missScopes,
-  isLoading,
 }: any) => {
   const { reportClick } = useReport();
   const navigate = useNavigate(); // 统一使用小写 navigate（React Router 规范）
@@ -136,9 +133,7 @@ const AnalyticsCard = ({
   };
   const handleNavigateDetail = () => {
     setImproveBtnState(true);
-    navigate("/app/translate_report", {
-      state: { analyticsData },
-    });
+    navigate("/app/translate_report");
     reportClick("dashboard_optimize_translation_score");
   };
   const handleCancel = () => {
@@ -372,7 +367,7 @@ const AnalyticsCard = ({
 
       if (graphqlFetcher.data?.success) {
         // 可在此处理创建成功逻辑，如 toast
-        // shopify.toast.show("Web Pixel 激活成功");
+        shopify.toast.show("Web Pixel 激活成功");
         setNavigateToRateState(true);
         console.log(graphqlFetcher.data);
         // 导航到详情页
@@ -380,7 +375,7 @@ const AnalyticsCard = ({
         queryWebPixel(); // 创建后重新查询更新状态
       } else {
         queryWebPixel();
-        // shopify.toast.show("Web Pixel 激活失败");
+        shopify.toast.show("Web Pixel 激活失败");
         setNavigateToRateState(false);
       }
     }
@@ -397,11 +392,9 @@ const AnalyticsCard = ({
         setConfigPixel(false);
         console.log("查询失败");
       }
-    }
-    else{
-      setTimeout(()=>{
-        // setConfigPixel(false);
-      },3000)
+    }else{
+      queryWebPixel();
+      console.log("configCreateWebPixel 的值为 null，表示查询中或未查询");
     }
   }, [queryWebPixelFetcher.data]);
   useEffect(() => {

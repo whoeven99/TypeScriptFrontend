@@ -6,6 +6,7 @@ import { PhoneOutlined } from "@ant-design/icons";
 import { handleContactSupport } from "~/routes/app._index/route";
 import { GetProgressData, GetUserValue } from "~/api/JavaServer";
 import useReport from "../../scripts/eventReport";
+import TranslationPanel from "~/routes/app._index/components/TranslationPanel";
 const { Text, Title } = Typography;
 
 interface ProgressingCardProps {
@@ -833,6 +834,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           )}
         </Space>
       )}
+      <TranslationPanel />
     </Card>
   );
 };

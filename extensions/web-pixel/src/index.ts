@@ -19,11 +19,60 @@ register(async ({ analytics, browser, init, settings }) => {
   const parts = new URL(storefrontUrl).pathname.split("/").filter(Boolean);
   let storeLanguage = parts.length > 0 ? [parts[parts.length - 1]] : ["en"];
   console.log("storeLanguage", storeLanguage);
-  
+
+  // function isLikelyBotByUA() {
+  //   let ua = "";
+
+  //   // 确保 navigator 存在且 userAgent 可用
+  //   if (typeof navigator !== "undefined" && navigator.userAgent) {
+  //     ua = navigator.userAgent.toLowerCase();
+  //   }
+
+  //   const botKeywords = [
+  //     "bot",
+  //     "spider",
+  //     "crawl",
+  //     "slurp",
+  //     "bingpreview",
+  //     "facebookexternalhit",
+  //     "monitor",
+  //     "headless",
+  //     "wget",
+  //     "curl",
+  //     "python-requests",
+  //   ];
+
+  //   // UA 关键词检测
+  //   if (ua && botKeywords.some((keyword) => ua.includes(keyword))) return true;
+
+  //   // webdriver 检测
+  //   if (typeof navigator !== "undefined" && navigator.webdriver) return true;
+
+  //   // 缺少语言信息
+  //   if (
+  //     typeof navigator !== "undefined" &&
+  //     (!navigator.languages || navigator.languages.length === 0)
+  //   ) {
+  //     return true;
+  //   }
+
+  //   // 屏幕宽高异常
+  //   if (
+  //     typeof window !== "undefined" &&
+  //     (window.outerWidth === 0 || window.outerHeight === 0)
+  //   ) {
+  //     return true;
+  //   }
+
+  //   // JS 执行标记检测（需要在页面里给 window 打个标记）
+  //   // if (typeof window !== "undefined" && !(window as any).__JS_EXECUTED__) {
+  //   //   return true;
+  //   // }
+
+  //   return false;
+  // }
   function isLikelyBotByUA() {
     let ua = "";
-
-    // 确保 navigator 存在且 userAgent 可用
     if (typeof navigator !== "undefined" && navigator.userAgent) {
       ua = navigator.userAgent.toLowerCase();
     }
@@ -42,36 +91,41 @@ register(async ({ analytics, browser, init, settings }) => {
       "python-requests",
     ];
 
-    // UA 关键词检测
-    if (ua && botKeywords.some((keyword) => ua.includes(keyword))) return true;
+    // 只在 UA 明确包含爬虫相关关键词时判断为爬虫
+    if (ua && botKeywords.some((keyword) => ua.includes(keyword))) {
+      return true;
+    }
 
-    // webdriver 检测
-    if (typeof navigator !== "undefined" && navigator.webdriver) return true;
+    // 移除过于宽松的 webdriver 检查，除非明确知道环境支持
+    // if (typeof navigator !== "undefined" && navigator.webdriver) return true;
 
-    // 缺少语言信息
+    // 调整 languages 检查，容忍部分空值，但结合其他条件
     if (
       typeof navigator !== "undefined" &&
-      (!navigator.languages || navigator.languages.length === 0)
+      (!navigator.languages || navigator.languages.length === 0) &&
+      ua &&
+      !ua.includes("chrome") &&
+      !ua.includes("safari") // 容忍主流浏览器
     ) {
       return true;
     }
 
-    // 屏幕宽高异常
+    // 屏幕宽高检查，增加容差范围
     if (
       typeof window !== "undefined" &&
-      (window.outerWidth === 0 || window.outerHeight === 0)
+      (window.outerWidth === 0 || window.outerHeight === 0) &&
+      !ua.includes("mobile") // 容忍移动设备可能异常
     ) {
       return true;
     }
-
-    // JS 执行标记检测（需要在页面里给 window 打个标记）
-    // if (typeof window !== "undefined" && !(window as any).__JS_EXECUTED__) {
-    //   return true;
-    // }
 
     return false;
   }
   analytics.subscribe("page_viewed", async (event) => {
+    if (isLikelyBotByUA()) {
+      console.log("page_viewed event ignored due to bot detection");
+      return;
+    }
     try {
       console.log("event", event);
       const payload = {
@@ -95,6 +149,10 @@ register(async ({ analytics, browser, init, settings }) => {
 
   // 添加购物车事件
   analytics.subscribe("product_added_to_cart", async (event) => {
+    if (isLikelyBotByUA()) {
+      console.log("product_added_to_cart event ignored due to bot detection");
+      return;
+    }
     try {
       const payload = {
         storeLanguage,
@@ -117,6 +175,10 @@ register(async ({ analytics, browser, init, settings }) => {
     }
   });
   analytics.subscribe("clicked", async (event) => {
+    if (isLikelyBotByUA()) {
+      console.log("clicked event ignored due to bot detection");
+      return;
+    }
     try {
       const payload = {
         storeLanguage,

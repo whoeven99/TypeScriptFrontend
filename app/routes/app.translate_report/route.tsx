@@ -135,7 +135,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 const TranslationDashboard = () => {
   const { reportClick } = useReport();
-  const { state } = useLocation();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [useTermbase, setTermbase] = useState(false);
