@@ -28,10 +28,7 @@ interface loadingGather {
   conversionRate: LoadingItem;
 }
 type PixelStatus = "loading" | "configured" | "notConfigured";
-const AnalyticsCard = ({
-  hasRequiresScopes,
-  missScopes,
-}: any) => {
+const AnalyticsCard = ({ hasRequiresScopes, missScopes }: any) => {
   const { reportClick } = useReport();
   const navigate = useNavigate(); // 统一使用小写 navigate（React Router 规范）
   const { t } = useTranslation();
@@ -376,6 +373,7 @@ const AnalyticsCard = ({
       } else {
         queryWebPixel();
         shopify.toast.show("Web Pixel 激活失败");
+        checkScopes();
         setNavigateToRateState(false);
       }
     }
@@ -392,21 +390,21 @@ const AnalyticsCard = ({
         setConfigPixel(false);
         console.log("查询失败");
       }
-    }else{
+    } else {
       queryWebPixel();
       console.log("configCreateWebPixel 的值为 null，表示查询中或未查询");
     }
   }, [queryWebPixelFetcher.data]);
+  const checkScopes = async () => {
+    const { granted } = await shopify.scopes.query();
+    console.log("exit", granted);
+    const missingScopes = missScopes.filter(
+      (s: string) => !granted.includes(s),
+    );
+    setShowRequireScopeBtn(missingScopes.length === 0);
+    console.log(showRequireScopeBtn);
+  };
   useEffect(() => {
-    const checkScopes = async () => {
-      const { granted } = await shopify.scopes.query();
-      console.log("exit", granted);
-      const missingScopes = missScopes.filter(
-        (s: string) => !granted.includes(s),
-      );
-      setShowRequireScopeBtn(missingScopes.length === 0);
-      console.log(showRequireScopeBtn);
-    };
     checkScopes();
   }, []);
 

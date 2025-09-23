@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Row, Col, Button, Card, Flex } from "antd";
+import { Row, Col, Button, Card, Flex, Grid } from "antd";
 import { useFetcher, useNavigate } from "@remix-run/react";
 
 interface LanguageButtonProps {
@@ -30,8 +30,11 @@ const LanguageButton: React.FC<LanguageButtonProps> = ({
 };
 
 const TranslationPanel = () => {
+  const { useBreakpoint } = Grid;
   const navigate = useNavigate();
   const languagesFetcher = useFetcher();
+  const screens = useBreakpoint();
+  const gridWidth = screens.lg ? 54 : screens.md ? 80 : 120;
   const [languages, setLanguages] = useState<string[]>([
     "English",
     "Deutsch",
@@ -62,11 +65,11 @@ const TranslationPanel = () => {
   return (
     <Row gutter={[10, 10]} style={{ marginTop: "20px" }}>
       {/* Add Language & Auto Translate */}
-      <Col span={8}>
+      <Col span={8} sm={24} md={12} lg={8}>
         <Card title="Add Language & Auto Translate" style={{ height: "100%" }}>
           <Flex justify="space-between" align="center" wrap gap="8px">
             {languages.map((lang, idx) => (
-              <LanguageButton key={idx} label={lang} />
+              <LanguageButton key={idx} label={lang} width={gridWidth} />
             ))}
             <Button type="default">And More</Button>
           </Flex>
@@ -77,9 +80,9 @@ const TranslationPanel = () => {
       </Col>
 
       {/* Manage Translation & Edit */}
-      <Col span={8}>
+      <Col span={8} sm={24} md={12} lg={8}>
         <Card style={{ height: "100%" }} title="Manage Translation & Edit">
-          <Flex justify="center" gap="8px">
+          <Flex justify="space-between" gap="8px">
             <Button type="default">Theme</Button>
             <Button type="default">Product</Button>
             <Button type="default">And More</Button>
@@ -91,7 +94,7 @@ const TranslationPanel = () => {
       </Col>
 
       {/* More Translation Tools */}
-      <Col span={8}>
+      <Col span={8} sm={24} md={24} lg={8}>
         <Card style={{ height: "100%" }} title="More Translation Tools">
           <Flex justify="space-between" wrap="wrap" gap="8px">
             <Button type="default" onClick={() => navigate("/app/glossary")}>
