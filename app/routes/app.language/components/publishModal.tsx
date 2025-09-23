@@ -83,61 +83,46 @@ const PublishModal: React.FC<PublishModalProps> = ({
   useEffect(() => {
     if (webPresencesFetcher.data?.success) {
       console.log(webPresencesFetcher.data.response);
-
+      let newMarketArray: MarketType[] = [];
       webPresencesFetcher.data.response?.forEach((market: any) => {
         if (market?.id && market?.domain) {
-          setMarkets((prevMarkets) => {
-            // 判断 key 是否已存在
-            if (prevMarkets.some((m) => m?.key === market?.id)) {
-              return prevMarkets; // 已存在则不添加
-            }
-            return [
-              ...prevMarkets,
-              {
-                key: market?.id,
-                domain: {
-                  [market?.domain?.host]:
-                    market?.domain?.localization?.alternateLocales,
-                },
-              },
-            ];
+          newMarketArray.push({
+            key: market?.id,
+            domain: {
+              [market?.domain?.host]:
+                market?.domain?.localization?.alternateLocales,
+            },
           });
         }
       });
+      setMarkets(newMarketArray);
     }
   }, [webPresencesFetcher.data]);
 
   useEffect(() => {
     if (webPresencesUpdateFetcher.data?.success) {
       const errorMsg = webPresencesUpdateFetcher.data?.errorMsg;
-      const webPresencesId =
-        webPresencesUpdateFetcher.data.response?.webPresencesId;
-      console.log(errorMsg);
-      console.log(webPresencesId);
-
       if (errorMsg) {
         shopify.toast.show(webPresencesUpdateFetcher.data?.errorMsg);
+        const errorCode = webPresencesUpdateFetcher.data?.errorCode;
+        if (errorCode == 10002) return;
       }
-      if (webPresencesId?.length) {
-        publishFetcher.submit(
-          {
-            publishInfo: JSON.stringify({
-              locale:
-                webPresencesUpdateFetcher.data.response.publishedCode ||
-                languageCode,
-              shopLocale: {
-                marketWebPresenceIds:
-                  webPresencesUpdateFetcher.data.response?.webPresencesId || [],
-                published: true,
-              },
-            }),
-          },
-          {
-            method: "POST",
-            action: "/app/language",
-          },
-        );
-      }
+      publishFetcher.submit(
+        {
+          publishInfo: JSON.stringify({
+            locale:
+              webPresencesUpdateFetcher.data.response.publishedCode ||
+              languageCode,
+            shopLocale: {
+              published: true,
+            },
+          }),
+        },
+        {
+          method: "POST",
+          action: "/app/language",
+        },
+      );
     }
   }, [webPresencesUpdateFetcher.data]);
 
@@ -263,7 +248,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
           <Button onClick={() => setIsModalOpen(false)}>{t("Cancel")}</Button>
           <Button
             type="primary"
-            // disabled={dataSource.every((item) => !item.published)}
+            disabled={dataSource.every((item) => !item.published)}
             loading={
               webPresencesUpdateFetcher.state == "submitting" ||
               publishFetcher.state == "submitting"

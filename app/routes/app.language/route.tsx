@@ -247,7 +247,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         console.log(
           "results: ",
-          results[0]?.value?.data?.webPresenceUpdate?.userErrors,
+          results[1]?.value?.data?.webPresenceUpdate?.userErrors,
+        );
+
+        console.log(
+          "webPresencesUpdate[0].publishedCode: ",
+          webPresencesUpdate[0].publishedCode,
+        );
+
+        console.log(
+          "webPresencesUpdate[0].publishedCode: ",
+          webPresencesUpdate[0].publishedCode,
         );
 
         const successRes = results.filter(
@@ -325,7 +335,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           return json({
             success: false,
-            errorCode: 10001,
+            errorCode: 10002,
             errorMsg:
               "Errors occurred when binding languages ​​to certain domains",
             response: {

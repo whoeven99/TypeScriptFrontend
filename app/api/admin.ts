@@ -1670,13 +1670,19 @@ export const mutationShopLocalePublish = async ({
       }
     }
 
+    console.log("publishInfo.locale: ", publishInfo.locale);
+    console.log(
+      "publishInfo.shopLocale.published: ",
+      publishInfo.shopLocale.published,
+    );
+    console.log("marketWebPresenceIdsString: ", marketWebPresenceIdsString);
+
     // 遍历语言数组并逐个执行 GraphQL mutation
     const confirmMutation = `
         mutation {
           shopLocaleUpdate(
             locale: "${publishInfo.locale}"
             shopLocale: {
-              marketWebPresenceIds: ${marketWebPresenceIdsString},
               published: ${publishInfo.shopLocale.published},
             }
           ){
