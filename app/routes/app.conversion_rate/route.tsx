@@ -363,6 +363,7 @@ const Index = () => {
       mg: "Malagasy",
       sw: "Kiswahili",
       zu: "isiZulu",
+      "pt-PT": "Português (Portugal)",
     };
 
     function formatDateToChinese(dateStr: string) {

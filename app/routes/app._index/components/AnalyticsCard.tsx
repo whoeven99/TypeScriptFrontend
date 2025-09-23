@@ -368,6 +368,8 @@ const AnalyticsCard = ({
   // 监听 graphqlFetcher.data（创建响应），如果需要处理错误或其他逻辑
   useEffect(() => {
     if (graphqlFetcher.data) {
+      console.log("graphqlFetcher.data:", graphqlFetcher.data);
+      
       if (graphqlFetcher.data?.success) {
         // 可在此处理创建成功逻辑，如 toast
         shopify.toast.show("Web Pixel 激活成功");
@@ -394,7 +396,7 @@ const AnalyticsCard = ({
         console.log("查询失败");
       }
     } else {
-      setConfigPixel(false);
+      // setConfigPixel(false);
       console.log("queryWebPixelFetcher.data 为空");
     }
   }, [queryWebPixelFetcher.data]);
