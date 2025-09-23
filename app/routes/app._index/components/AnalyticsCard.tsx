@@ -334,10 +334,13 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes }: any) => {
   // }, [conversionCateFetcher.data]);
   useEffect(() => {
     if (!conversionCateFetcher.data) return;
-
+    console.log("conversionCateFetcher.data:", conversionCateFetcher.data);
+    
     try {
       if (conversionCateFetcher.data.success) {
         let resp = conversionCateFetcher.data.response;
+        console.log('resp:', resp);
+        
         if (typeof resp === "string") {
           resp = JSON.parse(resp);
         }

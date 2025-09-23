@@ -126,6 +126,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
         const data = (await mutationResponse.json()) as any;
         let source = "en";
+        console.log("shopLocales: ", data.data.shopLocales);
+
         if (data.data.shopLocales.length > 0) {
           data.data.shopLocales.forEach((item: any) => {
             if (item.primary === true) {
@@ -133,6 +135,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             }
           });
         }
+        console.log("source language: ", source);
+
         // const { languages, days } = LanguageFetcher;
         const response = await GetStoreLanguage({
           shop,
@@ -163,7 +167,6 @@ const Index = () => {
   const navigate = useNavigate();
   const [gridColumns, setGridColumns] = useState<number>(2); // 默认 2 列
   const polarisVizDataFetcher = useFetcher<any>();
-  const storeLanguageFetcher = useFetcher<any>();
   const [isLoading, setIsLoading] = useState(true);
   const [currentFilterCondition, setCondition] = useState("last7");
   const [chartData, setChartData] = useState<any>([]);
@@ -285,32 +288,15 @@ const Index = () => {
     setSelectedDates({ start, end });
   };
 
-  // useEffect(() => {
-
-  // }, []);
 
   useEffect(() => {
     const formData = new FormData();
-    formData.append("LanguageFetcher", JSON.stringify({}));
-    storeLanguageFetcher.submit(formData, {
+    formData.append("polarisVizFetcher", JSON.stringify({ days: 30 }));
+    polarisVizDataFetcher.submit(formData, {
       method: "post",
       action: "/app/conversion_rate",
     });
   }, []);
-
-  useEffect(() => {
-    if (storeLanguageFetcher.data) {
-      console.log(storeLanguageFetcher.data);
-      if (storeLanguageFetcher.data?.success) {
-        const formData = new FormData();
-        formData.append("polarisVizFetcher", JSON.stringify({ days: 30 }));
-        polarisVizDataFetcher.submit(formData, {
-          method: "post",
-          action: "/app/conversion_rate",
-        });
-      }
-    }
-  }, [storeLanguageFetcher.data]);
 
   function transformData(raw: any) {
     const languageMap: Record<string, string> = {
@@ -457,7 +443,7 @@ const Index = () => {
           商店数据预览
         </Title>
       </div>
-      <div style={{height:'20px'}}></div>
+      <div style={{ height: "20px" }}></div>
       <BlockStack>
         <Card>
           <Flex
