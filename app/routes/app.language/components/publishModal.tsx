@@ -56,7 +56,6 @@ const PublishModal: React.FC<PublishModalProps> = ({
   const fetcher = useFetcher<any>();
   const webPresencesFetcher = useFetcher<any>();
   const webPresencesUpdateFetcher = useFetcher<any>();
-  const publishFetcher = useFetcher<any>();
 
   useEffect(() => {
     // 如果数据和上一次完全一样，就不触发
@@ -107,56 +106,8 @@ const PublishModal: React.FC<PublishModalProps> = ({
         const errorCode = webPresencesUpdateFetcher.data?.errorCode;
         if (errorCode == 10002) return;
       }
-      publishFetcher.submit(
-        {
-          publishInfo: JSON.stringify({
-            locale:
-              webPresencesUpdateFetcher.data.response.publishedCode ||
-              languageCode,
-            shopLocale: {
-              published: true,
-            },
-          }),
-        },
-        {
-          method: "POST",
-          action: "/app/language",
-        },
-      );
     }
   }, [webPresencesUpdateFetcher.data]);
-
-  useEffect(() => {
-    if (publishFetcher.data) {
-      if (publishFetcher.data.success) {
-        const response = publishFetcher.data.response;
-        dispatch(
-          setPublishLoadingState({ locale: response?.locale, loading: false }),
-        );
-        dispatch(
-          setPublishState({
-            locale: response?.locale,
-            published: response?.published,
-          }),
-        );
-        shopify.toast.show(
-          t("{{ locale }} is published", { locale: response?.name || "" }),
-        );
-        setIsModalOpen(false);
-        fetcher.submit(
-          {
-            log: `${shop} 发布语言${response?.locale}`,
-          },
-          {
-            method: "POST",
-            action: "/log",
-          },
-        );
-      } else {
-        shopify.toast.show(t("Publish failed"));
-      }
-    }
-  }, [publishFetcher.data]);
 
   useEffect(() => {
     setDataSource(
@@ -249,10 +200,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
           <Button
             type="primary"
             disabled={dataSource.every((item) => !item.published)}
-            loading={
-              webPresencesUpdateFetcher.state == "submitting" ||
-              publishFetcher.state == "submitting"
-            }
+            loading={webPresencesUpdateFetcher.state == "submitting"}
             onClick={handlePublish}
           >
             {t("Save")}
