@@ -1,20 +1,12 @@
-import { useFetcher } from "@remix-run/react";
-import { Button, Modal, Space, Switch, Table } from "antd";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { FetcherWithComponents, useFetcher } from "@remix-run/react";
+import { Button, Flex, Modal, Space, Switch, Table, Typography } from "antd";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  setPublishLoadingState,
-  setPublishState,
-} from "~/store/modules/languageTableData";
-import isEqual from "lodash/isEqual";
+import { LanguagesDataType, MarketType } from "../route";
+import styles from "../styles.module.css";
 
-interface MarketType {
-  key: string;
-  domain: {
-    [key: string]: string[];
-  };
-}
+const { Text } = Typography;
 
 interface MarketDataType {
   key: string;
@@ -23,80 +15,34 @@ interface MarketDataType {
 }
 
 interface PublishModalProps {
-  shop: string;
+  publishLangaugeCode: string;
+  markets: MarketType[];
+  setMarkets: (e: MarketType[]) => void;
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
-  languageCode: string;
-  languageName: string;
+  publishFetcher: FetcherWithComponents<any>;
 }
 
 const PublishModal: React.FC<PublishModalProps> = ({
-  shop,
+  publishLangaugeCode,
+  markets,
+  setMarkets,
   isVisible,
   setIsModalOpen,
-  languageCode,
-  languageName,
+  publishFetcher,
 }) => {
-  const [markets, setMarkets] = useState<MarketType[]>([]);
-  const [dataSource, setDataSource] = useState<MarketDataType[]>([]);
-  const { t } = useTranslation();
-  const dispatch = useDispatch();
-
-  const languageData = useSelector(
+  const languageData: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
-
-  const languageLocaleData = useMemo(() => {
-    return languageData?.map((item: any) => item?.locale) || [];
-  }, [languageData]);
+  const selectedLanguage = useMemo(() => {
+    return languageData.find((item) => item.locale == publishLangaugeCode);
+  }, [languageData, publishLangaugeCode]);
+  const [published, setPublished] = useState<boolean>(false);
+  const [dataSource, setDataSource] = useState<MarketDataType[]>([]);
+  const { t } = useTranslation();
 
   // 2. 用一个 ref 缓存上一次的值
-  const prevLocaleDataRef = useRef<string[]>();
-
-  const fetcher = useFetcher<any>();
-  const webPresencesFetcher = useFetcher<any>();
   const webPresencesUpdateFetcher = useFetcher<any>();
-
-  useEffect(() => {
-    // 如果数据和上一次完全一样，就不触发
-    if (
-      isEqual(prevLocaleDataRef.current, languageLocaleData) ||
-      !languageData?.length
-    ) {
-      return;
-    }
-
-    prevLocaleDataRef.current = languageLocaleData;
-
-    webPresencesFetcher.submit(
-      {
-        webPresences: JSON.stringify(true),
-      },
-      {
-        method: "POST",
-        action: "/app/language",
-      },
-    );
-  }, [languageLocaleData]);
-
-  useEffect(() => {
-    if (webPresencesFetcher.data?.success) {
-      console.log(webPresencesFetcher.data.response);
-      let newMarketArray: MarketType[] = [];
-      webPresencesFetcher.data.response?.forEach((market: any) => {
-        if (market?.id && market?.domain) {
-          newMarketArray.push({
-            key: market?.id,
-            domain: {
-              [market?.domain?.host]:
-                market?.domain?.localization?.alternateLocales,
-            },
-          });
-        }
-      });
-      setMarkets(newMarketArray);
-    }
-  }, [webPresencesFetcher.data]);
 
   useEffect(() => {
     if (webPresencesUpdateFetcher.data?.success) {
@@ -106,20 +52,64 @@ const PublishModal: React.FC<PublishModalProps> = ({
         const errorCode = webPresencesUpdateFetcher.data?.errorCode;
         if (errorCode == 10002) return;
       }
+      const updatedMarkets = [...markets];
+
+      webPresencesUpdateFetcher.data.response?.webPresences?.forEach(
+        (market: any) => {
+          const webpresenceId =
+            market?.value?.data?.webPresenceUpdate?.webPresence?.id;
+          const host =
+            market?.value?.data?.webPresenceUpdate?.webPresence?.domain?.host;
+          const locales =
+            market?.value?.data?.webPresenceUpdate?.webPresence?.domain
+              ?.localization?.alternateLocales;
+
+          if (webpresenceId && locales && host) {
+            const existingIndex = updatedMarkets.findIndex(
+              (m) => m.key === webpresenceId,
+            );
+
+            if (existingIndex >= 0) {
+              updatedMarkets[existingIndex] = {
+                ...updatedMarkets[existingIndex],
+                domain: {
+                  ...updatedMarkets[existingIndex].domain,
+                  [host]: locales,
+                },
+              };
+            } else {
+              updatedMarkets.push({
+                key: webpresenceId,
+                domain: {
+                  [host]: locales,
+                },
+              });
+            }
+          }
+        },
+      );
+
+      setMarkets(updatedMarkets);
     }
   }, [webPresencesUpdateFetcher.data]);
 
   useEffect(() => {
+    if (!publishLangaugeCode) return;
     setDataSource(
       markets.flatMap((market) =>
         Object.entries(market.domain).map(([host, locales]) => ({
           key: market.key,
           domain: host,
-          published: (locales as string[]).includes(languageCode),
+          published: (locales as string[]).includes(publishLangaugeCode),
         })),
       ),
     );
-  }, [markets, languageCode]);
+  }, [markets, publishLangaugeCode]);
+
+  useEffect(() => {
+    if (!publishLangaugeCode) return;
+    setPublished(selectedLanguage?.published || false);
+  }, [markets, publishLangaugeCode]);
 
   const columns = [
     {
@@ -148,7 +138,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
     },
   ];
 
-  const handlePublish = () => {
+  const handleWebpresenceChange = () => {
     const webPresencesData = dataSource.map((item) => {
       // 找到对应的 market
       const market = markets.find((m) => m.key === item.key);
@@ -162,20 +152,20 @@ const PublishModal: React.FC<PublishModalProps> = ({
 
       if (item.published) {
         // published 为 true，确保 languageCode 存在且去重
-        if (!locales.includes(languageCode)) {
-          locales.push(languageCode);
+        if (!locales.includes(publishLangaugeCode)) {
+          locales.push(publishLangaugeCode);
         }
         // 去重（其实上面已保证唯一，但更保险）
         locales = Array.from(new Set(locales));
       } else {
         // published 为 false，确保 languageCode 不存在
-        locales = locales.filter((l) => l !== languageCode);
+        locales = locales.filter((l) => l !== publishLangaugeCode);
       }
 
       return {
         id: item.key,
         alternateLocales: locales,
-        publishedCode: languageCode,
+        publishedCode: publishLangaugeCode,
       };
     });
     webPresencesUpdateFetcher.submit(
@@ -189,9 +179,50 @@ const PublishModal: React.FC<PublishModalProps> = ({
     );
   };
 
+  const handlePublishChange = (checked: boolean) => {
+    if (checked) {
+      publishFetcher.submit(
+        {
+          publishInfo: JSON.stringify({
+            locale: publishLangaugeCode,
+            shopLocale: { published: true },
+          }),
+        },
+        {
+          method: "POST",
+          action: "/app/language",
+        },
+      );
+    } else {
+      publishFetcher.submit(
+        {
+          unPublishInfo: JSON.stringify({
+            locale: publishLangaugeCode,
+            shopLocale: { published: false },
+          }),
+        },
+        {
+          method: "POST",
+          action: "/app/language",
+        },
+      );
+    }
+  };
+
+  const onSave = () => {
+    if (selectedLanguage)
+      if (selectedLanguage.published != published)
+        handlePublishChange(published);
+    if (published) {
+      handleWebpresenceChange();
+    }
+  };
+
   return (
     <Modal
-      title={t("publishModal.title", { languageName })}
+      title={t("publishModal.title", {
+        languageName: selectedLanguage?.localeName,
+      })}
       open={isVisible}
       onCancel={() => setIsModalOpen(false)}
       footer={
@@ -199,9 +230,12 @@ const PublishModal: React.FC<PublishModalProps> = ({
           <Button onClick={() => setIsModalOpen(false)}>{t("Cancel")}</Button>
           <Button
             type="primary"
-            disabled={dataSource.every((item) => !item.published)}
-            loading={webPresencesUpdateFetcher.state == "submitting"}
-            onClick={handlePublish}
+            disabled={dataSource.every((item) => !item.published) && published}
+            loading={
+              webPresencesUpdateFetcher.state == "submitting" ||
+              publishFetcher.state == "submitting"
+            }
+            onClick={onSave}
           >
             {t("Save")}
           </Button>
@@ -211,7 +245,26 @@ const PublishModal: React.FC<PublishModalProps> = ({
         top: "40%",
       }}
     >
-      <Table dataSource={dataSource} columns={columns} pagination={false} />
+      <Space
+        direction="vertical"
+        size={"large"}
+        style={{ width: "100%", margin: "12px 0 0" }}
+      >
+        <Flex justify="space-between" align="center">
+          <Text strong>{t("Language Publishing Status")}</Text>
+          <Switch value={published} onChange={(e) => setPublished(e)} />
+        </Flex>
+        {published && (
+          <div className={styles.publishModal_webpresence_card}>
+            <Text strong>{t("Publish to Selected Domains")}</Text>
+            <Table
+              dataSource={dataSource}
+              columns={columns}
+              pagination={false}
+            />
+          </div>
+        )}
+      </Space>
     </Modal>
   );
 };

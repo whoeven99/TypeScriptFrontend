@@ -12,10 +12,9 @@ import {
   Card,
   Checkbox,
 } from "antd";
-import { useEffect, useState, startTransition, useMemo } from "react";
+import { useEffect, useState, startTransition, useMemo, useRef } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
-import "./styles.css";
 import { authenticate } from "~/shopify.server";
 import {
   mutationShopLocaleDisable,
@@ -52,7 +51,17 @@ import ScrollNotice from "~/components/ScrollNotice";
 import DeleteConfirmModal from "./components/deleteConfirmModal";
 import PublishModal from "./components/publishModal";
 import useReport from "scripts/eventReport";
+import isEqual from "lodash/isEqual";
+import styles from "./styles.module.css";
+
 const { Title, Text } = Typography;
+
+export interface MarketType {
+  key: string;
+  domain: {
+    [key: string]: string[];
+  };
+}
 
 export interface ShopLocalesType {
   locale: string;
@@ -80,16 +89,6 @@ export interface LanguagesDataType {
   publishLoading?: boolean;
   autoTranslateLoading?: boolean;
 }
-
-const autoTranslationMapping = {
-  1: 20,
-  2: 20,
-  3: 20,
-  4: 20,
-  5: 20,
-  6: 20,
-  7: 20,
-};
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -176,10 +175,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                   id
                   domain {
                     id
+                    host
                     localization {
                       alternateLocales
-                    }
-                    host
+                    }           
                   }
                 }
               }
@@ -223,6 +222,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                     id
                     domain {
                       id
+                      host
                       localization {
                         alternateLocales
                       }
@@ -283,10 +283,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               errorMsg: "",
               response: {
                 webPresences: successRes,
-                webPresencesId: successRes?.map(
-                  (item: any) =>
-                    item?.value?.data?.webPresenceUpdate?.webPresence?.id,
-                ),
                 publishedCode: webPresencesUpdate[0].publishedCode,
               },
             });
@@ -312,10 +308,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 "Errors occurred when binding languages ​​to certain domains",
               response: {
                 webPresences: successRes,
-                webPresencesId: successRes?.map(
-                  (item: any) =>
-                    item?.value?.data?.webPresenceUpdate?.webPresence?.id,
-                ),
                 publishedCode: webPresencesUpdate[0].publishedCode,
               },
             });
@@ -340,7 +332,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               "Errors occurred when binding languages ​​to certain domains",
             response: {
               webPresences: [],
-              webPresencesId: [],
               publishedCode: webPresencesUpdate[0].publishedCode,
             },
           });
@@ -541,12 +532,16 @@ const Index = () => {
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
-  const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>(
-    [],
-  );
+
+  const languageLocaleData = useMemo(() => {
+    return dataSource?.map((item: any) => item?.locale) || [];
+  }, [dataSource]);
+
+  const prevLocaleDataRef = useRef<string[]>();
   const [shopPrimaryLanguage, setShopPrimaryLanguage] = useState<
     ShopLocalesType[]
   >([]);
+  const [markets, setMarkets] = useState<MarketType[]>([]);
   const [languageLocaleInfo, setLanguageLocaleInfo] = useState<any>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
@@ -581,8 +576,10 @@ const Index = () => {
   const deleteFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const addDataFetcher = useFetcher<any>();
+  const webPresencesFetcher = useFetcher<any>();
   const publishFetcher = useFetcher<any>();
   const { reportClick, report } = useReport();
+
   useEffect(() => {
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
@@ -596,6 +593,15 @@ const Index = () => {
       },
       {
         method: "post",
+        action: "/app/language",
+      },
+    );
+    webPresencesFetcher.submit(
+      {
+        webPresences: JSON.stringify(true),
+      },
+      {
+        method: "POST",
         action: "/app/language",
       },
     );
@@ -622,6 +628,47 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    // 如果数据和上一次完全一样，就不触发
+    if (
+      isEqual(prevLocaleDataRef.current, languageLocaleData) ||
+      !dataSource?.length
+    ) {
+      return;
+    }
+
+    prevLocaleDataRef.current = languageLocaleData;
+
+    webPresencesFetcher.submit(
+      {
+        webPresences: JSON.stringify(true),
+      },
+      {
+        method: "POST",
+        action: "/app/language",
+      },
+    );
+  }, [languageLocaleData]);
+
+  useEffect(() => {
+    if (webPresencesFetcher.data?.success) {
+      console.log(webPresencesFetcher.data.response);
+      let newMarketArray: MarketType[] = [];
+      webPresencesFetcher.data.response?.forEach((market: any) => {
+        if (market?.id && market?.domain) {
+          newMarketArray.push({
+            key: market?.id,
+            domain: {
+              [market?.domain?.host]:
+                market?.domain?.localization?.alternateLocales,
+            },
+          });
+        }
+      });
+      setMarkets(newMarketArray);
+    }
+  }, [webPresencesFetcher.data]);
+
+  useEffect(() => {
     if (loadingFetcher.data) {
       // setLanguagesLoad(loadingFetcher.data.languagesLoad);
       // setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
@@ -638,21 +685,18 @@ const Index = () => {
         );
         setShopPrimaryLanguage(shopPrimaryLanguageData || []);
 
-        let data = shopLanguagesWithoutPrimaryIndex.map(
-          (lang: any, index: number) => ({
-            key: index,
-            language: lang?.name,
-            locale: lang?.locale,
-            published: lang.published,
-            localeName: "",
-            status: 0,
-            countries: [],
-            autoTranslate: false,
-            publishLoading: false,
-            autoTranslateLoading: false,
-          }),
-        );
-        setShopLanguagesLoad(shopLanguagesWithoutPrimaryIndex);
+        let data = shopLanguagesWithoutPrimaryIndex.map((lang: any) => ({
+          key: lang?.locale,
+          language: lang?.name,
+          locale: lang?.locale,
+          published: lang.published,
+          localeName: "",
+          status: 0,
+          countries: [],
+          autoTranslate: false,
+          publishLoading: false,
+          autoTranslateLoading: false,
+        }));
         const GetLanguageLocaleInfoFront = async () => {
           const languageLocaleInfo = await GetLanguageLocaleInfo({
             server: server as string,
@@ -796,8 +840,6 @@ const Index = () => {
           shopify.toast.show(
             t("{{ locale }} is published", { locale: response.name }),
           );
-          setPublishModalLanguageCode(response.locale);
-          setIsPublishModalOpen(true);
           fetcher.submit(
             {
               log: `${shop} 发布语言${response?.locale}`,
@@ -981,36 +1023,9 @@ const Index = () => {
 
   const handlePublishChange = (locale: string, checked: boolean) => {
     const row = dataSource.find((item: any) => item.locale === locale);
-    console.log(row);
-    console.log(checked);
-    if (checked && row) {
-      dispatch(setPublishLoadingState({ locale, loading: true }));
-      publishFetcher.submit(
-        {
-          publishInfo: JSON.stringify({
-            locale: row.locale,
-            shopLocale: { published: true },
-          }),
-        },
-        {
-          method: "POST",
-          action: "/app/language",
-        },
-      );
-    } else if (!checked && row) {
-      dispatch(setPublishLoadingState({ locale, loading: true }));
-      publishFetcher.submit(
-        {
-          unPublishInfo: JSON.stringify({
-            locale: row.locale,
-            shopLocale: { published: false },
-          }),
-        },
-        {
-          method: "POST",
-          action: "/app/language",
-        },
-      );
+    if (row) {
+      setPublishModalLanguageCode(row?.locale);
+      setIsPublishModalOpen(true);
     }
     report(
       {
@@ -1138,7 +1153,7 @@ const Index = () => {
           </Title>
           <PrimaryLanguage shopLanguages={shopPrimaryLanguage} />
         </div>
-        <div className="languageTable_action">
+        <div className={styles.languageTable_action}>
           <Flex
             align="center"
             justify="space-between" // 使按钮左右分布
@@ -1321,15 +1336,12 @@ const Index = () => {
         </Text>
       </Modal>
       <PublishModal
-        shop={shop}
+        markets={markets}
+        setMarkets={setMarkets}
         isVisible={isPublishModalOpen}
         setIsModalOpen={setIsPublishModalOpen}
-        languageCode={publishModalLanguageCode}
-        languageName={
-          shopLanguagesLoad.find(
-            (item: any) => item.locale === publishModalLanguageCode,
-          )?.name || ""
-        }
+        publishFetcher={publishFetcher}
+        publishLangaugeCode={publishModalLanguageCode}
       />
       <Modal
         open={noFirstTranslation}
