@@ -679,5 +679,8 @@
   "Image translation failed": "Перевод изображения не удался",
   "Image translated successfully": "Изображение успешно переведено",
   "The current language does not support image translation": "Текущий язык не поддерживает перевод изображений.",
-  "1000 credits": "1000 кредитов"
+  "1000 credits": "1000 кредитов",
+  "Save successfully": "Успешно сохранено",
+  "Language Publishing Status": "Статус публикации языка",
+  "Publish to Selected Domains": "Опубликовать в выбранных доменах"
 }

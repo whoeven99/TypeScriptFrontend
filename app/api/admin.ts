@@ -1666,6 +1666,10 @@ export const mutationShopLocalePublish = async ({
               published: ${publishInfo.shopLocale.published},
             }
           ){
+            userErrors {
+              field
+              message
+            }
             shopLocale {
               published
               primary
@@ -1688,9 +1692,7 @@ export const mutationShopLocalePublish = async ({
     });
     console.log(`${shop} mutationShopLocalePublish:`, response.data);
 
-    const res = response.data?.data?.shopLocaleUpdate?.shopLocale;
-
-    return res;
+    return response.data;
   } catch (error) {
     console.error("Error mutationShopLocalePublish:", error);
   }

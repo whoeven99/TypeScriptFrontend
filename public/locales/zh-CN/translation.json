@@ -681,5 +681,8 @@
   "Image translation failed": "图片翻译失败",
   "Image translated successfully": "图片翻译成功",
   "The current language does not support image translation": "当前语言不支持图片翻译",
-  "1000 credits": "1000积分"
+  "1000 credits": "1000积分",
+  "Save successfully": "保存成功",
+  "Language Publishing Status": "语言发布状态",
+  "Publish to Selected Domains": "发布到所选域名"
 }

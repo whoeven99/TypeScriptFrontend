@@ -1,10 +1,15 @@
 import { FetcherWithComponents, useFetcher } from "@remix-run/react";
 import { Button, Flex, Modal, Space, Switch, Table, Typography } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { LanguagesDataType, MarketType } from "../route";
 import styles from "../styles.module.css";
+import {
+  setPublishLoadingState,
+  setPublishState,
+} from "~/store/modules/languageTableData";
+import { globalStore } from "~/globalStore";
 
 const { Text } = Typography;
 
@@ -20,7 +25,6 @@ interface PublishModalProps {
   setMarkets: (e: MarketType[]) => void;
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
-  publishFetcher: FetcherWithComponents<any>;
 }
 
 const PublishModal: React.FC<PublishModalProps> = ({
@@ -29,7 +33,6 @@ const PublishModal: React.FC<PublishModalProps> = ({
   setMarkets,
   isVisible,
   setIsModalOpen,
-  publishFetcher,
 }) => {
   const languageData: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
@@ -37,25 +40,34 @@ const PublishModal: React.FC<PublishModalProps> = ({
   const selectedLanguage = useMemo(() => {
     return languageData.find((item) => item.locale == publishLangaugeCode);
   }, [languageData, publishLangaugeCode]);
+
+  const submitCurrent = useRef<string[]>([]);
+
   const [published, setPublished] = useState<boolean>(false);
   const [dataSource, setDataSource] = useState<MarketDataType[]>([]);
   const { t } = useTranslation();
+  const dispatch = useDispatch();
 
   // 2. 用一个 ref 缓存上一次的值
-  const webPresencesUpdateFetcher = useFetcher<any>();
+  const fetcher = useFetcher<any>();
+  const publishFetcher = useFetcher<any>();
 
   useEffect(() => {
-    if (webPresencesUpdateFetcher.data?.success) {
-      const errorMsg = webPresencesUpdateFetcher.data?.errorMsg;
+    if (publishFetcher.data?.success) {
+      const errorMsg = publishFetcher.data?.errorMsg;
       if (errorMsg) {
-        shopify.toast.show(webPresencesUpdateFetcher.data?.errorMsg);
-        const errorCode = webPresencesUpdateFetcher.data?.errorCode;
+        shopify.toast.show(publishFetcher.data?.errorMsg);
+        const errorCode = publishFetcher.data?.errorCode;
         if (errorCode == 10002) return;
       }
-      const updatedMarkets = [...markets];
+      const shopLocaleUpdate = publishFetcher.data?.response?.shopLocaleUpdate;
+      const webPresenceUpdate =
+        publishFetcher.data?.response?.webPresenceUpdate;
 
-      webPresencesUpdateFetcher.data.response?.webPresences?.forEach(
-        (market: any) => {
+      if (webPresenceUpdate?.length) {
+        const updatedMarkets = [...markets];
+
+        webPresenceUpdate?.forEach((market: any) => {
           const webpresenceId =
             market?.value?.data?.webPresenceUpdate?.webPresence?.id;
           const host =
@@ -86,12 +98,59 @@ const PublishModal: React.FC<PublishModalProps> = ({
               });
             }
           }
-        },
-      );
+        });
 
-      setMarkets(updatedMarkets);
+        setMarkets(updatedMarkets);
+      }
+
+      if (shopLocaleUpdate?.length) {
+        const shopLocale =
+          shopLocaleUpdate[0]?.value?.data?.shopLocaleUpdate?.shopLocale;
+        if (shopLocale) {
+          dispatch(
+            setPublishLoadingState({
+              locale: shopLocale.locale,
+              loading: false,
+            }),
+          );
+          dispatch(
+            setPublishState({
+              locale: shopLocale.locale,
+              published: shopLocale.published,
+            }),
+          );
+          if (published) {
+            fetcher.submit(
+              {
+                log: `${globalStore?.shop} 发布语言${shopLocale?.locale}`,
+              },
+              {
+                method: "POST",
+                action: "/log",
+              },
+            );
+          } else {
+            fetcher.submit(
+              {
+                log: `${globalStore?.shop} 取消发布语言${shopLocale?.locale}`,
+              },
+              {
+                method: "POST",
+                action: "/log",
+              },
+            );
+          }
+        }
+      }
+
+      shopify.toast.show("Save successfully");
+      setIsModalOpen(false);
     }
-  }, [webPresencesUpdateFetcher.data]);
+  }, [publishFetcher.data]);
+
+  useEffect(() => {
+    console.log(submitCurrent.current);
+  }, [submitCurrent.current]);
 
   useEffect(() => {
     if (!publishLangaugeCode) return;
@@ -104,12 +163,8 @@ const PublishModal: React.FC<PublishModalProps> = ({
         })),
       ),
     );
-  }, [markets, publishLangaugeCode]);
-
-  useEffect(() => {
-    if (!publishLangaugeCode) return;
     setPublished(selectedLanguage?.published || false);
-  }, [markets, publishLangaugeCode]);
+  }, [markets, publishLangaugeCode, isVisible]);
 
   const columns = [
     {
@@ -138,84 +193,58 @@ const PublishModal: React.FC<PublishModalProps> = ({
     },
   ];
 
-  const handleWebpresenceChange = () => {
-    const webPresencesData = dataSource.map((item) => {
-      // 找到对应的 market
-      const market = markets.find((m) => m.key === item.key);
-      // 找到 domain 的 value（数组）
-      let locales: string[] = [];
-      if (market) {
-        // 取出 domain 的第一个键值对（因为你的结构是 { [host]: string[] }，通常只有一个 host）
-        const domainLocales = Object.values(market.domain)[0] || [];
-        locales = [...domainLocales];
+  const onSave = () => {
+    let publishInfo = null;
+    let webPresencesData = null;
+    if (selectedLanguage) {
+      if (selectedLanguage.published != published) {
+        publishInfo = {
+          locale: publishLangaugeCode,
+          shopLocale: { published },
+        };
       }
+    }
 
-      if (item.published) {
-        // published 为 true，确保 languageCode 存在且去重
-        if (!locales.includes(publishLangaugeCode)) {
-          locales.push(publishLangaugeCode);
+    if (published) {
+      webPresencesData = dataSource.map((item) => {
+        // 找到对应的 market
+        const market = markets.find((m) => m.key === item.key);
+        // 找到 domain 的 value（数组）
+        let locales: string[] = [];
+        if (market) {
+          // 取出 domain 的第一个键值对（因为你的结构是 { [host]: string[] }，通常只有一个 host）
+          const domainLocales = Object.values(market.domain)[0] || [];
+          locales = [...domainLocales];
         }
-        // 去重（其实上面已保证唯一，但更保险）
-        locales = Array.from(new Set(locales));
-      } else {
-        // published 为 false，确保 languageCode 不存在
-        locales = locales.filter((l) => l !== publishLangaugeCode);
-      }
+        if (item.published) {
+          // published 为 true，确保 languageCode 存在且去重
+          if (!locales.includes(publishLangaugeCode)) {
+            locales.push(publishLangaugeCode);
+          }
+          // 去重（其实上面已保证唯一，但更保险）
+          locales = Array.from(new Set(locales));
+        } else {
+          // published 为 false，确保 languageCode 不存在
+          locales = locales.filter((l) => l !== publishLangaugeCode);
+        }
+        return {
+          id: item.key,
+          alternateLocales: locales,
+          publishedCode: publishLangaugeCode,
+        };
+      });
+    }
 
-      return {
-        id: item.key,
-        alternateLocales: locales,
-        publishedCode: publishLangaugeCode,
-      };
-    });
-    webPresencesUpdateFetcher.submit(
+    publishFetcher.submit(
       {
-        webPresencesUpdate: JSON.stringify(webPresencesData),
+        publishInfo: JSON.stringify(publishInfo),
+        webPresencesData: JSON.stringify(webPresencesData),
       },
       {
         method: "POST",
-        action: "/app/language",
+        action: "/publishAction",
       },
     );
-  };
-
-  const handlePublishChange = (checked: boolean) => {
-    if (checked) {
-      publishFetcher.submit(
-        {
-          publishInfo: JSON.stringify({
-            locale: publishLangaugeCode,
-            shopLocale: { published: true },
-          }),
-        },
-        {
-          method: "POST",
-          action: "/app/language",
-        },
-      );
-    } else {
-      publishFetcher.submit(
-        {
-          unPublishInfo: JSON.stringify({
-            locale: publishLangaugeCode,
-            shopLocale: { published: false },
-          }),
-        },
-        {
-          method: "POST",
-          action: "/app/language",
-        },
-      );
-    }
-  };
-
-  const onSave = () => {
-    if (selectedLanguage)
-      if (selectedLanguage.published != published)
-        handlePublishChange(published);
-    if (published) {
-      handleWebpresenceChange();
-    }
   };
 
   return (
@@ -231,10 +260,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
           <Button
             type="primary"
             disabled={dataSource.every((item) => !item.published) && published}
-            loading={
-              webPresencesUpdateFetcher.state == "submitting" ||
-              publishFetcher.state == "submitting"
-            }
+            loading={publishFetcher.state == "submitting"}
             onClick={onSave}
           >
             {t("Save")}
