@@ -22,6 +22,7 @@ import {
   Affix,
   Skeleton,
   Spin,
+  Empty,
 } from "antd";
 import { BlockStack, Page } from "@shopify/polaris";
 import { useLocation } from "@remix-run/react";
@@ -159,51 +160,13 @@ const TranslationDashboard = () => {
     notTransLanguage: null,
     optimizationNotEnabled: null,
   });
-  // const languageTranslation = [
-  //   { languge: "简体中文", code: "zh-CN", hasTranslated: false },
-  //   { languge: "繁体中文", code: "zh-TW", hasTranslated: false },
-  //   { languge: "日语", code: "ja", hasTranslated: false },
-  //   { languge: "法语", code: "fr", hasTranslated: false },
-  // ];
   const [reportTotalData, setReportTotalData] = useState<ReportData>();
   const [tOptimizationLoading, setOptimizationLoading] =
     useState<boolean>(false);
-  useEffect(
-    () => {
-      handleRequestReportData();
-      // if (
-      //   storeLanguageFetcher.state === "loading" ||
-      //   realTimeQuotaFetcher.state === "loading"
-      // ) {
-      //   return;
-      // }
-      // const length = storeLanguages.filter(
-      //   (item) => item.status === "untranslated",
-      // ).length;
-      // let optimizationNotEnabled = 0;
-      // if (!publishLanguage) {
-      //   optimizationNotEnabled += 1;
-      // }
-      // Object.values(realTimeData).forEach((value) => {
-      //   if (!value) {
-      //     optimizationNotEnabled += 1;
-      //   }
-      // });
-      // setReportIntroduction((prev) => ({
-      //   ...prev,
-      //   notTransLanguage: length,
-      //   optimizationNotEnabled,
-      // }));
-      // setOptimizationLoading(true);
-    },
-    [
-      // publishLanguage,
-      // realTimeData,
-      // storeLanguages,
-      // storeLanguageFetcher.state,
-      // realTimeQuotaFetcher.state,
-    ],
-  );
+  // 首次加载
+  useEffect(() => {
+    handleRequestReportData();
+  }, []);
   const optimizationNotEnabled = useMemo(() => {
     if (
       storeLanguageFetcher.state === "loading" ||
@@ -230,8 +193,12 @@ const TranslationDashboard = () => {
     const length = storeLanguages.filter(
       (item) => item.status === "untranslated",
     ).length;
-    console.log('optimizationNotEnabled赋值了: ', length, optimizationNotEnabled);
-    
+    console.log(
+      "optimizationNotEnabled赋值了: ",
+      length,
+      optimizationNotEnabled,
+    );
+
     setReportIntroduction({
       notTransLanguage: length,
       optimizationNotEnabled,
@@ -499,7 +466,7 @@ const TranslationDashboard = () => {
                     {t("translation optimization features not enabled")}
                   </li> */}
                   <li>
-                    {storeLanguages.length === 0 ? (
+                    {storeLanguageFetcher.state === "submitting" ? (
                       <Spin size="small" />
                     ) : (
                       <>
@@ -561,14 +528,16 @@ const TranslationDashboard = () => {
           isLoading ? (
             <Skeleton.Button active />
           ) : (
-            <Button
-              onClick={() => {
-                navigate("/app/language");
-                reportClick("transate_report_deoptimization");
-              }}
-            >
-              {t("Deoptimization")}
-            </Button>
+            storeLanguages.length > 0 && (
+              <Button
+                onClick={() => {
+                  navigate("/app/language");
+                  reportClick("transate_report_deoptimization");
+                }}
+              >
+                {t("Deoptimization")}
+              </Button>
+            )
           )
         }
         style={{ marginBottom: 20 }}
@@ -581,27 +550,55 @@ const TranslationDashboard = () => {
             ></Skeleton.Node>
           </BlockStack>
         ) : (
-          <Row gutter={16}>
-            {storeLanguages.map((item, index) => (
-              <Col key={index} span={8} style={{ padding: "20px" }}>
-                <Flex justify="space-between">
-                  <Text>{item.language}</Text>
-                  {item.status === "translated" && (
-                    <Tag color="success">{t("Translated")}</Tag>
-                  )}
-                  {item.status === "untranslated" && (
-                    <Tag color="error">{t("Untranslated")}</Tag>
-                  )}
-                  {item.status === "translating" && (
-                    <Tag color="processing">{t("Translating")}</Tag>
-                  )}
-                  {item.status === "partial" && (
-                    <Tag color="warning">{t("Partially Translated")}</Tag>
-                  )}
-                </Flex>
-              </Col>
-            ))}
-          </Row>
+          <>
+            {storeLanguages.length > 0 ? (
+              <Row gutter={16}>
+                {storeLanguages.map((item, index) => (
+                  <Col key={index} span={8} style={{ padding: "20px" }}>
+                    <Flex justify="space-between">
+                      <Text>{item.language}</Text>
+                      {item.status === "translated" && (
+                        <Tag color="success">{t("Translated")}</Tag>
+                      )}
+                      {item.status === "untranslated" && (
+                        <Tag color="error">{t("Untranslated")}</Tag>
+                      )}
+                      {item.status === "translating" && (
+                        <Tag color="processing">{t("Translating")}</Tag>
+                      )}
+                      {item.status === "partial" && (
+                        <Tag color="warning">{t("Partially Translated")}</Tag>
+                      )}
+                    </Flex>
+                  </Col>
+                ))}
+              </Row>
+            ) : (
+              <Flex
+                vertical
+                justify="center"
+                align="center"
+                style={{ padding: "40px 0" }}
+              >
+                <Empty
+                  description={
+                    <Text type="secondary" style={{ fontSize: 16 }}>
+                      {t("You haven't added any languages yet")}
+                    </Text>
+                  }
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                />
+                <Button
+                  type="primary"
+                  size="middle"
+                  style={{ marginTop: 16 }}
+                  onClick={() => navigate("/app/language")}
+                >
+                  {t("Manage Languages")}
+                </Button>
+              </Flex>
+            )}
+          </>
         )}
       </Card>
 

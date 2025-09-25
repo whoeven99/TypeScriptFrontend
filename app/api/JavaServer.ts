@@ -1525,42 +1525,27 @@ export const GetTranslationQualityScore = async () => {
 };
 
 // 查询未翻译的字符数
-export const GetUnTranslatedWords = async () => {
+export const GetUnTranslatedWords = async ({
+  shop,
+  module,
+  accessToken,
+}: {
+  shop: string;
+  module: string;
+  accessToken: string;
+}) => {
   try {
-    const response = await new Promise((resolve) => {
-      setTimeout(resolve), 2000;
-    });
-    return {
-      success: true,
-      response: {
-        words: 147859,
+    const response = await axios({
+      method: "POST",
+      url: `${process.env.SERVER_URL}/shopify/getTotalWords?shopName=${shop}&modelType=${module}`,
+      data: {
+        accessToken,
       },
-    };
+    });
+    // console.log("unTranslated words data", response.data);
+    return response.data;
   } catch (error) {
     console.log("get unTranslated words failed:", error);
-    return {
-      success: false,
-      errorCode: 10001,
-      errorMsg: "SERVER_ERROR",
-      response: undefined,
-    };
-  }
-};
-
-// 获取用户商店翻译转换率以及对应的图标数据
-export const GetConversionRate = async () => {
-  try {
-    const response = await new Promise((resolve) => {
-      setTimeout(resolve), 2000;
-    });
-    return {
-      success: true,
-      response: {
-        conversion: "13.54%",
-      },
-    };
-  } catch (error) {
-    console.log("get conversion rate failed:", error);
     return {
       success: false,
       errorCode: 10001,

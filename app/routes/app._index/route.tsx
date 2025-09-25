@@ -376,7 +376,6 @@ const Index = () => {
             hasRequiresScopes={hasRequiresScopes}
             missScopes={missScopes}
           ></AnalyticsCard>
-          {/* <TranslationPanel /> */}
           <div>
             <Card
               style={

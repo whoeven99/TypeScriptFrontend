@@ -65,9 +65,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const polarisVizFetcher = JSON.parse(
       formData.get("polarisVizFetcher") as string,
     );
-    const LanguageFetcher = JSON.parse(
-      formData.get("LanguageFetcher") as string,
-    );
     if (polarisVizFetcher) {
       try {
         const mutationResponse = await admin.graphql(
@@ -99,48 +96,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           shop,
           storeLanguage: updatedStoreLanguage,
           dayData: days,
-        });
-        return response;
-      } catch (error) {
-        console.log("get polarisViz data failed", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: null,
-        };
-      }
-    }
-
-    if (LanguageFetcher) {
-      try {
-        const mutationResponse = await admin.graphql(
-          `query MyQuery {
-            shopLocales(published: true) {
-              locale
-              name
-              primary
-              published
-            }
-          }`,
-        );
-        const data = (await mutationResponse.json()) as any;
-        let source = "en";
-        console.log("shopLocales: ", data.data.shopLocales);
-
-        if (data.data.shopLocales.length > 0) {
-          data.data.shopLocales.forEach((item: any) => {
-            if (item.primary === true) {
-              source = item.locale;
-            }
-          });
-        }
-        console.log("source language: ", source);
-
-        // const { languages, days } = LanguageFetcher;
-        const response = await GetStoreLanguage({
-          shop,
-          source,
         });
         return response;
       } catch (error) {
@@ -191,12 +146,15 @@ const Index = () => {
     const timer = setTimeout(() => setReady(true), 100);
     return () => clearTimeout(timer);
   }, []);
+  function formatDateLocalized(date: Date) {
+    return `${date.getMonth() + 1}${t("month")}${date.getDate()}${t("day")}`;
+  }
   const generateDateRange = (start: Date, end: Date) => {
     const dates: string[] = [];
     const current = new Date(start);
 
     while (current <= end) {
-      const label = `${current.getMonth() + 1}月${current.getDate()}日`;
+      const label = formatDateLocalized(current);
       dates.push(label);
       current.setDate(current.getDate() + 1);
     }
@@ -253,14 +211,9 @@ const Index = () => {
         }),
       };
     });
-    console.log("filled data: ", filled);
-
     setFilteredChartData(filled);
   }, [selectedDates, chartData]);
   const formatDate = (date: Date) => {
-    // if (!isClient) {
-    //   return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
-    // }
     return date.toLocaleDateString();
   };
 
@@ -287,7 +240,6 @@ const Index = () => {
 
     setSelectedDates({ start, end });
   };
-
 
   useEffect(() => {
     const formData = new FormData();
@@ -360,9 +312,9 @@ const Index = () => {
 
     function getDateRangeName(dates: string[]) {
       if (!dates || dates.length === 0) return "未知日期范围";
-      if (dates.length === 1) return `2025年${formatDateToChinese(dates[0])}`;
-      return `2025年${formatDateToChinese(dates[0])}-${formatDateToChinese(
-        dates[dates.length - 1],
+      if (dates.length === 1) return formatDateLocalized(new Date(dates[0]));
+      return `${formatDateLocalized(new Date(dates[0]))} - ${formatDateLocalized(
+        new Date(dates[dates.length - 1]),
       )}`;
     }
 
@@ -384,7 +336,7 @@ const Index = () => {
           exposure > 0 ? Math.min((clicks / exposure) * 100, 100) : 0;
 
         return {
-          key: formatDateToChinese(dateStr),
+          key: formatDateLocalized(new Date(dateStr)),
           value: Number.isFinite(conversionRate) ? conversionRate : 0,
         };
       });
@@ -403,7 +355,7 @@ const Index = () => {
 
   useEffect(() => {
     if (polarisVizDataFetcher.data) {
-      console.log(polarisVizDataFetcher.data);
+      console.log("polarisVizDataFetcher.data", polarisVizDataFetcher.data);
 
       if (polarisVizDataFetcher.data.response) {
         setChartData(transformData(polarisVizDataFetcher.data.response));
@@ -411,8 +363,6 @@ const Index = () => {
           transformData(polarisVizDataFetcher.data.response),
         );
       }
-      console.log(transformData(polarisVizDataFetcher.data.response));
-
       setIsLoading(false);
     }
   }, [polarisVizDataFetcher.data]);
@@ -440,7 +390,7 @@ const Index = () => {
             fontWeight: 700,
           }}
         >
-          商店数据预览
+          {t("Add to Cart Conversion Rate")}
         </Title>
       </div>
       <div style={{ height: "20px" }}></div>
@@ -463,7 +413,7 @@ const Index = () => {
                   clickReportDate(1);
                 }}
               >
-                昨天
+                {t("Yesterday")}
               </Button>
               <Button
                 variant={
@@ -473,7 +423,7 @@ const Index = () => {
                   setPreset("last7"), clickReportDate(7);
                 }}
               >
-                过去 7 天
+                {t("Last 7 Days")}
               </Button>
               <Button
                 variant={
@@ -484,7 +434,7 @@ const Index = () => {
                   clickReportDate(30);
                 }}
               >
-                过去 30 天
+                {t("Last 30 Days")}
               </Button>
             </InlineStack>
             <InlineStack gap="150">

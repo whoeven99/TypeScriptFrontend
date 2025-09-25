@@ -37,7 +37,6 @@ import {
   IsOpenFreePlan,
   GetTranslationQualityScore,
   GetUnTranslatedWords,
-  GetConversionRate,
 } from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -428,7 +427,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.error("GraphQL 错误: ", data.errors);
           return {
             success: false,
-            response: null,
+            response: {
+              errorCode: 2,
+            },
           };
         }
 
@@ -436,7 +437,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.error("业务错误: ", data.data.webPixelCreate.userErrors);
           return {
             success: false,
-            response: null,
+            response: {
+              errorCode: 3,
+            },
           };
         }
         return {
@@ -447,7 +450,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.log("getOrderData failed", error);
         return {
           success: false,
-          response: null,
+          response: {
+            errorCode: 1,
+          },
         };
       }
     }
@@ -463,8 +468,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           }
         `;
         const response = await admin.graphql(query);
-        console.log("findWebPixelId", response);
-        const data = await response.json();
+        if (!response.ok) {
+          return {
+            success: false,
+            errorCode: response.status,
+            errorMsg: response.statusText,
+            response: null,
+          };
+        }
+
+        const data = (await response.json()) as any;
+        console.log("findWebPixelId data", data);
+
+        // 再看 GraphQL 层面是否有错误
+        if (data.errors) {
+          return {
+            success: false,
+            errorCode: 10002,
+            errorMsg: data.errors.map((e: any) => e.message).join(", "),
+            response: data,
+          };
+        }
+
         return {
           success: true,
           response: data,
@@ -497,25 +522,33 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (unTranslated) {
       try {
-        const response = await GetUnTranslatedWords();
-        return response;
+        const { resourceModules } = unTranslated;
+        let totalWords = 0;
+        const results = await Promise.all(
+          resourceModules.map((module: string) =>
+            GetUnTranslatedWords({
+              shop,
+              module,
+              accessToken: accessToken as string,
+            }),
+          ),
+        );
+
+        results.forEach((res) => {
+          console.log("dasdasdas132dwew: ", res);
+
+          if (res.success && res.response) {
+            totalWords += res.response;
+          }
+        });
+        return {
+          success: true,
+          response: {
+            totalWords,
+          },
+        };
       } catch (error) {
         console.log("get unTranslated words failed", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: null,
-        };
-      }
-    }
-
-    if (conversionRate) {
-      try {
-        const response = await GetConversionRate();
-        return response;
-      } catch (error) {
-        console.log("get conversion rate failed", error);
         return {
           success: false,
           errorCode: 10001,

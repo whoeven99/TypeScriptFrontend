@@ -9,7 +9,6 @@ interface Props {
 const LineChartECharts: React.FC<Props> = ({ data, height = 300 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
-
   useEffect(() => {
     if (chartRef.current) {
       chartInstance.current = echarts.init(chartRef.current);
