@@ -1500,19 +1500,19 @@ export const GoogleAnalyticClickReport = async (params: any, name: string) => {
 };
 
 // 获取翻译报告分数以及详细报告指标
-export const GetTranslationQualityScore = async () => {
+export const GetTranslationQualityScore = async ({
+  shop,
+  source,
+}: {
+  shop: string;
+  source: string;
+}) => {
   try {
-    const response = await new Promise((resolve) => {
-      setTimeout(resolve), 5000;
+    const response = await axios({
+      method: "POST",
+      url: `${process.env.SERVER_URL}/rating/getRatingInfo?shopName=${shop}&source=${source}`,
     });
-    return {
-      success: true,
-      response: {
-        data: {
-          totalScore: 88,
-        },
-      },
-    };
+    return response.data;
   } catch (error) {
     console.log("get translationQuality score error:", error);
     return {
@@ -1542,7 +1542,7 @@ export const GetUnTranslatedWords = async ({
         accessToken,
       },
     });
-    // console.log("unTranslated words data", response.data);
+    console.log("unTranslated words data", response.data);
     return response.data;
   } catch (error) {
     console.log("get unTranslated words failed:", error);
@@ -1601,7 +1601,7 @@ export const GetStoreLanguage = async ({
 
     const response = await axios({
       method: "POST",
-      url: `${process.env.SERVER_URL}/translate/getTranslationStatus?shopName=${shop}&source=${source}`,
+      url: `${process.env.SERVER_URL}/rating/getTranslationStatus?shopName=${shop}&source=${source}`,
     });
     console.log("user stroe language data", response.data);
     return response.data;
@@ -1621,7 +1621,7 @@ export const GetRealTimeQuotaData = async ({ shop }: { shop: string }) => {
   try {
     const response = await axios({
       method: "POST",
-      url: `${process.env.SERVER_URL}/shopify/getDBConfiguration?shopName=${shop}`,
+      url: `${process.env.SERVER_URL}/rating/getDBConfiguration?shopName=${shop}`,
     });
     console.log("user stroe language data", response.data);
     return response.data;

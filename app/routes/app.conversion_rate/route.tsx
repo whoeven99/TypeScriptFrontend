@@ -58,7 +58,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   const { admin } = adminAuthResult;
-  console.log("conversion rate action", shop);
 
   try {
     const formData = await request.formData();
@@ -84,13 +83,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             storeLanguage.push(item.locale);
           });
         }
-        console.log("storeLanguage: ", storeLanguage);
         const updatedStoreLanguage = storeLanguage.map((lang) =>
           lang === "zh-CN" ? "zh-hans" : lang,
         );
         const { days } = polarisVizFetcher;
-        console.log("coversion fetcher: ", polarisVizFetcher);
-        console.log("updated store language: ", updatedStoreLanguage);
 
         const response = await GetConversionData({
           shop,
@@ -222,7 +218,6 @@ const Index = () => {
     const today = new Date();
     let start = new Date(today);
     let end = new Date(today);
-    console.log(today.getDate());
 
     if (type === "yesterday") {
       start.setDate(today.getDate() - 1);
@@ -355,8 +350,6 @@ const Index = () => {
 
   useEffect(() => {
     if (polarisVizDataFetcher.data) {
-      console.log("polarisVizDataFetcher.data", polarisVizDataFetcher.data);
-
       if (polarisVizDataFetcher.data.response) {
         setChartData(transformData(polarisVizDataFetcher.data.response));
         setFilteredChartData(

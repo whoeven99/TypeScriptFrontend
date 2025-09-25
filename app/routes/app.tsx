@@ -35,7 +35,6 @@ import {
   GetUserSubscriptionPlan,
   GoogleAnalyticClickReport,
   IsOpenFreePlan,
-  GetTranslationQualityScore,
   GetUnTranslatedWords,
 } from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
@@ -98,9 +97,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       formData.get("qualityEvaluation") as string,
     );
     const findWebPixelId = JSON.parse(formData.get("findWebPixelId") as string);
-    const translationScore = JSON.parse(
-      formData.get("translationScore") as string,
-    );
     const unTranslated = JSON.parse(formData.get("unTranslated") as string);
     const conversionRate = JSON.parse(formData.get("conversionRate") as string);
     const getAssessmentScoreFetcher = JSON.parse(
@@ -496,21 +492,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         };
       } catch (error) {
         console.log("findWebPixel failed", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: null,
-        };
-      }
-    }
-
-    if (translationScore) {
-      try {
-        const response = await GetTranslationQualityScore();
-        return response;
-      } catch (error) {
-        console.log("get translation score failed", error);
         return {
           success: false,
           errorCode: 10001,

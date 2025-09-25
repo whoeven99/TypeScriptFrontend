@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Button, Card, Progress, Skeleton, Space, Typography } from "antd";
+import { Button, Card, Progress, Skeleton, Space, Typography,Flex } from "antd";
 import { useTranslation } from "react-i18next";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { PhoneOutlined } from "@ant-design/icons";
@@ -466,10 +466,30 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       "dashboard_translation_task_continue",
     );
   };
-
+  const navigateToTranslate = () => {
+    reportClick("dashboard_translate_button");
+    navigate("/app/translate", {
+      state: { from: "/app", selectedLanguageCode: "" },
+    });
+    fetcher.submit(
+      {
+        log: `${shop} 前往翻译页面, 从主页面点击`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+  };
   return (
     <Card>
-      <Title level={4}>{t("progressing.title")}</Title>
+      <Flex justify="space-between">
+        <Title level={4}>{t("transLanguageCard1.title")}</Title>
+        <Button type="primary" onClick={() => navigateToTranslate()}>
+          {t("transLanguageCard1.button")}
+        </Button>
+      </Flex>
+
       {loading ? (
         <Skeleton.Button active style={{ height: "130px" }} block />
       ) : (

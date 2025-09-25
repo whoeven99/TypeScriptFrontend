@@ -218,21 +218,6 @@ const Index = () => {
   const handleReportCiwiHelpCenter = () => {
     reportClick("dashboard_footer_help_center");
   };
-  const navigateToTranslate = () => {
-    reportClick("dashboard_translate_button");
-    navigate("/app/translate", {
-      state: { from: "/app", selectedLanguageCode: "" },
-    });
-    fetcher.submit(
-      {
-        log: `${shop} 前往翻译页面, 从主页面点击`,
-      },
-      {
-        method: "POST",
-        action: "/log",
-      },
-    );
-  };
   const navigateToHelpSwitchCurrency = () => {
     reportClick("dashboard_currency_guide");
     window.open(
@@ -287,10 +272,9 @@ const Index = () => {
       },
     );
   };
-  useEffect(()=>{
-    console.log('app home');
-    
-  },[])
+  useEffect(() => {
+    console.log("app home");
+  }, []);
 
   const handleTestGraphqlData = async () => {
     // await shopify.scopes.revoke(['read_analytics','read_reports','read_orders']);
@@ -365,18 +349,13 @@ const Index = () => {
           overflowX: "hidden",
         }}
       >
-        <WelcomeCard
-          switcherOpen={switcherOpen}
-          blockUrl={blockUrl}
-          shop={shop}
-          // handleReload={handleReload}
-        />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <AnalyticsCard
             hasRequiresScopes={hasRequiresScopes}
             missScopes={missScopes}
+            isLoading={isLoading}
           ></AnalyticsCard>
-          <div>
+          {/* <div>
             <Card
               style={
                 !userConfigIsLoading && isNew
@@ -398,12 +377,7 @@ const Index = () => {
                   {isLoading ? (
                     <Skeleton.Button active />
                   ) : (
-                    <Button
-                      type="primary"
-                      onClick={() => navigateToTranslate()}
-                    >
-                      {t("transLanguageCard1.button")}
-                    </Button>
+                    <></>
                   )}
                 </div>
               </Space>
@@ -498,53 +472,20 @@ const Index = () => {
                 )}
               </Flex>
             </Card>
-          </div>
+          </div> */}
           <ProgressingCard shop={shop} server={server || ""} />
-          <Row gutter={16}>
-            <Col xs={24} sm={24} md={12}>
+          <WelcomeCard
+            switcherOpen={switcherOpen}
+            blockUrl={blockUrl}
+            shop={shop}
+            // handleReload={handleReload}
+          />
+          <Row>
+            <Col span={24}>
               <Card
                 style={{
                   height: "100%",
-                }}
-                styles={{
-                  body: {
-                    height: "100%",
-                  },
-                }}
-              >
-                <div
-                  style={{
-                    height: "100%",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    flexDirection: "column",
-                  }}
-                >
-                  <Space
-                    direction="vertical"
-                    size="middle"
-                    style={{ display: "flex" }}
-                  >
-                    <Text strong>{t("transLanguageCard2.title")}</Text>
-                    <Text>{t("transLanguageCard2.description")}</Text>
-                  </Space>
-                  {isLoading ? (
-                    <Skeleton.Button active />
-                  ) : (
-                    <Button
-                      onClick={() => navigateToLanguage()}
-                      style={{ marginLeft: "auto", alignSelf: "flex-start" }}
-                    >
-                      {t("transLanguageCard2.button")}
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            </Col>
-            <Col xs={24} sm={24} md={12}>
-              <Card
-                style={{
-                  height: "100%",
+                  width: "100%",
                 }}
               >
                 <Space
@@ -627,76 +568,6 @@ const Index = () => {
               </div>
             </Space>
           </Card>
-          <Row gutter={16}>
-            <Col xs={24} sm={24} md={12}>
-              <Card
-                style={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-                styles={{
-                  body: {
-                    display: "flex",
-                    flexDirection: "column",
-                    flex: 1,
-                  },
-                }}
-              >
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    flex: 1,
-                  }}
-                >
-                  <Text strong>{t("transCurrencyCard2.title")}</Text>
-                  <Text>{t("transCurrencyCard2.description")}</Text>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    {isLoading ? (
-                      <Skeleton.Button active />
-                    ) : (
-                      <Button onClick={navigateToHelpSwitchCurrency}>
-                        {t("transCurrencyCard2.button")}
-                      </Button>
-                    )}
-                  </div>
-                </Space>
-              </Card>
-            </Col>
-            <Col xs={24} sm={24} md={12}>
-              <Card
-                style={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{
-                    display: "flex",
-                    flex: 1,
-                  }}
-                >
-                  <Text strong>{t("transCurrencyCard3.title")}</Text>
-                  <Text>{t("transCurrencyCard3.description")}</Text>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    {isLoading ? (
-                      <Skeleton.Button active />
-                    ) : (
-                      <Button onClick={navigateToSwitchCurrencyDetail}>
-                        {t("transCurrencyCard3.button")}
-                      </Button>
-                    )}
-                  </div>
-                </Space>
-              </Card>
-            </Col>
-          </Row>
         </Space>
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>

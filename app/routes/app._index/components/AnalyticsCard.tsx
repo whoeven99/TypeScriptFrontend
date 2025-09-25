@@ -26,7 +26,7 @@ interface loadingGather {
   unTranslated: LoadingItem;
   conversionRate: LoadingItem;
 }
-const AnalyticsCard = ({ hasRequiresScopes, missScopes }: any) => {
+const AnalyticsCard = ({ hasRequiresScopes, missScopes,isLoading }: any) => {
   const { reportClick } = useReport();
   const navigate = useNavigate(); // 统一使用小写 navigate（React Router 规范）
   const { t } = useTranslation();
@@ -40,7 +40,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes }: any) => {
     setIsModalVisible(true);
   };
   const [loadingGather, setLoadingGather] = useState<loadingGather>({
-    translationScore: { loading: true },
+    translationScore: { loading: false },
     unTranslated: { loading: true },
     conversionRate: { loading: true },
   });
@@ -206,18 +206,31 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes }: any) => {
 
   // 组件加载时自动查询 Web Pixel
   useEffect(() => {
+    const translateReportData = localStorage.getItem(
+      "translate_report_score",
+    ) as any;
     if (queryWebPixelFetcher.state === "idle" && !queryWebPixelFetcher.data) {
       queryWebPixel();
     }
+    if (translateReportData) {
+      setTranslateData(translateReportData);
+    } else {
+      // 初始化获取翻译质量的分数
+      const formData = new FormData();
+      formData.append("translationScore", JSON.stringify({}));
+      translationScoreFetcher.submit(formData, {
+        method: "post",
+        action: "/app/translate_report",
+      });
+      setLoadingGather((prev) => ({
+        ...prev,
+        translationScore: {
+          loading: true,
+        },
+      }));
+    }
   }, []); // 只在 mount 时执行
   useEffect(() => {
-    // 初始化获取翻译质量的分数
-    const formData = new FormData();
-    formData.append("translationScore", JSON.stringify({}));
-    translationScoreFetcher.submit(formData, {
-      method: "post",
-      action: "/app",
-    });
     const untranslatedForm = new FormData();
     untranslatedForm.append(
       "unTranslated",
@@ -249,26 +262,27 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes }: any) => {
         conversionRate: { loading: false },
       }));
       // setConversionRate(undefined); // 表示“未配置 / 无数据”
-      console.log("未配置 pixel，等待授权/创建后再请求");
     }
   }, [configCreateWebPixel]);
   useEffect(() => {
     if (translationScoreFetcher.data && translationScoreFetcher.data.success) {
       // setLoading(false);
-      console.log("translationScoreFetcher: ", translationScoreFetcher.data);
-      setTranslateData(translationScoreFetcher.data?.response.data);
+      setTranslateData(Math.ceil(translationScoreFetcher.data?.response * 100));
       setLoadingGather((prev) => ({
         ...prev,
         translationScore: {
           loading: false,
         },
       }));
+      localStorage.setItem(
+        "translate_report_score",
+        JSON.stringify(Math.ceil(translationScoreFetcher.data?.response * 100)),
+      );
     }
   }, [translationScoreFetcher.data]);
   useEffect(() => {
     if (unTranslatedFetcher.data && unTranslatedFetcher.data.success) {
       // setLoading(false);
-      console.log("unTranslatedFetcher: ", unTranslatedFetcher.data);
       setUnTranslateWords(unTranslatedFetcher.data?.response);
       setLoadingGather((prev) => ({
         ...prev,
@@ -329,10 +343,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes }: any) => {
     if (queryWebPixelFetcher.data) {
       if (queryWebPixelFetcher.data?.success) {
         setConfigPixel(true);
-        console.log(queryWebPixelFetcher.data);
       } else {
-        console.log(queryWebPixelFetcher.data);
-        
         setConfigPixel(false);
       }
     } else {
@@ -371,13 +382,13 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes }: any) => {
             align="center"
             style={{ height: "100%", minWidth: 200 }}
           >
-            <Text>{t("Translation score")}</Text>
-            {loadingGather.translationScore.loading ? (
+            <Text>{t("Translation Score")}</Text>
+            {loadingGather.translationScore.loading || isLoading ? (
               <Skeleton.Node style={{ height: 50 }} active />
             ) : (
               <Progress
                 type="circle"
-                percent={translateScoreData?.totalScore}
+                percent={translateScoreData ?? 0}
                 format={(percent) => (
                   <div
                     style={{
@@ -394,9 +405,16 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes }: any) => {
                   </div>
                 )}
                 size={60}
+                strokeColor={
+                  translateScoreData >= 60
+                    ? translateScoreData >= 80
+                      ? "#52c41a"
+                      : "#faad14"
+                    : "#ff4d4f"
+                }
               />
             )}
-            {loadingGather.translationScore.loading ? (
+            {loadingGather.translationScore.loading || isLoading ? (
               <Skeleton.Button active />
             ) : (
               <Button
@@ -453,7 +471,6 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes }: any) => {
           </Flex>
         </Col>
 
-        
         <Col xs={24} sm={12} md={8}>
           <Flex
             vertical

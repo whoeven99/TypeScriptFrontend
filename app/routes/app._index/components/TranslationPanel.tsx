@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Row, Col, Button, Card, Flex, Grid, Image } from "antd";
+import { Row, Col, Button, Card, Flex, Grid, Image, Skeleton } from "antd";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
 import { useTranslation } from "react-i18next";
+import languageLocaleData from "../../../../scripts/language-locale-data";
 interface LanguageButtonProps {
   label: string;
   width?: number;
@@ -35,11 +36,11 @@ const TranslationPanel = () => {
   const { reportClick } = useReport();
   const { useBreakpoint } = Grid;
   const navigate = useNavigate();
-  const LanguageFetcher = useFetcher();
+  const LanguageFetcher = useFetcher<any>();
   const screens = useBreakpoint();
   const gridWidth = screens.lg ? 54 : screens.md ? 80 : 120;
-  const [languages, setLanguages] = useState<string[]>(["PR", "DE", "FR"]);
-
+  const [languages, setLanguages] = useState<any>([]);
+  const [nationalFlags, setNationalFlags] = useState<string[]>([]);
   useEffect(() => {
     const formData = new FormData();
     formData.append("LanguageFetcher", JSON.stringify({}));
@@ -52,10 +53,28 @@ const TranslationPanel = () => {
   useEffect(() => {
     if (LanguageFetcher.data) {
       console.log("LanguageFetcher.data", LanguageFetcher.data);
-      // 假设后端返回 ["English", "Deutsch", "Norsk (Nynorsk)"]
-      //   if (LanguageFetcher.data?.success && Array.isArray(LanguageFetcher.data.response)) {
-      //     setLanguages(LanguageFetcher.data.response);
-      //   }
+
+      const raw = LanguageFetcher.data.response;
+      const langs: Record<string, any> = { ...raw };
+      delete langs["Published Languages"];
+      console.log("langs", langs);
+
+      for (const langName in langs) {
+        const match = Object.values(languageLocaleData).find(
+          (item) => item.Name === langName,
+        );
+
+        if (match) {
+          langs[langName] = {
+            value: langs[langName],
+            flagUrl: match.countries[0], // 用第一个国家作为 flagUrl
+          };
+        } else {
+          langs[langName] = { value: langs[langName], flagUrl: null };
+        }
+      }
+      setLanguages(Object.values(langs).slice(0, 3)); // 只显示前3个
+      console.log("langs with flagUrl", langs);
     }
   }, [LanguageFetcher.data]);
 
@@ -69,23 +88,36 @@ const TranslationPanel = () => {
           style={{ width: "100%" }}
         >
           <Flex justify="space-between" align="center" gap="8px">
-            {languages.map((lang, idx) => (
-              // <LanguageButton key={idx} label={lang} width={gridWidth} />
-              <Image
-                key={idx}
-                src={`https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/flag_webp/${lang}.webp`}
-                alt={lang}
-                width={40}
-                preview={false}
-                style={{ cursor: "pointer" }}
-                onClick={() => {
-                  navigate("/app/language");
-                }}
-              />
-            ))}
+            <Flex flex={1} justify="start" align="center" gap="8px">
+              {languages.length > 0 ? (
+                languages.map((lang: any, idx: number) => (
+                  // <LanguageButton key={idx} label={lang} width={gridWidth} />
+                  <Image
+                    key={idx}
+                    src={lang.flagUrl || "/default-flag.png"}
+                    alt={lang}
+                    width={40}
+                    preview={false}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => {
+                      navigate("/app/language");
+                    }}
+                  />
+                ))
+              ) : (
+                <Skeleton.Input
+                  style={{ width: gridWidth, height: 40 }}
+                  active
+                />
+              )}
+            </Flex>
+
             <Button
               type="default"
-              style={{ color: "#999", fontSize: "12px" }}
+              style={{
+                color: "#999",
+                fontSize: "12px",
+              }}
               onClick={() => navigate("/app/language")}
             >
               {t("And More")}

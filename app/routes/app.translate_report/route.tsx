@@ -6,7 +6,11 @@ import {
   json,
 } from "@remix-run/node";
 import { authenticate } from "../../shopify.server";
-import { GetRealTimeQuotaData, GetStoreLanguage } from "../../api/JavaServer";
+import {
+  GetRealTimeQuotaData,
+  GetStoreLanguage,
+  GetTranslationQualityScore,
+} from "../../api/JavaServer";
 import {
   Card,
   Button,
@@ -32,25 +36,12 @@ import { Icon } from "@shopify/polaris";
 import { ArrowLeftIcon } from "@shopify/polaris-icons";
 import { useNavigate, useFetcher } from "@remix-run/react";
 import useReport from "scripts/eventReport";
+import TranslatedIcon from "app/components/translateIcon";
 const { Text, Title } = Typography;
-interface ReportData {
-  totalScore: number;
-  notTransLanguage: [
-    { language: string; code: string; hasTranslated: boolean },
-  ];
-  incompatibleStyles: number;
-  notEnabled: number;
-  notSEOFriendly: number;
-  notOnBrand: number;
-}
 interface RealTimeData {
   autoTranslate: false;
   glossary: false;
   switch: false;
-}
-interface StoreLanguage {
-  language: string;
-  status: "untranslated" | "translated" | "translating" | "partial";
 }
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -62,7 +53,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
   const { admin } = adminAuthResult;
-  console.log("conversion rate action", shop);
 
   try {
     const formData = await request.formData();
@@ -72,6 +62,47 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const realTimeFetcher = JSON.parse(
       formData.get("realTimeFetcher") as string,
     );
+    const translationScore = JSON.parse(
+      formData.get("translationScore") as string,
+    );
+    if (translationScore) {
+      try {
+        const mutationResponse = await admin.graphql(
+          `query MyQuery {
+            shopLocales(published: true) {
+              locale
+              name
+              primary
+              published
+            }
+          }`,
+        );
+        const data = (await mutationResponse.json()) as any;
+        let source = "en";
+        if (data.data.shopLocales.length > 0) {
+          data.data.shopLocales.forEach((item: any) => {
+            if (item.primary === true) {
+              source = item.locale;
+            }
+          });
+        }
+        const response = await GetTranslationQualityScore({
+          shop,
+          source: source,
+        });
+
+        return response;
+      } catch (error) {
+        console.log("get translation score failed", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+        };
+      }
+    }
+
     if (LanguageFetcher) {
       try {
         const mutationResponse = await admin.graphql(
@@ -138,21 +169,13 @@ const TranslationDashboard = () => {
   const { reportClick } = useReport();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [useTermbase, setTermbase] = useState(false);
-  const [useSwitcher, setSwitcher] = useState(true);
   const [publishLanguage, setPublishLanguage] = useState(false);
-  const [autoTranslate, setAutoTranslate] = useState(false);
-  const [isLoading, setLoading] = useState(true);
+  const [isLoading, setLoading] = useState(false);
   const [reDectionLoading, setReDectionLoading] = useState(false);
   const translationEvaluationFetcher = useFetcher<any>();
   const storeLanguageFetcher = useFetcher<any>();
   const realTimeQuotaFetcher = useFetcher<any>();
-  const [storeLanguages, setStoreLanguages] = useState<StoreLanguage[]>([]);
-  const [realTimeData, setRealTimeData] = useState<RealTimeData>({
-    autoTranslate: false,
-    glossary: false,
-    switch: false,
-  });
+  const [languageStatus, setLanguageStatus] = useState<boolean>(false);
   const [reportIntroduction, setReportIntroduction] = useState<{
     notTransLanguage: number | null;
     optimizationNotEnabled: number | null;
@@ -160,12 +183,44 @@ const TranslationDashboard = () => {
     notTransLanguage: null,
     optimizationNotEnabled: null,
   });
-  const [reportTotalData, setReportTotalData] = useState<ReportData>();
-  const [tOptimizationLoading, setOptimizationLoading] =
-    useState<boolean>(false);
-  // 首次加载
+  const [reportData, setReportData] = useState<any>({
+    totalScore: null,
+    language: [],
+    realTimeBtns: {
+      autoTranslate: false,
+      glossary: false,
+      switch: false,
+      publishLanguage: false,
+    },
+  });
+  useState<boolean>(false);
   useEffect(() => {
-    handleRequestReportData();
+    if (reportData && reportData.totalScore !== null) {
+      localStorage.setItem("reportData", JSON.stringify(reportData));
+    }
+  }, [reportData]);
+  useEffect(() => {
+    // 查看浏览器有无存储报告数据
+    const data = localStorage.getItem("reportData") as any;
+    if (data) {
+      try {
+        const parsed = JSON.parse(data);
+        setReportData({
+          totalScore: parsed.totalScore ?? null,
+          language: parsed.language ?? [],
+          realTimeBtns: parsed.realTimeBtns ?? {
+            autoTranslate: false,
+            glossary: false,
+            switch: false,
+            publishLanguage: false,
+          },
+        });
+      } catch {
+        console.error("localStorage 解析失败，使用默认值");
+      }
+    } else {
+      handleRequestReportData();
+    }
   }, []);
   const optimizationNotEnabled = useMemo(() => {
     if (
@@ -176,40 +231,27 @@ const TranslationDashboard = () => {
     }
 
     let count = 0;
-    if (!publishLanguage) count++;
-    Object.values(realTimeData).forEach((value) => {
+    Object.entries(reportData.realTimeBtns).forEach(([, value]) => {
       if (!value) count++;
     });
     return count;
-  }, [
-    publishLanguage,
-    realTimeData,
-    storeLanguages,
-    storeLanguageFetcher.state,
-    realTimeQuotaFetcher.state,
-  ]);
+  }, [reportData, storeLanguageFetcher.state, realTimeQuotaFetcher.state]);
 
   useEffect(() => {
-    const length = storeLanguages.filter(
-      (item) => item.status === "untranslated",
+    const length = reportData.language.filter(
+      (item: any) => item[1] === 0,
     ).length;
-    console.log(
-      "optimizationNotEnabled赋值了: ",
-      length,
-      optimizationNotEnabled,
-    );
 
     setReportIntroduction({
       notTransLanguage: length,
       optimizationNotEnabled,
     });
-  }, [storeLanguages, optimizationNotEnabled]);
+  }, [reportData.language, optimizationNotEnabled]);
   const handleNavigate = () => {
     navigate("/app");
   };
   const handleReDetection = () => {
     setReDectionLoading(true);
-    console.log("重新检测");
     handleRequestReportData();
     reportClick("translate_report_retest");
   };
@@ -218,71 +260,77 @@ const TranslationDashboard = () => {
     formData.append("translationScore", JSON.stringify({}));
     translationEvaluationFetcher.submit(formData, {
       method: "post",
-      action: "/app",
+      action: "/app/translate_report",
     });
-  };
-  useEffect(() => {
+    setLoading(true);
     const languageFormData = new FormData();
     languageFormData.append("LanguageFetcher", JSON.stringify({}));
     storeLanguageFetcher.submit(languageFormData, {
       method: "post",
       action: "/app/translate_report",
     });
-
+    setLanguageStatus(true);
     const realTimeFormData = new FormData();
     realTimeFormData.append("realTimeFetcher", JSON.stringify({}));
     realTimeQuotaFetcher.submit(realTimeFormData, {
       method: "post",
       action: "/app/translate_report",
     });
-  }, []);
+  };
   useEffect(() => {
     if (storeLanguageFetcher.data) {
-      console.log(storeLanguageFetcher.data);
       if (storeLanguageFetcher.data.success) {
         const languagesObj = { ...storeLanguageFetcher.data.response };
+        const publishLang = languagesObj["Published Languages"] === 1;
         setPublishLanguage(languagesObj["Published Languages"] === 1);
+
         delete languagesObj["Published Languages"];
-        const languageArr = Object.entries(languagesObj).map(
-          ([language, value]) => {
-            let status:
-              | "untranslated"
-              | "translated"
-              | "translating"
-              | "partial";
+        setReportData((prev: any) => {
+          const next = {
+            ...prev,
+            realTimeBtns: {
+              ...(prev.realTimeBtns ?? {}),
+              publishLanguage: publishLang,
+            },
+            language: Object.entries(languagesObj),
+          };
+          return next;
+        });
 
-            if (value === 0) {
-              status = "untranslated";
-            } else if (value === 1) {
-              status = "translated";
-            } else if (value === 2) {
-              status = "translating";
-            } else {
-              status = "partial";
-            }
-
-            return {
-              language,
-              status,
-            };
-          },
-        );
-        setStoreLanguages(languageArr);
+        setLanguageStatus(false);
       }
     }
   }, [storeLanguageFetcher.data]);
   useEffect(() => {
     if (realTimeQuotaFetcher.data) {
       if (realTimeQuotaFetcher.data.success) {
-        // console.log(realTimeQuotaFetcher.data);
-        setRealTimeData(realTimeQuotaFetcher.data.response);
+        setReportData((prev: any) => ({
+          ...prev,
+          realTimeBtns: {
+            ...prev.realTimeBtns,
+            ...realTimeQuotaFetcher.data.response,
+          },
+        }));
       }
     }
   }, [realTimeQuotaFetcher.data]);
   useEffect(() => {
-    if (translationEvaluationFetcher.data) {
-      // console.log(translationEvaluationFetcher.data);
-      setReportTotalData(translationEvaluationFetcher.data.response.data);
+    if (
+      translationEvaluationFetcher.data &&
+      translationEvaluationFetcher.data.success
+    ) {
+      setReportData((prev: any) => ({
+        ...prev,
+        totalScore: Math.ceil(
+          translationEvaluationFetcher.data?.response * 100,
+        ),
+      }));
+      localStorage.setItem(
+        "translate_report_score",
+        JSON.stringify(
+          Math.ceil(translationEvaluationFetcher.data?.response * 100),
+        ),
+      );
       setLoading(false);
       setReDectionLoading(false);
     }
@@ -360,13 +408,20 @@ const TranslationDashboard = () => {
             >
               <Progress
                 type="circle"
-                percent={reportTotalData?.totalScore ?? 0}
+                percent={reportData.totalScore || 0}
                 size={120}
                 format={(percent) => (
                   <span style={{ fontSize: 22, fontWeight: "bold" }}>
                     {percent}
                   </span>
                 )}
+                strokeColor={
+                  reportData.totalScore >= 60
+                    ? reportData.totalScore >= 80
+                      ? "#52c41a"
+                      : "#faad14"
+                    : "#ff4d4f"
+                }
               />
             </Col>
             {/* <Col
@@ -436,13 +491,18 @@ const TranslationDashboard = () => {
                   )}
                   <span
                     style={{
-                      color: "green",
+                      color:
+                        reportData.totalScore >= 80
+                          ? "#52c41a"
+                          : reportData.totalScore >= 60
+                            ? "#faad14"
+                            : "#ff4d4f",
                       fontSize: "22px",
                       fontWeight: "bold",
                       padding: "0 6px",
                     }}
                   >
-                    {reportTotalData?.totalScore}
+                    {reportData.totalScore || 0}
                   </span>
                   {t("points")}
                 </p>
@@ -525,10 +585,10 @@ const TranslationDashboard = () => {
       <Card
         title={t("Language translation")}
         extra={
-          isLoading ? (
+          languageStatus ? (
             <Skeleton.Button active />
           ) : (
-            storeLanguages.length > 0 && (
+            reportData.language.length > 0 && (
               <Button
                 onClick={() => {
                   navigate("/app/language");
@@ -542,7 +602,7 @@ const TranslationDashboard = () => {
         }
         style={{ marginBottom: 20 }}
       >
-        {storeLanguageFetcher.state === "submitting" ? (
+        {languageStatus ? (
           <BlockStack>
             <Skeleton.Node
               active
@@ -551,24 +611,13 @@ const TranslationDashboard = () => {
           </BlockStack>
         ) : (
           <>
-            {storeLanguages.length > 0 ? (
+            {reportData.language.length > 0 ? (
               <Row gutter={16}>
-                {storeLanguages.map((item, index) => (
+                {reportData.language.map((item: any, index: number) => (
                   <Col key={index} span={8} style={{ padding: "20px" }}>
                     <Flex justify="space-between">
-                      <Text>{item.language}</Text>
-                      {item.status === "translated" && (
-                        <Tag color="success">{t("Translated")}</Tag>
-                      )}
-                      {item.status === "untranslated" && (
-                        <Tag color="error">{t("Untranslated")}</Tag>
-                      )}
-                      {item.status === "translating" && (
-                        <Tag color="processing">{t("Translating")}</Tag>
-                      )}
-                      {item.status === "partial" && (
-                        <Tag color="warning">{t("Partially Translated")}</Tag>
-                      )}
+                      <Text>{item[0]}</Text>
+                      <TranslatedIcon status={item[1]} />
                     </Flex>
                   </Col>
                 ))}
@@ -618,7 +667,7 @@ const TranslationDashboard = () => {
           <Flex vertical gap="middle">
             <Flex justify="space-between" align="center">
               <Text>{t("Termbase")}</Text>
-              {realTimeData.glossary ? (
+              {reportData.realTimeBtns.glossary ? (
                 <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
               ) : (
                 <Button
@@ -634,7 +683,7 @@ const TranslationDashboard = () => {
             </Flex>
             <Flex justify="space-between" align="center">
               <Text>{t("Switcher")}</Text>
-              {realTimeData.switch ? (
+              {reportData.realTimeBtns.switch ? (
                 <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
               ) : (
                 <Button
@@ -650,7 +699,7 @@ const TranslationDashboard = () => {
             </Flex>
             <Flex justify="space-between" align="center">
               <Text>{t("Published Languages")}</Text>
-              {publishLanguage ? (
+              {reportData.realTimeBtns.publishLanguage ? (
                 <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
               ) : (
                 <Button
@@ -666,7 +715,7 @@ const TranslationDashboard = () => {
             </Flex>
             <Flex justify="space-between" align="center">
               <Text>{t("Enable automatic translation")}</Text>
-              {realTimeData.autoTranslate ? (
+              {reportData.realTimeBtns.autoTranslate ? (
                 <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
               ) : (
                 <Button
