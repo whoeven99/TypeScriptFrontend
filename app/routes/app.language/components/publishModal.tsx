@@ -143,7 +143,7 @@ const PublishModal: React.FC<PublishModalProps> = ({
         }
       }
 
-      shopify.toast.show("Save successfully");
+      shopify.toast.show(t("Save successfully"));
       setIsModalOpen(false);
     }
   }, [publishFetcher.data]);
