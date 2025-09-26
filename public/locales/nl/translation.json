@@ -681,5 +681,8 @@
   "The current language does not support image translation": "De huidige taal ondersteunt geen beeldvertaling",
   "1000 credits": "1000 studiepunten",
   "Got a 5-day free trial": "Krijg een 5-daagse gratis proefperiode",
-  "You have received {{ plan }} Plan benefits": "U heeft {{ plan }} Plan voordelen ontvangen"
+  "You have received {{ plan }} Plan benefits": "U heeft {{ plan }} Plan voordelen ontvangen",
+  "Save successfully": "Succesvol opgeslagen",
+  "Language Publishing Status": "Publicatiestatus van taal",
+  "Publish to Selected Domains": "Publiceren op geselecteerde domeinen"
 }

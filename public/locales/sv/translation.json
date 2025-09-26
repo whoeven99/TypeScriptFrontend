@@ -681,5 +681,8 @@
   "The current language does not support image translation": "Det aktuella språket stöder inte bildöversättning",
   "1000 credits": "1000 poäng",
   "Got a 5-day free trial": "Få en 5-dagars gratis provperiod",
-  "You have received {{ plan }} Plan benefits": "Du har fått {{ plan }} Plan-förmåner"
+  "You have received {{ plan }} Plan benefits": "Du har fått {{ plan }} Plan-förmåner",
+  "Save successfully": "Sparat framgångsrikt",
+  "Language Publishing Status": "Språkpubliceringsstatus",
+  "Publish to Selected Domains": "Publicera till valda domäner"
 }

@@ -302,7 +302,7 @@ const Index = () => {
         dispatch(
           setTableData(
             shopLanguages.map((language: ShopLocalesType, index: number) => ({
-              key: index,
+              key: language.locale,
               language: language.name,
               locale: language.locale,
               primary: language.primary,

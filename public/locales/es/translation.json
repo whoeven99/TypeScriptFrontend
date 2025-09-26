@@ -681,5 +681,8 @@
   "The current language does not support image translation": "El idioma actual no admite la traducción de imágenes.",
   "1000 credits": "1000 créditos",
   "Got a 5-day free trial": "Obtén una prueba gratuita de 5 días",
-  "You have received {{ plan }} Plan benefits": "Has recibido los beneficios del Plan {{ plan }}"
+  "You have received {{ plan }} Plan benefits": "Has recibido los beneficios del Plan {{ plan }}",
+  "Save successfully": "Guardado correctamente",
+  "Language Publishing Status": "Estado de publicación de idioma",
+  "Publish to Selected Domains": "Publicar en dominios seleccionados"
 }

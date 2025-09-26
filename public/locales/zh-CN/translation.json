@@ -683,5 +683,8 @@
   "The current language does not support image translation": "当前语言不支持图片翻译",
   "1000 credits": "1000积分",
   "Got a 5-day free trial": "获得 5 天免费试用",
-  "You have received {{ plan }} Plan benefits": "您已收到 {{ plan }} 计划福利"
+  "You have received {{ plan }} Plan benefits": "您已收到 {{ plan }} 计划福利",
+  "Save successfully": "保存成功",
+  "Language Publishing Status": "语言发布状态",
+  "Publish to Selected Domains": "发布到所选域名"
 }
