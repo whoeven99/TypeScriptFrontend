@@ -345,7 +345,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         progressData?.response?.RemainingQuantity) /
         progressData?.response?.TotalQuantity) *
       100
-    ).toFixed(2);
+    ).toFixed(3);
 
     setProgressNumber({
       hasTranslated:
