@@ -19,20 +19,14 @@ import { authenticate } from "~/shopify.server";
 import {
   mutationShopLocaleDisable,
   mutationShopLocaleEnable,
-  mutationShopLocalePublish,
-  mutationShopLocaleUnpublish,
-  PublishInfoType,
   queryAllLanguages,
   queryPrimaryMarket,
   queryShopLanguages,
-  UnpublishInfoType,
 } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setAutoTranslateLoadingState,
   setAutoTranslateState,
-  setPublishLoadingState,
-  setPublishState,
   setStatusState,
   setTableData,
 } from "~/store/modules/languageTableData";
