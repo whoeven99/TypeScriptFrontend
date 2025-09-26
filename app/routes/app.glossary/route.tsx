@@ -37,6 +37,7 @@ import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import defaultStyles from "../styles/defaultStyles.module.css";
+import styles from "../app.language/styles.module.css";
 import useReport from "scripts/eventReport";
 const { Title, Text } = Typography;
 
@@ -412,7 +413,7 @@ const Index = () => {
             <NoLanguageSetCard />
           </div>
         ) : (
-          <div className="languageTable_action">
+          <div className={styles.languageTable_action}>
             <Flex
               align="center"
               justify="space-between" // 使按钮左右分布

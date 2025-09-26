@@ -679,5 +679,8 @@
   "Image translation failed": "La traducción de la imagen falló",
   "Image translated successfully": "Imagen traducida correctamente",
   "The current language does not support image translation": "El idioma actual no admite la traducción de imágenes.",
-  "1000 credits": "1000 créditos"
+  "1000 credits": "1000 créditos",
+  "Save successfully": "Guardado correctamente",
+  "Language Publishing Status": "Estado de publicación de idioma",
+  "Publish to Selected Domains": "Publicar en dominios seleccionados"
 }

@@ -679,5 +679,8 @@
   "Image translation failed": "Görüntü çevirisi başarısız oldu",
   "Image translated successfully": "Resim başarıyla çevrildi",
   "The current language does not support image translation": "Mevcut dil resim çevirisini desteklemiyor",
-  "1000 credits": "1000 kredi"
+  "1000 credits": "1000 kredi",
+  "Save successfully": "Başarıyla kaydedildi",
+  "Language Publishing Status": "Dil yayınlama durumu",
+  "Publish to Selected Domains": "Seçili etki alanlarına yayınla"
 }

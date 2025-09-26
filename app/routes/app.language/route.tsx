@@ -12,28 +12,21 @@ import {
   Card,
   Checkbox,
 } from "antd";
-import { useEffect, useState, startTransition, useMemo } from "react";
+import { useEffect, useState, startTransition, useMemo, useRef } from "react";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
-import "./styles.css";
 import { authenticate } from "~/shopify.server";
 import {
   mutationShopLocaleDisable,
   mutationShopLocaleEnable,
-  mutationShopLocalePublish,
-  mutationShopLocaleUnpublish,
-  PublishInfoType,
   queryAllLanguages,
   queryPrimaryMarket,
   queryShopLanguages,
-  UnpublishInfoType,
 } from "~/api/admin";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setAutoTranslateLoadingState,
   setAutoTranslateState,
-  setPublishLoadingState,
-  setPublishState,
   setStatusState,
   setTableData,
 } from "~/store/modules/languageTableData";
@@ -52,7 +45,17 @@ import ScrollNotice from "~/components/ScrollNotice";
 import DeleteConfirmModal from "./components/deleteConfirmModal";
 import PublishModal from "./components/publishModal";
 import useReport from "scripts/eventReport";
+import isEqual from "lodash/isEqual";
+import styles from "./styles.module.css";
+
 const { Title, Text } = Typography;
+
+export interface MarketType {
+  key: string;
+  domain: {
+    [key: string]: string[];
+  };
+}
 
 export interface ShopLocalesType {
   locale: string;
@@ -81,16 +84,6 @@ export interface LanguagesDataType {
   autoTranslateLoading?: boolean;
 }
 
-const autoTranslationMapping = {
-  1: 20,
-  2: 20,
-  3: 20,
-  4: 20,
-  5: 20,
-  6: 20,
-  7: 20,
-};
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
@@ -112,19 +105,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const loading = JSON.parse(formData.get("loading") as string);
   const primaryMarket = JSON.parse(formData.get("primaryMarket") as string);
   const webPresences = JSON.parse(formData.get("webPresences") as string);
-  const webPresencesUpdate = JSON.parse(
-    formData.get("webPresencesUpdate") as string,
-  );
   const addData = JSON.parse(formData.get("addData") as string);
   const addLanguages = JSON.parse(formData.get("addLanguages") as string); // 获取语言数组
   const translation = JSON.parse(formData.get("translation") as string);
-  const googleAnalytic = JSON.parse(formData.get("googleAnalytic") as string);
-  const publishInfo: PublishInfoType = JSON.parse(
-    formData.get("publishInfo") as string,
-  );
-  const unPublishInfo: UnpublishInfoType = JSON.parse(
-    formData.get("unPublishInfo") as string,
-  );
   const deleteData = JSON.parse(formData.get("deleteData") as string);
 
   switch (true) {
@@ -176,10 +159,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                   id
                   domain {
                     id
+                    host
                     localization {
                       alternateLocales
-                    }
-                    host
+                    }           
                   }
                 }
               }
@@ -204,69 +187,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           errorMsg: "",
           dresponse: [],
         };
-      }
-
-    case !!webPresencesUpdate:
-      try {
-        const promises = webPresencesUpdate.map((item: any) => {
-          return admin
-            .graphql(
-              `#graphql
-              mutation webPresenceUpdate($id: ID!, $input: WebPresenceUpdateInput!) {
-                webPresenceUpdate(id: $id, input: $input) {
-                  userErrors {
-                    field
-                    message
-                  }
-                  webPresence {
-                    id
-                    domain {
-                      id
-                      localization {
-                        alternateLocales
-                      }
-                    }
-                  }
-                }
-              }`,
-              {
-                variables: {
-                  id: item.id,
-                  input: {
-                    alternateLocales: item.alternateLocales,
-                  },
-                },
-              },
-            )
-            .then((response) => response.json());
-        });
-
-        // 并发执行所有请求
-        const results = await Promise.allSettled(promises);
-
-        if (results.every((item) => item.status === "fulfilled")) {
-          return json({
-            success: true,
-            errorCode: 0,
-            errorMsg: "",
-            response: {
-              webPresences: results,
-              publishedCode: webPresencesUpdate[0].publishedCode,
-            },
-          });
-        } else {
-          return json({
-            success: false,
-            errorCode: 0,
-            errorMsg: "",
-            response: {
-              webPresences: results,
-              publishedCode: webPresencesUpdate[0].publishedCode,
-            },
-          });
-        }
-      } catch (error) {
-        console.error("Error webPresencesUpdate language:", error);
       }
 
     case !!addData:
@@ -369,44 +289,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ error: "Error translation language" }, { status: 500 });
       }
 
-    case !!publishInfo:
-      try {
-        const response = await mutationShopLocalePublish({
-          shop,
-          accessToken: accessToken as string,
-          publishInfo: publishInfo,
-        });
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response,
-        };
-      } catch (error) {
-        console.error("Error publishInfo language:", error);
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: [],
-        };
-      }
-
-    case !!unPublishInfo:
-      try {
-        const response = await mutationShopLocaleUnpublish({
-          shop,
-          accessToken: accessToken as string,
-          publishInfos: [unPublishInfo],
-        });
-        return {
-          data: response,
-        };
-      } catch (error) {
-        console.error("Error unPublishInfo language:", error);
-        return json({ error: "Error unPublishInfo language" }, { status: 500 });
-      }
-
     case !!deleteData:
       try {
         if (deleteData.targets.length > 0) {
@@ -443,12 +325,16 @@ const Index = () => {
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
-  const [shopLanguagesLoad, setShopLanguagesLoad] = useState<ShopLocalesType[]>(
-    [],
-  );
+
+  const languageLocaleData = useMemo(() => {
+    return dataSource?.map((item: any) => item?.locale) || [];
+  }, [dataSource]);
+
+  const prevLocaleDataRef = useRef<string[]>();
   const [shopPrimaryLanguage, setShopPrimaryLanguage] = useState<
     ShopLocalesType[]
   >([]);
+  const [markets, setMarkets] = useState<MarketType[]>([]);
   const [languageLocaleInfo, setLanguageLocaleInfo] = useState<any>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false); // 控制Modal显示的状态
@@ -483,8 +369,10 @@ const Index = () => {
   const deleteFetcher = useFetcher<any>();
   const statusFetcher = useFetcher<any>();
   const addDataFetcher = useFetcher<any>();
+  const webPresencesFetcher = useFetcher<any>();
   const publishFetcher = useFetcher<any>();
   const { reportClick, report } = useReport();
+
   useEffect(() => {
     const formData = new FormData();
     formData.append("loading", JSON.stringify(true));
@@ -498,6 +386,15 @@ const Index = () => {
       },
       {
         method: "post",
+        action: "/app/language",
+      },
+    );
+    webPresencesFetcher.submit(
+      {
+        webPresences: JSON.stringify(true),
+      },
+      {
+        method: "POST",
         action: "/app/language",
       },
     );
@@ -524,9 +421,48 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
+    // 如果数据和上一次完全一样，就不触发
+    if (
+      isEqual(prevLocaleDataRef.current, languageLocaleData) ||
+      !dataSource?.length
+    ) {
+      return;
+    }
+
+    prevLocaleDataRef.current = languageLocaleData;
+
+    webPresencesFetcher.submit(
+      {
+        webPresences: JSON.stringify(true),
+      },
+      {
+        method: "POST",
+        action: "/app/language",
+      },
+    );
+  }, [languageLocaleData]);
+
+  useEffect(() => {
+    if (webPresencesFetcher.data?.success) {
+      console.log(webPresencesFetcher.data.response);
+      let newMarketArray: MarketType[] = [];
+      webPresencesFetcher.data.response?.forEach((market: any) => {
+        if (market?.id && market?.domain) {
+          newMarketArray.push({
+            key: market?.id,
+            domain: {
+              [market?.domain?.host]:
+                market?.domain?.localization?.alternateLocales,
+            },
+          });
+        }
+      });
+      setMarkets(newMarketArray);
+    }
+  }, [webPresencesFetcher.data]);
+
+  useEffect(() => {
     if (loadingFetcher.data) {
-      // setLanguagesLoad(loadingFetcher.data.languagesLoad);
-      // setLanguageLocaleInfo(loadingFetcher.data.languageLocaleInfo);
       if (loadingFetcher.data.success) {
         const shopLanguages = loadingFetcher.data.response;
         const shopPrimaryLanguageData = shopLanguages?.filter(
@@ -540,21 +476,18 @@ const Index = () => {
         );
         setShopPrimaryLanguage(shopPrimaryLanguageData || []);
 
-        let data = shopLanguagesWithoutPrimaryIndex.map(
-          (lang: any, index: number) => ({
-            key: lang?.locale,
-            language: lang?.name,
-            locale: lang?.locale,
-            published: lang.published,
-            localeName: "",
-            status: 0,
-            countries: [],
-            autoTranslate: false,
-            publishLoading: false,
-            autoTranslateLoading: false,
-          }),
-        );
-        setShopLanguagesLoad(shopLanguagesWithoutPrimaryIndex);
+        let data = shopLanguagesWithoutPrimaryIndex.map((lang: any) => ({
+          key: lang?.locale,
+          language: lang?.name,
+          locale: lang?.locale,
+          published: lang.published,
+          localeName: "",
+          status: 0,
+          countries: [],
+          autoTranslate: false,
+          publishLoading: false,
+          autoTranslateLoading: false,
+        }));
         const GetLanguageLocaleInfoFront = async () => {
           const languageLocaleInfo = await GetLanguageLocaleInfo({
             server: server as string,
@@ -679,49 +612,6 @@ const Index = () => {
       }
     }
   }, [statusFetcher.data]);
-
-  useEffect(() => {
-    if (publishFetcher.data) {
-      if (publishFetcher.data?.data?.published) {
-        const response = publishFetcher.data.data;
-        dispatch(
-          setPublishLoadingState({ locale: response.locale, loading: false }),
-        );
-        dispatch(
-          setPublishState({
-            locale: response.locale,
-            published: response.published,
-          }),
-        );
-        shopify.toast.show(
-          t("{{ locale }} is published", { locale: response.name }),
-        );
-      } else {
-        const response = publishFetcher.data?.data;
-        dispatch(
-          setPublishLoadingState({ locale: response?.locale, loading: false }),
-        );
-        dispatch(
-          setPublishState({
-            locale: response?.locale,
-            published: response?.published,
-          }),
-        );
-        shopify.toast.show(
-          t("{{ locale }} is unPublished", { locale: response?.name }),
-        );
-        fetcher.submit(
-          {
-            log: `${shop} 取消发布语言${response?.locale}`,
-          },
-          {
-            method: "POST",
-            action: "/log",
-          },
-        );
-      }
-    }
-  }, [publishFetcher.data]);
 
   useEffect(() => {
     if (addDataFetcher.data) {
@@ -879,23 +769,9 @@ const Index = () => {
 
   const handlePublishChange = (locale: string, checked: boolean) => {
     const row = dataSource.find((item: any) => item.locale === locale);
-    if (checked && row) {
-      setPublishModalLanguageCode(locale);
+    if (row) {
+      setPublishModalLanguageCode(row?.locale);
       setIsPublishModalOpen(true);
-    } else if (!checked && row) {
-      dispatch(setPublishLoadingState({ locale, loading: true }));
-      publishFetcher.submit(
-        {
-          unPublishInfo: JSON.stringify({
-            locale: row.locale,
-            shopLocale: { published: false },
-          }),
-        },
-        {
-          method: "POST",
-          action: "/app/language",
-        },
-      );
     }
     report(
       {
@@ -1021,9 +897,9 @@ const Index = () => {
           <Title style={{ fontSize: "1.25rem", display: "inline" }}>
             {t("Languages")}
           </Title>
-          <PrimaryLanguage shopLanguages={shopLanguagesLoad} />
+          <PrimaryLanguage shopLanguages={shopPrimaryLanguage} />
         </div>
-        <div className="languageTable_action">
+        <div className={styles.languageTable_action}>
           <Flex
             align="center"
             justify="space-between" // 使按钮左右分布
@@ -1206,15 +1082,11 @@ const Index = () => {
         </Text>
       </Modal>
       <PublishModal
-        shop={shop}
+        markets={markets}
+        setMarkets={setMarkets}
         isVisible={isPublishModalOpen}
         setIsModalOpen={setIsPublishModalOpen}
-        languageCode={publishModalLanguageCode}
-        languageName={
-          shopLanguagesLoad.find(
-            (item: any) => item.locale === publishModalLanguageCode,
-          )?.name || ""
-        }
+        publishLangaugeCode={publishModalLanguageCode}
       />
       <Modal
         open={noFirstTranslation}

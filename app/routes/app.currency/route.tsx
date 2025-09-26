@@ -453,8 +453,6 @@ const Index = () => {
       const tableData = data?.response?.filter(
         (item: any) => !item?.primaryStatus,
       );
-      console.log("tableData: ", tableData);
-
       setOriginalData(tableData);
       setFilteredData(tableData);
       dispatch(setTableData(tableData));
