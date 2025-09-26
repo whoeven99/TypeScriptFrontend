@@ -1360,7 +1360,7 @@ export const GetLanguageStatus = async ({
 
     console.log(
       `${shop} GetLanguageStatus: `,
-      response.data?.translatesDOResult,
+      response.data?.response,
     );
 
     return response.data;
