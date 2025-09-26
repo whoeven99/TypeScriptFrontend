@@ -28,7 +28,6 @@ const languageTableDataSlice = createSlice({
           state.rows[data] = newData;
         } else {
           // 如果不存在，新增数据
-
           // 将包含 key 的 newData 添加到 rows
           state.rows.unshift(newData);
         }
