@@ -379,7 +379,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
         padding:"12px 24px"
       }}}
     >
-      <Flex justify="space-between" style={{ marginBottom: "30px" }}>
+      <Flex justify="space-between" style={{ marginBottom: "10px" }}>
         <Title
           level={5}
           style={{ display: "flex", alignItems: "center",fontWeight:600 }}

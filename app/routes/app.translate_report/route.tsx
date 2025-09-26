@@ -27,6 +27,7 @@ import {
   Skeleton,
   Spin,
   Empty,
+  Space,
 } from "antd";
 import { BlockStack, Page } from "@shopify/polaris";
 import { useLocation } from "@remix-run/react";
@@ -197,8 +198,6 @@ const TranslationDashboard = () => {
     },
   });
   const rows = useSelector((state: RootState) => state.languageTableData.rows);
-  console.log("rows: ", rows);
-
   useEffect(() => {
     if (reportData && reportData.totalScore !== null) {
       localStorage.setItem("reportData", JSON.stringify(reportData));
@@ -246,7 +245,7 @@ const TranslationDashboard = () => {
 
   useEffect(() => {
     const length = reportData.language.filter(
-      (item: any) => item[1] === 0,
+      (item: any) => item[1] !== 1,
     ).length;
 
     setReportIntroduction({
@@ -292,6 +291,8 @@ const TranslationDashboard = () => {
         setPublishLanguage(languagesObj["Published Languages"] === 1);
 
         delete languagesObj["Published Languages"];
+        delete languagesObj["English"];
+
         setReportData((prev: any) => {
           const next = {
             ...prev,
@@ -394,490 +395,278 @@ const TranslationDashboard = () => {
         </div>
       </Affix>
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}></div>
-      <Divider style={{ margin: "0" }} />
-      <Card
-        title={t("Translation quality score")}
-        style={{ margin: "20px 0" }}
-        styles={{ header: { borderBottom: "none" } }}
-      >
-        {isLoading ? (
-          <BlockStack>
-            <Skeleton.Node
-              active
-              style={{ height: 100, width: "100%" }}
-            ></Skeleton.Node>
-          </BlockStack>
-        ) : (
-          <Row gutter={16}>
-            <Col
-              span={8}
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Progress
-                type="circle"
-                percent={reportData.totalScore || 0}
-                size={120}
-                format={(percent) => (
-                  <span style={{ fontSize: 22, fontWeight: "bold" }}>
-                    {percent}
-                  </span>
-                )}
-                strokeColor={
-                  reportData.totalScore >= 60
-                    ? reportData.totalScore >= 80
-                      ? "#52c41a"
-                      : "#faad14"
-                    : "#ff4d4f"
-                }
-              />
-            </Col>
-            {/* <Col
-              span={18}
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <p>
-                {t(
-                  "After AI testing, your website translation quality score is",
-                )}
-                <span
-                  style={{ color: "green", fontSize: "18px", padding: "0 4px" }}
-                >
-                  {reportTotalData?.totalScore}
-                </span>
-                {t("points, of which")}
-                <span
-                  style={{ color: "red", fontSize: "18px", padding: "0 4px" }}
-                >
-                  {reportTotalData?.notTransLanguage?.length}
-                </span>
-                {t("languages ​​not translated,has")}
-                <span
-                  style={{ color: "red", fontSize: "18px", padding: "0 4px" }}
-                >
-                  {reportTotalData?.notEnabled}
-                </span>
-                {t("The operations to improve translation are not enabled.has")}
-                <span
-                  style={{ color: "red", fontSize: "18px", padding: "0 4px" }}
-                >
-                  {reportTotalData?.incompatibleStyles}
-                </span>
-                {t(
-                  "The quality of language translation does not meet the local language style.has",
-                )}
-                <span
-                  style={{ color: "red", fontSize: "18px", padding: "0 4px" }}
-                >
-                  {reportTotalData?.notSEOFriendly}
-                </span>
-                {t("The language translation does not meet SEO standards.has")}
-                <span
-                  style={{ color: "red", fontSize: "18px", padding: "0 4px" }}
-                >
-                  {reportTotalData?.notOnBrand}
-                </span>
-                {t("The language translation does not match the brand tone.")}
-              </p>
-            </Col> */}
-            <Col
-              span={16}
-              style={{
-                display: "flex",
-                justifyContent: "flex-start",
-                alignItems: "center",
-              }}
-            >
-              <div style={{ lineHeight: 1.8, fontSize: "16px" }}>
-                <p>
-                  {t(
-                    "After AI evaluation, your website translation quality score is",
-                  )}
-                  <span
-                    style={{
-                      color:
-                        reportData.totalScore >= 80
-                          ? "#52c41a"
-                          : reportData.totalScore >= 60
-                            ? "#faad14"
-                            : "#ff4d4f",
-                      fontSize: "22px",
-                      fontWeight: "bold",
-                      padding: "0 6px",
-                    }}
-                  >
-                    {reportData.totalScore || 0}
-                  </span>
-                  {t("points")}
-                </p>
-                <ul style={{ listStyle: "none", padding: 0, margin: "12px 0" }}>
-                  {/* <li>
-                    <Spin size="small" />
-                    <span style={{ color: "red", fontWeight: "bold" }}>
-                      {
-                        storeLanguages.filter(
-                          (item) => item.status === "untranslated",
-                        ).length
-                        // reportIntroduction.notTransLanguage
-                      }
-                    </span>{" "}
-                    {t("languages not translated")}
-                  </li>
-                  <li>
-                    <span style={{ color: "red", fontWeight: "bold" }}>
-                      {reportIntroduction.optimizationNotEnabled}
-                    </span>{" "}
-                    {t("translation optimization features not enabled")}
-                  </li> */}
-                  <li>
-                    {storeLanguageFetcher.state === "submitting" ? (
-                      <Spin size="small" />
-                    ) : (
-                      <>
-                        <span style={{ color: "red", fontWeight: "bold" }}>
-                          {
-                            // storeLanguages.filter(
-                            //   (item) => item.status === "untranslated",
-                            // ).length
-                            reportIntroduction.notTransLanguage
-                          }
-                        </span>{" "}
-                      </>
-                    )}
-                    {t("languages not translated")}
-                  </li>
-
-                  <li>
-                    {storeLanguageFetcher.state === "submitting" ||
-                    reportIntroduction.optimizationNotEnabled === null ? (
-                      <Spin size="small" />
-                    ) : (
-                      <>
-                        <span style={{ color: "red", fontWeight: "bold" }}>
-                          {reportIntroduction.optimizationNotEnabled}
-                        </span>{" "}
-                      </>
-                    )}
-                    {t("translation optimization features not enabled")}
-                  </li>
-                  {/* <li>
-                    <span style={{ color: "red", fontWeight: "bold" }}>
-                      {reportTotalData?.incompatibleStyles}
-                    </span>{" "}
-                    {t("translations not matching local style")}
-                  </li>
-                  <li>
-                    <span style={{ color: "red", fontWeight: "bold" }}>
-                      {reportTotalData?.notSEOFriendly}
-                    </span>{" "}
-                    {t("translations not SEO-friendly")}
-                  </li>
-                  <li>
-                    <span style={{ color: "red", fontWeight: "bold" }}>
-                      {reportTotalData?.notOnBrand}
-                    </span>{" "}
-                    {t("translations not aligned with brand tone")}
-                  </li> */}
-                </ul>
-              </div>
-            </Col>
-          </Row>
-        )}
-      </Card>
-
-      {/* 语言翻译情况 */}
-      <Card
-        title={t("Language translation")}
-        styles={{ header: { borderBottom: "none" } }}
-        extra={
-          languageStatus ? (
-            <Skeleton.Button active />
+      {/* <Divider style={{ margin: "0" }} /> */}
+      <Space direction="vertical" size={"middle"}>
+        <Card
+          title={t("Translation quality score")}
+          styles={{ header: { borderBottom: "none" } }}
+        >
+          {isLoading ? (
+            <BlockStack>
+              <Skeleton.Node
+                active
+                style={{ height: 100, width: "100%" }}
+              ></Skeleton.Node>
+            </BlockStack>
           ) : (
-            reportData.language.length > 0 && (
-              <Button
-                onClick={() => {
-                  navigate("/app/language");
-                  reportClick("transate_report_deoptimization");
+            <Row gutter={16}>
+              <Col
+                span={8}
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}
               >
-                {t("Deoptimization")}
-              </Button>
-            )
-          )
-        }
-        style={{ marginBottom: 20 }}
-      >
-        {languageStatus ? (
-          <BlockStack>
-            <Skeleton.Node
-              active
-              style={{ height: 100, width: "100%" }}
-            ></Skeleton.Node>
-          </BlockStack>
-        ) : (
-          <>
-            {reportData.language.length > 0 ? (
-              <Row gutter={16}>
-                {reportData.language.map((item: any, index: number) => (
-                  <Col key={index} span={8} style={{ padding: "20px" }}>
-                    <Flex justify="space-between">
-                      <Text>{item[0]}</Text>
-                      <TranslatedIcon status={item[1] === 1 ? 1 : 0} />
-                    </Flex>
-                  </Col>
-                ))}
-              </Row>
-            ) : (
-              <Flex
-                vertical
-                justify="center"
-                align="center"
-                style={{ padding: "40px 0" }}
-              >
-                <Empty
-                  description={
-                    <Text type="secondary" style={{ fontSize: 16 }}>
-                      {t("You haven't added any languages yet")}
-                    </Text>
+                <Progress
+                  type="circle"
+                  percent={reportData.totalScore || 0}
+                  size={120}
+                  format={(percent) => (
+                    <span style={{ fontSize: 22, fontWeight: "bold" }}>
+                      {percent}
+                    </span>
+                  )}
+                  strokeColor={
+                    reportData.totalScore >= 60
+                      ? reportData.totalScore >= 80
+                        ? "#52c41a"
+                        : "#faad14"
+                      : "#ff4d4f"
                   }
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
                 />
+              </Col>
+              <Col
+                span={16}
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-start",
+                  alignItems: "center",
+                }}
+              >
+                <div style={{ lineHeight: 1.8, fontSize: "16px" }}>
+                  <p>
+                    {t(
+                      "After AI evaluation, your website translation quality score is",
+                    )}
+                    <span
+                      style={{
+                        color:
+                          reportData.totalScore >= 80
+                            ? "#52c41a"
+                            : reportData.totalScore >= 60
+                              ? "#faad14"
+                              : "#ff4d4f",
+                        fontSize: "22px",
+                        fontWeight: "bold",
+                        padding: "0 6px",
+                      }}
+                    >
+                      {reportData.totalScore || 0}
+                    </span>
+                    {t("points")}
+                  </p>
+                  <ul
+                    style={{ listStyle: "none", padding: 0, margin: "12px 0" }}
+                  >
+                    <li>
+                      {storeLanguageFetcher.state === "submitting" ? (
+                        <Spin size="small" />
+                      ) : (
+                        <>
+                          <span style={{ color: "red", fontWeight: "bold" }}>
+                            {
+                              // storeLanguages.filter(
+                              //   (item) => item.status === "untranslated",
+                              // ).length
+                              reportIntroduction.notTransLanguage
+                            }
+                          </span>{" "}
+                        </>
+                      )}
+                      {t("languages not translated")}
+                    </li>
+
+                    <li>
+                      {storeLanguageFetcher.state === "submitting" ||
+                      reportIntroduction.optimizationNotEnabled === null ? (
+                        <Spin size="small" />
+                      ) : (
+                        <>
+                          <span style={{ color: "red", fontWeight: "bold" }}>
+                            {reportIntroduction.optimizationNotEnabled}
+                          </span>{" "}
+                        </>
+                      )}
+                      {t("translation optimization features not enabled")}
+                    </li>
+                  </ul>
+                </div>
+              </Col>
+            </Row>
+          )}
+        </Card>
+
+        {/* 语言翻译情况 */}
+        <Card
+          title={t("Language translation")}
+          styles={{
+            header: { borderBottom: "none" },
+            body: {
+              padding: "12px 24px",
+            },
+          }}
+          extra={
+            languageStatus ? (
+              <Skeleton.Button active />
+            ) : (
+              reportData.language.length > 0 && (
                 <Button
-                  type="primary"
-                  size="middle"
-                  style={{ marginTop: 16 }}
-                  onClick={() => navigate("/app/language")}
+                  onClick={() => {
+                    navigate("/app/language");
+                    reportClick("transate_report_deoptimization");
+                  }}
                 >
-                  {t("Manage Languages")}
+                  {t("Deoptimization")}
                 </Button>
+              )
+            )
+          }
+        >
+          {languageStatus ? (
+            <BlockStack>
+              <Skeleton.Node
+                active
+                style={{ height: 100, width: "100%" }}
+              ></Skeleton.Node>
+            </BlockStack>
+          ) : (
+            <>
+              {reportData.language.length > 0 ? (
+                <Row gutter={16}>
+                  {reportData.language.map((item: any, index: number) => (
+                    <Col key={index} span={8} style={{ padding: "20px" }}>
+                      <Flex justify="space-between">
+                        <Text>{item[0]}</Text>
+                        <TranslatedIcon status={item[1] === 1 ? 1 : 0} />
+                      </Flex>
+                    </Col>
+                  ))}
+                </Row>
+              ) : (
+                <Flex
+                  vertical
+                  justify="center"
+                  align="center"
+                  style={{ padding: "40px 0" }}
+                >
+                  <Empty
+                    description={
+                      <Text type="secondary" style={{ fontSize: 16 }}>
+                        {t("You haven't added any languages yet")}
+                      </Text>
+                    }
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
+                  <Button
+                    type="primary"
+                    size="middle"
+                    style={{ marginTop: 16 }}
+                    onClick={() => navigate("/app/language")}
+                  >
+                    {t("Manage Languages")}
+                  </Button>
+                </Flex>
+              )}
+            </>
+          )}
+        </Card>
+
+        {/* 翻译待办事项 */}
+        <Card
+          title={t("Real-time and professional translation")}
+          style={{ marginBottom: 20 }}
+          styles={{ header: { borderBottom: "none" },body:{
+            padding:"12px 24px"
+          } }}
+        >
+          {isLoading ? (
+            <BlockStack>
+              <Skeleton.Node
+                active
+                style={{ height: 200, width: "100%" }}
+              ></Skeleton.Node>
+            </BlockStack>
+          ) : (
+            <Flex vertical gap="small">
+              <Flex justify="space-between" align="center">
+                <Text>{t("Termbase")}</Text>
+                {reportData.realTimeBtns.glossary ? (
+                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
+                ) : (
+                  <Button
+                    onClick={() => {
+                      navigate("/app/glossary");
+                      reportClick("translate_report_open_termbase");
+                    }}
+                    style={{ marginTop: 8 }}
+                  >
+                    {t("Enable")}
+                  </Button>
+                )}
               </Flex>
-            )}
-          </>
-        )}
-      </Card>
-
-      {/* 翻译待办事项 */}
-      <Card
-        title={t("Real-time and professional translation")}
-        style={{ marginBottom: 20 }}
-        styles={{ header: { borderBottom: "none" } }}
-      >
-        {isLoading ? (
-          <BlockStack>
-            <Skeleton.Node
-              active
-              style={{ height: 200, width: "100%" }}
-            ></Skeleton.Node>
-          </BlockStack>
-        ) : (
-          <Flex vertical gap="middle">
-            <Flex justify="space-between" align="center">
-              <Text>{t("Termbase")}</Text>
-              {reportData.realTimeBtns.glossary ? (
-                <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
-              ) : (
-                <Button
-                  onClick={() => {
-                    navigate("/app/glossary");
-                    reportClick("translate_report_open_termbase");
-                  }}
-                  style={{ marginTop: 8 }}
-                >
-                  {t("Enable")}
-                </Button>
-              )}
+              <Flex justify="space-between" align="center">
+                <Text>{t("Switcher")}</Text>
+                {reportData.realTimeBtns.switch ? (
+                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
+                ) : (
+                  <Button
+                    style={{ marginTop: 8 }}
+                    onClick={() => {
+                      navigate("/app/switcher");
+                      reportClick("translate_report_open_switcher");
+                    }}
+                  >
+                    {t("Enable")}
+                  </Button>
+                )}
+              </Flex>
+              <Flex justify="space-between" align="center">
+                <Text>{t("Published Languages")}</Text>
+                {reportData.realTimeBtns.publishLanguage ? (
+                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
+                ) : (
+                  <Button
+                    onClick={() => {
+                      navigate("/app/language");
+                      reportClick("translate_report_manage_language");
+                    }}
+                    style={{ marginTop: 8 }}
+                  >
+                    {t("Enable")}
+                  </Button>
+                )}
+              </Flex>
+              <Flex justify="space-between" align="center">
+                <Text>{t("Enable automatic translation")}</Text>
+                {reportData.realTimeBtns.autoTranslate ? (
+                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
+                ) : (
+                  <Button
+                    onClick={() => {
+                      navigate("/app/language");
+                      reportClick("translate_report_manage_auto_translate");
+                    }}
+                    style={{ marginTop: 8 }}
+                  >
+                    {t("Enable")}
+                  </Button>
+                )}
+              </Flex>
             </Flex>
-            <Flex justify="space-between" align="center">
-              <Text>{t("Switcher")}</Text>
-              {reportData.realTimeBtns.switch ? (
-                <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
-              ) : (
-                <Button
-                  style={{ marginTop: 8 }}
-                  onClick={() => {
-                    navigate("/app/switcher");
-                    reportClick("translate_report_open_switcher");
-                  }}
-                >
-                  {t("Enable")}
-                </Button>
-              )}
-            </Flex>
-            <Flex justify="space-between" align="center">
-              <Text>{t("Published Languages")}</Text>
-              {reportData.realTimeBtns.publishLanguage ? (
-                <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
-              ) : (
-                <Button
-                  onClick={() => {
-                    navigate("/app/language");
-                    reportClick("translate_report_manage_language");
-                  }}
-                  style={{ marginTop: 8 }}
-                >
-                  {t("Enable")}
-                </Button>
-              )}
-            </Flex>
-            <Flex justify="space-between" align="center">
-              <Text>{t("Enable automatic translation")}</Text>
-              {reportData.realTimeBtns.autoTranslate ? (
-                <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
-              ) : (
-                <Button
-                  onClick={() => {
-                    navigate("/app/language");
-                    reportClick("translate_report_manage_auto_translate");
-                  }}
-                  style={{ marginTop: 8 }}
-                >
-                  {t("Enable")}
-                </Button>
-              )}
-            </Flex>
-          </Flex>
-        )}
-      </Card>
-
-      {/* <Card title="翻译质量检查" style={{ marginBottom: 20 }}>
-        {isLoading ? (
-          <BlockStack>
-            <Skeleton.Node
-              active
-              style={{ height: 100, width: "100%" }}
-            ></Skeleton.Node>
-          </BlockStack>
-        ) : (
-          <p>
-            日语
-            <br />
-            texttexttexttexttexttexttexttexttexttexttexttexttexttexttext文
-            <br />
-            英语
-            <br />
-            texttexttexttexttexttexttexttexttexttexttexttext文
-          </p>
-        )}
-      </Card>
-
-      <Card title="SEO 检查" style={{ marginBottom: 20 }}>
-        <p style={{ marginBottom: 20, fontSize: "24px" }}>
-          默认语言的关键词为 "test"
-        </p>
-        {isLoading ? (
-          <BlockStack>
-            <Skeleton.Node
-              active
-              style={{ height: 300, width: "100%" }}
-            ></Skeleton.Node>
-          </BlockStack>
-        ) : (
-          <Flex vertical gap="middle">
-            <Flex justify="space-between" align="center">
-              <Text>产品标题/描述是否翻译</Text>
-              {useTermbase ? (
-                <Text style={{ padding: "15px" }}>已完成</Text>
-              ) : (
-                <Button
-                  onClick={() => navigate("/app/glossary")}
-                  style={{ marginTop: 8 }}
-                >
-                  去优化
-                </Button>
-              )}
-            </Flex>
-            <Flex justify="space-between" align="center">
-              <Text>产品图片标题/描述是否翻译</Text>
-              {useSwitcher ? (
-                <Text style={{ padding: "15px" }}>已完成</Text>
-              ) : (
-                <Button style={{ marginTop: 8 }}>去优化</Button>
-              )}
-            </Flex>
-            <Flex justify="space-between" align="center">
-              <Text>Meta Title & Meta Description是否翻译</Text>
-              {publishLanguage ? (
-                <Text>已翻译</Text>
-              ) : (
-                <Button
-                  onClick={() => navigate("/app/language")}
-                  style={{ marginTop: 8 }}
-                >
-                  去优化
-                </Button>
-              )}
-            </Flex>
-            <Flex justify="space-between" align="center">
-              <Text>ALT是否翻译</Text>
-              {autoTranslate ? (
-                <Text>已翻译</Text>
-              ) : (
-                <Button
-                  onClick={() => navigate("/app/language")}
-                  style={{ marginTop: 8 }}
-                >
-                  去优化
-                </Button>
-              )}
-            </Flex>
-            <Flex justify="space-between" align="center">
-              <Text>URL是否翻译</Text>
-              {autoTranslate ? (
-                <Text>已翻译</Text>
-              ) : (
-                <Button
-                  onClick={() => navigate("/app/language")}
-                  style={{ marginTop: 8 }}
-                >
-                  去优化
-                </Button>
-              )}
-            </Flex>
-          </Flex>
-        )}
-      </Card>
-
-      <Card title="翻译的调性检查" style={{ marginBottom: 20 }}>
-        {isLoading ? (
-          <BlockStack>
-            <Skeleton.Node
-              active
-              style={{ height: 100, width: "100%" }}
-            ></Skeleton.Node>
-          </BlockStack>
-        ) : (
-          <Flex vertical gap="middle">
-            <Flex justify="space-between" align="center">
-              <Text>品牌词是否强化</Text>
-              {useTermbase ? (
-                <Text style={{ padding: "15px" }}>已完成</Text>
-              ) : (
-                <Button
-                  onClick={() => navigate("/app/glossary")}
-                  style={{ marginTop: 8 }}
-                >
-                  去优化
-                </Button>
-              )}
-            </Flex>
-            <Flex justify="space-between" align="center">
-              <Text>标题句式是否符合当地风格</Text>
-              {useSwitcher ? (
-                <Text style={{ padding: "15px" }}>已完成</Text>
-              ) : (
-                <Button style={{ marginTop: 8 }}>去优化</Button>
-              )}
-            </Flex>
-          </Flex>
-        )}
-      </Card> */}
+          )}
+        </Card>
+      </Space>
     </Page>
   );
 };

@@ -57,7 +57,7 @@ const TranslationPanel = () => {
       const raw = LanguageFetcher.data.response;
       const langs: Record<string, any> = { ...raw };
       delete langs["Published Languages"];
-      console.log("langs", langs);
+      delete langs["English"];
 
       for (const langName in langs) {
         const match = Object.values(languageLocaleData).find(
@@ -74,7 +74,6 @@ const TranslationPanel = () => {
         }
       }
       setLanguages(Object.values(langs).slice(0, 3)); // 只显示前3个
-      console.log("langs with flagUrl", langs);
     }
   }, [LanguageFetcher.data]);
 

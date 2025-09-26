@@ -381,11 +381,7 @@ const Index = () => {
                   },
                 }}
               >
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{ display: "flex" }}
-                >
+                <Space direction="vertical" style={{ display: "flex" }}>
                   <Text strong>{t("transLanguageCard3.title")}</Text>
                   <div
                     style={{
@@ -447,15 +443,23 @@ const Index = () => {
                   },
                 }}
               >
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{ display: "flex" }}
+                <Flex
+                  vertical
+                  style={{ height: "100%" }}
+                  justify="space-between"
                 >
                   {/* <Title level={4}>{t("transCurrencyCard1.title")}</Title> */}
-                  <Text strong>{t("transCurrencyCard1.title")}</Text>
-                  <Text>{t("transCurrencyCard1.description")}</Text>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <Space direction="vertical" style={{ display: "flex" }}>
+                    <Text strong>{t("transCurrencyCard1.title")}</Text>
+                    <Text>{t("transCurrencyCard1.description")}</Text>
+                  </Space>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-start",
+                      bottom: "0",
+                    }}
+                  >
                     {isLoading ? (
                       <Skeleton.Button active />
                     ) : (
@@ -467,21 +471,14 @@ const Index = () => {
                       </Button>
                     )}
                   </div>
-                </Space>
+                </Flex>
               </Card>
             </Col>
           </Row>
         </Space>
-        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          {/* <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>{t("dashboard.title2")}</Title>
-            <Text strong>{t("dashboard.description2")}</Text>
-          </div> */}
-        </Space>
-        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <Space direction="vertical" size="small" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
             <Title level={4}>{t("dashboard.title3")}</Title>
-            {/* <Text strong>{t("dashboard.description3")}</Text> */}
           </div>
           <Card
             styles={{
@@ -492,18 +489,12 @@ const Index = () => {
           >
             <Space
               direction="vertical"
-              size="middle"
+              size="small"
               style={{ display: "flex" }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Title level={4}>{t("planCard.title")}</Title>
-
+              <Title level={4}>{t("planCard.title")}</Title>
+              <Flex justify="space-between" align="center">
+                <Text>{t("planCard.description")}</Text>
                 {isLoading ? (
                   <Skeleton.Button active />
                 ) : (
@@ -511,8 +502,8 @@ const Index = () => {
                     {t("planCard.button")}
                   </Button>
                 )}
-              </div>
-              <Text>{t("planCard.description")}</Text>
+              </Flex>
+
               <Table columns={columns} dataSource={data} pagination={false} />
             </Space>
           </Card>

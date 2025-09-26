@@ -500,7 +500,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       <Flex
         justify="space-between"
         align="center"
-        style={{ marginBottom: "30px" }}
+        style={{ marginBottom: "10px" }}
       >
         <Title level={5} style={{ fontWeight: 600 }}>
           {t("transLanguageCard1.title")}

@@ -34,7 +34,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ isChinese, onClick }) => {
     >
       <Space
         direction="vertical"
-        size="middle"
+        size="small"
         style={{
           display: "flex",
           justifyContent: "space-between",
