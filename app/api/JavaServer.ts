@@ -1346,12 +1346,6 @@ export const GetLanguageStatus = async ({
   target: string[];
 }) => {
   try {
-    console.log(`${shop} GetLanguageStatus Input: `, {
-      shopName: shop,
-      source: source,
-      target: target,
-    });
-
     const response = await axios({
       url: `${process.env.SERVER_URL}/translate/readTranslateDOByArray`,
       method: "Post",
@@ -1364,7 +1358,10 @@ export const GetLanguageStatus = async ({
       ],
     });
 
-    console.log(`${shop} GetLanguageStatus: `, response.data);
+    console.log(
+      `${shop} GetLanguageStatus: `,
+      response.data?.translatesDOResult,
+    );
 
     return response.data;
   } catch (error) {
