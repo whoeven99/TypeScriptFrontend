@@ -1387,8 +1387,6 @@ window.onload = async function () {
           "shopify-design-mode",
         );
 
-        console.log();
-
         if (
           (detectedCountry !== country || detectedLanguage !== language) &&
           detectedCountry &&
