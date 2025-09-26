@@ -680,6 +680,8 @@
   "Image translated successfully": "画像の翻訳に成功しました",
   "The current language does not support image translation": "現在の言語は画像翻訳をサポートしていません",
   "1000 credits": "1000クレジット",
+  "Got a 5-day free trial": "5日間の無料トライアルを取得",
+  "You have received {{ plan }} Plan benefits": "{{ plan }} プランの特典を受け取りました",
   "Save successfully": "保存に成功しました",
   "Language Publishing Status": "言語の公開ステータス",
   "Publish to Selected Domains": "選択したドメインに公開"

@@ -679,6 +679,8 @@
   "Image translated successfully": "Зображення успішно перекладено",
   "The current language does not support image translation": "Поточна мова не підтримує переклад зображень",
   "1000 credits": "1000 кредитів",
+  "Got a 5-day free trial": "Отримайте 5-денну безкоштовну пробну версію",
+  "You have received {{ plan }} Plan benefits": "Ви отримали переваги плану {{ plan }}",
   "Save successfully": "Успішно збережено",
   "Language Publishing Status": "Статус публікації мови",
   "Publish to Selected Domains": "Опублікувати в обраних доменах"

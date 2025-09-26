@@ -680,6 +680,8 @@
   "Image translated successfully": "圖片翻譯成功",
   "The current language does not support image translation": "當前語言不支援圖片翻譯",
   "1000 credits": "1000積分",
+  "Got a 5-day free trial": "獲得 5 天免費試用",
+  "You have received {{ plan }} Plan benefits": "您已收到 {{ plan }} 方案福利",
   "Save successfully": "保存成功",
   "Language Publishing Status": "語言發布狀態",
   "Publish to Selected Domains": "發布到所選網域"

@@ -679,6 +679,8 @@
   "Image translated successfully":"Image translated successfully",
   "The current language does not support image translation":"The current language does not support image translation",
   "1000 credits":"1000 credits",
+  "Got a 5-day free trial": "Got a 5-day free trial",
+  "You have received {{ plan }} Plan benefits": "You have received {{ plan }} Plan benefits",
   "Save successfully": "Save successfully",
   "Language Publishing Status": "Language Publishing Status",
   "Publish to Selected Domains": "Publish to Selected Domains"
