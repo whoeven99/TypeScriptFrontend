@@ -602,14 +602,14 @@ const TranslationDashboard = () => {
               <Flex justify="space-between" align="center">
                 <Text>{t("Termbase")}</Text>
                 {reportData.realTimeBtns.glossary ? (
-                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
+                  <Text style={{ padding: "0 15px" }}>{t("Enabled")}</Text>
                 ) : (
                   <Button
                     onClick={() => {
                       navigate("/app/glossary");
                       reportClick("translate_report_open_termbase");
                     }}
-                    style={{ marginTop: 8 }}
+                    // style={{ marginTop: 8 }}
                   >
                     {t("Enable")}
                   </Button>
@@ -618,10 +618,10 @@ const TranslationDashboard = () => {
               <Flex justify="space-between" align="center">
                 <Text>{t("Switcher")}</Text>
                 {reportData.realTimeBtns.switch ? (
-                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
+                  <Text style={{ padding: "0 15px" }}>{t("Enabled")}</Text>
                 ) : (
                   <Button
-                    style={{ marginTop: 8 }}
+                    // style={{ marginTop: 8 }}
                     onClick={() => {
                       navigate("/app/switcher");
                       reportClick("translate_report_open_switcher");
@@ -634,14 +634,14 @@ const TranslationDashboard = () => {
               <Flex justify="space-between" align="center">
                 <Text>{t("Published Languages")}</Text>
                 {reportData.realTimeBtns.publishLanguage ? (
-                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
+                  <Text style={{ padding: "0 15px" }}>{t("Enabled")}</Text>
                 ) : (
                   <Button
                     onClick={() => {
                       navigate("/app/language");
                       reportClick("translate_report_manage_language");
                     }}
-                    style={{ marginTop: 8 }}
+                    // style={{ marginTop: 8 }}
                   >
                     {t("Enable")}
                   </Button>
@@ -650,14 +650,14 @@ const TranslationDashboard = () => {
               <Flex justify="space-between" align="center">
                 <Text>{t("Enable automatic translation")}</Text>
                 {reportData.realTimeBtns.autoTranslate ? (
-                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
+                  <Text style={{ padding: "0 15px" }}>{t("Enabled")}</Text>
                 ) : (
                   <Button
                     onClick={() => {
                       navigate("/app/language");
                       reportClick("translate_report_manage_auto_translate");
                     }}
-                    style={{ marginTop: 8 }}
+                    // style={{ marginTop: 8 }}
                   >
                     {t("Enable")}
                   </Button>
