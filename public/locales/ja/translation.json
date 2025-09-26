@@ -451,10 +451,6 @@
   "dashboard.title3": "Building in Progress",
   "delete user api key failed": "Failed to delete API key. Please try again.",
   "delete user api key success": "API key deleted successfully",
-  "devplanCard1.title": "Supports OpenAI private API, allowing individuals to use their own API credits for translation",
-  "devplanCard2.title": "Adds translation progress",
-  "devplanCard3.title": "Optimizes the switcher style, supporting display in the footer",
-  "devplanCard4.title": "Improves translation speed, adding a fast translation mode",
   "discountText": {
     "premium": "Premium Plan Benefit: enjoy 50% discount",
     "pro": "Pro Plan Benefit, enjoy 25% discount",
@@ -726,5 +722,13 @@
   "Manage Languages": "言語を管理する",
   "You haven't added any languages yet.": "まだ言語を追加していません。",
   "Authorization": "承認",
-  "Please authorize before use": "使用前に承認してください"
+  "Please authorize before use": "使用前に承認してください",
+  "Save successfully": "保存に成功しました",
+  "Language Publishing Status": "言語の公開ステータス",
+  "Publish to Selected Domains": "選択したドメインに公開",
+  "devplanCard1.title": "製品画像の翻訳をサポート",
+  "devplanCard2.title": "最適化されたエディターディレクトリ",
+  "devplanCard3.title": "翻訳速度が30%向上",
+  "devplanCard4.title": "IPベースの位置情報に基づく非表示モードを備えたスイッチャー",
+  "devplanCard5.title": "さまざまな言語のコンバージョン率メトリックを表示して翻訳結果を最適化します"
 }

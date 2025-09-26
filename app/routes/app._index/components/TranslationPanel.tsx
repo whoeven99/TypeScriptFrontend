@@ -89,6 +89,10 @@ const TranslationPanel = () => {
             header: {
               borderBottom: "none",
             },
+            body:{
+              paddingTop:0,
+              paddingBottom:"12px"
+            }
           }}
         >
           <Flex justify="space-between" align="center" gap="8px">
@@ -100,7 +104,7 @@ const TranslationPanel = () => {
                     key={idx}
                     src={lang.flagUrl || "/default-flag.png"}
                     alt={lang}
-                    width={40}
+                    width={32}
                     preview={false}
                     style={{ cursor: "pointer" }}
                     onClick={() => {
@@ -129,7 +133,7 @@ const TranslationPanel = () => {
           </Flex>
           <Button
             type="default"
-            style={{ marginTop: "16px", fontWeight: 500 }}
+            style={{ marginTop: "8px" }}
             onClick={() => {
               reportClick("dashboard_add_language");
               navigate("/app/language");
@@ -149,6 +153,10 @@ const TranslationPanel = () => {
             header: {
               borderBottom: "none",
             },
+            body:{
+              paddingTop:0,
+              paddingBottom:"12px"
+            }
           }}
         >
           <Flex justify="space-between" gap="8px">
@@ -176,7 +184,7 @@ const TranslationPanel = () => {
           </Flex>
           <Button
             type="default"
-            style={{ marginTop: "16px", fontWeight: 500 }}
+            style={{ marginTop: "8px" }}
             onClick={() => {
               reportClick("dashboard_mange_translate");
               navigate("/app/manage_translation");
@@ -196,6 +204,10 @@ const TranslationPanel = () => {
             header: {
               borderBottom: "none",
             },
+            body:{
+              paddingTop:0,
+              paddingBottom:"12px"
+            }
           }}
         >
           <Flex justify="space-between" wrap="wrap" gap="8px">
@@ -205,14 +217,14 @@ const TranslationPanel = () => {
                 navigate("/app/glossary"),
                   reportClick("dashboard_translate_tool_glossary");
               }}
-              style={{ color: "#999", fontSize: "12px" }}
+              style={{ fontSize: "12px" }}
             >
               {t("Glossary")}
             </Button>
             <Button
               type="default"
               onClick={() => navigate("/app/manage_translation")}
-              style={{ color: "#999", fontSize: "12px" }}
+              style={{ fontSize: "12px" }}
             >
               {t("Image & All Text Translation")}
             </Button>

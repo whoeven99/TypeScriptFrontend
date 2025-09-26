@@ -451,10 +451,6 @@
   "dashboard.title3": "Building in Progress",
   "delete user api key failed": "Failed to delete API key. Please try again.",
   "delete user api key success": "API key deleted successfully",
-  "devplanCard1.title": "Supports OpenAI private API, allowing individuals to use their own API credits for translation",
-  "devplanCard2.title": "Adds translation progress",
-  "devplanCard3.title": "Optimizes the switcher style, supporting display in the footer",
-  "devplanCard4.title": "Improves translation speed, adding a fast translation mode",
   "discountText": {
     "premium": "Premium Plan Benefit: enjoy 50% discount",
     "pro": "Pro Plan Benefit, enjoy 25% discount",
@@ -726,5 +722,13 @@
   "Manage Languages": "Hantera språk",
   "You haven't added any languages yet.": "Du har inte lagt till några språk än.",
   "Authorization": "Tillstånd",
-  "Please authorize before use": "Vänligen auktorisera före användning"
+  "Please authorize before use": "Vänligen auktorisera före användning",
+  "Save successfully": "Sparat framgångsrikt",
+  "Language Publishing Status": "Språkpubliceringsstatus",
+  "Publish to Selected Domains": "Publicera till valda domäner",
+  "devplanCard1.title": "Stöder översättning av produktbilder",
+  "devplanCard2.title": "Optimerad redigeringskatalog",
+  "devplanCard3.title": "30 % snabbare översättningshastighet",
+  "devplanCard4.title": "Växlare med osynligt läge under IP-baserad geolokalisering",
+  "devplanCard5.title": "Visa konverteringsfrekvensstatistik för olika språk för att optimera översättningsresultaten"
 }

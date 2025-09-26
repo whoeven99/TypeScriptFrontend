@@ -189,25 +189,31 @@ const Index = () => {
     {
       key: 1,
       need: t("devplanCard1.title"),
-      votes: 100,
+      votes: 65,
       devStatus: t("Launched"),
     },
     {
       key: 2,
       need: t("devplanCard2.title"),
-      votes: 35,
-      devStatus: t("Launched"),
+      votes: 33,
+      devStatus: t("In development"),
     },
     {
       key: 3,
       need: t("devplanCard3.title"),
-      votes: 35,
-      devStatus: t("In development"),
+      votes: 41,
+      devStatus: t("Launched"),
     },
     {
       key: 4,
       need: t("devplanCard4.title"),
-      votes: 25,
+      votes: 18,
+      devStatus: t("Launched"),
+    },
+    {
+      key: 5,
+      need: t("devplanCard5.title"),
+      votes: 29,
       devStatus: t("In development"),
     },
   ];
@@ -362,12 +368,17 @@ const Index = () => {
             shop={shop}
             // handleReload={handleReload}
           />
-          <Row>
-            <Col span={24}>
+          <Row gutter={16}>
+            <Col xs={24} sm={24} md={12}>
               <Card
                 style={{
                   height: "100%",
-                  width: "100%",
+                }}
+                styles={{
+                  body: {
+                    height: "100%",
+                    padding: "12px 24px",
+                  },
                 }}
               >
                 <Space
@@ -424,6 +435,41 @@ const Index = () => {
                 </Space>
               </Card>
             </Col>
+            <Col xs={24} sm={24} md={12}>
+              <Card
+                style={{
+                  height: "100%",
+                }}
+                styles={{
+                  body: {
+                    height: "100%",
+                    padding: "12px 24px",
+                  },
+                }}
+              >
+                <Space
+                  direction="vertical"
+                  size="middle"
+                  style={{ display: "flex" }}
+                >
+                  {/* <Title level={4}>{t("transCurrencyCard1.title")}</Title> */}
+                  <Text strong>{t("transCurrencyCard1.title")}</Text>
+                  <Text>{t("transCurrencyCard1.description")}</Text>
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    {isLoading ? (
+                      <Skeleton.Button active />
+                    ) : (
+                      <Button
+                        type="primary"
+                        onClick={() => navigateToCurrency()}
+                      >
+                        {t("transCurrencyCard1.button")}
+                      </Button>
+                    )}
+                  </div>
+                </Space>
+              </Card>
+            </Col>
           </Row>
         </Space>
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
@@ -431,32 +477,19 @@ const Index = () => {
             <Title level={3}>{t("dashboard.title2")}</Title>
             <Text strong>{t("dashboard.description2")}</Text>
           </div> */}
-          <Card>
-            <Space
-              direction="vertical"
-              size="middle"
-              style={{ display: "flex" }}
-            >
-              <Title level={4}>{t("transCurrencyCard1.title")}</Title>
-              <Text>{t("transCurrencyCard1.description")}</Text>
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                {isLoading ? (
-                  <Skeleton.Button active />
-                ) : (
-                  <Button type="primary" onClick={() => navigateToCurrency()}>
-                    {t("transCurrencyCard1.button")}
-                  </Button>
-                )}
-              </div>
-            </Space>
-          </Card>
         </Space>
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>{t("dashboard.title3")}</Title>
-            <Text strong>{t("dashboard.description3")}</Text>
+            <Title level={4}>{t("dashboard.title3")}</Title>
+            {/* <Text strong>{t("dashboard.description3")}</Text> */}
           </div>
-          <Card>
+          <Card
+            styles={{
+              body: {
+                padding: "12px 24px",
+              },
+            }}
+          >
             <Space
               direction="vertical"
               size="middle"

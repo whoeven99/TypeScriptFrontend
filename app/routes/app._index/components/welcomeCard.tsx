@@ -70,6 +70,12 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
           ? t("The switcher is currently enabled.")
           : t("Enable language and currency switcher")
       }
+      styles={{
+        header: { borderBottom: "none" },
+        body: {
+          padding: "12px 24px",
+        },
+      }}
       // extra={
       //   <Button
       //     icon={<RedoOutlined spin={loading} />}
@@ -78,20 +84,44 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
       //   />
       // }
     >
-      <Flex justify="space-between" align="center">
-        <Text>
-          {!switcherOpen
-            ? t(
-                "Customers can switch languages and currencies when visiting the site. ",
-              )
-            : t(
-                "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ",
-              )}
-        </Text>
+      <Flex vertical align="center" gap={8}>
+        <Flex gap={8} style={{width:"100%",justifyContent:"space-between"}}>
+          <Text style={{width:"75%"}}>
+            {!switcherOpen
+              ? t(
+                  "Customers can switch languages and currencies when visiting the site. ",
+                )
+              : t(
+                  "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ",
+                )}
+          </Text>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              objectFit: "cover",
+              objectPosition: "center",
+              width: "120px",
+              // height:"50px"
+            }}
+          >
+            <img
+              src="https://ciwi-1327177217.cos.ap-singapore.myqcloud.com/switcher-view.png"
+              alt="safe"
+              style={{
+                width: "100%",
+                height: "100%",
+              }}
+            />
+          </div>
+        </Flex>
         <Button
           onClick={() => {
             handleSetting();
           }}
+          type="default"
+          style={{ width: "auto", alignSelf: "flex-start" }}
         >
           {!switcherOpen ? t("Disable App") : t("Setup App")}
         </Button>

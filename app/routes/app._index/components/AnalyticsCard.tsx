@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useFetcher } from "@remix-run/react";
 import {
   Card,
@@ -16,6 +16,9 @@ import { useNavigate } from "@remix-run/react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import useReport from "scripts/eventReport";
+import store from "~/store";
+import { UseSelector } from "react-redux";
+import { RootState } from "~/store";
 const { Text, Title } = Typography;
 
 interface LoadingItem {
@@ -44,7 +47,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
     unTranslated: { loading: true },
     conversionRate: { loading: true },
   });
-  const { plan } = useSelector((state: any) => state.userConfig);
+  const { plan, isNew } = useSelector((state: any) => state.userConfig);
   const Schedule = [
     "Free Plan",
     "Free Plan",
@@ -53,6 +56,12 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
     "Pro Plan",
     "Premium Plan",
   ];
+  const getPlanName = (planId: number, isNew: boolean) => {
+    if (isNew && planId >= 1 && planId <= 3) {
+      return "免费试用（5天）";
+    }
+    return Schedule[planId - 1];
+  };
   const translationScoreFetcher = useFetcher<any>();
   const unTranslatedFetcher = useFetcher<any>();
   const conversionCateFetcher = useFetcher<any>();
@@ -364,19 +373,24 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
   }, []);
 
   return (
-    <Card style={{ width: "100%" }}>
+    <Card
+      style={{ width: "100%", padding: "0px" }}
+      styles={{body:{
+        padding:"12px 24px"
+      }}}
+    >
       <Flex justify="space-between" style={{ marginBottom: "30px" }}>
         <Title
-          level={4}
-          style={{ display: "flex", alignItems: "center", margin: 0 }}
+          level={5}
+          style={{ display: "flex", alignItems: "center",fontWeight:600 }}
         >
-          {t("My assets & analytics")}
+          {t("Dashboard")}
         </Title>
         {isLoading ? (
-          <Skeleton />
+          <Skeleton.Button />
         ) : (
-          <Text style={{ fontWeight: 500, fontSize: "20px" }}>
-            {Schedule[plan.id - 1]}
+          <Text strong style={{ fontSize: "14px",color:"#007F61" }}>
+            {getPlanName(plan.id, isNew)}
           </Text>
         )}
       </Flex>
@@ -426,18 +440,19 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
                 }
               />
             )}
-            {loadingGather.translationScore.loading || isLoading ? (
+            <Button
+              type="default"
+              loading={improveBtnState}
+              onClick={handleNavigateDetail}
+              disabled={loadingGather.translationScore.loading || isLoading}
+            >
+              {t("Improve")}
+            </Button>
+            {/* {  ? (
               <Skeleton.Button active />
             ) : (
-              <Button
-                type="default"
-                loading={improveBtnState}
-                onClick={handleNavigateDetail}
-                style={{ fontWeight: 500 }}
-              >
-                {t("Improve")}
-              </Button>
-            )}
+              
+            )} */}
           </Flex>
         </Col>
 
@@ -467,20 +482,21 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
                 )}
                 <Text>{t("words")}</Text>
               </Flex>
-              {loadingGather.unTranslated.loading ? (
+              <Button
+                type="default"
+                onClick={() => {
+                  navigate("/app/language");
+                  reportClick("dashboard_go_translation");
+                }}
+                disabled={loadingGather.unTranslated.loading}
+              >
+                {t("Translate")}
+              </Button>
+              {/* {loadingGather.unTranslated.loading ? (
                 <Skeleton.Button active />
               ) : (
-                <Button
-                  type="default"
-                  onClick={() => {
-                    navigate("/app/language");
-                    reportClick("dashboard_go_translation");
-                  }}
-                  style={{ fontWeight: 500 }}
-                >
-                  {t("Translate")}
-                </Button>
-              )}
+                
+              )} */}
             </Flex>
           </Flex>
         </Col>
@@ -502,7 +518,9 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
               ) : !configCreateWebPixel ? (
                 // 未配置 Pixel
                 <div style={{ textAlign: "center" }}>
-                  <Text type="secondary">{t("Please authorize before use")}</Text>
+                  <Text type="secondary">
+                    {t("Please authorize before use")}
+                  </Text>
                 </div>
               ) : conversionRate === null ? (
                 // 已配置 Pixel
@@ -548,7 +566,6 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
                 type="default"
                 loading={navigateToRateState}
                 onClick={handleConfigScopes}
-                style={{ fontWeight: 500 }}
               >
                 {t("Details")}
               </Button>

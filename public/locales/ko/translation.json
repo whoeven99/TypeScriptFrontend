@@ -451,10 +451,6 @@
   "dashboard.title3": "Building in Progress",
   "delete user api key failed": "Failed to delete API key. Please try again.",
   "delete user api key success": "API key deleted successfully",
-  "devplanCard1.title": "Supports OpenAI private API, allowing individuals to use their own API credits for translation",
-  "devplanCard2.title": "Adds translation progress",
-  "devplanCard3.title": "Optimizes the switcher style, supporting display in the footer",
-  "devplanCard4.title": "Improves translation speed, adding a fast translation mode",
   "discountText": {
     "premium": "Premium Plan Benefit: enjoy 50% discount",
     "pro": "Pro Plan Benefit, enjoy 25% discount",
@@ -726,5 +722,13 @@
   "Manage Languages": "언어 관리",
   "You haven't added any languages yet.": "아직 언어를 추가하지 않았습니다.",
   "Authorization": "권한 부여",
-  "Please authorize before use": "사용 전 승인을 해주세요"
+  "Please authorize before use": "사용 전 승인을 해주세요",
+  "Save successfully": "저장이 완료되었습니다",
+  "Language Publishing Status": "언어 게시 상태",
+  "Publish to Selected Domains": "선택한 도메인에 게시",
+  "devplanCard1.title": "제품 이미지 번역 지원",
+  "devplanCard2.title": "최적화된 편집기 디렉토리",
+  "devplanCard3.title": "번역 속도가 30% 더 빨라졌습니다",
+  "devplanCard4.title": "IP 기반 지리적 위치에서 보이지 않는 모드가 있는 스위처",
+  "devplanCard5.title": "번역 결과를 최적화하기 위해 다양한 언어에 대한 전환율 지표를 표시합니다."
 }

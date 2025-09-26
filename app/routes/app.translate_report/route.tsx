@@ -37,6 +37,9 @@ import { ArrowLeftIcon } from "@shopify/polaris-icons";
 import { useNavigate, useFetcher } from "@remix-run/react";
 import useReport from "scripts/eventReport";
 import TranslatedIcon from "app/components/translateIcon";
+import store from "~/store";
+import { RootState } from "~/store";
+import { useSelector } from "react-redux";
 const { Text, Title } = Typography;
 interface RealTimeData {
   autoTranslate: false;
@@ -193,7 +196,9 @@ const TranslationDashboard = () => {
       publishLanguage: false,
     },
   });
-  useState<boolean>(false);
+  const rows = useSelector((state: RootState) => state.languageTableData.rows);
+  console.log("rows: ", rows);
+
   useEffect(() => {
     if (reportData && reportData.totalScore !== null) {
       localStorage.setItem("reportData", JSON.stringify(reportData));
@@ -220,7 +225,7 @@ const TranslationDashboard = () => {
       }
     } else {
       console.log("发送请求");
-      
+
       handleRequestReportData();
     }
   }, []);
@@ -390,7 +395,11 @@ const TranslationDashboard = () => {
       </Affix>
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}></div>
       <Divider style={{ margin: "0" }} />
-      <Card title={t("Translation quality score")} style={{ margin: "20px 0" }} styles={{header:{borderBottom:"none"}}}>
+      <Card
+        title={t("Translation quality score")}
+        style={{ margin: "20px 0" }}
+        styles={{ header: { borderBottom: "none" } }}
+      >
         {isLoading ? (
           <BlockStack>
             <Skeleton.Node
@@ -586,7 +595,7 @@ const TranslationDashboard = () => {
       {/* 语言翻译情况 */}
       <Card
         title={t("Language translation")}
-        styles={{header:{borderBottom:"none"}}}
+        styles={{ header: { borderBottom: "none" } }}
         extra={
           languageStatus ? (
             <Skeleton.Button active />
@@ -620,7 +629,7 @@ const TranslationDashboard = () => {
                   <Col key={index} span={8} style={{ padding: "20px" }}>
                     <Flex justify="space-between">
                       <Text>{item[0]}</Text>
-                      <TranslatedIcon status={item[1]} />
+                      <TranslatedIcon status={item[1] === 1 ? 1 : 0} />
                     </Flex>
                   </Col>
                 ))}
@@ -658,7 +667,7 @@ const TranslationDashboard = () => {
       <Card
         title={t("Real-time and professional translation")}
         style={{ marginBottom: 20 }}
-        styles={{header:{borderBottom:"none"}}}
+        styles={{ header: { borderBottom: "none" } }}
       >
         {isLoading ? (
           <BlockStack>

@@ -451,10 +451,6 @@
   "dashboard.title3": "In Entwicklung",
   "delete user api key failed": "Fehler beim Löschen des API-Schlüssels. Bitte versuchen Sie es erneut.",
   "delete user api key success": "API-Schlüssel erfolgreich gelöscht",
-  "devplanCard1.title": "Unterstützt OpenAI private API, ermöglicht es Einzelpersonen, ihre eigenen API-Credits für die Übersetzung zu verwenden",
-  "devplanCard2.title": "Fügt Übersetzungsfortschritt hinzu",
-  "devplanCard3.title": "Optimiert den Umschalter-Stil, unterstützt Anzeige in der Fußzeile",
-  "devplanCard4.title": "Verbessert die Übersetzungsgeschwindigkeit, fügt einen schnellen Übersetzungsmodus hinzu",
   "discountText": {
     "premium": "Premium Plan Vorteil: 50% Rabatt genießen",
     "pro": "Pro Plan Vorteil, 25% Rabatt genießen",
@@ -679,6 +675,9 @@
   "Image translated successfully": "Bild erfolgreich übersetzt",
   "The current language does not support image translation": "Die aktuelle Sprache unterstützt keine Bildübersetzung",
   "1000 credits": "1000 Credits",
+  "Save successfully": "Erfolgreich gespeichert",
+  "Language Publishing Status": "Sprachveröffentlichungsstatus",
+  "Publish to Selected Domains": "In ausgewählte Domänen veröffentlichen",
   "Translation quality assessment": "Bewertung der Übersetzungsqualität",
   "Retest": "Erneuter Test",
   "Translation quality score": "Bewertung der Übersetzungsqualität",
@@ -725,5 +724,10 @@
   "Manage Languages": "Sprachen verwalten",
   "You haven't added any languages yet.": "Sie haben noch keine Sprachen hinzugefügt.",
   "Authorization": "Genehmigung",
-  "Please authorize before use": "Bitte vor der Verwendung autorisieren"
+  "Please authorize before use": "Bitte vor der Verwendung autorisieren",
+  "devplanCard1.title": "Unterstützt die Übersetzung von Produktbildern",
+  "devplanCard2.title": "Optimiertes Editorverzeichnis",
+  "devplanCard3.title": "30 % schnellere Übersetzungsgeschwindigkeit",
+  "devplanCard4.title": "Umschalter mit unsichtbarem Modus unter IP-basierter Geolokalisierung",
+  "devplanCard5.title": "Zeigen Sie Conversion-Rate-Kennzahlen für verschiedene Sprachen an, um die Übersetzungsergebnisse zu optimieren"
 }

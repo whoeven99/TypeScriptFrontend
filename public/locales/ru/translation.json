@@ -451,10 +451,6 @@
   "dashboard.title3": "Building in Progress",
   "delete user api key failed": "Failed to delete API key. Please try again.",
   "delete user api key success": "API key deleted successfully",
-  "devplanCard1.title": "Supports OpenAI private API, allowing individuals to use their own API credits for translation",
-  "devplanCard2.title": "Adds translation progress",
-  "devplanCard3.title": "Optimizes the switcher style, supporting display in the footer",
-  "devplanCard4.title": "Improves translation speed, adding a fast translation mode",
   "discountText": {
     "premium": "Premium Plan Benefit: enjoy 50% discount",
     "pro": "Pro Plan Benefit, enjoy 25% discount",
@@ -726,5 +722,13 @@
   "Manage Languages": "Управление языками",
   "You haven't added any languages yet.": "Вы еще не добавили ни одного языка.",
   "Authorization": "Авторизация",
-  "Please authorize before use": "Пожалуйста, дайте разрешение перед использованием"
+  "Please authorize before use": "Пожалуйста, дайте разрешение перед использованием",
+  "Save successfully": "Успешно сохранено",
+  "Language Publishing Status": "Статус публикации языка",
+  "Publish to Selected Domains": "Опубликовать в выбранных доменах",
+  "devplanCard1.title": "Поддерживает перевод изображений продукта",
+  "devplanCard2.title": "Оптимизированный каталог редактора",
+  "devplanCard3.title": "Скорость перевода на 30% выше",
+  "devplanCard4.title": "Переключатель с невидимым режимом при геолокации на основе IP",
+  "devplanCard5.title": "Отображайте показатели коэффициента конверсии для разных языков, чтобы оптимизировать результаты перевода."
 }

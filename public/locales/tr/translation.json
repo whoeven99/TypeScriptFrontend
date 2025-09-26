@@ -451,10 +451,6 @@
   "dashboard.title3": "Building in Progress",
   "delete user api key failed": "Failed to delete API key. Please try again.",
   "delete user api key success": "API key deleted successfully",
-  "devplanCard1.title": "Supports OpenAI private API, allowing individuals to use their own API credits for translation",
-  "devplanCard2.title": "Adds translation progress",
-  "devplanCard3.title": "Optimizes the switcher style, supporting display in the footer",
-  "devplanCard4.title": "Improves translation speed, adding a fast translation mode",
   "discountText": {
     "premium": "Premium Plan Benefit: enjoy 50% discount",
     "pro": "Pro Plan Benefit, enjoy 25% discount",
@@ -726,5 +722,13 @@
   "Manage Languages": "Dilleri Yönet",
   "You haven't added any languages yet.": "Henüz hiçbir dil eklemediniz.",
   "Authorization": "Yetkilendirme",
-  "Please authorize before use": "Lütfen kullanmadan önce yetkilendirin"
+  "Please authorize before use": "Lütfen kullanmadan önce yetkilendirin",
+  "Save successfully": "Başarıyla kaydedildi",
+  "Language Publishing Status": "Dil yayınlama durumu",
+  "Publish to Selected Domains": "Seçili etki alanlarına yayınla",
+  "devplanCard1.title": "Ürün görseli çevirisini destekler",
+  "devplanCard2.title": "Optimize edilmiş editör dizini",
+  "devplanCard3.title": "%30 daha hızlı çeviri hızı",
+  "devplanCard4.title": "IP tabanlı coğrafi konum altında görünmez modlu anahtarlayıcı",
+  "devplanCard5.title": "Çeviri sonuçlarını optimize etmek için farklı diller için dönüşüm oranı ölçümlerini görüntüleyin"
 }

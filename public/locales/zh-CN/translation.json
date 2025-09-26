@@ -260,10 +260,6 @@
   "Home Appliances": "家用电器",
   "Automotive Parts": "汽车配件",
   "In development": "开发中",
-  "devplanCard1.title": "支持OpenAI私人API，允许个人使用自己的API积分进行翻译",
-  "devplanCard2.title": "添加翻译进度",
-  "devplanCard3.title": "优化切换器样式，支持在页脚显示",
-  "devplanCard4.title": "提高翻译速度，添加快速翻译模式",
   "Not enough translation credits. Purchase more to continue": "账户内没有足够的翻译积分，请购买积分后继续",
   "Translation tasks": "翻译任务",
   "Estimated number of words to translate: ": "需要翻译的单词数：",
@@ -728,5 +724,13 @@
   "Manage Languages": "管理语言",
   "You haven't added any languages yet.": "您尚未添加任何语言。",
   "Authorization": "授权",
-  "Please authorize before use": "请授权后再使用"
+  "Please authorize before use": "请授权后再使用",
+  "Save successfully": "保存成功",
+  "Language Publishing Status": "语言发布状态",
+  "Publish to Selected Domains": "发布到所选域名",
+  "devplanCard1.title": "支持产品图片翻译",
+  "devplanCard2.title": "优化编辑器目录",
+  "devplanCard3.title": "翻译速度提高 30%",
+  "devplanCard4.title": "基于 IP 地理位置的隐形模式切换器",
+  "devplanCard5.title": "显示不同语言的转化率指标以优化翻译结果"
 }

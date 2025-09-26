@@ -28,6 +28,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ isChinese, onClick }) => {
           display: "flex",
           flexDirection: "column",
           flex: 1,
+          padding:"12px 24px"
         },
       }}
     >

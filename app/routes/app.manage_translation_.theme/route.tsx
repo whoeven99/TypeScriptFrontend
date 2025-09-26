@@ -183,10 +183,10 @@ const Index = () => {
     { label: t("Articles"), value: "article" },
     { label: t("Blog titles"), value: "blog" },
     { label: t("Pages"), value: "page" },
-    // { label: t("Filters"), value: "filter" },
+    { label: t("Filters"), value: "filter" },
     { label: t("Metaobjects"), value: "metaobject" },
-    // { label: t("Navigation"), value: "navigation" },
-    // { label: t("Email"), value: "email" },
+    { label: t("Navigation"), value: "navigation" },
+    { label: t("Email"), value: "email" },
     { label: t("Policies"), value: "policy" },
     { label: t("Product images"), value: "productImage" },
     { label: t("Product image alt text"), value: "productImageAlt" },
@@ -328,7 +328,7 @@ const Index = () => {
         dispatch(
           setTableData(
             shopLanguages.map((language: ShopLocalesType, index: number) => ({
-              key: index,
+              key: language.locale,
               language: language.name,
               locale: language.locale,
               primary: language.primary,
