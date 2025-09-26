@@ -724,5 +724,7 @@
   "month": "месяц",
   "day": "день",
   "Manage Languages": "Управление языками",
-  "You haven't added any languages yet.": "Вы еще не добавили ни одного языка."
+  "You haven't added any languages yet.": "Вы еще не добавили ни одного языка.",
+  "Authorization": "Авторизация",
+  "Please authorize before use": "Пожалуйста, дайте разрешение перед использованием"
 }

@@ -724,5 +724,7 @@
   "month": "maand",
   "day": "dag",
   "Manage Languages": "Talen beheren",
-  "You haven't added any languages yet.": "Je hebt nog geen talen toegevoegd."
+  "You haven't added any languages yet.": "Je hebt nog geen talen toegevoegd.",
+  "Authorization": "Autorisatie",
+  "Please authorize before use": "Graag toestemming voor gebruik"
 }

@@ -686,12 +686,12 @@
   "Retest": "重新测试",
   "Translation quality score": "翻译质量评分",
   "After AI evaluation, your website translation quality score is": "经过AI评估，您的网站翻译质量得分为",
-  "points": "点",
+  "points": "分",
   "languages not translated": "未翻译的语言",
   "translation optimization features not enabled": "未启用翻译优化功能",
-  "Language translation": "语言翻译",
+  "Language translation": "语言翻译情况",
   "Deoptimization": "去优化",
-  "Real-time and professional translation": "实时专业翻译",
+  "Real-time and professional translation": "翻译实时性和专业性",
   "Enable": "启用",
   "Enabled": "已启用",
   "Published Languages": "已发布的语言",
@@ -699,7 +699,7 @@
   "Termbase": "术语库",
   "My assets & analytics": "我的资产和分析",
   "Translation Score": "翻译分数",
-  "score": "分数",
+  "score": "分",
   "Improve": "提升",
   "CRO analytics": "CRO分析",
   "Compared to 7 days ago": "与 7 天前相比",
@@ -726,5 +726,7 @@
   "month": "月",
   "day": "天",
   "Manage Languages": "管理语言",
-  "You haven't added any languages yet.": "您尚未添加任何语言。"
+  "You haven't added any languages yet.": "您尚未添加任何语言。",
+  "Authorization": "授权",
+  "Please authorize before use": "请授权后再使用"
 }

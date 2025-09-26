@@ -84,8 +84,12 @@ const TranslationPanel = () => {
       <Col sm={24} md={12} lg={8}>
         <Card
           title={t("Add Language & Auto Translate")}
-          headStyle={{ borderBottom: "none" }}
           style={{ width: "100%" }}
+          styles={{
+            header: {
+              borderBottom: "none",
+            },
+          }}
         >
           <Flex justify="space-between" align="center" gap="8px">
             <Flex flex={1} justify="start" align="center" gap="8px">
@@ -139,9 +143,13 @@ const TranslationPanel = () => {
       {/* Manage Translation & Edit */}
       <Col sm={24} md={12} lg={8}>
         <Card
-          headStyle={{ borderBottom: "none" }}
           title={t("Manage Translation & Edit")}
           style={{ width: "100%" }}
+          styles={{
+            header: {
+              borderBottom: "none",
+            },
+          }}
         >
           <Flex justify="space-between" gap="8px">
             <Button
@@ -182,9 +190,13 @@ const TranslationPanel = () => {
       {/* More Translation Tools */}
       <Col sm={24} md={12} lg={8}>
         <Card
-          headStyle={{ borderBottom: "none" }}
           style={{ height: "100%", width: "100%" }}
           title={t("More Translation Tools")}
+          styles={{
+            header: {
+              borderBottom: "none",
+            },
+          }}
         >
           <Flex justify="space-between" wrap="wrap" gap="8px">
             <Button

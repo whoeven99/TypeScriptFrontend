@@ -16,7 +16,7 @@ import { useNavigate } from "@remix-run/react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import useReport from "scripts/eventReport";
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 interface LoadingItem {
   loading: boolean;
@@ -26,7 +26,7 @@ interface loadingGather {
   unTranslated: LoadingItem;
   conversionRate: LoadingItem;
 }
-const AnalyticsCard = ({ hasRequiresScopes, missScopes,isLoading }: any) => {
+const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
   const { reportClick } = useReport();
   const navigate = useNavigate(); // 统一使用小写 navigate（React Router 规范）
   const { t } = useTranslation();
@@ -364,11 +364,23 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes,isLoading }: any) => {
   }, []);
 
   return (
-    <Card
-      title={t("My assets & analytics")}
-      extra={<span>{Schedule[plan.id - 1]}</span>}
-      style={{ width: "100%" }}
-    >
+    <Card style={{ width: "100%" }}>
+      <Flex justify="space-between" style={{ marginBottom: "30px" }}>
+        <Title
+          level={4}
+          style={{ display: "flex", alignItems: "center", margin: 0 }}
+        >
+          {t("My assets & analytics")}
+        </Title>
+        {isLoading ? (
+          <Skeleton />
+        ) : (
+          <Text style={{ fontWeight: 500, fontSize: "20px" }}>
+            {Schedule[plan.id - 1]}
+          </Text>
+        )}
+      </Flex>
+
       <Row gutter={[16, 16]}>
         <Col
           xs={24} // 移动端：独占一行
@@ -382,7 +394,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes,isLoading }: any) => {
             align="center"
             style={{ height: "100%", minWidth: 200 }}
           >
-            <Text>{t("Translation Score")}</Text>
+            <Text style={{ fontWeight: 500 }}>{t("Translation Score")}</Text>
             {loadingGather.translationScore.loading || isLoading ? (
               <Skeleton.Node style={{ height: 50 }} active />
             ) : (
@@ -421,6 +433,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes,isLoading }: any) => {
                 type="default"
                 loading={improveBtnState}
                 onClick={handleNavigateDetail}
+                style={{ fontWeight: 500 }}
               >
                 {t("Improve")}
               </Button>
@@ -442,7 +455,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes,isLoading }: any) => {
               gap="small"
               style={{ flex: 1 }}
             >
-              <Text>{t("Untranslated")}</Text>
+              <Text style={{ fontWeight: 500 }}>{t("Untranslated")}</Text>
               <Flex vertical align="center" justify="center" gap="small">
                 {loadingGather.unTranslated.loading ? (
                   <Skeleton.Node style={{ width: 50, height: 30 }} active />
@@ -463,6 +476,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes,isLoading }: any) => {
                     navigate("/app/language");
                     reportClick("dashboard_go_translation");
                   }}
+                  style={{ fontWeight: 500 }}
                 >
                   {t("Translate")}
                 </Button>
@@ -479,7 +493,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes,isLoading }: any) => {
             gap="small"
             style={{ height: "100%", minWidth: 200 }}
           >
-            <Text>{t("CRO analytics")}</Text>
+            <Text style={{ fontWeight: 500 }}>{t("CRO analytics")}</Text>
 
             <Flex vertical align="center" justify="center" gap="small">
               {configCreateWebPixel === null ? (
@@ -488,7 +502,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes,isLoading }: any) => {
               ) : !configCreateWebPixel ? (
                 // 未配置 Pixel
                 <div style={{ textAlign: "center" }}>
-                  <Text type="secondary">{t("web Pixel not configured")}</Text>
+                  <Text type="secondary">{t("Please authorize before use")}</Text>
                 </div>
               ) : conversionRate === null ? (
                 // 已配置 Pixel
@@ -526,7 +540,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes,isLoading }: any) => {
                 loading={navigateToRateState}
                 onClick={handleConfigScopes}
               >
-                {t("Configure")}
+                {t("Authorization")}
               </Button>
             ) : (
               // 已配置 Pixel
@@ -534,6 +548,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes,isLoading }: any) => {
                 type="default"
                 loading={navigateToRateState}
                 onClick={handleConfigScopes}
+                style={{ fontWeight: 500 }}
               >
                 {t("Details")}
               </Button>

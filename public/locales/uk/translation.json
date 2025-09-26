@@ -723,5 +723,7 @@
   "month": "місяць",
   "day": "день",
   "Manage Languages": "Керування мовами",
-  "You haven't added any languages yet.": "Ви ще не додали жодної мови."
+  "You haven't added any languages yet.": "Ви ще не додали жодної мови.",
+  "Authorization": "Авторизація",
+  "Please authorize before use": "Будь ласка, авторизуйте перед використанням"
 }

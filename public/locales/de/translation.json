@@ -723,5 +723,7 @@
   "month": "Monat",
   "day": "Tag",
   "Manage Languages": "Sprachen verwalten",
-  "You haven't added any languages yet.": "Sie haben noch keine Sprachen hinzugefügt."
+  "You haven't added any languages yet.": "Sie haben noch keine Sprachen hinzugefügt.",
+  "Authorization": "Genehmigung",
+  "Please authorize before use": "Bitte vor der Verwendung autorisieren"
 }

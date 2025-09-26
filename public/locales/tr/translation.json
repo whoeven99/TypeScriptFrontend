@@ -724,5 +724,7 @@
   "month": "ay",
   "day": "gün",
   "Manage Languages": "Dilleri Yönet",
-  "You haven't added any languages yet.": "Henüz hiçbir dil eklemediniz."
+  "You haven't added any languages yet.": "Henüz hiçbir dil eklemediniz.",
+  "Authorization": "Yetkilendirme",
+  "Please authorize before use": "Lütfen kullanmadan önce yetkilendirin"
 }

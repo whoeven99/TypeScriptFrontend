@@ -724,5 +724,7 @@
   "month": "月",
   "day": "日",
   "Manage Languages": "言語を管理する",
-  "You haven't added any languages yet.": "まだ言語を追加していません。"
+  "You haven't added any languages yet.": "まだ言語を追加していません。",
+  "Authorization": "承認",
+  "Please authorize before use": "使用前に承認してください"
 }

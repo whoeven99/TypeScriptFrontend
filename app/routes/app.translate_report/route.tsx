@@ -219,6 +219,8 @@ const TranslationDashboard = () => {
         console.error("localStorage 解析失败，使用默认值");
       }
     } else {
+      console.log("发送请求");
+      
       handleRequestReportData();
     }
   }, []);
@@ -388,7 +390,7 @@ const TranslationDashboard = () => {
       </Affix>
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}></div>
       <Divider style={{ margin: "0" }} />
-      <Card title={t("Translation quality score")} style={{ margin: "20px 0" }}>
+      <Card title={t("Translation quality score")} style={{ margin: "20px 0" }} styles={{header:{borderBottom:"none"}}}>
         {isLoading ? (
           <BlockStack>
             <Skeleton.Node
@@ -584,6 +586,7 @@ const TranslationDashboard = () => {
       {/* 语言翻译情况 */}
       <Card
         title={t("Language translation")}
+        styles={{header:{borderBottom:"none"}}}
         extra={
           languageStatus ? (
             <Skeleton.Button active />
@@ -655,6 +658,7 @@ const TranslationDashboard = () => {
       <Card
         title={t("Real-time and professional translation")}
         style={{ marginBottom: 20 }}
+        styles={{header:{borderBottom:"none"}}}
       >
         {isLoading ? (
           <BlockStack>

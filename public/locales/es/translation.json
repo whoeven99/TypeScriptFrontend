@@ -724,5 +724,7 @@
   "month": "mes",
   "day": "día",
   "Manage Languages": "Administrar idiomas",
-  "You haven't added any languages yet.": "Aún no has añadido ningún idioma."
+  "You haven't added any languages yet.": "Aún no has añadido ningún idioma.",
+  "Authorization": "Autorización",
+  "Please authorize before use": "Por favor autorizar antes de usar"
 }

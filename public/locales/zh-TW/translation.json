@@ -697,7 +697,7 @@
   "Termbase": "術語庫",
   "My assets & analytics": "我的資產和分析",
   "Translation Score": "翻譯分數",
-  "score": "分數",
+  "score": "分",
   "Improve": "提升",
   "CRO analytics": "CRO分析",
   "Compared to 7 days ago": "與 7 天前相比",
@@ -724,5 +724,7 @@
   "month": "月",
   "day": "天",
   "Manage Languages": "管理語言",
-  "You haven't added any languages yet.": "您尚未新增任何語言。"
+  "You haven't added any languages yet.": "您尚未新增任何語言。",
+  "Authorization": "授權",
+  "Please authorize before use": "請授權後再使用"
 }
