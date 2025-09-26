@@ -542,7 +542,7 @@ const Index = () => {
 
         let data = shopLanguagesWithoutPrimaryIndex.map(
           (lang: any, index: number) => ({
-            key: index,
+            key: lang?.locale,
             language: lang?.name,
             locale: lang?.locale,
             published: lang.published,

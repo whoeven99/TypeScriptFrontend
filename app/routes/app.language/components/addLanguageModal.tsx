@@ -314,6 +314,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
     if (addFetcher.data) {
       if (addFetcher.data?.success) {
         const data = addFetcher.data.response?.map((lang: any, i: any) => ({
+          key: lang.locale,
           language: lang.name,
           localeName:
             languageLocaleInfo[addFetcher.data.response[i].locale].Local,
