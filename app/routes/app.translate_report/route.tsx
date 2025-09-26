@@ -399,7 +399,7 @@ const TranslationDashboard = () => {
       <Space direction="vertical" size={"middle"}>
         <Card
           title={t("Translation quality score")}
-          styles={{ header: { borderBottom: "none" } }}
+          styles={{ header: { borderBottom: "none" },body:{padding:"12px 24px"} }}
         >
           {isLoading ? (
             <BlockStack>
