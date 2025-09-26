@@ -281,7 +281,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
               break;
 
             case resourceType == "EMAIL_TEMPLATE":
-              setItem("Shipping");
+              setItem("Email");
               break;
 
             case resourceType == "ONLINE_STORE_THEME_APP_EMBED":
