@@ -1318,10 +1318,6 @@ window.onload = async function () {
 
     const countryInput = ciwiBlock.querySelector('input[name="country_code"]');
     const country = countryInput.value;
-
-    const currencyInput = ciwiBlock.querySelector(
-      'input[name="currency_code"]',
-    );
     const availableLanguages = Array.from(
       ciwiBlock.querySelectorAll(".option-item[data-type='language']"),
     ).map((option) => option.dataset.value);
@@ -1342,15 +1338,6 @@ window.onload = async function () {
     }
 
     if (storedCountry && storedCurrency) {
-      if (
-        countryInput.value !== storedCountry &&
-        availableCountries.includes(storedCountry)
-      ) {
-        countryInput.value = storedCountry;
-      }
-      if (currencyInput.value !== storedCurrency) {
-        currencyInput.value = storedCurrency;
-      }
     } else {
       const checkUserIpStartTime = new Date().getTime();
       const userIp = await checkUserIp({ blockId, shop: shop.value });
@@ -1399,6 +1386,8 @@ window.onload = async function () {
         const isInThemeEditor = document.documentElement.classList.contains(
           "shopify-design-mode",
         );
+
+        console.log();
 
         if (
           (detectedCountry !== country || detectedLanguage !== language) &&
