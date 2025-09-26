@@ -196,7 +196,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         setStatus(statusValue);
         if (statusValue === 2) {
           switch (true) {
-            case resourceType == "SHOP":
+            case resourceType == "SHOP" || resourceType == "SELLING_PLAN_GROUP":
               setItem("Shop");
               break;
 
@@ -204,19 +204,19 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
               setItem("Pages");
               break;
 
-            case resourceType == "ONLINE_STORE_THEME":
+            case resourceType == "ONLINE_STORE_THEME" ||
+              resourceType == "ONLINE_STORE_THEME_LOCALE_CONTENT" ||
+              resourceType == "ONLINE_STORE_THEME_JSON_TEMPLATE" ||
+              resourceType == "ONLINE_STORE_THEME_SECTION_GROUP" ||
+              resourceType == "ONLINE_STORE_THEME_SETTINGS_CATEGORY" ||
+              resourceType == "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS" ||
+              resourceType == "ONLINE_STORE_THEME_APP_EMBED":
               setItem("Theme");
               break;
 
-            case resourceType == "PRODUCT":
-              setItem("Products");
-              break;
-
-            case resourceType == "PRODUCT_OPTION":
-              setItem("Products");
-              break;
-
-            case resourceType == "PRODUCT_OPTION_VALUE":
+            case resourceType == "PRODUCT" ||
+              resourceType == "PRODUCT_OPTION" ||
+              resourceType == "PRODUCT_OPTION_VALUE":
               setItem("Products");
               break;
 
@@ -236,11 +236,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
               setItem("Blog titles");
               break;
 
-            case resourceType == "MENU":
-              setItem("Navigation");
-              break;
-
-            case resourceType == "LINK":
+            case resourceType == "MENU" || resourceType == "LINK":
               setItem("Navigation");
               break;
 
@@ -248,24 +244,10 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
               setItem("Filters");
               break;
 
-            case resourceType == "METAOBJECT":
+            case resourceType == "METAOBJECT" ||
+              resourceType == "PAYMENT_GATEWAY" ||
+              resourceType == "SELLING_PLAN":
               setItem("Metaobjects");
-              break;
-
-            case resourceType == "ONLINE_STORE_THEME_JSON_TEMPLATE":
-              setItem("Theme");
-              break;
-
-            case resourceType == "ONLINE_STORE_THEME_SECTION_GROUP":
-              setItem("Theme");
-              break;
-
-            case resourceType == "ONLINE_STORE_THEME_SETTINGS_CATEGORY":
-              setItem("Theme");
-              break;
-
-            case resourceType == "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS":
-              setItem("Theme");
               break;
 
             case resourceType == "PACKING_SLIP_TEMPLATE":
@@ -281,23 +263,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
               break;
 
             case resourceType == "EMAIL_TEMPLATE":
-              setItem("Shipping");
-              break;
-
-            case resourceType == "ONLINE_STORE_THEME_APP_EMBED":
-              setItem("Theme");
-              break;
-
-            case resourceType == "PAYMENT_GATEWAY":
-              setItem("Metaobjects");
-              break;
-
-            case resourceType == "SELLING_PLAN":
-              setItem("Metaobjects");
-              break;
-
-            case resourceType == "SELLING_PLAN_GROUP":
-              setItem("Shop");
+              setItem("Email");
               break;
 
             default:
