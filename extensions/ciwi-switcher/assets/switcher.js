@@ -809,6 +809,7 @@ class CiwiswitcherForm extends HTMLElement {
     const text = option.querySelector(".option-text")?.textContent;
     const flag = option.querySelector(".option-country-flag")?.src;
     const selectorType = option.closest(".custom-selector")?.dataset.type; // 获取选择器类型
+    if (this.elements.languageInput.value == value) return;
 
     if (selectorType === "language") {
       // 更新选中项显示
@@ -929,7 +930,7 @@ class CiwiswitcherForm extends HTMLElement {
     }
 
     const isVisible = this.elements.selectorBox.style.display !== "none";
-    this.elements.selectorBox.style.display = isVisible ? "none" : "block";
+    this.elements.selectorBox.style.display = isVisible ? "none" : "flex";
     if (
       this.elements.translateFloatBtn.style.justifyContent &&
       this.elements.mainBox.style.display === "none"

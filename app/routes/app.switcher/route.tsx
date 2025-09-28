@@ -165,8 +165,6 @@ const Index = () => {
   const [currencySelector, setCurrencySelector] = useState(true);
   const [fontColor, setFontColor] = useState("#000000");
   const [backgroundColor, setBackgroundColor] = useState("#ffffff");
-  const [buttonColor, setButtonColor] = useState("#ffffff");
-  const [buttonBackgroundColor, setButtonBackgroundColor] = useState("#000000");
   const [optionBorderColor, setOptionBorderColor] = useState("#ccc");
   const [selectorPosition, setSelectorPosition] = useState("top_left");
   const [positionData, setPositionData] = useState<string>("0");
@@ -283,8 +281,6 @@ const Index = () => {
         setIsGeoLocationEnabled(res.ipOpen);
         setFontColor(res.fontColor);
         setBackgroundColor(res.backgroundColor);
-        setButtonColor(res.buttonColor);
-        setButtonBackgroundColor(res.buttonBackgroundColor);
         setOptionBorderColor(res.optionBorderColor);
         setSelectorPosition(res.selectorPosition);
         setPositionData(res.positionData);
@@ -299,8 +295,6 @@ const Index = () => {
         setIsGeoLocationEnabled(initData.ipOpen);
         setFontColor(initData.fontColor);
         setBackgroundColor(initData.backgroundColor);
-        setButtonColor(initData.buttonColor);
-        setButtonBackgroundColor(initData.buttonBackgroundColor);
         setOptionBorderColor(initData.optionBorderColor);
         setSelectorPosition(initData.selectorPosition);
         setPositionData(initData.positionData);
@@ -490,12 +484,6 @@ const Index = () => {
           break;
         case "backgroundColor":
           setBackgroundColor(value as string);
-          break;
-        case "buttonColor":
-          setButtonColor(value as string);
-          break;
-        case "buttonBackgroundColor":
-          setButtonBackgroundColor(value as string);
           break;
         case "optionBorderColor":
           setOptionBorderColor(value as string);
@@ -696,8 +684,6 @@ const Index = () => {
       setIsGeoLocationEnabled(originalData.ipOpen);
       setFontColor(originalData.fontColor);
       setBackgroundColor(originalData.backgroundColor);
-      setButtonColor(originalData.buttonColor);
-      setButtonBackgroundColor(originalData.buttonBackgroundColor);
       setOptionBorderColor(originalData.optionBorderColor);
       setSelectorPosition(originalData.selectorPosition);
       setPositionData(originalData.positionData);
@@ -949,44 +935,6 @@ const Index = () => {
                         justifyContent: "space-between",
                       }}
                     >
-                      <Text>{t("Button Color:")}</Text>
-                      <ColorPicker
-                        style={{ alignSelf: "flex-start" }}
-                        value={buttonColor}
-                        onChange={(e) =>
-                          handleEditData({ buttonColor: e.toHexString() })
-                        }
-                        showText
-                      />
-                    </div>
-                    <div
-                      style={{
-                        flex: 1,
-                        flexDirection: "column",
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <Text>{t("Button Background Color:")}</Text>
-                      <ColorPicker
-                        style={{ alignSelf: "flex-start" }}
-                        value={buttonBackgroundColor}
-                        onChange={(e) =>
-                          handleEditData({
-                            buttonBackgroundColor: e.toHexString(),
-                          })
-                        }
-                        showText
-                      />
-                    </div>
-                    <div
-                      style={{
-                        flex: 1,
-                        flexDirection: "column",
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
                       <Text>{t("Option Border Color:")}</Text>
                       <ColorPicker
                         style={{ alignSelf: "flex-start" }}
@@ -1095,11 +1043,10 @@ const Index = () => {
                   <div
                     id="ciwi-container"
                     style={{
+                      marginTop: "100px",
                       minWidth: "100px",
                       position: "absolute", // 改为绝对定位
                       top:
-                        selectorPosition === "top_left" ||
-                        selectorPosition === "top_right" ||
                         languageSelector === currencySelector
                           ? "-221px"
                           : "-171px", // 位于顶部
@@ -1127,7 +1074,11 @@ const Index = () => {
                           border: `1px solid ${optionBorderColor}`,
                           padding: "15px",
                           borderRadius: "5px",
-                          marginBottom: "5px",
+                          height:
+                            languageSelector === currencySelector
+                              ? "124px"
+                              : "74px",
+                          marginBottom: "1px",
                           width: "100%",
                         }}
                       >
@@ -1135,6 +1086,7 @@ const Index = () => {
                           style={{
                             display: `${languageSelector || (!languageSelector && !currencySelector) ? "block" : "none"}`,
                             marginBottom: "10px",
+                            gap: "10px",
                           }}
                         >
                           <div
@@ -1317,30 +1269,6 @@ const Index = () => {
                             </div>
                           </div>
                         </div>
-                        <div className={styles.button_wrapper}>
-                          <button
-                            id="switcher-confirm"
-                            className={styles.ciwi_switcher_confirm_button}
-                            style={{
-                              backgroundColor: buttonBackgroundColor,
-                              color: buttonColor,
-                            }}
-                            onClick={handleSelectorClick}
-                          >
-                            Confirm
-                          </button>
-                          <button
-                            id="switcher-cancel"
-                            className={styles.ciwi_switcher_confirm_button}
-                            style={{
-                              backgroundColor: buttonBackgroundColor,
-                              color: buttonColor,
-                            }}
-                            onClick={handleCancelClick}
-                          >
-                            Cancel
-                          </button>
-                        </div>
                       </div>
                     )}
                     <div
@@ -1350,8 +1278,8 @@ const Index = () => {
                         marginTop: isSelectorOpen
                           ? "0px"
                           : languageSelector === currencySelector
-                            ? "225px"
-                            : "175px",
+                            ? "125px"
+                            : "75px",
                         background: backgroundColor,
                         border: `1px solid ${optionBorderColor}`,
                         justifyContent: isIncludedFlag ? "" : "center",
@@ -1382,7 +1310,7 @@ const Index = () => {
                         className={styles.mainarrow_icon}
                         src="/arrow.svg"
                         alt="Arrow Icon"
-                        width="15%"
+                        width="25px"
                         height="25%"
                       />
                     </div>
