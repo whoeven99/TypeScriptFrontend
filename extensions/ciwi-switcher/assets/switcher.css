@@ -224,7 +224,7 @@ a[href="https://translate.google.com"]
     Ubuntu, Cantarell, sans-serif;
 }
 
-.selector-header {
+.language_selector_header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -234,6 +234,18 @@ a[href="https://translate.google.com"]
   background: #fff;
   cursor: pointer;
   margin-bottom: 10px;
+  height: 40px;
+}
+
+.currency_selector_header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
   height: 40px;
 }
 
