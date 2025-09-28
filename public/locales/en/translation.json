@@ -729,5 +729,6 @@
   "month": "month",
   "day": "day",
   "Manage Languages": "Manage Languages",
-  "You haven't added any languages yet.": "You haven't added any languages yet."
+  "You haven't added any languages yet.": "You haven't added any languages yet.",
+  "Unknown date range":"Unknown date range"
 }

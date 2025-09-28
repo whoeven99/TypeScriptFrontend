@@ -2,7 +2,7 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { Button, Card, ConfigProvider, Flex, Skeleton, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import useReport from "scripts/eventReport";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 const { Text } = Typography;
 
 interface WelcomeCardProps {
@@ -66,15 +66,15 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
     });
   };
   useEffect(() => {
-      const handleResize = () => {
-        setIsMobile(window.innerWidth < 768);
-      };
-      handleResize();
-      window.addEventListener("resize", handleResize);
-      return () => {
-        window.removeEventListener("resize", handleResize);
-      };
-    }, []);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
   return (
     <Card
       title={
@@ -97,8 +97,11 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
       // }
     >
       <Flex vertical align="center" gap={8}>
-        <Flex gap={8} style={{width:"100%",justifyContent:"space-between"}}>
-          <Text style={{width:"75%"}}>
+        <Flex
+          gap={8}
+          style={{ width: "100%", justifyContent: "space-between" }}
+        >
+          <Text style={{ width: "75%" }}>
             {!switcherOpen
               ? t(
                   "Customers can switch languages and currencies when visiting the site. ",
@@ -115,7 +118,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
               objectFit: "cover",
               objectPosition: "center",
               width: isMobile ? "70px" : "120px",
-              height:isMobile ? "25px" : "auto"
+              height: isMobile ? "25px" : "auto",
             }}
           >
             <img

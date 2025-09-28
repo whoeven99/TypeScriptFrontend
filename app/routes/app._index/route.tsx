@@ -278,9 +278,6 @@ const Index = () => {
       },
     );
   };
-  useEffect(() => {
-    console.log("app home");
-  }, []);
 
   const handleTestGraphqlData = async () => {
     // await shopify.scopes.revoke(['read_analytics','read_reports','read_orders']);

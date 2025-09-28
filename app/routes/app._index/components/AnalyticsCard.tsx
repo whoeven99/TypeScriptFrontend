@@ -292,7 +292,6 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
   useEffect(() => {
     if (unTranslatedFetcher.data && unTranslatedFetcher.data.success) {
       // setLoading(false);
-      console.log(unTranslatedFetcher.data);
       setLoadingGather((prev) => ({
         ...prev,
         unTranslated: {
@@ -410,6 +409,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
             justify="space-between"
             align="center"
             style={{ height: "100%", minWidth: 200 }}
+            gap={8}
           >
             <Text style={{ fontWeight: 500 }}>{t("Translation Score")}</Text>
             {loadingGather.translationScore.loading || isLoading ? (
@@ -451,11 +451,6 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
             >
               {t("Improve")}
             </Button>
-            {/* {  ? (
-              <Skeleton.Button active />
-            ) : (
-              
-            )} */}
           </Flex>
         </Col>
 

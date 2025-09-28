@@ -96,7 +96,7 @@ const TranslationPanel = () => {
   return (
     <Row gutter={[10, 10]} style={{ marginTop: "20px" }}>
       {/* Add Language & Auto Translate */}
-      <Col sm={24} md={12} lg={8}>
+      <Col sm={24} md={12} lg={8} xs={24}>
         <Card
           title={t("Add Language & Auto Translate")}
           style={{ width: "100%", height: "100%" }}
@@ -163,7 +163,7 @@ const TranslationPanel = () => {
       </Col>
 
       {/* Manage Translation & Edit */}
-      <Col sm={24} md={12} lg={8}>
+      <Col sm={24} md={12} lg={8} xs={24}>
         <Card
           title={t("Manage Translation & Edit")}
           style={{ width: "100%" }}
@@ -214,7 +214,7 @@ const TranslationPanel = () => {
       </Col>
 
       {/* More Translation Tools */}
-      <Col sm={24} md={12} lg={8}>
+      <Col sm={24} md={12} lg={8} xs={24}>
         <Card
           style={{ height: "100%", width: "100%" }}
           title={t("More Translation Tools")}

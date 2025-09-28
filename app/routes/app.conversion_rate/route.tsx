@@ -27,6 +27,7 @@ import {
   Typography,
   Button as AntButton,
   Divider,
+  Empty,
 } from "antd";
 import {
   LayoutColumn1Icon,
@@ -116,6 +117,7 @@ const Index = () => {
   const { report } = useReport();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const [gridColumns, setGridColumns] = useState<number>(2); // 默认 2 列
   const polarisVizDataFetcher = useFetcher<any>();
   const [isLoading, setIsLoading] = useState(true);
@@ -297,6 +299,32 @@ const Index = () => {
       sw: "Kiswahili",
       zu: "isiZulu",
       "pt-PT": "Português (Portugal)",
+      af: "Afrikaans",
+      sq: "Shqip (Albanian)",
+      am: "አማርኛ (Amharic)",
+      hy: "Հայերեն (Armenian)",
+      az: "Azərbaycan (Azerbaijani)",
+      eu: "Euskara (Basque)",
+      be: "Беларуская (Belarusian)",
+      km: "ភាសាខ្មែរ (Khmer)",
+      ky: "Кыргызча (Kyrgyz)",
+      lo: "ລາວ (Lao)",
+      mk: "Македонски (Macedonian)",
+      mn: "Монгол (Mongolian)",
+      fa: "فارسی (Persian)",
+      ps: "پښتو (Pashto)",
+      si: "සිංහල (Sinhala)",
+      so: "Soomaali (Somali)",
+      tg: "Тоҷикӣ (Tajik)",
+      uz: "Oʻzbek (Uzbek)",
+      ka: "ქართული (Georgian)",
+      ga: "Gaeilge (Irish)",
+      is: "Íslenska (Icelandic)",
+      mt: "Malti (Maltese)",
+      kk: "Қазақша (Kazakh)",
+      tk: "Türkmen (Turkmen)",
+      ur: "اردو (Urdu)",
+      yi: "ייִדיש (Yiddish)",
     };
 
     function formatDateToChinese(dateStr: string) {
@@ -306,7 +334,7 @@ const Index = () => {
     }
 
     function getDateRangeName(dates: string[]) {
-      if (!dates || dates.length === 0) return "未知日期范围";
+      if (!dates || dates.length === 0) return t("Unknown date range");
       if (dates.length === 1) return formatDateLocalized(new Date(dates[0]));
       return `${formatDateLocalized(new Date(dates[0]))} - ${formatDateLocalized(
         new Date(dates[dates.length - 1]),
@@ -359,6 +387,17 @@ const Index = () => {
       setIsLoading(false);
     }
   }, [polarisVizDataFetcher.data]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
   return (
     <Page>
       {/* 筛选器 */}
@@ -439,14 +478,16 @@ const Index = () => {
                 }}
                 icon={LayoutColumn1Icon}
               />
-              <Button
-                variant={gridColumns === 2 ? "primary" : "secondary"}
-                onClick={() => {
-                  handleSwitcherTime(2);
-                  clickReportGridColumns(2);
-                }}
-                icon={LayoutColumns2Icon}
-              />
+              {!isMobile && (
+                <Button
+                  variant={gridColumns === 2 ? "primary" : "secondary"}
+                  onClick={() => {
+                    handleSwitcherTime(2);
+                    clickReportGridColumns(2);
+                  }}
+                  icon={LayoutColumns2Icon}
+                />
+              )}
             </InlineStack>
           </Flex>
         </Card>
@@ -456,7 +497,11 @@ const Index = () => {
         <Layout.Section>
           <InlineGrid
             gap="400"
-            columns={`repeat(${gridColumns}, minmax(420px, 1fr))`}
+            columns={{
+              xs: "1fr", // 手机：1列
+              sm: "1fr", // 平板：2列
+              md: `repeat(${gridColumns}, minmax(300px, 1fr))`, // 桌面：动态列数
+            }}
           >
             {isLoading ? (
               SkeletonGrid.map((item: any, index: number) => {
@@ -481,21 +526,21 @@ const Index = () => {
                     style={{
                       height: 300,
                       width: "100%",
-                      minWidth: 400,
+                      // minWidth: 400,
                       marginTop: "16px",
                     }}
                   >
                     {chart.data && chart.data.length > 0 && ready ? (
                       <LineChartECharts data={chart.data} height={300} />
                     ) : (
-                      <Text as="p">无数据可显示</Text>
+                      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
                     )}
                   </div>
                 </Card>
               ))
             ) : (
               <Card>
-                <Text as="p">无图表数据</Text>
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
               </Card>
             )}
           </InlineGrid>

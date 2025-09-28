@@ -28,6 +28,7 @@ import {
   Spin,
   Empty,
   Space,
+  Grid
 } from "antd";
 import { BlockStack, Page } from "@shopify/polaris";
 import { useLocation } from "@remix-run/react";
@@ -173,6 +174,9 @@ const TranslationDashboard = () => {
   const { reportClick } = useReport();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { useBreakpoint } = Grid;
+  const screens = useBreakpoint();
+  const progressSize = screens.xs ? 80 : 120;
   const [isLoading, setLoading] = useState(false);
   const [realTimeIsLoading, setRealTimeIsLoading] = useState(false);
   const [reDectionLoading, setReDectionLoading] = useState(false);
@@ -426,7 +430,7 @@ const TranslationDashboard = () => {
                 <Progress
                   type="circle"
                   percent={reportData.totalScore || 0}
-                  size={120}
+                  size={progressSize}
                   format={(percent) => (
                     <span style={{ fontSize: 22, fontWeight: "bold" }}>
                       {percent}
@@ -550,7 +554,7 @@ const TranslationDashboard = () => {
               {reportData.language.length > 0 ? (
                 <Row gutter={16}>
                   {reportData.language.map((item: any, index: number) => (
-                    <Col key={index} span={8} style={{ padding: "20px" }}>
+                    <Col key={index}  sm={24} md={12} lg={8} xs={24} style={{ padding: "20px" }}>
                       <Flex justify="space-between">
                         <Text>{item[0]}</Text>
                         <TranslatedIcon status={item[1] === 1 ? 1 : 0} />
