@@ -485,9 +485,9 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
-      source: themes
-        .find((item: any) => item?.resourceId === key)
-        ?.translatableContent.find((item: any) => item.key === key)?.locale,
+      source: themes[0]?.translatableContent.find(
+        (item: any) => item.key === key,
+      )?.locale,
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
