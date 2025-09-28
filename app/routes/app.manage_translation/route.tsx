@@ -189,10 +189,9 @@ const Index = () => {
   const articlesFetcher = useFetcher<any>();
   const blog_titlesFetcher = useFetcher<any>();
   const pagesFetcher = useFetcher<any>();
-  const filtersFetcher = useFetcher<any>();
   const metaobjectsFetcher = useFetcher<any>();
-  const navigationFetcher = useFetcher<any>();
   const emailFetcher = useFetcher<any>();
+  const paymentFetcher = useFetcher<any>();
   const policiesFetcher = useFetcher<any>();
   const shopFetcher = useFetcher<any>();
   const store_metadataFetcher = useFetcher<any>();
@@ -278,20 +277,6 @@ const Index = () => {
       sync_status: false,
       navigation: "page",
     },
-    // {
-    //   key: "filters",
-    //   title: t("Filters"),
-    //   allTranslatedItems:
-    //     languageItemsData.find(
-    //       (item: any) => item?.language === current && item?.type === "FILTER",
-    //     )?.translatedNumber ?? undefined,
-    //   allItems:
-    //     languageItemsData.find(
-    //       (item: any) => item?.language === current && item?.type === "FILTER",
-    //     )?.totalNumber ?? undefined,
-    //   sync_status: false,
-    //   navigation: "filter",
-    // },
     {
       key: "metaobjects",
       title: t("Metaobjects"),
@@ -308,20 +293,6 @@ const Index = () => {
       sync_status: false,
       navigation: "metaobject",
     },
-    // {
-    //   key: "navigation",
-    //   title: t("Navigation"),
-    //   allTranslatedItems:
-    //     languageItemsData.find(
-    //       (item: any) => item?.language === current && item?.type === "LINK",
-    //     )?.translatedNumber ?? undefined,
-    //   allItems:
-    //     languageItemsData.find(
-    //       (item: any) => item?.language === current && item?.type === "LINK",
-    //     )?.totalNumber ?? undefined,
-    //   sync_status: false,
-    //   navigation: "navigation",
-    // },
     {
       key: "store_metadata",
       title: t("Store metadata"),
@@ -337,6 +308,22 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "metafield",
+    },
+    {
+      key: "payment_gateway",
+      title: t("Payment gateway"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "PAYMENT_GATEWAY",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "PAYMENT_GATEWAY",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "payment",
     },
   ];
 
@@ -582,17 +569,6 @@ const Index = () => {
   }, [pagesFetcher.data]);
 
   useEffect(() => {
-    if (filtersFetcher.data) {
-      if (
-        filtersFetcher.data?.success &&
-        filtersFetcher.data?.response?.length > 0
-      ) {
-        dispatch(updateData(filtersFetcher.data?.response));
-      }
-    }
-  }, [filtersFetcher.data]);
-
-  useEffect(() => {
     if (metaobjectsFetcher.data) {
       if (
         metaobjectsFetcher.data?.success &&
@@ -613,6 +589,17 @@ const Index = () => {
       }
     }
   }, [emailFetcher.data]);
+
+  useEffect(() => {
+    if (paymentFetcher.data) {
+      if (
+        paymentFetcher.data?.success &&
+        paymentFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(paymentFetcher.data?.response));
+      }
+    }
+  }, [paymentFetcher.data]);
 
   useEffect(() => {
     if (policiesFetcher.data) {
@@ -755,19 +742,6 @@ const Index = () => {
         method: "post",
         action: "/app/manage_translation",
       }); // 提交表单请求
-      const filtersFormData = new FormData();
-      filtersFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: primaryLanguage,
-          target: current,
-          resourceType: "Filters",
-        }),
-      );
-      filtersFetcher.submit(filtersFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
       const metaobjectsFormData = new FormData();
       metaobjectsFormData.append(
         "itemsCount",
@@ -781,19 +755,6 @@ const Index = () => {
         method: "post",
         action: "/app/manage_translation",
       }); // 提交表单请求
-      const navigationFormData = new FormData();
-      navigationFormData.append(
-        "itemsCount",
-        JSON.stringify({
-          source: primaryLanguage,
-          target: current,
-          resourceType: "Navigation",
-        }),
-      );
-      navigationFetcher.submit(navigationFormData, {
-        method: "post",
-        action: "/app/manage_translation",
-      }); // 提交表单请求
       const emailFormData = new FormData();
       emailFormData.append(
         "itemsCount",
@@ -804,6 +765,19 @@ const Index = () => {
         }),
       );
       emailFetcher.submit(emailFormData, {
+        method: "post",
+        action: "/app/manage_translation",
+      }); // 提交表单请求
+      const paymentFormData = new FormData();
+      paymentFormData.append(
+        "itemsCount",
+        JSON.stringify({
+          source: primaryLanguage,
+          target: current,
+          resourceType: "PAYMENT_GATEWAY",
+        }),
+      );
+      paymentFetcher.submit(paymentFormData, {
         method: "post",
         action: "/app/manage_translation",
       }); // 提交表单请求
