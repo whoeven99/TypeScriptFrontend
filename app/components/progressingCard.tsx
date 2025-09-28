@@ -505,9 +505,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
         <Title level={5} style={{ fontWeight: 600 }}>
           {t("transLanguageCard1.title")}
         </Title>
-        <Button type="primary" onClick={() => navigateToTranslate()}>
-          {t("transLanguageCard1.button")}
-        </Button>
+        {loading ? (
+          <Skeleton.Button active />
+        ) : (
+          <Button type="primary" onClick={() => navigateToTranslate()}>
+            {t("transLanguageCard1.button")}
+          </Button>
+        )}
       </Flex>
 
       {loading ? (
@@ -515,7 +519,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       ) : (
         <Space direction="vertical" style={{ width: "100%" }}>
           {status !== 0 ? (
-            <Card styles={{body:{padding:"12px 24px"}}}>
+            <Card styles={{ body: { padding: "12px 24px" } }}>
               {/* <Space style={{ width: '100%', }} size="small"> */}
               <div
                 style={{
@@ -545,7 +549,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                       width: "100%", // 确保占满容器宽度
                       // flex: 1, // 让这个区域占据剩余空间
                       gap: 30,
-                      height:"47px"
+                      height: "47px",
                     }}
                   >
                     {/* 左侧部分 */}
@@ -861,7 +865,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         display: "flex",
                         flexDirection: "column",
                         gap: 10,
-                        justifyContent:"center",
+                        justifyContent: "center",
                       }}
                     >
                       <Button block onClick={() => navigate("/app/translate")}>

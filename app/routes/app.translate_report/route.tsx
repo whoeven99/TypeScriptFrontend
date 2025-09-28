@@ -173,8 +173,8 @@ const TranslationDashboard = () => {
   const { reportClick } = useReport();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [publishLanguage, setPublishLanguage] = useState(false);
   const [isLoading, setLoading] = useState(false);
+  const [realTimeIsLoading, setRealTimeIsLoading] = useState(false);
   const [reDectionLoading, setReDectionLoading] = useState(false);
   const translationEvaluationFetcher = useFetcher<any>();
   const storeLanguageFetcher = useFetcher<any>();
@@ -282,13 +282,13 @@ const TranslationDashboard = () => {
       method: "post",
       action: "/app/translate_report",
     });
+    setRealTimeIsLoading(true);
   };
   useEffect(() => {
     if (storeLanguageFetcher.data) {
       if (storeLanguageFetcher.data.success) {
         const languagesObj = { ...storeLanguageFetcher.data.response };
         const publishLang = languagesObj["Published Languages"] === 1;
-        setPublishLanguage(languagesObj["Published Languages"] === 1);
 
         delete languagesObj["Published Languages"];
         delete languagesObj["English"];
@@ -319,6 +319,7 @@ const TranslationDashboard = () => {
             ...realTimeQuotaFetcher.data.response,
           },
         }));
+        setRealTimeIsLoading(false);
       }
     }
   }, [realTimeQuotaFetcher.data]);
@@ -396,10 +397,14 @@ const TranslationDashboard = () => {
       </Affix>
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}></div>
       {/* <Divider style={{ margin: "0" }} /> */}
-      <Space direction="vertical" size={"middle"}>
+      <Space direction="vertical" size={"middle"} style={{ width: "100%" }}>
         <Card
           title={t("Translation quality score")}
-          styles={{ header: { borderBottom: "none" },body:{padding:"12px 24px"} }}
+          style={{ width: "100%" }}
+          styles={{
+            header: { borderBottom: "none" },
+            body: { padding: "12px 24px" },
+          }}
         >
           {isLoading ? (
             <BlockStack>
@@ -586,11 +591,14 @@ const TranslationDashboard = () => {
         <Card
           title={t("Real-time and professional translation")}
           style={{ marginBottom: 20 }}
-          styles={{ header: { borderBottom: "none" },body:{
-            padding:"12px 24px"
-          } }}
+          styles={{
+            header: { borderBottom: "none" },
+            body: {
+              padding: "12px 24px",
+            },
+          }}
         >
-          {isLoading ? (
+          {realTimeIsLoading ? (
             <BlockStack>
               <Skeleton.Node
                 active

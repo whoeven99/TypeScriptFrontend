@@ -478,7 +478,7 @@ const Index = () => {
         </Space>
         <Space direction="vertical" size="small" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
-            <Title level={4}>{t("dashboard.title3")}</Title>
+            <Title level={5}>{t("dashboard.title3")}</Title>
           </div>
           <Card
             styles={{
@@ -492,7 +492,7 @@ const Index = () => {
               size="small"
               style={{ display: "flex" }}
             >
-              <Title level={4}>{t("planCard.title")}</Title>
+              <Title level={5}>{t("planCard.title")}</Title>
               <Flex justify="space-between" align="center">
                 <Text>{t("planCard.description")}</Text>
                 {isLoading ? (

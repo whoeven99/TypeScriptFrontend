@@ -292,13 +292,14 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
   useEffect(() => {
     if (unTranslatedFetcher.data && unTranslatedFetcher.data.success) {
       // setLoading(false);
-      setUnTranslateWords(unTranslatedFetcher.data?.response);
+      console.log(unTranslatedFetcher.data);
       setLoadingGather((prev) => ({
         ...prev,
         unTranslated: {
           loading: false,
         },
       }));
+      setUnTranslateWords(unTranslatedFetcher.data?.response);
     }
   }, [unTranslatedFetcher.data]);
 
@@ -375,21 +376,23 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
   return (
     <Card
       style={{ width: "100%", padding: "0px" }}
-      styles={{body:{
-        padding:"12px 24px"
-      }}}
+      styles={{
+        body: {
+          padding: "12px 24px",
+        },
+      }}
     >
       <Flex justify="space-between" style={{ marginBottom: "10px" }}>
         <Title
           level={5}
-          style={{ display: "flex", alignItems: "center",fontWeight:600 }}
+          style={{ display: "flex", alignItems: "center", fontWeight: 600 }}
         >
           {t("Dashboard")}
         </Title>
         {isLoading ? (
           <Skeleton.Button />
         ) : (
-          <Text strong style={{ fontSize: "14px",color:"#007F61" }}>
+          <Text strong style={{ fontSize: "14px", color: "#007F61" }}>
             {getPlanName(plan.id, isNew)}
           </Text>
         )}
@@ -476,7 +479,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
                   <Skeleton.Node style={{ width: 50, height: 30 }} active />
                 ) : (
                   <Statistic
-                    value={unTranslateWords.totalWords}
+                    value={unTranslateWords?.totalWords ?? 0}
                     valueStyle={{ fontWeight: 500 }}
                   />
                 )}

@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { Row, Col, Button, Card, Flex, Grid, Image, Skeleton } from "antd";
+import {
+  Row,
+  Col,
+  Button,
+  Card,
+  Flex,
+  Grid,
+  Image,
+  Skeleton,
+  Empty,
+} from "antd";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
 import { useTranslation } from "react-i18next";
@@ -40,6 +50,7 @@ const TranslationPanel = () => {
   const screens = useBreakpoint();
   const gridWidth = screens.lg ? 54 : screens.md ? 80 : 120;
   const [languages, setLanguages] = useState<any>([]);
+  const [languageLoading, setLanguageLoading] = useState(true);
   const [nationalFlags, setNationalFlags] = useState<string[]>([]);
   useEffect(() => {
     const formData = new FormData();
@@ -52,28 +63,33 @@ const TranslationPanel = () => {
 
   useEffect(() => {
     if (LanguageFetcher.data) {
-      console.log("LanguageFetcher.data", LanguageFetcher.data);
+      if (LanguageFetcher.data?.success) {
+        console.log(LanguageFetcher.data);
 
-      const raw = LanguageFetcher.data.response;
-      const langs: Record<string, any> = { ...raw };
-      delete langs["Published Languages"];
-      delete langs["English"];
+        const raw = LanguageFetcher.data.response;
+        const langs: Record<string, any> = { ...raw };
+        delete langs["Published Languages"];
+        delete langs["English"];
 
-      for (const langName in langs) {
-        const match = Object.values(languageLocaleData).find(
-          (item) => item.Name === langName,
-        );
+        for (const langName in langs) {
+          const match = Object.values(languageLocaleData).find(
+            (item) => item.Name === langName,
+          );
 
-        if (match) {
-          langs[langName] = {
-            value: langs[langName],
-            flagUrl: match.countries[0], // 用第一个国家作为 flagUrl
-          };
-        } else {
-          langs[langName] = { value: langs[langName], flagUrl: null };
+          if (match) {
+            langs[langName] = {
+              value: langs[langName],
+              flagUrl: match.countries[0], // 用第一个国家作为 flagUrl
+            };
+          } else {
+            langs[langName] = { value: langs[langName], flagUrl: null };
+          }
         }
+        setLanguages(Object.values(langs).slice(0, 3)); // 只显示前3个
+        setLanguageLoading(false);
+      } else {
+        setLanguageLoading(false);
       }
-      setLanguages(Object.values(langs).slice(0, 3)); // 只显示前3个
     }
   }, [LanguageFetcher.data]);
 
@@ -88,29 +104,36 @@ const TranslationPanel = () => {
             header: {
               borderBottom: "none",
             },
-            body:{
-              paddingTop:0,
-              paddingBottom:"12px"
-            }
+            body: {
+              paddingTop: 0,
+              paddingBottom: "12px",
+            },
           }}
         >
           <Flex justify="space-between" align="center" gap="8px">
             <Flex flex={1} justify="start" align="center" gap="8px">
-              {languages.length > 0 ? (
-                languages.map((lang: any, idx: number) => (
-                  // <LanguageButton key={idx} label={lang} width={gridWidth} />
-                  <Image
-                    key={idx}
-                    src={lang.flagUrl || "/default-flag.png"}
-                    alt={lang}
-                    width={32}
-                    preview={false}
-                    style={{ cursor: "pointer" }}
-                    onClick={() => {
-                      navigate("/app/language");
-                    }}
-                  />
-                ))
+              {!languageLoading ? (
+                languages.length > 0 ? (
+                  languages.map((lang: any, idx: number) => (
+                    // <LanguageButton key={idx} label={lang} width={gridWidth} />
+                    <Image
+                      key={idx}
+                      src={lang.flagUrl || "/default-flag.png"}
+                      alt={lang}
+                      width={32}
+                      preview={false}
+                      style={{
+                        cursor: "pointer",
+                        border: "1px solid #333",
+                      }}
+                      onClick={() => {
+                        navigate("/app/language");
+                      }}
+                    />
+                  ))
+                ) : (
+                  <div>no data</div>
+                )
               ) : (
                 <Skeleton.Input
                   style={{ width: gridWidth, height: 40 }}
@@ -152,10 +175,10 @@ const TranslationPanel = () => {
             header: {
               borderBottom: "none",
             },
-            body:{
-              paddingTop:0,
-              paddingBottom:"12px"
-            }
+            body: {
+              paddingTop: 0,
+              paddingBottom: "12px",
+            },
           }}
         >
           <Flex justify="space-between" gap="8px">
@@ -203,10 +226,10 @@ const TranslationPanel = () => {
             header: {
               borderBottom: "none",
             },
-            body:{
-              paddingTop:0,
-              paddingBottom:"12px"
-            }
+            body: {
+              paddingTop: 0,
+              paddingBottom: "12px",
+            },
           }}
         >
           <Flex justify="space-between" wrap="wrap" gap="8px">
