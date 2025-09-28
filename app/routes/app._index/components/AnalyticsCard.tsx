@@ -392,7 +392,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
         {isLoading ? (
           <Skeleton.Button />
         ) : (
-          <Text strong style={{ fontSize: "14px", color: "#007F61" }}>
+          <Text strong onClick={()=>navigate('/app/pricing')} style={{ fontSize: "14px", color: "#007F61",cursor:"pointer" }}>
             {getPlanName(plan.id, isNew)}
           </Text>
         )}
@@ -557,7 +557,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
             ) : !configCreateWebPixel ? (
               // 未配置 Pixel
               <Button
-                type="primary"
+                type="default"
                 loading={navigateToRateState}
                 onClick={handleConfigScopes}
               >

@@ -464,7 +464,7 @@ const Index = () => {
                       <Skeleton.Button active />
                     ) : (
                       <Button
-                        type="primary"
+                        type="default"
                         onClick={() => navigateToCurrency()}
                       >
                         {t("transCurrencyCard1.button")}

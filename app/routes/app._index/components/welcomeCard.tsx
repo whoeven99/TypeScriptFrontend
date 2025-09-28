@@ -2,6 +2,7 @@ import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { Button, Card, ConfigProvider, Flex, Skeleton, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import useReport from "scripts/eventReport";
+import { useState,useEffect } from "react";
 const { Text } = Typography;
 
 interface WelcomeCardProps {
@@ -19,6 +20,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
   const navigate = useNavigate();
   const fetcher = useFetcher<any>();
   const graphqlFetcher = useFetcher<any>();
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const { report, trackExposure, fetcherState } = useReport();
   const handleSetting = () => {
     if (!switcherOpen) {
@@ -63,6 +65,16 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
       action: "/app",
     });
   };
+  useEffect(() => {
+      const handleResize = () => {
+        setIsMobile(window.innerWidth < 768);
+      };
+      handleResize();
+      window.addEventListener("resize", handleResize);
+      return () => {
+        window.removeEventListener("resize", handleResize);
+      };
+    }, []);
   return (
     <Card
       title={
@@ -102,8 +114,8 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
               justifyContent: "center",
               objectFit: "cover",
               objectPosition: "center",
-              width: "120px",
-              // height:"50px"
+              width: isMobile ? "70px" : "120px",
+              height:isMobile ? "25px" : "auto"
             }}
           >
             <img

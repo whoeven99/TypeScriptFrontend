@@ -99,7 +99,7 @@ const TranslationPanel = () => {
       <Col sm={24} md={12} lg={8}>
         <Card
           title={t("Add Language & Auto Translate")}
-          style={{ width: "100%" }}
+          style={{ width: "100%", height: "100%" }}
           styles={{
             header: {
               borderBottom: "none",
@@ -113,49 +113,45 @@ const TranslationPanel = () => {
           <Flex justify="space-between" align="center" gap="8px">
             <Flex flex={1} justify="start" align="center" gap="8px">
               {!languageLoading ? (
-                languages.length > 0 ? (
-                  languages.map((lang: any, idx: number) => (
-                    // <LanguageButton key={idx} label={lang} width={gridWidth} />
-                    <Image
-                      key={idx}
-                      src={lang.flagUrl || "/default-flag.png"}
-                      alt={lang}
-                      width={32}
-                      preview={false}
-                      style={{
-                        cursor: "pointer",
-                        border: "1px solid #333",
-                      }}
-                      onClick={() => {
-                        navigate("/app/language");
-                      }}
-                    />
-                  ))
-                ) : (
-                  <div>no data</div>
-                )
+                languages.map((lang: any, idx: number) => (
+                  <Image
+                    key={idx}
+                    src={lang.flagUrl || "/default-flag.png"}
+                    alt={lang}
+                    width={32}
+                    preview={false}
+                    style={{
+                      cursor: "pointer",
+                      border: "1px solid #333",
+                    }}
+                    onClick={() => {
+                      navigate("/app/language");
+                    }}
+                  />
+                ))
               ) : (
                 <Skeleton.Input
-                  style={{ width: gridWidth, height: 40 }}
+                  style={{ width: gridWidth, height: 30 }}
                   active
                 />
               )}
             </Flex>
-
-            <Button
-              type="default"
-              style={{
-                color: "#999",
-                fontSize: "12px",
-              }}
-              onClick={() => navigate("/app/language")}
-            >
-              {t("And More")}
-            </Button>
+            {languages.length > 0 ? (
+              <Button
+                type="default"
+                style={{
+                  color: "#999",
+                  fontSize: "12px",
+                }}
+                onClick={() => navigate("/app/language")}
+              >
+                {t("And More")}
+              </Button>
+            ) : <div style={{height:30}}></div>}
           </Flex>
           <Button
             type="default"
-            style={{ marginTop: "8px" }}
+            style={{ marginTop: "8px", bottom: 0 }}
             onClick={() => {
               reportClick("dashboard_add_language");
               navigate("/app/language");
