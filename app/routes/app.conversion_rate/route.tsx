@@ -14,21 +14,12 @@ import {
   Layout,
   Grid,
   Popover,
-  Button,
   BlockStack,
   InlineGrid,
   Icon,
   Box,
 } from "@shopify/polaris";
-import {
-  Flex,
-  Row,
-  Skeleton,
-  Typography,
-  Button as AntButton,
-  Divider,
-  Empty,
-} from "antd";
+import { Flex, Row, Skeleton, Typography, Button, Divider, Empty } from "antd";
 import {
   LayoutColumn1Icon,
   LayoutColumns2Icon,
@@ -36,6 +27,7 @@ import {
   ChartVerticalFilledIcon,
   ArrowLeftIcon,
 } from "@shopify/polaris-icons";
+import {AppstoreOutlined,ColumnWidthOutlined,BarsOutlined} from '@ant-design/icons'
 import ScrollNotice from "~/components/ScrollNotice";
 import { authenticate } from "../../shopify.server";
 // import {  BarChart } from "@shopify/polaris-viz";
@@ -145,7 +137,7 @@ const Index = () => {
     return () => clearTimeout(timer);
   }, []);
   function formatDateLocalized(date: Date) {
-    return `${date.getMonth() + 1}${t("month")}${date.getDate()}${t("day")}`;
+    return `${date.getMonth() + 1}/${date.getDate()}`;
   }
   const generateDateRange = (start: Date, end: Date) => {
     const dates: string[] = [];
@@ -403,18 +395,18 @@ const Index = () => {
       {/* 筛选器 */}
       <ScrollNotice
         text={t(
-          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
+          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible."
         )}
       />
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        <AntButton
+        <Button
           type="text"
           variant="outlined"
           onClick={() => navigate("/app")}
           style={{ padding: "4px" }}
         >
           <Icon source={ArrowLeftIcon} tone="base" />
-        </AntButton>
+        </Button>
         <Title
           style={{
             margin: "0",
@@ -435,10 +427,8 @@ const Index = () => {
           >
             <InlineStack gap="200" align="center">
               <Button
-                variant={
-                  currentFilterCondition === "yesterday"
-                    ? "primary"
-                    : "secondary"
+                type={
+                  currentFilterCondition === "yesterday" ? "primary" : "default"
                 }
                 onClick={() => {
                   setPreset("yesterday");
@@ -448,8 +438,8 @@ const Index = () => {
                 {t("Yesterday")}
               </Button>
               <Button
-                variant={
-                  currentFilterCondition === "last7" ? "primary" : "secondary"
+                type={
+                  currentFilterCondition === "last7" ? "primary" : "default"
                 }
                 onClick={() => {
                   setPreset("last7"), clickReportDate(7);
@@ -458,8 +448,8 @@ const Index = () => {
                 {t("Last 7 Days")}
               </Button>
               <Button
-                variant={
-                  currentFilterCondition === "last30" ? "primary" : "secondary"
+                type={
+                  currentFilterCondition === "last30" ? "primary" : "default"
                 }
                 onClick={() => {
                   setPreset("last30");
@@ -471,21 +461,21 @@ const Index = () => {
             </InlineStack>
             <InlineStack gap="150">
               <Button
-                variant={gridColumns === 1 ? "primary" : "secondary"}
+                type={gridColumns === 1 ? "primary" : "default"}
                 onClick={() => {
                   handleSwitcherTime(1);
                   clickReportGridColumns(1);
                 }}
-                icon={LayoutColumn1Icon}
+                icon={<BarsOutlined />}
               />
               {!isMobile && (
                 <Button
-                  variant={gridColumns === 2 ? "primary" : "secondary"}
+                  type={gridColumns === 2 ? "primary" : "default"}
                   onClick={() => {
                     handleSwitcherTime(2);
                     clickReportGridColumns(2);
                   }}
-                  icon={LayoutColumns2Icon}
+                  icon={<AppstoreOutlined />}
                 />
               )}
             </InlineStack>

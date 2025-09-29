@@ -347,7 +347,7 @@
   "The server received an invalid response from the upstream server.": "Der Server erhielt eine ungültige Antwort vom Upstream-Server.",
   "The specified fields were not found in the store.": "Angegebene Felder im Shop nicht gefunden",
   "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Der Umschalter ist derzeit deaktiviert. Wenn Sie IP-basiertes automatisches Sprach- und Währungsumschalten benötigen, klicken Sie bitte auf \" Setup\". ",
-  "The switcher is currently enabled.": "Der Umschalter ist derzeit aktiviert.",
+  "The switcher is currently enabled.": "Der Umschalter ist derzeit aktiviert",
   "The translation cannot be completed due to exhausted credits.": "Die Übersetzung kann nicht fortgesetzt werden, da die Credits aufgebraucht sind.",
   "The translation task is in progress.": "Übersetzung läuft.",
   "The translation task is in progress. Please try translating again later.": "Übersetzung läuft. Bitte warten Sie, bis sie abgeschlossen ist, bevor Sie eine neue Aufgabe starten.",

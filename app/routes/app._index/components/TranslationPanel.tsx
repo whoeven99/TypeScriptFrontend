@@ -19,28 +19,6 @@ interface LanguageButtonProps {
   width?: number;
 }
 
-// const LanguageButton: React.FC<LanguageButtonProps> = ({
-//   label,
-//   width = 54,
-// }) => {
-//   const navigate = useNavigate();
-//   return (
-//     <Button
-//       type="default"
-//       title={label} // hover 显示完整
-//       style={{
-//         width,
-//         overflow: "hidden",
-//         textOverflow: "ellipsis",
-//         whiteSpace: "nowrap",
-//       }}
-//       onClick={() => navigate("/app/language")}
-//     >
-//       {label}
-//     </Button>
-//   );
-// };
-
 const TranslationPanel = () => {
   const { t } = useTranslation();
   const { reportClick } = useReport();
@@ -53,6 +31,11 @@ const TranslationPanel = () => {
   const [languageLoading, setLanguageLoading] = useState(true);
   const [nationalFlags, setNationalFlags] = useState<string[]>([]);
   useEffect(() => {
+    const localFlags = localStorage.getItem("localFlagsData");
+    if (localFlags) {
+      setNationalFlags(JSON.parse(localFlags));
+    }
+
     const formData = new FormData();
     formData.append("LanguageFetcher", JSON.stringify({}));
     LanguageFetcher.submit(formData, {
@@ -60,6 +43,11 @@ const TranslationPanel = () => {
       method: "post",
     });
   }, []);
+  useEffect(() => {
+    if (nationalFlags) {
+      localStorage.setItem("localFlagsData", JSON.stringify(nationalFlags));
+    }
+  }, [nationalFlags]);
 
   useEffect(() => {
     if (LanguageFetcher.data) {
@@ -87,6 +75,10 @@ const TranslationPanel = () => {
         }
         setLanguages(Object.values(langs).slice(0, 3)); // 只显示前3个
         setLanguageLoading(false);
+        localStorage.setItem(
+          "localFlagsData",
+          JSON.stringify(Object.values(langs).slice(0, 3)),
+        );
       } else {
         setLanguageLoading(false);
       }
@@ -112,29 +104,31 @@ const TranslationPanel = () => {
         >
           <Flex justify="space-between" align="center" gap="8px">
             <Flex flex={1} justify="start" align="center" gap="8px">
-              {!languageLoading ? (
-                languages.map((lang: any, idx: number) => (
-                  <Image
-                    key={idx}
-                    src={lang.flagUrl || "/default-flag.png"}
-                    alt={lang}
-                    width={32}
-                    preview={false}
-                    style={{
-                      cursor: "pointer",
-                      border: "1px solid #333",
-                    }}
-                    onClick={() => {
-                      navigate("/app/language");
-                    }}
-                  />
-                ))
-              ) : (
-                <Skeleton.Input
-                  style={{ width: gridWidth, height: 30 }}
-                  active
-                />
-              )}
+              {
+                (languages.length > 0 ? languages : nationalFlags).map(
+                  (lang: any, idx: number) => (
+                    <Image
+                      key={idx}
+                      src={lang.flagUrl || "/default-flag.png"}
+                      alt={lang}
+                      width={32}
+                      preview={false}
+                      style={{
+                        cursor: "pointer",
+                        border: "1px solid #333",
+                      }}
+                      onClick={() => {
+                        navigate("/app/language");
+                      }}
+                    />
+                  ),
+                )
+
+                // <Skeleton.Input
+                //   style={{ width: gridWidth, height: 30 }}
+                //   active
+                // />
+              }
             </Flex>
             {languages.length > 0 ? (
               <Button
@@ -147,7 +141,9 @@ const TranslationPanel = () => {
               >
                 {t("And More")}
               </Button>
-            ) : <div style={{height:30}}></div>}
+            ) : (
+              <div style={{ height: 30 }}></div>
+            )}
           </Flex>
           <Button
             type="default"

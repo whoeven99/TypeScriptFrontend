@@ -28,7 +28,7 @@ import {
   Spin,
   Empty,
   Space,
-  Grid
+  Grid,
 } from "antd";
 import { BlockStack, Page } from "@shopify/polaris";
 import { useLocation } from "@remix-run/react";
@@ -261,6 +261,8 @@ const TranslationDashboard = () => {
     navigate("/app");
   };
   const handleReDetection = () => {
+    console.log("重新检测");
+
     setReDectionLoading(true);
     handleRequestReportData();
     reportClick("translate_report_retest");
@@ -344,6 +346,11 @@ const TranslationDashboard = () => {
           Math.ceil(translationEvaluationFetcher.data?.response * 100),
         ),
       );
+      // const data = JSON.parse(localStorage.getItem("localAnalyticsData")!);
+      // data.translateQualityScore = Math.ceil(
+      //   translationEvaluationFetcher.data?.response * 100,
+      // );
+      // localStorage.setItem("localAnalyticsData", JSON.stringify(data));
       setLoading(false);
       setReDectionLoading(false);
     }
@@ -352,7 +359,7 @@ const TranslationDashboard = () => {
     <Page>
       <ScrollNotice
         text={t(
-          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
+          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible."
         )}
       />
       {/* 头部卡片 - 翻译质量得分 */}
@@ -554,7 +561,14 @@ const TranslationDashboard = () => {
               {reportData.language.length > 0 ? (
                 <Row gutter={16}>
                   {reportData.language.map((item: any, index: number) => (
-                    <Col key={index}  sm={24} md={12} lg={8} xs={24} style={{ padding: "20px" }}>
+                    <Col
+                      key={index}
+                      sm={24}
+                      md={12}
+                      lg={8}
+                      xs={24}
+                      style={{ padding: "20px" }}
+                    >
                       <Flex justify="space-between">
                         <Text>{item[0]}</Text>
                         <TranslatedIcon status={item[1] === 1 ? 1 : 0} />
@@ -614,7 +628,7 @@ const TranslationDashboard = () => {
               <Flex justify="space-between" align="center">
                 <Text>{t("Termbase")}</Text>
                 {reportData.realTimeBtns.glossary ? (
-                  <Text style={{ padding: "0 15px" }}>{t("Enabled")}</Text>
+                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
                 ) : (
                   <Button
                     onClick={() => {
@@ -630,7 +644,7 @@ const TranslationDashboard = () => {
               <Flex justify="space-between" align="center">
                 <Text>{t("Switcher")}</Text>
                 {reportData.realTimeBtns.switch ? (
-                  <Text style={{ padding: "0 15px" }}>{t("Enabled")}</Text>
+                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
                 ) : (
                   <Button
                     // style={{ marginTop: 8 }}
@@ -646,7 +660,7 @@ const TranslationDashboard = () => {
               <Flex justify="space-between" align="center">
                 <Text>{t("Published Languages")}</Text>
                 {reportData.realTimeBtns.publishLanguage ? (
-                  <Text style={{ padding: "0 15px" }}>{t("Enabled")}</Text>
+                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
                 ) : (
                   <Button
                     onClick={() => {
@@ -662,7 +676,7 @@ const TranslationDashboard = () => {
               <Flex justify="space-between" align="center">
                 <Text>{t("Enable automatic translation")}</Text>
                 {reportData.realTimeBtns.autoTranslate ? (
-                  <Text style={{ padding: "0 15px" }}>{t("Enabled")}</Text>
+                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
                 ) : (
                   <Button
                     onClick={() => {

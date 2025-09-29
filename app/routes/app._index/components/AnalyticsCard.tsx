@@ -36,12 +36,34 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const graphqlFetcher = useFetcher<any>();
   const queryWebPixelFetcher = useFetcher<any>();
-  const [configCreateWebPixel, setConfigPixel] = useState<boolean | null>(null);
+  const [configCreateWebPixel, setConfigPixel] = useState<boolean>(false);
   const [showRequireScopeBtn, setShowRequireScopeBtn] =
     useState(!hasRequiresScopes);
   const showModal = () => {
     setIsModalVisible(true);
   };
+  // const [localAnalyticsData, setLocalAnalyticsData] = useState(() => {
+  //   if (typeof window !== "undefined") {
+  //     try {
+  //       const cached = localStorage.getItem("localAnalyticsData");
+  //       if (cached) return JSON.parse(cached);
+  //     } catch (e) {
+  //       console.error("localStorage parse error:", e);
+  //     }
+  //   }
+  //   return {
+  //     translateQualityScore: 0,
+  //     unTranslateWords: { totalWords: 0 },
+  //     conversionRate: 0,
+  //     languageFlags: [],
+  //   };
+  // });
+  //   const [localAnalyticsData, setLocalAnalyticsData] = useState({
+  //     translateQualityScore: 0,
+  //     unTranslateWords: { totalWords: 0 },
+  //     conversionRate: 0,
+  //     languageFlags: [],
+  //   });
   const [loadingGather, setLoadingGather] = useState<loadingGather>({
     translationScore: { loading: false },
     unTranslated: { loading: true },
@@ -66,6 +88,8 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
   const unTranslatedFetcher = useFetcher<any>();
   const conversionCateFetcher = useFetcher<any>();
   const [translateScoreData, setTranslateData] = useState<any>();
+  const [localUnTranslateWords, setLocalUnTranslateWords] = useState<any>();
+  const [localConversionRate, setLocalConversionRate] = useState<any>();
   const [unTranslateWords, setUnTranslateWords] = useState<any>();
   const [conversionRate, setConversionRate] = useState<any>(null);
   const [navigateToRateState, setNavigateToRateState] = useState(false);
@@ -99,6 +123,50 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
     "SELLING_PLAN",
     "SELLING_PLAN_GROUP",
   ];
+  //   useEffect(() => {
+  //     const storedData = localStorage.getItem("localAnalyticsData");
+  //     if (storedData) {
+  //       try {
+  //         const parsed = JSON.parse(storedData);
+  //         setLocalAnalyticsData((prev: any) => ({
+  //           ...prev,
+  //           ...parsed,
+  //         }));
+  //         setInitialized(true);
+  //         // 判断是否需要请求翻译分数
+  //         if (!parsed.translateQualityScore) {
+  //           const formData = new FormData();
+  //           formData.append("translationScore", JSON.stringify({}));
+  //           translationScoreFetcher.submit(formData, {
+  //             method: "post",
+  //             action: "/app/translate_report",
+  //           });
+  //         }
+  //       } catch (error) {
+  //         console.error("解析 localStorage 数据失败:", error);
+  //       }
+  //     } else {
+  //       // 没有缓存，直接请求
+  //       const formData = new FormData();
+  //       formData.append("translationScore", JSON.stringify({}));
+  //       translationScoreFetcher.submit(formData, {
+  //         method: "post",
+  //         action: "/app/translate_report",
+  //       });
+  //     }
+  //   }, []);
+  //   useEffect(() => {
+  //     if (!initialized) return; // ✅ 初始化完成之后再写入
+  //     try {
+  //       localStorage.setItem(
+  //         "localAnalyticsData",
+  //         JSON.stringify(localAnalyticsData),
+  //       );
+  //       console.log("存储数据到浏览器本地");
+  //     } catch (e) {
+  //       console.error("localStorage set error:", e);
+  //     }
+  //   }, [initialized, localAnalyticsData]);
   function calculateConversionRate(
     resp: Record<string, Record<string, Record<string, any>>>,
   ): number {
@@ -218,8 +286,20 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
     const translateReportData = localStorage.getItem(
       "translate_report_score",
     ) as any;
+    const localUnTranslateWords = localStorage.getItem(
+      "local_untranslate_words",
+    ) as any;
+    const localConversionRate = localStorage.getItem(
+      "local_conversion_rate",
+    ) as any;
     if (queryWebPixelFetcher.state === "idle" && !queryWebPixelFetcher.data) {
       queryWebPixel();
+    }
+    if (localUnTranslateWords) {
+      setLocalUnTranslateWords(JSON.parse(localUnTranslateWords));
+    }
+    if (localConversionRate) {
+      setLocalConversionRate(JSON.parse(localConversionRate));
     }
     if (translateReportData) {
       setTranslateData(translateReportData);
@@ -238,7 +318,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
         },
       }));
     }
-  }, []); // 只在 mount 时执行
+  }, []);
   useEffect(() => {
     const untranslatedForm = new FormData();
     untranslatedForm.append(
@@ -275,7 +355,6 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
   }, [configCreateWebPixel]);
   useEffect(() => {
     if (translationScoreFetcher.data && translationScoreFetcher.data.success) {
-      // setLoading(false);
       setTranslateData(Math.ceil(translationScoreFetcher.data?.response * 100));
       setLoadingGather((prev) => ({
         ...prev,
@@ -299,6 +378,10 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
         },
       }));
       setUnTranslateWords(unTranslatedFetcher.data?.response);
+      localStorage.setItem(
+        "local_untranslate_words",
+        JSON.stringify(unTranslatedFetcher.data?.response),
+      );
     }
   }, [unTranslatedFetcher.data]);
 
@@ -313,6 +396,10 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
         const finalRateDecimal = calculateConversionRate(resp);
         const finalRatePercent = Number((finalRateDecimal * 100).toFixed(2));
         setConversionRate(finalRatePercent);
+        localStorage.setItem(
+          "local_conversion_rate",
+          JSON.stringify(finalRatePercent),
+        );
       }
     } catch (e) {
       console.error("解析 conversionRate 响应失败:", e);
@@ -340,7 +427,6 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
           setNavigateToRateState(true);
           navigate("/app/conversion_rate");
         }
-        // shopify.toast.show("Web Pixel 激活失败");
         checkScopes();
         setNavigateToRateState(false);
       }
@@ -391,7 +477,11 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
         {isLoading ? (
           <Skeleton.Button />
         ) : (
-          <Text strong onClick={()=>navigate('/app/pricing')} style={{ fontSize: "14px", color: "#007F61",cursor:"pointer" }}>
+          <Text
+            strong
+            onClick={() => navigate("/app/pricing")}
+            style={{ fontSize: "14px", color: "#007F61", cursor: "pointer" }}
+          >
             {getPlanName(plan.id, isNew)}
           </Text>
         )}
@@ -412,37 +502,33 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
             gap={8}
           >
             <Text style={{ fontWeight: 500 }}>{t("Translation Score")}</Text>
-            {loadingGather.translationScore.loading || isLoading ? (
-              <Skeleton.Node style={{ height: 50 }} active />
-            ) : (
-              <Progress
-                type="circle"
-                percent={translateScoreData ?? 0}
-                format={(percent) => (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    <span style={{ fontSize: 14, fontWeight: 600 }}>
-                      {percent}
-                    </span>
-                    <span style={{ fontSize: 12 }}>{t("score")}</span>
-                  </div>
-                )}
-                size={60}
-                strokeColor={
-                  translateScoreData >= 60
-                    ? translateScoreData >= 80
-                      ? "#52c41a"
-                      : "#faad14"
-                    : "#ff4d4f"
-                }
-              />
-            )}
+            <Progress
+              type="circle"
+              percent={translateScoreData ?? 0}
+              format={(percent) => (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 600 }}>
+                    {percent}
+                  </span>
+                  <span style={{ fontSize: 12 }}>{t("score")}</span>
+                </div>
+              )}
+              size={60}
+              strokeColor={
+                translateScoreData >= 60
+                  ? translateScoreData >= 80
+                    ? "#52c41a"
+                    : "#faad14"
+                  : "#ff4d4f"
+              }
+            />
             <Button
               type="default"
               loading={improveBtnState}
@@ -470,14 +556,13 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
             >
               <Text style={{ fontWeight: 500 }}>{t("Untranslated")}</Text>
               <Flex vertical align="center" justify="center" gap="small">
-                {loadingGather.unTranslated.loading ? (
-                  <Skeleton.Node style={{ width: 50, height: 30 }} active />
-                ) : (
-                  <Statistic
-                    value={unTranslateWords?.totalWords ?? 0}
-                    valueStyle={{ fontWeight: 500 }}
-                  />
-                )}
+                <Statistic
+                  value={
+                    unTranslateWords?.totalWords ??
+                    localUnTranslateWords?.totalWords
+                  }
+                  valueStyle={{ fontWeight: 500 }}
+                />
                 <Text>{t("words")}</Text>
               </Flex>
               <Button
@@ -490,11 +575,6 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
               >
                 {t("Translate")}
               </Button>
-              {/* {loadingGather.unTranslated.loading ? (
-                <Skeleton.Button active />
-              ) : (
-                
-              )} */}
             </Flex>
           </Flex>
         </Col>
@@ -510,64 +590,25 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
             <Text style={{ fontWeight: 500 }}>{t("CRO analytics")}</Text>
 
             <Flex vertical align="center" justify="center" gap="small">
-              {configCreateWebPixel === null ? (
-                // 配置状态未知，Skeleton
-                <Skeleton.Input style={{ width: 50 }} active size="small" />
-              ) : !configCreateWebPixel ? (
-                // 未配置 Pixel
-                <div style={{ textAlign: "center" }}>
-                  <Text type="secondary">
-                    {t("Please authorize before use")}
-                  </Text>
-                </div>
-              ) : conversionRate === null ? (
-                // 已配置 Pixel
-                loadingGather.conversionRate.loading ? (
-                  // 数据请求中
-                  <div style={{ textAlign: "center" }}>
-                    <Text type="secondary">{t("Loading...")}</Text>
-                  </div>
-                ) : (
-                  // 请求结束但无数据
-                  <div style={{ textAlign: "center" }}>
-                    <Text type="secondary">{t("No data available")}</Text>
-                  </div>
-                )
-              ) : (
-                // 有数据
-                <>
-                  <Statistic
-                    value={`+${conversionRate}%`}
-                    valueStyle={{ fontWeight: 500 }}
-                  />
-                  <Text>{t("Compared to 7 days ago")}</Text>
-                </>
-              )}
+              <div style={{ textAlign: "center" }}>
+                <Statistic
+                  value={
+                    conversionRate !== null
+                      ? `+${conversionRate}%`
+                      : `+${localConversionRate ?? 0}%`
+                  }
+                  valueStyle={{ fontWeight: 500 }}
+                />
+                <Text>{t("Compared to 7 days ago")}</Text>
+              </div>
             </Flex>
-
-            {/* 按钮逻辑 */}
-            {configCreateWebPixel === null ? (
-              // 配置状态未知
-              <Skeleton.Button active />
-            ) : !configCreateWebPixel ? (
-              // 未配置 Pixel
-              <Button
-                type="default"
-                loading={navigateToRateState}
-                onClick={handleConfigScopes}
-              >
-                {t("Authorization")}
-              </Button>
-            ) : (
-              // 已配置 Pixel
-              <Button
-                type="default"
-                loading={navigateToRateState}
-                onClick={handleConfigScopes}
-              >
-                {t("Details")}
-              </Button>
-            )}
+            <Button
+              type="default"
+              loading={navigateToRateState}
+              onClick={handleConfigScopes}
+            >
+              {t("Details")}
+            </Button>
           </Flex>
         </Col>
       </Row>

@@ -347,7 +347,7 @@
   "The server received an invalid response from the upstream server.": "Сервер отримав недійсну відповідь від вищестоящого сервера.",
   "The specified fields were not found in the store.": "Вказані поля не знайдено в магазині",
   "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Перемикач наразі вимкнено. Якщо вам потрібне автоматичне перемикання мови та валюти на основі IP, натисніть \" Налаштування\". ",
-  "The switcher is currently enabled.": "Перемикач наразі увімкнено.",
+  "The switcher is currently enabled.": "Перемикач наразі увімкнено",
   "The translation cannot be completed due to exhausted credits.": "Переклад не може бути завершений через вичерпані кредити.",
   "The translation task is in progress.": "Завдання перекладу виконується.",
   "The translation task is in progress. Please try translating again later.": "Завдання перекладу виконується. Спробуйте перекласти пізніше.",

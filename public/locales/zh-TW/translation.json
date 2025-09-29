@@ -443,7 +443,7 @@
   "Unsaved changes": "未儲存的更改",
   "Stay on Page": "留在頁面上",
   "Leave Anyway": "無論如何離開",
-  "The switcher is currently enabled.": "切換器目前已啟用。",
+  "The switcher is currently enabled.": "切換器目前已啟用",
   "Enable language and currency switcher": "啟用語言和貨幣轉換器",
   "Customers can switch languages and currencies when visiting the site. ": "客戶在造訪網站時可以切換語言和貨幣。",
   "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "切換器目前已停用。如果您需要基於 IP 位址自動切換語言和貨幣，請點擊「設定」。",

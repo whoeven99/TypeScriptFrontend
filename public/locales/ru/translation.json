@@ -347,7 +347,7 @@
   "The server received an invalid response from the upstream server.": "The server received an invalid response from the upstream server.",
   "The specified fields were not found in the store.": "Specified fields not found in the store",
   "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ",
-  "The switcher is currently enabled.": "The switcher is currently enabled.",
+  "The switcher is currently enabled.": "The switcher is currently enabled",
   "The translation cannot be completed due to exhausted credits.": "Translation cannot proceed because credits are exhausted.",
   "The translation task is in progress.": "Translation in progress.",
   "The translation task is in progress. Please try translating again later.": "Translation in progress. Please wait until it finishes before starting a new task.",

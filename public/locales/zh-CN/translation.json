@@ -459,7 +459,7 @@
   "Unsaved changes": "未保存的更改",
   "Stay on Page": "留在页面上",
   "Leave Anyway": "离开",
-  "The switcher is currently enabled.": "切换器当前已启用。",
+  "The switcher is currently enabled.": "切换器当前已启用",
   "Enable language and currency switcher": "启用语言和货币切换器",
   "Customers can switch languages and currencies when visiting the site. ": "客户在访问网站时可以切换语言和货币。",
   "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "切换器当前已禁用。如果您需要基于 IP 的自动语言和货币切换，请点击“设置”。",

@@ -341,7 +341,7 @@ const Index = () => {
       {/* <FreePlanCountdownCard /> */}
       <ScrollNotice
         text={t(
-          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
+          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible."
         )}
       />
       <Space

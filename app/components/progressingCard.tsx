@@ -549,7 +549,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                       width: "100%", // 确保占满容器宽度
                       // flex: 1, // 让这个区域占据剩余空间
                       gap: 30,
-                      height: "47px",
+                      minHeight: "47px",
                     }}
                   >
                     {/* 左侧部分 */}
@@ -738,9 +738,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   {status === 2 && (
                     <div
                       style={{
+                        width:"100%",
                         display: "flex",
                         justifyContent: "center",
                         flexDirection: "column",
+                        alignItems:"center"
                       }}
                     >
                       <Button
@@ -795,9 +797,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   {status === 4 && (
                     <div
                       style={{
+                        width:"100%",
                         display: "flex",
                         justifyContent: "center",
                         flexDirection: "column",
+                        alignItems:"center"
                       }}
                     >
                       <Button
@@ -843,9 +847,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   {status === 6 && (
                     <div
                       style={{
+                        width:"100%",
                         display: "flex",
                         justifyContent: "center",
                         flexDirection: "column",
+                        alignItems:"center"
                       }}
                     >
                       <Button
