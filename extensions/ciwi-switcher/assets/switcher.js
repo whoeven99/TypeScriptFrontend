@@ -838,6 +838,18 @@ class CiwiswitcherForm extends HTMLElement {
     }
     // 关闭所有选择器
     this.closeAllSelectors();
+    if (this.elements.selectorBox) {
+      this.elements.languageSelector?.classList.remove("open");
+      this.elements.currencySelector?.classList.remove("open");
+      this.elements.selectorBox.style.display = "none";
+      if (
+        this.elements.translateFloatBtn.style.justifyContent &&
+        this.elements.mainBox.style.display === "none"
+      ) {
+        this.elements.translateFloatBtn.style.display = "flex";
+      }
+    }
+    this.rotateArrow("#mainbox-arrow-icon", 0);
     event.preventDefault();
     // 更新 main-box 显示文本
     const mainBoxFlag = this.querySelector("#main-language-flag");
@@ -1211,6 +1223,8 @@ function isLikelyBotByUA() {
 
   return error.length >= 2 ? error.join(",") : undefined;
 }
+
+console.log("welcome to use Ciwi.ai Language Switcher! v1.0.1");
 
 // Page load handling
 window.onload = async function () {
