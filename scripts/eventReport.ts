@@ -13,13 +13,6 @@ interface ReportOptions {
 
 const useReport = () => {
   const fetcher = useFetcher();
-  // useEffect(()=>{
-  //   if (fetcher.data) {
-  //     console.log(fetcher.data);
-  //   }else{
-  //     console.log('点击上报失败');
-  //   }
-  // },[fetcher.data])
   // 通用上报函数
   const report = async (
     data: ReportData,
