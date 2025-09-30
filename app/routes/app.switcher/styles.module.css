@@ -22,7 +22,6 @@
   .main_box {
     padding: 0%;
     border: 0;
-    background-color: transparent !important;
   }
 
   .switcher_container {
@@ -53,7 +52,7 @@
 
   .options_list {
     max-height: 50vh; /* 最大高度为视窗高度的一半 */
-    border-radius: 8px 8px 0 0;
+    border-radius: 8px;
   }
 
   /* 移动端按钮样式优化 */
@@ -148,7 +147,7 @@ a[href="https://translate.google.com"]
   display: inline-block;
   line-height: 20px; /* 与图片高度一致 */
   vertical-align: middle;
-  margin: 0 20px;
+  margin: 0 10px;
   padding: 0;
   font-size: 14px; /* 明确设置字体大小 */
 }
@@ -266,12 +265,11 @@ a[href="https://translate.google.com"]
 }
 
 .country_flag {
-  width: 30px;
-  height: 20px;
+  width: 20px;
+  height: auto;
   object-fit: cover;
   border-radius: 2px;
   border: 1px solid #ddd;
-  min-width: 30px; /* 保持最小宽度 */
   opacity: 0; /* 初始状态完全透明 */
   transition: opacity 0.3s ease; /* 平滑过渡效果 */
 }

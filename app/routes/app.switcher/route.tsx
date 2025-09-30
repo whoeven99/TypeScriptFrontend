@@ -1130,8 +1130,8 @@ const Index = () => {
                                       )?.flag
                                     }
                                     alt=""
-                                    width="25%"
-                                    height="25%"
+                                    width="20px"
+                                    height="auto"
                                   />
                                 )}
                                 <span
@@ -1167,6 +1167,7 @@ const Index = () => {
                                 className={styles.options_list}
                                 style={{
                                   border: `1px solid ${optionBorderColor}`,
+                                  backgroundColor: backgroundColor,
                                 }}
                               >
                                 {localization.languages.map((language) => (
@@ -1184,8 +1185,8 @@ const Index = () => {
                                         className={styles.country_flag}
                                         src={language.flag}
                                         alt=""
-                                        width="25%"
-                                        height="25%"
+                                        width="20px"
+                                        height="auto"
                                       />
                                     )}
                                     <span className={styles.option_text}>
@@ -1306,8 +1307,8 @@ const Index = () => {
                           className={styles.country_flag}
                           src={selectedLanguage?.flag}
                           alt=""
-                          width="25%"
-                          height="25%"
+                          width="20px"
+                          height="auto"
                         />
                       )}
                       <span id="display-text" className={styles.main_box_text}>
