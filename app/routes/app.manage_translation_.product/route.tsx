@@ -1621,7 +1621,7 @@ const Index = () => {
             action: `/app/manage_translation/product?language=${searchTerm}`,
           },
         );
-      }, 1000);
+      }, 500);
     };
   })();
 
