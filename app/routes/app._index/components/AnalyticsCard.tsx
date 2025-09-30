@@ -101,6 +101,13 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
     "SELLING_PLAN",
     "SELLING_PLAN_GROUP",
   ];
+  const displayValue =
+    conversionRate != null
+      ? `+${conversionRate}%`
+      : localConversionRate != null
+        ? `+${localConversionRate}%`
+        : "-";
+
   function calculateConversionRate(
     resp: Record<string, Record<string, Record<string, any>>>,
   ): number {
@@ -513,11 +520,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
             <Flex vertical align="center" justify="center" gap="small">
               <div style={{ textAlign: "center" }}>
                 <Statistic
-                  value={
-                    conversionRate !== null
-                      ? `+${conversionRate}%`
-                      : `+${localConversionRate ?? 0}%`
-                  }
+                  value={displayValue}
                   valueStyle={{ fontWeight: 500 }}
                 />
                 <Text>{t("Compared to 7 days ago")}</Text>
@@ -535,24 +538,28 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
       </Row>
 
       <Modal
-        title={t("Permissions Required")}
+        title={t("Permissions Needed for Multilingual Analytics")}
         open={isModalVisible}
         onOk={handleOk}
         onCancel={handleCancel}
         centered
-        okText={t("Confirm")}
-        cancelText={t("Cancel")}
+        okText={t("Got it")}
+        cancelButtonProps={{ style: { display: "none" } }}
       >
         <p>
           {t(
-            "To provide you with a better experience, this app requires the following permissions:",
+            "To track conversion rates across different languages, this app requires:",
           )}
         </p>
         {/* 建议在这里动态列出 missScopes */}
         <ul>
           {missScopes?.map((scope: string) => <li key={scope}>{scope}</li>)}
         </ul>
-        <p>{t("Please enable these permissions in your settings.")}</p>
+        <p>
+          {t(
+            "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.",
+          )}
+        </p>
       </Modal>
     </Card>
   );

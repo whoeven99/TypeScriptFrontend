@@ -741,5 +741,9 @@
   "Enable automatic switching to match visitors’ language and currency.": "Habilite el cambio automático para que coincida con el idioma y la moneda de los visitantes.",
   "Make your translations live so customers can see them.": "Haga que sus traducciones estén en vivo para que los clientes puedan verlas.",
   "Auto-Translation": "Traducción automática",
-  "Turn on automatic translation to keep your store updated in real time.": "Activa la traducción automática para mantener tu tienda actualizada en tiempo real."
+  "Turn on automatic translation to keep your store updated in real time.": "Activa la traducción automática para mantener tu tienda actualizada en tiempo real.",
+  "Image & Alt Text Translation": "Traducción de imágenes y texto alternativo",
+  "Permissions Needed for Multilingual Analytics": "Permisos necesarios para análisis multilingües",
+  "To track conversion rates across different languages, this app requires:": "Para realizar un seguimiento de las tasas de conversión en diferentes idiomas, esta aplicación requiere:",
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Se te pedirá que actualices los permisos en un mensaje posterior del sistema. Confirma para acceder a la información de rendimiento multilingüe."
 }

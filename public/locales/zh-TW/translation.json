@@ -710,7 +710,6 @@
   "More Translation Tools": "更多翻譯工具",
   "And More": "以及更多",
   "Product": "產品",
-  "Image & All Text Translation": "圖像和所有文字翻譯",
   "Authorization successful": "授權成功",
   "Authorization failed": "授權失敗",
   "Add to Cart Conversion Rate": "加入購物車轉換率",
@@ -741,5 +740,9 @@
   "Enable automatic switching to match visitors’ language and currency.": "啟用自動切換以符合訪客的語言和貨幣。",
   "Make your translations live so customers can see them.": "讓您的翻譯即時更新，以便客戶能夠看到。",
   "Auto-Translation": "自動翻譯",
-  "Turn on automatic translation to keep your store updated in real time.": "開啟自動翻譯，讓您的商店保持即時更新。"
+  "Turn on automatic translation to keep your store updated in real time.": "開啟自動翻譯，讓您的商店保持即時更新。",
+  "Image & Alt Text Translation": "圖片和替代文字翻譯",
+  "Permissions Needed for Multilingual Analytics": "多語言分析所需的權限",
+  "To track conversion rates across different languages, this app requires:": "為了追蹤不同語言的轉換率，此應用程式需要：",
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "稍後系統會提示您更新權限。請確認以解鎖多語言效能洞察。"
 }

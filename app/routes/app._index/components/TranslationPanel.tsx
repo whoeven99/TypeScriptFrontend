@@ -238,7 +238,7 @@ const TranslationPanel = () => {
               onClick={() => navigate("/app/manage_translation")}
               style={{ fontSize: "12px" }}
             >
-              {t("Image & All Text Translation")}
+              {t("Image & Alt Text Translation")}
             </Button>
           </Flex>
         </Card>

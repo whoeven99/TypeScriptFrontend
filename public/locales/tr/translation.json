@@ -710,7 +710,6 @@
   "More Translation Tools": "Daha Fazla Çeviri Aracı",
   "And More": "Ve Daha Fazlası",
   "Product": "Ürün",
-  "Image & All Text Translation": "Resim ve Tüm Metin Çevirisi",
   "Authorization successful": "Yetkilendirme başarılı",
   "Authorization failed": "Yetkilendirme başarısız oldu",
   "Add to Cart Conversion Rate": "Sepete Ekle Dönüşüm Oranı",
@@ -741,5 +740,9 @@
   "Enable automatic switching to match visitors’ language and currency.": "Ziyaretçilerin diline ve para birimine uyum sağlayacak şekilde otomatik geçişi etkinleştirin.",
   "Make your translations live so customers can see them.": "Çevirilerinizi canlı hale getirin, böylece müşterileriniz bunları görebilir.",
   "Auto-Translation": "Otomatik Çeviri",
-  "Turn on automatic translation to keep your store updated in real time.": "Mağazanızın gerçek zamanlı olarak güncel kalmasını sağlamak için otomatik çeviriyi açın."
+  "Turn on automatic translation to keep your store updated in real time.": "Mağazanızın gerçek zamanlı olarak güncel kalmasını sağlamak için otomatik çeviriyi açın.",
+  "Image & Alt Text Translation": "Resim ve Alternatif Metin Çevirisi",
+  "Permissions Needed for Multilingual Analytics": "Çok Dilli Analizler İçin Gerekli İzinler",
+  "To track conversion rates across different languages, this app requires:": "Farklı dillerdeki dönüşüm oranlarını izlemek için bu uygulamanın şunları gerektirmesi gerekir:",
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Daha sonraki bir sistem isteminde İzinleri Güncelle'niz istenecektir. Çok dilli performans bilgilerinin kilidini açmak için lütfen onaylayın."
 }

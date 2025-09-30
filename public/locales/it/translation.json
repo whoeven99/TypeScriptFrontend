@@ -710,7 +710,6 @@
   "More Translation Tools": "Altri strumenti di traduzione",
   "And More": "E altro ancora",
   "Product": "Prodotto",
-  "Image & All Text Translation": "Traduzione di immagini e testi",
   "Authorization successful": "Autorizzazione avvenuta con successo",
   "Authorization failed": "Autorizzazione fallita",
   "Add to Cart Conversion Rate": "Aggiungi al carrello Tasso di conversione",
@@ -741,5 +740,9 @@
   "Enable automatic switching to match visitors’ language and currency.": "Abilita la commutazione automatica in base alla lingua e alla valuta dei visitatori.",
   "Make your translations live so customers can see them.": "Rendi le tue traduzioni visibili ai clienti.",
   "Auto-Translation": "Traduzione automatica",
-  "Turn on automatic translation to keep your store updated in real time.": "Attiva la traduzione automatica per mantenere il tuo negozio aggiornato in tempo reale."
+  "Turn on automatic translation to keep your store updated in real time.": "Attiva la traduzione automatica per mantenere il tuo negozio aggiornato in tempo reale.",
+  "Image & Alt Text Translation": "Traduzione di immagini e testo alternativo",
+  "Permissions Needed for Multilingual Analytics": "Autorizzazioni necessarie per l'analisi multilingue",
+  "To track conversion rates across different languages, this app requires:": "Per monitorare i tassi di conversione nelle diverse lingue, questa app richiede:",
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Ti verrà chiesto di aggiornare le autorizzazioni in un prompt di sistema successivo. Conferma per sbloccare le informazioni sulle prestazioni multilingue."
 }

@@ -719,7 +719,6 @@
   "More Translation Tools":"More Translation Tools",
   "And More":"And More",
   "Product": "Product",
-  "Image & All Text Translation": "Image & All Text Translation",
   "Authorization successful":"Authorization successful",
   "Authorization failed":"Authorization failed",
   "Add to Cart Conversion Rate":"Add to Cart Conversion Rate",
@@ -740,5 +739,9 @@
   "Enable automatic switching to match visitors’ language and currency.":"Enable automatic switching to match visitors’ language and currency.",
   "Make your translations live so customers can see them.":"Make your translations live so customers can see them.",
   "Auto-Translation":"Auto-Translation",
-  "Turn on automatic translation to keep your store updated in real time.":"Turn on automatic translation to keep your store updated in real time."
+  "Turn on automatic translation to keep your store updated in real time.":"Turn on automatic translation to keep your store updated in real time.",
+  "Image & Alt Text Translation":"Image & Alt Text Translation",
+  "Permissions Needed for Multilingual Analytics":"Permissions Needed for Multilingual Analytics",
+  "To track conversion rates across different languages, this app requires:":"To track conversion rates across different languages, this app requires:",
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.":"You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights."
 }

@@ -710,7 +710,6 @@
   "More Translation Tools": "Fler översättningsverktyg",
   "And More": "Och mer",
   "Product": "Produkt",
-  "Image & All Text Translation": "Bild- och all textöversättning",
   "Authorization successful": "Auktoriseringen lyckades",
   "Authorization failed": "Auktoriseringen misslyckades",
   "Add to Cart Conversion Rate": "Lägg till i varukorgen Konverteringsfrekvens",
@@ -741,5 +740,9 @@
   "Enable automatic switching to match visitors’ language and currency.": "Aktivera automatisk växling för att matcha besökarnas språk och valuta.",
   "Make your translations live so customers can see them.": "Gör dina översättningar tillgängliga så att kunderna kan se dem.",
   "Auto-Translation": "Automatisk översättning",
-  "Turn on automatic translation to keep your store updated in real time.": "Aktivera automatisk översättning för att hålla din butik uppdaterad i realtid."
+  "Turn on automatic translation to keep your store updated in real time.": "Aktivera automatisk översättning för att hålla din butik uppdaterad i realtid.",
+  "Image & Alt Text Translation": "Översättning av bilder och alternativtext",
+  "Permissions Needed for Multilingual Analytics": "Behörigheter som krävs för flerspråkig analys",
+  "To track conversion rates across different languages, this app requires:": "För att spåra konverteringsfrekvenser på olika språk kräver den här appen:",
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Du kommer att bli ombedd att uppdatera behörigheter i en senare systemfråga. Bekräfta för att låsa upp flerspråkiga prestandainsikter."
 }

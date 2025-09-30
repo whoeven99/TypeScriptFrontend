@@ -710,7 +710,6 @@
   "More Translation Tools": "더 많은 번역 도구",
   "And More": "그리고 더 많은 것",
   "Product": "제품",
-  "Image & All Text Translation": "이미지 및 모든 텍스트 번역",
   "Authorization successful": "승인 성공",
   "Authorization failed": "승인에 실패했습니다",
   "Add to Cart Conversion Rate": "장바구니에 담기 전환율",
@@ -741,5 +740,9 @@
   "Enable automatic switching to match visitors’ language and currency.": "방문자의 언어와 통화에 맞게 자동 전환을 활성화합니다.",
   "Make your translations live so customers can see them.": "고객이 볼 수 있도록 번역을 실시간으로 공개하세요.",
   "Auto-Translation": "자동 번역",
-  "Turn on automatic translation to keep your store updated in real time.": "자동 번역을 켜면 매장 정보를 실시간으로 업데이트할 수 있습니다."
+  "Turn on automatic translation to keep your store updated in real time.": "자동 번역을 켜면 매장 정보를 실시간으로 업데이트할 수 있습니다.",
+  "Image & Alt Text Translation": "이미지 및 대체 텍스트 번역",
+  "Permissions Needed for Multilingual Analytics": "다국어 분석에 필요한 권한",
+  "To track conversion rates across different languages, this app requires:": "다양한 언어의 전환율을 추적하려면 이 앱에 다음이 필요합니다.",
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "나중에 시스템 프롬프트에서 권한을 업데이트하라는 메시지가 표시됩니다. 다국어 성과 분석 정보를 잠금 해제하려면 확인해 주세요."
 }

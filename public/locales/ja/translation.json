@@ -710,7 +710,6 @@
   "More Translation Tools": "その他の翻訳ツール",
   "And More": "その他",
   "Product": "製品",
-  "Image & All Text Translation": "画像とすべてのテキストの翻訳",
   "Authorization successful": "認証に成功しました",
   "Authorization failed": "認証に失敗しました",
   "Add to Cart Conversion Rate": "カートに追加コンバージョン率",
@@ -741,5 +740,9 @@
   "Enable automatic switching to match visitors’ language and currency.": "訪問者の言語と通貨に合わせて自動切り替えを有効にします。",
   "Make your translations live so customers can see them.": "翻訳を公開して顧客に見てもらいましょう。",
   "Auto-Translation": "自動翻訳",
-  "Turn on automatic translation to keep your store updated in real time.": "自動翻訳をオンにすると、ストアの最新情報がリアルタイムで更新されます。"
+  "Turn on automatic translation to keep your store updated in real time.": "自動翻訳をオンにすると、ストアの最新情報がリアルタイムで更新されます。",
+  "Image & Alt Text Translation": "画像と代替テキストの翻訳",
+  "Permissions Needed for Multilingual Analytics": "多言語分析に必要な権限",
+  "To track conversion rates across different languages, this app requires:": "異なる言語間でのコンバージョン率を追跡するには、このアプリに以下が必要です。",
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "後ほどシステムプロンプトで権限の更新を求められます。多言語パフォーマンス分析機能を有効にするには、ご確認ください。"
 }
