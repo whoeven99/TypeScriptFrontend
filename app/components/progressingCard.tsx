@@ -1,20 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
-import {
-  Button,
-  Card,
-  Progress,
-  Skeleton,
-  Space,
-  Typography,
-  Flex,
-} from "antd";
+import { Button, Card, Progress, Skeleton, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { PhoneOutlined } from "@ant-design/icons";
 import { handleContactSupport } from "~/routes/app._index/route";
 import { GetProgressData, GetUserValue } from "~/api/JavaServer";
 import useReport from "../../scripts/eventReport";
-import TranslationPanel from "~/routes/app._index/components/TranslationPanel";
 const { Text, Title } = Typography;
 
 interface ProgressingCardProps {
@@ -440,52 +431,16 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
       "dashboard_translation_task_continue",
     );
   };
-  const navigateToTranslate = () => {
-    reportClick("dashboard_translate_button");
-    navigate("/app/translate", {
-      state: { from: "/app", selectedLanguageCode: "" },
-    });
-    fetcher.submit(
-      {
-        log: `${shop} 前往翻译页面, 从主页面点击`,
-      },
-      {
-        method: "POST",
-        action: "/log",
-      },
-    );
-  };
-  return (
-    <Card
-      styles={{
-        body: {
-          padding: "12px 24px",
-        },
-      }}
-    >
-      <Flex
-        justify="space-between"
-        align="center"
-        style={{ marginBottom: "10px" }}
-      >
-        <Title level={5} style={{ fontWeight: 600 }}>
-          {t("transLanguageCard1.title")}
-        </Title>
-        {loading ? (
-          <Skeleton.Button active />
-        ) : (
-          <Button type="primary" onClick={() => navigateToTranslate()}>
-            {t("transLanguageCard1.button")}
-          </Button>
-        )}
-      </Flex>
 
+  return (
+    <Card>
+      <Title level={4}>{t("progressing.title")}</Title>
       {loading ? (
         <Skeleton.Button active style={{ height: "130px" }} block />
       ) : (
         <Space direction="vertical" style={{ width: "100%" }}>
           {status !== 0 ? (
-            <Card styles={{ body: { padding: "12px 24px" } }}>
+            <Card>
               {/* <Space style={{ width: '100%', }} size="small"> */}
               <div
                 style={{
@@ -495,13 +450,13 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   width: "100%", // 确保占满容器宽度
                   textAlign: "center",
                   gap: 10,
-                  minHeight: "120px",
+                  minHeight: "75px",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
-                    justifyContent: "center",
+                    justifyContent: "space-between",
                     alignItems: "stretch", // 改为 stretch 让子元素拉伸到相同高度
                     width: isMobile ? "100%" : "80%", // 确保占满容器宽度
                     textAlign: "center",
@@ -513,9 +468,8 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                     style={{
                       display: "flex",
                       width: "100%", // 确保占满容器宽度
-                      // flex: 1, // 让这个区域占据剩余空间
+                      flex: 1, // 让这个区域占据剩余空间
                       gap: 30,
-                      minHeight: "47px",
                     }}
                   >
                     {/* 左侧部分 */}
@@ -629,7 +583,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   <div
                     style={{
                       width: "100%",
-                      // marginTop: "auto", // 将进度条推到底部
+                      marginTop: "auto", // 将进度条推到底部
                       display: isMobile ? "none" : "block",
                     }}
                   >
@@ -660,7 +614,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                     justifyContent: "space-between",
                     alignItems: "stretch", // 改为 stretch 让子元素拉伸到相同高度
                     width: isMobile ? "100%" : "20%",
-                    // height:"100%"
                     // 移除固定高度，让它根据按钮内容自动调整
                   }}
                 >
@@ -670,8 +623,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         width: "100%", // 限制最大宽度
                         display: "flex",
                         flexDirection: "column",
-                        // height:"100%",
-                        justifyContent: "center",
                         gap: 10,
                       }}
                     >
@@ -696,30 +647,23 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                             state: { publishLanguageCode: target[index] },
                           })
                         }
+                        style={{
+                          marginTop: "auto",
+                        }}
                       >
                         {t("progressing.publish")}
                       </Button>
                     </div>
                   )}
                   {status === 2 && (
-                    <div
-                      style={{
-                        width: "100%",
-                        display: translateStatus !== 3 ? "flex" : "none",
-                        justifyContent: "center",
-                        flexDirection: "column",
-                        alignItems: "center",
-                      }}
+                    <Button
+                      block
+                      onClick={handleStopTranslate}
+                      loading={stopTranslateFetcher.state === "submitting"}
+                      style={{ marginTop: "auto" }}
                     >
-                      <Button
-                        block
-                        onClick={handleStopTranslate}
-                        loading={stopTranslateFetcher.state === "submitting"}
-                        // style={{ marginTop: "auto" }}
-                      >
-                        {t("progressing.stopTranslate")}
-                      </Button>
-                    </div>
+                      {t("progressing.stopTranslate")}
+                    </Button>
                   )}
                   {status === 3 && (
                     <div
@@ -728,7 +672,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         display: "flex",
                         flexDirection: "column",
                         gap: 10,
-                        justifyContent: "center",
                       }}
                     >
                       <Button
@@ -761,25 +704,15 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                     </div>
                   )}
                   {status === 4 && (
-                    <div
-                      style={{
-                        width: "100%",
-                        display: "flex",
-                        justifyContent: "center",
-                        flexDirection: "column",
-                        alignItems: "center",
-                      }}
+                    <Button
+                      block
+                      type="primary"
+                      icon={<PhoneOutlined />}
+                      onClick={handleContactSupport}
+                      style={{ marginTop: "auto" }}
                     >
-                      <Button
-                        block
-                        type="primary"
-                        icon={<PhoneOutlined />}
-                        onClick={handleContactSupport}
-                        // style={{ marginTop: "auto" }}
-                      >
-                        {t("progressing.contactButton")}
-                      </Button>
-                    </div>
+                      {t("progressing.contactButton")}
+                    </Button>
                   )}
                   {status === 5 && (
                     <div
@@ -788,7 +721,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         display: "flex",
                         flexDirection: "column",
                         gap: 10,
-                        justifyContent: "center",
                       }}
                     >
                       <Button
@@ -811,24 +743,14 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                     </div>
                   )}
                   {status === 6 && (
-                    <div
-                      style={{
-                        width: "100%",
-                        display: "flex",
-                        justifyContent: "center",
-                        flexDirection: "column",
-                        alignItems: "center",
-                      }}
+                    <Button
+                      block
+                      onClick={handleReTranslate}
+                      loading={translateFetcher.state === "submitting"}
+                      style={{ marginTop: "auto" }}
                     >
-                      <Button
-                        block
-                        onClick={handleReTranslate}
-                        loading={translateFetcher.state === "submitting"}
-                        // style={{ marginTop: "auto" }}
-                      >
-                        {t("progressing.continueTranslate")}
-                      </Button>
-                    </div>
+                      {t("progressing.continueTranslate")}
+                    </Button>
                   )}
                   {status === 7 && (
                     <div
@@ -837,7 +759,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                         display: "flex",
                         flexDirection: "column",
                         gap: 10,
-                        justifyContent: "center",
                       }}
                     >
                       <Button block onClick={() => navigate("/app/translate")}>
@@ -878,7 +799,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           )}
         </Space>
       )}
-      <TranslationPanel />
     </Card>
   );
 };

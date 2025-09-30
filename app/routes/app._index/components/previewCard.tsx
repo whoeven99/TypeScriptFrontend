@@ -64,7 +64,6 @@ const PreviewCard: React.FC<PreviewCardProps> = ({ shop }) => {
           <CloseOutlined />
         </Button>
       }
-      styles={{body:{padding:"12px 24px"}}}
     >
       <div
         style={{
