@@ -405,7 +405,6 @@ const TranslationDashboard = () => {
         </div>
       </Affix>
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}></div>
-      {/* <Divider style={{ margin: "0" }} /> */}
       <Space direction="vertical" size={"middle"} style={{ width: "100%" }}>
         <Card
           title={t("Translation quality score")}
@@ -490,9 +489,6 @@ const TranslationDashboard = () => {
                         <>
                           <span style={{ color: "red", fontWeight: "bold" }}>
                             {
-                              // storeLanguages.filter(
-                              //   (item) => item.status === "untranslated",
-                              // ).length
                               reportIntroduction.notTransLanguage
                             }
                           </span>{" "}

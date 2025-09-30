@@ -41,18 +41,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const scopes = adminAuthResult.session.scope
     ? adminAuthResult.session.scope.split(",")
     : [];
-  console.log("dsdadasd", adminAuthResult.session.scope?.split(","));
-
-  console.log("aaaaascopes", scopes.length);
-
   const optionalScopes = process.env.OPTIONAL_SCOPES;
   const missScopes = optionalScopes
     ?.split(",")
     .filter((s) => !scopes.includes(s)) as string[];
 
   const hasRequiresScopes = missScopes?.length === 0;
-  console.log("hasRequiresScopes", hasRequiresScopes);
-
   if (languageCode === "zh" || languageCode === "zh-CN") {
     return {
       language,
@@ -109,13 +103,8 @@ const Index = () => {
   const themeFetcher = useFetcher<any>();
   const graphqlFetcher = useFetcher<any>();
   const findWebPixelFetcher = useFetcher<any>();
-  const [showRequireScopeBtn, setShowRequireScopeBtn] =
-    useState(!hasRequiresScopes);
-  const { reportClick, report } = useReport();
 
-  // 翻译得分
-  const [translationScore, setTranslationScore] = useState<number>(0);
-  const [translatedLanguages, setTranslatedLanguages] = useState<number>(0);
+  const { reportClick, report } = useReport();
   useEffect(() => {
     setIsLoading(false);
     themeFetcher.submit(
@@ -279,50 +268,6 @@ const Index = () => {
     );
   };
 
-  const handleTestGraphqlData = async () => {
-    // await shopify.scopes.revoke(['read_analytics','read_reports','read_orders']);
-    console.log(missScopes);
-    console.log(hasRequiresScopes);
-
-    const response = await shopify.scopes.request(missScopes as string[]);
-    console.log("add scopes", response);
-    const formData = new FormData();
-    formData.append("quailtyEvaluation", JSON.stringify({}));
-    graphqlFetcher.submit(formData, {
-      method: "post",
-      action: "/app",
-    });
-    console.log(hasRequiresScopes, missScopes);
-  };
-  const handleFindWebPixel = async () => {
-    const data = await axios({
-      method: "post",
-      url: "http://localhost:3000/track",
-      data: {
-        eventData: "1111",
-      },
-    });
-    console.log("data", data);
-
-    // const formData = new FormData();
-    // formData.append("findWebPixelId", JSON.stringify({}));
-    // findWebPixelFetcher.submit(formData, {
-    //   method: "post",
-    //   action: "/app",
-    // });
-  };
-  // useEffect(() => {
-  //   const checkScopes = async () => {
-  //     const { granted } = await shopify.scopes.query();
-  //     console.log("exit", granted);
-  //     const missingScopes = ["read_customer_events", "write_pixels"].filter(
-  //       (s) => !granted.includes(s),
-  //     );
-  //     setShowRequireScopeBtn(missingScopes.length !== 0);
-  //     console.log(showRequireScopeBtn);
-  //   };
-  //   checkScopes();
-  // }, []);
   useEffect(() => {
     if (graphqlFetcher.data) {
       console.log(graphqlFetcher.data);
@@ -445,7 +390,6 @@ const Index = () => {
                   style={{ height: "100%" }}
                   justify="space-between"
                 >
-                  {/* <Title level={4}>{t("transCurrencyCard1.title")}</Title> */}
                   <Space direction="vertical" style={{ display: "flex" }}>
                     <Text strong>{t("transCurrencyCard1.title")}</Text>
                     <Text>{t("transCurrencyCard1.description")}</Text>
