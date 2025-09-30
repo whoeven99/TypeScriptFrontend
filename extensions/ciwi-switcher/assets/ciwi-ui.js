@@ -327,7 +327,7 @@ export async function LanguageSelectorTakeEffect(
     }
     const mainBoxText = ciwiBlock.querySelector(".main_box_text");
     if (mainBoxText) {
-      mainBoxText.style.margin = "0 20px 0px 35px";
+      mainBoxText.style.margin = "0 20px 0px 25px";
     }
   }
 }
@@ -516,7 +516,7 @@ export class CiwiswitcherForm extends HTMLElement {
       // 更新选中状态
       currencyOptions?.forEach((opt) => opt.classList.remove("selected"));
       option.classList.add("selected");
-      this.elements.currencyInput.value = value;
+      localStorage.setItem("ciwi_selected_currency", value);
     }
     // 关闭所有选择器
     this.closeAllSelectors();
@@ -565,10 +565,6 @@ export class CiwiswitcherForm extends HTMLElement {
       }
     }
     const form = this.querySelector("form");
-    localStorage.setItem(
-      "ciwi_selected_currency",
-      this.elements.currencyInput.value,
-    );
 
     // 提交表单
     if (form) {
@@ -583,7 +579,10 @@ export class CiwiswitcherForm extends HTMLElement {
     this.elements.languageSelector?.classList.remove("open");
     this.elements.currencySelector?.classList.remove("open");
     this.elements.selectorBox.style.display = "none";
-    if (this.elements.translateFloatBtn.style.justifyContent) {
+    if (
+      this.elements.translateFloatBtn.style.justifyContent &&
+      this.elements.mainBox.style.display === "none"
+    ) {
       this.elements.translateFloatBtn.style.display = "flex";
     }
     this.rotateArrow("#mainbox-arrow-icon", 0);
