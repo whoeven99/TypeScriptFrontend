@@ -1,20 +1,24 @@
 // ui.js
-import { fetchCurrencies, GetProductImageData } from "./ciwi-api.js";
+import {
+  fetchCurrencies,
+  GetProductImageData,
+  fetchAutoRate,
+} from "./ciwi-api.js";
 import { transformPrices } from "./ciwi-utils.js";
 
 /**
  * 渲染货币选项
  */
-export function renderCurrencyOptions(
+export function renderCurrencyOptions({
   optionsList,
   selectedOption,
-  data,
+  currencyData,
   selectedCurrencyCode,
-) {
-  console.log("currency: ", data);
+}) {
+  console.log("currency: ", currencyData);
 
   optionsList.innerHTML = "";
-  data.forEach((currency) => {
+  currencyData.forEach((currency) => {
     const optionItem = document.createElement("div");
     optionItem.className = `option-item ${currency?.currencyCode == selectedCurrencyCode ? "selected" : ""}`;
     optionItem.dataset.value = currency?.currencyCode;
@@ -49,31 +53,81 @@ export function renderCurrencyOptions(
 /**
  * 初始化货币选择器
  */
-export function initializeCurrency({ blockId, currencyData, shop, ciwiBlock }) {
+export async function initializeCurrency({
+  blockId,
+  currencyData,
+  shop,
+  ciwiBlock,
+}) {
+  const selectedCurrencyCode = localStorage.getItem("ciwi_selected_currency");
+
+  const moneyFormat = ciwiBlock.querySelector("#queryMoneyFormat").value;
+
+  const selectedCurrency = currencyData?.find(
+    (item) => item?.currencyCode == selectedCurrencyCode,
+  );
+
+  const isValueInCurrencies =
+    selectedCurrency && !selectedCurrency?.primaryStatus;
+
+  // 获取新的选择器元素
   const customSelector = ciwiBlock.querySelector(
     "#currency-switcher-container",
   );
   const selectedOption = customSelector?.querySelector(".selected-option");
   const optionsList = customSelector?.querySelector(".options-list");
+  const pageCurrencyCode = ciwiBlock.querySelector(
+    'input[name="currency_code"]',
+  )?.value;
 
-  const selectedCurrencyCode =
-    localStorage.getItem("ciwi_selected_currency") ||
-    ciwiBlock.querySelector('input[name="currency_code"]')?.value;
-
-  console.log("selectedCurrencyCode: ", selectedCurrencyCode);
-
-  renderCurrencyOptions(
+  renderCurrencyOptions({
     optionsList,
     selectedOption,
     currencyData,
-    selectedCurrencyCode,
-  );
+    selectedCurrencyCode: selectedCurrencyCode || pageCurrencyCode,
+  });
+
+  if (isValueInCurrencies) {
+    let rate = 1;
+    if (selectedCurrency?.exchangeRate == "Auto") {
+      const localRateJSON = localStorage.getItem("ciwi_selected_currency_rate");
+      const localRate = JSON.parse(localRateJSON);
+      if (localRate && localRate?.currencyCode == selectedCurrencyCode) {
+        rate = localRate?.exchangeRate;
+      } else {
+        const autoRate = await fetchAutoRate({
+          blockId,
+          shop: shop,
+          currencyCode: selectedCurrency.currencyCode,
+        });
+        if (typeof rate == "number") {
+          rate = autoRate;
+        }
+        localStorage.setItem(
+          "ciwi_selected_currency_rate",
+          JSON.stringify({
+            currencyCode: selectedCurrency.currencyCode,
+            exchangeRate: rate,
+          }),
+        );
+      }
+    } else {
+      rate = selectedCurrency.exchangeRate;
+    }
+    console.log("selectedCurrency: ", selectedCurrency);
+
+    // 初始执行一次
+    transformPrices({ rate, moneyFormat, selectedCurrency });
+
+    // 开始观察整个文档 body
+    initPriceObserver({ rate, moneyFormat, selectedCurrency });
+  }
 }
 
 /**
  * 观察 DOM 变化，动态处理新价格
  */
-export function initPriceObserver(rate, moneyFormat, selectedCurrency) {
+export function initPriceObserver({ rate, moneyFormat, selectedCurrency }) {
   const observer = new MutationObserver((mutationsList) => {
     for (const mutation of mutationsList) {
       if (mutation.type === "childList") {

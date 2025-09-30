@@ -174,14 +174,11 @@ export function transformPrices({ rate, moneyFormat, selectedCurrency }) {
   const pricesDoc = document.querySelectorAll(".ciwi-money");
 
   pricesDoc.forEach((price) => {
-    const priceText = price.innerText;
-    const transformedPrice = transform(
-      priceText,
+    const transformedPrice = transformSinglePriceNode(
+      price,
       rate,
       moneyFormat,
-      selectedCurrency.symbol,
-      selectedCurrency.currencyCode,
-      selectedCurrency.rounding,
+      selectedCurrency,
     );
 
     if (transformedPrice) {
