@@ -101,50 +101,6 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
     "SELLING_PLAN",
     "SELLING_PLAN_GROUP",
   ];
-  //   useEffect(() => {
-  //     const storedData = localStorage.getItem("localAnalyticsData");
-  //     if (storedData) {
-  //       try {
-  //         const parsed = JSON.parse(storedData);
-  //         setLocalAnalyticsData((prev: any) => ({
-  //           ...prev,
-  //           ...parsed,
-  //         }));
-  //         setInitialized(true);
-  //         // 判断是否需要请求翻译分数
-  //         if (!parsed.translateQualityScore) {
-  //           const formData = new FormData();
-  //           formData.append("translationScore", JSON.stringify({}));
-  //           translationScoreFetcher.submit(formData, {
-  //             method: "post",
-  //             action: "/app/translate_report",
-  //           });
-  //         }
-  //       } catch (error) {
-  //         console.error("解析 localStorage 数据失败:", error);
-  //       }
-  //     } else {
-  //       // 没有缓存，直接请求
-  //       const formData = new FormData();
-  //       formData.append("translationScore", JSON.stringify({}));
-  //       translationScoreFetcher.submit(formData, {
-  //         method: "post",
-  //         action: "/app/translate_report",
-  //       });
-  //     }
-  //   }, []);
-  //   useEffect(() => {
-  //     if (!initialized) return; // ✅ 初始化完成之后再写入
-  //     try {
-  //       localStorage.setItem(
-  //         "localAnalyticsData",
-  //         JSON.stringify(localAnalyticsData),
-  //       );
-  //       console.log("存储数据到浏览器本地");
-  //     } catch (e) {
-  //       console.error("localStorage set error:", e);
-  //     }
-  //   }, [initialized, localAnalyticsData]);
   function calculateConversionRate(
     resp: Record<string, Record<string, Record<string, any>>>,
   ): number {
@@ -310,25 +266,12 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
   }, []);
   useEffect(() => {
     if (configCreateWebPixel) {
-      // 开始请求前显示 loading（避免闪烁）
-      setLoadingGather((prev) => ({
-        ...prev,
-        conversionRate: { loading: true },
-      }));
-
       const conversionForm = new FormData();
       conversionForm.append("polarisVizFetcher", JSON.stringify({ days: 7 }));
       conversionCateFetcher.submit(conversionForm, {
         method: "post",
         action: "/app/conversion_rate",
       });
-    } else {
-      // 没配置 Pixel：关掉 loading，但不要显示 "+0%"
-      setLoadingGather((prev) => ({
-        ...prev,
-        conversionRate: { loading: false },
-      }));
-      // setConversionRate(undefined); // 表示“未配置 / 无数据”
     }
   }, [configCreateWebPixel]);
   useEffect(() => {

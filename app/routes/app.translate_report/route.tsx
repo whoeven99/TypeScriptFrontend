@@ -261,8 +261,6 @@ const TranslationDashboard = () => {
     navigate("/app");
   };
   const handleReDetection = () => {
-    console.log("重新检测");
-
     setReDectionLoading(true);
     handleRequestReportData();
     reportClick("translate_report_retest");
