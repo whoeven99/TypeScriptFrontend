@@ -134,7 +134,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         const data = await response.json();
-        console.log(`应用日志: ${shop} 翻译管理-产品页面翻到上一页`);
 
         return json({
           success: true,
@@ -168,6 +167,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       }
     case !!endCursor:
+      console.log("endCursor: ", endCursor);
+
       try {
         const response = await admin.graphql(
           `#graphql
@@ -199,7 +200,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         const data = await response.json();
-        console.log(`应用日志: ${shop} 翻译管理-产品页面翻到下一页`);
 
         return json({
           success: true,
@@ -1546,6 +1546,7 @@ const Index = () => {
           endCursor: JSON.stringify({
             cursor: endCursor,
             searchTerm: searchTerm,
+            query: queryText,
           }),
         },
         {
@@ -1564,6 +1565,7 @@ const Index = () => {
           startCursor: JSON.stringify({
             cursor: startCursor,
             searchTerm: searchTerm,
+            query: queryText,
           }),
         },
         {
@@ -1592,10 +1594,36 @@ const Index = () => {
     }
   };
 
-  const handleSearch = (value: string) => {
-    console.log(value);
-    setQueryText(value);
-  };
+  const handleSearch = (() => {
+    let timer: NodeJS.Timeout;
+
+    return (value: string) => {
+      console.log(value);
+      setQueryText(value);
+
+      // 清除上一次的定时器
+      if (timer) {
+        clearTimeout(timer);
+      }
+
+      // 延迟 1s 再执行请求
+      timer = setTimeout(() => {
+        dataFetcher.submit(
+          {
+            endCursor: JSON.stringify({
+              cursor: "",
+              searchTerm: searchTerm,
+              query: value,
+            }),
+          },
+          {
+            method: "post",
+            action: `/app/manage_translation/product?language=${searchTerm}`,
+          },
+        );
+      }, 1000);
+    };
+  })();
 
   const onPrevious = () => {
     if (confirmData.length > 0) {
@@ -2443,33 +2471,6 @@ const Index = () => {
           />
         )}
       </Layout>
-      {/* <Modal
-        variant={"base"}
-        open={!!isVisible}
-        onHide={() => setIsVisible(false)}
-      >
-        <div
-          style={{
-            padding: "16px",
-          }}
-        >
-          <Text>
-            {t("If you leave this page, any unsaved changes will be lost.")}
-          </Text>
-        </div>
-        <TitleBar title={t("Unsaved changes")}>
-          <button
-            variant="primary"
-            tone="critical"
-            onClick={() => handleLeaveItem(isVisible)}
-          >
-            {t("Leave Anyway")}
-          </button>
-          <button onClick={() => setIsVisible(false)}>
-            {t("Stay on Page")}
-          </button>
-        </TitleBar>
-      </Modal> */}
     </Page>
   );
 };
