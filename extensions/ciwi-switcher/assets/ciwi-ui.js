@@ -250,16 +250,16 @@ export async function LanguageSelectorTakeEffect(
   data,
   ciwiBlock,
 ) {
-  if (!isLanguageSelectorTakeEffect) return;
-
+  if (!isLanguageSelectorTakeEffect) {
+    console.log("languageSelector function false");
+    return;
+  }
   const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
   const language = languageInput.value;
   const languageSelector = ciwiBlock.querySelector(
     "#language-switcher-container",
   );
-
   languageSelector.style.display = "block";
-
   const languageSelectorHeader = ciwiBlock.querySelector(
     ".language_selector_header",
   );
@@ -275,51 +275,59 @@ export async function LanguageSelectorTakeEffect(
   const translateFloatBtnIcon = ciwiBlock.querySelector(
     "#translate-float-btn-icon",
   );
-
-  if (data?.includedFlag && window.languageLocaleData) {
-    const languageLocaleData = window.languageLocaleData;
+  if (data?.includedFlag) {
+    //获取所有语言代码
+    const languageLocaleData = window.languageLocaleData
+      ? window.languageLocaleData
+      : null;
     const languageOptions = ciwiBlock.querySelectorAll(
       ".option-item[data-type='language']",
     );
-
     languageOptions.forEach((option) => {
       const langCode = option.dataset.value;
       const countryCode = languageLocaleData[langCode]?.countries[0];
       if (countryCode) {
+        // 创建并插入国旗图片
         const flagImg = document.createElement("img");
         flagImg.className = "option-country-flag";
         flagImg.src = countryCode;
+        flagImg.alt = "";
+        // 将图片插入到选项的最前面
         option.insertBefore(flagImg, option.firstChild);
       }
     });
-
+    // 为当前选中的语言添加国旗
     const selectedOption = ciwiBlock.querySelector(
       ".language_selector_header[data-type='language'] .selected-option",
     );
     if (selectedOption) {
       const countryCode = languageLocaleData[language]?.countries[0];
+      const optionFlagImg = document.createElement("img");
+      optionFlagImg.className = "option-country-flag";
+      optionFlagImg.src = countryCode;
+      optionFlagImg.alt = "";
       if (countryCode) {
-        const optionFlagImg = document.createElement("img");
-        optionFlagImg.className = "option-country-flag";
-        optionFlagImg.src = countryCode;
         selectedOption.insertBefore(optionFlagImg, selectedOption.firstChild);
-
-        if (
-          mainLanguageFlag &&
-          (data.languageSelector || data.currencySelector)
-        ) {
-          mainLanguageFlag.src = countryCode;
-          mainLanguageFlag.hidden = false;
-        }
-        if (
-          translateFloatBtnIcon &&
-          !data.languageSelector &&
-          !data.currencySelector
-        ) {
-          translateFloatBtnIcon.src = countryCode;
-          translateFloatBtnIcon.hidden = false;
-        }
       }
+      if (
+        mainLanguageFlag &&
+        (data.languageSelector || data.currencySelector)
+      ) {
+        mainLanguageFlag.src = countryCode;
+        mainLanguageFlag.hidden = false;
+      }
+      if (
+        translateFloatBtnIcon &&
+        !data.languageSelector &&
+        !data.currencySelector
+      ) {
+        translateFloatBtnIcon.src = countryCode;
+        translateFloatBtnIcon.hidden = false;
+      }
+    }
+    const mainBoxText = ciwiBlock.querySelector(".main_box_text");
+    if (mainBoxText) {
+      mainBoxText.style.margin = "0 20px 0px 35px";
     }
   }
 }
@@ -612,7 +620,10 @@ export class CiwiswitcherForm extends HTMLElement {
 
     const isVisible = this.elements.selectorBox.style.display !== "none";
     this.elements.selectorBox.style.display = isVisible ? "none" : "flex";
-    if (this.elements.translateFloatBtn.style.justifyContent) {
+    if (
+      this.elements.translateFloatBtn.style.justifyContent &&
+      this.elements.mainBox.style.display === "none"
+    ) {
       this.elements.translateFloatBtn.style.display = isVisible
         ? "flex"
         : "none";
