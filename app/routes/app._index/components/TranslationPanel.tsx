@@ -1,34 +1,23 @@
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 import {
   Row,
   Col,
   Button,
   Card,
   Flex,
-  Grid,
   Image,
-  Skeleton,
-  Empty,
 } from "antd";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
 import { useTranslation } from "react-i18next";
 import languageLocaleData from "../../../../scripts/language-locale-data";
-interface LanguageButtonProps {
-  label: string;
-  width?: number;
-}
 
 const TranslationPanel = () => {
   const { t } = useTranslation();
   const { reportClick } = useReport();
-  const { useBreakpoint } = Grid;
   const navigate = useNavigate();
   const LanguageFetcher = useFetcher<any>();
-  const screens = useBreakpoint();
-  const gridWidth = screens.lg ? 54 : screens.md ? 80 : 120;
   const [languages, setLanguages] = useState<any>([]);
-  const [languageLoading, setLanguageLoading] = useState(true);
   const [nationalFlags, setNationalFlags] = useState<string[]>([]);
   useEffect(() => {
     const localFlags = localStorage.getItem("localFlagsData");
@@ -72,13 +61,11 @@ const TranslationPanel = () => {
           }
         }
         setLanguages(Object.values(langs).slice(0, 3)); // 只显示前3个
-        setLanguageLoading(false);
         localStorage.setItem(
           "localFlagsData",
-          JSON.stringify(Object.values(langs).slice(0, 3)),
+          JSON.stringify(Object.values(langs).slice(0, 3)), 
         );
       } else {
-        setLanguageLoading(false);
       }
     }
   }, [LanguageFetcher.data]);

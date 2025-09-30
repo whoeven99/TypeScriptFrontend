@@ -224,40 +224,44 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
 
   // 组件加载时自动查询 Web Pixel
   useEffect(() => {
-    const translateReportData = localStorage.getItem(
-      "translate_report_score",
-    ) as any;
-    const localUnTranslateWords = localStorage.getItem(
-      "local_untranslate_words",
-    ) as any;
-    const localConversionRate = localStorage.getItem(
-      "local_conversion_rate",
-    ) as any;
-    if (queryWebPixelFetcher.state === "idle" && !queryWebPixelFetcher.data) {
-      queryWebPixel();
-    }
-    if (localUnTranslateWords) {
-      setLocalUnTranslateWords(JSON.parse(localUnTranslateWords));
-    }
-    if (localConversionRate) {
-      setLocalConversionRate(JSON.parse(localConversionRate));
-    }
-    if (translateReportData) {
-      setTranslateData(translateReportData);
-    } else {
-      // 初始化获取翻译质量的分数
-      const formData = new FormData();
-      formData.append("translationScore", JSON.stringify({}));
-      translationScoreFetcher.submit(formData, {
-        method: "post",
-        action: "/app/translate_report",
-      });
-      setLoadingGather((prev) => ({
-        ...prev,
-        translationScore: {
-          loading: true,
-        },
-      }));
+    try {
+      const translateReportData = localStorage.getItem(
+        "translate_report_score",
+      ) as any;
+      const localUnTranslateWords = localStorage.getItem(
+        "local_untranslate_words",
+      ) as any;
+      const localConversionRate = localStorage.getItem(
+        "local_conversion_rate",
+      ) as any;
+      if (queryWebPixelFetcher.state === "idle" && !queryWebPixelFetcher.data) {
+        queryWebPixel();
+      }
+      if (localUnTranslateWords) {
+        setLocalUnTranslateWords(JSON.parse(localUnTranslateWords));
+      }
+      if (localConversionRate) {
+        setLocalConversionRate(JSON.parse(localConversionRate));
+      }
+      if (translateReportData) {
+        setTranslateData(translateReportData);
+      } else {
+        // 初始化获取翻译质量的分数
+        const formData = new FormData();
+        formData.append("translationScore", JSON.stringify({}));
+        translationScoreFetcher.submit(formData, {
+          method: "post",
+          action: "/app/translate_report",
+        });
+        setLoadingGather((prev) => ({
+          ...prev,
+          translationScore: {
+            loading: true,
+          },
+        }));
+      }
+    } catch (error) {
+      console.error("localConversionRate JSON 解析失败", error);
     }
   }, []);
   useEffect(() => {
@@ -410,7 +414,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
             onClick={() => navigate("/app/pricing")}
             style={{ fontSize: "14px", color: "#007F61", cursor: "pointer" }}
           >
-            {getPlanName(plan.id, isNew)}
+            {plan ? getPlanName(plan.id, isNew) : ""}
           </Text>
         )}
       </Flex>
@@ -461,7 +465,6 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
               type="default"
               loading={improveBtnState}
               onClick={handleNavigateDetail}
-              disabled={loadingGather.translationScore.loading || isLoading}
             >
               {t("Check")}
             </Button>
@@ -499,7 +502,6 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
                   navigate("/app/language");
                   reportClick("dashboard_go_translation");
                 }}
-                disabled={loadingGather.unTranslated.loading}
               >
                 {t("Translate")}
               </Button>
@@ -520,7 +522,13 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
             <Flex vertical align="center" justify="center" gap="small">
               <div style={{ textAlign: "center" }}>
                 <Statistic
-                  value={displayValue}
+                  value={
+                    conversionRate != null
+                      ? `+${conversionRate}%`
+                      : localConversionRate != null
+                        ? `+${localConversionRate}%`
+                        : "-"
+                  }
                   valueStyle={{ fontWeight: 500 }}
                 />
                 <Text>{t("Compared to 7 days ago")}</Text>
@@ -551,9 +559,9 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
             "To track conversion rates across different languages, this app requires:",
           )}
         </p>
-        {/* 建议在这里动态列出 missScopes */}
         <ul>
-          {missScopes?.map((scope: string) => <li key={scope}>{scope}</li>)}
+          {Array.isArray(missScopes) &&
+            missScopes.map((scope: string) => <li key={scope}>{scope}</li>)}
         </ul>
         <p>
           {t(

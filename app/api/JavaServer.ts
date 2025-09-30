@@ -1623,8 +1623,6 @@ export const GetStoreLanguage = async ({
   source: string;
 }) => {
   try {
-    console.log("sourceaaa: ", source);
-
     const response = await axios({
       method: "POST",
       url: `${process.env.SERVER_URL}/rating/getTranslationStatus?shopName=${shop}&source=${source}`,

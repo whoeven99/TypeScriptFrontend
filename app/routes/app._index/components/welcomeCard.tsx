@@ -104,10 +104,10 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
           <Text style={{ width: "75%" }}>
             {!switcherOpen
               ? t(
-                  "Customers can switch languages and currencies when visiting the site. ",
+                  "Customers can switch languages and currencies when visiting the site. "
                 )
               : t(
-                  "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ",
+                  "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. "
                 )}
           </Text>
           <div
