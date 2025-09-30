@@ -109,6 +109,27 @@ a[href="https://translate.google.com"]
   display: none !important;
 }
 
+.close_button_wrapper {
+  display: flex; /* 居中对齐图标 */
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.selector_box_close_button {
+  width: 16px; /* 给按钮固定宽度 */
+  height: 16px; /* 给按钮固定高度 */
+  display: flex; /* 居中对齐图标 */
+  align-items: center;
+  justify-content: center;
+  background: transparent; /* 背景透明 */
+  border: none; /* 去掉边框 */
+  padding: 0;
+  cursor: pointer;
+  font-size: 20px; /* 如果是文字 × */
+  font-weight: bold;
+  color: #000; /* 图标颜色 */
+}
+
 .main_box {
   display: flex;
   position: relative;

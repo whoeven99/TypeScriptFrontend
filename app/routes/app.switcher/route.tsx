@@ -29,6 +29,7 @@ import SwitcherSettingCard from "./components/switcherSettingCard";
 const { Text, Title } = Typography;
 import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
+import CloseIcon from "~/components/icon/closeIcon";
 interface EditData {
   shopName: string;
   includedFlag: boolean;
@@ -603,6 +604,7 @@ const Index = () => {
           language.selected = false;
         } else {
           language.selected = true;
+          setSelectedLanguage(language);
         }
       });
       setLocalization({ ...localization });
@@ -614,10 +616,12 @@ const Index = () => {
           currency.selected = false;
         } else {
           currency.selected = true;
+          setSelectedCurrency(currency);
         }
       });
       setLocalization({ ...localization });
     }
+    setIsSelectorOpen(false);
   };
 
   const handleIpOpenChange = (checked: boolean) => {
@@ -1043,7 +1047,7 @@ const Index = () => {
                   <div
                     id="ciwi-container"
                     style={{
-                      marginTop: "100px",
+                      marginTop: "84px",
                       minWidth: "100px",
                       position: "absolute", // 改为绝对定位
                       top:
@@ -1072,20 +1076,31 @@ const Index = () => {
                         style={{
                           background: backgroundColor,
                           border: `1px solid ${optionBorderColor}`,
-                          padding: "15px",
+                          padding: "10px",
                           borderRadius: "5px",
                           height:
                             languageSelector === currencySelector
-                              ? "124px"
-                              : "74px",
+                              ? "140px"
+                              : "90px",
                           marginBottom: "1px",
                           width: "100%",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "10px",
                         }}
                       >
+                        <div className={styles.close_button_wrapper}>
+                          <button
+                            onClick={handleCancelClick}
+                            className={styles.selector_box_close_button}
+                            id="selector-box-close-button"
+                          >
+                            <CloseIcon color={fontColor} />
+                          </button>
+                        </div>
                         <div
                           style={{
                             display: `${languageSelector || (!languageSelector && !currencySelector) ? "block" : "none"}`,
-                            marginBottom: "10px",
                             gap: "10px",
                           }}
                         >
@@ -1278,8 +1293,8 @@ const Index = () => {
                         marginTop: isSelectorOpen
                           ? "0px"
                           : languageSelector === currencySelector
-                            ? "125px"
-                            : "75px",
+                            ? "141px"
+                            : "91px",
                         background: backgroundColor,
                         border: `1px solid ${optionBorderColor}`,
                         justifyContent: isIncludedFlag ? "" : "center",
