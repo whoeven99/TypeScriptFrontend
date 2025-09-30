@@ -403,22 +403,22 @@ const Index = () => {
       sync_status: false,
       navigation: "policy",
     },
-    // {
-    //   key: "email",
-    //   title: t("Email"),
-    //   allTranslatedItems:
-    //     languageItemsData.find(
-    //       (item: any) =>
-    //         item?.language === current && item?.type === "EMAIL_TEMPLATE",
-    //     )?.translatedNumber ?? undefined,
-    //   allItems:
-    //     languageItemsData.find(
-    //       (item: any) =>
-    //         item?.language === current && item?.type === "EMAIL_TEMPLATE",
-    //     )?.totalNumber ?? undefined,
-    //   sync_status: false,
-    //   navigation: "email",
-    // },
+    {
+      key: "email",
+      title: t("Email"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "EMAIL_TEMPLATE",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "EMAIL_TEMPLATE",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "email",
+    },
     {
       key: "shipping",
       title: t("Shipping"),
@@ -602,6 +602,17 @@ const Index = () => {
       }
     }
   }, [metaobjectsFetcher.data]);
+
+  useEffect(() => {
+    if (emailFetcher.data) {
+      if (
+        emailFetcher.data?.success &&
+        emailFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(emailFetcher.data?.response));
+      }
+    }
+  }, [emailFetcher.data]);
 
   useEffect(() => {
     if (policiesFetcher.data) {

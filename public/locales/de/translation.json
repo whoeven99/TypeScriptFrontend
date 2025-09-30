@@ -675,6 +675,8 @@
   "Image translated successfully": "Bild erfolgreich übersetzt",
   "The current language does not support image translation": "Die aktuelle Sprache unterstützt keine Bildübersetzung",
   "1000 credits": "1000 Credits",
+  "Got a 5-day free trial": "Erhalten Sie eine 5-tägige kostenlose Testversion",
+  "You have received {{ plan }} Plan benefits": "Sie haben {{ plan }} Plan-Vorteile erhalten",
   "Save successfully": "Erfolgreich gespeichert",
   "Language Publishing Status": "Sprachveröffentlichungsstatus",
   "Publish to Selected Domains": "In ausgewählte Domänen veröffentlichen",

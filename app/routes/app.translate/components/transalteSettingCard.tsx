@@ -154,6 +154,10 @@ const TransalteSettingCard = ({
       value: "theme",
     },
     {
+      label: t("Email"),
+      value: "notifications",
+    },
+    {
       label: t("Delivery"),
       value: "delivery",
     },

@@ -722,6 +722,8 @@
   "You haven't added any languages yet.": "아직 언어를 추가하지 않았습니다.",
   "Authorization": "권한 부여",
   "Please authorize before use": "사용 전 승인을 해주세요",
+  "Got a 5-day free trial": "5일 무료 체험을 받으세요",
+  "You have received {{ plan }} Plan benefits": "{{ plan }} 플랜 혜택을 받았습니다",
   "Save successfully": "저장이 완료되었습니다",
   "Language Publishing Status": "언어 게시 상태",
   "Publish to Selected Domains": "선택한 도메인에 게시",

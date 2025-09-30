@@ -722,6 +722,8 @@
   "You haven't added any languages yet.": "Du har inte lagt till några språk än.",
   "Authorization": "Tillstånd",
   "Please authorize before use": "Vänligen auktorisera före användning",
+  "Got a 5-day free trial": "Få en 5-dagars gratis provperiod",
+  "You have received {{ plan }} Plan benefits": "Du har fått {{ plan }} Plan-förmåner",
   "Save successfully": "Sparat framgångsrikt",
   "Language Publishing Status": "Språkpubliceringsstatus",
   "Publish to Selected Domains": "Publicera till valda domäner",

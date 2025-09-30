@@ -722,6 +722,8 @@
   "You haven't added any languages yet.": "まだ言語を追加していません。",
   "Authorization": "承認",
   "Please authorize before use": "使用前に承認してください",
+  "Got a 5-day free trial": "5日間の無料トライアルを取得",
+  "You have received {{ plan }} Plan benefits": "{{ plan }} プランの特典を受け取りました",
   "Save successfully": "保存に成功しました",
   "Language Publishing Status": "言語の公開ステータス",
   "Publish to Selected Domains": "選択したドメインに公開",

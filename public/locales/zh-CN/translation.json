@@ -724,6 +724,8 @@
   "You haven't added any languages yet.": "您尚未添加任何语言。",
   "Authorization": "授权",
   "Please authorize before use": "请授权后再使用",
+  "Got a 5-day free trial": "获得 5 天免费试用",
+  "You have received {{ plan }} Plan benefits": "您已收到 {{ plan }} 计划福利",
   "Save successfully": "保存成功",
   "Language Publishing Status": "语言发布状态",
   "Publish to Selected Domains": "发布到所选域名",

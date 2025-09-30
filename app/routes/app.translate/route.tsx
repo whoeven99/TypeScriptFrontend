@@ -115,6 +115,7 @@ const Index = () => {
     "navigation",
     "shop",
     "theme",
+    "notifications",
     "delivery",
     "shipping",
   ]);

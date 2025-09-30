@@ -722,6 +722,8 @@
   "You haven't added any languages yet.": "Henüz hiçbir dil eklemediniz.",
   "Authorization": "Yetkilendirme",
   "Please authorize before use": "Lütfen kullanmadan önce yetkilendirin",
+  "Got a 5-day free trial": "5 günlük ücretsiz deneme sürümü alın",
+  "You have received {{ plan }} Plan benefits": "{{ plan }} Plan avantajlarını aldınız",
   "Save successfully": "Başarıyla kaydedildi",
   "Language Publishing Status": "Dil yayınlama durumu",
   "Publish to Selected Domains": "Seçili etki alanlarına yayınla",

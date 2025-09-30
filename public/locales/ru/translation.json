@@ -722,6 +722,8 @@
   "You haven't added any languages yet.": "Вы еще не добавили ни одного языка.",
   "Authorization": "Авторизация",
   "Please authorize before use": "Пожалуйста, дайте разрешение перед использованием",
+  "Got a 5-day free trial": "Получите 5-дневную бесплатную пробную версию",
+  "You have received {{ plan }} Plan benefits": "Вы получили преимущества плана {{ plan }}",
   "Save successfully": "Успешно сохранено",
   "Language Publishing Status": "Статус публикации языка",
   "Publish to Selected Domains": "Опубликовать в выбранных доменах",

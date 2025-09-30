@@ -722,6 +722,8 @@
   "You haven't added any languages yet.": "Je hebt nog geen talen toegevoegd.",
   "Authorization": "Autorisatie",
   "Please authorize before use": "Graag toestemming voor gebruik",
+  "Got a 5-day free trial": "Krijg een 5-daagse gratis proefperiode",
+  "You have received {{ plan }} Plan benefits": "U heeft {{ plan }} Plan voordelen ontvangen",
   "Save successfully": "Succesvol opgeslagen",
   "Language Publishing Status": "Publicatiestatus van taal",
   "Publish to Selected Domains": "Publiceren op geselecteerde domeinen",
