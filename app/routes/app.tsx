@@ -503,6 +503,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (unTranslated) {
       try {
+        const mutationResponse = await admin.graphql(
+          `query MyQuery {
+            shopLocales(published: true) {
+              locale
+              name
+              primary
+              published
+            }
+          }`,
+        );
+        const data = (await mutationResponse.json()) as any;
+        let source = "en";
+        if (data.data.shopLocales.length > 0) {
+          data.data.shopLocales.forEach((item: any) => {
+            if (item.primary === true) {
+              source = item.locale;
+            }
+          });
+        }
         const { resourceModules } = unTranslated;
         let totalWords = 0;
         const results = await Promise.all(
@@ -511,13 +530,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               shop,
               module,
               accessToken: accessToken as string,
+              source
             }),
           ),
         );
 
         results.forEach((res) => {
-          console.log("dasdasdas132dwew: ", res);
-
           if (res.success && res.response) {
             totalWords += res.response;
           }

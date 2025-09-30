@@ -738,11 +738,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   {status === 2 && (
                     <div
                       style={{
-                        width:"100%",
-                        display: "flex",
+                        width: "100%",
+                        display: translateStatus !== 3 ? "flex" : "none",
                         justifyContent: "center",
                         flexDirection: "column",
-                        alignItems:"center"
+                        alignItems: "center",
                       }}
                     >
                       <Button
@@ -797,11 +797,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   {status === 4 && (
                     <div
                       style={{
-                        width:"100%",
+                        width: "100%",
                         display: "flex",
                         justifyContent: "center",
                         flexDirection: "column",
-                        alignItems:"center"
+                        alignItems: "center",
                       }}
                     >
                       <Button
@@ -847,11 +847,11 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                   {status === 6 && (
                     <div
                       style={{
-                        width:"100%",
+                        width: "100%",
                         display: "flex",
                         justifyContent: "center",
                         flexDirection: "column",
-                        alignItems:"center"
+                        alignItems: "center",
                       }}
                     >
                       <Button

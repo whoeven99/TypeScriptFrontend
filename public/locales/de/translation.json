@@ -586,7 +586,7 @@
   "transLanguageCard3.description2": "<strong>Support</strong>: Unterstützt Sie & entwickelt angeforderte Funktionen",
   "transLanguageCard3.description3": "<strong>Preise</strong>: Zahlen Sie nur für die Modellnutzung",
   "transLanguageCard3.description4": "<strong>Assets</strong>: Ihre bezahlten Inhalte bleiben Ihnen",
-  "transLanguageCard3.description5": "<a href='https://ciwi.bogdatech.com/help/uncategorized/translation-service-guarantees/' target='_blank'>Vollständige Service-Garantien anzeigen</a>",
+  "transLanguageCard3.description5": "<a href='https://ciwi.ai/help-center/ShopifyApp/translation-service-guarantees' target='_blank'>Vollständige Service-Garantien anzeigen</a>",
   "transLanguageCard3.title": "Verpflichtet, die beste Übersetzungsqualität zu liefern.",
   "translate to": "Übersetzen zu",
   "translateSettings.title1": "Zielsprache",
@@ -730,5 +730,15 @@
   "devplanCard3.title": "30 % schnellere Übersetzungsgeschwindigkeit",
   "devplanCard4.title": "Umschalter mit unsichtbarem Modus unter IP-basierter Geolokalisierung",
   "devplanCard5.title": "Zeigen Sie Conversion-Rate-Kennzahlen für verschiedene Sprachen an, um die Übersetzungsergebnisse zu optimieren",
-  "Unknown date range": "Unbekannter Datumsbereich"
+  "Unknown date range": "Unbekannter Datumsbereich",
+  "Check": "Überprüfen",
+  "Translation Quality Report": "Bericht zur Übersetzungsqualität",
+  "Language Translation Status": "Status der Sprachübersetzung",
+  "Recommendations to Improve Quality": "Empfehlungen zur Qualitätsverbesserung",
+  "Define key terms to keep translations consistent with your brand.": "Definieren Sie Schlüsselbegriffe, um sicherzustellen, dass die Übersetzungen mit Ihrer Marke übereinstimmen.",
+  "Language & Currency Switcher": "Sprach- und Währungsumschalter",
+  "Enable automatic switching to match visitors’ language and currency.": "Aktivieren Sie die automatische Umschaltung, um die Sprache und Währung der Besucher anzupassen.",
+  "Make your translations live so customers can see them.": "Machen Sie Ihre Übersetzungen live, damit Kunden sie sehen können.",
+  "Auto-Translation": "Automatische Übersetzung",
+  "Turn on automatic translation to keep your store updated in real time.": "Aktivieren Sie die automatische Übersetzung, um Ihren Shop in Echtzeit auf dem neuesten Stand zu halten."
 }

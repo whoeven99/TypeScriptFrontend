@@ -1529,15 +1529,17 @@ export const GetUnTranslatedWords = async ({
   shop,
   module,
   accessToken,
+  source,
 }: {
   shop: string;
   module: string;
   accessToken: string;
+  source: string;
 }) => {
   try {
     const response = await axios({
       method: "POST",
-      url: `${process.env.SERVER_URL}/shopify/getTotalWords?shopName=${shop}&modelType=${module}`,
+      url: `${process.env.SERVER_URL}/shopify/getUnTranslatedToken?shopName=${shop}&source=${source}&modelType=${module}`,
       data: {
         accessToken,
       },

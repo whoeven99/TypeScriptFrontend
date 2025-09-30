@@ -9,6 +9,7 @@ interface Props {
 const LineChartECharts: React.FC<Props> = ({ data, height = 300 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
+
   useEffect(() => {
     if (chartRef.current) {
       chartInstance.current = echarts.init(chartRef.current);
@@ -25,7 +26,11 @@ const LineChartECharts: React.FC<Props> = ({ data, height = 300 }) => {
       };
     }
   }, []);
-
+  const formatPercent = (val: number) => {
+    if (val == null) return "-";
+    // 判断是不是整数
+    return Number.isInteger(val) ? `${val}%` : `${val.toFixed(2)}%`;
+  };
   useEffect(() => {
     if (!chartInstance.current) return;
 
@@ -56,7 +61,16 @@ const LineChartECharts: React.FC<Props> = ({ data, height = 300 }) => {
         smooth: true,
         symbol: "none", // 去掉圆圈
       })),
-      tooltip: { trigger: "axis" },
+      tooltip: {
+        trigger: "axis",
+        formatter: (params: any) => {
+          let result = params[0].axisValue + "<br/>";
+          params.forEach((item: any) => {
+            result += `${item.marker}${item.seriesName}: ${formatPercent(item.value)}<br/>`;
+          });
+          return result;
+        },
+      },
     };
 
     chartInstance.current.setOption(option);

@@ -538,7 +538,7 @@
   "transLanguageCard3.description2": "<strong>Support</strong>: Support you & develop requested features",
   "transLanguageCard3.description3": "<strong>Pricing</strong>: Only pay for model use",
   "transLanguageCard3.description4": "<strong>Assets</strong>: Your paid content remains yours",
-  "transLanguageCard3.description5": "<a href='https://ciwi.bogdatech.com/help/uncategorized/translation-service-guarantees/' target='_blank'>View full service guarantees</a>",
+  "transLanguageCard3.description5": "<a href='https://ciwi.ai/help-center/ShopifyApp/translation-service-guarantees' target='_blank'>View full service guarantees</a>",
   "transLanguageCard3.title": "Committed to delivering the best translation quality",
   "translate to": "Translate to",
   "translateSettings.title1": "Target language",
@@ -731,5 +731,15 @@
   "devplanCard3.title": "Velocidad de traducción un 30% más rápida",
   "devplanCard4.title": "Conmutador con modo invisible bajo geolocalización basada en IP",
   "devplanCard5.title": "Mostrar métricas de tasa de conversión para diferentes idiomas para optimizar los resultados de traducción",
-  "Unknown date range": "Rango de fechas desconocido"
+  "Unknown date range": "Rango de fechas desconocido",
+  "Check": "Controlar",
+  "Translation Quality Report": "Informe de calidad de la traducción",
+  "Language Translation Status": "Estado de la traducción del idioma",
+  "Recommendations to Improve Quality": "Recomendaciones para mejorar la calidad",
+  "Define key terms to keep translations consistent with your brand.": "Define términos clave para mantener las traducciones coherentes con tu marca.",
+  "Language & Currency Switcher": "Selector de idioma y moneda",
+  "Enable automatic switching to match visitors’ language and currency.": "Habilite el cambio automático para que coincida con el idioma y la moneda de los visitantes.",
+  "Make your translations live so customers can see them.": "Haga que sus traducciones estén en vivo para que los clientes puedan verlas.",
+  "Auto-Translation": "Traducción automática",
+  "Turn on automatic translation to keep your store updated in real time.": "Activa la traducción automática para mantener tu tienda actualizada en tiempo real."
 }

@@ -390,7 +390,7 @@ const TranslationDashboard = () => {
                 fontWeight: 700,
               }}
             >
-              {t("Translation quality assessment")}
+              {t("Translation Quality Report")}
             </Title>
           </div>
           {isLoading ? (
@@ -401,7 +401,7 @@ const TranslationDashboard = () => {
               loading={reDectionLoading}
               onClick={handleReDetection}
             >
-              {t("Retest")}
+              {t("Check")}
             </Button>
           )}
         </div>
@@ -525,7 +525,7 @@ const TranslationDashboard = () => {
 
         {/* 语言翻译情况 */}
         <Card
-          title={t("Language translation")}
+          title={t("Language Translation Status")}
           styles={{
             header: { borderBottom: "none" },
             body: {
@@ -543,7 +543,7 @@ const TranslationDashboard = () => {
                     reportClick("transate_report_deoptimization");
                   }}
                 >
-                  {t("Deoptimization")}
+                  {t("Improve")}
                 </Button>
               )
             )
@@ -586,7 +586,7 @@ const TranslationDashboard = () => {
                   <Empty
                     description={
                       <Text type="secondary" style={{ fontSize: 16 }}>
-                        {t("You haven't added any languages yet")}
+                        {t("You haven't added any languages yet.")}
                       </Text>
                     }
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -607,7 +607,7 @@ const TranslationDashboard = () => {
 
         {/* 翻译待办事项 */}
         <Card
-          title={t("Real-time and professional translation")}
+          title={t("Recommendations to Improve Quality")}
           style={{ marginBottom: 20 }}
           styles={{
             header: { borderBottom: "none" },
@@ -626,9 +626,19 @@ const TranslationDashboard = () => {
           ) : (
             <Flex vertical gap="small">
               <Flex justify="space-between" align="center">
-                <Text>{t("Termbase")}</Text>
+                <Flex vertical gap={4}>
+                  <Text strong>{t("Glossary")}</Text>
+                  <Text>
+                    {t(
+                      "Define key terms to keep translations consistent with your brand.",
+                    )}
+                  </Text>
+                </Flex>
+
                 {reportData.realTimeBtns.glossary ? (
-                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
+                  <Text style={{ padding: "15px", color: "#007F61" }}>
+                    {t("Enabled")}
+                  </Text>
                 ) : (
                   <Button
                     onClick={() => {
@@ -641,10 +651,21 @@ const TranslationDashboard = () => {
                   </Button>
                 )}
               </Flex>
+              <Divider style={{ margin: "0" }} />
               <Flex justify="space-between" align="center">
-                <Text>{t("Switcher")}</Text>
+                <Flex vertical gap={4}>
+                  <Text strong>{t("Language & Currency Switcher")}</Text>
+                  <Text>
+                    {t(
+                      "Enable automatic switching to match visitors’ language and currency.",
+                    )}
+                  </Text>
+                </Flex>
+
                 {reportData.realTimeBtns.switch ? (
-                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
+                  <Text style={{ padding: "15px", color: "#007F61" }}>
+                    {t("Enabled")}
+                  </Text>
                 ) : (
                   <Button
                     // style={{ marginTop: 8 }}
@@ -657,10 +678,21 @@ const TranslationDashboard = () => {
                   </Button>
                 )}
               </Flex>
+              <Divider style={{ margin: "0" }} />
               <Flex justify="space-between" align="center">
-                <Text>{t("Published Languages")}</Text>
+                <Flex vertical gap={4}>
+                  <Text strong>{t("Published Languages")}</Text>
+                  <Text>
+                    {t(
+                      "Make your translations live so customers can see them.",
+                    )}
+                  </Text>
+                </Flex>
+
                 {reportData.realTimeBtns.publishLanguage ? (
-                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
+                  <Text style={{ padding: "15px", color: "#007F61" }}>
+                    {t("Enabled")}
+                  </Text>
                 ) : (
                   <Button
                     onClick={() => {
@@ -673,10 +705,21 @@ const TranslationDashboard = () => {
                   </Button>
                 )}
               </Flex>
+              <Divider style={{ margin: "0" }} />
               <Flex justify="space-between" align="center">
-                <Text>{t("Enable automatic translation")}</Text>
+                <Flex vertical gap={4}>
+                  <Text strong>{t("Auto-Translation")}</Text>
+                  <Text>
+                    {t(
+                      "Turn on automatic translation to keep your store updated in real time.",
+                    )}
+                  </Text>
+                </Flex>
+
                 {reportData.realTimeBtns.autoTranslate ? (
-                  <Text style={{ padding: "15px" }}>{t("Enabled")}</Text>
+                  <Text style={{ padding: "15px", color: "#007F61" }}>
+                    {t("Enabled")}
+                  </Text>
                 ) : (
                   <Button
                     onClick={() => {

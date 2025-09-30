@@ -52,8 +52,6 @@ const TranslationPanel = () => {
   useEffect(() => {
     if (LanguageFetcher.data) {
       if (LanguageFetcher.data?.success) {
-        console.log(LanguageFetcher.data);
-
         const raw = LanguageFetcher.data.response;
         const langs: Record<string, any> = { ...raw };
         delete langs["Published Languages"];

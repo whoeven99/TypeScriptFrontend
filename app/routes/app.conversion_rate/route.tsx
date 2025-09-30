@@ -27,7 +27,11 @@ import {
   ChartVerticalFilledIcon,
   ArrowLeftIcon,
 } from "@shopify/polaris-icons";
-import {AppstoreOutlined,ColumnWidthOutlined,BarsOutlined} from '@ant-design/icons'
+import {
+  AppstoreOutlined,
+  ColumnWidthOutlined,
+  BarsOutlined,
+} from "@ant-design/icons";
 import ScrollNotice from "~/components/ScrollNotice";
 import { authenticate } from "../../shopify.server";
 // import {  BarChart } from "@shopify/polaris-viz";
@@ -71,9 +75,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
         const data = (await mutationResponse.json()) as any;
         let storeLanguage = [] as string[];
+        let defaultLanguage = "en";
+        console.log("jdiasjdiasjdi", data.data.shopLocales);
+
         if (data.data.shopLocales.length > 0) {
           data.data.shopLocales.forEach((item: any) => {
             storeLanguage.push(item.locale);
+            if (item.primary) {
+              defaultLanguage = item.name;
+            }
           });
         }
         const updatedStoreLanguage = storeLanguage.map((lang) =>
@@ -86,7 +96,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           storeLanguage: updatedStoreLanguage,
           dayData: days,
         });
-        return response;
+        return { ...response, defaultLanguage };
       } catch (error) {
         console.log("get polarisViz data failed", error);
         return {
@@ -116,8 +126,9 @@ const Index = () => {
   const [currentFilterCondition, setCondition] = useState("last7");
   const [chartData, setChartData] = useState<any>([]);
   const [filteredChartData, setFilteredChartData] = useState<any>([]);
+  const [defaultLanguage, setDefaultLanguage] = useState<string>("");
 
-  const SkeletonGrid = ["1", "2", "3"];
+  const SkeletonGrid = ["1", "2", "3", "4"];
   const getLast24HoursRange = (): { start: Date; end: Date } => {
     const end = new Date(); // 现在
     const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000); // 一个星期前
@@ -173,36 +184,80 @@ const Index = () => {
       "conversion_rate_gridColumns",
     );
   };
+  // useEffect(() => {
+  //   if (chartData.length === 0) return;
+
+  //   const allDates = generateDateRange(selectedDates.start, selectedDates.end);
+  //   console.log(chartData);
+
+  //   const filled = chartData.map((chart: any) => {
+  //     return {
+  //       ...chart,
+  //       data: chart.data.map((series: any) => {
+  //         // 建立一个 key -> value 的 Map
+  //         const valueMap = new Map(
+  //           series.data.map((item: any) => [item.key, item.value]),
+  //         );
+
+  //         // 重新按完整日期数组生成数据
+  //         const alignedData = allDates.map((date) => ({
+  //           key: date,
+  //           value: valueMap.get(date) ?? 0, // 没数据就补 0
+  //         }));
+
+  //         return {
+  //           ...series,
+  //           data: alignedData,
+  //           name: `${formatDate(selectedDates.start)} ~ ${formatDate(selectedDates.end)}`,
+  //         };
+  //       }),
+  //     };
+  //   });
+  //   console.log(filled);
+
+  //   setFilteredChartData(filled);
+  // }, [selectedDates, chartData]);
   useEffect(() => {
     if (chartData.length === 0) return;
 
     const allDates = generateDateRange(selectedDates.start, selectedDates.end);
-
     const filled = chartData.map((chart: any) => {
       return {
         ...chart,
+        language:
+          chart.language === defaultLanguage
+            ? `${chart.language} (${t("Default Language")})`
+            : chart.language,
         data: chart.data.map((series: any) => {
-          // 建立一个 key -> value 的 Map
           const valueMap = new Map(
             series.data.map((item: any) => [item.key, item.value]),
           );
 
-          // 重新按完整日期数组生成数据
           const alignedData = allDates.map((date) => ({
             key: date,
-            value: valueMap.get(date) ?? 0, // 没数据就补 0
+            value: valueMap.get(date) ?? 0,
           }));
 
           return {
             ...series,
             data: alignedData,
-            name: `${formatDate(selectedDates.start)} ~ ${formatDate(selectedDates.end)}`,
+            name: `${formatDate(selectedDates.start)} ~ ${formatDate(
+              selectedDates.end,
+            )}`,
           };
         }),
       };
     });
-    setFilteredChartData(filled);
-  }, [selectedDates, chartData]);
+
+    // 排序，确保默认语言在第一个
+    const sorted = filled.sort((a: any, b: any) => {
+      if (a.language.includes(defaultLanguage)) return -1;
+      if (b.language.includes(defaultLanguage)) return 1;
+      return 0;
+    });
+
+    setFilteredChartData(sorted);
+  }, [selectedDates, chartData, defaultLanguage, t]);
   const formatDate = (date: Date) => {
     return date.toLocaleDateString();
   };
@@ -372,6 +427,7 @@ const Index = () => {
     if (polarisVizDataFetcher.data) {
       if (polarisVizDataFetcher.data.response) {
         setChartData(transformData(polarisVizDataFetcher.data.response));
+        setDefaultLanguage(polarisVizDataFetcher.data?.defaultLanguage);
         setFilteredChartData(
           transformData(polarisVizDataFetcher.data.response),
         );

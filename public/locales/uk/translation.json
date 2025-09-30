@@ -586,7 +586,7 @@
   "transLanguageCard3.description2": "<strong>Підтримка</strong>: Підтримуємо вас і розробляємо запитувані функції",
   "transLanguageCard3.description3": "<strong>Ціноутворення</strong>: Платите лише за використання моделі",
   "transLanguageCard3.description4": "<strong>Активи</strong>: Ваш оплачений контент залишається вашим",
-  "transLanguageCard3.description5": "<a href='https://ciwi.bogdatech.com/help/uncategorized/translation-service-guarantees/' target='_blank'>Переглянути повні гарантії сервісу</a>",
+  "transLanguageCard3.description5": "<a href='https://ciwi.ai/help-center/ShopifyApp/translation-service-guarantees' target='_blank'>Переглянути повні гарантії сервісу</a>",
   "transLanguageCard3.title": "Прагнемо забезпечити найкращу якість перекладу.",
   "translate to": "Перекласти на",
   "translateSettings.title1": "Цільова мова",
@@ -730,5 +730,15 @@
   "devplanCard3.title": "На 30% швидше перекладати",
   "devplanCard4.title": "Перемикач з невидимим режимом під час геолокації на основі IP",
   "devplanCard5.title": "Відображати показники коефіцієнта конверсії для різних мов для оптимізації результатів перекладу",
-  "Unknown date range": "Невідомий діапазон дат"
+  "Unknown date range": "Невідомий діапазон дат",
+  "Check": "Перевірити",
+  "Translation Quality Report": "Звіт про якість перекладу",
+  "Language Translation Status": "Стан перекладу мови",
+  "Recommendations to Improve Quality": "Рекомендації щодо покращення якості",
+  "Define key terms to keep translations consistent with your brand.": "Визначте ключові терміни, щоб переклади відповідали вашому бренду.",
+  "Language & Currency Switcher": "Перемикач мови та валюти",
+  "Enable automatic switching to match visitors’ language and currency.": "Увімкнути автоматичне перемикання відповідно до мови та валюти відвідувачів.",
+  "Make your translations live so customers can see them.": "Опублікуйте свої переклади, щоб клієнти могли їх побачити.",
+  "Auto-Translation": "Автоматичний переклад",
+  "Turn on automatic translation to keep your store updated in real time.": "Увімкніть автоматичний переклад, щоб ваш магазин оновлювався в режимі реального часу."
 }

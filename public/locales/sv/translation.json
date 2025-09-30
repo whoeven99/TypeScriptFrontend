@@ -536,7 +536,7 @@
   "transLanguageCard3.description2": "<strong>Support</strong>: Support you & develop requested features",
   "transLanguageCard3.description3": "<strong>Pricing</strong>: Only pay for model use",
   "transLanguageCard3.description4": "<strong>Assets</strong>: Your paid content remains yours",
-  "transLanguageCard3.description5": "<a href='https://ciwi.bogdatech.com/help/uncategorized/translation-service-guarantees/' target='_blank'>View full service guarantees</a>",
+  "transLanguageCard3.description5": "<a href='https://ciwi.ai/help-center/ShopifyApp/translation-service-guarantees' target='_blank'>View full service guarantees</a>",
   "transLanguageCard3.title": "Committed to delivering the best translation quality",
   "translate to": "Translate to",
   "translateSettings.title1": "Target language",
@@ -731,5 +731,15 @@
   "devplanCard3.title": "30 % snabbare översättningshastighet",
   "devplanCard4.title": "Växlare med osynligt läge under IP-baserad geolokalisering",
   "devplanCard5.title": "Visa konverteringsfrekvensstatistik för olika språk för att optimera översättningsresultaten",
-  "Unknown date range": "Okänt datumintervall"
+  "Unknown date range": "Okänt datumintervall",
+  "Check": "Kontrollera",
+  "Translation Quality Report": "Rapport om översättningskvalitet",
+  "Language Translation Status": "Status för språköversättning",
+  "Recommendations to Improve Quality": "Rekommendationer för att förbättra kvaliteten",
+  "Define key terms to keep translations consistent with your brand.": "Definiera nyckeltermer för att hålla översättningarna i linje med ditt varumärke.",
+  "Language & Currency Switcher": "Språk- och valutaväxling",
+  "Enable automatic switching to match visitors’ language and currency.": "Aktivera automatisk växling för att matcha besökarnas språk och valuta.",
+  "Make your translations live so customers can see them.": "Gör dina översättningar tillgängliga så att kunderna kan se dem.",
+  "Auto-Translation": "Automatisk översättning",
+  "Turn on automatic translation to keep your store updated in real time.": "Aktivera automatisk översättning för att hålla din butik uppdaterad i realtid."
 }

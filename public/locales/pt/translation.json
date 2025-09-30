@@ -538,7 +538,7 @@
   "transLanguageCard3.description2": "<strong>Support</strong>: Support you & develop requested features",
   "transLanguageCard3.description3": "<strong>Pricing</strong>: Only pay for model use",
   "transLanguageCard3.description4": "<strong>Assets</strong>: Your paid content remains yours",
-  "transLanguageCard3.description5": "<a href='https://ciwi.bogdatech.com/help/uncategorized/translation-service-guarantees/' target='_blank'>View full service guarantees</a>",
+  "transLanguageCard3.description5": "<a href='https://ciwi.ai/help-center/ShopifyApp/translation-service-guarantees' target='_blank'>View full service guarantees</a>",
   "transLanguageCard3.title": "Committed to delivering the best translation quality",
   "translate to": "Translate to",
   "translateSettings.title1": "Target language",
@@ -731,5 +731,15 @@
   "devplanCard3.title": "Velocidade de tradução 30% mais rápida",
   "devplanCard4.title": "Comutador com modo invisível sob geolocalização baseada em IP",
   "devplanCard5.title": "Exibir métricas de taxa de conversão para diferentes idiomas para otimizar os resultados da tradução",
-  "Unknown date range": "Intervalo de datas desconhecido"
+  "Unknown date range": "Intervalo de datas desconhecido",
+  "Check": "Verificar",
+  "Translation Quality Report": "Relatório de Qualidade da Tradução",
+  "Language Translation Status": "Status da tradução de idiomas",
+  "Recommendations to Improve Quality": "Recomendações para melhorar a qualidade",
+  "Define key terms to keep translations consistent with your brand.": "Defina termos-chave para manter as traduções consistentes com sua marca.",
+  "Language & Currency Switcher": "Seletor de idioma e moeda",
+  "Enable automatic switching to match visitors’ language and currency.": "Habilite a alternância automática para corresponder ao idioma e à moeda dos visitantes.",
+  "Make your translations live so customers can see them.": "Torne suas traduções públicas para que os clientes possam vê-las.",
+  "Auto-Translation": "Tradução automática",
+  "Turn on automatic translation to keep your store updated in real time.": "Ative a tradução automática para manter sua loja atualizada em tempo real."
 }

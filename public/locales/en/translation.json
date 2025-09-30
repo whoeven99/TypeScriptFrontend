@@ -240,7 +240,7 @@
   "transLanguageCard3.description2": "<strong>Support</strong>: Support you & develop requested features",
   "transLanguageCard3.description3": "<strong>Pricing</strong>: Only pay for model use",
   "transLanguageCard3.description4": "<strong>Assets</strong>: Your paid content remains yours",
-  "transLanguageCard3.description5": "<a href='https://ciwi.bogdatech.com/help/uncategorized/translation-service-guarantees/' target='_blank'>View full service guarantees</a>",
+  "transLanguageCard3.description5": "<a href='https://ciwi.ai/help-center/ShopifyApp/translation-service-guarantees' target='_blank'>View full service guarantees</a>",
   "transCurrencyCard1.title": "Set up multiple currencies for different regions",
   "transCurrencyCard1.description": "Add currencies, manage exchange rates, and customize settings to suit your global store.",
   "transCurrencyCard1.button": "Manage Currency",
@@ -730,5 +730,15 @@
   "day": "day",
   "Manage Languages": "Manage Languages",
   "You haven't added any languages yet.": "You haven't added any languages yet.",
-  "Unknown date range":"Unknown date range"
+  "Unknown date range":"Unknown date range",
+  "Check":"Check",
+  "Translation Quality Report":"Translation Quality Report",
+  "Language Translation Status":"Language Translation Status",
+  "Recommendations to Improve Quality":"Recommendations to Improve Quality",
+  "Define key terms to keep translations consistent with your brand.":"Define key terms to keep translations consistent with your brand.",
+  "Language & Currency Switcher":"Language & Currency Switcher",
+  "Enable automatic switching to match visitors’ language and currency.":"Enable automatic switching to match visitors’ language and currency.",
+  "Make your translations live so customers can see them.":"Make your translations live so customers can see them.",
+  "Auto-Translation":"Auto-Translation",
+  "Turn on automatic translation to keep your store updated in real time.":"Turn on automatic translation to keep your store updated in real time."
 }

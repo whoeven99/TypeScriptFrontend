@@ -201,7 +201,7 @@
   "transLanguageCard3.description2": "<strong>支援</strong>：支援您並開發所需的功能",
   "transLanguageCard3.description3": "<strong>定價</strong>：僅支付模型使用費",
   "transLanguageCard3.description4": "<strong>資產</strong>：您的付費內容仍歸您所有",
-  "transLanguageCard3.description5": "<a href='https://ciwi.bogdatech.com/help/uncategorized/translation-service-guarantees/' target='_blank'>查看完整的服務保證</a>",
+  "transLanguageCard3.description5": "<a href='https://ciwi.ai/help-center/ShopifyApp/translation-service-guarantees' target='_blank'>查看完整的服務保證</a>",
   "transCurrencyCard1.title": "為不同地區設定多種貨幣",
   "transCurrencyCard1.description": "新增貨幣、管理匯率並自訂設定以適合您的全球商店。",
   "transCurrencyCard1.button": "管理貨幣",
@@ -731,5 +731,15 @@
   "devplanCard3.title": "翻譯速度提高 30%",
   "devplanCard4.title": "基於 IP 地理位置的隱形模式切換器",
   "devplanCard5.title": "顯示不同語言的轉換率指標以最佳化翻譯結果",
-  "Unknown date range": "未知日期範圍"
+  "Unknown date range": "未知日期範圍",
+  "Check": "查看",
+  "Translation Quality Report": "翻譯品質報告",
+  "Language Translation Status": "語言翻譯現狀",
+  "Recommendations to Improve Quality": "提高品質的建議",
+  "Define key terms to keep translations consistent with your brand.": "定義關鍵術語以使翻譯與您的品牌保持一致。",
+  "Language & Currency Switcher": "語言和貨幣轉換器",
+  "Enable automatic switching to match visitors’ language and currency.": "啟用自動切換以符合訪客的語言和貨幣。",
+  "Make your translations live so customers can see them.": "讓您的翻譯即時更新，以便客戶能夠看到。",
+  "Auto-Translation": "自動翻譯",
+  "Turn on automatic translation to keep your store updated in real time.": "開啟自動翻譯，讓您的商店保持即時更新。"
 }

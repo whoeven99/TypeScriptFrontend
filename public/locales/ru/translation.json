@@ -536,7 +536,7 @@
   "transLanguageCard3.description2": "<strong>Support</strong>: Support you & develop requested features",
   "transLanguageCard3.description3": "<strong>Pricing</strong>: Only pay for model use",
   "transLanguageCard3.description4": "<strong>Assets</strong>: Your paid content remains yours",
-  "transLanguageCard3.description5": "<a href='https://ciwi.bogdatech.com/help/uncategorized/translation-service-guarantees/' target='_blank'>View full service guarantees</a>",
+  "transLanguageCard3.description5": "<a href='https://ciwi.ai/help-center/ShopifyApp/translation-service-guarantees' target='_blank'>View full service guarantees</a>",
   "transLanguageCard3.title": "Committed to delivering the best translation quality",
   "translate to": "Translate to",
   "translateSettings.title1": "Target language",
@@ -731,5 +731,15 @@
   "devplanCard3.title": "Скорость перевода на 30% выше",
   "devplanCard4.title": "Переключатель с невидимым режимом при геолокации на основе IP",
   "devplanCard5.title": "Отображайте показатели коэффициента конверсии для разных языков, чтобы оптимизировать результаты перевода.",
-  "Unknown date range": "Неизвестный диапазон дат"
+  "Unknown date range": "Неизвестный диапазон дат",
+  "Check": "Проверять",
+  "Translation Quality Report": "Отчет о качестве перевода",
+  "Language Translation Status": "Статус перевода языка",
+  "Recommendations to Improve Quality": "Рекомендации по улучшению качества",
+  "Define key terms to keep translations consistent with your brand.": "Определите ключевые термины, чтобы переводы соответствовали вашему бренду.",
+  "Language & Currency Switcher": "Переключатель языка и валюты",
+  "Enable automatic switching to match visitors’ language and currency.": "Включите автоматическое переключение в соответствии с языком и валютой посетителей.",
+  "Make your translations live so customers can see them.": "Сделайте ваши переводы доступными для просмотра клиентами.",
+  "Auto-Translation": "Автоматический перевод",
+  "Turn on automatic translation to keep your store updated in real time.": "Включите автоматический перевод, чтобы ваш магазин обновлялся в режиме реального времени."
 }

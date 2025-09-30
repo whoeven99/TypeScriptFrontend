@@ -42,28 +42,6 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
   const showModal = () => {
     setIsModalVisible(true);
   };
-  // const [localAnalyticsData, setLocalAnalyticsData] = useState(() => {
-  //   if (typeof window !== "undefined") {
-  //     try {
-  //       const cached = localStorage.getItem("localAnalyticsData");
-  //       if (cached) return JSON.parse(cached);
-  //     } catch (e) {
-  //       console.error("localStorage parse error:", e);
-  //     }
-  //   }
-  //   return {
-  //     translateQualityScore: 0,
-  //     unTranslateWords: { totalWords: 0 },
-  //     conversionRate: 0,
-  //     languageFlags: [],
-  //   };
-  // });
-  //   const [localAnalyticsData, setLocalAnalyticsData] = useState({
-  //     translateQualityScore: 0,
-  //     unTranslateWords: { totalWords: 0 },
-  //     conversionRate: 0,
-  //     languageFlags: [],
-  //   });
   const [loadingGather, setLoadingGather] = useState<loadingGather>({
     translationScore: { loading: false },
     unTranslated: { loading: true },
@@ -535,7 +513,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
               onClick={handleNavigateDetail}
               disabled={loadingGather.translationScore.loading || isLoading}
             >
-              {t("Improve")}
+              {t("Check")}
             </Button>
           </Flex>
         </Col>
