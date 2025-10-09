@@ -32,11 +32,6 @@ const TranslationPanel = () => {
       method: "post",
     });
   }, []);
-  useEffect(() => {
-    if (nationalFlags) {
-      localStorage.setItem("localFlagsData", JSON.stringify(nationalFlags));
-    }
-  }, [nationalFlags]);
 
   useEffect(() => {
     if (LanguageFetcher.data) {
@@ -44,8 +39,6 @@ const TranslationPanel = () => {
         const raw = LanguageFetcher.data.response;
         const langs: Record<string, any> = { ...raw };
         delete langs["Published Languages"];
-        delete langs["English"];
-
         for (const langName in langs) {
           const match = Object.values(languageLocaleData).find(
             (item) => item.Name === langName,
@@ -66,6 +59,8 @@ const TranslationPanel = () => {
           JSON.stringify(Object.values(langs).slice(0, 3)), 
         );
       } else {
+        // console.error("国旗查询失败");
+        // setLanguages(nationalFlags);
       }
     }
   }, [LanguageFetcher.data]);

@@ -37,7 +37,7 @@ import { authenticate } from "../../shopify.server";
 // import {  BarChart } from "@shopify/polaris-viz";
 import "@shopify/polaris-viz/build/esm/styles.css";
 import { useFetcher } from "@remix-run/react";
-import { GetConversionData, GetStoreLanguage } from "../../api/JavaServer";
+import { GetConversionData } from "../../api/JavaServer";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
@@ -76,8 +76,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = (await mutationResponse.json()) as any;
         let storeLanguage = [] as string[];
         let defaultLanguage = "en";
-        console.log("jdiasjdiasjdi", data.data.shopLocales);
-
         if (data.data.shopLocales.length > 0) {
           data.data.shopLocales.forEach((item: any) => {
             storeLanguage.push(item.locale);

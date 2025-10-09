@@ -61,7 +61,6 @@ register(async ({ analytics, browser, init, settings }) => {
   }
   analytics.subscribe("page_viewed", async (event) => {
     try {
-      console.log("event", event);
       const payload = {
         storeLanguage,
         eventName: event.name,
@@ -75,7 +74,6 @@ register(async ({ analytics, browser, init, settings }) => {
         method: "POST",
         data: payload,
       });
-      console.log("page_viewed success: ", response);
     } catch (error) {
       console.error("Failed to send page_viewed event:", error);
     }
@@ -91,7 +89,6 @@ register(async ({ analytics, browser, init, settings }) => {
         pageEventId: event.id,
         clientId: event.clientId,
       };
-      console.log("add to cart: ", payload);
 
       // Example for sending event to third party servers
       const response = await axios({
@@ -99,7 +96,6 @@ register(async ({ analytics, browser, init, settings }) => {
         method: "POST",
         data: payload,
       });
-      console.log("product_added_to_cart success", response);
     } catch (error) {
       console.error("Failed to send product_added_to_cart event:", error);
     }
@@ -113,7 +109,6 @@ register(async ({ analytics, browser, init, settings }) => {
         pageEventId: event.id,
         clientId: event.clientId,
       };
-      console.log("clicked: ", payload);
 
       // Example for sending event to third party servers
       const response = await axios({
@@ -121,7 +116,6 @@ register(async ({ analytics, browser, init, settings }) => {
         method: "POST",
         data: payload,
       });
-      console.log("clicked event success", response);
     } catch (error) {
       console.error("Failed clieked event:", error);
     }

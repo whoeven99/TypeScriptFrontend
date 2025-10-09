@@ -147,7 +147,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (realTimeFetcher) {
       try {
-        // const { languages, days } = LanguageFetcher;
         const response = await GetRealTimeQuotaData({
           shop,
         });
@@ -201,7 +200,7 @@ const TranslationDashboard = () => {
       publishLanguage: false,
     },
   });
-  const rows = useSelector((state: RootState) => state.languageTableData.rows);
+  // const rows = useSelector((state: RootState) => state.languageTableData.rows);
   useEffect(() => {
     if (reportData && reportData.totalScore !== null) {
       localStorage.setItem("reportData", JSON.stringify(reportData));
@@ -295,7 +294,6 @@ const TranslationDashboard = () => {
         const publishLang = languagesObj["Published Languages"] === 1;
 
         delete languagesObj["Published Languages"];
-        delete languagesObj["English"];
 
         setReportData((prev: any) => {
           const next = {
@@ -344,11 +342,6 @@ const TranslationDashboard = () => {
           Math.ceil(translationEvaluationFetcher.data?.response * 100),
         ),
       );
-      // const data = JSON.parse(localStorage.getItem("localAnalyticsData")!);
-      // data.translateQualityScore = Math.ceil(
-      //   translationEvaluationFetcher.data?.response * 100,
-      // );
-      // localStorage.setItem("localAnalyticsData", JSON.stringify(data));
       setLoading(false);
       setReDectionLoading(false);
     }

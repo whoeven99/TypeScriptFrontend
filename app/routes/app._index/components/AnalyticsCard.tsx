@@ -244,7 +244,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
         setLocalConversionRate(JSON.parse(localConversionRate));
       }
       if (translateReportData) {
-        setTranslateData(translateReportData);
+        setTranslateData(JSON.parse(translateReportData));
       } else {
         // 初始化获取翻译质量的分数
         const formData = new FormData();
@@ -381,9 +381,9 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
   }, [queryWebPixelFetcher.data]);
   const checkScopes = async () => {
     const { granted } = await shopify.scopes.query();
-    const missingScopes = missScopes.filter(
-      (s: string) => !granted.includes(s),
-    );
+    const missingScopes = Array.isArray(missScopes)
+      ? missScopes.filter((s: string) => !granted.includes(s))
+      : [];
     setShowRequireScopeBtn(missingScopes.length === 0);
   };
   useEffect(() => {

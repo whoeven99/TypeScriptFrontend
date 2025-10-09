@@ -540,6 +540,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             totalWords += res.response;
           }
         });
+        console.log(`${shop} unTranslate words is ${totalWords}`);
         return {
           success: true,
           response: {
@@ -547,7 +548,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         };
       } catch (error) {
-        console.log("get unTranslated words failed", error);
+        console.log(`${shop} get unTranslated words failed`, error);
         return {
           success: false,
           errorCode: 10001,
