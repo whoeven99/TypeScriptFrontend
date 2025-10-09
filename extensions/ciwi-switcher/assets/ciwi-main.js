@@ -55,6 +55,7 @@ const rtlLanguages = [
   "کوردی",
   "ئۇيغۇرچە",
 ];
+
 async function a() {
   console.log("onload start (modular+full)");
   const blockId = document.querySelector('input[name="block_id"]')?.value;
@@ -205,6 +206,7 @@ async function a() {
       const translateFloatBtnText = ciwiBlock.querySelector(
         "#translate-float-btn-text",
       );
+      const optionsContainer = ciwiBlock.querySelectorAll(".options-container");
       selectorBox.style.backgroundColor = configData.backgroundColor;
       switcher.style.color = configData.fontColor;
       // 四个方向处理（保持原始逻辑）
@@ -219,6 +221,10 @@ async function a() {
           selectorBox.style.bottom = "auto";
           break;
         case "bottom_left":
+          optionsContainer.forEach((item) => {
+            item.style.top = "-135px";
+            item.style.marginTop = "-4px";
+          });
           switcher.style.bottom = configData.positionData + "%" || "10%";
           switcher.style.top = "auto";
           translateFloatBtnText.style.borderRadius = "8px 8px 0 0";
@@ -238,6 +244,10 @@ async function a() {
           selectorBox.style.bottom = "auto";
           break;
         case "bottom_right":
+          optionsContainer.forEach((item) => {
+            item.style.top = "-135px";
+            item.style.marginTop = "-4px";
+          });
           switcher.style.bottom = configData.positionData + "%" || "10%";
           switcher.style.right = "0";
           switcher.style.top = "auto";
