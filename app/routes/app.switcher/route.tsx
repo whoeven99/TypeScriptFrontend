@@ -1047,13 +1047,8 @@ const Index = () => {
                   <div
                     id="ciwi-container"
                     style={{
-                      marginTop: "84px",
                       minWidth: "100px",
                       position: "absolute", // 改为绝对定位
-                      top:
-                        languageSelector === currencySelector
-                          ? "-221px"
-                          : "-171px", // 位于顶部
                       left:
                         selectorPosition === "top_left" ||
                         selectorPosition === "bottom_left"
@@ -1064,6 +1059,9 @@ const Index = () => {
                         selectorPosition === "bottom_right"
                           ? "0"
                           : "auto",
+                      background: backgroundColor,
+                      border: `1px solid ${optionBorderColor}`,
+                      borderRadius: "5px",
                       transform: "none", // 移除transform，使用left/right定位
                       height: "auto",
                       display: isTransparent ? "none" : "block",
@@ -1074,6 +1072,17 @@ const Index = () => {
                       <div
                         id="selector-box"
                         style={{
+                          position: "absolute",
+                          bottom:
+                            selectorPosition === "bottom_left" ||
+                            selectorPosition === "bottom_right"
+                              ? "100%"
+                              : "auto",
+                          top:
+                            selectorPosition === "top_left" ||
+                            selectorPosition === "top_right"
+                              ? "100%"
+                              : "auto",
                           background: backgroundColor,
                           border: `1px solid ${optionBorderColor}`,
                           padding: "10px",
@@ -1158,6 +1167,16 @@ const Index = () => {
                               className={styles.options_container}
                               data-type="language"
                               style={{
+                                bottom:
+                                  selectorPosition === "bottom_left" ||
+                                  selectorPosition === "bottom_right"
+                                    ? "100%"
+                                    : "auto",
+                                top:
+                                  selectorPosition === "top_left" ||
+                                  selectorPosition === "top_right"
+                                    ? "100%"
+                                    : "auto",
                                 display: isLanguageOpen ? "block" : "none",
                                 backgroundColor: backgroundColor,
                                 zIndex: "2000",
@@ -1166,6 +1185,7 @@ const Index = () => {
                               <div
                                 className={styles.options_list}
                                 style={{
+                                  backgroundColor: backgroundColor,
                                   border: `1px solid ${optionBorderColor}`,
                                 }}
                               >
@@ -1252,7 +1272,19 @@ const Index = () => {
                               className={styles.options_container}
                               data-type="currency"
                               style={{
+                                backgroundColor: backgroundColor,
+                                zIndex: "2000",
                                 display: isCurrencyOpen ? "block" : "none",
+                                bottom:
+                                  selectorPosition === "bottom_left" ||
+                                  selectorPosition === "bottom_right"
+                                    ? "100%"
+                                    : "auto",
+                                top:
+                                  selectorPosition === "top_left" ||
+                                  selectorPosition === "top_right"
+                                    ? "100%"
+                                    : "auto",
                               }}
                             >
                               <div
@@ -1290,13 +1322,6 @@ const Index = () => {
                       id="main-box"
                       className={styles.main_box}
                       style={{
-                        marginTop: isSelectorOpen
-                          ? "0px"
-                          : languageSelector === currencySelector
-                            ? "141px"
-                            : "91px",
-                        background: backgroundColor,
-                        border: `1px solid ${optionBorderColor}`,
                         justifyContent: isIncludedFlag ? "" : "center",
                       }}
                       onClick={handleSelectorClick}
