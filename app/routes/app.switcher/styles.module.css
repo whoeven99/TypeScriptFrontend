@@ -197,12 +197,10 @@ a[href="https://translate.google.com"]
 }
 
 .arrow_icon {
-  width: 25% !important;
+  width: 15% !important;
   height: 25% !important;
   border: 0 !important;
   display: flex;
-  position: absolute;
-  right: 5%; /* 箭头图标右对齐 */
   pointer-events: none; /* 防止图标影响选择框的点击 */
   transition: transform 0.3s ease; /* 平滑过渡 */
 }
@@ -248,6 +246,7 @@ a[href="https://translate.google.com"]
   align-items: center;
   justify-content: space-between;
   border-radius: 4px;
+  padding: 0 8px;
   cursor: pointer;
   height: 40px;
 }
@@ -256,11 +255,6 @@ a[href="https://translate.google.com"]
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 10px;
-}
-
-.selected_text {
-  margin-right: 25px;
 }
 
 .country_flag {

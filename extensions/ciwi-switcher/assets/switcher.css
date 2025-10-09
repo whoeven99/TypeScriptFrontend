@@ -1,5 +1,5 @@
 .ciwi_container {
-  min-width: 100px;
+  min-width: 150px;
   right: auto;
   top: auto;
   position: fixed; /* 改为相对屏幕的位置 */

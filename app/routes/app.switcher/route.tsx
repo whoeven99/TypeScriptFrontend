@@ -1139,7 +1139,7 @@ const Index = () => {
                                       )?.flag
                                     }
                                     alt=""
-                                    width="25%"
+                                    width="15%"
                                     height="25%"
                                   />
                                 )}
