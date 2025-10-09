@@ -1059,6 +1059,9 @@ const Index = () => {
                         selectorPosition === "bottom_right"
                           ? "0"
                           : "auto",
+                      background: backgroundColor,
+                      border: `1px solid ${optionBorderColor}`,
+                      borderRadius: "5px",
                       transform: "none", // 移除transform，使用left/right定位
                       height: "auto",
                       display: isTransparent ? "none" : "block",
@@ -1319,8 +1322,6 @@ const Index = () => {
                       id="main-box"
                       className={styles.main_box}
                       style={{
-                        background: backgroundColor,
-                        border: `1px solid ${optionBorderColor}`,
                         justifyContent: isIncludedFlag ? "" : "center",
                       }}
                       onClick={handleSelectorClick}
