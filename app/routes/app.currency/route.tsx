@@ -337,21 +337,7 @@ const Index = () => {
 
   const hasSelected = selectedRowKeys.length > 0;
 
-  const exRateColumns: (BaseOptionType | DefaultOptionType)[] = [
-    { value: "Auto", label: t("Auto") },
-    { value: "Manual Rate", label: t("Manual Rate") },
-  ];
 
-  const roundingColumns: (BaseOptionType | DefaultOptionType)[] = [
-    { value: "", label: t("Disable") },
-    { value: "0", label: t("No decimal") },
-    { value: "1.00", label: `1.00 (${t("Recommend")})` },
-    { value: "0.99", label: "0.99" },
-    { value: "0.95", label: "0.95" },
-    { value: "0.75", label: "0.75" },
-    { value: "0.5", label: "0.50" },
-    { value: "0.25", label: "0.25" },
-  ];
 
   const columns: ColumnsType<any> = [
     {
@@ -523,7 +509,7 @@ const Index = () => {
       <TitleBar title={t("Currency")}></TitleBar>
       <ScrollNotice
         text={t(
-          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible."
+          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
@@ -730,8 +716,6 @@ const Index = () => {
       <CurrencyEditModal
         isVisible={isCurrencyEditModalOpen}
         setIsModalOpen={setIsCurrencyEditModalOpen}
-        roundingColumns={roundingColumns}
-        exRateColumns={exRateColumns}
         selectedRow={selectedRow}
         defaultCurrencyCode={defaultCurrencyCode}
       />

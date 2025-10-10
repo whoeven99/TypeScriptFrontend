@@ -304,7 +304,7 @@ a[href="https://translate.google.com"]
   height: 20px;
   object-fit: cover;
   border-radius: 2px;
-  /* border: 1px solid #ddd; */
+  border: 1px solid #ddd;
   min-width: 30px; /* 保持最小宽度 */
   opacity: 0; /* 初始状态完全透明 */
   transition: opacity 0.3s ease; /* 平滑过渡效果 */
@@ -348,10 +348,8 @@ a[href="https://translate.google.com"]
 
 .options-container {
   position: absolute;
-  top: 100%;
   left: 0;
   right: 0;
-  margin-top: 4px;
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 4px;

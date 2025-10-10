@@ -1,13 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import {
-  Button,
-  Card,
-  Progress,
-  Skeleton,
-  Space,
-  Typography,
-  Flex,
-} from "antd";
+import { Button, Card, Flex, Progress, Skeleton, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import { PhoneOutlined } from "@ant-design/icons";
@@ -837,7 +829,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           )}
         </Space>
       )}
-      <TranslationPanel />
     </Card>
   );
 };

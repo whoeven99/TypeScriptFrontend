@@ -1375,7 +1375,7 @@ export const GetLanguageStatus = async ({
   }
 };
 
-//查询语言待翻译字符数
+// //查询语言待翻译字符数
 // export const GetTotalWords = async ({
 //   shop,
 //   accessToken,
@@ -1395,18 +1395,11 @@ export const GetLanguageStatus = async ({
 //         target: target,
 //       },
 //     });
-//     console.log("get words: ", response);
 
-//     const res = response.data;
+//     const res = response.data.response;
 //     return res;
 //   } catch (error) {
 //     console.error("Error GetTotalWords:", error);
-//     return {
-//       success: false,
-//       errorCode: 10001,
-//       errorMsg: "SERVER_ERROR",
-//       response: [],
-//     };
 //   }
 // };
 

@@ -75,6 +75,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   const { admin } = adminAuthResult;
+
   try {
     const formData = await request.formData();
     const init = JSON.parse(formData.get("init") as string);
@@ -530,7 +531,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               shop,
               module,
               accessToken: accessToken as string,
-              source
+              source,
             }),
           ),
         );
