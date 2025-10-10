@@ -260,7 +260,7 @@ const Index = () => {
   function transformData(raw: any) {
     const languageMap: Record<string, string> = {
       en: "English",
-      ja: "日本語",
+      ja: "Japanese",
       "zh-hans": "简体中文",
       "zh-TW": "繁體中文",
       fr: "Français",
