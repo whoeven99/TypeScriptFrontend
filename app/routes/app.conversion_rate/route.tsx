@@ -21,15 +21,10 @@ import {
 } from "@shopify/polaris";
 import { Flex, Row, Skeleton, Typography, Button, Divider, Empty } from "antd";
 import {
-  LayoutColumn1Icon,
-  LayoutColumns2Icon,
-  LayoutColumns3Icon,
-  ChartVerticalFilledIcon,
   ArrowLeftIcon,
 } from "@shopify/polaris-icons";
 import {
   AppstoreOutlined,
-  ColumnWidthOutlined,
   BarsOutlined,
 } from "@ant-design/icons";
 import ScrollNotice from "~/components/ScrollNotice";
@@ -76,6 +71,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = (await mutationResponse.json()) as any;
         let storeLanguage = [] as string[];
         let defaultLanguage = "en";
+        console.log("data.data.shopLocales32: ",data.data.shopLocales);
+        
         if (data.data.shopLocales.length > 0) {
           data.data.shopLocales.forEach((item: any) => {
             storeLanguage.push(item.locale);

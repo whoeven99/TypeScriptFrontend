@@ -1,5 +1,4 @@
 import { register } from "@shopify/web-pixels-extension";
-console.log("dsadasda");
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 
@@ -100,24 +99,24 @@ register(async ({ analytics, browser, init, settings }) => {
       console.error("Failed to send product_added_to_cart event:", error);
     }
   });
-  analytics.subscribe("clicked", async (event) => {
-    try {
-      const payload = {
-        storeLanguage,
-        eventName: event.name,
-        timestamp: event.timestamp,
-        pageEventId: event.id,
-        clientId: event.clientId,
-      };
+  // analytics.subscribe("clicked", async (event) => {
+  //   try {
+  //     const payload = {
+  //       storeLanguage,
+  //       eventName: event.name,
+  //       timestamp: event.timestamp,
+  //       pageEventId: event.id,
+  //       clientId: event.clientId,
+  //     };
 
-      // Example for sending event to third party servers
-      const response = await axios({
-        url: serverUrl,
-        method: "POST",
-        data: payload,
-      });
-    } catch (error) {
-      console.error("Failed clieked event:", error);
-    }
-  });
+  //     // Example for sending event to third party servers
+  //     const response = await axios({
+  //       url: serverUrl,
+  //       method: "POST",
+  //       data: payload,
+  //     });
+  //   } catch (error) {
+  //     console.error("Failed clieked event:", error);
+  //   }
+  // });
 });

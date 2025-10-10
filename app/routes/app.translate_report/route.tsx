@@ -603,7 +603,7 @@ const TranslationDashboard = () => {
             },
           }}
         >
-          {realTimeIsLoading ? (
+          {languageStatus ? (
             <BlockStack>
               <Skeleton.Node
                 active

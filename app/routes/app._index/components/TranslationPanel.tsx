@@ -75,6 +75,7 @@ const TranslationPanel = () => {
           styles={{
             header: {
               borderBottom: "none",
+              fontSize:"14px"
             },
             body: {
               paddingTop: 0,
@@ -146,6 +147,7 @@ const TranslationPanel = () => {
           styles={{
             header: {
               borderBottom: "none",
+              fontSize:"14px"
             },
             body: {
               paddingTop: 0,
@@ -197,6 +199,7 @@ const TranslationPanel = () => {
           styles={{
             header: {
               borderBottom: "none",
+              fontSize:"14px"
             },
             body: {
               paddingTop: 0,

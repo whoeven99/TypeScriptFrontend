@@ -401,7 +401,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
     >
       <Flex justify="space-between" style={{ marginBottom: "10px" }}>
         <Title
-          level={5}
+          level={4}
           style={{ display: "flex", alignItems: "center", fontWeight: 600 }}
         >
           {t("Dashboard")}
@@ -531,7 +531,7 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
                   }
                   valueStyle={{ fontWeight: 500 }}
                 />
-                <Text>{t("Compared to 7 days ago")}</Text>
+                <Text>{t("Average conversion rate over 7 days")}</Text>
               </div>
             </Flex>
             <Button
