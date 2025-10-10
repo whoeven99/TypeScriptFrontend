@@ -746,5 +746,6 @@
   "Image & Alt Text Translation": "이미지 및 대체 텍스트 번역",
   "Permissions Needed for Multilingual Analytics": "다국어 분석에 필요한 권한",
   "To track conversion rates across different languages, this app requires:": "다양한 언어의 전환율을 추적하려면 이 앱에 다음이 필요합니다.",
-  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "나중에 시스템 프롬프트에서 권한을 업데이트하라는 메시지가 표시됩니다. 다국어 성과 분석 정보를 잠금 해제하려면 확인해 주세요."
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "나중에 시스템 프롬프트에서 권한을 업데이트하라는 메시지가 표시됩니다. 다국어 성과 분석 정보를 잠금 해제하려면 확인해 주세요.",
+  "Average conversion rate over 7 days": "7일 동안의 평균 전환율"
 }

@@ -746,5 +746,6 @@
   "Image & Alt Text Translation": "Resim ve Alternatif Metin Çevirisi",
   "Permissions Needed for Multilingual Analytics": "Çok Dilli Analizler İçin Gerekli İzinler",
   "To track conversion rates across different languages, this app requires:": "Farklı dillerdeki dönüşüm oranlarını izlemek için bu uygulamanın şunları gerektirmesi gerekir:",
-  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Daha sonraki bir sistem isteminde İzinleri Güncelle'niz istenecektir. Çok dilli performans bilgilerinin kilidini açmak için lütfen onaylayın."
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Daha sonraki bir sistem isteminde İzinleri Güncelle'niz istenecektir. Çok dilli performans bilgilerinin kilidini açmak için lütfen onaylayın.",
+  "Average conversion rate over 7 days": "7 günlük ortalama dönüşüm oranı"
 }

@@ -746,5 +746,6 @@
   "Image & Alt Text Translation": "Traduzione di immagini e testo alternativo",
   "Permissions Needed for Multilingual Analytics": "Autorizzazioni necessarie per l'analisi multilingue",
   "To track conversion rates across different languages, this app requires:": "Per monitorare i tassi di conversione nelle diverse lingue, questa app richiede:",
-  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Ti verrà chiesto di aggiornare le autorizzazioni in un prompt di sistema successivo. Conferma per sbloccare le informazioni sulle prestazioni multilingue."
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Ti verrà chiesto di aggiornare le autorizzazioni in un prompt di sistema successivo. Conferma per sbloccare le informazioni sulle prestazioni multilingue.",
+  "Average conversion rate over 7 days": "Tasso di conversione medio su 7 giorni"
 }

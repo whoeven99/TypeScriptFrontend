@@ -746,5 +746,6 @@
   "Image & Alt Text Translation": "圖片和替代文字翻譯",
   "Permissions Needed for Multilingual Analytics": "多語言分析所需的權限",
   "To track conversion rates across different languages, this app requires:": "為了追蹤不同語言的轉換率，此應用程式需要：",
-  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "稍後系統會提示您更新權限。請確認以解鎖多語言效能洞察。"
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "稍後系統會提示您更新權限。請確認以解鎖多語言效能洞察。",
+  "Average conversion rate over 7 days": "7 天平均轉換率"
 }

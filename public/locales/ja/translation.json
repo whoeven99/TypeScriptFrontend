@@ -746,5 +746,6 @@
   "Image & Alt Text Translation": "画像と代替テキストの翻訳",
   "Permissions Needed for Multilingual Analytics": "多言語分析に必要な権限",
   "To track conversion rates across different languages, this app requires:": "異なる言語間でのコンバージョン率を追跡するには、このアプリに以下が必要です。",
-  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "後ほどシステムプロンプトで権限の更新を求められます。多言語パフォーマンス分析機能を有効にするには、ご確認ください。"
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "後ほどシステムプロンプトで権限の更新を求められます。多言語パフォーマンス分析機能を有効にするには、ご確認ください。",
+  "Average conversion rate over 7 days": "7日間の平均コンバージョン率"
 }

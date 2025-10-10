@@ -745,5 +745,6 @@
   "Image & Alt Text Translation": "Переклад зображень та альтернативного тексту",
   "Permissions Needed for Multilingual Analytics": "Дозволи, необхідні для багатомовної аналітики",
   "To track conversion rates across different languages, this app requires:": "Щоб відстежувати коефіцієнти конверсії різними мовами, цьому додатку потрібні:",
-  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Вам буде запропоновано оновити дозволи в наступному системному запиті. Підтвердьте, щоб розблокувати багатомовну аналітику продуктивності."
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Вам буде запропоновано оновити дозволи в наступному системному запиті. Підтвердьте, щоб розблокувати багатомовну аналітику продуктивності.",
+  "Average conversion rate over 7 days": "Середній коефіцієнт конверсії за 7 днів"
 }
