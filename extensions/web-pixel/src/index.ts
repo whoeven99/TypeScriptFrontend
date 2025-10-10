@@ -95,6 +95,10 @@ register(async ({ analytics, browser, init, settings }) => {
         method: "POST",
         data: payload,
       });
+      console.log("add cart payload",payload);
+      
+      console.log("add cart res",response);
+      
     } catch (error) {
       console.error("Failed to send product_added_to_cart event:", error);
     }

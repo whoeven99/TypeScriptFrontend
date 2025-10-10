@@ -71,11 +71,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = (await mutationResponse.json()) as any;
         let storeLanguage = [] as string[];
         let defaultLanguage = "en";
-        console.log("data.data.shopLocales32: ",data.data.shopLocales);
-        
         if (data.data.shopLocales.length > 0) {
           data.data.shopLocales.forEach((item: any) => {
-            storeLanguage.push(item.locale);
+            // storeLanguage.push(item.locale);
             if (item.primary) {
               defaultLanguage = item.locale;
             }
@@ -91,6 +89,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           storeLanguage: updatedStoreLanguage,
           dayData: days,
         });
+        console.log("response11: ",response);
+        
         return json({ ...response, defaultLanguage });
       } catch (error) {
         console.log("get polarisViz data failed", error);
@@ -375,7 +375,7 @@ const Index = () => {
 
       return {
         locale: lang, // ✅ 新增 locale
-        language, // ✅ 显示名
+        language:lang, // ✅ 显示名
         data: [
           {
             name: dateRangeName,
@@ -389,6 +389,9 @@ const Index = () => {
   useEffect(() => {
     if (polarisVizDataFetcher.data) {
       if (polarisVizDataFetcher.data.response) {
+        console.log(polarisVizDataFetcher.data.response);
+        console.log(transformData(polarisVizDataFetcher.data.response));
+        
         setChartData(transformData(polarisVizDataFetcher.data.response));
         setDefaultLanguage(polarisVizDataFetcher.data?.defaultLanguage);
         setFilteredChartData(
