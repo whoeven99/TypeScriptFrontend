@@ -389,9 +389,6 @@ const Index = () => {
   useEffect(() => {
     if (polarisVizDataFetcher.data) {
       if (polarisVizDataFetcher.data.response) {
-        console.log(polarisVizDataFetcher.data.response);
-        console.log(transformData(polarisVizDataFetcher.data.response));
-        
         setChartData(transformData(polarisVizDataFetcher.data.response));
         setDefaultLanguage(polarisVizDataFetcher.data?.defaultLanguage);
         setFilteredChartData(

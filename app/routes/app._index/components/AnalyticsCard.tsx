@@ -524,9 +524,9 @@ const AnalyticsCard = ({ hasRequiresScopes, missScopes, isLoading }: any) => {
                 <Statistic
                   value={
                     conversionRate != null
-                      ? `+${conversionRate}%`
+                      ? `${conversionRate}%`
                       : localConversionRate != null
-                        ? `+${localConversionRate}%`
+                        ? `${localConversionRate}%`
                         : "-"
                   }
                   valueStyle={{ fontWeight: 500 }}
