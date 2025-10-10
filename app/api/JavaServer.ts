@@ -19,6 +19,33 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const IsInFreePlanTime = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/userTrials/isInFreePlanTime?shopName=${shop}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} IsInFreePlanTime: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} IsInFreePlanTime error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: "",
+    };
+  }
+};
+
 export const IsShowFreePlan = async ({
   shop,
   server,
@@ -1358,10 +1385,7 @@ export const GetLanguageStatus = async ({
       ],
     });
 
-    console.log(
-      `${shop} GetLanguageStatus: `,
-      response.data?.response,
-    );
+    console.log(`${shop} GetLanguageStatus: `, response.data?.response);
 
     return response.data;
   } catch (error) {
