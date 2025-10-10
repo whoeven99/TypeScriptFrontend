@@ -214,12 +214,76 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           (item) => item?.locale,
         );
 
-        const translatingData = await GetTranslateDOByShopNameAndSource({
-          shop,
-          source: shopPrimaryLanguage[0]?.locale,
-        });
+        // const translatingData = await GetTranslateDOByShopNameAndSource({
+        //   shop,
+        //   source: shopPrimaryLanguage[0]?.locale,
+        // });
+        const translatingData = {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            list: [
+              {
+                target: "zh-CN",
+                status: 1,
+                resourceType: "FILTER",
+                value: "11111",
+                translateStatus: "translation_process_init",
+                progressData: {
+                  RemainingQuantity: 10,
+                  TotalQuantity: 100,
+                },
+              },
+              {
+                target: "ko",
+                status: 2,
+                resourceType: "FILTER",
+                value: "22222",
+                translateStatus: "translation_process_init",
+                progressData: {
+                  RemainingQuantity: 20,
+                  TotalQuantity: 100,
+                },
+              },
+              {
+                target: "ko",
+                status: 2,
+                resourceType: "FILTER",
+                value: "22222",
+                translateStatus: "translation_process_translating",
+                progressData: {
+                  RemainingQuantity: 20,
+                  TotalQuantity: 100,
+                },
+              },
+              {
+                target: "ko",
+                status: 2,
+                resourceType: "FILTER",
+                value: "22222",
+                translateStatus: "translation_process_saving_shopify",
+                progressData: {
+                  RemainingQuantity: 40,
+                  TotalQuantity: 100,
+                },
+              },
+              {
+                target: "ko",
+                status: 7,
+                resourceType: "FILTER",
+                value: "22222",
+                translateStatus: "translation_process_saving_shopify",
+                progressData: {
+                  RemainingQuantity: 40,
+                  TotalQuantity: 100,
+                },
+              },
+            ],
+          },
+        };
 
-        const data = translatingData.response?.filter(
+        const data = translatingData.response?.list?.filter(
           (translatingDataItem: any) =>
             shopLocalesIndex.includes(translatingDataItem?.target) &&
             (translatingDataItem?.status !== 1 ||
@@ -238,19 +302,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response:
             data.length > 0
               ? data.map((item: any) => ({
-                  source: item?.source || shopPrimaryLanguage[0].locale,
+                  source: shopPrimaryLanguage[0].locale,
                   target: item?.target || "",
                   status: item?.status || 0,
+                  translateStatus: item?.translateStatus || "",
                   resourceType: item?.resourceType || "",
-                }))
-              : [
-                  {
-                    source: "",
-                    target: "",
-                    status: 0,
-                    resourceType: "",
+                  value: item?.value || "",
+                  progressData: item?.progressData || {
+                    RemainingQuantity: 0,
+                    TotalQuantity: 0,
                   },
-                ],
+                }))
+              : [],
         };
       } catch (error) {
         console.error("Error nearTransaltedData app:", error);
@@ -258,14 +321,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: false,
           errorCode: 0,
           errorMsg: "",
-          response: [
-            {
-              source: "",
-              target: "",
-              status: 0,
-              resourceType: "",
-            },
-          ],
+          response: [],
         };
       }
     }

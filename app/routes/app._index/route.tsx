@@ -19,7 +19,7 @@ import ContactCard from "./components/contactCard";
 import PreviewCard from "./components/previewCard";
 import ScrollNotice from "~/components/ScrollNotice";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import ProgressingCard from "~/components/progressingCard";
+import ProgressingCard from "~/routes/app._index/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
 import useReport from "scripts/eventReport";
