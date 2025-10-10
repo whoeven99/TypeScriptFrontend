@@ -2228,16 +2228,6 @@ export const InsertOrUpdateOrder = async ({
   confirmationUrl?: URL;
 }) => {
   try {
-    console.log("Order: ", {
-      shopName: shop,
-      id: id,
-      amount: amount,
-      name: name,
-      createdAt: createdAt,
-      status: status,
-      confirmationUrl: confirmationUrl,
-    });
-
     await axios({
       url: `${process.env.SERVER_URL}/orders/insertOrUpdateOrder?shopName=${shop}`,
       method: "POST",

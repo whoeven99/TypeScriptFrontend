@@ -24,12 +24,7 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useMemo, useState } from "react";
 import ScrollNotice from "~/components/ScrollNotice";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  GetLatestActiveSubscribeId,
-  GetUserSubscriptionPlan,
-  GetUserWords,
-  IsOpenFreePlan,
-} from "~/api/JavaServer";
+import { GetLatestActiveSubscribeId } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { OptionType } from "~/components/paymentModal";
@@ -44,16 +39,8 @@ import { handleContactSupport } from "../app._index/route";
 import { setPlan, setUpdateTime } from "~/store/modules/userConfig";
 import useReport from "scripts/eventReport";
 import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
+import { globalStore } from "~/globalStore";
 const { Title, Text, Paragraph } = Typography;
-
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-  return {
-    shop,
-    server: process.env.SERVER_URL,
-  };
-};
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -179,7 +166,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, server } = useLoaderData<typeof loader>();
   const { plan, updateTime, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
@@ -334,9 +320,6 @@ const Index = () => {
   const [payForPlanButtonLoading, setPayForPlanButtonLoading] =
     useState<string>("");
   const [selectedPayPlanOption, setSelectedPayPlanOption] = useState<any>();
-  // const [freeTrialModalOpen, setFreeTrialModalOpen] = useState(false);
-  // const [freeTrialButtonLoading, setFreeTrialButtonLoading] = useState(false);
-  // const [creditsCalculatorOpen, setCreditsCalculatorOpen] = useState(false);
   const isQuotaExceeded = useMemo(
     () => chars >= totalChars && totalChars > 0,
     [chars, totalChars],
@@ -375,7 +358,7 @@ const Index = () => {
     setIsLoading(false);
     fetcher.submit(
       {
-        log: `${shop} 目前在付费页面`,
+        log: `${globalStore?.shop} 目前在付费页面`,
       },
       {
         method: "POST",
@@ -855,8 +838,8 @@ const Index = () => {
 
   const handleCancelPlan = async () => {
     const data = await GetLatestActiveSubscribeId({
-      shop,
-      server: server as string,
+      shop: globalStore?.shop as string,
+      server: globalStore?.server as string,
     });
     if (data.success) {
       planCancelFetcher.submit(
