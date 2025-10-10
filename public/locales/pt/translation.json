@@ -684,5 +684,22 @@
   "You have received {{ plan }} Plan benefits": "Você recebeu os benefícios do Plano {{ plan }}",
   "Save successfully": "Salvo com sucesso",
   "Language Publishing Status": "Status de publicação do idioma",
-  "Publish to Selected Domains": "Publicar nos domínios selecionados"
+  "Publish to Selected Domains": "Publicar nos domínios selecionados",
+  "devplanCard5.title": "Exibir métricas de taxa de conversão para diferentes idiomas para otimizar os resultados da tradução",
+  "Unknown date range": "Intervalo de datas desconhecido",
+  "Check": "Verificar",
+  "Translation Quality Report": "Relatório de Qualidade da Tradução",
+  "Language Translation Status": "Status da tradução de idiomas",
+  "Recommendations to Improve Quality": "Recomendações para melhorar a qualidade",
+  "Define key terms to keep translations consistent with your brand.": "Defina termos-chave para manter as traduções consistentes com sua marca.",
+  "Language & Currency Switcher": "Seletor de idioma e moeda",
+  "Enable automatic switching to match visitors’ language and currency.": "Habilite a alternância automática para corresponder ao idioma e à moeda dos visitantes.",
+  "Make your translations live so customers can see them.": "Torne suas traduções públicas para que os clientes possam vê-las.",
+  "Auto-Translation": "Tradução automática",
+  "Turn on automatic translation to keep your store updated in real time.": "Ative a tradução automática para manter sua loja atualizada em tempo real.",
+  "Image & Alt Text Translation": "Tradução de imagens e textos alternativos",
+  "Permissions Needed for Multilingual Analytics": "Permissões necessárias para análises multilíngues",
+  "To track conversion rates across different languages, this app requires:": "Para rastrear as taxas de conversão em diferentes idiomas, este aplicativo requer:",
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Você será solicitado a atualizar as permissões em um prompt do sistema posterior. Confirme para desbloquear os insights de desempenho multilíngue.",
+  "Average conversion rate over 7 days": "Taxa média de conversão em 7 dias"
 }
