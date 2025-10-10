@@ -292,7 +292,6 @@ const TranslationDashboard = () => {
       if (storeLanguageFetcher.data.success) {
         const languagesObj = { ...storeLanguageFetcher.data.response };
         const publishLang = languagesObj["Published Languages"] === 1;
-
         delete languagesObj["Published Languages"];
 
         setReportData((prev: any) => {
