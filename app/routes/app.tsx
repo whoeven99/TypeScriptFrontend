@@ -35,7 +35,7 @@ import {
   GetUserSubscriptionPlan,
   GoogleAnalyticClickReport,
   IsOpenFreePlan,
-  GetUnTranslatedWords,
+  GetUnTranslatedWords
 } from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -75,7 +75,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
   const { admin } = adminAuthResult;
-
   try {
     const formData = await request.formData();
     const init = JSON.parse(formData.get("init") as string);

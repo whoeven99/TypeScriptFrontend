@@ -1306,6 +1306,7 @@ const languageLocaleData = {
     Name: "Zulu",
   },
 };
+
 // 导出配置对象
 if (typeof module !== "undefined" && module.exports) {
   module.exports = languageLocaleData;

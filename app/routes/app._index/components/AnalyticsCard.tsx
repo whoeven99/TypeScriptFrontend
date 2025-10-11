@@ -296,8 +296,6 @@ const AnalyticsCard = ({ isLoading }: any) => {
 
   useEffect(() => {
     if (!conversionCateFetcher.data) return;
-    console.log(conversionCateFetcher.data);
-    
     try {
       if (conversionCateFetcher.data.success) {
         let resp = conversionCateFetcher.data.response;

@@ -24,7 +24,6 @@ import { ArrowLeftIcon } from "@shopify/polaris-icons";
 import { AppstoreOutlined, BarsOutlined } from "@ant-design/icons";
 import ScrollNotice from "~/components/ScrollNotice";
 import { authenticate } from "../../shopify.server";
-// import {  BarChart } from "@shopify/polaris-viz";
 import { useFetcher } from "@remix-run/react";
 import { GetConversionData } from "../../api/JavaServer";
 import { useTranslation } from "react-i18next";
@@ -32,7 +31,6 @@ import { useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
 import LineChartECharts from "./components/LineChartECharts";
 const { Title } = Typography;
-// import { useNavigate } from "react-router";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
