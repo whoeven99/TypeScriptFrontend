@@ -799,6 +799,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           )}
         </Space>
       )}
+      <TranslationPanel />
     </Card>
   );
 };
