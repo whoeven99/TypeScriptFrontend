@@ -137,17 +137,12 @@ const AnalyticsCard = ({ isLoading }: any) => {
   const handleOk = async () => {
     try {
       setIsModalVisible(false);
-      console.log(missScopes);
-
-      const response = await shopify.scopes.request(missScopes) as any;
-
-      // 检查用户是否真的授权成功
-      if (response && response.granted) {
+      const response = (await shopify.scopes.request(missScopes)) as any;
+      if (response.result === "granted-all") {
         shopify.toast.show(t("Authorization successful"));
         await createWebPixel();
-      } else {
+      } else if (response.result === "declined-all") {
         checkScopes();
-        // shopify.toast.show(t("Authorization cancelled"));
       }
     } catch (error: any) {
       shopify.toast.show(t("Authorization failed"));
@@ -199,8 +194,6 @@ const AnalyticsCard = ({ isLoading }: any) => {
 
   const handleConfigScopes = async () => {
     setNavigateToRateState(true);
-    console.log(showRequireScopeBtn);
-
     try {
       if (!showRequireScopeBtn) {
         showModal();
@@ -210,8 +203,6 @@ const AnalyticsCard = ({ isLoading }: any) => {
 
       if (!configCreateWebPixel) {
         await createWebPixel(); // 保持 loading，直到创建完成
-      }
-      if (!configCreateWebPixel) {
         return;
       }
 
@@ -221,11 +212,10 @@ const AnalyticsCard = ({ isLoading }: any) => {
     }
     reportClick("dashboard_conversion_detail");
   };
-  const handleCancelScope = async () => {
-    const grand = await shopify.scopes.revoke(missScopes);
-    console.log(grand);
-    setShowRequireScopeBtn(false);
-  };
+  // const handleCancelScope = async () => {
+  //   const grand = await shopify.scopes.revoke(missScopes);
+  //   setShowRequireScopeBtn(false);
+  // };
 
   // 组件加载时自动查询 Web Pixel
   useEffect(() => {
@@ -363,8 +353,6 @@ const AnalyticsCard = ({ isLoading }: any) => {
   }, [queryWebPixelFetcher.data]);
   const checkScopes = async () => {
     const { granted } = await shopify.scopes.query();
-    console.log("adas: ", granted);
-
     const missingScopes = Array.isArray(missScopes)
       ? missScopes.filter((s: string) => !granted.includes(s))
       : [];
@@ -525,7 +513,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
             >
               {t("Details")}
             </Button>
-            <Button onClick={handleCancelScope}>取消授权</Button>
+            {/* <Button onClick={handleCancelScope}>取消授权</Button> */}
           </Flex>
         </Col>
       </Row>

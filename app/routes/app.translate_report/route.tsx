@@ -331,8 +331,6 @@ const TranslationDashboard = () => {
       translationEvaluationFetcher.data &&
       translationEvaluationFetcher.data.success
     ) {
-      console.log(translationEvaluationFetcher.data);
-      
       setReportData((prev: any) => ({
         ...prev,
         totalScore: Math.ceil(

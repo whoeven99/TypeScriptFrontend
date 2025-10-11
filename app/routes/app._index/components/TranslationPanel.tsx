@@ -34,8 +34,6 @@ const TranslationPanel = () => {
 
         const langs: Record<string, any> = { ...raw };
         delete langs["Published Languages"];
-        console.log(langs);
-
         for (const langName in langs) {
           const match = Object.values(languageLocaleData).find(
             (item) => item.Name === langName,
@@ -45,9 +43,8 @@ const TranslationPanel = () => {
             langs[langName] = {
               value: langs[langName],
               flagUrl: match.countries[0], // 用第一个国家作为 flagUrl
+              isoCode:match.isoCode
             };
-          } else {
-            langs[langName] = { value: langs[langName], flagUrl: null };
           }
         }
         setLanguages(Object.values(langs).slice(0, 3)); // 只显示前3个
