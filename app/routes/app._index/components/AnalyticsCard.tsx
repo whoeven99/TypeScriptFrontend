@@ -212,10 +212,12 @@ const AnalyticsCard = ({ isLoading }: any) => {
     }
     reportClick("dashboard_conversion_detail");
   };
-  // const handleCancelScope = async () => {
-  //   const grand = await shopify.scopes.revoke(missScopes);
-  //   setShowRequireScopeBtn(false);
-  // };
+  const handleCancelScope = async () => {
+    const grand = await shopify.scopes.revoke(missScopes);
+    console.log("grand: ",grand);
+    
+    setShowRequireScopeBtn(false);
+  };
 
   // 组件加载时自动查询 Web Pixel
   useEffect(() => {
