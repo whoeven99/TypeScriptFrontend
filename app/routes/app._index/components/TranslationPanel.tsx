@@ -48,6 +48,7 @@ const TranslationPanel = () => {
             langs[langName] = {
               value: langs[langName],
               flagUrl: match.countries[0], // 用第一个国家作为 flagUrl
+              isoCode:match.isoCode
             };
           } else {
             langs[langName] = { value: langs[langName], flagUrl: null };
@@ -59,7 +60,7 @@ const TranslationPanel = () => {
           JSON.stringify(Object.values(langs).slice(0, 3)), 
         );
       } else {
-        // console.error("国旗查询失败");
+        console.error("flag failed");
         // setLanguages(nationalFlags);
       }
     }

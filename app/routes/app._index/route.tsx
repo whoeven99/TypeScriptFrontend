@@ -38,15 +38,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const language =
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   const languageCode = language.split("-")[0];
-  const scopes = adminAuthResult.session.scope
-    ? adminAuthResult.session.scope.split(",")
-    : [];
-  const optionalScopes = process.env.OPTIONAL_SCOPES;
-  const missScopes = optionalScopes
-    ?.split(",")
-    .filter((s) => !scopes.includes(s)) as string[];
-
-  const hasRequiresScopes = missScopes?.length === 0;
   if (languageCode === "zh" || languageCode === "zh-CN") {
     return {
       language,
@@ -56,8 +47,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         .SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
       server: process.env.SERVER_URL,
       shop: shop,
-      hasRequiresScopes,
-      missScopes,
     };
   } else {
     return {
@@ -68,8 +57,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         .SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
       server: process.env.SERVER_URL,
       shop: shop,
-      hasRequiresScopes,
-      missScopes,
     };
   }
 };
@@ -82,8 +69,6 @@ const Index = () => {
     shop,
     ciwiSwitcherBlocksId,
     ciwiSwitcherId,
-    hasRequiresScopes,
-    missScopes,
   } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -255,31 +240,6 @@ const Index = () => {
     reportClick("dashboard_currency_manage");
   };
 
-  const handleReceive = () => {
-    navigate("/app/pricing");
-    fetcher.submit(
-      {
-        log: `${shop} 前往付费页面, 从新人链接点击`,
-      },
-      {
-        method: "POST",
-        action: "/log",
-      },
-    );
-  };
-
-  useEffect(() => {
-    if (graphqlFetcher.data) {
-      console.log(graphqlFetcher.data);
-    } else {
-    }
-  }, [graphqlFetcher.data]);
-  useEffect(() => {
-    if (findWebPixelFetcher.data) {
-      console.log(findWebPixelFetcher.data);
-    } else {
-    }
-  }, [findWebPixelFetcher.data]);
   return (
     <Page>
       <TitleBar title={t("Dashboard")} />
@@ -299,8 +259,6 @@ const Index = () => {
       >
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <AnalyticsCard
-            hasRequiresScopes={hasRequiresScopes}
-            missScopes={missScopes}
             isLoading={isLoading}
           ></AnalyticsCard>
           <ProgressingCard shop={shop} server={server || ""} />
