@@ -105,11 +105,6 @@ const TranslationPanel = () => {
                     />
                   ),
                 )
-
-                // <Skeleton.Input
-                //   style={{ width: gridWidth, height: 30 }}
-                //   active
-                // />
               }
             </Flex>
             {languages.length > 0 ? (
