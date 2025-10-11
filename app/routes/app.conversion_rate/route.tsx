@@ -30,6 +30,7 @@ import {
 import ScrollNotice from "~/components/ScrollNotice";
 import { authenticate } from "../../shopify.server";
 // import {  BarChart } from "@shopify/polaris-viz";
+import "@shopify/polaris-viz/build/esm/styles.css";
 import { useFetcher } from "@remix-run/react";
 import { GetConversionData } from "../../api/JavaServer";
 import { useTranslation } from "react-i18next";
