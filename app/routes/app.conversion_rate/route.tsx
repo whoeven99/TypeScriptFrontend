@@ -20,13 +20,8 @@ import {
   Box,
 } from "@shopify/polaris";
 import { Flex, Row, Skeleton, Typography, Button, Divider, Empty } from "antd";
-import {
-  ArrowLeftIcon,
-} from "@shopify/polaris-icons";
-import {
-  AppstoreOutlined,
-  BarsOutlined,
-} from "@ant-design/icons";
+import { ArrowLeftIcon } from "@shopify/polaris-icons";
+import { AppstoreOutlined, BarsOutlined } from "@ant-design/icons";
 import ScrollNotice from "~/components/ScrollNotice";
 import { authenticate } from "../../shopify.server";
 // import {  BarChart } from "@shopify/polaris-viz";
@@ -85,8 +80,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           storeLanguage: storeLanguage,
           dayData: days,
         });
-        console.log("response11: ",response);
-        
         return json({ ...response, defaultLanguage });
       } catch (error) {
         console.log("get polarisViz data failed", error);
@@ -371,7 +364,7 @@ const Index = () => {
 
       return {
         locale: lang, // ✅ 新增 locale
-        language:lang, // ✅ 显示名
+        language: lang, // ✅ 显示名
         data: [
           {
             name: dateRangeName,
@@ -384,12 +377,14 @@ const Index = () => {
 
   useEffect(() => {
     if (polarisVizDataFetcher.data) {
-      if (polarisVizDataFetcher.data.response) {
+      if (polarisVizDataFetcher.data?.success) {
         setChartData(transformData(polarisVizDataFetcher.data.response));
         setDefaultLanguage(polarisVizDataFetcher.data?.defaultLanguage);
         setFilteredChartData(
           transformData(polarisVizDataFetcher.data.response),
         );
+      } else {
+        setGridColumns(1);
       }
       setIsLoading(false);
     }
@@ -410,7 +405,7 @@ const Index = () => {
       {/* 筛选器 */}
       <ScrollNotice
         text={t(
-          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible."
+          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>

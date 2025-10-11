@@ -30,8 +30,6 @@ const TranslationPanel = () => {
     if (LanguageFetcher.data) {
       if (LanguageFetcher.data?.success) {
         const raw = LanguageFetcher.data.response;
-        console.log(raw);
-
         const langs: Record<string, any> = { ...raw };
         delete langs["Published Languages"];
         for (const langName in langs) {
@@ -53,7 +51,7 @@ const TranslationPanel = () => {
           JSON.stringify(Object.values(langs).slice(0, 3)),
         );
       } else {
-        // console.error("国旗查询失败");
+        console.error("国旗请求失败");
         // setLanguages(nationalFlags);
       }
     }
