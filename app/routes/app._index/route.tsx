@@ -26,10 +26,6 @@ import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
 import useReport from "scripts/eventReport";
 import { useSelector } from "react-redux";
-import CorrectIcon from "~/components/icon/correctIcon";
-import GiftIcon from "~/components/icon/giftIcon";
-import axios from "axios";
-import TranslationPanel from "./components/TranslationPanel";
 const { Title, Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -38,15 +34,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const language =
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   const languageCode = language.split("-")[0];
-  const scopes = adminAuthResult.session.scope
-    ? adminAuthResult.session.scope.split(",")
-    : [];
-  const optionalScopes = process.env.OPTIONAL_SCOPES;
-  const missScopes = optionalScopes
-    ?.split(",")
-    .filter((s) => !scopes.includes(s)) as string[];
-
-  const hasRequiresScopes = missScopes?.length === 0;
   if (languageCode === "zh" || languageCode === "zh-CN") {
     return {
       language,
@@ -56,8 +43,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         .SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
       server: process.env.SERVER_URL,
       shop: shop,
-      hasRequiresScopes,
-      missScopes,
     };
   } else {
     return {
@@ -68,8 +53,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         .SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
       server: process.env.SERVER_URL,
       shop: shop,
-      hasRequiresScopes,
-      missScopes,
     };
   }
 };
@@ -82,8 +65,6 @@ const Index = () => {
     shop,
     ciwiSwitcherBlocksId,
     ciwiSwitcherId,
-    hasRequiresScopes,
-    missScopes,
   } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -299,8 +280,6 @@ const Index = () => {
       >
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
           <AnalyticsCard
-            hasRequiresScopes={hasRequiresScopes}
-            missScopes={missScopes}
             isLoading={isLoading}
           ></AnalyticsCard>
           <ProgressingCard shop={shop} server={server || ""} />

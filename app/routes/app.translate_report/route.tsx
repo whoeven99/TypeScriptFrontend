@@ -290,6 +290,8 @@ const TranslationDashboard = () => {
   useEffect(() => {
     if (storeLanguageFetcher.data) {
       if (storeLanguageFetcher.data.success) {
+        console.log(storeLanguageFetcher.data.response);
+        
         const languagesObj = { ...storeLanguageFetcher.data.response };
         const publishLang = languagesObj["Published Languages"] === 1;
         delete languagesObj["Published Languages"];
@@ -329,6 +331,8 @@ const TranslationDashboard = () => {
       translationEvaluationFetcher.data &&
       translationEvaluationFetcher.data.success
     ) {
+      console.log(translationEvaluationFetcher.data);
+      
       setReportData((prev: any) => ({
         ...prev,
         totalScore: Math.ceil(

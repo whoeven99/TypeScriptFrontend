@@ -1,12 +1,5 @@
-import  { useEffect, useState } from "react";
-import {
-  Row,
-  Col,
-  Button,
-  Card,
-  Flex,
-  Image,
-} from "antd";
+import { useEffect, useState } from "react";
+import { Row, Col, Button, Card, Flex, Image } from "antd";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
 import { useTranslation } from "react-i18next";
@@ -37,8 +30,12 @@ const TranslationPanel = () => {
     if (LanguageFetcher.data) {
       if (LanguageFetcher.data?.success) {
         const raw = LanguageFetcher.data.response;
+        console.log(raw);
+
         const langs: Record<string, any> = { ...raw };
         delete langs["Published Languages"];
+        console.log(langs);
+
         for (const langName in langs) {
           const match = Object.values(languageLocaleData).find(
             (item) => item.Name === langName,
@@ -56,7 +53,7 @@ const TranslationPanel = () => {
         setLanguages(Object.values(langs).slice(0, 3)); // 只显示前3个
         localStorage.setItem(
           "localFlagsData",
-          JSON.stringify(Object.values(langs).slice(0, 3)), 
+          JSON.stringify(Object.values(langs).slice(0, 3)),
         );
       } else {
         // console.error("国旗查询失败");
@@ -75,7 +72,7 @@ const TranslationPanel = () => {
           styles={{
             header: {
               borderBottom: "none",
-              fontSize:"14px"
+              fontSize: "14px",
             },
             body: {
               paddingTop: 0,
@@ -147,7 +144,7 @@ const TranslationPanel = () => {
           styles={{
             header: {
               borderBottom: "none",
-              fontSize:"14px"
+              fontSize: "14px",
             },
             body: {
               paddingTop: 0,
@@ -199,7 +196,7 @@ const TranslationPanel = () => {
           styles={{
             header: {
               borderBottom: "none",
-              fontSize:"14px"
+              fontSize: "14px",
             },
             body: {
               paddingTop: 0,

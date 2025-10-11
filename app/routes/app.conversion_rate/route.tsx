@@ -78,14 +78,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             }
           });
         }
-        const updatedStoreLanguage = storeLanguage.map((lang) =>
-          lang === "zh-CN" ? "zh-hans" : lang,
-        );
         const { days } = polarisVizFetcher;
 
         const response = await GetConversionData({
           shop,
-          storeLanguage: updatedStoreLanguage,
+          storeLanguage: storeLanguage,
           dayData: days,
         });
         console.log("response11: ",response);
