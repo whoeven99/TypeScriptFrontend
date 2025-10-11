@@ -684,22 +684,5 @@
   "You have received {{ plan }} Plan benefits": "Du har fått {{ plan }} Plan-förmåner",
   "Save successfully": "Sparat framgångsrikt",
   "Language Publishing Status": "Språkpubliceringsstatus",
-  "Publish to Selected Domains": "Publicera till valda domäner",
-  "devplanCard5.title": "Visa konverteringsfrekvensstatistik för olika språk för att optimera översättningsresultaten",
-  "Unknown date range": "Okänt datumintervall",
-  "Check": "Kontrollera",
-  "Translation Quality Report": "Rapport om översättningskvalitet",
-  "Language Translation Status": "Status för språköversättning",
-  "Recommendations to Improve Quality": "Rekommendationer för att förbättra kvaliteten",
-  "Define key terms to keep translations consistent with your brand.": "Definiera nyckeltermer för att hålla översättningarna i linje med ditt varumärke.",
-  "Language & Currency Switcher": "Språk- och valutaväxling",
-  "Enable automatic switching to match visitors’ language and currency.": "Aktivera automatisk växling för att matcha besökarnas språk och valuta.",
-  "Make your translations live so customers can see them.": "Gör dina översättningar tillgängliga så att kunderna kan se dem.",
-  "Auto-Translation": "Automatisk översättning",
-  "Turn on automatic translation to keep your store updated in real time.": "Aktivera automatisk översättning för att hålla din butik uppdaterad i realtid.",
-  "Image & Alt Text Translation": "Översättning av bilder och alternativtext",
-  "Permissions Needed for Multilingual Analytics": "Behörigheter som krävs för flerspråkig analys",
-  "To track conversion rates across different languages, this app requires:": "För att spåra konverteringsfrekvenser på olika språk kräver den här appen:",
-  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Du kommer att bli ombedd att uppdatera behörigheter i en senare systemfråga. Bekräfta för att låsa upp flerspråkiga prestandainsikter.",
-  "Average conversion rate over 7 days": "Genomsnittlig konverteringsfrekvens över 7 dagar"
+  "Publish to Selected Domains": "Publicera till valda domäner"
 }
