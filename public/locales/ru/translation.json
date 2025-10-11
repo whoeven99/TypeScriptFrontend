@@ -684,22 +684,5 @@
   "You have received {{ plan }} Plan benefits": "Вы получили преимущества плана {{ plan }}",
   "Save successfully": "Успешно сохранено",
   "Language Publishing Status": "Статус публикации языка",
-  "Publish to Selected Domains": "Опубликовать в выбранных доменах",
-  "devplanCard5.title": "Отображайте показатели коэффициента конверсии для разных языков, чтобы оптимизировать результаты перевода.",
-  "Unknown date range": "Неизвестный диапазон дат",
-  "Check": "Проверять",
-  "Translation Quality Report": "Отчет о качестве перевода",
-  "Language Translation Status": "Статус перевода языка",
-  "Recommendations to Improve Quality": "Рекомендации по улучшению качества",
-  "Define key terms to keep translations consistent with your brand.": "Определите ключевые термины, чтобы переводы соответствовали вашему бренду.",
-  "Language & Currency Switcher": "Переключатель языка и валюты",
-  "Enable automatic switching to match visitors’ language and currency.": "Включите автоматическое переключение в соответствии с языком и валютой посетителей.",
-  "Make your translations live so customers can see them.": "Сделайте ваши переводы доступными для просмотра клиентами.",
-  "Auto-Translation": "Автоматический перевод",
-  "Turn on automatic translation to keep your store updated in real time.": "Включите автоматический перевод, чтобы ваш магазин обновлялся в режиме реального времени.",
-  "Image & Alt Text Translation": "Перевод изображений и альтернативного текста",
-  "Permissions Needed for Multilingual Analytics": "Разрешения, необходимые для многоязычной аналитики",
-  "To track conversion rates across different languages, this app requires:": "Для отслеживания коэффициентов конверсии на разных языках приложению требуется:",
-  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Вам будет предложено обновить разрешения в следующем системном запросе. Подтвердите, чтобы получить доступ к многоязычной статистике производительности.",
-  "Average conversion rate over 7 days": "Средний коэффициент конверсии за 7 дней"
+  "Publish to Selected Domains": "Опубликовать в выбранных доменах"
 }

@@ -684,22 +684,5 @@
   "You have received {{ plan }} Plan benefits": "Vous avez reçu les avantages du Plan {{ plan }}",
   "Save successfully": "Enregistré avec succès",
   "Language Publishing Status": "Statut de publication de la langue",
-  "Publish to Selected Domains": "Publier sur les domaines sélectionnés",
-  "devplanCard5.title": "Afficher les mesures du taux de conversion pour différentes langues afin d'optimiser les résultats de traduction",
-  "Unknown date range": "Plage de dates inconnue",
-  "Check": "Vérifier",
-  "Translation Quality Report": "Rapport sur la qualité de la traduction",
-  "Language Translation Status": "Statut de la traduction linguistique",
-  "Recommendations to Improve Quality": "Recommandations pour améliorer la qualité",
-  "Define key terms to keep translations consistent with your brand.": "Définissez des termes clés pour que les traductions soient cohérentes avec votre marque.",
-  "Language & Currency Switcher": "Sélecteur de langue et de devise",
-  "Enable automatic switching to match visitors’ language and currency.": "Activez la commutation automatique pour correspondre à la langue et à la devise des visiteurs.",
-  "Make your translations live so customers can see them.": "Rendez vos traductions en direct pour que les clients puissent les voir.",
-  "Auto-Translation": "Traduction automatique",
-  "Turn on automatic translation to keep your store updated in real time.": "Activez la traduction automatique pour garder votre boutique à jour en temps réel.",
-  "Image & Alt Text Translation": "Traduction d'images et de textes alternatifs",
-  "Permissions Needed for Multilingual Analytics": "Autorisations requises pour les analyses multilingues",
-  "To track conversion rates across different languages, this app requires:": "Pour suivre les taux de conversion dans différentes langues, cette application nécessite :",
-  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Vous serez invité à mettre à jour les autorisations ultérieurement. Veuillez confirmer pour accéder aux statistiques de performance multilingues.",
-  "Average conversion rate over 7 days": "Taux de conversion moyen sur 7 jours"
+  "Publish to Selected Domains": "Publier sur les domaines sélectionnés"
 }

@@ -683,22 +683,5 @@
   "You have received {{ plan }} Plan benefits": "Ви отримали переваги плану {{ plan }}",
   "Save successfully": "Успішно збережено",
   "Language Publishing Status": "Статус публікації мови",
-  "Publish to Selected Domains": "Опублікувати в обраних доменах",
-  "devplanCard5.title": "Відображати показники коефіцієнта конверсії для різних мов для оптимізації результатів перекладу",
-  "Unknown date range": "Невідомий діапазон дат",
-  "Check": "Перевірити",
-  "Translation Quality Report": "Звіт про якість перекладу",
-  "Language Translation Status": "Стан перекладу мови",
-  "Recommendations to Improve Quality": "Рекомендації щодо покращення якості",
-  "Define key terms to keep translations consistent with your brand.": "Визначте ключові терміни, щоб переклади відповідали вашому бренду.",
-  "Language & Currency Switcher": "Перемикач мови та валюти",
-  "Enable automatic switching to match visitors’ language and currency.": "Увімкнути автоматичне перемикання відповідно до мови та валюти відвідувачів.",
-  "Make your translations live so customers can see them.": "Опублікуйте свої переклади, щоб клієнти могли їх побачити.",
-  "Auto-Translation": "Автоматичний переклад",
-  "Turn on automatic translation to keep your store updated in real time.": "Увімкніть автоматичний переклад, щоб ваш магазин оновлювався в режимі реального часу.",
-  "Image & Alt Text Translation": "Переклад зображень та альтернативного тексту",
-  "Permissions Needed for Multilingual Analytics": "Дозволи, необхідні для багатомовної аналітики",
-  "To track conversion rates across different languages, this app requires:": "Щоб відстежувати коефіцієнти конверсії різними мовами, цьому додатку потрібні:",
-  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Вам буде запропоновано оновити дозволи в наступному системному запиті. Підтвердьте, щоб розблокувати багатомовну аналітику продуктивності.",
-  "Average conversion rate over 7 days": "Середній коефіцієнт конверсії за 7 днів"
+  "Publish to Selected Domains": "Опублікувати в обраних доменах"
 }

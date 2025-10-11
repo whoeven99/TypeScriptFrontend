@@ -686,22 +686,5 @@
   "You have received {{ plan }} Plan benefits": "您已收到 {{ plan }} 计划福利",
   "Save successfully": "保存成功",
   "Language Publishing Status": "语言发布状态",
-  "Publish to Selected Domains": "发布到所选域名",
-  "devplanCard5.title": "显示不同语言的转化率指标以优化翻译结果",
-  "Unknown date range": "未知日期范围",
-  "Check": "查看",
-  "Translation Quality Report": "翻译质量报告",
-  "Language Translation Status": "语言翻译现状",
-  "Recommendations to Improve Quality": "提高质量的建议",
-  "Define key terms to keep translations consistent with your brand.": "定义关键术语以使翻译与您的品牌保持一致。",
-  "Language & Currency Switcher": "语言和货币转换器",
-  "Enable automatic switching to match visitors’ language and currency.": "启用自动切换以匹配访客的语言和货币。",
-  "Make your translations live so customers can see them.": "让您的翻译实时更新，以便客户能够看到。",
-  "Auto-Translation": "自动翻译",
-  "Turn on automatic translation to keep your store updated in real time.": "开启自动翻译，让您的商店保持实时更新。",
-  "Image & Alt Text Translation": "图片和替代文本翻译",
-  "Permissions Needed for Multilingual Analytics": "多语言分析所需的权限",
-  "To track conversion rates across different languages, this app requires:": "为了跟踪不同语言的转换率，此应用需要：",
-  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "稍后系统会提示您更新权限。请确认以解锁多语言性能洞察。",
-  "Average conversion rate over 7 days": "7 天平均转化率"
+  "Publish to Selected Domains": "发布到所选域名"
 }
