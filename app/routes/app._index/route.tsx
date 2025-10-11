@@ -249,18 +249,6 @@ const Index = () => {
     );
   };
 
-  useEffect(() => {
-    if (graphqlFetcher.data) {
-      console.log(graphqlFetcher.data);
-    } else {
-    }
-  }, [graphqlFetcher.data]);
-  useEffect(() => {
-    if (findWebPixelFetcher.data) {
-      console.log(findWebPixelFetcher.data);
-    } else {
-    }
-  }, [findWebPixelFetcher.data]);
   return (
     <Page>
       <TitleBar title={t("Dashboard")} />
