@@ -35,6 +35,7 @@ import {
   GetUserSubscriptionPlan,
   GoogleAnalyticClickReport,
   IsOpenFreePlan,
+  GetUnTranslatedWords,
 } from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -73,6 +74,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
+  const { admin } = adminAuthResult;
 
   try {
     const formData = await request.formData();
@@ -91,6 +93,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const stopTranslate = JSON.parse(formData.get("stopTranslate") as string);
     const googleAnalytics = JSON.parse(
       formData.get("googleAnalytics") as string,
+    );
+    const qualityEvaluation = JSON.parse(
+      formData.get("qualityEvaluation") as string,
+    );
+    const findWebPixelId = JSON.parse(formData.get("findWebPixelId") as string);
+    const unTranslated = JSON.parse(formData.get("unTranslated") as string);
+    const conversionRate = JSON.parse(formData.get("conversionRate") as string);
+    const getAssessmentScoreFetcher = JSON.parse(
+      formData.get("getAssessmentScoreFetcher") as string,
     );
     if (init) {
       try {
@@ -369,6 +380,182 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             message: "Error googleAnalytics app",
           },
         });
+      }
+    }
+
+    if (qualityEvaluation) {
+      try {
+        console.log("quailtyEvaluation1");
+
+        const mutationResponse = await admin.graphql(
+          `
+        #graphql
+          mutation webPixelCreate($webPixel: WebPixelInput!){
+            webPixelCreate(webPixel: $webPixel) {
+              userErrors {
+                code
+                field
+                message
+              }
+              webPixel {
+                id
+                settings
+              }
+            }
+          }
+        `,
+          {
+            variables: {
+              webPixel: {
+                settings: JSON.stringify({
+                  shopName: shop,
+                  server: process.env.SERVER_URL,
+                }),
+              },
+            },
+          },
+        );
+        if (!mutationResponse.ok) {
+          console.error("Request failed", mutationResponse);
+          return;
+        }
+        const data = (await mutationResponse.json()) as any;
+        if (data.errors) {
+          console.error("GraphQL 错误: ", data.errors);
+          return {
+            success: false,
+            response: {
+              errorCode: 2,
+            },
+          };
+        }
+
+        if (data.data.webPixelCreate.userErrors.length > 0) {
+          console.error("业务错误: ", data.data.webPixelCreate.userErrors);
+          return {
+            success: false,
+            response: {
+              errorCode: 3,
+            },
+          };
+        }
+        return {
+          success: true,
+          response: data,
+        };
+      } catch (error) {
+        console.log("getOrderData failed", error);
+        return {
+          success: false,
+          response: {
+            errorCode: 1,
+          },
+        };
+      }
+    }
+
+    if (findWebPixelId) {
+      try {
+        const query = `
+          query {
+            webPixel {
+              id
+              settings
+            }
+          }
+        `;
+        const response = await admin.graphql(query);
+        if (!response.ok) {
+          return {
+            success: false,
+            errorCode: response.status,
+            errorMsg: response.statusText,
+            response: null,
+          };
+        }
+
+        const data = (await response.json()) as any;
+        console.log("findWebPixelId data", data);
+
+        // 再看 GraphQL 层面是否有错误
+        if (data.errors) {
+          return {
+            success: false,
+            errorCode: 10002,
+            errorMsg: data.errors.map((e: any) => e.message).join(", "),
+            response: data,
+          };
+        }
+
+        return {
+          success: true,
+          response: data,
+        };
+      } catch (error) {
+        console.log("findWebPixel failed", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+        };
+      }
+    }
+
+    if (unTranslated) {
+      try {
+        const mutationResponse = await admin.graphql(
+          `query MyQuery {
+            shopLocales(published: true) {
+              locale
+              name
+              primary
+              published
+            }
+          }`,
+        );
+        const data = (await mutationResponse.json()) as any;
+        let source = "en";
+        if (data.data.shopLocales.length > 0) {
+          data.data.shopLocales.forEach((item: any) => {
+            if (item.primary === true) {
+              source = item.locale;
+            }
+          });
+        }
+        const { resourceModules } = unTranslated;
+        let totalWords = 0;
+        const results = await Promise.all(
+          resourceModules.map((module: string) =>
+            GetUnTranslatedWords({
+              shop,
+              module,
+              accessToken: accessToken as string,
+              source,
+            }),
+          ),
+        );
+
+        results.forEach((res) => {
+          if (res.success && res.response) {
+            totalWords += res.response;
+          }
+        });
+        console.log(`${shop} unTranslate words is ${totalWords}`);
+        return {
+          success: true,
+          response: {
+            totalWords,
+          },
+        };
+      } catch (error) {
+        console.log(`${shop} get unTranslated words failed`, error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+        };
       }
     }
 

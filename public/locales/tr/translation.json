@@ -684,5 +684,22 @@
   "You have received {{ plan }} Plan benefits": "{{ plan }} Plan avantajlarını aldınız",
   "Save successfully": "Başarıyla kaydedildi",
   "Language Publishing Status": "Dil yayınlama durumu",
-  "Publish to Selected Domains": "Seçili etki alanlarına yayınla"
+  "Publish to Selected Domains": "Seçili etki alanlarına yayınla",
+  "devplanCard5.title": "Çeviri sonuçlarını optimize etmek için farklı diller için dönüşüm oranı ölçümlerini görüntüleyin",
+  "Unknown date range": "Bilinmeyen tarih aralığı",
+  "Check": "Kontrol etmek",
+  "Translation Quality Report": "Çeviri Kalite Raporu",
+  "Language Translation Status": "Dil Çeviri Durumu",
+  "Recommendations to Improve Quality": "Kaliteyi İyileştirmeye Yönelik Öneriler",
+  "Define key terms to keep translations consistent with your brand.": "Çevirilerin markanızla tutarlı olmasını sağlamak için anahtar terimleri tanımlayın.",
+  "Language & Currency Switcher": "Dil ve Para Birimi Değiştirici",
+  "Enable automatic switching to match visitors’ language and currency.": "Ziyaretçilerin diline ve para birimine uyum sağlayacak şekilde otomatik geçişi etkinleştirin.",
+  "Make your translations live so customers can see them.": "Çevirilerinizi canlı hale getirin, böylece müşterileriniz bunları görebilir.",
+  "Auto-Translation": "Otomatik Çeviri",
+  "Turn on automatic translation to keep your store updated in real time.": "Mağazanızın gerçek zamanlı olarak güncel kalmasını sağlamak için otomatik çeviriyi açın.",
+  "Image & Alt Text Translation": "Resim ve Alternatif Metin Çevirisi",
+  "Permissions Needed for Multilingual Analytics": "Çok Dilli Analizler İçin Gerekli İzinler",
+  "To track conversion rates across different languages, this app requires:": "Farklı dillerdeki dönüşüm oranlarını izlemek için bu uygulamanın şunları gerektirmesi gerekir:",
+  "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Daha sonraki bir sistem isteminde İzinleri Güncelle'niz istenecektir. Çok dilli performans bilgilerinin kilidini açmak için lütfen onaylayın.",
+  "Average conversion rate over 7 days": "7 günlük ortalama dönüşüm oranı"
 }
