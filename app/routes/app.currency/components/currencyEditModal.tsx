@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, InputNumber, Modal, Select, Space, Typography } from "antd";
 import { useFetcher } from "@remix-run/react";
 import { BaseOptionType, DefaultOptionType } from "antd/es/select";
@@ -13,9 +13,6 @@ const { Title, Text } = Typography;
 interface CurrencyEditModalProps {
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
-  // allCurrencies: AllLanguagesType[];
-  exRateColumns: (BaseOptionType | DefaultOptionType)[];
-  roundingColumns: (BaseOptionType | DefaultOptionType)[];
   selectedRow: CurrencyDataType | undefined;
   defaultCurrencyCode: string;
 }
@@ -23,11 +20,35 @@ interface CurrencyEditModalProps {
 const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   isVisible,
   setIsModalOpen,
-  exRateColumns,
-  roundingColumns,
   selectedRow,
   defaultCurrencyCode,
 }) => {
+  console.log("selectedRow: ", selectedRow);
+  console.log("defaultCurrencyCode: ", defaultCurrencyCode);
+  const dispatch = useDispatch();
+  const { t } = useTranslation();
+
+  const exRateColumns: (BaseOptionType | DefaultOptionType)[] = useMemo(
+    () => [
+      { value: "Auto", label: t("Auto") },
+      { value: "Manual Rate", label: t("Manual Rate") },
+    ],
+    [],
+  );
+  const roundingColumns: (BaseOptionType | DefaultOptionType)[] = useMemo(
+    () => [
+      { value: "", label: t("Disable") },
+      { value: "0", label: t("No decimal") },
+      { value: "1.00", label: `1.00 (${t("Recommend")})` },
+      { value: "0.99", label: "0.99" },
+      { value: "0.95", label: "0.95" },
+      { value: "0.75", label: "0.75" },
+      { value: "0.5", label: "0.50" },
+      { value: "0.25", label: "0.25" },
+    ],
+    [],
+  );
+
   const [exRateSelectValue, setExRateSelectValue] = useState<string>();
   const [roundingSelectValue, setRoundingSelectValue] = useState<string>();
   const [exRateValue, setExRateValue] = useState<number>(0);
@@ -39,8 +60,7 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   const [exRateStatus, setExRateStatus] = useState<"warning" | "error" | "">(
     "",
   );
-  const dispatch = useDispatch();
-  const { t } = useTranslation();
+
   const updateFetcher = useFetcher<any>();
   const dataSource = useSelector((state: any) => state.currencyTableData.rows);
   const title = `${t("Edit")} ${selectedRow?.currency}`;
@@ -82,9 +102,9 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
       setExRateSelectValue("Manual Rate");
       if (
         selectedRow?.exchangeRate !== null &&
-        typeof selectedRow?.exchangeRate === "number"
+        typeof Number(selectedRow?.exchangeRate) === "number"
       ) {
-        setExRateValue(selectedRow?.exchangeRate);
+        setExRateValue(Number(selectedRow?.exchangeRate));
       }
     }
     setRoundingSelectValue(selectedRow?.rounding);
