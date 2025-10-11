@@ -21,7 +21,6 @@ interface ProgressBlockProps {
   }; // 翻译进度
   value: string; // 翻译值
   module: string; // 翻译项
-  translateButtonLoading: boolean; // 继续翻译按钮加载状态
   stopTranslateFetcher: FetcherWithComponents<any>;
   handleReTranslate: () => void; // 重新翻译
 }
@@ -35,13 +34,25 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
   progressData,
   value,
   module,
-  translateButtonLoading,
   stopTranslateFetcher,
   handleReTranslate,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { reportClick, report } = useReport();
+
+  console.log({
+    isMobile,
+    source,
+    target,
+    status,
+    translateStatus,
+    progressData,
+    value,
+    module,
+    stopTranslateFetcher,
+    handleReTranslate,
+  });
 
   const progress = useMemo(
     () =>
@@ -67,16 +78,16 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
         action: "/app",
       },
     );
-    // report(
-    //   {
-    //     stopTranslate: JSON.stringify({
-    //       source: source,
-    //       target: target,
-    //     }),
-    //   },
-    //   { method: "post", action: "/app", eventType: "click" },
-    //   "dashboard_translation_task_stop",
-    // );
+    report(
+      {
+        stopTranslate: JSON.stringify({
+          source: source,
+          target: target,
+        }),
+      },
+      { method: "post", action: "/app", eventType: "click" },
+      "dashboard_translation_task_stop",
+    );
   };
 
   return (
@@ -398,7 +409,6 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
           <Button
             block
             onClick={handleReTranslate}
-            loading={translateButtonLoading}
             style={{ marginTop: "auto" }}
           >
             {t("progressing.continueTranslate")}

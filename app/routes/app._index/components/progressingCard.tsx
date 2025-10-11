@@ -15,32 +15,16 @@ interface ProgressingCardProps {
 const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   const source = useRef<string>("");
   const [dataSource, setDataSource] = useState<any[]>([]);
-  const [module, setModule] = useState("");
-  const [value, setValue] = useState<string>("");
-  const [target, setTarget] = useState<string[]>([]);
-  const [index, setIndex] = useState<number>(0);
-  const [progress, setProgress] = useState<number>(0);
-  const [progressNumber, setProgressNumber] = useState<{
-    hasTranslated: number;
-    totalNumber: number;
-  }>({
-    hasTranslated: 0,
-    totalNumber: 0,
-  });
   const [status, setStatus] = useState<number>(0);
   const [translateStatus, setTranslateStatus] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
   const [isMobile, setIsMobile] = useState<boolean>(false);
-  const [itemsVisible, setItemsVisible] = useState<boolean>(false);
   const [showMoreItems, setShowMoreItems] = useState<boolean>(false);
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const fetcher = useFetcher<any>();
   const languagefetcher = useFetcher<any>();
-  const statusFetcher = useFetcher<any>();
-  const translateFetcher = useFetcher<any>();
   const stopTranslateFetcher = useFetcher<any>();
-  const { reportClick, report } = useReport();
+  const { reportClick } = useReport();
 
   useEffect(() => {
     languagefetcher.submit(
@@ -63,101 +47,35 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
   }, []);
 
   useEffect(() => {
-    if (translateFetcher.data) {
-      if (translateFetcher.data?.success) {
-        setStatus(2);
-      }
-    }
-  }, [translateFetcher.data]);
+    let timeoutId: NodeJS.Timeout | null = null;
 
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    const needFetch = dataSource?.find((item) => item?.status == 2);
-
-    // 当状态为 2 时，开始轮询
-    if (needFetch) {
-      const pollStatus = () => {
-        // 状态查询请求
+    // 定义轮询函数
+    const pollStatus = () => {
+      const needFetch = dataSource?.find((item) => item?.status === 2);
+      if (needFetch) {
+        // 发送请求
         languagefetcher.submit(
-          {
-            nearTransaltedData: JSON.stringify(true),
-          },
+          { nearTransaltedData: JSON.stringify(true) },
           {
             method: "post",
             action: "/app",
           },
         );
 
-        // async function getUserValue() {
-        //   const data = await GetUserValue({ shop: shop, server });
-        //   setValue(data?.response?.value || "");
-        //   setTranslateStatus(data?.response?.status || 2);
-        // }
-
-        // getProgressData({ source: source.current, target: target[index] });
-        // getUserValue();
-
-        // setValue(userValue.data.userValue);
-
-        // 设置下一次轮询
+        // 3秒后继续轮询
         timeoutId = setTimeout(pollStatus, 3000);
-      };
+      }
+    };
 
-      // 开始首次轮询
-      pollStatus();
+    // 初次检测
+    pollStatus();
 
-      // 清理函数
-      return () => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
-      };
-    }
-    // else if (target[index + 1]) {
-    //   console.log("target[index + 1]: ", target[index + 1]);
-
-    //   setIndex(index + 1);
-    //   const pollStatus = () => {
-    //     // 状态查询请求
-    //     const statusformData = new FormData();
-    //     statusformData.append(
-    //       "statusData",
-    //       JSON.stringify({
-    //         source: source.current,
-    //         target: [target[index + 1]],
-    //       }),
-    //     );
-
-    //     statusFetcher.submit(statusformData, {
-    //       method: "post",
-    //       action: "/app",
-    //     });
-
-    //     async function getUserValue() {
-    //       const userValue = await GetUserValue({ shop: shop, server });
-    //       setValue(userValue?.response?.value || "");
-    //       setTranslateStatus(userValue?.response?.status || 2);
-    //     }
-
-    //     getProgressData({ source: source.current, target: target[index + 1] });
-    //     getUserValue();
-
-    //     // setValue(userValue.data.userValue);
-
-    //     // 设置下一次轮询
-    //     timeoutId = setTimeout(pollStatus, 3000);
-    //   };
-
-    //   // 开始首次轮询
-    //   pollStatus();
-
-    //   // 清理函数
-    //   return () => {
-    //     if (timeoutId) {
-    //       clearTimeout(timeoutId);
-    //     }
-    //   };
-    // }
+    // 清理定时器
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [dataSource]); // 添加 item 到依赖数组
 
   useEffect(() => {
@@ -171,8 +89,6 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
             module: resourceTypeToModule(item?.resourceType || ""),
           };
       });
-      console.log("data: ", data);
-
       setDataSource(data);
       setLoading(false);
     }
@@ -271,10 +187,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
                 translateStatus={item?.translateStatus}
                 progressData={item?.progressData}
                 value={item?.value}
-                module={module}
+                module={item?.module}
                 handleReTranslate={handleReTranslate}
                 stopTranslateFetcher={stopTranslateFetcher}
-                translateButtonLoading={translateFetcher.state === "submitting"}
               />
             </>
           );
@@ -289,10 +204,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
               translateStatus={item?.translateStatus}
               progressData={item?.progressData}
               value={item?.value}
-              module={module}
+              module={item?.module}
               handleReTranslate={handleReTranslate}
               stopTranslateFetcher={stopTranslateFetcher}
-              translateButtonLoading={translateFetcher.state === "submitting"}
             />
           );
         }
@@ -310,10 +224,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({ shop, server }) => {
           translateStatus={dataSource[0]?.translateStatus}
           progressData={dataSource[0]?.progressData}
           value={dataSource[0]?.value}
-          module={module}
+          module={dataSource[0]?.module}
           handleReTranslate={handleReTranslate}
           stopTranslateFetcher={stopTranslateFetcher}
-          translateButtonLoading={translateFetcher.state === "submitting"}
         />
       );
     }

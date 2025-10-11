@@ -247,7 +247,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 },
               },
               {
-                target: "ko",
+                target: "es",
                 status: 2,
                 resourceType: "FILTER",
                 value: "22222",
@@ -258,7 +258,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 },
               },
               {
-                target: "ko",
+                target: "ja",
                 status: 2,
                 resourceType: "FILTER",
                 value: "22222",
@@ -269,7 +269,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 },
               },
               {
-                target: "ko",
+                target: "zh-TW",
                 status: 7,
                 resourceType: "FILTER",
                 value: "22222",
