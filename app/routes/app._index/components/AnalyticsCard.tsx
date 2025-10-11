@@ -48,7 +48,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
   ];
   const getPlanName = (planId: number, isNew: boolean) => {
     if (isNew && planId >= 1 && planId <= 3) {
-      return "免费试用（5天）";
+      return t("5 Days Free Trial");
     }
     return Schedule[planId - 1];
   };
