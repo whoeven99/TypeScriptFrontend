@@ -226,8 +226,6 @@ const TranslationDashboard = () => {
         console.error("localStorage 解析失败，使用默认值");
       }
     } else {
-      console.log("发送请求");
-
       handleRequestReportData();
     }
   }, []);
