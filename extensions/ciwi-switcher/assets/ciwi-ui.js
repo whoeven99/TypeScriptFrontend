@@ -365,20 +365,25 @@ export function initProductImgObserver({
         });
 
         if (matched && matched.imageAfterUrl) {
-          console.log("Replacing image:", {
-            before: src,
-            after: matched.imageAfterUrl,
-          });
-
-          // 防止 observer 重复触发（暂停观察 → 修改 → 恢复）
-          observer.disconnect();
-
-          // 替换 src 和 srcset
-          node.src = matched.imageAfterUrl;
-          node.srcset = matched.imageAfterUrl;
-
-          // 重新启动观察
+          console.log("🕓 延迟替换图片:", matched.imageAfterUrl);
+          // 延迟执行替换
+          observer.disconnect(); // 暂停观察以防止重复触发
+          // 预加载替换图，等加载完成再替换 DOM
+          const newImg = new Image();
+          newImg.src = matched.imageAfterUrl;
+          // 复制原节点的属性
+          newImg.className = node.className;
+          newImg.alt = node.alt || "";
+          newImg.style.cssText = node.style.cssText;
+          // 替换节点
+          node.replaceWith(newImg);
+          // 恢复监听
           observer.observe(document.body, { childList: true, subtree: true });
+
+          newImg.onerror = () => {
+            console.warn("❌ 图片加载失败:", matched.imageAfterUrl);
+            observer.observe(document.body, { childList: true, subtree: true });
+          };
         }
       });
     }
@@ -423,16 +428,9 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
           if (match.imageAfterUrl) {
             img.src = match?.imageAfterUrl;
             img.srcset = match?.imageAfterUrl;
-            setTimeout(() => {
-              img.src = match?.imageAfterUrl;
-              img.srcset = match?.imageAfterUrl;
-            }, 2000);
           }
           if (match.altBeforeTranslation) {
             img.alt = match?.altBeforeTranslation;
-            setTimeout(() => {
-              img.alt = match?.altBeforeTranslation;
-            }, 2000);
           }
         }
       });
