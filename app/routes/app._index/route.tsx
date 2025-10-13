@@ -407,7 +407,7 @@ const Index = () => {
               </Flex>
             </Card>
           </div>
-          <ProgressingCard shop={shop} server={server || ""} />
+          <ProgressingCard />
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
               <Card

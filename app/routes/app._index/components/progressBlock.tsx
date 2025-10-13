@@ -41,19 +41,6 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
   const navigate = useNavigate();
   const { reportClick, report } = useReport();
 
-  console.log({
-    isMobile,
-    source,
-    target,
-    status,
-    translateStatus,
-    progressData,
-    value,
-    module,
-    stopTranslateFetcher,
-    handleReTranslate,
-  });
-
   const progress = useMemo(
     () =>
       (
@@ -63,7 +50,6 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
       ).toFixed(3),
     [progressData],
   );
-  console.log("translateStatus: ", translateStatus);
 
   const handleStopTranslate = () => {
     stopTranslateFetcher.submit(
