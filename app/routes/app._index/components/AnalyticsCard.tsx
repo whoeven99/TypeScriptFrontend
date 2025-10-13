@@ -91,12 +91,6 @@ const AnalyticsCard = ({ isLoading }: any) => {
     "SELLING_PLAN",
     "SELLING_PLAN_GROUP",
   ];
-  const displayValue =
-    conversionRate != null
-      ? `+${conversionRate}%`
-      : localConversionRate != null
-        ? `+${localConversionRate}%`
-        : "-";
 
   function calculateConversionRate(
     resp: Record<string, Record<string, Record<string, any>>>,
@@ -407,7 +401,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
             style={{ height: "100%", minWidth: 200 }}
             gap={8}
           >
-            <Text style={{ fontWeight: 500 }}>{t("Translation Score")}</Text>
+            <Text style={{ fontWeight: 500 }}>{t("Translation score")}</Text>
             <Progress
               type="circle"
               percent={translateScoreData ?? 0}
@@ -515,7 +509,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
             >
               {t("Details")}
             </Button>
-            {/* <Button onClick={handleCancelScope}>取消授权</Button> */}
+            <Button onClick={handleCancelScope}>取消授权</Button>
           </Flex>
         </Col>
       </Row>

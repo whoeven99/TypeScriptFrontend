@@ -86,8 +86,6 @@ const Index = () => {
 
   const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
-  const graphqlFetcher = useFetcher<any>();
-  const findWebPixelFetcher = useFetcher<any>();
 
   const { reportClick, report } = useReport();
   useEffect(() => {
