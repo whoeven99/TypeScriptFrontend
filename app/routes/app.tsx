@@ -35,6 +35,7 @@ import {
   GetUserSubscriptionPlan,
   GoogleAnalyticClickReport,
   IsOpenFreePlan,
+  GetAllProgressData,
 } from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -214,74 +215,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           (item) => item?.locale,
         );
 
-        // const translatingData = await GetTranslateDOByShopNameAndSource({
-        //   shop,
-        //   source: shopPrimaryLanguage[0]?.locale,
-        // });
-        const translatingData = {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            list: [
-              {
-                target: "zh-CN",
-                status: 1,
-                resourceType: "FILTER",
-                value: "11111",
-                translateStatus: "translation_process_init",
-                progressData: {
-                  RemainingQuantity: 10,
-                  TotalQuantity: 100,
-                },
-              },
-              {
-                target: "ko",
-                status: 2,
-                resourceType: "FILTER",
-                value: "22222",
-                translateStatus: "translation_process_init",
-                progressData: {
-                  RemainingQuantity: 20,
-                  TotalQuantity: 100,
-                },
-              },
-              {
-                target: "es",
-                status: 2,
-                resourceType: "FILTER",
-                value: "22222",
-                translateStatus: "translation_process_translating",
-                progressData: {
-                  RemainingQuantity: 20,
-                  TotalQuantity: 100,
-                },
-              },
-              {
-                target: "ja",
-                status: 2,
-                resourceType: "FILTER",
-                value: "22222",
-                translateStatus: "translation_process_saving_shopify",
-                progressData: {
-                  RemainingQuantity: 40,
-                  TotalQuantity: 100,
-                },
-              },
-              {
-                target: "zh-TW",
-                status: 7,
-                resourceType: "FILTER",
-                value: "22222",
-                translateStatus: "translation_process_saving_shopify",
-                progressData: {
-                  RemainingQuantity: 40,
-                  TotalQuantity: 100,
-                },
-              },
-            ],
-          },
-        };
+        const translatingData = await GetAllProgressData({
+          shop,
+          server: process.env.SERVER_URL as string,
+          source: shopPrimaryLanguage[0]?.locale,
+        });
 
         const data = translatingData.response?.list?.filter(
           (translatingDataItem: any) =>
