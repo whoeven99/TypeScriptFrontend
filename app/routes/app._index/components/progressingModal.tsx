@@ -41,32 +41,6 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
               module={item?.module}
               stopTranslateFetcher={stopTranslateFetcher}
             />
-            <Divider />
-            <ProgressBlock
-              key={item?.target}
-              isMobile={isMobile}
-              source={source}
-              target={item?.target}
-              status={item?.status}
-              translateStatus={item?.translateStatus}
-              progressData={item?.progressData}
-              value={item?.value}
-              module={item?.module}
-              stopTranslateFetcher={stopTranslateFetcher}
-            />
-            <Divider />
-            <ProgressBlock
-              key={item?.target}
-              isMobile={isMobile}
-              source={source}
-              target={item?.target}
-              status={item?.status}
-              translateStatus={item?.translateStatus}
-              progressData={item?.progressData}
-              value={item?.value}
-              module={item?.module}
-              stopTranslateFetcher={stopTranslateFetcher}
-            />
           </React.Fragment>
         );
       } else {
@@ -100,7 +74,15 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
       width={"100%"}
       style={{ maxWidth: "900px" }}
     >
-      {moreItems()}
+      <div
+        style={{
+          maxHeight: "70vh", // 限制高度为视口的 70%
+          overflowY: "auto", // 超出垂直滚动
+          paddingRight: "8px", // 留一点空位避免滚动条压文字
+        }}
+      >
+        {moreItems()}
+      </div>{" "}
     </Modal>
   );
 };
