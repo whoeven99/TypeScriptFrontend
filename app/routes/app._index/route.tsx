@@ -191,7 +191,7 @@ const Index = () => {
   }, [languageFetcher.data]);
 
   useEffect(() => {
-    if (stopTranslateFetcher.data?.success) {
+    if (stopTranslateFetcher.data) {
       setProgressDataSource((prev: any[] = []) =>
         prev.map((item) =>
           item?.status === 2 ? { ...item, status: 7 } : item,
