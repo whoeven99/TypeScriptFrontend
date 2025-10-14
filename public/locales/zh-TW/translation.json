@@ -161,7 +161,6 @@
   "translation_process_init": "正在初始化翻譯任務...",
   "translation_process_translating": "翻譯 {{item}} 模組({{hasTranslated}}/{{totalNumber}}):",
   "progressing.progressingWithoutSpace": "翻譯 {{item}} 模組:",
-  "translation_process_saving_shopify": "寫 {{item}} 模組",
   "progressing.finished": "您的翻譯已完成。發布它以應用更改。",
   "progressing.buyCredits": "購買積分",
   "progressing.review": "審閱翻譯",
@@ -686,5 +685,6 @@
   "Language Publishing Status": "語言發布狀態",
   "Publish to Selected Domains": "發布到所選網域",
   "{{count}} languages in progress — ": "{{count}} 個語言進行中 — ",
-  "see all tasks": "查看所有任務"
+  "see all tasks": "查看所有任務",
+  "translation_process_saving_shopify": "正在將翻譯套用到 {{item}} 模組…"
 }

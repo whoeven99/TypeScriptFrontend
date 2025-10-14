@@ -549,7 +549,6 @@
   "progressing.privateApiKeyAmountLimit": "Ihr API-Schlüssel hat das Limit erreicht. Bitte setzen Sie es zurück, um Ihre Übersetzungsaufgabe fortzusetzen.",
   "translation_process_translating": "Übersetze {{item}} Modul({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "Übersetze {{item}} Modul: ",
-  "translation_process_saving_shopify": "Schreibe {{item}} Modul",
   "progressing.publish": "Veröffentlichen",
   "progressing.reTranslate": "Erneut übersetzen",
   "progressing.reTranslateText": "Aktuelle Übersetzung wurde manuell gestoppt.",
@@ -685,5 +684,6 @@
   "Language Publishing Status": "Sprachveröffentlichungsstatus",
   "Publish to Selected Domains": "In ausgewählte Domänen veröffentlichen",
   "{{count}} languages in progress — ": "{{count}} Sprachen in Bearbeitung — ",
-  "see all tasks": "alle Aufgaben anzeigen"
+  "see all tasks": "alle Aufgaben anzeigen",
+  "translation_process_saving_shopify": "Übersetzungen werden auf das Modul {{item}} angewendet…"
 }
