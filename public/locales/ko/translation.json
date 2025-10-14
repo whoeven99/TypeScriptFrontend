@@ -496,12 +496,12 @@
   "progressing.continueTranslate": "Continue translating",
   "progressing.finished": "Your translation is ready. Publish it to apply the changes.",
   "progressing.hasPayed": "Translation credits have been added. You can now resume your translation.",
-  "progressing.init": "Initializing translation task...",
+  "translation_process_init": "Initializing translation task...",
   "progressing.noTranslate": "There are no ongoing translation tasks.",
   "progressing.privateApiKeyAmountLimit": "Your API key has hit the limit. Please reset it to continue your translation task.",
-  "progressing.progressingWithSpace": "Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
+  "translation_process_translating": "Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "Translating {{item}} Module: ",
-  "progressing.progressingWriting": "Writing {{item}} Module",
+  "translation_process_saving_shopify": "Writing {{item}} Module",
   "progressing.publish": "Publish",
   "progressing.reTranslate": "Retranslate",
   "progressing.reTranslateText": "Current translation was manually stopped.",
@@ -684,5 +684,7 @@
   "You have received {{ plan }} Plan benefits": "{{ plan }} 플랜 혜택을 받았습니다",
   "Save successfully": "저장이 완료되었습니다",
   "Language Publishing Status": "언어 게시 상태",
-  "Publish to Selected Domains": "선택한 도메인에 게시"
+  "Publish to Selected Domains": "선택한 도메인에 게시",
+  "{{count}} languages in progress — ": "진행 중인 언어 {{count}} — ",
+  "see all tasks": "모든 작업 보기"
 }

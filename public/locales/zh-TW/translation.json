@@ -158,10 +158,10 @@
   "rating.description": "如果您對我們的產品和服務感到滿意，請留下評論以幫助我們改進！",
   "progressing.title": "翻譯任務：",
   "progressing.target": "目標：",
-  "progressing.init": "正在初始化翻譯任務...",
-  "progressing.progressingWithSpace": "翻譯 {{item}} 模組({{hasTranslated}}/{{totalNumber}}):",
+  "translation_process_init": "正在初始化翻譯任務...",
+  "translation_process_translating": "翻譯 {{item}} 模組({{hasTranslated}}/{{totalNumber}}):",
   "progressing.progressingWithoutSpace": "翻譯 {{item}} 模組:",
-  "progressing.progressingWriting": "寫 {{item}} 模組",
+  "translation_process_saving_shopify": "寫 {{item}} 模組",
   "progressing.finished": "您的翻譯已完成。發布它以應用更改。",
   "progressing.buyCredits": "購買積分",
   "progressing.review": "審閱翻譯",
@@ -684,5 +684,7 @@
   "You have received {{ plan }} Plan benefits": "您已收到 {{ plan }} 方案福利",
   "Save successfully": "保存成功",
   "Language Publishing Status": "語言發布狀態",
-  "Publish to Selected Domains": "發布到所選網域"
+  "Publish to Selected Domains": "發布到所選網域",
+  "{{count}} languages in progress — ": "{{count}} 個語言進行中 — ",
+  "see all tasks": "查看所有任務"
 }

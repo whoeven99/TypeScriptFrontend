@@ -495,12 +495,12 @@
   "progressing.continueTranslate": "Continue translating",
   "progressing.finished": "Your translation is ready. Publish it to apply the changes.",
   "progressing.hasPayed": "Translation credits have been added. You can now resume your translation.",
-  "progressing.init": "Initializing translation task...",
+  "translation_process_init": "Initializing translation task...",
   "progressing.noTranslate": "There are no ongoing translation tasks.",
   "progressing.privateApiKeyAmountLimit": "Your API key has hit the limit. Please reset it to continue your translation task.",
-  "progressing.progressingWithSpace": "Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
+  "translation_process_translating": "Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "Translating {{item}} Module: ",
-  "progressing.progressingWriting": "Writing {{item}} Module",
+  "translation_process_saving_shopify": "Writing {{item}} Module",
   "progressing.publish": "Publish",
   "progressing.reTranslate": "Retranslate",
   "progressing.reTranslateText": "Current translation was manually stopped.",
@@ -684,5 +684,7 @@
   "You have received {{ plan }} Plan benefits": "Du har fått {{ plan }} Plan-förmåner",
   "Save successfully": "Sparat framgångsrikt",
   "Language Publishing Status": "Språkpubliceringsstatus",
-  "Publish to Selected Domains": "Publicera till valda domäner"
+  "Publish to Selected Domains": "Publicera till valda domäner",
+  "{{count}} languages in progress — ": "{{count}} språk pågår — ",
+  "see all tasks": "visa alla uppgifter"
 }

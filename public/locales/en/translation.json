@@ -197,10 +197,10 @@
   "rating.description":"If you’re happy with our product and service, please leave a review to help us improve!",
   "progressing.title":"Translation Tasks: ",
   "progressing.target":"Target:",
-  "progressing.init":"Initializing translation task...",
-  "progressing.progressingWithSpace":"Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
+  "translation_process_init":"Initializing translation task...",
+  "translation_process_translating":"Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace":"Translating {{item}} Module: ",
-  "progressing.progressingWriting":"Writing {{item}} Module",
+  "translation_process_saving_shopify":"Writing {{item}} Module",
   "progressing.finished":"Your translation is ready. Publish it to apply the changes.",
   "progressing.buyCredits":"Buy credits",
   "progressing.review":"Review Translation",
@@ -683,5 +683,7 @@
   "You have received {{ plan }} Plan benefits": "You have received {{ plan }} Plan benefits",
   "Save successfully": "Save successfully",
   "Language Publishing Status": "Language Publishing Status",
-  "Publish to Selected Domains": "Publish to Selected Domains"
+  "Publish to Selected Domains": "Publish to Selected Domains",
+  "{{count}} languages in progress — ": "{{count}} languages in progress — ",
+  "see all tasks": "see all tasks"
 }
