@@ -354,8 +354,6 @@ export function initProductImgObserver({
         const { src = "", srcset = "" } = node;
         if (!src && !srcset) return;
 
-        console.log("node: ", node);
-
         // 在翻译数组中查找匹配项
         const matched = translateSourceArray.find((item) => {
           const key = item?.imageBeforeUrl?.split("/files/")[2];
@@ -416,14 +414,16 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
       // 遍历所有img
       imageDomList.forEach((img) => {
         // 在response数组中查找匹配项
-        const match = productImageData.response.find(
-          (item) =>
-            img.src.includes(item.imageBeforeUrl.split("/files/")[2]) &&
-            item.languageCode === language,
-        );
+        const match = productImageData.response.find((item) => {
+          const key = item?.imageBeforeUrl?.split("/files/")[2];
+          if (!key || item.languageCode !== language) return false;
+
+          return src.includes(key) || srcset.includes(key);
+        });
+
+        console.log("selectedImg: ", match);
 
         if (match) {
-          console.log("img: ", img);
           // 如果imageAfterUrl或altBeforeTranslation存在，则替换
           if (match?.imageAfterUrl) {
             img.src = match?.imageAfterUrl;
