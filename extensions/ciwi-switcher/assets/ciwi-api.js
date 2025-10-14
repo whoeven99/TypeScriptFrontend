@@ -87,6 +87,35 @@ export async function GetProductImageData({
   }
 }
 
+export async function GetShopImageData({ shopName, languageCode,blockId }) {
+  try {
+    const { data } = await fetchJson(
+      `${switchUrl(blockId)}/picture/getPictureDataByShopNameAndLanguageCode?shopName=${shopName}&languageCode=${languageCode}`,
+      {
+        method: "POST",
+      },
+    );
+    return data;
+    // return [
+    //   {
+    //     id: 101,
+    //     shopName: "quickstart-0f992326.myshopify.com",
+    //     imageId: "gid://shopify/Product/8583334691066",
+    //     imageBeforeUrl:
+    //       "https://cdn.shopify.com/s/files/1/0714/6959/6922/files/Main_0a40b01b-5021-48c1-80d1-aa8ab4876d3d.jpg?v=1722495811",
+    //     imageAfterUrl:
+    //       "https://ciwi-us-1327177217.cos.na-ashburn.myqcloud.com/image-Translation/quickstart-0f992326.myshopify.com/gid://shopify/Product/8583334691066/97683600.jfif",
+    //     altBeforeTranslation: "",
+    //     altAfterTranslation: "",
+    //     languageCode: "zh-TW",
+    //     isDelete: false,
+    //   },
+    // ];
+  } catch (err) {
+    console.error("Error GetProductImageData:", err);
+  }
+}
+
 export async function fetchSwitcherConfig({ blockId, shop }) {
   const { data } = await fetchJson(
     `${switchUrl(blockId)}/widgetConfigurations/getData`,

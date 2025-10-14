@@ -3,6 +3,7 @@ import {
   fetchCurrencies,
   GetProductImageData,
   fetchAutoRate,
+  GetShopImageData,
 } from "./ciwi-api.js";
 import { transformPrices } from "./ciwi-utils.js";
 
@@ -346,6 +347,7 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
       productId: productId,
       languageCode: language,
     });
+    console.log("productImageData: ", productImageData);
 
     if (productImageData.response.length > 0) {
       const imageDomList = document.querySelectorAll("img");
@@ -357,7 +359,6 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
             img.src.includes(item.imageBeforeUrl.split("/files/")[2]) &&
             item.languageCode === language,
         );
-
         if (match) {
           // 如果imageAfterUrl或altBeforeTranslation存在，则替换
           if (match.imageAfterUrl || match.altBeforeTranslation) {
@@ -372,6 +373,38 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
         }
       });
     }
+  }
+}
+
+/**
+ * 批量替换主页图片
+ */
+export async function HomeImageTranslate(blockId) {
+  const shop = document.querySelector("#queryCiwiId")?.value;
+  const language = document.querySelector('input[name="language_code"]')?.value;
+  if (!shop || !language) return;
+
+  // Step 2: 获取翻译图片数据
+  const translatedImages = await GetShopImageData({
+    shopName: shop,
+    blockId,
+    languageCode: language,
+  });
+  console.log("translatedImages: ", translatedImages);
+  if (translatedImages.length > 0) {
+    // Step 3: 替换
+    translatedImages.forEach((item) => {
+      const key = item.imageBeforeUrl.split("/files/")[2];
+      document.querySelectorAll(`img[src*="${key}"]`).forEach((img) => {
+        if (item.imageAfterUrl) {
+          img.src = item.imageAfterUrl;
+          img.srcset = item.imageAfterUrl;
+        }
+        if (item.altBeforeTranslation) {
+          img.alt = item.altBeforeTranslation;
+        }
+      });
+    });
   }
 }
 

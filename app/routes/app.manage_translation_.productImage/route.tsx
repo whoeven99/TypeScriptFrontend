@@ -854,6 +854,8 @@ const Index = () => {
           productId: selectedKey,
           languageCode: selectedLanguage,
         });
+        console.log("targetData: ",targetData);
+        
         if (targetData?.success && targetData?.response?.length > 0) {
           setProductImageData(
             data.map((item: any) => {
