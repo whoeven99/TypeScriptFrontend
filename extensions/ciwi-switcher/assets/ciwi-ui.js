@@ -425,12 +425,12 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
         if (match) {
           console.log("img: ", img);
           // 如果imageAfterUrl或altBeforeTranslation存在，则替换
-          if (match.imageAfterUrl) {
+          if (match?.imageAfterUrl) {
             img.src = match?.imageAfterUrl;
             img.srcset = match?.imageAfterUrl;
           }
-          if (match.altBeforeTranslation) {
-            img.alt = match?.altBeforeTranslation;
+          if (match?.altAfterTranslation) {
+            img.alt = match?.altAfterTranslation;
           }
         }
       });
