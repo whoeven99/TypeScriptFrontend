@@ -63,7 +63,7 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
           paddingRight: "8px", // 留一点空位避免滚动条压文字
         }}
       >
-        <Space direction="vertical" style={{ width: "100%" }}>
+        <Space direction="vertical" size={"large"} style={{ width: "100%" }}>
           {moreItems()}
         </Space>
       </div>
