@@ -31,7 +31,6 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
   status,
   translateStatus,
   progressData,
-  value,
   module,
   stopTranslateFetcher,
 }) => {
@@ -157,82 +156,6 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
                   })}
                 </Text>
               )
-              //   (translateStatus === 1 ? (
-              //     <Text>{t("translation_process_init")}</Text>
-              //   ) : (
-              //     <div style={{ width: "100%" }}>
-              //       <Text
-              //         style={{
-              //           width: "100%",
-              //           whiteSpace: "nowrap",
-              //           display: "block",
-              //         }}
-              //       >
-              //         {/* {translateStatus === 2
-              //           ? itemsVisible
-              //             ? t("translation_process_translating", {
-              //                 item: t(item),
-              //                 hasTranslated:
-              //                   progressNumber.hasTranslated > 0
-              //                     ? progressNumber.hasTranslated
-              //                     : 0,
-              //                 totalNumber:
-              //                   progressNumber.totalNumber > 0
-              //                     ? progressNumber.totalNumber
-              //                     : 0,
-              //               })
-              //             : t("progressing.progressingWithoutSpace", {
-              //                 item: t(item),
-              //               })
-              //           : t("translation_process_saving_shopify", {
-              //               item: t(item),
-              //             })} */}
-              //         {translateStatus === 2
-              //           ? t("translation_process_translating", {
-              //               item: t(module),
-              //               hasTranslated:
-              //                 progressData.TotalQuantity -
-              //                   progressData.RemainingQuantity >
-              //                 0
-              //                   ? progressData.TotalQuantity -
-              //                     progressData.RemainingQuantity
-              //                   : 0,
-              //               totalNumber:
-              //                 progressData.TotalQuantity > 0
-              //                   ? progressData.TotalQuantity
-              //                   : 0,
-              //             })
-              //           : t("translation_process_saving_shopify", {
-              //               item: t(module),
-              //             })}
-              //       </Text>
-              //       {translateStatus === 2 && (
-              //         <div style={{ width: "100%" }}>
-              //           <Text
-              //             style={{
-              //               display: "flex",
-              //               width: "100%",
-              //               overflow: "hidden",
-              //               color: "#007F61",
-              //               whiteSpace: "nowrap",
-              //             }}
-              //           >
-              //             <span style={{ flexShrink: 0 }}>[</span>
-              //             <span
-              //               style={{
-              //                 overflow: "hidden",
-              //                 textOverflow: "ellipsis",
-              //                 whiteSpace: "nowrap",
-              //               }}
-              //             >
-              //               {value}
-              //             </span>
-              //             <span style={{ flexShrink: 0 }}>]</span>
-              //           </Text>
-              //         </div>
-              //       )}
-              //     </div>
-              //   ))}
             }
             {status === 3 && <Text>⚠️{t("progressing.contact")}</Text>}
             {status === 4 && <Text>{t("progressing.somethingWentWrong")}</Text>}

@@ -683,5 +683,7 @@
   "You have received {{ plan }} Plan benefits": "Sie haben {{ plan }} Plan-Vorteile erhalten",
   "Save successfully": "Erfolgreich gespeichert",
   "Language Publishing Status": "Sprachveröffentlichungsstatus",
-  "Publish to Selected Domains": "In ausgewählte Domänen veröffentlichen"
+  "Publish to Selected Domains": "In ausgewählte Domänen veröffentlichen",
+  "{{count}} languages in progress — ": "{{count}} Sprachen in Bearbeitung — ",
+  "see all tasks": "alle Aufgaben anzeigen"
 }

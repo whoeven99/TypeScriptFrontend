@@ -684,5 +684,7 @@
   "You have received {{ plan }} Plan benefits": "U heeft {{ plan }} Plan voordelen ontvangen",
   "Save successfully": "Succesvol opgeslagen",
   "Language Publishing Status": "Publicatiestatus van taal",
-  "Publish to Selected Domains": "Publiceren op geselecteerde domeinen"
+  "Publish to Selected Domains": "Publiceren op geselecteerde domeinen",
+  "{{count}} languages in progress — ": "{{count}} talen in uitvoering — ",
+  "see all tasks": "alle taken bekijken"
 }

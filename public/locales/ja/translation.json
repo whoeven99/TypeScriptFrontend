@@ -684,5 +684,7 @@
   "You have received {{ plan }} Plan benefits": "{{ plan }} プランの特典を受け取りました",
   "Save successfully": "保存に成功しました",
   "Language Publishing Status": "言語の公開ステータス",
-  "Publish to Selected Domains": "選択したドメインに公開"
+  "Publish to Selected Domains": "選択したドメインに公開",
+  "{{count}} languages in progress — ": "進行中の言語 {{count}} — ",
+  "see all tasks": "すべてのタスクを見る"
 }

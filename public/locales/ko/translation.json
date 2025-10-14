@@ -684,5 +684,7 @@
   "You have received {{ plan }} Plan benefits": "{{ plan }} 플랜 혜택을 받았습니다",
   "Save successfully": "저장이 완료되었습니다",
   "Language Publishing Status": "언어 게시 상태",
-  "Publish to Selected Domains": "선택한 도메인에 게시"
+  "Publish to Selected Domains": "선택한 도메인에 게시",
+  "{{count}} languages in progress — ": "진행 중인 언어 {{count}} — ",
+  "see all tasks": "모든 작업 보기"
 }

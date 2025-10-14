@@ -62,7 +62,7 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
     });
 
     return dom;
-  }, [dataSource, isMobile, source]);
+  }, [dataSource, isMobile, source, stopTranslateFetcher]);
 
   return (
     <Modal
@@ -76,13 +76,13 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
     >
       <div
         style={{
-          maxHeight: "70vh", // 限制高度为视口的 70%
+          height: "70vh", // 限制高度为视口的 70%
           overflowY: "auto", // 超出垂直滚动
           paddingRight: "8px", // 留一点空位避免滚动条压文字
         }}
       >
         {moreItems()}
-      </div>{" "}
+      </div>
     </Modal>
   );
 };

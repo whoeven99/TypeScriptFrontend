@@ -208,12 +208,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopPrimaryLanguage = shopLanguagesIndex?.filter(
           (language) => language?.primary,
         );
-        const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex?.filter(
-          (language) => !language?.primary,
-        );
-        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
-          (item) => item?.locale,
-        );
 
         const translatingData = await GetAllProgressData({
           shop,
@@ -221,38 +215,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source: shopPrimaryLanguage[0]?.locale,
         });
 
-        const data = translatingData.response?.list?.filter(
-          (translatingDataItem: any) =>
-            shopLocalesIndex.includes(translatingDataItem?.target) &&
-            (translatingDataItem?.status !== 1 ||
-              !shopLanguagesWithoutPrimaryIndex.find(
-                (item) => item.locale === translatingDataItem?.target,
-              )?.published),
-        );
-
-        console.log(`应用日志: ${shop} 进度条返回数据 ${data}`);
-        console.log(`应用日志: ${shop} 主页面数据加载完毕`);
-
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response:
-            data.length > 0
-              ? data.map((item: any) => ({
-                  source: shopPrimaryLanguage[0].locale,
-                  target: item?.target || "",
-                  status: item?.status || 0,
-                  translateStatus: item?.translateStatus || "",
-                  resourceType: item?.resourceType || "",
-                  value: item?.value || "",
-                  progressData: item?.progressData || {
-                    RemainingQuantity: 0,
-                    TotalQuantity: 0,
-                  },
-                }))
-              : [],
-        };
+        return translatingData;
       } catch (error) {
         console.error("Error nearTransaltedData app:", error);
         return {

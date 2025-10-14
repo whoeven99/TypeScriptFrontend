@@ -684,5 +684,7 @@
   "You have received {{ plan }} Plan benefits": "Du har fått {{ plan }} Plan-förmåner",
   "Save successfully": "Sparat framgångsrikt",
   "Language Publishing Status": "Språkpubliceringsstatus",
-  "Publish to Selected Domains": "Publicera till valda domäner"
+  "Publish to Selected Domains": "Publicera till valda domäner",
+  "{{count}} languages in progress — ": "{{count}} språk pågår — ",
+  "see all tasks": "visa alla uppgifter"
 }

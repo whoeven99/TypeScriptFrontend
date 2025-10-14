@@ -684,5 +684,7 @@
   "You have received {{ plan }} Plan benefits": "{{ plan }} Plan avantajlarını aldınız",
   "Save successfully": "Başarıyla kaydedildi",
   "Language Publishing Status": "Dil yayınlama durumu",
-  "Publish to Selected Domains": "Seçili etki alanlarına yayınla"
+  "Publish to Selected Domains": "Seçili etki alanlarına yayınla",
+  "{{count}} languages in progress — ": "{{count}} dil devam ediyor — ",
+  "see all tasks": "tüm görevleri gör"
 }

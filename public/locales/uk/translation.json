@@ -683,5 +683,7 @@
   "You have received {{ plan }} Plan benefits": "Ви отримали переваги плану {{ plan }}",
   "Save successfully": "Успішно збережено",
   "Language Publishing Status": "Статус публікації мови",
-  "Publish to Selected Domains": "Опублікувати в обраних доменах"
+  "Publish to Selected Domains": "Опублікувати в обраних доменах",
+  "{{count}} languages in progress — ": "{{count}} мов у процесі — ",
+  "see all tasks": "переглянути всі завдання"
 }

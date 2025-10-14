@@ -686,5 +686,7 @@
   "You have received {{ plan }} Plan benefits": "您已收到 {{ plan }} 计划福利",
   "Save successfully": "保存成功",
   "Language Publishing Status": "语言发布状态",
-  "Publish to Selected Domains": "发布到所选域名"
+  "Publish to Selected Domains": "发布到所选域名",
+  "{{count}} languages in progress — ": "{{count}} 个语言进行中 — ",
+  "see all tasks": "查看所有任务"
 }
