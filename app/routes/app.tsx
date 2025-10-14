@@ -215,7 +215,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source: shopPrimaryLanguage[0]?.locale,
         });
 
-        return translatingData;
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            ...translatingData?.response,
+            source: shopPrimaryLanguage[0]?.locale,
+          },
+        };
       } catch (error) {
         console.error("Error nearTransaltedData app:", error);
         return {

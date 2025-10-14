@@ -1,4 +1,4 @@
-import { Divider, Modal } from "antd";
+import { Card, Divider, Modal, Space } from "antd";
 import React, { useCallback } from "react";
 import ProgressBlock from "./progressBlock";
 import { FetcherWithComponents } from "@remix-run/react";
@@ -25,26 +25,8 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
 
   const moreItems = useCallback(() => {
     const dom = dataSource?.map((item: any, index: number) => {
-      if (index) {
-        return (
-          <React.Fragment key={item?.target}>
-            <Divider />
-            <ProgressBlock
-              key={item?.target}
-              isMobile={isMobile}
-              source={source}
-              target={item?.target}
-              status={item?.status}
-              translateStatus={item?.translateStatus}
-              progressData={item?.progressData}
-              value={item?.value}
-              module={item?.module}
-              stopTranslateFetcher={stopTranslateFetcher}
-            />
-          </React.Fragment>
-        );
-      } else {
-        return (
+      return (
+        <Card key={item?.target}>
           <ProgressBlock
             key={item?.target}
             isMobile={isMobile}
@@ -57,8 +39,8 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
             module={item?.module}
             stopTranslateFetcher={stopTranslateFetcher}
           />
-        );
-      }
+        </Card>
+      );
     });
 
     return dom;
@@ -81,7 +63,9 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
           paddingRight: "8px", // 留一点空位避免滚动条压文字
         }}
       >
-        {moreItems()}
+        <Space direction="vertical" style={{ width: "100%" }}>
+          {moreItems()}
+        </Space>
       </div>
     </Modal>
   );

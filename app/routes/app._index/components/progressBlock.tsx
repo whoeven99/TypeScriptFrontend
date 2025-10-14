@@ -137,26 +137,24 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             }}
           >
             {status === 1 && <Text>{t("progressing.finished")}</Text>}
-            {
-              status === 2 && (
-                <Text>
-                  {t(translateStatus, {
-                    item: t(module),
-                    hasTranslated:
-                      progressData.TotalQuantity -
-                        progressData.RemainingQuantity >
-                      0
-                        ? progressData.TotalQuantity -
-                          progressData.RemainingQuantity
-                        : 0,
-                    totalNumber:
-                      progressData.TotalQuantity > 0
-                        ? progressData.TotalQuantity
-                        : 0,
-                  })}
-                </Text>
-              )
-            }
+            {status === 2 && (
+              <Text>
+                {t(translateStatus, {
+                  item: t(module),
+                  hasTranslated:
+                    progressData.TotalQuantity -
+                      progressData.RemainingQuantity >
+                    0
+                      ? progressData.TotalQuantity -
+                        progressData.RemainingQuantity
+                      : 0,
+                  totalNumber:
+                    progressData.TotalQuantity > 0
+                      ? progressData.TotalQuantity
+                      : 0,
+                })}
+              </Text>
+            )}
             {status === 3 && <Text>⚠️{t("progressing.contact")}</Text>}
             {status === 4 && <Text>{t("progressing.somethingWentWrong")}</Text>}
             {status === 5 && (

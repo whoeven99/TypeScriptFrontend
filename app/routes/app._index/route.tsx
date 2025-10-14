@@ -69,6 +69,7 @@ const Index = () => {
   const timeoutIdRef = useRef<number | null>(null);
   const isActiveRef = useRef(false); // 当前轮询是否激活（可控制停止）
   const hasInitialized = useRef(false);
+  const hasStopped = useRef(false);
 
   const { userConfigIsLoading, isNew } = useSelector(
     (state: any) => state.userConfig,
@@ -92,7 +93,7 @@ const Index = () => {
   const languageFetcher = useFetcher<any>();
   const stopTranslateFetcher = useFetcher<any>();
 
-  const { reportClick, report } = useReport();
+  const { reportClick } = useReport();
 
   useEffect(() => {
     setIsLoading(false);
@@ -162,16 +163,15 @@ const Index = () => {
         }) ?? [];
 
       if (!hasInitialized.current) {
-        source.current = response[0]?.source;
+        setProgressDataSource(data);
+        source.current = languageFetcher.data?.response?.source;
         setIsProgressLoading(false);
         hasInitialized.current = true;
       }
 
-      setProgressDataSource(data);
-
       const needRepoll = response.some((item: any) => item?.status === 2);
 
-      if (!needRepoll) {
+      if (!needRepoll || hasStopped.current) {
         return () => {
           if (timeoutIdRef.current) {
             clearTimeout(timeoutIdRef.current);
@@ -179,14 +179,27 @@ const Index = () => {
         };
       }
 
+      setProgressDataSource(data);
+
       // 若轮询仍激活，则等待3秒后继续
-      if (isActiveRef.current) {
+      if (isActiveRef.current && !hasStopped.current) {
         timeoutIdRef.current = window.setTimeout(() => {
           pollStatus();
         }, 3000);
       }
     }
   }, [languageFetcher.data]);
+
+  useEffect(() => {
+    if (stopTranslateFetcher.data?.success) {
+      setProgressDataSource((prev: any[] = []) =>
+        prev.map((item) =>
+          item?.status === 2 ? { ...item, status: 7 } : item,
+        ),
+      );
+      hasStopped.current = true;
+    }
+  }, [stopTranslateFetcher.data]);
 
   const columns = [
     {
