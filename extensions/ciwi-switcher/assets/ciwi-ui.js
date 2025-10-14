@@ -418,10 +418,8 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
           const key = item?.imageBeforeUrl?.split("/files/")[2];
           if (!key || item.languageCode !== language) return false;
 
-          return src.includes(key) || srcset.includes(key);
+          return img?.src.includes(key) || img?.srcset.includes(key);
         });
-
-        console.log("selectedImg: ", match);
 
         if (match) {
           // 如果imageAfterUrl或altBeforeTranslation存在，则替换
