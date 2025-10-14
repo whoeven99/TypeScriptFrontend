@@ -549,7 +549,6 @@
   "progressing.privateApiKeyAmountLimit": "Ваш API ключ досяг ліміту. Скиньте його, щоб продовжити завдання перекладу.",
   "translation_process_translating": "Переклад модуля {{item}} ({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "Переклад модуля {{item}}: ",
-  "translation_process_saving_shopify": "Запис модуля {{item}}",
   "progressing.publish": "Опублікувати",
   "progressing.reTranslate": "Перекласти знову",
   "progressing.reTranslateText": "Поточний переклад було зупинено вручну.",
@@ -685,5 +684,6 @@
   "Language Publishing Status": "Статус публікації мови",
   "Publish to Selected Domains": "Опублікувати в обраних доменах",
   "{{count}} languages in progress — ": "{{count}} мов у процесі — ",
-  "see all tasks": "переглянути всі завдання"
+  "see all tasks": "переглянути всі завдання",
+  "translation_process_saving_shopify": "Застосування перекладів до модуля {{item}}…"
 }

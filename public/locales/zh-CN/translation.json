@@ -157,7 +157,6 @@
   "translation_process_init": "正在初始化翻译任务...",
   "translation_process_translating": "正在翻译{{item}}模块({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "正在翻译{{item}}模块: ",
-  "translation_process_saving_shopify": "正在写入{{item}}模块",
   "progressing.finished": "翻译已完成。翻译内容需要发布后才能生效。",
   "progressing.buyCredits": "购买积分",
   "progressing.review": "检查翻译",
@@ -688,5 +687,6 @@
   "Language Publishing Status": "语言发布状态",
   "Publish to Selected Domains": "发布到所选域名",
   "{{count}} languages in progress — ": "{{count}} 个语言进行中 — ",
-  "see all tasks": "查看所有任务"
+  "see all tasks": "查看所有任务",
+  "translation_process_saving_shopify": "正在将翻译应用到 {{item}} 模块…"
 }
