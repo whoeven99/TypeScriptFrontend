@@ -56,6 +56,18 @@ const ProgressingCard: React.FC<ProgressingCardProps> = () => {
       setDataSource(data);
       setLoading(false);
 
+      const needRepoll = languagefetcher.data.response.some(
+        (item: any) => item?.status === 2,
+      );
+
+      if (!needRepoll) {
+        return () => {
+          if (timeoutIdRef.current) {
+            clearTimeout(timeoutIdRef.current);
+          }
+        };
+      }
+
       // 若轮询仍激活，则等待3秒后继续
       if (isActiveRef.current) {
         timeoutIdRef.current = window.setTimeout(() => {
