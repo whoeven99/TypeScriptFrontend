@@ -683,5 +683,7 @@
   "You have received {{ plan }} Plan benefits": "You have received {{ plan }} Plan benefits",
   "Save successfully": "Save successfully",
   "Language Publishing Status": "Language Publishing Status",
-  "Publish to Selected Domains": "Publish to Selected Domains"
+  "Publish to Selected Domains": "Publish to Selected Domains",
+  "{{count}} languages in progress — ": "{{count}} languages in progress — ",
+  "see all tasks": "see all tasks"
 }

@@ -22,7 +22,6 @@ interface ProgressBlockProps {
   value: string; // 翻译值
   module: string; // 翻译项
   stopTranslateFetcher: FetcherWithComponents<any>;
-  handleReTranslate: () => void; // 重新翻译
 }
 
 const ProgressBlock: React.FC<ProgressBlockProps> = ({
@@ -35,11 +34,15 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
   value,
   module,
   stopTranslateFetcher,
-  handleReTranslate,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { reportClick, report } = useReport();
+
+  const handleReTranslate = () => {
+    navigate("/app/translate");
+    reportClick("dashboard_translation_task_retranslate");
+  };
 
   const progress = useMemo(
     () =>

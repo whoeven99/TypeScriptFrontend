@@ -2,16 +2,15 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Card, Divider, Flex, Skeleton, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useFetcher, useNavigate } from "@remix-run/react";
-import { GetProgressData, GetUserValue } from "~/api/JavaServer";
 import useReport from "../../../../scripts/eventReport";
 import ProgressBlock from "./progressBlock";
+import ProgressingModal from "./progressingModal";
 const { Text, Title } = Typography;
 
 interface ProgressingCardProps {}
 
 const ProgressingCard: React.FC<ProgressingCardProps> = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const languagefetcher = useFetcher<any>();
   const stopTranslateFetcher = useFetcher<any>();
@@ -21,13 +20,9 @@ const ProgressingCard: React.FC<ProgressingCardProps> = () => {
   const isActiveRef = useRef(false); // 当前轮询是否激活（可控制停止）
 
   const [dataSource, setDataSource] = useState<any[]>([]);
-  const [status, setStatus] = useState<number>(0);
-  const [translateStatus, setTranslateStatus] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showMoreItems, setShowMoreItems] = useState<boolean>(false);
-
-  const { reportClick } = useReport();
 
   // === 响应窗口变化 ===
   useEffect(() => {
@@ -78,12 +73,12 @@ const ProgressingCard: React.FC<ProgressingCardProps> = () => {
   }, [languagefetcher.data]);
 
   useEffect(() => {
-    if (stopTranslateFetcher.data) {
-      if (stopTranslateFetcher.data?.success) {
-        setStatus(7);
-        setTranslateStatus(1);
-      } else {
-      }
+    if (stopTranslateFetcher.data?.success) {
+      setDataSource((prev: any[] = []) =>
+        prev.map((item) =>
+          item?.status === 2 ? { ...item, status: 7 } : item,
+        ),
+      );
     }
   }, [stopTranslateFetcher.data]);
 
@@ -161,97 +156,30 @@ const ProgressingCard: React.FC<ProgressingCardProps> = () => {
     }
   };
 
-  const handleReTranslate = () => {
-    navigate("/app/translate");
-    reportClick("dashboard_translation_task_retranslate");
-  };
-
-  const moreItems = useCallback(() => {
-    if (showMoreItems) {
-      const dom = dataSource?.map((item: any, index: number) => {
-        if (index) {
-          return (
-            <React.Fragment key={item?.target}>
-              <Divider />
-              <ProgressBlock
-                key={item?.target}
-                isMobile={isMobile}
-                source={source.current}
-                target={item?.target}
-                status={item?.status}
-                translateStatus={item?.translateStatus}
-                progressData={item?.progressData}
-                value={item?.value}
-                module={item?.module}
-                handleReTranslate={handleReTranslate}
-                stopTranslateFetcher={stopTranslateFetcher}
-              />
-            </React.Fragment>
-          );
-        } else {
-          return (
-            <ProgressBlock
-              key={item?.target}
-              isMobile={isMobile}
-              source={source.current}
-              target={item?.target}
-              status={item?.status}
-              translateStatus={item?.translateStatus}
-              progressData={item?.progressData}
-              value={item?.value}
-              module={item?.module}
-              handleReTranslate={handleReTranslate}
-              stopTranslateFetcher={stopTranslateFetcher}
-            />
-          );
-        }
-      });
-
-      return dom;
-    } else {
-      return (
-        <ProgressBlock
-          key={dataSource[0]?.target}
-          isMobile={isMobile}
-          source={source.current}
-          target={dataSource[0]?.target}
-          status={dataSource[0]?.status}
-          translateStatus={dataSource[0]?.translateStatus}
-          progressData={dataSource[0]?.progressData}
-          value={dataSource[0]?.value}
-          module={dataSource[0]?.module}
-          handleReTranslate={handleReTranslate}
-          stopTranslateFetcher={stopTranslateFetcher}
-        />
-      );
-    }
-  }, [dataSource, isMobile, source, showMoreItems]);
-
   return (
-    <Card>
-      <Flex
-        justify="space-between"
-        align="center"
-        style={{ marginBottom: "8px" }}
+    <Card style={{ width: "100%" }} styles={{ body: { width: "100%" } }}>
+      <Title
+        level={4}
+        // style={{ margin: 0 }}
       >
-        <Title level={4} style={{ margin: 0 }}>
-          {t("progressing.title")}
-        </Title>
-
-        {dataSource?.length > 1 && (
-          <Button onClick={() => setShowMoreItems(!showMoreItems)}>
-            {showMoreItems
-              ? t("progressing.showLessItems")
-              : t("progressing.showMoreItems", { items: dataSource?.length })}
-          </Button>
-        )}
-      </Flex>
+        {t("progressing.title")}
+      </Title>
       {loading ? (
         <Skeleton.Button active style={{ height: "130px" }} block />
       ) : dataSource?.length !== 0 ? (
         <Card>
-          {/* 始终显示第一个 ProgressBlock */}
-          {moreItems()}
+          <ProgressBlock
+            key={dataSource[0]?.target}
+            isMobile={isMobile}
+            source={source.current}
+            target={dataSource[0]?.target}
+            status={dataSource[0]?.status}
+            translateStatus={dataSource[0]?.translateStatus}
+            progressData={dataSource[0]?.progressData}
+            value={dataSource[0]?.value}
+            module={dataSource[0]?.module}
+            stopTranslateFetcher={stopTranslateFetcher}
+          />
         </Card>
       ) : (
         <Card>
@@ -267,6 +195,34 @@ const ProgressingCard: React.FC<ProgressingCardProps> = () => {
           </Text>
         </Card>
       )}
+      <Flex
+        justify="left"
+        style={{
+          display: dataSource.length > 1 ? "flex" : "none",
+          marginTop: "8px",
+        }}
+      >
+        <Text>
+          {t("{{count}} languages in progress — ", {
+            count: dataSource.length,
+          })}
+        </Text>
+        <Button
+          type="link"
+          onClick={() => setShowMoreItems(true)}
+          size="small"
+        >
+          {t("see all tasks")}
+        </Button>
+      </Flex>
+      <ProgressingModal
+        open={showMoreItems}
+        onCancel={() => setShowMoreItems(false)}
+        dataSource={dataSource}
+        isMobile={isMobile}
+        source={source.current || ""}
+        stopTranslateFetcher={stopTranslateFetcher}
+      />
     </Card>
   );
 };
