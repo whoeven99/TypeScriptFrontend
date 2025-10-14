@@ -150,6 +150,8 @@ const Index = () => {
   useEffect(() => {
     if (languageFetcher.data) {
       const response = languageFetcher.data?.response?.list || [];
+      setIsProgressLoading(false);
+
       if (!response.length) return;
 
       const data =
@@ -161,7 +163,6 @@ const Index = () => {
             };
           return item;
         }) ?? [];
-
       if (!hasInitialized.current) {
         setProgressDataSource(data);
         source.current = languageFetcher.data?.response?.source;
