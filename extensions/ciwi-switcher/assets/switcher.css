@@ -363,7 +363,7 @@ a[href="https://translate.google.com"]
 }
 
 .options-list {
-  max-height: 135px;
+  height: 135px;
   overflow-y: auto;
 }
 
