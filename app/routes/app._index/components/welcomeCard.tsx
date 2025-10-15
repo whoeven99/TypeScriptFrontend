@@ -83,7 +83,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
           : t("Enable language and currency switcher")
       }
       styles={{
-        header: { borderBottom: "none",fontSize:"14px" },
+        header: { borderBottom: "none",fontSize:"20px" },
         body: {
           padding: "0 24px 12px 24px",
         },

@@ -509,7 +509,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
             >
               {t("Details")}
             </Button>
-            <Button onClick={handleCancelScope}>取消授权</Button>
+            {/* <Button onClick={handleCancelScope}>取消授权</Button> */}
           </Flex>
         </Col>
       </Row>

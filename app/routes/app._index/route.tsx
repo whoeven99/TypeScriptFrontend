@@ -29,6 +29,7 @@ import { useSelector } from "react-redux";
 import ProgressingModal from "./components/progressingModal";
 import CorrectIcon from "~/components/icon/correctIcon";
 import GiftIcon from "~/components/icon/giftIcon";
+import TranslationPanel from "./components/TranslationPanel";
 
 const { Title, Text } = Typography;
 
@@ -422,7 +423,7 @@ const Index = () => {
       {/* <FreePlanCountdownCard /> */}
       <ScrollNotice
         text={t(
-          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible."
+          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
       <Space
@@ -434,11 +435,11 @@ const Index = () => {
         }}
       >
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <div style={{ paddingLeft: "8px" }}>
+          {/* <div style={{ paddingLeft: "8px" }}>
             <Title level={3}>{t("dashboard.title1")}</Title>
             <Text strong>{t("dashboard.description1")}</Text>
-          </div>
-          <div>
+          </div> */}
+          {/* <div>
             <Card
               style={
                 !userConfigIsLoading && isNew
@@ -560,7 +561,8 @@ const Index = () => {
                 )}
               </Flex>
             </Card>
-          </div>
+          </div> */}
+          <AnalyticsCard isLoading={isLoading}></AnalyticsCard>
           <ProgressingCard
             dataSource={progressDataSource}
             source={source.current}
@@ -569,6 +571,15 @@ const Index = () => {
             isMobile={isMobile}
             setProgressingModalOpen={setProgressingModalOpen}
           />
+          <TranslationPanel />
+
+          <WelcomeCard
+            switcherOpen={switcherOpen}
+            blockUrl={blockUrl}
+            shop={shop}
+            // handleReload={handleReload}
+          />
+
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
               <Card
@@ -692,7 +703,7 @@ const Index = () => {
               size="small"
               style={{ display: "flex" }}
             >
-              <Title style={{fontSize:"14px"}}>{t("planCard.title")}</Title>
+              <Title style={{ fontSize: "14px" }}>{t("planCard.title")}</Title>
               <Flex justify="space-between" align="center">
                 <Text>{t("planCard.description")}</Text>
                 {isLoading ? (

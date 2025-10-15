@@ -1,12 +1,5 @@
-import  { useEffect, useState } from "react";
-import {
-  Row,
-  Col,
-  Button,
-  Card,
-  Flex,
-  Image,
-} from "antd";
+import { useEffect, useState } from "react";
+import { Row, Col, Button, Card, Flex, Image, Typography } from "antd";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
 import { useTranslation } from "react-i18next";
@@ -14,6 +7,7 @@ import languageLocaleData from "../../../../scripts/language-locale-data";
 
 const TranslationPanel = () => {
   const { t } = useTranslation();
+  const { Text, Title } = Typography;
   const { reportClick } = useReport();
   const navigate = useNavigate();
   const LanguageFetcher = useFetcher<any>();
@@ -48,7 +42,7 @@ const TranslationPanel = () => {
             langs[langName] = {
               value: langs[langName],
               flagUrl: match.countries[0], // 用第一个国家作为 flagUrl
-              isoCode:match.isoCode
+              isoCode: match.isoCode,
             };
           } else {
             langs[langName] = { value: langs[langName], flagUrl: null };
@@ -57,7 +51,7 @@ const TranslationPanel = () => {
         setLanguages(Object.values(langs).slice(0, 3)); // 只显示前3个
         localStorage.setItem(
           "localFlagsData",
-          JSON.stringify(Object.values(langs).slice(0, 3)), 
+          JSON.stringify(Object.values(langs).slice(0, 3)),
         );
       } else {
         console.error("flag failed");
@@ -67,27 +61,42 @@ const TranslationPanel = () => {
   }, [LanguageFetcher.data]);
 
   return (
-    <Row gutter={[10, 10]} style={{ marginTop: "20px" }}>
-      {/* Add Language & Auto Translate */}
-      <Col sm={24} md={12} lg={8} xs={24}>
-        <Card
-          title={t("Add Language & Auto Translate")}
-          style={{ width: "100%", height: "100%" }}
-          styles={{
-            header: {
-              borderBottom: "none",
-              fontSize:"14px"
-            },
-            body: {
-              paddingTop: 0,
-              paddingBottom: "12px",
-            },
-          }}
+    <Card
+      style={{ width: "100%", padding: "0px" }}
+      styles={{
+        body: {
+          padding: "12px 24px",
+        },
+      }}
+    >
+      <Flex justify="space-between" style={{ marginBottom: "10px" }}>
+        <Title
+          level={4}
+          style={{ display: "flex", alignItems: "center", fontWeight: 600 }}
         >
-          <Flex justify="space-between" align="center" gap="8px">
-            <Flex flex={1} justify="start" align="center" gap="8px">
-              {
-                (languages.length > 0 ? languages : nationalFlags).map(
+          {t("Translation tools")}
+        </Title>
+      </Flex>
+      <Row gutter={[10, 10]} style={{ marginTop: "20px" }}>
+        {/* Add Language & Auto Translate */}
+        <Col sm={24} md={12} lg={8} xs={24}>
+          <Card
+            title={t("Add Language & Auto Translate")}
+            style={{ width: "100%", height: "100%" }}
+            styles={{
+              header: {
+                borderBottom: "none",
+                fontSize: "14px",
+              },
+              body: {
+                paddingTop: 0,
+                paddingBottom: "12px",
+              },
+            }}
+          >
+            <Flex justify="space-between" align="center" gap="8px">
+              <Flex flex={1} justify="start" align="center" gap="8px">
+                {(languages.length > 0 ? languages : nationalFlags).map(
                   (lang: any, idx: number) => (
                     <Image
                       key={idx}
@@ -104,127 +113,127 @@ const TranslationPanel = () => {
                       }}
                     />
                   ),
-                )
-              }
+                )}
+              </Flex>
+              {languages.length > 0 ? (
+                <Button
+                  type="default"
+                  style={{
+                    color: "#999",
+                    fontSize: "12px",
+                  }}
+                  onClick={() => navigate("/app/language")}
+                >
+                  {t("And More")}
+                </Button>
+              ) : (
+                <div style={{ height: 30 }}></div>
+              )}
             </Flex>
-            {languages.length > 0 ? (
+            <Button
+              type="default"
+              style={{ marginTop: "8px", bottom: 0 }}
+              onClick={() => {
+                reportClick("dashboard_add_language");
+                navigate("/app/language");
+              }}
+            >
+              {t("Add")}
+            </Button>
+          </Card>
+        </Col>
+
+        {/* Manage Translation & Edit */}
+        <Col sm={24} md={12} lg={8} xs={24}>
+          <Card
+            title={t("Manage Translation & Edit")}
+            style={{ width: "100%" }}
+            styles={{
+              header: {
+                borderBottom: "none",
+                fontSize: "14px",
+              },
+              body: {
+                paddingTop: 0,
+                paddingBottom: "12px",
+              },
+            }}
+          >
+            <Flex justify="space-between" gap="8px">
               <Button
                 type="default"
-                style={{
-                  color: "#999",
-                  fontSize: "12px",
-                }}
-                onClick={() => navigate("/app/language")}
+                style={{ color: "#999", fontSize: "12px" }}
+                onClick={() => navigate("/app/manage_translation")}
+              >
+                {t("Theme")}
+              </Button>
+              <Button
+                type="default"
+                style={{ color: "#999", fontSize: "12px" }}
+                onClick={() => navigate("/app/manage_translation")}
+              >
+                {t("Product")}
+              </Button>
+              <Button
+                type="default"
+                style={{ color: "#999", fontSize: "12px" }}
+                onClick={() => navigate("/app/manage_translation")}
               >
                 {t("And More")}
               </Button>
-            ) : (
-              <div style={{ height: 30 }}></div>
-            )}
-          </Flex>
-          <Button
-            type="default"
-            style={{ marginTop: "8px", bottom: 0 }}
-            onClick={() => {
-              reportClick("dashboard_add_language");
-              navigate("/app/language");
-            }}
-          >
-            {t("Add")}
-          </Button>
-        </Card>
-      </Col>
-
-      {/* Manage Translation & Edit */}
-      <Col sm={24} md={12} lg={8} xs={24}>
-        <Card
-          title={t("Manage Translation & Edit")}
-          style={{ width: "100%" }}
-          styles={{
-            header: {
-              borderBottom: "none",
-              fontSize:"14px"
-            },
-            body: {
-              paddingTop: 0,
-              paddingBottom: "12px",
-            },
-          }}
-        >
-          <Flex justify="space-between" gap="8px">
+            </Flex>
             <Button
               type="default"
-              style={{ color: "#999", fontSize: "12px" }}
-              onClick={() => navigate("/app/manage_translation")}
-            >
-              {t("Theme")}
-            </Button>
-            <Button
-              type="default"
-              style={{ color: "#999", fontSize: "12px" }}
-              onClick={() => navigate("/app/manage_translation")}
-            >
-              {t("Product")}
-            </Button>
-            <Button
-              type="default"
-              style={{ color: "#999", fontSize: "12px" }}
-              onClick={() => navigate("/app/manage_translation")}
-            >
-              {t("And More")}
-            </Button>
-          </Flex>
-          <Button
-            type="default"
-            style={{ marginTop: "8px" }}
-            onClick={() => {
-              reportClick("dashboard_mange_translate");
-              navigate("/app/manage_translation");
-            }}
-          >
-            {t("Manage")}
-          </Button>
-        </Card>
-      </Col>
-
-      {/* More Translation Tools */}
-      <Col sm={24} md={12} lg={8} xs={24}>
-        <Card
-          style={{ height: "100%", width: "100%" }}
-          title={t("More Translation Tools")}
-          styles={{
-            header: {
-              borderBottom: "none",
-              fontSize:"14px"
-            },
-            body: {
-              paddingTop: 0,
-              paddingBottom: "12px",
-            },
-          }}
-        >
-          <Flex justify="space-between" wrap="wrap" gap="8px">
-            <Button
-              type="default"
+              style={{ marginTop: "8px" }}
               onClick={() => {
-                navigate("/app/glossary"),
-                  reportClick("dashboard_translate_tool_glossary");
+                reportClick("dashboard_mange_translate");
+                navigate("/app/manage_translation");
               }}
-              style={{ fontSize: "12px" }}
             >
-              {t("Glossary")}
+              {t("Manage")}
             </Button>
-            <Button
-              type="default"
-              onClick={() => navigate("/app/manage_translation")}
-              style={{ fontSize: "12px" }}
-            >
-              {t("Image & Alt Text Translation")}
-            </Button>
-          </Flex>
-        </Card>
-      </Col>
-    </Row>
+          </Card>
+        </Col>
+
+        {/* More Translation Tools */}
+        <Col sm={24} md={12} lg={8} xs={24}>
+          <Card
+            style={{ height: "100%", width: "100%" }}
+            title={t("More Translation Tools")}
+            styles={{
+              header: {
+                borderBottom: "none",
+                fontSize: "14px",
+              },
+              body: {
+                paddingTop: 0,
+                paddingBottom: "12px",
+              },
+            }}
+          >
+            <Flex justify="space-between" wrap="wrap" gap="8px">
+              <Button
+                type="default"
+                onClick={() => {
+                  navigate("/app/glossary"),
+                    reportClick("dashboard_translate_tool_glossary");
+                }}
+                style={{ fontSize: "12px" }}
+              >
+                {t("Glossary")}
+              </Button>
+              <Button
+                type="default"
+                onClick={() => navigate("/app/manage_translation")}
+                style={{ fontSize: "12px" }}
+              >
+                {t("Image & Alt Text Translation")}
+              </Button>
+            </Flex>
+          </Card>
+        </Col>
+      </Row>
+    </Card>
   );
 };
 
