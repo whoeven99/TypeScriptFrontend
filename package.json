@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "remix vite:build",
-    "dev": "shopify app dev",
+    "dev": "shopify app dev --port 8080",
     "deployTest": "npx shopify app deploy -c shopify.app.test.toml --force",
     "deployProd": "npx shopify app deploy -c shopify.app.prod.toml --force",
     "translate": "node scripts/translate.js",

@@ -10,6 +10,7 @@ import {
   Space,
   Table,
   Typography,
+  Modal,
 } from "antd";
 import { Link, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -19,14 +20,16 @@ import ContactCard from "./components/contactCard";
 import PreviewCard from "./components/previewCard";
 import ScrollNotice from "~/components/ScrollNotice";
 import { LoaderFunctionArgs } from "@remix-run/node";
+import AnalyticsCard from "./components/AnalyticsCard";
 import ProgressingCard from "~/routes/app._index/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
 import useReport from "scripts/eventReport";
 import { useSelector } from "react-redux";
+import ProgressingModal from "./components/progressingModal";
 import CorrectIcon from "~/components/icon/correctIcon";
 import GiftIcon from "~/components/icon/giftIcon";
-import ProgressingModal from "./components/progressingModal";
+import TranslationPanel from "./components/TranslationPanel";
 
 const { Title, Text } = Typography;
 
@@ -90,6 +93,7 @@ const Index = () => {
 
   const fetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
+
   const languageFetcher = useFetcher<any>();
   const stopTranslateFetcher = useFetcher<any>();
 
@@ -229,25 +233,31 @@ const Index = () => {
     {
       key: 1,
       need: t("devplanCard1.title"),
-      votes: 100,
+      votes: 65,
       devStatus: t("Launched"),
     },
     {
       key: 2,
       need: t("devplanCard2.title"),
-      votes: 35,
-      devStatus: t("Launched"),
+      votes: 33,
+      devStatus: t("In development"),
     },
     {
       key: 3,
       need: t("devplanCard3.title"),
-      votes: 35,
-      devStatus: t("In development"),
+      votes: 41,
+      devStatus: t("Launched"),
     },
     {
       key: 4,
       need: t("devplanCard4.title"),
-      votes: 25,
+      votes: 18,
+      devStatus: t("Launched"),
+    },
+    {
+      key: 5,
+      need: t("devplanCard5.title"),
+      votes: 29,
       devStatus: t("In development"),
     },
   ];
@@ -424,140 +434,8 @@ const Index = () => {
           overflowX: "hidden",
         }}
       >
-        <WelcomeCard
-          switcherOpen={switcherOpen}
-          blockUrl={blockUrl}
-          shop={shop}
-          // handleReload={handleReload}
-        />
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>{t("dashboard.title1")}</Title>
-            <Text strong>{t("dashboard.description1")}</Text>
-          </div>
-          <div>
-            <Card
-              style={
-                !userConfigIsLoading && isNew
-                  ? {
-                      borderBottomLeftRadius: 0,
-                      borderBottomRightRadius: 0,
-                    }
-                  : {}
-              }
-            >
-              <Space
-                direction="vertical"
-                size="middle"
-                style={{ display: "flex" }}
-              >
-                <Title level={4}>{t("transLanguageCard1.title")}</Title>
-                <Text>{t("transLanguageCard1.description")}</Text>
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  {isLoading ? (
-                    <Skeleton.Button active />
-                  ) : (
-                    <Button
-                      type="primary"
-                      onClick={() => navigateToTranslate()}
-                    >
-                      {t("transLanguageCard1.button")}
-                    </Button>
-                  )}
-                </div>
-              </Space>
-            </Card>
-
-            <Card
-              style={{
-                borderBlockStartColor: "#f0f0f0",
-                borderTopLeftRadius: 0,
-                borderTopRightRadius: 0,
-              }}
-              styles={{
-                body: {
-                  paddingTop: 6,
-                  paddingBottom: 6,
-                },
-              }}
-            >
-              <Flex align="center" justify="space-between" gap={24}>
-                <Space
-                  size={"small"}
-                  style={{ display: "flex", alignItems: "center" }}
-                >
-                  <Flex align="center">
-                    <CorrectIcon />
-                  </Flex>
-                  <Text
-                    style={{
-                      whiteSpace: "normal", // 允许换行
-                      wordBreak: "break-word", // 长单词也能断开
-                      maxWidth: "100%", // 不超过容器宽度
-                      color: "#007F61",
-                    }}
-                  >
-                    {t("Up to 8,000,000 translation credits")}
-                  </Text>
-                  <Flex align="center">
-                    <CorrectIcon />
-                  </Flex>
-                  <Text
-                    style={{
-                      whiteSpace: "normal", // 允许换行
-                      wordBreak: "break-word", // 长单词也能断开
-                      maxWidth: "100%", // 不超过容器宽度
-                      color: "#007F61",
-                    }}
-                  >
-                    {t("Auto translation")}
-                  </Text>
-                  <Flex align="center">
-                    <CorrectIcon />
-                  </Flex>
-                  <Text
-                    style={{
-                      whiteSpace: "normal", // 允许换行
-                      wordBreak: "break-word", // 长单词也能断开
-                      maxWidth: "100%", // 不超过容器宽度
-                      color: "#007F61",
-                    }}
-                  >
-                    {t("Image & alt text translation")}
-                  </Text>
-                  <Flex align="center">
-                    <CorrectIcon />
-                  </Flex>
-
-                  <Text
-                    style={{
-                      whiteSpace: "normal", // 允许换行
-                      wordBreak: "break-word", // 长单词也能断开
-                      maxWidth: "100%", // 不超过容器宽度
-                      color: "#007F61",
-                    }}
-                  >
-                    {t("IP-based switching")}
-                  </Text>
-                </Space>
-                {!userConfigIsLoading ? (
-                  <Button
-                    type="text"
-                    icon={<GiftIcon />}
-                    onClick={handleReceive}
-                    style={{
-                      color: "#007F61",
-                      padding: 0,
-                    }}
-                  >
-                    {isNew ? t("5 Days Free Trial >>") : t("Activate >>")}
-                  </Button>
-                ) : (
-                  <Skeleton.Button active />
-                )}
-              </Flex>
-            </Card>
-          </div>
+          <AnalyticsCard isLoading={isLoading}></AnalyticsCard>
           <ProgressingCard
             dataSource={progressDataSource}
             source={source.current}
@@ -566,6 +444,15 @@ const Index = () => {
             isMobile={isMobile}
             setProgressingModalOpen={setProgressingModalOpen}
           />
+          <TranslationPanel />
+
+          <WelcomeCard
+            switcherOpen={switcherOpen}
+            blockUrl={blockUrl}
+            shop={shop}
+            // handleReload={handleReload}
+          />
+
           <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
               <Card
@@ -575,49 +462,11 @@ const Index = () => {
                 styles={{
                   body: {
                     height: "100%",
+                    padding: "12px 24px",
                   },
                 }}
               >
-                <div
-                  style={{
-                    height: "100%",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    flexDirection: "column",
-                  }}
-                >
-                  <Space
-                    direction="vertical"
-                    size="middle"
-                    style={{ display: "flex" }}
-                  >
-                    <Text strong>{t("transLanguageCard2.title")}</Text>
-                    <Text>{t("transLanguageCard2.description")}</Text>
-                  </Space>
-                  {isLoading ? (
-                    <Skeleton.Button active />
-                  ) : (
-                    <Button
-                      onClick={() => navigateToLanguage()}
-                      style={{ marginLeft: "auto", alignSelf: "flex-start" }}
-                    >
-                      {t("transLanguageCard2.button")}
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            </Col>
-            <Col xs={24} sm={24} md={12}>
-              <Card
-                style={{
-                  height: "100%",
-                }}
-              >
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{ display: "flex" }}
-                >
+                <Space direction="vertical" style={{ display: "flex" }}>
                   <Text strong>{t("transLanguageCard3.title")}</Text>
                   <div
                     style={{
@@ -667,123 +516,69 @@ const Index = () => {
                 </Space>
               </Card>
             </Col>
-          </Row>
-        </Space>
-        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>{t("dashboard.title2")}</Title>
-            <Text strong>{t("dashboard.description2")}</Text>
-          </div>
-          <Card>
-            <Space
-              direction="vertical"
-              size="middle"
-              style={{ display: "flex" }}
-            >
-              <Title level={4}>{t("transCurrencyCard1.title")}</Title>
-              <Text>{t("transCurrencyCard1.description")}</Text>
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                {isLoading ? (
-                  <Skeleton.Button active />
-                ) : (
-                  <Button type="primary" onClick={() => navigateToCurrency()}>
-                    {t("transCurrencyCard1.button")}
-                  </Button>
-                )}
-              </div>
-            </Space>
-          </Card>
-          <Row gutter={16}>
             <Col xs={24} sm={24} md={12}>
               <Card
                 style={{
                   height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
                 }}
                 styles={{
                   body: {
-                    display: "flex",
-                    flexDirection: "column",
-                    flex: 1,
+                    height: "100%",
+                    padding: "12px 24px",
                   },
                 }}
               >
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    flex: 1,
-                  }}
+                <Flex
+                  vertical
+                  style={{ height: "100%" }}
+                  justify="space-between"
                 >
-                  <Text strong>{t("transCurrencyCard2.title")}</Text>
-                  <Text>{t("transCurrencyCard2.description")}</Text>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <Space direction="vertical" style={{ display: "flex" }}>
+                    <Text strong>{t("transCurrencyCard1.title")}</Text>
+                    <Text>{t("transCurrencyCard1.description")}</Text>
+                  </Space>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-start",
+                      bottom: "0",
+                    }}
+                  >
                     {isLoading ? (
                       <Skeleton.Button active />
                     ) : (
-                      <Button onClick={navigateToHelpSwitchCurrency}>
-                        {t("transCurrencyCard2.button")}
+                      <Button
+                        type="default"
+                        onClick={() => navigateToCurrency()}
+                      >
+                        {t("transCurrencyCard1.button")}
                       </Button>
                     )}
                   </div>
-                </Space>
-              </Card>
-            </Col>
-            <Col xs={24} sm={24} md={12}>
-              <Card
-                style={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{
-                    display: "flex",
-                    flex: 1,
-                  }}
-                >
-                  <Text strong>{t("transCurrencyCard3.title")}</Text>
-                  <Text>{t("transCurrencyCard3.description")}</Text>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    {isLoading ? (
-                      <Skeleton.Button active />
-                    ) : (
-                      <Button onClick={navigateToSwitchCurrencyDetail}>
-                        {t("transCurrencyCard3.button")}
-                      </Button>
-                    )}
-                  </div>
-                </Space>
+                </Flex>
               </Card>
             </Col>
           </Row>
         </Space>
-        <Space direction="vertical" size="middle" style={{ display: "flex" }}>
+        <Space direction="vertical" size="small" style={{ display: "flex" }}>
           <div style={{ paddingLeft: "8px" }}>
-            <Title level={3}>{t("dashboard.title3")}</Title>
-            <Text strong>{t("dashboard.description3")}</Text>
+            <Title level={4}>{t("dashboard.title3")}</Title>
           </div>
-          <Card>
+          <Card
+            styles={{
+              body: {
+                padding: "12px 24px",
+              },
+            }}
+          >
             <Space
               direction="vertical"
-              size="middle"
+              size="small"
               style={{ display: "flex" }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Title level={4}>{t("planCard.title")}</Title>
-
+              <Title style={{ fontSize: "14px" }}>{t("planCard.title")}</Title>
+              <Flex justify="space-between" align="center">
+                <Text>{t("planCard.description")}</Text>
                 {isLoading ? (
                   <Skeleton.Button active />
                 ) : (
@@ -791,8 +586,8 @@ const Index = () => {
                     {t("planCard.button")}
                   </Button>
                 )}
-              </div>
-              <Text>{t("planCard.description")}</Text>
+              </Flex>
+
               <Table columns={columns} dataSource={data} pagination={false} />
             </Space>
           </Card>
