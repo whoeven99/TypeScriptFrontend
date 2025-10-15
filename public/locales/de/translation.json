@@ -544,12 +544,12 @@
   "progressing.continueTranslate": "Übersetzung fortsetzen",
   "progressing.finished": "Ihre Übersetzung ist bereit. Veröffentlichen Sie sie, um die Änderungen anzuwenden.",
   "progressing.hasPayed": "Übersetzungs-Credits wurden hinzugefügt. Sie können nun Ihre Übersetzung fortsetzen.",
-  "progressing.init": "Übersetzungsaufgabe wird initialisiert...",
+  "translation_process_init": "Übersetzungsaufgabe wird initialisiert...",
   "progressing.noTranslate": "Es gibt keine laufenden Übersetzungsaufgaben.",
   "progressing.privateApiKeyAmountLimit": "Ihr API-Schlüssel hat das Limit erreicht. Bitte setzen Sie es zurück, um Ihre Übersetzungsaufgabe fortzusetzen.",
-  "progressing.progressingWithSpace": "Übersetze {{item}} Modul({{hasTranslated}}/{{totalNumber}}): ",
+  "translation_process_translating": "Übersetze {{item}} Modul({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "Übersetze {{item}} Modul: ",
-  "progressing.progressingWriting": "Schreibe {{item}} Modul",
+  "translation_process_saving_shopify": "Schreibe {{item}} Modul",
   "progressing.publish": "Veröffentlichen",
   "progressing.reTranslate": "Erneut übersetzen",
   "progressing.reTranslateText": "Aktuelle Übersetzung wurde manuell gestoppt.",
@@ -747,5 +747,7 @@
   "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.": "Sie werden in einer späteren Systemaufforderung aufgefordert, die Berechtigungen zu aktualisieren. Bitte bestätigen Sie, um mehrsprachige Leistungseinblicke freizuschalten.",
   "Average conversion rate over 7 days": "Durchschnittliche Conversion-Rate über 7 Tage",
   "Translation score": "Übersetzungsergebnis",
-  "5 Days Free Trial": "5 Tage kostenlos testen"
+  "5 Days Free Trial": "5 Tage kostenlos testen",
+  "{{count}} languages in progress — ": "{{count}} Sprachen in Bearbeitung — ",
+  "see all tasks": "alle Aufgaben anzeigen"
 }

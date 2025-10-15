@@ -496,12 +496,12 @@
   "progressing.continueTranslate": "Continue translating",
   "progressing.finished": "Your translation is ready. Publish it to apply the changes.",
   "progressing.hasPayed": "Translation credits have been added. You can now resume your translation.",
-  "progressing.init": "Initializing translation task...",
+  "translation_process_init": "Initializing translation task...",
   "progressing.noTranslate": "There are no ongoing translation tasks.",
   "progressing.privateApiKeyAmountLimit": "Your API key has hit the limit. Please reset it to continue your translation task.",
-  "progressing.progressingWithSpace": "Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
+  "translation_process_translating": "Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "Translating {{item}} Module: ",
-  "progressing.progressingWriting": "Writing {{item}} Module",
+  "translation_process_saving_shopify": "Writing {{item}} Module",
   "progressing.publish": "Publish",
   "progressing.reTranslate": "Retranslate",
   "progressing.reTranslateText": "Current translation was manually stopped.",
@@ -748,5 +748,7 @@
   "day": "dia",
   "Manage Languages": "Gerenciar idiomas",
   "You haven't added any languages yet.": "Você ainda não adicionou nenhum idioma.",
-  "5 Days Free Trial": "Teste grátis por 5 dias"
+  "5 Days Free Trial": "Teste grátis por 5 dias",
+  "{{count}} languages in progress — ": "{{count}} idiomas em andamento — ",
+  "see all tasks": "ver todas as tarefas"
 }

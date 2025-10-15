@@ -36,6 +36,7 @@ import {
   GoogleAnalyticClickReport,
   IsOpenFreePlan,
   GetUnTranslatedWords,
+  GetAllProgressData,
 } from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -218,50 +219,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopPrimaryLanguage = shopLanguagesIndex?.filter(
           (language) => language?.primary,
         );
-        const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex?.filter(
-          (language) => !language?.primary,
-        );
-        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
-          (item) => item?.locale,
-        );
 
-        const translatingData = await GetTranslateDOByShopNameAndSource({
+        const translatingData = await GetAllProgressData({
           shop,
+          server: process.env.SERVER_URL as string,
           source: shopPrimaryLanguage[0]?.locale,
         });
-
-        const data = translatingData.response?.filter(
-          (translatingDataItem: any) =>
-            shopLocalesIndex.includes(translatingDataItem?.target) &&
-            (translatingDataItem?.status !== 1 ||
-              !shopLanguagesWithoutPrimaryIndex.find(
-                (item) => item.locale === translatingDataItem?.target,
-              )?.published),
-        );
-
-        console.log(`应用日志: ${shop} 进度条返回数据 ${data}`);
-        console.log(`应用日志: ${shop} 主页面数据加载完毕`);
 
         return {
           success: true,
           errorCode: 0,
           errorMsg: "",
-          response:
-            data.length > 0
-              ? data.map((item: any) => ({
-                  source: item?.source || shopPrimaryLanguage[0].locale,
-                  target: item?.target || "",
-                  status: item?.status || 0,
-                  resourceType: item?.resourceType || "",
-                }))
-              : [
-                  {
-                    source: "",
-                    target: "",
-                    status: 0,
-                    resourceType: "",
-                  },
-                ],
+          response: {
+            ...translatingData?.response,
+            source: shopPrimaryLanguage[0]?.locale,
+          },
         };
       } catch (error) {
         console.error("Error nearTransaltedData app:", error);
@@ -269,14 +241,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: false,
           errorCode: 0,
           errorMsg: "",
-          response: [
-            {
-              source: "",
-              target: "",
-              status: 0,
-              resourceType: "",
-            },
-          ],
+          response: [],
         };
       }
     }

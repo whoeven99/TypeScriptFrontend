@@ -154,10 +154,10 @@
   "rating.description": "如果对我们的产品和服务感到满意，请给出你的评价，帮助我们更好地改进!",
   "progressing.title": "翻译任务：",
   "progressing.target": "目标语言：",
-  "progressing.init": "正在初始化翻译任务...",
-  "progressing.progressingWithSpace": "正在翻译{{item}}模块({{hasTranslated}}/{{totalNumber}}): ",
+  "translation_process_init": "正在初始化翻译任务...",
+  "translation_process_translating": "正在翻译{{item}}模块({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "正在翻译{{item}}模块: ",
-  "progressing.progressingWriting": "正在写入{{item}}模块",
+  "translation_process_saving_shopify": "正在写入{{item}}模块",
   "progressing.finished": "翻译已完成。翻译内容需要发布后才能生效。",
   "progressing.buyCredits": "购买积分",
   "progressing.review": "检查翻译",
@@ -750,5 +750,7 @@
   "day": "天",
   "Manage Languages": "管理语言",
   "You haven't added any languages yet.": "您尚未添加任何语言。",
-  "5 Days Free Trial": "5天免费试用"
+  "5 Days Free Trial": "5天免费试用",
+  "{{count}} languages in progress — ": "{{count}} 个语言进行中 — ",
+  "see all tasks": "查看所有任务"
 }

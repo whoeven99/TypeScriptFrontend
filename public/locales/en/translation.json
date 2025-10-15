@@ -197,10 +197,10 @@
   "rating.description":"If you’re happy with our product and service, please leave a review to help us improve!",
   "progressing.title":"Translation Tasks: ",
   "progressing.target":"Target:",
-  "progressing.init":"Initializing translation task...",
-  "progressing.progressingWithSpace":"Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
+  "translation_process_init":"Initializing translation task...",
+  "translation_process_translating":"Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace":"Translating {{item}} Module: ",
-  "progressing.progressingWriting":"Writing {{item}} Module",
+  "translation_process_saving_shopify":"Writing {{item}} Module",
   "progressing.finished":"Your translation is ready. Publish it to apply the changes.",
   "progressing.buyCredits":"Buy credits",
   "progressing.review":"Review Translation",
@@ -746,5 +746,7 @@
   "To track conversion rates across different languages, this app requires:":"To track conversion rates across different languages, this app requires:",
   "You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.":"You’ll be asked to Update permissions in a later system prompt. Please confirm to unlock multilingual performance insights.",
   "Average conversion rate over 7 days":"Average conversion rate over 7 days",
-  "5 Days Free Trial":"5 Days Free Trial"
+  "5 Days Free Trial":"5 Days Free Trial",
+  "{{count}} languages in progress — ": "{{count}} languages in progress — ",
+  "see all tasks": "see all tasks"
 }

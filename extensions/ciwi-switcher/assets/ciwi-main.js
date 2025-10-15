@@ -56,7 +56,7 @@ const rtlLanguages = [
   "ئۇيغۇرچە",
 ];
 
-async function a() {
+window.onload = async () => {
   console.log("onload start (modular+full)");
   const blockId = document.querySelector('input[name="block_id"]')?.value;
   if (!blockId) return console.warn("blockId not found");
@@ -304,6 +304,4 @@ async function a() {
   }
   // 刷新缓存
   console.log("onload end (modular+full)");
-}
-
-a();
+};
