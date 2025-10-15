@@ -562,7 +562,6 @@ export default function App() {
     );
     setIsClient(true);
     globalStore.shop = shop as string;
-    globalStore.server = server as string;
   }, []);
 
   useEffect(() => {

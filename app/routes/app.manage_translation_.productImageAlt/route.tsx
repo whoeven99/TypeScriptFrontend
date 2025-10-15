@@ -47,6 +47,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
 
   return json({
+    server: process.env.SERVER_URL,
     searchTerm,
   });
 };
@@ -491,7 +492,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm } = useLoaderData<typeof loader>();
+  const { server, searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(false);
 
@@ -664,7 +665,7 @@ const Index = () => {
         )[0] || [];
       async function getTargetData() {
         const targetData = await GetProductImageData({
-          server: globalStore?.server || "",
+          server: server as string,
           shopName: globalStore?.shop || "",
           productId: selectedKey,
           languageCode: selectedLanguage,
@@ -907,7 +908,7 @@ const Index = () => {
     setSaveLoading(true);
     const promises = confirmData.map((item: any) =>
       UpdateProductImageAltData({
-        server: globalStore?.server || "",
+        server: server as string,
         shopName: globalStore?.shop || "",
         productId: item.productId,
         imageUrl: item.imageUrl,

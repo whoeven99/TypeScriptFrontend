@@ -3,32 +3,31 @@ import { Button, Card, ConfigProvider, Flex, Skeleton, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import useReport from "scripts/eventReport";
 import { useState, useEffect } from "react";
+import { globalStore } from "~/globalStore";
 const { Text } = Typography;
 
 interface WelcomeCardProps {
   switcherOpen: boolean;
   blockUrl: string;
-  shop: string;
 }
 
 const WelcomeCard: React.FC<WelcomeCardProps> = ({
   switcherOpen,
   blockUrl,
-  shop,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const fetcher = useFetcher<any>();
   const graphqlFetcher = useFetcher<any>();
   const [isMobile, setIsMobile] = useState<boolean>(false);
-  const { report, trackExposure, fetcherState } = useReport();
+  const { report } = useReport();
   const handleSetting = () => {
     if (!switcherOpen) {
       // TODO: Disable App
       window.open(blockUrl, "_blank");
       fetcher.submit(
         {
-          log: `${shop} 前往开启switcher, 从主页面点击`,
+          log: `${globalStore?.shop} 前往开启switcher, 从主页面点击`,
         },
         {
           method: "POST",
@@ -40,7 +39,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
       localStorage.setItem("switcherCard", "true");
       fetcher.submit(
         {
-          log: `${shop} 前往配置switcher, 从主页面点击`,
+          log: `${globalStore?.shop} 前往配置switcher, 从主页面点击`,
         },
         {
           method: "POST",
@@ -83,7 +82,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
           : t("Enable language and currency switcher")
       }
       styles={{
-        header: { borderBottom: "none",fontSize:"20px" },
+        header: { borderBottom: "none", fontSize: "20px" },
         body: {
           padding: "0 24px 12px 24px",
         },
@@ -104,10 +103,10 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
           <Text style={{ width: "75%" }}>
             {!switcherOpen
               ? t(
-                  "Customers can switch languages and currencies when visiting the site. "
+                  "Customers can switch languages and currencies when visiting the site. ",
                 )
               : t(
-                  "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. "
+                  "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ",
                 )}
           </Text>
           <div

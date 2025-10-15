@@ -43,6 +43,7 @@ import { useEffect, useState, useRef } from "react";
 import styles from "./styles.module.css";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import ApiCard from "./components/ApiCard";
+import { globalStore } from "~/globalStore";
 
 const { Title, Text } = Typography;
 
@@ -56,13 +57,6 @@ export interface GLossaryDataType {
   status: number;
   loading: boolean;
 }
-
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-
-  return { shop };
-};
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -160,7 +154,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop } = useLoaderData<typeof loader>();
   const [apiKeyError, setApiKeyError] = useState(false);
   const [countError, setCountError] = useState(false);
   const [keywordsError, setkeywordsError] = useState(false);
@@ -390,7 +383,7 @@ const Index = () => {
     );
     fetcher.submit(
       {
-        log: `${shop} 目前在私有key页面`,
+        log: `${globalStore?.shop} 目前在私有key页面`,
       },
       {
         method: "POST",

@@ -52,6 +52,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
 
   return {
+    server: process.env.SERVER_URL,
     searchTerm,
   };
 };
@@ -488,7 +489,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { searchTerm } = useLoaderData<typeof loader>();
+  const { server, searchTerm } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -849,7 +850,7 @@ const Index = () => {
         )[0] || [];
       const getTargetData = async () => {
         const targetData = await GetProductImageData({
-          server: globalStore?.server || "",
+          server: server as string,
           shopName: globalStore?.shop || "",
           productId: selectedKey,
           languageCode: selectedLanguage,
@@ -972,7 +973,7 @@ const Index = () => {
               maxCount={1}
               accept="image/*"
               name="file"
-              action={`${globalStore?.server}/picture/insertPictureToDbAndCloud`}
+              action={`${server as string}/picture/insertPictureToDbAndCloud`}
               beforeUpload={(file) => {
                 const isImage = file.type.startsWith("image/");
                 const isLt20M = file.size / 1024 / 1024 < 20;
@@ -1177,7 +1178,7 @@ const Index = () => {
   const handleDelete = async (productId: string, imageUrl: string) => {
     setIsDeleteLoading(true);
     const res = await DeleteProductImageData({
-      server: globalStore?.server || "",
+      server: server || "",
       shopName: globalStore?.shop || "",
       productId: productId,
       imageUrl: imageUrl,
@@ -1426,7 +1427,7 @@ const Index = () => {
                                   maxCount={1}
                                   accept="image/*"
                                   name="file"
-                                  action={`${globalStore?.server}/picture/insertPictureToDbAndCloud`}
+                                  action={`${server}/picture/insertPictureToDbAndCloud`}
                                   beforeUpload={(file) => {
                                     const isImage =
                                       file.type.startsWith("image/");

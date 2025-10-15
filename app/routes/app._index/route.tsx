@@ -30,12 +30,11 @@ import ProgressingModal from "./components/progressingModal";
 import CorrectIcon from "~/components/icon/correctIcon";
 import GiftIcon from "~/components/icon/giftIcon";
 import TranslationPanel from "./components/TranslationPanel";
+import { globalStore } from "~/globalStore";
 
 const { Title, Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
   const language =
     request.headers.get("Accept-Language")?.split(",")[0] || "en";
   const languageCode = language.split("-")[0];
@@ -47,7 +46,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       ciwiSwitcherBlocksId: process.env
         .SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
       server: process.env.SERVER_URL,
-      shop: shop,
     };
   } else {
     return {
@@ -57,13 +55,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       ciwiSwitcherBlocksId: process.env
         .SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
       server: process.env.SERVER_URL,
-      shop: shop,
     };
   }
 };
 
 const Index = () => {
-  const { language, isChinese, shop, ciwiSwitcherBlocksId, ciwiSwitcherId } =
+  const { language, isChinese, ciwiSwitcherBlocksId, ciwiSwitcherId } =
     useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -74,9 +71,6 @@ const Index = () => {
   const hasInitialized = useRef(false);
   const hasStopped = useRef(false);
 
-  const { userConfigIsLoading, isNew } = useSelector(
-    (state: any) => state.userConfig,
-  );
   const [progressDataSource, setProgressDataSource] = useState<any[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -87,8 +81,8 @@ const Index = () => {
 
   const blockUrl = useMemo(
     () =>
-      `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/ciwi_I18n_Switcher`,
-    [shop, ciwiSwitcherBlocksId],
+      `https://${globalStore?.shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/ciwi_I18n_Switcher`,
+    [globalStore?.shop, ciwiSwitcherBlocksId],
   );
 
   const fetcher = useFetcher<any>();
@@ -112,7 +106,7 @@ const Index = () => {
     );
     fetcher.submit(
       {
-        log: `${shop} 目前在主页面, 页面语言为${language}`,
+        log: `${globalStore?.shop} 目前在主页面, 页面语言为${language}`,
       },
       {
         method: "POST",
@@ -278,7 +272,7 @@ const Index = () => {
     });
     fetcher.submit(
       {
-        log: `${shop} 前往翻译页面, 从主页面点击`,
+        log: `${globalStore?.shop} 前往翻译页面, 从主页面点击`,
       },
       {
         method: "POST",
@@ -307,7 +301,7 @@ const Index = () => {
     navigate("/app/language");
     fetcher.submit(
       {
-        log: `${shop} 前往语言页面, 从主页面点击`,
+        log: `${globalStore?.shop} 前往语言页面, 从主页面点击`,
       },
       {
         method: "POST",
@@ -321,7 +315,7 @@ const Index = () => {
     navigate("/app/currency");
     fetcher.submit(
       {
-        log: `${shop} 前往货币页面, 从主页面点击`,
+        log: `${globalStore?.shop} 前往货币页面, 从主页面点击`,
       },
       {
         method: "POST",
@@ -335,7 +329,7 @@ const Index = () => {
     navigate("/app/pricing");
     fetcher.submit(
       {
-        log: `${shop} 前往付费页面, 从新人链接点击`,
+        log: `${globalStore?.shop} 前往付费页面, 从新人链接点击`,
       },
       {
         method: "POST",
@@ -449,8 +443,6 @@ const Index = () => {
           <WelcomeCard
             switcherOpen={switcherOpen}
             blockUrl={blockUrl}
-            shop={shop}
-            // handleReload={handleReload}
           />
 
           <Row gutter={16}>
@@ -605,7 +597,7 @@ const Index = () => {
               <UserGuideCard />
             </Col>
           </Row>
-          <PreviewCard shop={shop} />
+          <PreviewCard  />
         </Space>
         <Text
           style={{

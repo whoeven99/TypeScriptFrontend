@@ -4,13 +4,12 @@ import { useTranslation } from "react-i18next";
 import { useFetcher } from "@remix-run/react";
 import { CloseOutlined } from "@ant-design/icons";
 import useReport from "scripts/eventReport";
+import { globalStore } from "~/globalStore";
 const { Text } = Typography;
 
-interface PreviewCardProps {
-  shop: string;
-}
+interface PreviewCardProps {}
 
-const PreviewCard: React.FC<PreviewCardProps> = ({ shop }) => {
+const PreviewCard: React.FC<PreviewCardProps> = ({}) => {
   const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
   const [count, setCount] = useState(0);
@@ -29,7 +28,7 @@ const PreviewCard: React.FC<PreviewCardProps> = ({ shop }) => {
     localStorage.setItem("rate", JSON.stringify(value));
     // 5星评价时跳转到Shopify应用商店
     fetcher.submit(
-      { log: `${shop} 评分为${value}星` },
+      { log: `${globalStore?.shop} 评分为${value}星` },
       { method: "post", action: "/log" },
     );
     if (value === 5) {
@@ -40,7 +39,7 @@ const PreviewCard: React.FC<PreviewCardProps> = ({ shop }) => {
     }
     report(
       {
-        count: value
+        count: value,
       },
       {
         action: "/app",

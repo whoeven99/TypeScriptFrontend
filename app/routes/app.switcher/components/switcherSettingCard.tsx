@@ -9,16 +9,16 @@ import {
   ConfigProvider,
   Divider,
 } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useReport from "scripts/eventReport";
+import { globalStore } from "~/globalStore";
 const { Text, Paragraph, Title } = Typography;
 
 interface SwitcherSettingCardProps {
   step1Visible: boolean | undefined;
   step2Visible: boolean | undefined;
   loading: boolean;
-  shop: string;
   ciwiSwitcherId: string;
   withMoneyValue: string;
   withoutMoneyValue: string;
@@ -29,16 +29,26 @@ const SwitcherSettingCard: React.FC<SwitcherSettingCardProps> = ({
   step1Visible,
   step2Visible,
   loading,
-  shop,
   ciwiSwitcherId,
   withMoneyValue,
   withoutMoneyValue,
 }) => {
   const [visible, setVisible] = useState(false);
-  const blockUrl = `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/ciwi_I18n_Switcher`;
-  const supportUrl =
-    "https://ciwi.ai/help-center/ShopifyApp/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher";
-  const settingUrl = `https://admin.shopify.com/store/${shop.split(".")[0]}/settings/general`;
+  const blockUrl = useMemo(
+    () =>
+      `https://${globalStore?.shop}/admin/themes/current/editor?context=apps&activateAppId=${ciwiSwitcherId}/ciwi_I18n_Switcher`,
+    [globalStore?.shop],
+  );
+  const supportUrl = useMemo(
+    () =>
+      "https://ciwi.ai/help-center/ShopifyApp/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher",
+    [],
+  );
+  const settingUrl = useMemo(
+    () =>
+      `https://admin.shopify.com/store/${(globalStore?.shop as string).split(".")[0]}/settings/general`,
+    [globalStore?.shop],
+  );
 
   const { t } = useTranslation();
   const { reportClick } = useReport();

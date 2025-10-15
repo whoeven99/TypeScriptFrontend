@@ -8,11 +8,11 @@ import { CurrencyDataType, CurrencyType } from "../route";
 import { updateTableData } from "~/store/modules/currencyDataTable";
 import { useTranslation } from "react-i18next";
 import { AddCurrency } from "~/api/JavaServer";
+import { globalStore } from "~/globalStore";
 
 const { Text } = Typography;
 
 interface AddCurrencyModalProps {
-  shop: string;
   server: string;
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
@@ -21,7 +21,6 @@ interface AddCurrencyModalProps {
 }
 
 const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
-  shop,
   server,
   isVisible,
   setIsModalOpen,
@@ -153,8 +152,8 @@ const AddCurrencyModal: React.FC<AddCurrencyModalProps> = ({
     setAddLoading(true);
     const promises = allSelectedCurrency.map((currency: any) =>
       AddCurrency({
-        shop,
-        server,
+        shop: globalStore?.shop as string,
+        server: server as string,
         currencyName: currency.currencyName,
         currencyCode: currency.currencyCode,
         primaryStatus: currency?.primaryStatus || 0,

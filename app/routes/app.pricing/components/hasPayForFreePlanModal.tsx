@@ -9,9 +9,13 @@ import { planNum } from "../route";
 
 const { Title, Text } = Typography;
 
-interface HasPayForFreePlanModalProps {}
+interface HasPayForFreePlanModalProps {
+  server: string;
+}
 
-const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({}) => {
+const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({
+  server,
+}) => {
   const { t } = useTranslation();
 
   const [content, setContent] = useState<any>({
@@ -34,7 +38,7 @@ const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({}) => {
         setTimeout(async () => {
           const hasShowModalResponse = await IsShowFreePlan({
             shop: globalStore?.shop || "",
-            server: globalStore?.server || "",
+            server: server as string,
           });
           if (hasShowModalResponse?.success) {
             if (hasShowModalResponse?.response) {

@@ -55,6 +55,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
 
   return json({
+    server: process.env.SERVER_URL,
     searchTerm,
   });
 };
@@ -122,7 +123,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm } = useLoaderData<typeof loader>();
+  const { server, searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
@@ -445,7 +446,7 @@ const Index = () => {
       context: context,
       key: key,
       type: type,
-      server: globalStore?.server || "",
+      server: server as string,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {

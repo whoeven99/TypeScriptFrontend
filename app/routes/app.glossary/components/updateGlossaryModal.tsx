@@ -16,6 +16,7 @@ import { updateGLossaryTableData } from "~/store/modules/glossaryTableData";
 import { useTranslation } from "react-i18next";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { InsertGlossaryInfo, UpdateTargetTextById } from "~/api/JavaServer";
+import { globalStore } from "~/globalStore";
 
 const { Text } = Typography;
 
@@ -25,7 +26,6 @@ interface GlossaryModalProps {
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   shopLocales: ShopLocalesType[];
-  shop: string;
   server: string;
 }
 
@@ -35,7 +35,6 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
   isVisible,
   setIsModalOpen,
   shopLocales,
-  shop,
   server,
 }) => {
   const [sourceText, setSourceText] = useState<string>("");
@@ -169,7 +168,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       let data;
       if (item) {
         data = await UpdateTargetTextById({
-          shop: shop,
+          shop: globalStore?.shop as string,
           data: {
             key: id,
             sourceText: sourceText,
@@ -182,7 +181,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
         });
       } else {
         data = await InsertGlossaryInfo({
-          shop: shop,
+          shop: globalStore?.shop as string,
           sourceText: sourceText,
           targetText: targetText,
           rangeCode: rangeCode,

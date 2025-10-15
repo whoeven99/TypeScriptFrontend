@@ -48,11 +48,6 @@ interface RealTimeData {
   glossary: false;
   switch: false;
 }
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-  return json({ shop });
-};
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);

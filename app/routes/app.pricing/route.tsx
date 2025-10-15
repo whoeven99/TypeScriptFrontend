@@ -40,7 +40,13 @@ import { setPlan, setUpdateTime } from "~/store/modules/userConfig";
 import useReport from "scripts/eventReport";
 import HasPayForFreePlanModal from "./components/hasPayForFreePlanModal";
 import { globalStore } from "~/globalStore";
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  return {
+    server: process.env.SERVER_URL,
+  };
+};
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
@@ -166,6 +172,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
+  const { server } = useLoaderData<typeof loader>();
   const { plan, updateTime, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
@@ -839,7 +846,7 @@ const Index = () => {
   const handleCancelPlan = async () => {
     const data = await GetLatestActiveSubscribeId({
       shop: globalStore?.shop as string,
-      server: globalStore?.server as string,
+      server: server as string,
     });
     if (data.success) {
       planCancelFetcher.submit(
@@ -1315,7 +1322,7 @@ const Index = () => {
           </Col>
         </Row>
       </Space>
-      <HasPayForFreePlanModal />
+      <HasPayForFreePlanModal server={server as string} />
       <Modal
         title={t("Buy Credits")}
         open={addCreditsModalOpen}

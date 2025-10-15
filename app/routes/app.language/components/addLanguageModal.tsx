@@ -22,11 +22,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { updateTableData } from "~/store/modules/languageTableData";
 import { useTranslation } from "react-i18next";
 import { useFetcher } from "@remix-run/react";
+import { globalStore } from "~/globalStore";
 
 const { Panel } = Collapse;
 
 interface AddLanguageModalProps {
-  shop: string;
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   languageLocaleInfo: any;
@@ -34,7 +34,6 @@ interface AddLanguageModalProps {
 }
 
 const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
-  shop,
   isVisible,
   setIsModalOpen,
   languageLocaleInfo,
@@ -332,7 +331,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
         setConfirmButtonDisable(false);
         fetcher.submit(
           {
-            log: `${shop} 添加语言${data?.map((item: any) => item?.locale)}`,
+            log: `${globalStore?.shop} 添加语言${data?.map((item: any) => item?.locale)}`,
           },
           {
             method: "POST",

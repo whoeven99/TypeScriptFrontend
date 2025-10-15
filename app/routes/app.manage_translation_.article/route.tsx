@@ -97,6 +97,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const searchTerm = url.searchParams.get("language");
 
   return json({
+    server: process.env.SERVER_URL,
     searchTerm,
   });
 };
@@ -192,8 +193,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  const { server, searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
@@ -770,7 +770,7 @@ const Index = () => {
       context: context,
       key: key,
       type: type,
-      server: globalStore?.server || "",
+      server: server as string,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
@@ -848,7 +848,7 @@ const Index = () => {
         },
         {
           method: "POST",
-          action: `/app/manage_translation/article?language=${language}`
+          action: `/app/manage_translation/article?language=${language}`,
         },
       );
       isManualChangeRef.current = true;

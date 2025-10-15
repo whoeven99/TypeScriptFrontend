@@ -39,6 +39,7 @@ import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import { useNavigate } from "react-router-dom";
 import useReport from "scripts/eventReport";
+import { globalStore } from "~/globalStore";
 const { Title, Text } = Typography;
 
 export interface CurrencyDataType {
@@ -58,13 +59,9 @@ export interface CurrencyType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
   return json({
-    shop,
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
   });
@@ -205,8 +202,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, server, mobile } = useLoaderData<typeof loader>();
-  const userShop = `https://${shop}`;
+  const { server, mobile } = useLoaderData<typeof loader>();
   const [loading, setLoading] = useState<boolean>(true);
   const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>("");
   const [searchInput, setSearchInput] = useState("");
@@ -268,7 +264,7 @@ const Index = () => {
     });
     fetcher.submit(
       {
-        log: `${shop} 目前在货币页面`,
+        log: `${globalStore?.shop} 目前在货币页面`,
       },
       {
         method: "POST",
@@ -336,8 +332,6 @@ const Index = () => {
   }, [dataSource]);
 
   const hasSelected = selectedRowKeys.length > 0;
-
-
 
   const columns: ColumnsType<any> = [
     {
@@ -412,27 +406,9 @@ const Index = () => {
     },
   ];
 
-  // const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const value = e.target.value;
-  //   setSearchInput(value);
-
-  //   if (originalData) {
-  //     if (value) {
-  //       const filtered = originalData.filter(
-  //         (data) =>
-  //           data.currency.toLowerCase().includes(value.toLowerCase()) ||
-  //           data.currencyCode.toLowerCase().includes(value.toLowerCase()),
-  //       );
-  //       setFilteredData(filtered);
-  //     } else {
-  //       setFilteredData(originalData);
-  //     }
-  //   }
-  // };
-
   const getCurrencyByShopName = async () => {
     const data = await GetCurrencyByShopName({
-      shop,
+      shop: globalStore?.shop as string,
       server: server as string,
     });
     if (data?.success) {
@@ -454,7 +430,11 @@ const Index = () => {
 
   const getAutoRateData = async (autoRateData: string[]) => {
     const promises = autoRateData.map((currencyCode: any) =>
-      GetCacheData({ shop, server: server as string, currencyCode }),
+      GetCacheData({
+        shop: globalStore?.shop as string,
+        server: server as string,
+        currencyCode,
+      }),
     );
     const data = await Promise.allSettled(promises);
     if (data?.length) {
@@ -706,7 +686,6 @@ const Index = () => {
         )}
       </Space>
       <AddCurrencyModal
-        shop={shop}
         server={server as string}
         isVisible={isAddCurrencyModalOpen}
         setIsModalOpen={setIsAddCurrencyModalOpen}

@@ -30,6 +30,7 @@ const { Text, Title } = Typography;
 import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
 import CloseIcon from "~/components/icon/closeIcon";
+import { globalStore } from "~/globalStore";
 interface EditData {
   shopName: string;
   includedFlag: boolean;
@@ -99,10 +100,7 @@ const planMapping = {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
   return {
-    shop,
     server: process.env.SERVER_URL,
     ciwiSwitcherId: process.env.SHOPIFY_CIWI_SWITCHER_ID as string,
     ciwiSwitcherBlocksId: process.env.SHOPIFY_CIWI_SWITCHER_THEME_ID as string,
@@ -158,7 +156,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, server, ciwiSwitcherId, ciwiSwitcherBlocksId } =
+  const { server, ciwiSwitcherId, ciwiSwitcherBlocksId } =
     useLoaderData<typeof loader>();
   const [isGeoLocationEnabled, setIsGeoLocationEnabled] = useState(false);
   const [isIncludedFlag, setIsIncludedFlag] = useState(true);
@@ -249,11 +247,11 @@ const Index = () => {
     );
     const getSwitcherConfig = async () => {
       const data = await WidgetConfigurations({
-        shop: shop,
+        shop: globalStore?.shop as string,
         server: server as string,
       });
       const initData = {
-        shopName: shop,
+        shopName: globalStore?.shop as string,
         includedFlag: true,
         languageSelector: true,
         currencySelector: true,
@@ -308,7 +306,7 @@ const Index = () => {
     getSwitcherConfig();
     fetcher.submit(
       {
-        log: `${shop} 目前在切换器页面`,
+        log: `${globalStore?.shop} 目前在切换器页面`,
       },
       {
         method: "POST",
@@ -666,11 +664,13 @@ const Index = () => {
     }
     setUpdateLoading(false);
     if (isGeoLocationEnabled) {
-      await axios.post(`${server}/userIp/addOrUpdateUserIp?shopName=${shop}`);
+      await axios.post(
+        `${server}/userIp/addOrUpdateUserIp?shopName=${globalStore?.shop}`,
+      );
     }
     fetcher.submit(
       {
-        log: `${shop} 切换器配置修改数据保存成功`,
+        log: `${globalStore?.shop} 切换器配置修改数据保存成功`,
       },
       {
         method: "POST",
@@ -754,7 +754,6 @@ const Index = () => {
           step1Visible={currencyFormatConfigCardOpen}
           step2Visible={switcherEnableCardOpen}
           loading={cardLoading}
-          shop={shop}
           ciwiSwitcherId={ciwiSwitcherId}
           defaultCurrencyCode={defaultCurrencyCode}
           withMoneyValue={withMoneyValue}

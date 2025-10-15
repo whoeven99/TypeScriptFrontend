@@ -47,6 +47,7 @@ import PublishModal from "./components/publishModal";
 import useReport from "scripts/eventReport";
 import isEqual from "lodash/isEqual";
 import styles from "./styles.module.css";
+import { globalStore } from "~/globalStore";
 
 const { Title, Text } = Typography;
 
@@ -85,15 +86,11 @@ export interface LanguagesDataType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
   return json({
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
-    shop: shop,
   });
 };
 
@@ -317,7 +314,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, mobile, server } = useLoaderData<typeof loader>();
+  const { server, mobile } = useLoaderData<typeof loader>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -400,7 +397,7 @@ const Index = () => {
     );
     fetcher.submit(
       {
-        log: `${shop} 目前在语言页面`,
+        log: `${globalStore?.shop} 目前在语言页面`,
       },
       {
         method: "POST",
@@ -494,7 +491,7 @@ const Index = () => {
             locale: shopLocalesIndex,
           });
           const languageList = await GetLanguageList({
-            shop,
+            shop: globalStore?.shop as string,
             server: server as string,
             source: shopPrimaryLanguageData[0]?.locale,
           });
@@ -564,7 +561,7 @@ const Index = () => {
       shopify.toast.show(t("Delete successfully"));
       fetcher.submit(
         {
-          log: `${shop} 删除语言${deleteData}`,
+          log: `${globalStore?.shop} 删除语言${deleteData}`,
         },
         {
           method: "POST",
@@ -730,7 +727,7 @@ const Index = () => {
     });
     fetcher.submit(
       {
-        log: `${shop} 前往翻译${selectedLanguageCode?.join(",")}, 从语言页面点击`,
+        log: `${globalStore?.shop} 前往翻译${selectedLanguageCode?.join(",")}, 从语言页面点击`,
       },
       {
         method: "POST",
@@ -746,7 +743,7 @@ const Index = () => {
     });
     fetcher.submit(
       {
-        log: `${shop} 前往管理${selectedLanguageCode}, 从语言页面点击`,
+        log: `${globalStore?.shop} 前往管理${selectedLanguageCode}, 从语言页面点击`,
       },
       {
         method: "POST",
@@ -808,11 +805,11 @@ const Index = () => {
     const row = dataSource.find((item: any) => item.locale === locale);
     if (row) {
       const data = await UpdateAutoTranslateByData({
-        shopName: shop,
+        shopName: globalStore?.shop as string,
         source: shopPrimaryLanguage[0]?.locale,
         target: row.locale,
         autoTranslate: checked,
-        server: server || "",
+        server: server as string,
       });
       if (data?.success) {
         dispatch(setAutoTranslateLoadingState({ locale, loading: false }));
@@ -820,7 +817,7 @@ const Index = () => {
         shopify.toast.show(t("Auto translate updated successfully"));
         fetcher.submit(
           {
-            log: `${shop} 自动翻译${checked ? "开启" : "关闭"}${row?.locale}`,
+            log: `${globalStore?.shop} 自动翻译${checked ? "开启" : "关闭"}${row?.locale}`,
           },
           {
             method: "POST",
@@ -879,7 +876,7 @@ const Index = () => {
   };
 
   const PreviewClick = () => {
-    const shopUrl = `https://${shop}`;
+    const shopUrl = `https://${globalStore?.shop}`;
     window.open(shopUrl, "_blank", "noopener,noreferrer");
     reportClick("language_list_preview_store");
   };
@@ -1045,7 +1042,6 @@ const Index = () => {
         </div>
       </Space>
       <AddLanguageModal
-        shop={shop}
         isVisible={isLanguageModalOpen}
         setIsModalOpen={setIsLanguageModalOpen}
         languageLocaleInfo={languageLocaleInfo}

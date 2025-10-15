@@ -39,6 +39,7 @@ import ScrollNotice from "~/components/ScrollNotice";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import styles from "../app.language/styles.module.css";
 import useReport from "scripts/eventReport";
+import { globalStore } from "~/globalStore";
 const { Title, Text } = Typography;
 
 export interface GLossaryDataType {
@@ -64,13 +65,9 @@ export const planMapping = {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
   return {
-    shop,
     server: process.env.SERVER_URL,
     mobile: isMobile as boolean,
   };
@@ -125,7 +122,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 const Index = () => {
-  const { shop, server, mobile } = useLoaderData<typeof loader>();
+  const { server, mobile } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -177,7 +174,7 @@ const Index = () => {
     );
     fetcher.submit(
       {
-        log: `${shop} 目前在术语表页面`,
+        log: `${globalStore?.shop} 目前在术语表页面`,
       },
       {
         method: "POST",
@@ -257,7 +254,7 @@ const Index = () => {
     };
 
     const data = await UpdateTargetTextById({
-      shop: shop,
+      shop: globalStore?.shop as string,
       data: updateInfo,
       server: server as string,
     });
@@ -610,7 +607,6 @@ const Index = () => {
         isVisible={isGlossaryModalOpen}
         setIsModalOpen={setIsGlossaryModalOpen}
         shopLocales={shopLocales}
-        shop={shop}
         server={server as string}
       />
       <Modal

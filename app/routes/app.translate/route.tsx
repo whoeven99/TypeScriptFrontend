@@ -42,6 +42,7 @@ import LanguageSelectorCard from "./components/languageSelectorCard";
 import TransalteSettingCard from "./components/transalteSettingCard";
 import ToneSettingCard from "./components/toneSettingCard";
 import AdvanceSettingCard from "./components/advanceSettingCard";
+import { globalStore } from "~/globalStore";
 
 const { Title, Text } = Typography;
 
@@ -62,16 +63,13 @@ export interface apiKeyConfiguration {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
   return {
-    shop,
     server: process.env.SERVER_URL,
   };
 };
 
 const Index = () => {
-  const { shop, server } = useLoaderData<typeof loader>();
+  const { server } = useLoaderData<typeof loader>();
   const dispatch = useDispatch();
   const languageCardRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
@@ -230,7 +228,7 @@ const Index = () => {
     );
     fetcher.submit(
       {
-        log: `${shop} 目前在翻译设置页面`,
+        log: `${globalStore?.shop} 目前在翻译设置页面`,
       },
       {
         method: "POST",
@@ -282,7 +280,7 @@ const Index = () => {
             locale: shopLocalesIndex,
           });
           const languageList = await GetLanguageList({
-            shop,
+            shop: globalStore?.shop as string,
             server: server as string,
             source: shopPrimaryLanguage[0]?.locale,
           });
@@ -309,7 +307,7 @@ const Index = () => {
 
           fetcher.submit(
             {
-              log: `${shop} 翻译设置页面数据加载完毕`,
+              log: `${globalStore?.shop} 翻译设置页面数据加载完毕`,
             },
             {
               method: "POST",
@@ -350,7 +348,7 @@ const Index = () => {
         navigate("/app");
         fetcher.submit(
           {
-            log: `${shop} 翻译成功, 正在跳转至主页面`,
+            log: `${globalStore?.shop} 翻译成功, 正在跳转至主页面`,
           },
           {
             method: "POST",
@@ -413,7 +411,7 @@ const Index = () => {
     navigate("/app/apikeySetting");
     fetcher.submit(
       {
-        log: `${shop} 前往私有key页面, 从翻译设置页面点击`,
+        log: `${globalStore?.shop} 前往私有key页面, 从翻译设置页面点击`,
       },
       {
         method: "POST",
@@ -558,7 +556,7 @@ const Index = () => {
     let error;
 
     const data = await GetGlossaryByShopName({
-      shop,
+      shop: globalStore?.shop as string,
       server: server as string,
     });
 
