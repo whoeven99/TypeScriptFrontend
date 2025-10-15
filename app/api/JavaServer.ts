@@ -1902,14 +1902,6 @@ export const AddCurrency = async ({
   currencyCode: string;
   primaryStatus: number;
 }) => {
-  console.log("AddCurrency: ", {
-    shopName: shop,
-    currencyName: currencyName, // 国家
-    currencyCode: currencyCode, // 货币代码
-    rounding: "",
-    exchangeRate: "Auto",
-    primaryStatus: primaryStatus,
-  });
   try {
     const response = await axios({
       url: `${server}/currency/insertCurrency`,
@@ -1924,7 +1916,7 @@ export const AddCurrency = async ({
       },
     });
 
-    console.log(`${shop} AddCurrency: `, response.data);
+    console.log(`应用日志: ${shop} 添加货币: `, response.data);
 
     return response.data;
   } catch (error) {
@@ -2043,7 +2035,7 @@ export const GetCurrencyByShopName = async ({
       }));
       return {
         success: true,
-        errorCode: 0,
+        errorCode: 10001,
         errorMsg: "",
         response: data,
       };
@@ -2287,7 +2279,7 @@ export const GetGlossaryByShopNameLoading = async ({
 
     return {
       success: true,
-      errorCode: 0,
+      errorCode: 10001,
       errorMsg: "",
       response: {
         glossaryTableData: sortedRes,
