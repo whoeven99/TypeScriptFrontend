@@ -63,6 +63,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = (await mutationResponse.json()) as any;
         let storeLanguage = [] as string[];
         let defaultLanguage = "en";
+        console.log("data.data.shopLocales",data.data.shopLocales);
+        
         if (data.data.shopLocales.length > 0) {
           data.data.shopLocales.forEach((item: any) => {
             // storeLanguage.push(item.locale);
@@ -176,7 +178,7 @@ const Index = () => {
       return {
         ...chart,
         language:
-          chart.locale === defaultLanguage
+          chart.locale?.includes(defaultLanguage)
             ? `${chart.language} (${t("Default Language")})`
             : chart.language,
         data: chart.data.map((series: any) => {

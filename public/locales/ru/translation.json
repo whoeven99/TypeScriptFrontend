@@ -347,7 +347,7 @@
   "The server received an invalid response from the upstream server.": "The server received an invalid response from the upstream server.",
   "The specified fields were not found in the store.": "Specified fields not found in the store",
   "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ",
-  "The switcher is currently enabled.": "The switcher is currently enabled.",
+  "The switcher is currently enabled.": "The switcher is currently enabled",
   "The translation cannot be completed due to exhausted credits.": "Translation cannot proceed because credits are exhausted.",
   "The translation task is in progress.": "Translation in progress.",
   "The translation task is in progress. Please try translating again later.": "Translation in progress. Please wait until it finishes before starting a new task.",
@@ -451,10 +451,6 @@
   "dashboard.title3": "Building in Progress",
   "delete user api key failed": "Failed to delete API key. Please try again.",
   "delete user api key success": "API key deleted successfully",
-  "devplanCard1.title": "Supports OpenAI private API, allowing individuals to use their own API credits for translation",
-  "devplanCard2.title": "Adds translation progress",
-  "devplanCard3.title": "Optimizes the switcher style, supporting display in the footer",
-  "devplanCard4.title": "Improves translation speed, adding a fast translation mode",
   "discountText": {
     "premium": "Premium Plan Benefit: enjoy 50% discount",
     "pro": "Pro Plan Benefit, enjoy 25% discount",
@@ -540,8 +536,8 @@
   "transLanguageCard3.description2": "<strong>Support</strong>: Support you & develop requested features",
   "transLanguageCard3.description3": "<strong>Pricing</strong>: Only pay for model use",
   "transLanguageCard3.description4": "<strong>Assets</strong>: Your paid content remains yours",
-  "transLanguageCard3.description5": "<a href='https://ciwi.bogdatech.com/help/uncategorized/translation-service-guarantees/' target='_blank'>View full service guarantees</a>",
-  "transLanguageCard3.title": "Committed to delivering the best translation quality.",
+  "transLanguageCard3.description5": "<a href='https://ciwi.ai/help-center/ShopifyApp/translation-service-guarantees' target='_blank'>View full service guarantees</a>",
+  "transLanguageCard3.title": "Committed to delivering the best translation quality",
   "translate to": "Translate to",
   "translateSettings.title1": "Target language",
   "translateSettings.title2": "Translation Settings",
@@ -751,5 +747,9 @@
   "5 Days Free Trial": "5 дней бесплатной пробной версии",
   "{{count}} languages in progress — ": "{{count}} языков в процессе — ",
   "see all tasks": "смотреть все задачи",
-  "Translation tools": "Инструменты перевода"
+  "Translation tools": "Инструменты перевода",
+  "devplanCard1.title": "Поддерживает перевод изображений продукта",
+  "devplanCard2.title": "Оптимизированный каталог редактора",
+  "devplanCard3.title": "Скорость перевода на 30% выше",
+  "devplanCard4.title": "Переключатель с невидимым режимом при геолокации на основе IP"
 }

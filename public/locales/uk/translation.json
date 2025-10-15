@@ -347,7 +347,7 @@
   "The server received an invalid response from the upstream server.": "Сервер отримав недійсну відповідь від вищестоящого сервера.",
   "The specified fields were not found in the store.": "Вказані поля не знайдено в магазині",
   "The switcher is currently disabled. If you need IP-based automatic language and currency switching, please click “ Setup”. ": "Перемикач наразі вимкнено. Якщо вам потрібне автоматичне перемикання мови та валюти на основі IP, натисніть \" Налаштування\". ",
-  "The switcher is currently enabled.": "Перемикач наразі увімкнено.",
+  "The switcher is currently enabled.": "Перемикач наразі увімкнено",
   "The translation cannot be completed due to exhausted credits.": "Переклад не може бути завершений через вичерпані кредити.",
   "The translation task is in progress.": "Завдання перекладу виконується.",
   "The translation task is in progress. Please try translating again later.": "Завдання перекладу виконується. Спробуйте перекласти пізніше.",
@@ -451,10 +451,6 @@
   "dashboard.title3": "Розробка в процесі",
   "delete user api key failed": "Не вдалося видалити API ключ користувача",
   "delete user api key success": "API ключ користувача успішно видалено",
-  "devplanCard1.title": "Підтримує приватний API OpenAI, дозволяючи особам використовувати власні API кредити для перекладу",
-  "devplanCard2.title": "Додає прогрес перекладу",
-  "devplanCard3.title": "Оптимізує стиль перемикача, підтримуючи відображення у нижньому колонтитулі",
-  "devplanCard4.title": "Покращує швидкість перекладу, додаючи режим швидкого перекладу",
   "discountText": {
     "premium": "Переваги преміум плану: насолоджуйтесь знижкою 50%",
     "pro": "Переваги професійного плану, насолоджуйтесь знижкою 25%",
@@ -590,7 +586,7 @@
   "transLanguageCard3.description2": "<strong>Підтримка</strong>: Підтримуємо вас і розробляємо запитувані функції",
   "transLanguageCard3.description3": "<strong>Ціноутворення</strong>: Платите лише за використання моделі",
   "transLanguageCard3.description4": "<strong>Активи</strong>: Ваш оплачений контент залишається вашим",
-  "transLanguageCard3.description5": "<a href='https://ciwi.bogdatech.com/help/uncategorized/translation-service-guarantees/' target='_blank'>Переглянути повні гарантії сервісу</a>",
+  "transLanguageCard3.description5": "<a href='https://ciwi.ai/help-center/ShopifyApp/translation-service-guarantees' target='_blank'>Переглянути повні гарантії сервісу</a>",
   "transLanguageCard3.title": "Прагнемо забезпечити найкращу якість перекладу.",
   "translate to": "Перекласти на",
   "translateSettings.title1": "Цільова мова",
@@ -750,5 +746,9 @@
   "5 Days Free Trial": "5 днів безкоштовної пробної версії",
   "{{count}} languages in progress — ": "{{count}} мов у процесі — ",
   "see all tasks": "переглянути всі завдання",
-  "Translation tools": "Інструменти перекладу"
+  "Translation tools": "Інструменти перекладу",
+  "devplanCard1.title": "Підтримує переклад зображень продукту",
+  "devplanCard2.title": "Оптимізований каталог редактора",
+  "devplanCard3.title": "На 30% швидше перекладати",
+  "devplanCard4.title": "Перемикач з невидимим режимом під час геолокації на основі IP"
 }
