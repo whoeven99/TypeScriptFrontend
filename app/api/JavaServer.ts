@@ -34,7 +34,10 @@ export const GetAllProgressData = async ({
       method: "POST",
     });
 
-    console.log(`应用日志: ${shop} GetAllProgressData: `, response.data?.list);
+    console.log(
+      `应用日志: ${shop} GetAllProgressData: `,
+      response.data?.response?.list,
+    );
 
     return response.data;
   } catch (error) {
