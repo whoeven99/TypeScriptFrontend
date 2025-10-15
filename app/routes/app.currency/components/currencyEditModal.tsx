@@ -23,8 +23,6 @@ const CurrencyEditModal: React.FC<CurrencyEditModalProps> = ({
   selectedRow,
   defaultCurrencyCode,
 }) => {
-  console.log("selectedRow: ", selectedRow);
-  console.log("defaultCurrencyCode: ", defaultCurrencyCode);
   const dispatch = useDispatch();
   const { t } = useTranslation();
 

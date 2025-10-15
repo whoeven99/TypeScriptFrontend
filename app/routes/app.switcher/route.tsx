@@ -213,6 +213,7 @@ const Index = () => {
   const { plan } = useSelector((state: any) => state.userConfig);
 
   const fetcher = useFetcher<any>();
+  const initFetcher = useFetcher<any>();
   const themeFetcher = useFetcher<any>();
   const shopFetcher = useFetcher<any>();
 
@@ -245,6 +246,13 @@ const Index = () => {
       {
         method: "post",
         action: "/app/switcher",
+      },
+    );
+    initFetcher.submit(
+      {},
+      {
+        method: "post",
+        action: "/currencyInit",
       },
     );
     const getSwitcherConfig = async () => {
