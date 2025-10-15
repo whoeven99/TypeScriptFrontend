@@ -157,7 +157,6 @@
   "translation_process_init": "正在初始化翻译任务...",
   "translation_process_translating": "正在翻译{{item}}模块({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "正在翻译{{item}}模块: ",
-  "translation_process_saving_shopify": "正在写入{{item}}模块",
   "progressing.finished": "翻译已完成。翻译内容需要发布后才能生效。",
   "progressing.buyCredits": "购买积分",
   "progressing.review": "检查翻译",
@@ -753,5 +752,6 @@
   "devplanCard1.title": "支持产品图片翻译",
   "devplanCard2.title": "优化编辑器目录",
   "devplanCard3.title": "翻译速度提高 30%",
-  "devplanCard4.title": "基于 IP 地理位置的隐形模式切换器"
+  "devplanCard4.title": "基于 IP 地理位置的隐形模式切换器",
+  "translation_process_saving_shopify": "正在将翻译应用到 {{item}} 模块…"
 }

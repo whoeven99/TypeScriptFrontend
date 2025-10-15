@@ -545,7 +545,6 @@
   "progressing.privateApiKeyAmountLimit": "Ваш API ключ досяг ліміту. Скиньте його, щоб продовжити завдання перекладу.",
   "translation_process_translating": "Переклад модуля {{item}} ({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "Переклад модуля {{item}}: ",
-  "translation_process_saving_shopify": "Запис модуля {{item}}",
   "progressing.publish": "Опублікувати",
   "progressing.reTranslate": "Перекласти знову",
   "progressing.reTranslateText": "Поточний переклад було зупинено вручну.",
@@ -750,5 +749,6 @@
   "devplanCard1.title": "Підтримує переклад зображень продукту",
   "devplanCard2.title": "Оптимізований каталог редактора",
   "devplanCard3.title": "На 30% швидше перекладати",
-  "devplanCard4.title": "Перемикач з невидимим режимом під час геолокації на основі IP"
+  "devplanCard4.title": "Перемикач з невидимим режимом під час геолокації на основі IP",
+  "translation_process_saving_shopify": "Застосування перекладів до модуля {{item}}…"
 }

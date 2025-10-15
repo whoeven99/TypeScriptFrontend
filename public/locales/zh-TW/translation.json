@@ -161,7 +161,6 @@
   "translation_process_init": "正在初始化翻譯任務...",
   "translation_process_translating": "翻譯 {{item}} 模組({{hasTranslated}}/{{totalNumber}}):",
   "progressing.progressingWithoutSpace": "翻譯 {{item}} 模組:",
-  "translation_process_saving_shopify": "寫 {{item}} 模組",
   "progressing.finished": "您的翻譯已完成。發布它以應用更改。",
   "progressing.buyCredits": "購買積分",
   "progressing.review": "審閱翻譯",
@@ -751,5 +750,6 @@
   "devplanCard1.title": "支援產品圖片翻譯",
   "devplanCard2.title": "優化編輯器目錄",
   "devplanCard3.title": "翻譯速度提高 30%",
-  "devplanCard4.title": "基於 IP 地理位置的隱形模式切換器"
+  "devplanCard4.title": "基於 IP 地理位置的隱形模式切換器",
+  "translation_process_saving_shopify": "正在將翻譯套用到 {{item}} 模組…"
 }

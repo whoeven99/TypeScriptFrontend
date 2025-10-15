@@ -545,7 +545,6 @@
   "progressing.privateApiKeyAmountLimit": "Ihr API-Schlüssel hat das Limit erreicht. Bitte setzen Sie es zurück, um Ihre Übersetzungsaufgabe fortzusetzen.",
   "translation_process_translating": "Übersetze {{item}} Modul({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "Übersetze {{item}} Modul: ",
-  "translation_process_saving_shopify": "Schreibe {{item}} Modul",
   "progressing.publish": "Veröffentlichen",
   "progressing.reTranslate": "Erneut übersetzen",
   "progressing.reTranslateText": "Aktuelle Übersetzung wurde manuell gestoppt.",
@@ -750,5 +749,6 @@
   "devplanCard1.title": "Unterstützt die Übersetzung von Produktbildern",
   "devplanCard2.title": "Optimiertes Editorverzeichnis",
   "devplanCard3.title": "30 % schnellere Übersetzungsgeschwindigkeit",
-  "devplanCard4.title": "Umschalter mit unsichtbarem Modus unter IP-basierter Geolokalisierung"
+  "devplanCard4.title": "Umschalter mit unsichtbarem Modus unter IP-basierter Geolokalisierung",
+  "translation_process_saving_shopify": "Übersetzungen werden auf das Modul {{item}} angewendet…"
 }
