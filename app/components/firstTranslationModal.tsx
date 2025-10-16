@@ -25,12 +25,9 @@ const FirstTranslationModal: React.FC<FirstTranslationModalProps> = ({
 
   useEffect(() => {
     if (planFetcher.data) {
-      if (
-        planFetcher.data?.appSubscription &&
-        planFetcher.data?.confirmationUrl
-      ) {
-        const order = planFetcher.data?.appSubscription;
-        const confirmationUrl = planFetcher.data?.confirmationUrl;
+      if (planFetcher.data?.success) {
+        const order = planFetcher.data?.response?.appSubscription;
+        const confirmationUrl = planFetcher.data?.response?.confirmationUrl;
         const orderInfo = {
           id: order.id,
           amount: order.price.amount,
@@ -46,6 +43,7 @@ const FirstTranslationModal: React.FC<FirstTranslationModalProps> = ({
           action: "/app",
         });
         open(confirmationUrl, "_top");
+      } else {
       }
     }
   }, [planFetcher.data]);
@@ -93,7 +91,7 @@ const FirstTranslationModal: React.FC<FirstTranslationModalProps> = ({
             margin: "0",
             fontSize: "1.25rem",
             fontWeight: 700,
-            marginBottom: 24
+            marginBottom: 24,
           }}
         >
           {t("No Translation Credits Available")}

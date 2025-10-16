@@ -333,6 +333,68 @@ export async function LanguageSelectorTakeEffect(
   }
 }
 
+/**
+ * 观察 DOM 变化，动态处理新价格
+ */
+export function initProductImgObserver({
+  translateSourceArray = [],
+  languageCode,
+}) {
+  if (!Array.isArray(translateSourceArray) || !languageCode) return;
+
+  // 只监控图片相关节点的变化
+  const observer = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+      if (mutation.type !== "childList" || mutation.addedNodes.length === 0)
+        continue;
+
+      mutation.addedNodes.forEach((node) => {
+        // 只处理图片元素
+        if (!(node instanceof HTMLImageElement)) return;
+
+        const { src = "", srcset = "" } = node;
+        if (!src && !srcset) return;
+
+        // 在翻译数组中查找匹配项
+        const matched = translateSourceArray.find((item) => {
+          const key = item?.imageBeforeUrl?.split("/files/")[2];
+          if (!key || item.languageCode !== languageCode) return false;
+
+          return src.includes(key) || srcset.includes(key);
+        });
+
+        if (matched && matched.imageAfterUrl) {
+          console.log("🕓 延迟替换图片:", matched.imageAfterUrl);
+          // 延迟执行替换
+          observer.disconnect(); // 暂停观察以防止重复触发
+          // 预加载替换图，等加载完成再替换 DOM
+          const newImg = new Image();
+          newImg.src = matched.imageAfterUrl;
+          // 复制原节点的属性
+          newImg.className = node.className;
+          newImg.alt = node.alt || "";
+          newImg.style.cssText = node.style.cssText;
+          // 替换节点
+          node.replaceWith(newImg);
+          // 恢复监听
+          observer.observe(document.body, { childList: true, subtree: true });
+
+          newImg.onerror = () => {
+            console.warn("❌ 图片加载失败:", matched.imageAfterUrl);
+            observer.observe(document.body, { childList: true, subtree: true });
+          };
+        }
+      });
+    }
+  });
+
+  // 开始监听
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+}
+
 export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
   const productIdInput = ciwiBlock.querySelector('input[name="product_id"]');
   const productId = productIdInput.value;
@@ -354,23 +416,28 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
       // 遍历所有img
       imageDomList.forEach((img) => {
         // 在response数组中查找匹配项
-        const match = productImageData.response.find(
-          (item) =>
-            img.src.includes(item.imageBeforeUrl.split("/files/")[2]) &&
-            item.languageCode === language,
-        );
+        const match = productImageData.response.find((item) => {
+          const key = item?.imageBeforeUrl?.split("/files/")[2];
+          if (!key || item.languageCode !== language) return false;
+
+          return img?.src.includes(key) || img?.srcset.includes(key);
+        });
+
         if (match) {
           // 如果imageAfterUrl或altBeforeTranslation存在，则替换
-          if (match.imageAfterUrl || match.altBeforeTranslation) {
-            if (match.imageAfterUrl) {
-              img.src = match?.imageAfterUrl;
-              img.srcset = match?.imageAfterUrl;
-            }
-            if (match.altBeforeTranslation) {
-              img.alt = match?.altBeforeTranslation;
-            }
+          if (match?.imageAfterUrl) {
+            img.src = match?.imageAfterUrl;
+            img.srcset = match?.imageAfterUrl;
+          }
+          if (match?.altAfterTranslation) {
+            img.alt = match?.altAfterTranslation;
           }
         }
+      });
+
+      initProductImgObserver({
+        translateSourceArray: productImageData.response,
+        languageCode: language,
       });
     }
   }
@@ -396,6 +463,8 @@ export async function HomeImageTranslate(blockId) {
     translatedImages.forEach((item) => {
       const key = item.imageBeforeUrl.split("/files/")[2];
       document.querySelectorAll(`img[src*="${key}"]`).forEach((img) => {
+        console.log("找到图片了 ：",img);
+        
         if (item.imageAfterUrl) {
           img.src = item.imageAfterUrl;
           img.srcset = item.imageAfterUrl;

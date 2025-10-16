@@ -16,15 +16,15 @@ const UserGuideCard: React.FC = () => {
   const guideList: GuideItem[] = [
     {
       title: t("userGuide.feature1"),
-      link: "http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-translate/",
+      link: "https://ciwi.ai/help-center/ShopifyApp/how-to-translate",
     },
     {
       title: t("userGuide.feature2"),
-      link: "http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/",
+      link: "https://ciwi.ai/help-center/ShopifyApp/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher",
     },
     {
       title: t("userGuide.feature3"),
-      link: "http://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/",
+      link: "https://ciwi.ai/help-center/ShopifyApp/how-to-set-up-multi-currency-pricing-on-your-shopify-store",
     },
   ];
 
