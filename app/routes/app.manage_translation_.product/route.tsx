@@ -2,27 +2,18 @@ import {
   Button,
   Card,
   Divider,
+  Input,
   Layout,
   Menu,
   Result,
   Space,
   Spin,
   Table,
-  theme,
   Typography,
-  message,
 } from "antd";
 import { useEffect, useRef, useState, useMemo } from "react";
-import {
-  useActionData,
-  useFetcher,
-  useLoaderData,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-  useSubmit,
-} from "@remix-run/react"; // 引入 useNavigate
-import { FullscreenBar, Page, Pagination, Select } from "@shopify/polaris";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
+import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   ConfirmDataType,
@@ -33,18 +24,14 @@ import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  Modal,
-  SaveBar,
-  TitleBar,
-  useAppBridge,
-} from "@shopify/app-bridge-react";
+import { SaveBar } from "@shopify/app-bridge-react";
 import { MenuItem } from "../app.manage_translation/components/itemsScroll";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
+import { SearchOutlined } from "@ant-design/icons";
 const { Sider, Content } = Layout;
 
 const { Text, Title } = Typography;
@@ -119,8 +106,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         const response = await admin.graphql(
           `#graphql
-            query products($startCursor: String) {     
-              products(last: 20 ,before: $startCursor) {
+            query products($startCursor: String, $query: String) {     
+              products(last: 20 ,before: $startCursor, query: $query) {
                 nodes {
                   id
                   title
@@ -141,12 +128,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           {
             variables: {
               startCursor: startCursor.cursor ? startCursor.cursor : undefined,
+              query: startCursor.query ? startCursor.query : "",
             },
           },
         );
 
         const data = await response.json();
-        console.log(`应用日志: ${shop} 翻译管理-产品页面翻到上一页`);
 
         return json({
           success: true,
@@ -180,11 +167,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       }
     case !!endCursor:
+      console.log("endCursor: ", endCursor);
+
       try {
         const response = await admin.graphql(
           `#graphql
-            query products($endCursor: String) {     
-              products(first: 20 ,after: $endCursor) {
+            query products($endCursor: String, $query: String) {     
+              products(first: 20 ,after: $endCursor, query: $query) {
                 nodes {
                   id
                   title
@@ -205,12 +194,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           {
             variables: {
               endCursor: endCursor.cursor ? endCursor.cursor : undefined,
+              query: endCursor.query ? endCursor.query : "",
             },
           },
         );
 
         const data = await response.json();
-        console.log(`应用日志: ${shop} 翻译管理-产品页面翻到下一页`);
 
         return json({
           success: true,
@@ -387,7 +376,6 @@ const Index = () => {
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
-
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const productFetcher = useFetcher<any>();
@@ -418,6 +406,7 @@ const Index = () => {
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
+  const [queryText, setQueryText] = useState<string>("");
   const { reportClick } = useReport();
   const itemOptions = [
     { label: t("Products"), value: "product" },
@@ -511,8 +500,6 @@ const Index = () => {
     searchTerm || "",
   );
   const [selectedItem, setSelectedItem] = useState<string>("product");
-  // const [selectedModel, setSelectedModel] = useState<string>("1");
-  // const [selectedLanguagePack, setSelectedLanguagePack] = useState<string>("en");
   const [hasPrevious, setHasPrevious] = useState<boolean>(false);
   const [hasNext, setHasNext] = useState<boolean>(false);
   const [startCursor, setStartCursor] = useState<string>("");
@@ -520,8 +507,6 @@ const Index = () => {
   const [isMobile, setIsMobile] = useState<boolean>(false);
 
   useEffect(() => {
-    // setSelectedModel(localStorage.getItem("translateModel") || "1");
-    // setSelectedLanguagePack(localStorage.getItem("translateLanguagePack") || "1");
     if (languageTableData.length === 0) {
       languageFetcher.submit(
         {
@@ -538,6 +523,7 @@ const Index = () => {
         endCursor: JSON.stringify({
           cursor: "",
           searchTerm: searchTerm,
+          query: queryText,
         }),
       },
       {
@@ -1504,6 +1490,7 @@ const Index = () => {
           endCursor: JSON.stringify({
             cursor: "",
             searchTerm: searchTerm,
+            query: queryText,
           }),
         },
         {
@@ -1559,6 +1546,7 @@ const Index = () => {
           endCursor: JSON.stringify({
             cursor: endCursor,
             searchTerm: searchTerm,
+            query: queryText,
           }),
         },
         {
@@ -1577,6 +1565,7 @@ const Index = () => {
           startCursor: JSON.stringify({
             cursor: startCursor,
             searchTerm: searchTerm,
+            query: queryText,
           }),
         },
         {
@@ -1604,6 +1593,37 @@ const Index = () => {
       throttleMenuChange(key);
     }
   };
+
+  const handleSearch = (() => {
+    let timer: NodeJS.Timeout;
+
+    return (value: string) => {
+      console.log(value);
+      setQueryText(value);
+
+      // 清除上一次的定时器
+      if (timer) {
+        clearTimeout(timer);
+      }
+
+      // 延迟 1s 再执行请求
+      timer = setTimeout(() => {
+        dataFetcher.submit(
+          {
+            endCursor: JSON.stringify({
+              cursor: "",
+              searchTerm: searchTerm,
+              query: value,
+            }),
+          },
+          {
+            method: "post",
+            action: `/app/manage_translation/product?language=${searchTerm}`,
+          },
+        );
+      }, 500);
+    };
+  })();
 
   const onPrevious = () => {
     if (confirmData.length > 0) {
@@ -1822,6 +1842,45 @@ const Index = () => {
         </button>
         <button onClick={handleDiscard}>{t("Cancel")}</button>
       </SaveBar>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          marginBottom: "15px",
+          gap: "8px",
+        }}
+      >
+        <Input
+          placeholder={t("Search...")}
+          prefix={<SearchOutlined />}
+          value={queryText}
+          onChange={(e) => handleSearch(e.target.value)}
+        />
+        <div
+          style={{
+            width: "100px",
+          }}
+        >
+          <Select
+            label={""}
+            options={languageOptions}
+            value={selectedLanguage}
+            onChange={(value) => handleLanguageChange(value)}
+          />
+        </div>
+        <div
+          style={{
+            width: "100px",
+          }}
+        >
+          <Select
+            label={""}
+            options={itemOptions}
+            value={selectedItem}
+            onChange={(value) => handleItemChange(value)}
+          />
+        </div>
+      </div>
       <Layout
         style={{
           overflow: "auto",
@@ -1845,7 +1904,7 @@ const Index = () => {
             {!isMobile && (
               <Sider
                 style={{
-                  height: "100%",
+                  height: "calc(100% - 25px)",
                   minHeight: "70vh",
                   display: "flex",
                   flexDirection: "column",
@@ -1853,11 +1912,6 @@ const Index = () => {
                   backgroundColor: "var(--p-color-bg)",
                 }}
               >
-                {/* <ItemsScroll
-                selectItem={selectProductKey}
-                menuData={menuData}
-                setSelectItem={setSelectProductKey}
-              /> */}
                 <div
                   style={{
                     display: "flex",
@@ -1890,7 +1944,6 @@ const Index = () => {
                 </div>
               </Sider>
             )}
-
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
@@ -1898,63 +1951,21 @@ const Index = () => {
             >
               {isMobile ? (
                 <Space direction="vertical" style={{ width: "100%" }}>
-                  <div
+                  <Title
+                    level={4}
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
+                      margin: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    <Title
-                      level={4}
-                      style={{
-                        margin: 0,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {
-                        menuData!.find(
-                          (item: any) => item.key === selectProductKey,
-                        )?.label
-                      }
-                    </Title>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        flexGrow: 2,
-                        justifyContent: "flex-end",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "100px",
-                        }}
-                      >
-                        <Select
-                          label={""}
-                          options={languageOptions}
-                          value={selectedLanguage}
-                          onChange={(value) => handleLanguageChange(value)}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          width: "100px",
-                        }}
-                      >
-                        <Select
-                          label={""}
-                          options={itemOptions}
-                          value={selectedItem}
-                          onChange={(value) => handleItemChange(value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                    {
+                      menuData!.find(
+                        (item: any) => item.key === selectProductKey,
+                      )?.label
+                    }
+                  </Title>
                   <Card title={t("Resource")}>
                     <Space direction="vertical" style={{ width: "100%" }}>
                       {productBaseData.map((item: any, index: number) => {
@@ -2392,63 +2403,21 @@ const Index = () => {
                   size="large"
                   style={{ width: "100%" }}
                 >
-                  <div
+                  <Title
+                    level={4}
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
+                      margin: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    <Title
-                      level={4}
-                      style={{
-                        margin: 0,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {
-                        menuData!.find(
-                          (item: any) => item.key === selectProductKey,
-                        )?.label
-                      }
-                    </Title>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        flexGrow: 2,
-                        justifyContent: "flex-end",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "150px",
-                        }}
-                      >
-                        <Select
-                          label={""}
-                          options={languageOptions}
-                          value={selectedLanguage}
-                          onChange={(value) => handleLanguageChange(value)}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          width: "150px",
-                        }}
-                      >
-                        <Select
-                          label={""}
-                          options={itemOptions}
-                          value={selectedItem}
-                          onChange={(value) => handleItemChange(value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                    {
+                      menuData!.find(
+                        (item: any) => item.key === selectProductKey,
+                      )?.label
+                    }
+                  </Title>
                   <Table
                     columns={productBaseDataColumns}
                     dataSource={productBaseData}
@@ -2502,33 +2471,6 @@ const Index = () => {
           />
         )}
       </Layout>
-      {/* <Modal
-        variant={"base"}
-        open={!!isVisible}
-        onHide={() => setIsVisible(false)}
-      >
-        <div
-          style={{
-            padding: "16px",
-          }}
-        >
-          <Text>
-            {t("If you leave this page, any unsaved changes will be lost.")}
-          </Text>
-        </div>
-        <TitleBar title={t("Unsaved changes")}>
-          <button
-            variant="primary"
-            tone="critical"
-            onClick={() => handleLeaveItem(isVisible)}
-          >
-            {t("Leave Anyway")}
-          </button>
-          <button onClick={() => setIsVisible(false)}>
-            {t("Stay on Page")}
-          </button>
-        </TitleBar>
-      </Modal> */}
     </Page>
   );
 };
