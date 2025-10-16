@@ -449,7 +449,13 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
 export async function HomeImageTranslate(blockId) {
   const shop = document.querySelector("#queryCiwiId")?.value;
   const language = document.querySelector('input[name="language_code"]')?.value;
-  if (!shop || !language) return;
+  if (!shop || !language) {
+    console.warn("⚠️ [HomeImageTranslate] missing shop or language", {
+      shop,
+      language,
+    });
+    return;
+  }
 
   // Step 2: 获取翻译图片数据
   const translatedImages = await GetShopImageData({
@@ -457,21 +463,23 @@ export async function HomeImageTranslate(blockId) {
     blockId,
     languageCode: language,
   });
-  if (translatedImages.response.length > 0) {
-    // Step 3: 替换
-    translatedImages.response.forEach((item) => {
-      const key = item.imageBeforeUrl.split("/files/")[2];
-      document.querySelectorAll(`img[src*="${key}"]`).forEach((img) => {
-        if (item.imageAfterUrl) {
-          img.src = item.imageAfterUrl;
-          img.srcset = item.imageAfterUrl;
-        }
-        if (item.altBeforeTranslation) {
-          img.alt = item.altBeforeTranslation;
-        }
-      });
-    });
+  if (!translatedImages?.response?.length) {
+    console.log("ℹ️ [HomeImageTranslate] no translated images found");
+    return;
   }
+  // Step 3: 替换
+  translatedImages.response.forEach((item) => {
+    const key = item.imageBeforeUrl.split("/files/")[2];
+    document.querySelectorAll(`img[src*="${key}"]`).forEach((img) => {
+      if (item.imageAfterUrl) {
+        img.src = item.imageAfterUrl;
+        img.srcset = item.imageAfterUrl;
+      }
+      if (item.altBeforeTranslation) {
+        img.alt = item.altBeforeTranslation;
+      }
+    });
+  });
 }
 
 /**
