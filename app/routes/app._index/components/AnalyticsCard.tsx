@@ -28,8 +28,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
   const graphqlFetcher = useFetcher<any>();
   const queryWebPixelFetcher = useFetcher<any>();
   const [configCreateWebPixel, setConfigPixel] = useState<boolean>(false);
-  const [showRequireScopeBtn, setShowRequireScopeBtn] =
-    useState(false);
+  const [showRequireScopeBtn, setShowRequireScopeBtn] = useState(false);
   const showModal = () => {
     setIsModalVisible(true);
   };
@@ -188,7 +187,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
   const handleCancelScope = async () => {
     const grand = await shopify.scopes.revoke(missScopes);
     console.log("grand: ", grand);
-
+    // checkScopes();
     setShowRequireScopeBtn(false);
   };
 
@@ -226,7 +225,9 @@ const AnalyticsCard = ({ isLoading }: any) => {
         "local_conversion_rate",
       ) as any;
       if (queryWebPixelFetcher.state === "idle" && !queryWebPixelFetcher.data) {
-        queryWebPixel();
+        if (showRequireScopeBtn) {
+          queryWebPixel();
+        }
       }
       if (localUnTranslateWords) {
         setLocalUnTranslateWords(JSON.parse(localUnTranslateWords));
@@ -249,6 +250,11 @@ const AnalyticsCard = ({ isLoading }: any) => {
       console.error("localConversionRate JSON 解析失败", error);
     }
   }, []);
+  useEffect(() => {
+    if (showRequireScopeBtn) {
+      queryWebPixel();
+    }
+  }, [showRequireScopeBtn]);
   useEffect(() => {
     const untranslatedForm = new FormData();
     untranslatedForm.append(
@@ -341,11 +347,14 @@ const AnalyticsCard = ({ isLoading }: any) => {
       } else {
         setConfigPixel(false);
       }
-    } else {
-      setTimeout(() => {
-        queryWebPixel();
-      }, 1000);
     }
+    // else {
+    //   setTimeout(() => {
+    //     console.log('biding ');
+
+    //     queryWebPixel();
+    //   }, 1000);
+    // }
   }, [queryWebPixelFetcher.data]);
   const checkScopes = async () => {
     const { granted } = await shopify.scopes.query();
