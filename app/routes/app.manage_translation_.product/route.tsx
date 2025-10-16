@@ -45,37 +45,6 @@ type TableDataType = {
   translated: string | undefined;
 } | null;
 
-const modelOptions = [
-  {
-    label: "OpenAI/GPT-4",
-    value: "1",
-  },
-  {
-    label: "Google/Gemini-1.5",
-    value: "2",
-  },
-  {
-    label: "DeepL/DeepL-translator",
-    value: "3",
-  },
-  {
-    label: "Qwen/Qwen-Max",
-    value: "4",
-  },
-  {
-    label: "DeepSeek-ai/DeepSeek-V3",
-    value: "5",
-  },
-  {
-    label: "Meta/Llama-3",
-    value: "6",
-  },
-  {
-    label: "Google/Google translate",
-    value: "7",
-  },
-];
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
@@ -107,7 +76,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const response = await admin.graphql(
           `#graphql
             query products($startCursor: String, $query: String) {     
-              products(last: 20 ,before: $startCursor, query: $query) {
+              products(last: 20 ,before: $startCursor, query: $query, reverse: true) {
                 nodes {
                   id
                   title
@@ -173,7 +142,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const response = await admin.graphql(
           `#graphql
             query products($endCursor: String, $query: String) {     
-              products(first: 20 ,after: $endCursor, query: $query) {
+              products(first: 20 ,after: $endCursor, query: $query, reverse: true) {
                 nodes {
                   id
                   title
