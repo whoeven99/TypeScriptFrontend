@@ -167,8 +167,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       }
     case !!endCursor:
-      console.log("endCursor: ", endCursor);
-
       try {
         const response = await admin.graphql(
           `#graphql
@@ -376,20 +374,17 @@ const Index = () => {
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
+  const timeoutIdRef = useRef<any>();
+
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const productFetcher = useFetcher<any>();
-  // const optionFetcher = useFetcher<any>();
-  // const metafieldFetcher = useFetcher<any>();
   const variantFetcher = useFetcher<any>();
 
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  // const [isVisible, setIsVisible] = useState<
-  //   boolean | string | { language: string } | { item: string }
-  // >(false);
 
   const [menuData, setMenuData] = useState<MenuItem[]>([]);
   const [productsData, setProductsData] = useState<any>([]);
@@ -1594,36 +1589,31 @@ const Index = () => {
     }
   };
 
-  const handleSearch = (() => {
-    let timer: NodeJS.Timeout;
+  const handleSearch = (value: string) => {
+    setQueryText(value);
 
-    return (value: string) => {
-      console.log(value);
-      setQueryText(value);
+    // 清除上一次的定时器
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+    }
 
-      // 清除上一次的定时器
-      if (timer) {
-        clearTimeout(timer);
-      }
-
-      // 延迟 1s 再执行请求
-      timer = setTimeout(() => {
-        dataFetcher.submit(
-          {
-            endCursor: JSON.stringify({
-              cursor: "",
-              searchTerm: searchTerm,
-              query: value,
-            }),
-          },
-          {
-            method: "post",
-            action: `/app/manage_translation/product?language=${searchTerm}`,
-          },
-        );
-      }, 500);
-    };
-  })();
+    // 延迟 1s 再执行请求
+    timeoutIdRef.current = setTimeout(() => {
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: "",
+            searchTerm: searchTerm,
+            query: value,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/product?language=${searchTerm}`,
+        },
+      );
+    }, 500);
+  };
 
   const onPrevious = () => {
     if (confirmData.length > 0) {
@@ -1812,22 +1802,6 @@ const Index = () => {
     <Page
       title={t("Products")}
       fullWidth={true}
-      // primaryAction={{
-      //   content: t("Save"),
-      //   loading: confirmFetcher.state === "submitting",
-      //   disabled:
-      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //   onAction: handleConfirm,
-      // }}
-      // secondaryActions={[
-      //   {
-      //     content: t("Cancel"),
-      //     loading: confirmFetcher.state === "submitting",
-      //     disabled:
-      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //     onAction: handleDiscard,
-      //   },
-      // ]}
       backAction={{
         onAction: onCancel,
       }}
