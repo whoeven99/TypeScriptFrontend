@@ -1056,7 +1056,7 @@ const Index = () => {
   const handleProductNext = () => {
     productsFetcher.submit(
       {
-        productStartCursor: JSON.stringify({
+        productEndCursor: JSON.stringify({
           cursor: productsEndCursor,
           query: queryText,
         }),
