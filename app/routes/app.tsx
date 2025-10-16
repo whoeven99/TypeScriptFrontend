@@ -409,7 +409,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: data,
         };
       } catch (error) {
-        console.log("getOrderData failed", error);
+        console.log(`${shop} getOrderData failed`, error);
         return {
           success: false,
           response: {
@@ -457,7 +457,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: data,
         };
       } catch (error) {
-        console.log("findWebPixel failed", error);
+        console.log(`${shop} findWebPixel failed`, error);
         return {
           success: false,
           errorCode: 10001,
