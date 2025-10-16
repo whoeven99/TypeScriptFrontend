@@ -9,11 +9,34 @@
 }
 
 .selector_box {
+  flex-direction: column;
   position: absolute;
   background: #fff;
   padding: 10px;
   border-radius: 5px;
+  gap: 10px;
   width: 100%;
+}
+
+.close_button_wrapper {
+  display: flex; /* 居中对齐图标 */
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.selector_box_close_button {
+  width: 16px; /* 给按钮固定宽度 */
+  height: 16px; /* 给按钮固定高度 */
+  display: flex; /* 居中对齐图标 */
+  align-items: center;
+  justify-content: center;
+  background: transparent; /* 背景透明 */
+  border: none; /* 去掉边框 */
+  padding: 0;
+  cursor: pointer;
+  font-size: 20px; /* 如果是文字 × */
+  font-weight: bold;
+  color: #000; /* 图标颜色 */
 }
 
 .ciwi_main_box {
@@ -224,7 +247,7 @@ a[href="https://translate.google.com"]
     Ubuntu, Cantarell, sans-serif;
 }
 
-.selector-header {
+.language_selector_header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -233,7 +256,18 @@ a[href="https://translate.google.com"]
   border-radius: 4px;
   background: #fff;
   cursor: pointer;
-  margin-bottom: 10px;
+  height: 40px;
+}
+
+.currency_selector_header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
   height: 40px;
 }
 
@@ -254,17 +288,18 @@ a[href="https://translate.google.com"]
 .country-flag {
   position: absolute;
   left: 10px;
-  width: 30px;
-  height: 20px;
+  width: 20px;
+  height: auto;
   object-fit: cover;
   border-radius: 2px;
   /* border: 1px solid #ddd; */
-  min-width: 30px; /* 保持最小宽度 */
   opacity: 0; /* 初始状态完全透明 */
   transition: opacity 0.3s ease; /* 平滑过渡效果 */
 }
 
-.option-country-flag {
+.translate_float_btn_icon {
+  position: absolute;
+  left: 10px;
   width: 30px;
   height: 20px;
   object-fit: cover;
@@ -273,10 +308,26 @@ a[href="https://translate.google.com"]
   min-width: 30px; /* 保持最小宽度 */
   opacity: 0; /* 初始状态完全透明 */
   transition: opacity 0.3s ease; /* 平滑过渡效果 */
+  bottom: 15px;
+}
+
+.option-country-flag {
+  width: 20px;
+  height: auto;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid #ddd;
+  opacity: 0; /* 初始状态完全透明 */
+  transition: opacity 0.3s ease; /* 平滑过渡效果 */
 }
 
 /* 当图片加载完成时显示 */
 .country-flag[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"])
+{
+  opacity: 1;
+}
+
+.translate_float_btn_icon[src]:not([src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"])
 {
   opacity: 1;
 }
@@ -297,10 +348,8 @@ a[href="https://translate.google.com"]
 
 .options-container {
   position: absolute;
-  top: 100%;
   left: 0;
   right: 0;
-  margin-top: 4px;
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -314,7 +363,7 @@ a[href="https://translate.google.com"]
 }
 
 .options-list {
-  max-height: 135px;
+  height: 135px;
   overflow-y: auto;
 }
 

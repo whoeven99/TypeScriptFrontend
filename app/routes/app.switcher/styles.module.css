@@ -44,7 +44,6 @@
   /* 调整选项列表的样式 */
   .options_container {
     position: fixed; /* 固定定位 */
-    bottom: 120px; /* 距离底部的距离 */
     left: 0;
     width: 100%;
     margin: 0;
@@ -53,7 +52,7 @@
 
   .options_list {
     max-height: 50vh; /* 最大高度为视窗高度的一半 */
-    border-radius: 8px 8px 0 0;
+    border-radius: 8px 8px;
   }
 
   /* 移动端按钮样式优化 */
@@ -109,13 +108,33 @@ a[href="https://translate.google.com"]
   display: none !important;
 }
 
+.close_button_wrapper {
+  display: flex; /* 居中对齐图标 */
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.selector_box_close_button {
+  width: 16px; /* 给按钮固定宽度 */
+  height: 16px; /* 给按钮固定高度 */
+  display: flex; /* 居中对齐图标 */
+  align-items: center;
+  justify-content: center;
+  background: transparent; /* 背景透明 */
+  border: none; /* 去掉边框 */
+  padding: 0;
+  cursor: pointer;
+  font-size: 20px; /* 如果是文字 × */
+  font-weight: bold;
+  color: #000; /* 图标颜色 */
+}
+
 .main_box {
   display: flex;
   position: relative;
   background: #fff;
   padding: 10px;
   border-radius: 5px;
-  border: 1px solid rgb(217, 217, 217);
   cursor: pointer;
   user-select: none;
   display: flex;
@@ -230,7 +249,6 @@ a[href="https://translate.google.com"]
   justify-content: space-between;
   border-radius: 4px;
   cursor: pointer;
-  margin-bottom: 10px;
   height: 40px;
 }
 
@@ -276,7 +294,6 @@ a[href="https://translate.google.com"]
   top: 100%;
   left: 0;
   right: 0;
-  margin-top: 4px;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 1000;

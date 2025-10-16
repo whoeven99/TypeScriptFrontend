@@ -1736,7 +1736,6 @@ export const mutationAppSubscriptionCreate = async ({
   trialDays: number;
   returnUrl: URL;
 }) => {
-  console.log("mutationAppSubscriptionCreate is coming");
   try {
     // 执行 API 请求
     const response = await axios({
@@ -1795,7 +1794,10 @@ export const mutationAppSubscriptionCreate = async ({
         },
       },
     });
-    const res = response.data.data.appSubscriptionCreate;
+    const res = response.data?.data?.appSubscriptionCreate;
+
+    console.log(`${shop} mutationAppSubscriptionCreate: `, res);
+
     return res;
   } catch (error) {
     console.error("Error mutationAppSubscriptionCreate:", error);
