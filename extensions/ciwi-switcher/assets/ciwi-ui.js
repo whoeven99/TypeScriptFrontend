@@ -457,14 +457,11 @@ export async function HomeImageTranslate(blockId) {
     blockId,
     languageCode: language,
   });
-  console.log("translatedImages: ", translatedImages);
-  if (translatedImages.length > 0) {
+  if (translatedImages.response.length > 0) {
     // Step 3: 替换
-    translatedImages.forEach((item) => {
+    translatedImages.response.forEach((item) => {
       const key = item.imageBeforeUrl.split("/files/")[2];
       document.querySelectorAll(`img[src*="${key}"]`).forEach((img) => {
-        console.log("找到图片了 ：",img);
-        
         if (item.imageAfterUrl) {
           img.src = item.imageAfterUrl;
           img.srcset = item.imageAfterUrl;

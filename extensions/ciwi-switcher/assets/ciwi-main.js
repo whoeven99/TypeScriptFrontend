@@ -78,14 +78,8 @@ window.onload = async () => {
   }
   // 产品图片翻译（非阻塞）
   await ProductImgTranslate(blockId, shop, ciwiBlock);
+  // 主页图片替换
   await HomeImageTranslate(blockId);
-  // const observer = new MutationObserver(async() => {
-  //   console.log('监听dom的变化，替换图片');
-    
-  //   await ProductImgTranslate(blockId, shop, ciwiBlock);
-  // });
-
-  // observer.observe(document.body, { childList: true, subtree: true });
   setTimeout(() => {
     const observer = new MutationObserver(async (mutations) => {
       for (const m of mutations) {
