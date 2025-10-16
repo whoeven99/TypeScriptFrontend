@@ -33,23 +33,23 @@ const TranslationPanel = () => {
         const raw = LanguageFetcher.data.response;
         const langs: Record<string, any> = { ...raw };
         delete langs["Published Languages"];
-        for (const langName in langs) {
-          const match = Object.values(languageLocaleData).find(
-            (item) => item.Name === langName,
-          );
-
-          if (match) {
-            langs[langName] = {
+        const processed = Object.keys(langs)
+          .map((langName) => {
+            const match = Object.values(languageLocaleData).find(
+              (item) => item.Name === langName,
+            );
+            if (!match) return null;
+            return {
               value: langs[langName],
-              flagUrl: match.countries[0], // 用第一个国家作为 flagUrl
+              flagUrl: match.countries[0],
               isoCode: match.isoCode,
             };
-          }
-        }
-        setLanguages(Object.values(langs).slice(0, 3)); // 只显示前3个
+          })
+          .filter(Boolean);
+        setLanguages(processed.slice(0, 3)); // 只显示前3个
         localStorage.setItem(
           "localFlagsData",
-          JSON.stringify(Object.values(langs).slice(0, 3)),
+          JSON.stringify(processed.slice(0, 3)),
         );
       } else {
         console.error("flag failed");
@@ -98,7 +98,7 @@ const TranslationPanel = () => {
                   (lang: any, idx: number) => (
                     <Image
                       key={idx}
-                      src={lang.flagUrl || "/default-flag.png"}
+                      src={lang.flagUrl}
                       alt={lang}
                       width={32}
                       preview={false}
