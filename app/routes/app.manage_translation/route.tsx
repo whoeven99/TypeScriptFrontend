@@ -249,8 +249,8 @@ const Index = () => {
       navigation: "shop",
     },
     {
-      key: "theme",
-      title: t("Theme"),
+      key: "locale_content",
+      title: t("Locale Content"),
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
@@ -262,7 +262,55 @@ const Index = () => {
             item?.language === current && item?.type === "ONLINE_STORE_THEME",
         )?.totalNumber ?? undefined,
       sync_status: false,
-      navigation: "theme",
+      navigation: "locale_content",
+    },
+    {
+      key: "json_template",
+      title: t("Json Template"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "ONLINE_STORE_THEME",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "ONLINE_STORE_THEME",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "json_template",
+    },
+    {
+      key: "section_group",
+      title: t("Section Group"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "ONLINE_STORE_THEME",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "ONLINE_STORE_THEME",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "section_group",
+    },
+    {
+      key: "settings_category",
+      title: t("Settings Category"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "ONLINE_STORE_THEME",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "ONLINE_STORE_THEME",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "settings_category",
     },
     {
       key: "pages",

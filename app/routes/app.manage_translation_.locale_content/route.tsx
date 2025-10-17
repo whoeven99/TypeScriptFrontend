@@ -82,7 +82,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const response = await admin.graphql(
             `#graphql
             query {     
-              translatableResources(resourceType: ONLINE_STORE_THEME, first: 1) {
+              translatableResources(resourceType: ONLINE_STORE_THEME_LOCALE_CONTENT, first: 1) {
                 nodes {
                   resourceId
                   translatableContent {
@@ -162,10 +162,8 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  // const [isVisible, setIsVisible] = useState<
-  //   boolean | number | { language: string } | { item: string }
-  // >(false);
-  const [themes, setThemes] = useState<any>([]);
+  const [menuData, setMenuData] = useState<any>([]);
+  const [themesData, setThemesData] = useState<any>([]);
   const [resourceData, setResourceData] = useState<any>([]);
   const [filteredResourceData, setFilteredResourceData] = useState<any>([]);
   const [searchInput, setSearchInput] = useState("");
@@ -177,7 +175,10 @@ const Index = () => {
   const itemOptions = [
     { label: t("Products"), value: "product" },
     { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "theme" },
+    { label: t("Theme"), value: "json_template" },
+    { label: t("Theme"), value: "locale_content" },
+    { label: t("Theme"), value: "section_group" },
+    { label: t("Theme"), value: "settings_category" },
     { label: t("Shop"), value: "shop" },
     { label: t("Store metadata"), value: "metafield" },
     { label: t("Articles"), value: "article" },
@@ -199,7 +200,7 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<string>(
     searchTerm || "",
   );
-  const [selectedItem, setSelectedItem] = useState<string>("theme");
+  const [selectedItem, setSelectedItem] = useState<string>("locale_content");
   const [isMobile, setIsMobile] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -221,7 +222,6 @@ const Index = () => {
       },
       {
         method: "POST",
-        action: `/app/manage_translation/theme?language=${searchTerm}`,
       },
     );
     fetcher.submit(
@@ -245,7 +245,16 @@ const Index = () => {
 
   useEffect(() => {
     if (themeFetcher.data?.success) {
-      setThemes(themeFetcher.data.response);
+      setThemesData(themeFetcher.data.response);
+      const menuData = exMenuData(themeFetcher.data.response);
+      console.log("menuData: ", menuData);
+
+      setMenuData(menuData);
+      const data = generateMenuItemsArray(themeFetcher.data.response);
+      setResourceData(data);
+      setFilteredResourceData(data);
+      isManualChangeRef.current = false;
+      setIsLoading(false);
     }
   }, [themeFetcher.data]);
 
@@ -265,16 +274,6 @@ const Index = () => {
       );
     }
   }, [languageTableData]);
-
-  useEffect(() => {
-    if (themes.length && isManualChangeRef.current) {
-      const data = generateMenuItemsArray(themes);
-      setResourceData(data);
-      setFilteredResourceData(data);
-      isManualChangeRef.current = false;
-      setIsLoading(false);
-    }
-  }, [themes]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -398,7 +397,7 @@ const Index = () => {
           <Button
             onClick={() => {
               handleTranslate(
-                "ONLINE_STORE_THEME",
+                "ONLINE_STORE_THEME_LOCALE_CONTENT",
                 record?.key || "",
                 record?.type || "",
                 record?.default_language || "",
@@ -412,6 +411,28 @@ const Index = () => {
       },
     },
   ];
+
+  const exMenuData = (data: any) => {
+    const seen = new Set<string>();
+
+    return data[0]?.translatableContent
+      ?.map(({ key }: { key: string }) => {
+        const parts = key.split(".");
+        const first = parts[0];
+        const second = parts[1];
+        const label =
+          first === "shopify" || first === "section"
+            ? (second ?? first)
+            : first;
+
+        return { key: label, label };
+      })
+      .filter((item: any) => {
+        if (seen.has(item.label)) return false;
+        seen.add(item.label);
+        return true;
+      });
+  };
 
   const handleInputChange = (key: string, value: string) => {
     setTranslatedValues((prev) => ({
@@ -431,14 +452,15 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: themes[0]?.resourceId,
-          locale: themes[0]?.translatableContent[0]?.locale,
+          resourceId: themesData[0]?.resourceId,
+          locale: themesData[0]?.translatableContent[0]?.locale,
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest:
-            themes[0]?.translatableContent.find((item: any) => item.key === key)
-              ?.digest ||
-            themes[0]?.translatableContent[0]?.digest ||
+            themesData[0]?.translatableContent.find(
+              (item: any) => item.key === key,
+            )?.digest ||
+            themesData[0]?.translatableContent[0]?.digest ||
             "",
           target: searchTerm || "",
         };
@@ -485,7 +507,7 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
-      source: themes[0]?.translatableContent.find(
+      source: themesData[0]?.translatableContent.find(
         (item: any) => item.key === key,
       )?.locale,
       target: searchTerm || "",
@@ -527,12 +549,11 @@ const Index = () => {
         },
         {
           method: "POST",
-          action: `/app/manage_translation/theme?language=${language}`,
         },
       );
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
-      navigate(`/app/manage_translation/theme?language=${language}`);
+      navigate(`/app/manage_translation/locale_content?language=${language}`);
     }
   };
 
@@ -564,7 +585,6 @@ const Index = () => {
     formData.append("confirmData", JSON.stringify(confirmData)); // 将选中的语言作为字符串发送
     confirmFetcher.submit(formData, {
       method: "post",
-      action: `/app/manage_translation/theme?language=${searchTerm}`,
     }); // 提交表单请求
     fetcher.submit(
       {
@@ -579,35 +599,10 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("save-bar");
-    const data = generateMenuItemsArray(themes);
+    const data = generateMenuItemsArray(themesData);
     setFilteredResourceData(data); // 使用展开运算符创建新数组引用
     setConfirmData([]);
   };
-
-  // const handleLeaveItem = (
-  //   key: number | boolean | { language: string } | { item: string },
-  // ) => {
-  //   setIsVisible(false);
-  //   if (typeof key === "number") {
-  //     // 向前翻页
-  //     setCurrentPage(key);
-  //     setConfirmData([]);
-  //   } else if (typeof key === "object" && "language" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedLanguage(key.language);
-  //     navigate(`/app/manage_translation/theme?language=${key.language}`);
-  //   } else if (typeof key === "object" && "item" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedItem(key.item);
-  //     navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
-  //   } else {
-  //     navigate(`/app/manage_translation?language=${searchTerm}`, {
-  //       state: { key: searchTerm },
-  //     }); // 跳转到 /app/manage_translation
-  //   }
-  // };
 
   const onCancel = () => {
     if (confirmData.length > 0) {
@@ -672,7 +667,7 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : themes.length ? (
+        ) : themesData.length ? (
           <Content
             style={{
               paddingLeft: isMobile ? "16px" : "0",
@@ -792,7 +787,7 @@ const Index = () => {
                                 <Button
                                   onClick={() => {
                                     handleTranslate(
-                                      "ONLINE_STORE_THEME",
+                                      "ONLINE_STORE_THEME_LOCALE_CONTENT",
                                       item?.key || "",
                                       item?.type || "",
                                       item?.default_language || "",
@@ -856,7 +851,7 @@ const Index = () => {
                             <Button
                               onClick={() => {
                                 handleTranslate(
-                                  "ONLINE_STORE_THEME",
+                                  "ONLINE_STORE_THEME_LOCALE_CONTENT",
                                   item?.key || "",
                                   item?.type || "",
                                   item?.default_language || "",
