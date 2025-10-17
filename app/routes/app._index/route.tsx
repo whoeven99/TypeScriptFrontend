@@ -177,11 +177,9 @@ const Index = () => {
       const needRepoll = response.some((item: any) => item?.status === 2);
 
       if (!needRepoll || hasStopped.current) {
-        return () => {
-          if (timeoutIdRef.current) {
-            clearTimeout(timeoutIdRef.current);
-          }
-        };
+        if (timeoutIdRef.current) {
+          clearTimeout(timeoutIdRef.current);
+        }
       }
 
       setProgressDataSource(data);
