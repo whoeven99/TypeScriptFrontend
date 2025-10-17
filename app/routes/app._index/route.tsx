@@ -528,60 +528,30 @@ const Index = () => {
                   },
                 }}
               >
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    flex: 1,
-                  }}
+                <Flex
+                  vertical
+                  style={{ height: "100%" }}
+                  justify="space-between"
                 >
-                  <Text strong>{t("transCurrencyCard2.title")}</Text>
-                  <Text>{t("transCurrencyCard2.description")}</Text>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <Space direction="vertical" style={{ display: "flex" }}>
+                    <Text strong>{t("transCurrencyCard1.title")}</Text>
+                    <Text>{t("transCurrencyCard1.description")}</Text>
+                  </Space>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-start",
+                      bottom: "0",
+                    }}
+                  >
                     {isLoading ? (
                       <Skeleton.Button active />
                     ) : (
                       <Button
-                        onClick={() =>
-                          window.open(
-                            "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/",
-                            "_blank",
-                          )
-                        }
+                        type="default"
+                        onClick={() => navigateToCurrency()}
                       >
-                        {t("transCurrencyCard2.button")}
-                      </Button>
-                    )}
-                  </div>
-                </Space>
-              </Card>
-            </Col>
-            <Col xs={24} sm={24} md={12}>
-              <Card
-                style={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <Space
-                  direction="vertical"
-                  size="middle"
-                  style={{
-                    display: "flex",
-                    flex: 1,
-                  }}
-                >
-                  <Text strong>{t("transCurrencyCard3.title")}</Text>
-                  <Text>{t("transCurrencyCard3.description")}</Text>
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    {isLoading ? (
-                      <Skeleton.Button active />
-                    ) : (
-                      <Button onClick={navigateToSwitchCurrencyDetail}>
-                        {t("transCurrencyCard3.button")}
+                        {t("transCurrencyCard1.button")}
                       </Button>
                     )}
                   </div>
