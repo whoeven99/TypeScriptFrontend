@@ -179,6 +179,7 @@ const Index = () => {
       if (!needRepoll || hasStopped.current) {
         if (timeoutIdRef.current) {
           clearTimeout(timeoutIdRef.current);
+          isActiveRef.current = false;
         }
       }
 
