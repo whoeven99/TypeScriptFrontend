@@ -1067,7 +1067,7 @@ const Index = () => {
                 disabled={
                   plan.id === 1 || plan.id === 2 || selectedPayPlanOption
                 }
-                style={{ marginBottom: isNew ? "20px" : "70px" }}
+                style={{ marginBottom: isNew ? "70px" : "20px" }}
                 onClick={() => {
                   setCancelPlanWarnModal(true);
                   reportClick("pricing_plan_trial");

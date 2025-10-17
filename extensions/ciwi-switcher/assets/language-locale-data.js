@@ -1202,7 +1202,7 @@ const languageLocaleData = {
     ],
     Name: "Ukrainian",
   },
-
+  
   ur: {
     isoCode: "ur",
     Local: "اردو",

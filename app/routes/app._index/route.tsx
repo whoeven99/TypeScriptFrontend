@@ -24,12 +24,12 @@ import AnalyticsCard from "./components/AnalyticsCard";
 import ProgressingCard from "~/routes/app._index/components/progressingCard";
 import { authenticate } from "~/shopify.server";
 import WelcomeCard from "./components/welcomeCard";
-import useReport from "scripts/eventReport";
 import { useSelector } from "react-redux";
 import ProgressingModal from "./components/progressingModal";
 import CorrectIcon from "~/components/icon/correctIcon";
 import GiftIcon from "~/components/icon/giftIcon";
 import TranslationPanel from "./components/TranslationPanel";
+import useReport from "scripts/eventReport";
 
 const { Title, Text } = Typography;
 
@@ -528,30 +528,60 @@ const Index = () => {
                   },
                 }}
               >
-                <Flex
-                  vertical
-                  style={{ height: "100%" }}
-                  justify="space-between"
+                <Space
+                  direction="vertical"
+                  size="middle"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    flex: 1,
+                  }}
                 >
-                  <Space direction="vertical" style={{ display: "flex" }}>
-                    <Text strong>{t("transCurrencyCard1.title")}</Text>
-                    <Text>{t("transCurrencyCard1.description")}</Text>
-                  </Space>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "flex-start",
-                      bottom: "0",
-                    }}
-                  >
+                  <Text strong>{t("transCurrencyCard2.title")}</Text>
+                  <Text>{t("transCurrencyCard2.description")}</Text>
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
                     {isLoading ? (
                       <Skeleton.Button active />
                     ) : (
                       <Button
-                        type="default"
-                        onClick={() => navigateToCurrency()}
+                        onClick={() =>
+                          window.open(
+                            "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/",
+                            "_blank",
+                          )
+                        }
                       >
-                        {t("transCurrencyCard1.button")}
+                        {t("transCurrencyCard2.button")}
+                      </Button>
+                    )}
+                  </div>
+                </Space>
+              </Card>
+            </Col>
+            <Col xs={24} sm={24} md={12}>
+              <Card
+                style={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <Space
+                  direction="vertical"
+                  size="middle"
+                  style={{
+                    display: "flex",
+                    flex: 1,
+                  }}
+                >
+                  <Text strong>{t("transCurrencyCard3.title")}</Text>
+                  <Text>{t("transCurrencyCard3.description")}</Text>
+                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                    {isLoading ? (
+                      <Skeleton.Button active />
+                    ) : (
+                      <Button onClick={navigateToSwitchCurrencyDetail}>
+                        {t("transCurrencyCard3.button")}
                       </Button>
                     )}
                   </div>
@@ -582,7 +612,7 @@ const Index = () => {
                 {isLoading ? (
                   <Skeleton.Button active />
                 ) : (
-                  <Button onClick={handleCommitRequest}>
+                  <Button onClick={handleContactSupport}>
                     {t("planCard.button")}
                   </Button>
                 )}
@@ -618,7 +648,6 @@ const Index = () => {
             to="https://ciwi.ai/help-center/ShopifyApp/about-ciwi-ai-translator-shopify-app"
             target="_blank"
             style={{ margin: "0 5px" }}
-            onClick={handleReportCiwiHelpCenter}
           >
             {t("Ciwi Help Center")}
           </Link>
