@@ -4,25 +4,15 @@ import {
   Divider,
   Layout,
   Menu,
-  MenuProps,
   Result,
   Space,
   Spin,
   Table,
-  theme,
   Typography,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
-import {
-  useActionData,
-  useFetcher,
-  useLoaderData,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-  useSubmit,
-} from "@remix-run/react"; // 引入 useNavigate
-import { FullscreenBar, Page, Pagination, Select } from "@shopify/polaris";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
+import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
 import {
@@ -32,9 +22,8 @@ import {
 } from "~/api/JavaServer";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { SessionService } from "~/utils/session.server";
 import ManageTableInput from "~/components/manageTableInput";
-import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
+import { SaveBar } from "@shopify/app-bridge-react";
 import { useDispatch, useSelector } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
@@ -744,7 +733,7 @@ const Index = () => {
           {
             navigationStartCursor: JSON.stringify({
               cursor: startCursor,
-              searchTerm
+              searchTerm,
             }),
           },
           {
@@ -758,7 +747,7 @@ const Index = () => {
           {
             itemStartCursor: JSON.stringify({
               cursor: startCursor,
-              searchTerm
+              searchTerm,
             }),
           },
           {
@@ -781,7 +770,7 @@ const Index = () => {
           {
             navigationEndCursor: JSON.stringify({
               cursor: endCursor,
-              searchTerm
+              searchTerm,
             }),
           },
           {
@@ -795,7 +784,7 @@ const Index = () => {
           {
             itemEndCursor: JSON.stringify({
               cursor: endCursor,
-              searchTerm
+              searchTerm,
             }),
           },
           {
