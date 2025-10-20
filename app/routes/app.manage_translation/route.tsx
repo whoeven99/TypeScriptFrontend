@@ -249,8 +249,8 @@ const Index = () => {
       navigation: "shop",
     },
     {
-      key: "theme",
-      title: t("Theme"),
+      key: "locale_content",
+      title: t("Locale Content"),
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
@@ -262,7 +262,31 @@ const Index = () => {
             item?.language === current && item?.type === "ONLINE_STORE_THEME",
         )?.totalNumber ?? undefined,
       sync_status: false,
-      navigation: "theme",
+      navigation: "locale_content",
+    },
+    {
+      key: "json_template",
+      title: t("Json Template"),
+      allTranslatedItems: undefined,
+      allItems: undefined,
+      sync_status: false,
+      navigation: "json_template",
+    },
+    {
+      key: "section_group",
+      title: t("Section Group"),
+      allTranslatedItems: undefined,
+      allItems: undefined,
+      sync_status: false,
+      navigation: "section_group",
+    },
+    {
+      key: "settings_category",
+      title: t("Settings Category"),
+      allTranslatedItems: undefined,
+      allItems: undefined,
+      sync_status: false,
+      navigation: "settings_category",
     },
     {
       key: "pages",
@@ -1113,5 +1137,28 @@ const Index = () => {
     </Page>
   );
 };
+
+export const getItemOptions = (t: (key: string) => string) => [
+  { label: t("Products"), value: "product" },
+  { label: t("Collection"), value: "collection" },
+  { label: t("Json Template"), value: "json_template" },
+  { label: t("Locale Content"), value: "locale_content" },
+  { label: t("Section Group"), value: "section_group" },
+  { label: t("Settings Category"), value: "settings_category" },
+  { label: t("Shop"), value: "shop" },
+  { label: t("Store metadata"), value: "metafield" },
+  { label: t("Articles"), value: "article" },
+  { label: t("Blog titles"), value: "blog" },
+  { label: t("Pages"), value: "page" },
+  { label: t("Filters"), value: "filter" },
+  { label: t("Metaobjects"), value: "metaobject" },
+  { label: t("Navigation"), value: "navigation" },
+  { label: t("Email"), value: "email" },
+  { label: t("Policies"), value: "policy" },
+  { label: t("Product images"), value: "productImage" },
+  { label: t("Product image alt text"), value: "productImageAlt" },
+  { label: t("Delivery"), value: "delivery" },
+  { label: t("Shipping"), value: "shipping" },
+];
 
 export default Index;

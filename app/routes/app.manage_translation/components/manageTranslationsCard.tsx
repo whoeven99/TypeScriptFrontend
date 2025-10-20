@@ -36,14 +36,13 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
 }) => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { plan } = useSelector((state: any) => state.userConfig);
   const { report } = useReport();
   const handleEdit = (record: DataType) => {
     if (current)
       navigate(
         `/app/manage_translation/${record.navigation}?language=${current}`,
       );
-      report(
+    report(
       {
         language: current,
         online_store: record.navigation,
@@ -69,7 +68,13 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       dataIndex: "items",
       key: "items",
       width: "30%",
-      render: (_: any, record: any) => {
+      render: (_: any, record: any) => {        
+        if (
+          record.key == "json_template" ||
+          record.key == "section_group" ||
+          record.key == "settings_category"
+        )
+          return null;
         return record.allItems === undefined ||
           record.allTranslatedItems === undefined ? (
           <div>{t("Syncing")}</div>
