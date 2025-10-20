@@ -434,7 +434,7 @@ const Index = () => {
         }}
       >
         <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-          <AnalyticsCard isLoading={isLoading} shop={shop}></AnalyticsCard>
+          <AnalyticsCard isLoading={isLoading}></AnalyticsCard>
           <ProgressingCard
             dataSource={progressDataSource}
             source={source.current}

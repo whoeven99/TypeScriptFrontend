@@ -19,8 +19,9 @@ import useReport from "scripts/eventReport";
 import store from "~/store";
 import { UseSelector } from "react-redux";
 import { RootState } from "~/store";
+import { globalStore } from "~/globalStore";
 const { Text, Title } = Typography;
-const AnalyticsCard = ({ isLoading, shop }: any) => {
+const AnalyticsCard = ({ isLoading }: any) => {
   const { reportClick } = useReport();
   const navigate = useNavigate(); // 统一使用小写 navigate（React Router 规范）
   const { t } = useTranslation();
@@ -232,7 +233,7 @@ const AnalyticsCard = ({ isLoading, shop }: any) => {
       if (localUnTranslateWords) {
         setLocalUnTranslateWords(JSON.parse(localUnTranslateWords));
       }
-      if (localConversionRate) {
+      if (localConversionRate && localConversionRate !== "undefined") {
         setLocalConversionRate(JSON.parse(localConversionRate));
       }
       if (translateReportData) {
@@ -246,23 +247,35 @@ const AnalyticsCard = ({ isLoading, shop }: any) => {
           action: "/app/translate_report",
         });
       }
-      const localShop = localStorage.getItem("shop_origin") as any;
-      if (JSON.parse(localShop)===null) {
+      const rawShop = localStorage.getItem("shop_origin");
+      if (rawShop === "undefined") {
+        localStorage.removeItem("shop_origin");
+      }
+      const localShop =
+        rawShop && rawShop !== "undefined" ? JSON.parse(rawShop) : null;
+
+      if (localShop === null) {
         // 处理 shop 相关逻辑
-        localStorage.setItem("shop_origin", JSON.stringify(shop));
+        localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
       }
     } catch (error) {
       console.error("localConversionRate JSON 解析失败", error);
     }
   }, []);
   useEffect(() => {
-    const localShop = localStorage.getItem("shop_origin")as any;
-    if (JSON.parse(localShop) !== shop) {
-      // 处理 shop 相关逻辑
-      localStorage.setItem("shop_origin", JSON.stringify(shop));
-      localStorage.removeItem("local_conversion_rate");
+    try {
+      const localShop = JSON.parse(
+        localStorage.getItem("shop_origin") || "null",
+      );
+      if (localShop !== globalStore.shop) {
+        // 处理 shop 相关逻辑
+        localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
+        localStorage.removeItem("local_conversion_rate");
+      }
+    } catch (error) {
+      console.log(error);
     }
-  }, [shop]);
+  }, [globalStore.shop]);
   useEffect(() => {
     if (showRequireScopeBtn) {
       queryWebPixel();
