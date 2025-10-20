@@ -20,7 +20,7 @@ import store from "~/store";
 import { UseSelector } from "react-redux";
 import { RootState } from "~/store";
 const { Text, Title } = Typography;
-const AnalyticsCard = ({ isLoading }: any) => {
+const AnalyticsCard = ({ isLoading, shop }: any) => {
   const { reportClick } = useReport();
   const navigate = useNavigate(); // 统一使用小写 navigate（React Router 规范）
   const { t } = useTranslation();
@@ -246,10 +246,23 @@ const AnalyticsCard = ({ isLoading }: any) => {
           action: "/app/translate_report",
         });
       }
+      const localShop = localStorage.getItem("shop_origin") as any;
+      if (JSON.parse(localShop)===null) {
+        // 处理 shop 相关逻辑
+        localStorage.setItem("shop_origin", JSON.stringify(shop));
+      }
     } catch (error) {
       console.error("localConversionRate JSON 解析失败", error);
     }
   }, []);
+  useEffect(() => {
+    const localShop = localStorage.getItem("shop_origin")as any;
+    if (JSON.parse(localShop) !== shop) {
+      // 处理 shop 相关逻辑
+      localStorage.setItem("shop_origin", JSON.stringify(shop));
+      localStorage.removeItem("local_conversion_rate");
+    }
+  }, [shop]);
   useEffect(() => {
     if (showRequireScopeBtn) {
       queryWebPixel();
