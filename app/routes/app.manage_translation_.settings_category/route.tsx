@@ -83,7 +83,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                             type
                             value
                           }
-                          translations(locale: "${searchTerm}") {
+                          translations(locale: "${startCursor?.searchTerm || searchTerm}") {
                             value
                             key
                           }
@@ -137,7 +137,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                         type
                         value
                       }
-                      translations(locale: "${searchTerm}") {
+                      translations(locale: "${endCursor?.searchTerm || searchTerm}") {
                         value
                         key
                       }
@@ -476,13 +476,15 @@ const Index = () => {
 
     const { translatableContent, translations } = selectedData;
 
-    return translatableContent?.map((content: any, index: number) => ({
-      key: content.key,
-      resource: content.key,
-      default_language: content.value,
-      translated: translations[index]?.value ?? "",
-      type: content.type,
-    }));
+    return translatableContent
+      ?.filter((item: any) => item.value)
+      ?.map((content: any, index: number) => ({
+        key: content.key,
+        resource: content.key,
+        default_language: content.value,
+        translated: translations[index]?.value ?? "",
+        type: content.type,
+      }));
   };
 
   const handleInputChange = (key: string, value: string) => {
@@ -540,9 +542,7 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
-      source: themesData?.nodes[0]?.translatableContent.find(
-        (item: any) => item.key === key,
-      )?.locale,
+      source: themesData?.nodes[0]?.translatableContent[0]?.locale,
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -692,7 +692,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("Theme")}
+      title={t("Setting Category")}
       fullWidth={true}
       backAction={{
         onAction: onCancel,

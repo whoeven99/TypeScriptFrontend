@@ -65,7 +65,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
-
   const searchTerm = url.searchParams.get("language");
 
   const adminAuthResult = await authenticate.admin(request);
@@ -74,7 +73,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const formData = await request.formData();
-    const loading: string = JSON.parse(formData.get("loading") as string);
+    const loading: any = JSON.parse(formData.get("loading") as string);
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
@@ -94,7 +93,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                     type
                     value
                   }
-                  translations(locale: "${searchTerm}") {
+                  translations(locale: "${loading?.searchTerm || searchTerm}") {
                     value
                     key
                   }
@@ -200,7 +199,7 @@ const Index = () => {
     }
     themeFetcher.submit(
       {
-        loading: JSON.stringify(true),
+        loading: JSON.stringify({}),
       },
       {
         method: "POST",
@@ -239,11 +238,7 @@ const Index = () => {
     const filterMenuData = exMenuData(filteredResourceData);
     console.log("filterMenuData: ", menuData);
     setMenuData(filterMenuData);
-    setSelectedThemeKey(filterMenuData[0]?.key);
-    if (currentPage !== 1) setCurrentPage(1);
-  }, [filteredResourceData]);
-
-  useEffect(() => {
+    // setSelectedThemeKey(filterMenuData[0]?.key);
     const dataSource = filteredResourceData?.filter((item: any) => {
       const { key } = item;
       if (!key) return false;
@@ -257,7 +252,7 @@ const Index = () => {
     });
     setThemeData(dataSource);
     if (currentPage !== 1) setCurrentPage(1);
-  }, [selectedThemeKey]);
+  }, [selectedThemeKey, filteredResourceData]);
 
   useEffect(() => {
     loadingItemsRef.current = loadingItems;
@@ -421,12 +416,15 @@ const Index = () => {
         const parts = key.split(".");
         const first = parts[0];
         const second = parts[1];
-        const label =
+        const rawLabel =
           first === "shopify" || first === "section"
             ? (second ?? first)
             : first;
 
-        return { key: label, label };
+        // ✅ 首字母大写
+        const label = rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1);
+
+        return { key: rawLabel, label };
       })
       .filter((item: any) => {
         if (seen.has(item.label)) return false;
@@ -509,9 +507,7 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
-      source: themeFetcher.data.response[0]?.translatableContent.find(
-        (item: any) => item.key === key,
-      )?.locale,
+      source: themeFetcher.data.response[0]?.translatableContent[0]?.locale,
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -547,7 +543,9 @@ const Index = () => {
       setIsLoading(true);
       themeFetcher.submit(
         {
-          loading: JSON.stringify(true),
+          loading: JSON.stringify({
+            searchTerm: language,
+          }),
         },
         {
           method: "POST",
@@ -619,7 +617,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("Theme")}
+      title={t("Locale Content")}
       fullWidth={true}
       backAction={{
         onAction: onCancel,
