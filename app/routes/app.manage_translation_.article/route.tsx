@@ -193,7 +193,6 @@ const Index = () => {
   );
 
   const { searchTerm } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
@@ -219,7 +218,10 @@ const Index = () => {
   const itemOptions: { label: string; value: string }[] = [
     { label: t("Products"), value: "product" },
     { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "theme" },
+    { label: t("Json Template"), value: "json_template" },
+    { label: t("Locale Content"), value: "locale_content" },
+    { label: t("Section Group"), value: "section_group" },
+    { label: t("Settings Category"), value: "settings_category" },
     { label: t("Shop"), value: "shop" },
     { label: t("Store metadata"), value: "metafield" },
     { label: t("Articles"), value: "article" },
