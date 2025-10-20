@@ -85,16 +85,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop, accessToken } = adminAuthResult.session;
   try {
     const formData = await request.formData();
-    const navigationStartCursor: string = JSON.parse(
+    const navigationStartCursor: any = JSON.parse(
       formData.get("navigationStartCursor") as string,
     );
-    const navigationEndCursor: string = JSON.parse(
+    const navigationEndCursor: any = JSON.parse(
       formData.get("navigationEndCursor") as string,
     );
-    const itemStartCursor: string = JSON.parse(
+    const itemStartCursor: any = JSON.parse(
       formData.get("itemStartCursor") as string,
     );
-    const itemEndCursor: string = JSON.parse(
+    const itemEndCursor: any = JSON.parse(
       formData.get("itemEndCursor") as string,
     );
     const confirmData: ConfirmDataType[] = JSON.parse(
@@ -107,7 +107,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             shop,
             accessToken: accessToken as string,
             resourceType: "MENU",
-            startCursor: navigationStartCursor,
+            startCursor: navigationStartCursor?.cursor,
             locale: searchTerm || "",
           });
           return {
@@ -132,7 +132,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             shop,
             accessToken: accessToken as string,
             resourceType: "MENU",
-            endCursor: navigationEndCursor,
+            endCursor: navigationEndCursor?.cursor,
             locale: searchTerm || "",
           });
           return {
@@ -157,7 +157,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             shop,
             accessToken: accessToken as string,
             resourceType: "LINK",
-            startCursor: itemStartCursor,
+            startCursor: itemStartCursor?.cursor,
             locale: searchTerm || "",
           });
           return {
@@ -182,7 +182,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             shop,
             accessToken: accessToken as string,
             resourceType: "LINK",
-            endCursor: itemEndCursor,
+            endCursor: itemEndCursor?.cursor,
             locale: searchTerm || "",
           });
           return {
@@ -255,7 +255,8 @@ const Index = () => {
   const [navigationData, setNavigationData] = useState<ItemType[]>();
   const [ItemData, setItemData] = useState<ItemType[]>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [selectNavigationKey, setSelectNavigationKey] = useState("names");
+  const [selectNavigationKey, setSelectNavigationKey] =
+    useState<string>("names");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [translatedValues, setTranslatedValues] = useState<{
@@ -287,12 +288,8 @@ const Index = () => {
     searchTerm || "",
   );
   const [selectedItem, setSelectedItem] = useState<string>("navigation");
-  const [hasPrevious, setHasPrevious] = useState<boolean>(
-    navigationsData.pageInfo.hasPreviousPage || false,
-  );
-  const [hasNext, setHasNext] = useState<boolean>(
-    navigationsData.pageInfo.hasNextPage || false,
-  );
+  const [hasPrevious, setHasPrevious] = useState<boolean>(false);
+  const [hasNext, setHasNext] = useState<boolean>(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -355,16 +352,16 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
-    if (selectNavigationKey === "names") {
-      setHasPrevious(navigationsData.pageInfo.hasPreviousPage);
-      setHasNext(navigationsData.pageInfo.hasNextPage);
+    if (selectNavigationKey === "names" && navigationsData) {
+      setHasPrevious(navigationsData?.pageInfo?.hasPreviousPage || false);
+      setHasNext(navigationsData?.pageInfo?.hasNextPage || false);
       const data = transBeforeData({
         menus: navigationsData,
       });
       setNavigationData(data);
-    } else {
-      setHasPrevious(itemsData.pageInfo.hasPreviousPage);
-      setHasNext(itemsData.pageInfo.hasNextPage);
+    } else if (selectNavigationKey === "items" && itemsData) {
+      setHasPrevious(itemsData.pageInfo.hasPreviousPage || false);
+      setHasNext(itemsData.pageInfo.hasNextPage || false);
       const data = transBeforeData({
         menus: itemsData,
       });
@@ -416,34 +413,36 @@ const Index = () => {
 
       successfulItem.forEach((item: any) => {
         if (item.data.resourceId.split("/")[3] === "Menu") {
-          const index = navigationsData.nodes.findIndex(
-            (option: any) => option.resourceId === item.data.resourceId,
+          const index = navigationsData?.nodes?.findIndex(
+            (option: any) => option?.resourceId === item?.data?.resourceId,
           );
           if (index !== -1) {
-            const navigation = navigationsData.nodes[index].translations.find(
-              (option: any) => option.key === item.data.key,
+            const navigation = navigationsData?.nodes[
+              index
+            ]?.translations?.find(
+              (option: any) => option?.key === item?.data?.key,
             );
             if (navigation) {
               navigation.value = item.data.value;
             } else {
-              navigationsData.nodes[index].translations.push({
+              navigationsData?.nodes[index]?.translations?.push({
                 key: item.data.key,
                 value: item.data.value,
               });
             }
           }
         } else if (item.data.resourceId.split("/")[3] === "Link") {
-          const index = itemsData.nodes.findIndex(
-            (option: any) => option.resourceId === item.data.resourceId,
+          const index = itemsData?.nodes?.findIndex(
+            (option: any) => option?.resourceId === item?.data?.resourceId,
           );
           if (index !== -1) {
-            const link = itemsData.nodes[index].translations.find(
-              (option: any) => option.key === item.data.key,
+            const link = itemsData?.nodes[index]?.translations?.find(
+              (option: any) => option?.key === item?.data?.key,
             );
             if (link) {
               link.value = item.data.value;
             } else {
-              itemsData.nodes[index].translations.push({
+              itemsData?.nodes[index]?.translations?.push({
                 key: item.data.key,
                 value: item.data.value,
               });
@@ -598,6 +597,8 @@ const Index = () => {
   };
 
   const transBeforeData = ({ menus }: { menus: any }) => {
+    console.log("menus: ", menus);
+
     let data: ItemType[] = [
       {
         key: "",
@@ -957,7 +958,6 @@ const Index = () => {
                 >
                   <Menu
                     mode="inline"
-                    defaultSelectedKeys={[navigationsData.nodes[0]?.resourceId]}
                     style={{
                       flex: 1,
                       overflowY: "auto",
