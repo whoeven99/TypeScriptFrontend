@@ -308,20 +308,20 @@ const Index = () => {
       sync_status: false,
       navigation: "metaobject",
     },
-    // {
-    //   key: "navigation",
-    //   title: t("Navigation"),
-    //   allTranslatedItems:
-    //     languageItemsData.find(
-    //       (item: any) => item?.language === current && item?.type === "LINK",
-    //     )?.translatedNumber ?? undefined,
-    //   allItems:
-    //     languageItemsData.find(
-    //       (item: any) => item?.language === current && item?.type === "LINK",
-    //     )?.totalNumber ?? undefined,
-    //   sync_status: false,
-    //   navigation: "navigation",
-    // },
+    {
+      key: "navigation",
+      title: t("Navigation"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) => item?.language === current && item?.type === "LINK",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) => item?.language === current && item?.type === "LINK",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "navigation",
+    },
     {
       key: "store_metadata",
       title: t("Store metadata"),

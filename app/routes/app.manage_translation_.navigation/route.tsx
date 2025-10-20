@@ -39,6 +39,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
+import { globalStore } from "~/globalStore";
 
 const { Sider, Content } = Layout;
 
@@ -70,38 +71,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-
-  console.log(`${shop} 目前在翻译管理-导航页面`);
-
-  try {
-    const navigations = await queryNextTransType({
-      shop,
-      accessToken: accessToken as string,
-      resourceType: "MENU",
-      endCursor: "",
-      locale: searchTerm || "",
-    });
-    const navigationItems = await queryNextTransType({
-      shop,
-      accessToken: accessToken as string,
-      resourceType: "LINK",
-      endCursor: "",
-      locale: searchTerm || "",
-    });
-
-    return json({
-      server: process.env.SERVER_URL,
-      shopName: shop,
-      searchTerm,
-      navigations,
-      navigationItems,
-    });
-  } catch (error) {
-    console.error("Error load navigation:", error);
-    throw new Response("Error load navigation", { status: 500 });
-  }
+  return json({
+    server: process.env.SERVER_URL,
+    searchTerm,
+  });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -129,47 +102,103 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     switch (true) {
       case !!navigationStartCursor: {
-        const previousNavigations = await queryPreviousTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "MENU",
-          startCursor: navigationStartCursor,
-          locale: searchTerm || "",
-        });
-        return json({ previousNavigations });
+        try {
+          const response = await queryPreviousTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "MENU",
+            startCursor: navigationStartCursor,
+            locale: searchTerm || "",
+          });
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
       }
 
       case !!navigationEndCursor: {
-        const nextNavigations = await queryNextTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "MENU",
-          endCursor: navigationEndCursor,
-          locale: searchTerm || "",
-        });
-        return json({ nextNavigations });
+        try {
+          const response = await queryNextTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "MENU",
+            endCursor: navigationEndCursor,
+            locale: searchTerm || "",
+          });
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
       }
 
       case !!itemStartCursor: {
-        const previousItems = await queryPreviousTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "LINK",
-          startCursor: itemStartCursor,
-          locale: searchTerm || "",
-        });
-        return json({ previousItems });
+        try {
+          const response = await queryPreviousTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "LINK",
+            startCursor: itemStartCursor,
+            locale: searchTerm || "",
+          });
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
       }
 
       case !!itemEndCursor: {
-        const nextItems = await queryNextTransType({
-          shop,
-          accessToken: accessToken as string,
-          resourceType: "LINK",
-          endCursor: itemEndCursor,
-          locale: searchTerm || "",
-        });
-        return json({ nextItems });
+        try {
+          const response = await queryNextTransType({
+            shop,
+            accessToken: accessToken as string,
+            resourceType: "LINK",
+            endCursor: itemEndCursor,
+            locale: searchTerm || "",
+          });
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
       }
 
       case !!confirmData:
@@ -199,15 +228,14 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm, navigations, navigationItems, server, shopName } =
-    useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
+  const { searchTerm, server } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
-  const submit = useSubmit(); // 使用 useSubmit 钩子
   const languageFetcher = useFetcher<any>();
+  const menuDataFetcher = useFetcher<any>();
+  const linkDataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const menuData: any[] = [
@@ -221,12 +249,9 @@ const Index = () => {
     },
   ];
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  // const [isVisible, setIsVisible] = useState<
-  //   boolean | string | { language: string } | { item: string }
-  // >(false);
 
-  const [navigationsData, setNavigationsData] = useState(navigations);
-  const [itemsData, setItemsData] = useState(navigationItems);
+  const [navigationsData, setNavigationsData] = useState<any>();
+  const [itemsData, setItemsData] = useState<any>();
   const [navigationData, setNavigationData] = useState<ItemType[]>();
   const [ItemData, setItemData] = useState<ItemType[]>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
@@ -282,6 +307,26 @@ const Index = () => {
         },
       );
     }
+    menuDataFetcher.submit(
+      {
+        navigationEndCursor: JSON.stringify({
+          cursor: "",
+        }),
+      },
+      {
+        method: "post",
+      },
+    );
+    linkDataFetcher.submit(
+      {
+        itemEndCursor: JSON.stringify({
+          cursor: "",
+        }),
+      },
+      {
+        method: "post",
+      },
+    );
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -308,31 +353,6 @@ const Index = () => {
       );
     }
   }, [languageTableData]);
-
-  useEffect(() => {
-    if (navigations && isManualChangeRef.current) {
-      setNavigationsData(navigations);
-      isManualChangeRef.current = false; // 重置
-    }
-  }, [navigations]);
-
-  // useEffect(() => {
-  //   setHasPrevious(navigationsData.pageInfo.hasPreviousPage);
-  //   setHasNext(navigationsData.pageInfo.hasNextPage);
-  //   const data = transBeforeData({
-  //     menus: navigationsData,
-  //   });
-  //   setNavigationData(data);
-  // }, [navigationsData]);
-
-  // useEffect(() => {
-  //   setHasPrevious(itemsData.pageInfo.hasPreviousPage);
-  //   setHasNext(itemsData.pageInfo.hasNextPage);
-  //   const data = transBeforeData({
-  //     menus: itemsData,
-  //   });
-  //   setItemData(data);
-  // }, [itemsData]);
 
   useEffect(() => {
     if (selectNavigationKey === "names") {
@@ -369,20 +389,21 @@ const Index = () => {
   }, [ItemData]);
 
   useEffect(() => {
-    if (actionData && selectNavigationKey === "names") {
-      if ("nextNavigations" in actionData) {
-        setNavigationsData(actionData.nextNavigations);
-      } else if ("previousNavigations" in actionData) {
-        setNavigationsData(actionData.previousNavigations);
-      }
-    } else if (actionData && selectNavigationKey === "items") {
-      if ("nextItems" in actionData) {
-        setItemsData(actionData.nextItems);
-      } else if ("previousItems" in actionData) {
-        setItemsData(actionData.previousItems);
+    if (menuDataFetcher.data) {
+      if (menuDataFetcher.data?.success) {
+        setNavigationsData(menuDataFetcher.data?.response);
+        isManualChangeRef.current = false; // 重置
       }
     }
-  }, [actionData]);
+  }, [menuDataFetcher.data]);
+
+  useEffect(() => {
+    if (linkDataFetcher.data) {
+      if (linkDataFetcher.data?.success) {
+        setItemsData(linkDataFetcher.data?.response);
+      }
+    }
+  }, [linkDataFetcher.data]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -648,7 +669,7 @@ const Index = () => {
     }
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
-      shopName: shopName,
+      shopName: globalStore?.shop as string,
       source: navigationsData.nodes
         .find((item: any) => item?.resourceId === key)
         ?.translatableContent.find((item: any) => item.key === key)?.locale,
@@ -709,21 +730,31 @@ const Index = () => {
     } else {
       shopify.saveBar.hide("save-bar");
       if (selectNavigationKey === "names") {
-        const formData = new FormData();
-        const startCursor = navigationsData.pageInfo.startCursor;
-        formData.append("navigationStartCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-        submit(formData, {
-          method: "post",
-          action: `/app/manage_translation/navigation?language=${searchTerm}`,
-        }); // 提交表单请求
+        const startCursor = navigationsData?.pageInfo?.startCursor;
+        menuDataFetcher.submit(
+          {
+            navigationStartCursor: JSON.stringify({
+              cursor: startCursor,
+            }),
+          },
+          {
+            method: "post",
+            action: `/app/manage_translation/navigation?language=${searchTerm}`,
+          },
+        );
       } else {
-        const formData = new FormData();
         const startCursor = itemsData.pageInfo.startCursor;
-        formData.append("itemStartCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-        submit(formData, {
-          method: "post",
-          action: `/app/manage_translation/navigation?language=${searchTerm}`,
-        }); // 提交表单请求
+        linkDataFetcher.submit(
+          {
+            itemStartCursor: JSON.stringify({
+              cursor: startCursor,
+            }),
+          },
+          {
+            method: "post",
+            action: `/app/manage_translation/navigation?language=${searchTerm}`,
+          },
+        );
       }
     }
   };
@@ -734,21 +765,31 @@ const Index = () => {
     } else {
       shopify.saveBar.hide("save-bar");
       if (selectNavigationKey === "names") {
-        const formData = new FormData();
-        const endCursor = navigationsData.pageInfo.endCursor;
-        formData.append("navigationEndCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-        submit(formData, {
-          method: "post",
-          action: `/app/manage_translation/navigation?language=${searchTerm}`,
-        }); // 提交表单请求
+        const endCursor = navigationsData?.pageInfo?.endCursor;
+        menuDataFetcher.submit(
+          {
+            navigationEndCursor: JSON.stringify({
+              cursor: endCursor,
+            }),
+          },
+          {
+            method: "post",
+            action: `/app/manage_translation/navigation?language=${searchTerm}`,
+          },
+        );
       } else {
-        const formData = new FormData();
         const endCursor = itemsData.pageInfo.endCursor;
-        formData.append("itemEndCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-        submit(formData, {
-          method: "post",
-          action: `/app/manage_translation/navigation?language=${searchTerm}`,
-        }); // 提交表单请求
+        linkDataFetcher.submit(
+          {
+            itemEndCursor: JSON.stringify({
+              cursor: endCursor,
+            }),
+          },
+          {
+            method: "post",
+            action: `/app/manage_translation/navigation?language=${searchTerm}`,
+          },
+        );
       }
     }
   };
