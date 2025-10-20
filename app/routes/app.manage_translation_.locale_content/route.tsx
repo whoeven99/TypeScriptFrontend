@@ -11,6 +11,7 @@ import {
   theme,
   Typography,
   List,
+  Menu,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -33,16 +34,17 @@ import ManageTableInput from "~/components/manageTableInput";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
-import { Page, Select } from "@shopify/polaris";
+import { Page, Pagination, Select } from "@shopify/polaris";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import { S } from "node_modules/vite/dist/node/types.d-aGj9QkWt";
 import { globalStore } from "~/globalStore";
+import { getItemOptions } from "../app.manage_translation/route";
 
 const { Text } = Typography;
 
-const { Content } = Layout;
+const { Sider, Content } = Layout;
 
 type TableDataType = {
   key: string;
@@ -163,7 +165,8 @@ const Index = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [menuData, setMenuData] = useState<any>([]);
-  const [themesData, setThemesData] = useState<any>([]);
+  const [selectedThemeKey, setSelectedThemeKey] = useState<string>("");
+  const [themeData, setThemeData] = useState<any>([]);
   const [resourceData, setResourceData] = useState<any>([]);
   const [filteredResourceData, setFilteredResourceData] = useState<any>([]);
   const [searchInput, setSearchInput] = useState("");
@@ -172,28 +175,7 @@ const Index = () => {
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
-  const itemOptions = [
-    { label: t("Products"), value: "product" },
-    { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "json_template" },
-    { label: t("Theme"), value: "locale_content" },
-    { label: t("Theme"), value: "section_group" },
-    { label: t("Theme"), value: "settings_category" },
-    { label: t("Shop"), value: "shop" },
-    { label: t("Store metadata"), value: "metafield" },
-    { label: t("Articles"), value: "article" },
-    { label: t("Blog titles"), value: "blog" },
-    { label: t("Pages"), value: "page" },
-    { label: t("Filters"), value: "filter" },
-    { label: t("Metaobjects"), value: "metaobject" },
-    { label: t("Navigation"), value: "navigation" },
-    { label: t("Email"), value: "email" },
-    { label: t("Policies"), value: "policy" },
-    { label: t("Product images"), value: "productImage" },
-    { label: t("Product image alt text"), value: "productImageAlt" },
-    { label: t("Delivery"), value: "delivery" },
-    { label: t("Shipping"), value: "shipping" },
-  ];
+  const itemOptions = getItemOptions(t);
   const [languageOptions, setLanguageOptions] = useState<
     { label: string; value: string }[]
   >([]);
@@ -245,11 +227,6 @@ const Index = () => {
 
   useEffect(() => {
     if (themeFetcher.data?.success) {
-      setThemesData(themeFetcher.data.response);
-      const menuData = exMenuData(themeFetcher.data.response);
-      console.log("menuData: ", menuData);
-
-      setMenuData(menuData);
       const data = generateMenuItemsArray(themeFetcher.data.response);
       setResourceData(data);
       setFilteredResourceData(data);
@@ -257,6 +234,30 @@ const Index = () => {
       setIsLoading(false);
     }
   }, [themeFetcher.data]);
+
+  useEffect(() => {
+    const filterMenuData = exMenuData(filteredResourceData);
+    console.log("filterMenuData: ", menuData);
+    setMenuData(filterMenuData);
+    setSelectedThemeKey(filterMenuData[0]?.key);
+    if (currentPage !== 1) setCurrentPage(1);
+  }, [filteredResourceData]);
+
+  useEffect(() => {
+    const dataSource = filteredResourceData?.filter((item: any) => {
+      const { key } = item;
+      if (!key) return false;
+      const parts = key.split(".");
+      const first = parts[0];
+      const second = parts[1];
+      const label =
+        first === "shopify" || first === "section" ? (second ?? first) : first;
+
+      return label == selectedThemeKey;
+    });
+    setThemeData(dataSource);
+    if (currentPage !== 1) setCurrentPage(1);
+  }, [selectedThemeKey]);
 
   useEffect(() => {
     loadingItemsRef.current = loadingItems;
@@ -415,7 +416,7 @@ const Index = () => {
   const exMenuData = (data: any) => {
     const seen = new Set<string>();
 
-    return data[0]?.translatableContent
+    return data
       ?.map(({ key }: { key: string }) => {
         const parts = key.split(".");
         const first = parts[0];
@@ -452,15 +453,15 @@ const Index = () => {
       } else {
         // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: themesData[0]?.resourceId,
-          locale: themesData[0]?.translatableContent[0]?.locale,
+          resourceId: themeFetcher.data.response[0]?.resourceId,
+          locale: themeFetcher.data.response[0]?.translatableContent[0]?.locale,
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest:
-            themesData[0]?.translatableContent.find(
+            themeFetcher.data.response[0]?.translatableContent.find(
               (item: any) => item.key === key,
             )?.digest ||
-            themesData[0]?.translatableContent[0]?.digest ||
+            themeFetcher.data.response[0]?.translatableContent[0]?.digest ||
             "",
           target: searchTerm || "",
         };
@@ -472,15 +473,16 @@ const Index = () => {
   const generateMenuItemsArray = (items: any) => {
     return items[0]?.translatableContent.flatMap((item: any, index: number) => {
       // 创建当前项的对象
+      if (!item?.value) return [];
       const currentItem = {
-        key: `${item.key}`, // 使用 key 生成唯一的 key
-        resource: item.key,
-        default_language: item.value, // 默认语言为 item 的标题
+        key: `${item?.key}`, // 使用 key 生成唯一的 key
+        resource: item?.key,
+        default_language: item?.value, // 默认语言为 item 的标题
         translated:
           items[0]?.translations.find(
-            (translation: any) => translation.key === item.key,
+            (translation: any) => translation?.key === item?.key,
           )?.value || "", // 翻译字段初始化为空字符串
-        type: item.type,
+        type: item?.type,
       };
       return [currentItem];
     });
@@ -507,7 +509,7 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
-      source: themesData[0]?.translatableContent.find(
+      source: themeFetcher.data.response[0]?.translatableContent.find(
         (item: any) => item.key === key,
       )?.locale,
       target: searchTerm || "",
@@ -599,7 +601,7 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("save-bar");
-    const data = generateMenuItemsArray(themesData);
+    const data = generateMenuItemsArray(themeFetcher.data.response);
     setFilteredResourceData(data); // 使用展开运算符创建新数组引用
     setConfirmData([]);
   };
@@ -619,22 +621,6 @@ const Index = () => {
     <Page
       title={t("Theme")}
       fullWidth={true}
-      // primaryAction={{
-      //   content: t("Save"),
-      //   loading: confirmFetcher.state === "submitting",
-      //   disabled:
-      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //   onAction: handleConfirm,
-      // }}
-      // secondaryActions={[
-      //   {
-      //     content: t("Cancel"),
-      //     loading: confirmFetcher.state === "submitting",
-      //     disabled:
-      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //     onAction: handleDiscard,
-      //   },
-      // ]}
       backAction={{
         onAction: onCancel,
       }}
@@ -649,11 +635,50 @@ const Index = () => {
         </button>
         <button onClick={handleDiscard}>{t("Cancel")}</button>
       </SaveBar>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          marginBottom: "15px",
+          gap: "8px",
+        }}
+      >
+        <Input
+          placeholder={t("Search...")}
+          prefix={<SearchOutlined />}
+          value={searchInput}
+          onChange={handleSearch}
+        />
+        <div
+          style={{
+            width: "100px",
+          }}
+        >
+          <Select
+            label={""}
+            options={languageOptions}
+            value={selectedLanguage}
+            onChange={(value) => handleLanguageChange(value)}
+          />
+        </div>
+        <div
+          style={{
+            width: "100px",
+          }}
+        >
+          <Select
+            label={""}
+            options={itemOptions}
+            value={selectedItem}
+            onChange={(value) => handleItemChange(value)}
+          />
+        </div>
+      </div>
       <Layout
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 104px)",
+          height: "calc(100vh - 154px)",
         }}
       >
         {isLoading ? (
@@ -667,288 +692,253 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : themesData.length ? (
-          <Content
-            style={{
-              paddingLeft: isMobile ? "16px" : "0",
-            }}
-          >
-            {isMobile ? (
-              <Space direction="vertical" style={{ width: "100%" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    flexGrow: 2,
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "100px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={languageOptions}
-                      value={selectedLanguage}
-                      onChange={(value) => handleLanguageChange(value)}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      width: "100px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={itemOptions}
-                      value={selectedItem}
-                      onChange={(value) => handleItemChange(value)}
-                    />
-                  </div>
-                </div>
-                <Input
-                  placeholder={t("Search...")}
-                  prefix={<SearchOutlined />}
-                  value={searchInput}
-                  onChange={handleSearch}
-                />
-                <Card title={t("Resource")}>
-                  <Space direction="vertical" style={{ width: "100%" }}>
-                    {filteredResourceData.length > 20 ? (
-                      <List
-                        itemLayout="vertical"
-                        style={{ listStyle: "none" }}
-                        pagination={{
-                          onChange: (page) => {
-                            if (page !== currentPage) {
-                              if (confirmData.length > 0) {
-                                shopify.saveBar.leaveConfirmation();
-                              } else {
-                                setCurrentPage(page);
-                              }
-                            }
-                          },
-                          pageSize: 10,
-                          total: filteredResourceData.length,
-                          current: currentPage,
-                          showSizeChanger: false,
-                        }}
-                        dataSource={filteredResourceData}
-                        renderItem={(item: any) => (
-                          <List.Item key={item.key}>
-                            <Space
-                              direction="vertical"
-                              size="small"
-                              style={{ width: "100%" }}
-                            >
-                              <Text
-                                strong
-                                style={{
-                                  fontSize: "16px",
-                                }}
-                              >
-                                {t(item.resource)}
-                              </Text>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  gap: "8px",
-                                }}
-                              >
-                                <Text>{t("Default Language")}</Text>
-                                <ManageTableInput record={item} />
-                              </div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  gap: "8px",
-                                }}
-                              >
-                                <Text>{t("Translated")}</Text>
-                                <ManageTableInput
-                                  translatedValues={translatedValues}
-                                  setTranslatedValues={setTranslatedValues}
-                                  handleInputChange={handleInputChange}
-                                  isRtl={searchTerm === "ar"}
-                                  record={item}
-                                />
-                              </div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "flex-end",
-                                }}
-                              >
-                                <Button
-                                  onClick={() => {
-                                    handleTranslate(
-                                      "ONLINE_STORE_THEME_LOCALE_CONTENT",
-                                      item?.key || "",
-                                      item?.type || "",
-                                      item?.default_language || "",
-                                    );
-                                  }}
-                                  loading={loadingItems.includes(
-                                    item?.key || "",
-                                  )}
-                                >
-                                  {t("Translate")}
-                                </Button>
-                              </div>
-                              <Divider style={{ margin: "8px 0" }} />
-                            </Space>
-                          </List.Item>
-                        )}
-                      />
-                    ) : (
-                      filteredResourceData.map((item: any, index: number) => (
-                        <Space
-                          key={index}
-                          direction="vertical"
-                          size="small"
-                          style={{ width: "100%" }}
-                        >
-                          <Text strong style={{ fontSize: "16px" }}>
-                            {t(item.resource)}
-                          </Text>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: "8px",
-                            }}
-                          >
-                            <Text>{t("Default Language")}</Text>
-                            <ManageTableInput record={item} />
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: "8px",
-                            }}
-                          >
-                            <Text>{t("Translated")}</Text>
-                            <ManageTableInput
-                              translatedValues={translatedValues}
-                              setTranslatedValues={setTranslatedValues}
-                              handleInputChange={handleInputChange}
-                              isRtl={searchTerm === "ar"}
-                              record={item}
-                            />
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                            }}
-                          >
-                            <Button
-                              onClick={() => {
-                                handleTranslate(
-                                  "ONLINE_STORE_THEME_LOCALE_CONTENT",
-                                  item?.key || "",
-                                  item?.type || "",
-                                  item?.default_language || "",
-                                );
-                              }}
-                              loading={loadingItems.includes(item?.key || "")}
-                            >
-                              {t("Translate")}
-                            </Button>
-                          </div>
-                          <Divider
-                            style={{
-                              margin: "8px 0",
-                            }}
-                          />
-                        </Space>
-                      ))
-                    )}
-                  </Space>
-                </Card>
-              </Space>
-            ) : (
-              <Space
-                direction="vertical"
-                size="middle"
-                style={{ display: "flex" }}
+        ) : themeFetcher.data.response.length ? (
+          <>
+            {!isMobile && (
+              <Sider
+                style={{
+                  height: "calc(100% - 25px)",
+                  minHeight: "70vh",
+                  display: "flex",
+                  flexDirection: "column",
+                  overflow: "auto",
+                  backgroundColor: "var(--p-color-bg)",
+                }}
               >
                 <div
                   style={{
                     display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
+                    flexDirection: "column",
+                    height: "100%",
                     justifyContent: "space-between",
                   }}
                 >
-                  <Input
-                    placeholder={t("Search...")}
-                    prefix={<SearchOutlined />}
-                    value={searchInput}
-                    onChange={handleSearch}
-                  />
-                  <div
+                  <Menu
+                    mode="inline"
+                    defaultSelectedKeys={[menuData[0]?.key]}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      flexGrow: 2,
-                      justifyContent: "flex-end",
+                      flex: 1,
+                      overflowY: "auto",
+                      minHeight: 0,
+                      backgroundColor: "var(--p-color-bg)",
                     }}
-                  >
-                    <div
-                      style={{
-                        width: "150px",
-                      }}
-                    >
-                      <Select
-                        label={""}
-                        options={languageOptions}
-                        value={selectedLanguage}
-                        onChange={(value) => handleLanguageChange(value)}
-                      />
-                    </div>
-                    <div
-                      style={{
-                        width: "150px",
-                      }}
-                    >
-                      <Select
-                        label={""}
-                        options={itemOptions}
-                        value={selectedItem}
-                        onChange={(value) => handleItemChange(value)}
-                      />
-                    </div>
-                  </div>
+                    items={menuData}
+                    selectedKeys={[selectedThemeKey]}
+                    onClick={(e: any) => setSelectedThemeKey(e.key)}
+                  />
                 </div>
-                <Table
-                  columns={resourceColumns}
-                  dataSource={filteredResourceData}
-                  pagination={{
-                    current: currentPage,
-                    position: ["bottomCenter"],
-                    showSizeChanger: false,
-                    onChange: (page) => {
-                      if (page !== currentPage) {
-                        if (confirmData.length > 0) {
-                          shopify.saveBar.leaveConfirmation();
-                        } else {
-                          setCurrentPage(page);
-                        }
-                      }
-                    },
-                  }}
-                />
-              </Space>
+              </Sider>
             )}
-          </Content>
+            <Content
+              style={{
+                paddingLeft: isMobile ? "0" : "24px",
+                height: "calc(100% - 25px)",
+                minHeight: "70vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "auto",
+              }}
+            >
+              {isMobile ? (
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Card title={t("Resource")}>
+                    <Space direction="vertical" style={{ width: "100%" }}>
+                      {themeData.length > 20 ? (
+                        <List
+                          itemLayout="vertical"
+                          style={{ listStyle: "none" }}
+                          pagination={{
+                            onChange: (page) => {
+                              if (page !== currentPage) {
+                                if (confirmData.length > 0) {
+                                  shopify.saveBar.leaveConfirmation();
+                                } else {
+                                  setCurrentPage(page);
+                                }
+                              }
+                            },
+                            pageSize: 10,
+                            total: filteredResourceData.length,
+                            current: currentPage,
+                            showSizeChanger: false,
+                          }}
+                          dataSource={filteredResourceData}
+                          renderItem={(item: any) => (
+                            <List.Item key={item.key}>
+                              <Space
+                                direction="vertical"
+                                size="small"
+                                style={{ width: "100%" }}
+                              >
+                                <Text
+                                  strong
+                                  style={{
+                                    fontSize: "16px",
+                                  }}
+                                >
+                                  {t(item.resource)}
+                                </Text>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "8px",
+                                  }}
+                                >
+                                  <Text>{t("Default Language")}</Text>
+                                  <ManageTableInput record={item} />
+                                </div>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "8px",
+                                  }}
+                                >
+                                  <Text>{t("Translated")}</Text>
+                                  <ManageTableInput
+                                    translatedValues={translatedValues}
+                                    setTranslatedValues={setTranslatedValues}
+                                    handleInputChange={handleInputChange}
+                                    isRtl={searchTerm === "ar"}
+                                    record={item}
+                                  />
+                                </div>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "flex-end",
+                                  }}
+                                >
+                                  <Button
+                                    onClick={() => {
+                                      handleTranslate(
+                                        "ONLINE_STORE_THEME_LOCALE_CONTENT",
+                                        item?.key || "",
+                                        item?.type || "",
+                                        item?.default_language || "",
+                                      );
+                                    }}
+                                    loading={loadingItems.includes(
+                                      item?.key || "",
+                                    )}
+                                  >
+                                    {t("Translate")}
+                                  </Button>
+                                </div>
+                                <Divider style={{ margin: "8px 0" }} />
+                              </Space>
+                            </List.Item>
+                          )}
+                        />
+                      ) : (
+                        themeData.map((item: any, index: number) => (
+                          <Space
+                            key={index}
+                            direction="vertical"
+                            size="small"
+                            style={{ width: "100%" }}
+                          >
+                            <Text strong style={{ fontSize: "16px" }}>
+                              {t(item.resource)}
+                            </Text>
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "8px",
+                              }}
+                            >
+                              <Text>{t("Default Language")}</Text>
+                              <ManageTableInput record={item} />
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "8px",
+                              }}
+                            >
+                              <Text>{t("Translated")}</Text>
+                              <ManageTableInput
+                                translatedValues={translatedValues}
+                                setTranslatedValues={setTranslatedValues}
+                                handleInputChange={handleInputChange}
+                                isRtl={searchTerm === "ar"}
+                                record={item}
+                              />
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              <Button
+                                onClick={() => {
+                                  handleTranslate(
+                                    "ONLINE_STORE_THEME_LOCALE_CONTENT",
+                                    item?.key || "",
+                                    item?.type || "",
+                                    item?.default_language || "",
+                                  );
+                                }}
+                                loading={loadingItems.includes(item?.key || "")}
+                              >
+                                {t("Translate")}
+                              </Button>
+                            </div>
+                            <Divider
+                              style={{
+                                margin: "8px 0",
+                              }}
+                            />
+                          </Space>
+                        ))
+                      )}
+                    </Space>
+                  </Card>
+                  <Menu
+                    mode="inline"
+                    defaultSelectedKeys={[menuData[0]?.key]}
+                    style={{
+                      flex: 1,
+                      overflowY: "auto",
+                      minHeight: 0,
+                    }}
+                    items={menuData}
+                    selectedKeys={[selectedThemeKey]}
+                    onClick={(e) => setSelectedThemeKey(e.key)}
+                  />
+                </Space>
+              ) : (
+                <Space
+                  direction="vertical"
+                  size="middle"
+                  style={{ display: "flex" }}
+                >
+                  <Table
+                    columns={resourceColumns}
+                    dataSource={themeData}
+                    pagination={{
+                      current: currentPage,
+                      position: ["bottomCenter"],
+                      showSizeChanger: false,
+                      onChange: (page) => {
+                        if (page !== currentPage) {
+                          if (confirmData.length > 0) {
+                            shopify.saveBar.leaveConfirmation();
+                          } else {
+                            setCurrentPage(page);
+                          }
+                        }
+                      },
+                    }}
+                  />
+                </Space>
+              )}
+            </Content>
+          </>
         ) : (
           <Result
             title={t("The specified fields were not found in the store.")}
