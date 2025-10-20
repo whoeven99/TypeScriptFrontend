@@ -615,6 +615,17 @@ const Index = () => {
   }, [emailFetcher.data]);
 
   useEffect(() => {
+    if (navigationFetcher.data) {
+      if (
+        navigationFetcher.data?.success &&
+        navigationFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(navigationFetcher.data?.response));
+      }
+    }
+  }, [navigationFetcher.data]);
+
+  useEffect(() => {
     if (policiesFetcher.data) {
       if (
         policiesFetcher.data?.success &&

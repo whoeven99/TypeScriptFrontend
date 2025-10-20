@@ -108,7 +108,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             accessToken: accessToken as string,
             resourceType: "MENU",
             startCursor: navigationStartCursor?.cursor,
-            locale: searchTerm || "",
+            locale: navigationStartCursor?.searchTerm || searchTerm,
           });
           return {
             success: true,
@@ -133,7 +133,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             accessToken: accessToken as string,
             resourceType: "MENU",
             endCursor: navigationEndCursor?.cursor,
-            locale: searchTerm || "",
+            locale: navigationEndCursor?.searchTerm || searchTerm,
           });
           return {
             success: true,
@@ -158,7 +158,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             accessToken: accessToken as string,
             resourceType: "LINK",
             startCursor: itemStartCursor?.cursor,
-            locale: searchTerm || "",
+            locale: itemStartCursor?.searchTerm || searchTerm,
           });
           return {
             success: true,
@@ -183,7 +183,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             accessToken: accessToken as string,
             resourceType: "LINK",
             endCursor: itemEndCursor?.cursor,
-            locale: searchTerm || "",
+            locale: itemEndCursor?.searchTerm || searchTerm,
           });
           return {
             success: true,
@@ -308,6 +308,7 @@ const Index = () => {
       {
         navigationEndCursor: JSON.stringify({
           cursor: "",
+          searchTerm,
         }),
       },
       {
@@ -318,6 +319,7 @@ const Index = () => {
       {
         itemEndCursor: JSON.stringify({
           cursor: "",
+          searchTerm,
         }),
       },
       {
@@ -359,6 +361,10 @@ const Index = () => {
         menus: navigationsData,
       });
       setNavigationData(data);
+      if (isLoading)
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 100);
     } else if (selectNavigationKey === "items" && itemsData) {
       setHasPrevious(itemsData.pageInfo.hasPreviousPage || false);
       setHasNext(itemsData.pageInfo.hasNextPage || false);
@@ -370,9 +376,6 @@ const Index = () => {
     setConfirmData([]);
     setTranslatedValues({});
     setLoadingItems([]);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 100);
   }, [selectNavigationKey, navigationsData, itemsData]);
 
   useEffect(() => {
@@ -697,6 +700,28 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
+      menuDataFetcher.submit(
+        {
+          navigationEndCursor: JSON.stringify({
+            cursor: "",
+            searchTerm: language,
+          }),
+        },
+        {
+          method: "post",
+        },
+      );
+      linkDataFetcher.submit(
+        {
+          itemEndCursor: JSON.stringify({
+            cursor: "",
+            searchTerm: language,
+          }),
+        },
+        {
+          method: "post",
+        },
+      );
       setIsLoading(true);
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
@@ -736,6 +761,7 @@ const Index = () => {
           {
             navigationStartCursor: JSON.stringify({
               cursor: startCursor,
+              searchTerm
             }),
           },
           {
@@ -749,6 +775,7 @@ const Index = () => {
           {
             itemStartCursor: JSON.stringify({
               cursor: startCursor,
+              searchTerm
             }),
           },
           {
@@ -771,6 +798,7 @@ const Index = () => {
           {
             navigationEndCursor: JSON.stringify({
               cursor: endCursor,
+              searchTerm
             }),
           },
           {
@@ -784,6 +812,7 @@ const Index = () => {
           {
             itemEndCursor: JSON.stringify({
               cursor: endCursor,
+              searchTerm
             }),
           },
           {
