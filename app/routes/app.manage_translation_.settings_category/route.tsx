@@ -482,7 +482,10 @@ const Index = () => {
         key: content.key,
         resource: content.key,
         default_language: content.value,
-        translated: translations[index]?.value ?? "",
+        translated:
+          translations?.find(
+            (translation: any) => translation?.key == content.key,
+          )?.value ?? "",
         type: content.type,
       }));
   };
