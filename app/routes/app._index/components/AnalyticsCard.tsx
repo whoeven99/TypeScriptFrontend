@@ -213,33 +213,47 @@ const AnalyticsCard = ({ isLoading }: any) => {
     reportClick("dashboard_conversion_detail");
   };
 
-  // 组件加载时自动查询 Web Pixel
   useEffect(() => {
     try {
-      const translateReportData = localStorage.getItem(
-        "translate_report_score",
-      ) as any;
-      const localUnTranslateWords = localStorage.getItem(
-        "local_untranslate_words",
-      ) as any;
-      const localConversionRate = localStorage.getItem(
-        "local_conversion_rate",
-      ) as any;
-      if (queryWebPixelFetcher.state === "idle" && !queryWebPixelFetcher.data) {
-        if (showRequireScopeBtn) {
-          queryWebPixel();
+      // ---- 辅助安全解析函数 ----
+      const safeParse = (value: string | null) => {
+        if (!value || value === "undefined" || value === "null") return null;
+        try {
+          return JSON.parse(value);
+        } catch {
+          return null;
         }
+      };
+
+      // ---- 获取本地数据 ----
+      const translateReportData = safeParse(
+        localStorage.getItem("translate_report_score"),
+      );
+      const localUnTranslateWords = safeParse(
+        localStorage.getItem("local_untranslate_words"),
+      );
+      const localConversionRate = safeParse(
+        localStorage.getItem("local_conversion_rate"),
+      );
+      const localShop = safeParse(localStorage.getItem("shop_origin"));
+
+      // ---- 初始化 Web Pixel ----
+      if (
+        queryWebPixelFetcher.state === "idle" &&
+        !queryWebPixelFetcher.data &&
+        showRequireScopeBtn
+      ) {
+        queryWebPixel();
       }
-      if (localUnTranslateWords) {
-        setLocalUnTranslateWords(JSON.parse(localUnTranslateWords));
-      }
-      if (localConversionRate && localConversionRate !== "undefined") {
-        setLocalConversionRate(JSON.parse(localConversionRate));
-      }
+
+      // ---- 设置本地状态 ----
+      if (localUnTranslateWords)
+        setLocalUnTranslateWords(localUnTranslateWords);
+      if (localConversionRate) setLocalConversionRate(localConversionRate);
       if (translateReportData) {
-        setTranslateData(JSON.parse(translateReportData));
+        setTranslateData(translateReportData);
       } else {
-        // 初始化获取翻译质量的分数
+        // 初始化翻译分数请求
         const formData = new FormData();
         formData.append("translationScore", JSON.stringify({}));
         translationScoreFetcher.submit(formData, {
@@ -247,33 +261,24 @@ const AnalyticsCard = ({ isLoading }: any) => {
           action: "/app/translate_report",
         });
       }
-      const rawShop = localStorage.getItem("shop_origin");
-      if (rawShop === "undefined") {
-        localStorage.removeItem("shop_origin");
-      }
-      const localShop =
-        rawShop && rawShop !== "undefined" ? JSON.parse(rawShop) : null;
-
-      if (localShop === null) {
-        // 处理 shop 相关逻辑
-        localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
-      }
-    } catch (error) {
-      console.error("localConversionRate JSON 解析失败", error);
-    }
-  }, []);
-  useEffect(() => {
-    try {
-      const localShop = JSON.parse(
-        localStorage.getItem("shop_origin") || "null",
-      );
-      if (localShop !== globalStore.shop) {
-        // 处理 shop 相关逻辑
-        localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
-        localStorage.removeItem("local_conversion_rate");
+      // ---- 处理 shop 逻辑 ----
+      if (globalStore?.shop) {
+        if (!localShop) {
+          // 首次写入
+          localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
+        } else if (
+          JSON.stringify(localShop) !== JSON.stringify(globalStore.shop)
+        ) {
+          // 如果不同 -> 更新并清除 rate
+          console.log("检测到 shop 变化：清除 local_conversion_rate");
+          localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
+          localStorage.removeItem("local_conversion_rate");
+        }
+      } else {
+        console.warn("globalStore.shop 还未加载，跳过存储逻辑");
       }
     } catch (error) {
-      console.log(error);
+      console.error("useEffect 错误：", error);
     }
   }, [globalStore.shop]);
   useEffect(() => {
