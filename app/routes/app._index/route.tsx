@@ -380,7 +380,7 @@ const Index = () => {
         return "Collection";
 
       case resourceType == "METAFIELD":
-        return "Store metadata";
+        return "Metafield";
 
       case resourceType == "ARTICLE":
         return "Article";

@@ -348,7 +348,7 @@ const Index = () => {
     },
     {
       key: "store_metadata",
-      title: t("Store metadata"),
+      title: t("Metafield"),
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
@@ -874,7 +874,7 @@ const Index = () => {
         JSON.stringify({
           source: primaryLanguage,
           target: current,
-          resourceType: "Store metadata",
+          resourceType: "Metafield",
         }),
       );
       store_metadataFetcher.submit(store_metadataFormData, {
@@ -1157,7 +1157,7 @@ export const getItemOptions = (t: (key: string) => string) => [
   { label: t("Section Group"), value: "section_group" },
   { label: t("Settings Category"), value: "settings_category" },
   { label: t("Shop"), value: "shop" },
-  { label: t("Store metadata"), value: "metafield" },
+  { label: t("Metafield"), value: "metafield" },
   { label: t("Articles"), value: "article" },
   { label: t("Blog titles"), value: "blog" },
   { label: t("Pages"), value: "page" },
