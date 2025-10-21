@@ -32,6 +32,7 @@ import { ShopLocalesType } from "../app.language/route";
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
 import { SearchOutlined } from "@ant-design/icons";
+import { getItemOptions } from "../app.manage_translation/route";
 const { Sider, Content } = Layout;
 
 const { Text, Title } = Typography;
@@ -136,8 +137,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       }
     case !!endCursor:
-      console.log("endCursor: ", endCursor);
-
       try {
         const response = await admin.graphql(
           `#graphql
@@ -345,20 +344,17 @@ const Index = () => {
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
+  const timeoutIdRef = useRef<any>();
+
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
   const productFetcher = useFetcher<any>();
-  // const optionFetcher = useFetcher<any>();
-  // const metafieldFetcher = useFetcher<any>();
   const variantFetcher = useFetcher<any>();
 
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  // const [isVisible, setIsVisible] = useState<
-  //   boolean | string | { language: string } | { item: string }
-  // >(false);
 
   const [menuData, setMenuData] = useState<MenuItem[]>([]);
   const [productsData, setProductsData] = useState<any>([]);
@@ -377,25 +373,7 @@ const Index = () => {
   }>({});
   const [queryText, setQueryText] = useState<string>("");
   const { reportClick } = useReport();
-  const itemOptions = [
-    { label: t("Products"), value: "product" },
-    { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "theme" },
-    { label: t("Shop"), value: "shop" },
-    { label: t("Store metadata"), value: "metafield" },
-    { label: t("Articles"), value: "article" },
-    { label: t("Blog titles"), value: "blog" },
-    { label: t("Pages"), value: "page" },
-    { label: t("Filters"), value: "filter" },
-    { label: t("Metaobjects"), value: "metaobject" },
-    { label: t("Navigation"), value: "navigation" },
-    { label: t("Email"), value: "email" },
-    { label: t("Policies"), value: "policy" },
-    { label: t("Product images"), value: "productImage" },
-    { label: t("Product image alt text"), value: "productImageAlt" },
-    { label: t("Delivery"), value: "delivery" },
-    { label: t("Shipping"), value: "shipping" },
-  ];
+  const itemOptions = getItemOptions(t);
   const languagePackOptions = [
     {
       label: t("General"),
@@ -1563,36 +1541,31 @@ const Index = () => {
     }
   };
 
-  const handleSearch = (() => {
-    let timer: NodeJS.Timeout;
+  const handleSearch = (value: string) => {
+    setQueryText(value);
 
-    return (value: string) => {
-      console.log(value);
-      setQueryText(value);
+    // 清除上一次的定时器
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+    }
 
-      // 清除上一次的定时器
-      if (timer) {
-        clearTimeout(timer);
-      }
-
-      // 延迟 1s 再执行请求
-      timer = setTimeout(() => {
-        dataFetcher.submit(
-          {
-            endCursor: JSON.stringify({
-              cursor: "",
-              searchTerm: searchTerm,
-              query: value,
-            }),
-          },
-          {
-            method: "post",
-            action: `/app/manage_translation/product?language=${searchTerm}`,
-          },
-        );
-      }, 500);
-    };
-  })();
+    // 延迟 1s 再执行请求
+    timeoutIdRef.current = setTimeout(() => {
+      dataFetcher.submit(
+        {
+          endCursor: JSON.stringify({
+            cursor: "",
+            searchTerm: searchTerm,
+            query: value,
+          }),
+        },
+        {
+          method: "post",
+          action: `/app/manage_translation/product?language=${searchTerm}`,
+        },
+      );
+    }, 500);
+  };
 
   const onPrevious = () => {
     if (confirmData.length > 0) {
@@ -1781,22 +1754,6 @@ const Index = () => {
     <Page
       title={t("Products")}
       fullWidth={true}
-      // primaryAction={{
-      //   content: t("Save"),
-      //   loading: confirmFetcher.state === "submitting",
-      //   disabled:
-      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //   onAction: handleConfirm,
-      // }}
-      // secondaryActions={[
-      //   {
-      //     content: t("Cancel"),
-      //     loading: confirmFetcher.state === "submitting",
-      //     disabled:
-      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //     onAction: handleDiscard,
-      //   },
-      // ]}
       backAction={{
         onAction: onCancel,
       }}

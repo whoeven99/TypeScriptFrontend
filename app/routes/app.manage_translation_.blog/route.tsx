@@ -39,6 +39,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setLocale } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
 import { globalStore } from "~/globalStore";
+import { getItemOptions } from "../app.manage_translation/route";
 
 const { Sider, Content } = Layout;
 const { Text, Title } = Typography;
@@ -190,25 +191,7 @@ const Index = () => {
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
-  const itemOptions = [
-    { label: t("Products"), value: "product" },
-    { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "theme" },
-    { label: t("Shop"), value: "shop" },
-    { label: t("Store metadata"), value: "metafield" },
-    { label: t("Articles"), value: "article" },
-    { label: t("Blog titles"), value: "blog" },
-    { label: t("Pages"), value: "page" },
-    { label: t("Filters"), value: "filter" },
-    { label: t("Metaobjects"), value: "metaobject" },
-    { label: t("Navigation"), value: "navigation" },
-    { label: t("Email"), value: "email" },
-    { label: t("Policies"), value: "policy" },
-    { label: t("Product images"), value: "productImage" },
-    { label: t("Product image alt text"), value: "productImageAlt" },
-    { label: t("Delivery"), value: "delivery" },
-    { label: t("Shipping"), value: "shipping" },
-  ];
+  const itemOptions = getItemOptions(t);
   const [languageOptions, setLanguageOptions] = useState<
     { label: string; value: string }[]
   >([]);
@@ -278,7 +261,7 @@ const Index = () => {
       );
     }
   }, [languageTableData]);
-  
+
   useEffect(() => {
     if (blogsData) {
       const data = transBeforeData({
@@ -619,7 +602,7 @@ const Index = () => {
         },
         {
           method: "POST",
-          action:`/app/manage_translation/article?language=${language}`
+          action: `/app/manage_translation/article?language=${language}`,
         },
       );
       isManualChangeRef.current = true;
