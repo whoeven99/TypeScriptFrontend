@@ -453,18 +453,32 @@ const Index = () => {
   ];
 
   const exMenuData = (data: any) => {
-    const menuData = data?.nodes?.map((item: any) => {
-      const match = item?.resourceId.match(
-        /OnlineStoreThemeJsonTemplate\/([^?]+)/,
-      );
+    const menuData = data?.nodes
+      ?.filter((item: any) => {
+        const contents = item?.translatableContent;
 
-      const label = match ? match[1] : item?.resourceId;
+        // 如果没有 translatableContent，跳过
+        if (!Array.isArray(contents) || contents.length === 0) return false;
 
-      return {
-        key: item?.resourceId,
-        label: label,
-      };
-    });
+        // 检查是否全部为空（包括仅有空格）
+        const allEmpty = contents.every(
+          (c: any) => !c?.value || c.value.trim() === "",
+        );
+
+        return !allEmpty; // 仅保留有实际内容的项
+      })
+      ?.map((item: any) => {
+        const match = item?.resourceId.match(
+          /OnlineStoreThemeJsonTemplate\/([^?]+)/,
+        );
+
+        const label = match ? match[1] : item?.resourceId;
+
+        return {
+          key: item?.resourceId,
+          label: label,
+        };
+      });
     return menuData;
   };
 
@@ -483,7 +497,10 @@ const Index = () => {
         key: content.key,
         resource: content.key,
         default_language: content.value,
-        translated: translations[index]?.value ?? "",
+        translated:
+          translations?.find(
+            (translation: any) => translation?.key == content.key,
+          )?.value ?? "",
         type: content.type,
       }));
   };
