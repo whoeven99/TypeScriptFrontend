@@ -160,10 +160,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.warn(`${shop} shopLanguagesIndex: `, shopLanguagesIndex);
         }
 
-        return null;
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            source: shopPrimaryLanguage[0]?.locale || undefined,
+          },
+        };
       } catch (error) {
         console.error("Error languageInit app:", error);
-        return null;
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
       }
     }
 
@@ -564,6 +576,14 @@ export default function App() {
     globalStore.shop = shop as string;
     globalStore.server = server as string;
   }, []);
+
+  useEffect(() => {
+    if (languageFetcher.data) {
+      if (languageFetcher.data?.response) {
+        globalStore.source = languageFetcher.data?.response?.source
+      }
+    }
+  }, [languageFetcher.data]);
 
   useEffect(() => {
     // 当 URL 改变时调用这两个函数

@@ -447,9 +447,7 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
-      source: metafieldsData.nodes
-        .find((item: any) => item?.resourceId === key)
-        ?.translatableContent.find((item: any) => item.key === key)?.locale,
+      source: globalStore?.source || "",
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -629,7 +627,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("Store metadata")}
+      title={t("Metafield")}
       fullWidth={true}
       // primaryAction={{
       //   content: t("Save"),

@@ -1429,7 +1429,7 @@ const Index = () => {
 
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
-      source: productBaseData[0]?.locale,
+      source: globalStore?.source || "",
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
