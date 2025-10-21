@@ -399,7 +399,7 @@ const Index = () => {
         const newItem = {
           resourceId: metaobjectsData.nodes[index]?.resourceId,
           locale: metaobjectsData.nodes[index]?.translatableContent[0]?.locale,
-          key: "label",
+          key: metaobjectsData.nodes[index]?.translatableContent[0]?.key,
           value: value, // 初始为空字符串
           translatableContentDigest:
             metaobjectsData.nodes[index]?.translatableContent[0]?.digest,
