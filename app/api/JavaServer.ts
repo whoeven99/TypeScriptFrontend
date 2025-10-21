@@ -43,7 +43,7 @@ export const GetAllProgressData = async ({
       success: false,
       errorCode: 10001,
       errorMsg: "SERVER_ERROR",
-      response: "",
+      response: null,
     };
   }
 };
