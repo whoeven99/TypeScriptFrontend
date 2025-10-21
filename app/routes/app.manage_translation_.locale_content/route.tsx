@@ -236,9 +236,10 @@ const Index = () => {
 
   useEffect(() => {
     const filterMenuData = exMenuData(filteredResourceData);
-    console.log("filterMenuData: ", menuData);
+    console.log("filterMenuData: ", filterMenuData);
+
     setMenuData(filterMenuData);
-    // setSelectedThemeKey(filterMenuData[0]?.key);
+    setSelectedThemeKey(filterMenuData[0]?.key);
     const dataSource = filteredResourceData?.filter((item: any) => {
       const { key } = item;
       if (!key) return false;
@@ -252,7 +253,23 @@ const Index = () => {
     });
     setThemeData(dataSource);
     if (currentPage !== 1) setCurrentPage(1);
-  }, [selectedThemeKey, filteredResourceData]);
+  }, [filteredResourceData]);
+
+  useEffect(() => {
+    const dataSource = filteredResourceData?.filter((item: any) => {
+      const { key } = item;
+      if (!key) return false;
+      const parts = key.split(".");
+      const first = parts[0];
+      const second = parts[1];
+      const label =
+        first === "shopify" || first === "section" ? (second ?? first) : first;
+
+      return label == selectedThemeKey;
+    });
+    setThemeData(dataSource);
+    if (currentPage !== 1) setCurrentPage(1);
+  }, [selectedThemeKey]);
 
   useEffect(() => {
     loadingItemsRef.current = loadingItems;
@@ -756,11 +773,11 @@ const Index = () => {
                               }
                             },
                             pageSize: 10,
-                            total: filteredResourceData.length,
+                            total: themeData.length,
                             current: currentPage,
                             showSizeChanger: false,
                           }}
-                          dataSource={filteredResourceData}
+                          dataSource={themeData}
                           renderItem={(item: any) => (
                             <List.Item key={item.key}>
                               <Space
