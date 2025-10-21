@@ -239,7 +239,10 @@ const Index = () => {
     console.log("filterMenuData: ", filterMenuData);
 
     setMenuData(filterMenuData);
-    setSelectedThemeKey(filterMenuData[0]?.key);
+    const findIndex = filterMenuData.find(
+      (item: any) => item.key == selectedThemeKey,
+    );
+    if (!findIndex) setSelectedThemeKey(filterMenuData[0]?.key);
     const dataSource = filteredResourceData?.filter((item: any) => {
       const { key } = item;
       if (!key) return false;
