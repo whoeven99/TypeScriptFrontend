@@ -19,6 +19,27 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const IsInFreePlanTime = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/userTrials/isInFreePlanTime?shopName=${shop}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} IsInFreePlanTime: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} IsInFreePlanTime error:`, error);
+  }
+}
+
 export const GetAllProgressData = async ({
   shop,
   server,

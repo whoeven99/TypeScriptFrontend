@@ -38,9 +38,6 @@ export interface OptionType {
 const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   const [selectedKey, setSelectedKey] = useState<string>("option-1");
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
-  const [credits, setCredits] = useState<number | undefined>(undefined);
-  // const [multiple1, setMultiple1] = useState<number>(1);
-  // const [multiple2, setMultiple2] = useState<number>(model?.speed || 2);
   const { t } = useTranslation();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
@@ -54,8 +51,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         name: "500K",
         Credits: 500000,
         price: {
-          currentPrice:
-            plan?.type === "Premium"
+          currentPrice: plan?.isInFreePlanTime
+            ? 3.99
+            : plan?.type === "Premium"
               ? 1.99
               : plan?.type === "Pro"
                 ? 2.99
@@ -71,8 +69,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         name: "1M",
         Credits: 1000000,
         price: {
-          currentPrice:
-            plan?.type === "Premium"
+          currentPrice: plan?.isInFreePlanTime
+            ? 7.99
+            : plan?.type === "Premium"
               ? 3.99
               : plan?.type === "Pro"
                 ? 5.99
@@ -88,8 +87,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         name: "2M",
         Credits: 2000000,
         price: {
-          currentPrice:
-            plan?.type === "Premium"
+          currentPrice: plan?.isInFreePlanTime
+            ? 15.99
+            : plan?.type === "Premium"
               ? 7.99
               : plan?.type === "Pro"
                 ? 11.99
@@ -105,8 +105,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         name: "3M",
         Credits: 3000000,
         price: {
-          currentPrice:
-            plan?.type === "Premium"
+          currentPrice: plan?.isInFreePlanTime
+            ? 23.99
+            : plan?.type === "Premium"
               ? 11.99
               : plan?.type === "Pro"
                 ? 17.99
@@ -122,8 +123,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         name: "5M",
         Credits: 5000000,
         price: {
-          currentPrice:
-            plan?.type === "Premium"
+          currentPrice: plan?.isInFreePlanTime
+            ? 39.99
+            : plan?.type === "Premium"
               ? 19.99
               : plan?.type === "Pro"
                 ? 29.99
@@ -139,8 +141,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         name: "10M",
         Credits: 10000000,
         price: {
-          currentPrice:
-            plan?.type === "Premium"
+          currentPrice: plan?.isInFreePlanTime
+            ? 79.99
+            : plan?.type === "Premium"
               ? 39.99
               : plan?.type === "Pro"
                 ? 59.99
@@ -156,8 +159,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         name: "20M",
         Credits: 20000000,
         price: {
-          currentPrice:
-            plan?.type === "Premium"
+          currentPrice: plan?.isInFreePlanTime
+            ? 159.99
+            : plan?.type === "Premium"
               ? 79.99
               : plan?.type === "Pro"
                 ? 119.99
@@ -173,8 +177,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
         name: "30M",
         Credits: 30000000,
         price: {
-          currentPrice:
-            plan?.type === "Premium"
+          currentPrice: plan?.isInFreePlanTime
+            ? 239.99
+            : plan?.type === "Premium"
               ? 119.99
               : plan?.type === "Pro"
                 ? 179.99
@@ -192,17 +197,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   const selectedOption = useMemo(() => {
     return options.find((item) => item.key == selectedKey) || options[0];
   }, [selectedKey]);
-
-  // useEffect(() => {
-  //   if (credits && !selectedKey) {
-  //     const matchedOption = options.find(
-  //       (option) => option?.Credits >= credits * multiple1 * multiple2,
-  //     ); // 找到第一个符合条件的选项
-  //     if (matchedOption) {
-  //       setSelectedKey(matchedOption?.key);
-  //     }
-  //   }
-  // }, [credits]);
 
   useEffect(() => {
     if (payFetcher.data) {

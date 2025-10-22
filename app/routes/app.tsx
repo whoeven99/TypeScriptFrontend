@@ -37,6 +37,7 @@ import {
   IsOpenFreePlan,
   GetUnTranslatedWords,
   GetAllProgressData,
+  IsInFreePlanTime,
 } from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -599,31 +600,51 @@ export default function App() {
   }, [location]); // 监听 URL 的变化
 
   const getPlan = async () => {
-    const data = await GetUserSubscriptionPlan({
+    const getUserSubscriptionPlan = await GetUserSubscriptionPlan({
       shop: shop,
       server: server as string,
     });
-    if (data?.success) {
-      dispatch(
-        setPlan({
-          plan: {
-            id: data?.response?.userSubscriptionPlan || 2,
-            type: data?.response?.planType || "Free",
-            feeType: data?.response?.feeType || 0,
-          },
-        }),
-      );
-      if (data?.response?.currentPeriodEnd) {
-        const date = new Date(data?.response?.currentPeriodEnd)
+    const isInFreePlanTime = await IsInFreePlanTime({
+      shop: shop,
+      server: server as string,
+    });
+
+    let data: any = {
+      id: 2,
+      type: "Free",
+      feeType: 0,
+      isInFreePlanTime: false,
+    };
+
+    if (getUserSubscriptionPlan?.success) {
+      data = {
+        ...data,
+        id: getUserSubscriptionPlan?.response?.userSubscriptionPlan || 2,
+        type: getUserSubscriptionPlan?.response?.planType || "Free",
+        feeType: getUserSubscriptionPlan?.response?.feeType || 0,
+      };
+
+      if (getUserSubscriptionPlan?.response?.currentPeriodEnd) {
+        const updateTime = new Date(
+          getUserSubscriptionPlan?.response?.currentPeriodEnd,
+        )
           .toLocaleDateString("zh-CN", {
             year: "numeric",
             month: "2-digit",
             day: "2-digit",
           })
           .replace(/\//g, "-");
-        dispatch(setUpdateTime({ updateTime: date }));
+        dispatch(setUpdateTime({ updateTime: updateTime }));
       }
     }
+    if (isInFreePlanTime?.success) {
+      data = { ...data, isInFreePlanTime: isInFreePlanTime?.response || false };
+    }
+    dispatch(
+      setPlan({
+        plan: data,
+      }),
+    );
   };
 
   const getWords = async () => {
