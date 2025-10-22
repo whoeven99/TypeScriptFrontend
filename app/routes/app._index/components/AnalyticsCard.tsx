@@ -20,7 +20,9 @@ import store from "~/store";
 import { UseSelector } from "react-redux";
 import { RootState } from "~/store";
 import { globalStore } from "~/globalStore";
+
 const { Text, Title } = Typography;
+
 const AnalyticsCard = ({ isLoading }: any) => {
   const { reportClick } = useReport();
   const navigate = useNavigate(); // 统一使用小写 navigate（React Router 规范）
@@ -37,7 +39,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
     "read_customer_events",
     "write_pixels",
   ]);
-  const { plan, isNew } = useSelector((state: any) => state.userConfig);
+  const { plan } = useSelector((state: any) => state.userConfig);
   const Schedule = [
     "Free Plan",
     "Free Plan",
@@ -46,10 +48,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
     "Pro Plan",
     "Premium Plan",
   ];
-  const getPlanName = (planId: number, isNew: boolean) => {
-    if (isNew && planId >= 1 && planId <= 3) {
-      return t("5 Days Free Trial");
-    }
+  const getPlanName = (planId: number) => {
     return Schedule[planId - 1];
   };
   const translationScoreFetcher = useFetcher<any>();
@@ -417,7 +416,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
             onClick={() => navigate("/app/pricing")}
             style={{ fontSize: "14px", color: "#007F61", cursor: "pointer" }}
           >
-            {plan ? getPlanName(plan.id, isNew) : ""}
+            {plan ? getPlanName(plan.id) : ""}
           </Text>
         )}
       </Flex>
