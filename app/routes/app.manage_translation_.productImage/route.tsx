@@ -85,7 +85,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = await admin.graphql(
           `#graphql
             query products($startCursor: String, $query: String) {     
-              products(last: 20 ,before: $startCursor, query: $query) {
+              products(last: 20 ,before: $startCursor, query: $query, reverse: true) {
                 edges {
                 node {
                   id
@@ -186,7 +186,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = await admin.graphql(
           `#graphql
             query products($endCursor: String, $query: String) {     
-              products(first: 20 ,after: $endCursor, query: $query) {
+              products(first: 20 ,after: $endCursor, query: $query, reverse: true) {
                 edges {
                 node {
                   id
