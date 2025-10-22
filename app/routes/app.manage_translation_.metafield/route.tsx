@@ -37,6 +37,7 @@ import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import { globalStore } from "~/globalStore";
+import { getItemOptions } from "../app.manage_translation/route";
 
 const { Content } = Layout;
 
@@ -169,25 +170,7 @@ const Index = () => {
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
-  const itemOptions = [
-    { label: t("Products"), value: "product" },
-    { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "theme" },
-    { label: t("Shop"), value: "shop" },
-    { label: t("Store metadata"), value: "metafield" },
-    { label: t("Articles"), value: "article" },
-    { label: t("Blog titles"), value: "blog" },
-    { label: t("Pages"), value: "page" },
-    { label: t("Filters"), value: "filter" },
-    { label: t("Metaobjects"), value: "metaobject" },
-    { label: t("Navigation"), value: "navigation" },
-    { label: t("Email"), value: "email" },
-    { label: t("Policies"), value: "policy" },
-    { label: t("Product images"), value: "productImage" },
-    { label: t("Product image alt text"), value: "productImageAlt" },
-    { label: t("Delivery"), value: "delivery" },
-    { label: t("Shipping"), value: "shipping" },
-  ];
+  const itemOptions = getItemOptions(t);
   const [languageOptions, setLanguageOptions] = useState<
     { label: string; value: string }[]
   >([]);
@@ -464,9 +447,7 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
-      source: metafieldsData.nodes
-        .find((item: any) => item?.resourceId === key)
-        ?.translatableContent.find((item: any) => item.key === key)?.locale,
+      source: globalStore?.source || "",
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -646,7 +627,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("Store metadata")}
+      title={t("Metafield")}
       fullWidth={true}
       // primaryAction={{
       //   content: t("Save"),

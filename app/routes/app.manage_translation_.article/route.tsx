@@ -193,7 +193,6 @@ const Index = () => {
   );
 
   const { searchTerm } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
@@ -219,9 +218,12 @@ const Index = () => {
   const itemOptions: { label: string; value: string }[] = [
     { label: t("Products"), value: "product" },
     { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "theme" },
+    { label: t("Json Template"), value: "json_template" },
+    { label: t("Locale Content"), value: "locale_content" },
+    { label: t("Section Group"), value: "section_group" },
+    { label: t("Settings Category"), value: "settings_category" },
     { label: t("Shop"), value: "shop" },
-    { label: t("Store metadata"), value: "metafield" },
+    { label: t("Metafield"), value: "metafield" },
     { label: t("Articles"), value: "article" },
     { label: t("Blog titles"), value: "blog" },
     { label: t("Pages"), value: "page" },
@@ -762,9 +764,7 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
-      source: articlesData.nodes
-        .find((item: any) => item?.resourceId === selectArticleKey)
-        ?.translatableContent.find((item: any) => item.key === key)?.locale,
+      source: globalStore?.source || "",
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -848,7 +848,7 @@ const Index = () => {
         },
         {
           method: "POST",
-          action: `/app/manage_translation/article?language=${language}`
+          action: `/app/manage_translation/article?language=${language}`,
         },
       );
       isManualChangeRef.current = true;
