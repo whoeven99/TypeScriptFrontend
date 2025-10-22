@@ -38,6 +38,7 @@ import {
   UpdateProductImageAltData,
 } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
+import { getItemOptions } from "../app.manage_translation/route";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -80,7 +81,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         const loadData = await admin.graphql(
           `query {
-            products(first: 20) {
+            products(first: 20, reverse: true) {
               edges {
                 node {
                   id
@@ -172,7 +173,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         const loadData = await admin.graphql(
           `query {
-              products(last: 20, before: "${productStartCursor?.productsStartCursor}") {
+              products(last: 20, before: "${productStartCursor?.productsStartCursor}", reverse: true) {
                 edges {
                   node {    
                     id
@@ -264,7 +265,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         const loadData = await admin.graphql(
           `query {
-              products(first: 20, after: "${productEndCursor?.productsEndCursor}") {
+              products(first: 20, after: "${productEndCursor?.productsEndCursor}", reverse: true) {
                 edges {
                   node {    
                     id
@@ -544,25 +545,7 @@ const Index = () => {
   const [languageOptions, setLanguageOptions] = useState<
     { label: string; value: string }[]
   >([]);
-  const itemOptions = [
-    { label: t("Products"), value: "product" },
-    { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "theme" },
-    { label: t("Shop"), value: "shop" },
-    { label: t("Store metadata"), value: "metafield" },
-    { label: t("Articles"), value: "article" },
-    { label: t("Blog titles"), value: "blog" },
-    { label: t("Pages"), value: "page" },
-    { label: t("Filters"), value: "filter" },
-    { label: t("Metaobjects"), value: "metaobject" },
-    { label: t("Navigation"), value: "navigation" },
-    { label: t("Email"), value: "email" },
-    { label: t("Policies"), value: "policy" },
-    { label: t("Product images"), value: "productImage" },
-    { label: t("Product image alt text"), value: "productImageAlt" },
-    { label: t("Delivery"), value: "delivery" },
-    { label: t("Shipping"), value: "shipping" },
-  ];
+  const itemOptions = getItemOptions(t);
 
   const fetcher = useFetcher<any>();
   const loadFetcher = useFetcher<any>();

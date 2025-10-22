@@ -134,7 +134,7 @@ const TransalteSettingCard = ({
       value: "metaobjects",
     },
     {
-      label: t("Store metadata"),
+      label: t("Metafield"),
       value: "metadata",
     },
     {

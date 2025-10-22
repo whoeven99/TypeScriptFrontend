@@ -19,6 +19,7 @@ import useReport from "scripts/eventReport";
 import store from "~/store";
 import { UseSelector } from "react-redux";
 import { RootState } from "~/store";
+import { globalStore } from "~/globalStore";
 const { Text, Title } = Typography;
 const AnalyticsCard = ({ isLoading }: any) => {
   const { reportClick } = useReport();
@@ -28,8 +29,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
   const graphqlFetcher = useFetcher<any>();
   const queryWebPixelFetcher = useFetcher<any>();
   const [configCreateWebPixel, setConfigPixel] = useState<boolean>(false);
-  const [showRequireScopeBtn, setShowRequireScopeBtn] =
-    useState(false);
+  const [showRequireScopeBtn, setShowRequireScopeBtn] = useState(false);
   const showModal = () => {
     setIsModalVisible(true);
   };
@@ -188,7 +188,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
   const handleCancelScope = async () => {
     const grand = await shopify.scopes.revoke(missScopes);
     console.log("grand: ", grand);
-
+    // checkScopes();
     setShowRequireScopeBtn(false);
   };
 
@@ -226,12 +226,14 @@ const AnalyticsCard = ({ isLoading }: any) => {
         "local_conversion_rate",
       ) as any;
       if (queryWebPixelFetcher.state === "idle" && !queryWebPixelFetcher.data) {
-        queryWebPixel();
+        if (showRequireScopeBtn) {
+          queryWebPixel();
+        }
       }
       if (localUnTranslateWords) {
         setLocalUnTranslateWords(JSON.parse(localUnTranslateWords));
       }
-      if (localConversionRate) {
+      if (localConversionRate && localConversionRate !== "undefined") {
         setLocalConversionRate(JSON.parse(localConversionRate));
       }
       if (translateReportData) {
@@ -245,10 +247,40 @@ const AnalyticsCard = ({ isLoading }: any) => {
           action: "/app/translate_report",
         });
       }
+      const rawShop = localStorage.getItem("shop_origin");
+      if (rawShop === "undefined") {
+        localStorage.removeItem("shop_origin");
+      }
+      const localShop =
+        rawShop && rawShop !== "undefined" ? JSON.parse(rawShop) : null;
+
+      if (localShop === null) {
+        // 处理 shop 相关逻辑
+        localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
+      }
     } catch (error) {
       console.error("localConversionRate JSON 解析失败", error);
     }
   }, []);
+  useEffect(() => {
+    try {
+      const localShop = JSON.parse(
+        localStorage.getItem("shop_origin") || "null",
+      );
+      if (localShop !== globalStore.shop) {
+        // 处理 shop 相关逻辑
+        localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
+        localStorage.removeItem("local_conversion_rate");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }, [globalStore.shop]);
+  useEffect(() => {
+    if (showRequireScopeBtn) {
+      queryWebPixel();
+    }
+  }, [showRequireScopeBtn]);
   useEffect(() => {
     const untranslatedForm = new FormData();
     untranslatedForm.append(
@@ -341,11 +373,14 @@ const AnalyticsCard = ({ isLoading }: any) => {
       } else {
         setConfigPixel(false);
       }
-    } else {
-      setTimeout(() => {
-        queryWebPixel();
-      }, 1000);
     }
+    // else {
+    //   setTimeout(() => {
+    //     console.log('biding ');
+
+    //     queryWebPixel();
+    //   }, 1000);
+    // }
   }, [queryWebPixelFetcher.data]);
   const checkScopes = async () => {
     const { granted } = await shopify.scopes.query();

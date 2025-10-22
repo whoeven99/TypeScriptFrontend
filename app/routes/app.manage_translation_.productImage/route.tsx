@@ -16,8 +16,9 @@ import {
   Skeleton,
   Modal,
   Select as SelectAnt,
+  Input,
 } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import { SearchOutlined, UploadOutlined } from "@ant-design/icons";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import {
   useFetcher,
@@ -38,6 +39,7 @@ import { setLocale } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
 import { DeleteProductImageData, GetProductImageData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
+import { getItemOptions } from "../app.manage_translation/route";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -59,14 +61,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
   const formData = await request.formData();
-  const loading: any = JSON.parse(formData.get("loading") as string);
   const productStartCursor: any = JSON.parse(
     formData.get("productStartCursor") as string,
   );
@@ -81,104 +81,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   );
 
   switch (true) {
-    case !!loading:
-      try {
-        const loadData = await admin.graphql(
-          `query {
-            products(first: 20) {
-              edges {
-                node {
-                  id
-                  title
-                  images(first: 20) {
-                    edges {
-                      node {
-                        id
-                        url 
-                      }
-                    }
-                    pageInfo {
-                      hasNextPage
-                      hasPreviousPage
-                      startCursor
-                      endCursor
-                    }
-                  }
-                }
-              }
-              pageInfo {
-                hasNextPage
-                hasPreviousPage
-                startCursor
-                endCursor
-              }
-            } 
-          }`,
-        );
-
-        const response = await loadData.json();
-
-        console.log("loadData", response?.data?.products?.edges);
-        if (response?.data?.products?.edges.length > 0) {
-          const menuData = response?.data?.products?.edges.map((item: any) => {
-            return {
-              key: item?.node?.id,
-              label: item?.node?.title,
-            };
-          });
-          const imageData = response?.data?.products?.edges.map((item: any) => {
-            return item?.node?.images?.edges.map((image: any) => {
-              return {
-                key: image?.node?.id,
-                productId: item?.node?.id,
-                productTitle: item?.node?.title,
-                imageId: image?.node?.id,
-                imageUrl: image?.node?.url,
-                targetImageUrl: "",
-                imageStartCursor: item?.node?.images?.pageInfo?.startCursor,
-                imageEndCursor: item?.node?.images?.pageInfo?.endCursor,
-                imageHasNextPage: item?.node?.images?.pageInfo?.hasNextPage,
-                imageHasPreviousPage:
-                  item?.node?.images?.pageInfo?.hasPreviousPage,
-              };
-            });
-          });
-          return json({
-            menuData,
-            imageData,
-            productStartCursor: response?.data?.products?.pageInfo?.startCursor,
-            productEndCursor: response?.data?.products?.pageInfo?.endCursor,
-            productHasNextPage: response?.data?.products?.pageInfo?.hasNextPage,
-            productHasPreviousPage:
-              response?.data?.products?.pageInfo?.hasPreviousPage,
-          });
-        } else {
-          return json({
-            menuData: [],
-            imageData: [],
-            productStartCursor: "",
-            productEndCursor: "",
-            productHasNextPage: "",
-            productHasPreviousPage: "",
-          });
-        }
-      } catch (error) {
-        console.error("Error action loadData productImage:", error);
-        return json({
-          menuData: [],
-          imageData: [],
-          productStartCursor: "",
-          productEndCursor: "",
-          productHasNextPage: "",
-          productHasPreviousPage: "",
-        });
-      }
     case !!productStartCursor:
       try {
-        const loadData = await admin.graphql(
-          `query {
-            products(last: 20, before: "${productStartCursor?.productsStartCursor}") {
-              edges {
+        const data = await admin.graphql(
+          `#graphql
+            query products($startCursor: String, $query: String) {     
+              products(last: 20 ,before: $startCursor, query: $query, reverse: true) {
+                edges {
                 node {
                   id
                   title
@@ -204,11 +113,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 startCursor
                 endCursor
               }
-            } 
+              }
           }`,
+          {
+            variables: {
+              startCursor: productStartCursor?.cursor
+                ? productStartCursor?.cursor
+                : undefined,
+              query: productStartCursor?.query,
+            },
+          },
         );
 
-        const response = await loadData.json();
+        const response = await data.json();
 
         console.log("productStartCursor", response?.data?.products?.edges);
         if (response?.data?.products?.edges.length > 0) {
@@ -267,10 +184,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     case !!productEndCursor:
       try {
-        const loadData = await admin.graphql(
-          `query {
-            products(first: 20, after: "${productEndCursor?.productsEndCursor}") {
-              edges {
+        const data = await admin.graphql(
+          `#graphql
+            query products($endCursor: String, $query: String) {     
+              products(first: 20 ,after: $endCursor, query: $query, reverse: true) {
+                edges {
                 node {
                   id
                   title
@@ -296,11 +214,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 startCursor
                 endCursor
               }
-            } 
+              }
           }`,
+          {
+            variables: {
+              endCursor: productEndCursor?.cursor
+                ? productEndCursor?.cursor
+                : undefined,
+              query: productEndCursor?.query,
+            },
+          },
         );
 
-        const response = await loadData.json();
+        const response = await data.json();
 
         console.log("productEndCursor", response?.data?.products?.edges);
         if (response?.data?.products?.edges.length > 0) {
@@ -498,10 +424,10 @@ const Index = () => {
   );
   const navigate = useNavigate();
   const isManualChange = useRef(true);
+  const timeoutIdRef = useRef<any>(true);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
-  const [tableDataLoading, setTableDataLoading] = useState(true);
   const [menuData, setMenuData] = useState<any>([]);
   const [selectedKey, setSelectedKey] = useState("");
   const [dataResource, setDataResource] = useState<any>([]);
@@ -532,10 +458,6 @@ const Index = () => {
   const [productsHasPreviousPage, setProductsHasPreviousPage] = useState(false);
   const [productsStartCursor, setProductsStartCursor] = useState("");
   const [productsEndCursor, setProductsEndCursor] = useState("");
-  const [imageHasNextPage, setImageHasNextPage] = useState(false);
-  const [imageHasPreviousPage, setImageHasPreviousPage] = useState(false);
-  const [imageStartCursor, setImageStartCursor] = useState("");
-  const [imageEndCursor, setImageEndCursor] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(
     searchTerm || "",
@@ -544,33 +466,17 @@ const Index = () => {
   const [languageOptions, setLanguageOptions] = useState<
     { label: string; value: string }[]
   >([]);
-  const itemOptions = [
-    { label: t("Products"), value: "product" },
-    { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "theme" },
-    { label: t("Shop"), value: "shop" },
-    { label: t("Store metadata"), value: "metafield" },
-    { label: t("Articles"), value: "article" },
-    { label: t("Blog titles"), value: "blog" },
-    { label: t("Pages"), value: "page" },
-    { label: t("Filters"), value: "filter" },
-    { label: t("Metaobjects"), value: "metaobject" },
-    { label: t("Navigation"), value: "navigation" },
-    { label: t("Email"), value: "email" },
-    { label: t("Policies"), value: "policy" },
-    { label: t("Product images"), value: "productImage" },
-    { label: t("Product image alt text"), value: "productImageAlt" },
-    { label: t("Delivery"), value: "delivery" },
-    { label: t("Shipping"), value: "shipping" },
-  ];
+  const [queryText, setQueryText] = useState<string>("");
+  const itemOptions = getItemOptions(t);
 
   const fetcher = useFetcher<any>();
-  const loadFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
   const imageFetcher = useFetcher<any>();
+
   const translateImageFetcher = useFetcher<any>();
   const replaceTranslateImageFetcher = useFetcher<any>();
+
   const [translatrImageactive, setTranslatrImageactive] = useState(false);
   const sourceLanguages = [
     { label: "English", value: "en" },
@@ -640,6 +546,7 @@ const Index = () => {
   } as any;
   const [sourceLanguage, setSourceLanguage] = useState("zh");
   const [targetLanguage, setTargetLanguage] = useState(selectedLanguage);
+
   useEffect(() => {
     const mappedValues = languageMapping[sourceLanguage] || [];
     const filteredOptions = mappedValues.map((value: string) => ({
@@ -653,6 +560,7 @@ const Index = () => {
     // 重置目标语言选择
     setTargetLanguages(filteredOptions);
   }, [sourceLanguage]);
+
   useEffect(() => {
     setTargetLanguage(selectedLanguage);
     if (selectedLanguage === "zh-CN") {
@@ -665,6 +573,7 @@ const Index = () => {
       setTargetLanguage("pt");
     }
   }, [selectedLanguage]);
+
   // 图片翻译
   const handleTranslate = async () => {
     translateImageFetcher.submit(
@@ -680,9 +589,11 @@ const Index = () => {
     );
     setTranslatrImageactive(false);
   };
+
   const onClose = () => {
     setTranslatrImageactive(false);
   };
+
   const handleImageTranslate = (record: any) => {
     let mappedLanguage =
       selectedLanguage === "zh-CN"
@@ -745,18 +656,17 @@ const Index = () => {
       }
     }
   }, [translateImageFetcher.data]);
-  // useEffect(() => {
-  //   if (replaceTranslateImageFetcher.data) {
-  //     if (replaceTranslateImageFetcher.data.success) {
 
-  //     }
-  //     else {
-
-  //     }
-  //   }
-  // }, [replaceTranslateImageFetcher.data]);
   useEffect(() => {
-    loadFetcher.submit({ loading: true }, { method: "post" });
+    productsFetcher.submit(
+      {
+        productEndCursor: JSON.stringify({
+          cursor: productsEndCursor,
+          query: queryText,
+        }),
+      },
+      { method: "post" },
+    );
     if (languageTableData.length === 0) {
       languageFetcher.submit(
         {
@@ -786,20 +696,6 @@ const Index = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-
-  useEffect(() => {
-    if (loadFetcher.data) {
-      setMenuData(loadFetcher.data.menuData);
-      setDataResource(loadFetcher.data.imageData);
-      setSelectedKey(loadFetcher.data.menuData[0]?.key || "");
-      setProductsHasNextPage(loadFetcher.data.productHasNextPage);
-      setProductsHasPreviousPage(loadFetcher.data.productHasPreviousPage);
-      setProductsStartCursor(loadFetcher.data.productStartCursor);
-      setProductsEndCursor(loadFetcher.data.productEndCursor);
-      setTableDataLoading(false);
-      setIsLoading(false);
-    }
-  }, [loadFetcher.data]);
 
   useEffect(() => {
     if (productsFetcher.data) {
@@ -878,13 +774,6 @@ const Index = () => {
       setIsLoading(false);
     }
   }, [selectedKey, dataResource, selectedLanguage]);
-
-  useEffect(() => {
-    setImageHasNextPage(productImageData[0]?.imageHasNextPage);
-    setImageHasPreviousPage(productImageData[0]?.imageHasPreviousPage);
-    setImageStartCursor(productImageData[0]?.imageStartCursor);
-    setImageEndCursor(productImageData[0]?.imageEndCursor);
-  }, [productImageData]);
 
   useEffect(() => {
     if (languageTableData) {
@@ -1092,12 +981,32 @@ const Index = () => {
     },
   ];
 
+  const handleSearch = (value: string) => {
+    setQueryText(value);
+
+    // 清除上一次的定时器
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+    }
+
+    // 延迟 1s 再执行请求
+    timeoutIdRef.current = setTimeout(() => {
+      productsFetcher.submit(
+        {
+          productEndCursor: JSON.stringify({
+            cursor: "",
+            query: value,
+          }),
+        },
+        {
+          method: "post",
+        },
+      );
+    }, 500);
+  };
+
   const handleMenuChange = (key: string) => {
-    // if (confirmData.length > 0) {
-    // shopify.saveBar.leaveConfirmation();
-    // } else {
     setSelectedKey(key);
-    // }
   };
 
   const handleLanguageChange = (language: string) => {
@@ -1115,30 +1024,25 @@ const Index = () => {
   };
 
   const handleProductPrevious = () => {
-    // if (confirmData.length > 0) {
-    //   shopify.saveBar.leaveConfirmation();
-    // } else {
     productsFetcher.submit(
       {
         productStartCursor: JSON.stringify({
-          productsStartCursor,
+          cursor: productsStartCursor,
+          query: queryText,
         }),
       },
       {
         method: "post",
       },
     ); // 提交表单请求
-    // }
   };
 
   const handleProductNext = () => {
-    // if (confirmData.length > 0) {
-    //   shopify.saveBar.leaveConfirmation();
-    // } else {
     productsFetcher.submit(
       {
         productEndCursor: JSON.stringify({
-          productsEndCursor,
+          cursor: productsEndCursor,
+          query: queryText,
         }),
       },
       {
@@ -1151,7 +1055,7 @@ const Index = () => {
     imageFetcher.submit(
       {
         imageStartCursor: JSON.stringify({
-          imageStartCursor,
+          imageStartCursor: productImageData[0]?.imageStartCursor,
           productId: selectedKey,
         }),
       },
@@ -1165,7 +1069,7 @@ const Index = () => {
     imageFetcher.submit(
       {
         imageEndCursor: JSON.stringify({
-          imageEndCursor,
+          imageEndCursor: productImageData[0]?.imageEndCursor,
           productId: selectedKey,
         }),
       },
@@ -1215,36 +1119,49 @@ const Index = () => {
     <Page
       title={t("Product images")}
       fullWidth={true}
-      // primaryAction={{
-      //   content: t("Save"),
-      //   loading: confirmFetcher.state === "submitting",
-      //   disabled:
-      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //   onAction: handleConfirm,
-      // }}
-      // secondaryActions={[
-      //   {
-      //     content: t("Cancel"),
-      //     loading: confirmFetcher.state === "submitting",
-      //     disabled:
-      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //     onAction: handleDiscard,
-      //   },
-      // ]}
       backAction={{
         onAction: onCancel,
       }}
     >
-      {/* <SaveBar id="save-bar">
-        <button
-          variant="primary"
-          onClick={handleConfirm}
-          loading={confirmFetcher.state === "submitting" && ""}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          marginBottom: "15px",
+          gap: "8px",
+        }}
+      >
+        <Input
+          placeholder={t("Search...")}
+          prefix={<SearchOutlined />}
+          value={queryText}
+          onChange={(e) => handleSearch(e.target.value)}
+        />
+        <div
+          style={{
+            width: "100px",
+          }}
         >
-          {t("Save")}
-        </button>
-        <button onClick={handleDiscard}>{t("Cancel")}</button>
-      </SaveBar> */}
+          <Select
+            label={""}
+            options={languageOptions}
+            value={selectedLanguage}
+            onChange={(value) => handleLanguageChange(value)}
+          />
+        </div>
+        <div
+          style={{
+            width: "100px",
+          }}
+        >
+          <Select
+            label={""}
+            options={itemOptions}
+            value={selectedItem}
+            onChange={(value) => handleItemChange(value)}
+          />
+        </div>
+      </div>
       <Layout
         style={{
           overflow: "auto",
@@ -1263,7 +1180,7 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : (
+        ) : dataResource.length > 0 ? (
           <>
             {!isMobile && (
               <Sider
@@ -1340,40 +1257,6 @@ const Index = () => {
                           ?.label
                       }
                     </Title>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        flexGrow: 2,
-                        justifyContent: "flex-end",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "100px",
-                        }}
-                      >
-                        <Select
-                          label={""}
-                          options={languageOptions}
-                          value={selectedLanguage}
-                          onChange={(value) => handleLanguageChange(value)}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          width: "100px",
-                        }}
-                      >
-                        <Select
-                          label={""}
-                          options={itemOptions}
-                          value={selectedItem}
-                          onChange={(value) => handleItemChange(value)}
-                        />
-                      </div>
-                    </div>
                   </div>
                   <Card title={t("Resource")}>
                     <Space direction="vertical" style={{ width: "100%" }}>
@@ -1605,73 +1488,30 @@ const Index = () => {
                   size="large"
                   style={{ width: "100%" }}
                 >
-                  <div
+                  <Title
+                    level={4}
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
+                      margin: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    <Title
-                      level={4}
-                      style={{
-                        margin: 0,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {
-                        menuData!.find((item: any) => item.key === selectedKey)
-                          ?.label
-                      }
-                    </Title>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        flexGrow: 2,
-                        justifyContent: "flex-end",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "150px",
-                        }}
-                      >
-                        <Select
-                          label={""}
-                          options={languageOptions}
-                          value={selectedLanguage}
-                          onChange={(value) => handleLanguageChange(value)}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          width: "150px",
-                        }}
-                      >
-                        <Select
-                          label={""}
-                          options={itemOptions}
-                          value={selectedItem}
-                          onChange={(value) => handleItemChange(value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                    {
+                      menuData!.find((item: any) => item.key === selectedKey)
+                        ?.label
+                    }
+                  </Title>
                   <Table
                     columns={columns}
                     dataSource={productImageData}
                     pagination={false}
-                    loading={tableDataLoading}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     <Pagination
-                      hasPrevious={imageHasPreviousPage}
+                      hasPrevious={productImageData[0]?.imageHasPreviousPage}
                       onPrevious={handleImagePrevious}
-                      hasNext={imageHasNextPage}
+                      hasNext={productImageData[0]?.imageHasNextPage}
                       onNext={handleImageNext}
                     />
                   </div>
@@ -1679,19 +1519,16 @@ const Index = () => {
               )}
             </Content>
           </>
+        ) : (
+          <Result
+            title={t("The specified fields were not found in the store.")}
+            extra={
+              <Button type="primary" onClick={onCancel}>
+                {t("Yes")}
+              </Button>
+            }
+          />
         )}
-        {/* {dataResource.length > 0 && ( */}
-        {/* )} */}
-        {/* {dataResource.length === 0 && !isLoading && (
-            <Result
-              title={t("The specified fields were not found in the store.")}
-              extra={
-                <Button type="primary" onClick={onCancel}>
-                  {t("Yes")}
-                </Button>
-              }
-              />
-            )} */}
         <Modal
           title={t("Image Translation")}
           open={translatrImageactive}

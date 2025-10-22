@@ -171,11 +171,10 @@ const Index = () => {
       const needRepoll = response.some((item: any) => item?.status === 2);
 
       if (!needRepoll || hasStopped.current) {
-        return () => {
-          if (timeoutIdRef.current) {
-            clearTimeout(timeoutIdRef.current);
-          }
-        };
+        if (timeoutIdRef.current) {
+          clearTimeout(timeoutIdRef.current);
+          isActiveRef.current = false;
+        }
       }
 
       setProgressDataSource(data);
@@ -375,7 +374,7 @@ const Index = () => {
         return "Collection";
 
       case resourceType == "METAFIELD":
-        return "Store metadata";
+        return "Metafield";
 
       case resourceType == "ARTICLE":
         return "Article";

@@ -160,10 +160,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.warn(`${shop} shopLanguagesIndex: `, shopLanguagesIndex);
         }
 
-        return null;
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            source: shopPrimaryLanguage[0]?.locale || undefined,
+          },
+        };
       } catch (error) {
         console.error("Error languageInit app:", error);
-        return null;
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
       }
     }
 
@@ -409,7 +421,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: data,
         };
       } catch (error) {
-        console.log("getOrderData failed", error);
+        console.log(`${shop} getOrderData failed`, error);
         return {
           success: false,
           response: {
@@ -457,7 +469,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           response: data,
         };
       } catch (error) {
-        console.log("findWebPixel failed", error);
+        console.log(`${shop} findWebPixel failed`, error);
         return {
           success: false,
           errorCode: 10001,
@@ -563,6 +575,14 @@ export default function App() {
     setIsClient(true);
     globalStore.shop = shop as string;
   }, []);
+
+  useEffect(() => {
+    if (languageFetcher.data) {
+      if (languageFetcher.data?.response) {
+        globalStore.source = languageFetcher.data?.response?.source
+      }
+    }
+  }, [languageFetcher.data]);
 
   useEffect(() => {
     // 当 URL 改变时调用这两个函数

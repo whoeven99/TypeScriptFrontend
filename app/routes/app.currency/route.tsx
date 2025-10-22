@@ -69,13 +69,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
-  const { shop, accessToken } = session;
+  const { shop } = session;
   const formData = await request.formData();
-  const init = JSON.parse(formData.get("init") as string);
-  const loading = JSON.parse(formData.get("loading") as string);
   const theme = JSON.parse(formData.get("theme") as string);
-  const rateData = JSON.parse(formData.get("rateData") as string);
-  const addCurrencies = JSON.parse(formData.get("addCurrencies") as string);
   const deleteCurrencies: number[] = JSON.parse(
     formData.get("deleteCurrencies") as string,
   );
@@ -84,71 +80,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   );
 
   switch (true) {
-    case !!init:
-      try {
-        const primaryCurrency = await InitCurrency({ shop });
-        const shopLoad = await queryShop({
-          shop,
-          accessToken: accessToken as string,
-        });
-        const url = new URL("/currencies.json", request.url).toString();
-        const currencyLocaleData = await fetch(url)
-          .then((response) => response.json())
-          .catch((error) => console.error("Error loading currencies:", error));
-        if (!primaryCurrency && shopLoad.currencyCode) {
-          const currencyData = shopLoad.currencySettings.nodes
-            .filter((item1: any) => item1.enabled)
-            .filter(
-              (item2: any) => item2.currencyCode !== shopLoad.currencyCode,
-            )
-            .map((item3: any) => ({
-              currencyName:
-                currencyLocaleData.find(
-                  (item4: any) => item4.currencyCode === item3.currencyCode,
-                )?.currencyName || "",
-              currencyCode: item3.currencyCode,
-              primaryStatus: 0,
-            }));
-          currencyData.push({
-            currencyName:
-              currencyLocaleData.find(
-                (item: any) => item.currencyCode === shopLoad.currencyCode,
-              )?.currencyName || "",
-            currencyCode: shopLoad.currencyCode,
-            primaryStatus: 1,
-          });
-          const promises = currencyData.map((currency: any) =>
-            AddCurrency({
-              shop,
-              server: process.env.SERVER_URL as string,
-              currencyName: currency?.currencyName,
-              currencyCode: currency?.currencyCode,
-              primaryStatus: currency?.primaryStatus || 0,
-            }),
-          );
-          await Promise.allSettled(promises);
-        }
-        if (
-          primaryCurrency &&
-          shopLoad.currencyCode !== primaryCurrency?.currencyCode
-        ) {
-          await UpdateDefaultCurrency({
-            shop,
-            currencyName: currencyLocaleData.find(
-              (item: any) => item.currencyCode === shopLoad.currencyCode,
-            ).currencyName,
-            currencyCode: shopLoad.currencyCode,
-            primaryStatus: 1,
-          });
-        }
-        return json({
-          primaryCurrency,
-          defaultCurrencyCode: shopLoad.currencyCode,
-          currencyLocaleData: currencyLocaleData,
-        });
-      } catch (error) {
-        console.error("Error init currency:", error);
-      }
     case !!theme:
       try {
         const response = await admin.graphql(
@@ -204,11 +135,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const { server, mobile } = useLoaderData<typeof loader>();
   const [loading, setLoading] = useState<boolean>(true);
-  const [defaultCurrencyCode, setDefaultCurrencyCode] = useState<string>("");
-  const [searchInput, setSearchInput] = useState("");
+  const [defaultCurrency, setDefaultCurrency] = useState<{
+    code: string;
+    symbol: string;
+  }>({
+    code: "",
+    symbol: "",
+  });
   const [currencyData, setCurrencyData] = useState<CurrencyType[]>([]);
   const [currencyAutoRate, setCurrencyAutoRate] = useState<any>([]);
-  const [defaultSymbol, setDefaultSymbol] = useState<string>("");
   const [deleteloading, setDeleteLoading] = useState(false);
   const [deleteCode, setDeleteCode] = useState<any>("");
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -222,9 +157,6 @@ const Index = () => {
   const dataSource: CurrencyDataType[] = useSelector(
     (state: any) => state.currencyTableData.rows,
   );
-  const [originalData, setOriginalData] = useState<
-    CurrencyDataType[] | undefined
-  >();
   const [filteredData, setFilteredData] = useState<CurrencyDataType[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10; // 每页显示5条，可自定义
@@ -245,23 +177,22 @@ const Index = () => {
     () => currentPageKeys.some((key) => selectedRowKeys.includes(key)),
     [currentPageKeys, selectedRowKeys],
   );
-  const { reportClick, report } = useReport();
+  const { reportClick } = useReport();
   const dispatch = useDispatch();
   const { t } = useTranslation();
 
   const fetcher = useFetcher<any>();
   const initFetcher = useFetcher<any>();
-  const loadingFetcher = useFetcher<any>();
-  const rateFetcher = useFetcher<any>();
   const deleteFetcher = useFetcher<any>();
 
   useEffect(() => {
-    const initFormData = new FormData();
-    initFormData.append("init", JSON.stringify(true));
-    initFetcher.submit(initFormData, {
-      method: "post",
-      action: "/app/currency",
-    });
+    initFetcher.submit(
+      {},
+      {
+        method: "POST",
+        action: "/currencyInit",
+      },
+    );
     fetcher.submit(
       {
         log: `${globalStore?.shop} 目前在货币页面`,
@@ -283,19 +214,23 @@ const Index = () => {
 
   useEffect(() => {
     if (initFetcher.data) {
-      setDefaultCurrencyCode(initFetcher.data.defaultCurrencyCode);
-      setCurrencyData(initFetcher.data.currencyLocaleData);
-      setAddCurrencies(
-        initFetcher.data.currencyLocaleData.filter(
-          (item: any) =>
-            item.currencyCode !== initFetcher.data.defaultCurrencyCode,
-        ),
-      );
-      const defaultCurrency = currencyData.find(
-        (item) => item.currencyCode === initFetcher.data.defaultCurrencyCode,
-      );
-      if (defaultCurrency) {
-        setDefaultSymbol(defaultCurrency.symbol);
+      if (initFetcher.data?.success) {
+        const defaultCurrencyCode =
+          initFetcher.data?.response?.defaultCurrencyCode;
+        const currencyLocaleData =
+          initFetcher.data?.response?.currencyLocaleData;
+        const currencyDataWithoutPrimary = currencyLocaleData.filter(
+          (item: any) => item.currencyCode !== defaultCurrencyCode,
+        );
+        setCurrencyData(currencyLocaleData);
+        setAddCurrencies(currencyDataWithoutPrimary);
+        const defaultCurrencySymbol = currencyLocaleData.find(
+          (item: any) => item.currencyCode === defaultCurrencyCode,
+        )?.symbol;
+        setDefaultCurrency({
+          code: defaultCurrencyCode,
+          symbol: defaultCurrencySymbol || "",
+        });
       }
       getCurrencyByShopName();
     }
@@ -320,14 +255,12 @@ const Index = () => {
         setDeleteLoading(false);
         setSelectedRowKeys([]);
         setDeleteCode("");
-        setOriginalData(newData);
         setFilteredData(newData);
       }
     }
   }, [deleteFetcher.data]);
 
   useEffect(() => {
-    setOriginalData(dataSource);
     setFilteredData(dataSource);
   }, [dataSource]);
 
@@ -378,14 +311,15 @@ const Index = () => {
             <Text>{t("Auto")}</Text>
             {typeof autoRate?.exchangeRate === "number" && (
               <Text>
-                ({defaultSymbol}1 = {autoRate.exchangeRate.toFixed(4)}{" "}
+                ({defaultCurrency.symbol}1 = {autoRate.exchangeRate.toFixed(4)}{" "}
                 {record.currencyCode})
               </Text>
             )}
           </div>
         ) : (
           <Text>
-            {defaultSymbol}1 = {record?.exchangeRate} {record?.currencyCode}
+            {defaultCurrency.symbol}1 = {record?.exchangeRate}{" "}
+            {record?.currencyCode}
           </Text>
         );
       },
@@ -415,7 +349,6 @@ const Index = () => {
       const tableData = data?.response?.filter(
         (item: any) => !item?.primaryStatus,
       );
-      setOriginalData(tableData);
       setFilteredData(tableData);
       dispatch(setTableData(tableData));
       const autoRateData = data?.response
@@ -497,12 +430,12 @@ const Index = () => {
           <Title style={{ fontSize: "1.25rem", display: "inline" }}>
             {t("Currency")}
           </Title>
-          {defaultCurrencyCode ? (
+          {defaultCurrency.code ? (
             <div>
               <Text type="secondary">
                 {t("Your store's default currency:")}
               </Text>
-              <Text strong> {defaultCurrencyCode}</Text>
+              <Text strong> {defaultCurrency.code}</Text>
             </div>
           ) : (
             <Skeleton active paragraph={{ rows: 0 }} />
@@ -621,7 +554,7 @@ const Index = () => {
                               item?.currencyCode == item.currencyCode,
                           )?.rate === "number" && (
                             <Text>
-                              ({defaultSymbol}1 ={" "}
+                              ({defaultCurrency.symbol}1 ={" "}
                               {currencyAutoRate
                                 .find(
                                   (item: any) =>
@@ -634,7 +567,7 @@ const Index = () => {
                         </div>
                       ) : (
                         <Text>
-                          {defaultSymbol}1 = {item.exchangeRate}{" "}
+                          {defaultCurrency.symbol}1 = {item.exchangeRate}{" "}
                           {item.currencyCode}
                         </Text>
                       )}
@@ -690,13 +623,13 @@ const Index = () => {
         isVisible={isAddCurrencyModalOpen}
         setIsModalOpen={setIsAddCurrencyModalOpen}
         addCurrencies={addCurrencies}
-        defaultCurrencyCode={defaultCurrencyCode}
+        defaultCurrencyCode={defaultCurrency.code}
       />
       <CurrencyEditModal
         isVisible={isCurrencyEditModalOpen}
         setIsModalOpen={setIsCurrencyEditModalOpen}
         selectedRow={selectedRow}
-        defaultCurrencyCode={defaultCurrencyCode}
+        defaultCurrencyCode={defaultCurrency.code}
       />
     </Page>
   );
