@@ -580,7 +580,7 @@ export default function App() {
   useEffect(() => {
     if (languageFetcher.data) {
       if (languageFetcher.data?.response) {
-        globalStore.source = languageFetcher.data?.response?.source
+        globalStore.source = languageFetcher.data?.response?.source;
       }
     }
   }, [languageFetcher.data]);
@@ -608,6 +608,7 @@ export default function App() {
         setPlan({
           plan: {
             id: data?.response?.userSubscriptionPlan || 2,
+            type: data?.response?.planType || "Free",
             feeType: data?.response?.feeType || 0,
           },
         }),

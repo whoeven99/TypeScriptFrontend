@@ -277,8 +277,7 @@ const TransalteSettingCard = ({
             <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
               {t("translateSettings1.title")}
             </Title>
-            {(typeof plan?.id === "number" && plan?.id <= 2) ||
-            typeof plan?.id === "undefined" ? (
+            {plan?.type == "Free" || typeof plan?.type === "undefined" ? (
               <Flex align="center" gap="middle">
                 <Popconfirm
                   title=""

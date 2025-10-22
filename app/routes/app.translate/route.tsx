@@ -406,7 +406,7 @@ const Index = () => {
   };
 
   const handleUsePrivateApi = () => {
-    if (plan?.id <= 2 || !plan?.id) {
+    if (plan?.type == "Free" || !plan?.type) {
       setShowWarnModal(true);
       return;
     }

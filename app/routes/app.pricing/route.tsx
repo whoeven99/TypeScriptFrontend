@@ -178,11 +178,11 @@ const Index = () => {
         Credits: 500000,
         price: {
           currentPrice:
-            plan.id === 6
+            plan?.type === "Premium"
               ? 1.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 2.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 3.59
                   : 3.99,
           comparedPrice: 3.99,
@@ -195,11 +195,11 @@ const Index = () => {
         Credits: 1000000,
         price: {
           currentPrice:
-            plan.id === 6
+            plan?.type === "Premium"
               ? 3.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 5.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 7.19
                   : 7.99,
           comparedPrice: 7.99,
@@ -212,11 +212,11 @@ const Index = () => {
         Credits: 2000000,
         price: {
           currentPrice:
-            plan.id === 6
+            plan?.type === "Premium"
               ? 7.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 11.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 14.39
                   : 15.99,
           comparedPrice: 15.99,
@@ -229,11 +229,11 @@ const Index = () => {
         Credits: 3000000,
         price: {
           currentPrice:
-            plan.id === 6
+            plan?.type === "Premium"
               ? 11.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 17.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 21.79
                   : 23.99,
           comparedPrice: 23.99,
@@ -246,11 +246,11 @@ const Index = () => {
         Credits: 5000000,
         price: {
           currentPrice:
-            plan.id === 6
+            plan?.type === "Premium"
               ? 19.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 29.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 35.99
                   : 39.99,
           comparedPrice: 39.99,
@@ -263,11 +263,11 @@ const Index = () => {
         Credits: 10000000,
         price: {
           currentPrice:
-            plan.id === 6
+            plan?.type === "Premium"
               ? 39.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 59.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 71.99
                   : 79.99,
           comparedPrice: 79.99,
@@ -280,11 +280,11 @@ const Index = () => {
         Credits: 20000000,
         price: {
           currentPrice:
-            plan.id === 6
+            plan?.type === "Premium"
               ? 79.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 119.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 143.99
                   : 159.99,
           comparedPrice: 159.99,
@@ -297,11 +297,11 @@ const Index = () => {
         Credits: 30000000,
         price: {
           currentPrice:
-            plan.id === 6
+            plan?.type === "Premium"
               ? 119.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 179.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 215.99
                   : 239.99,
           comparedPrice: 239.99,
@@ -429,6 +429,7 @@ const Index = () => {
         setPlan({
           plan: {
             id: 2,
+            type: "Free",
             feeType: 0,
           },
         }),
@@ -1616,10 +1617,3 @@ const Index = () => {
 };
 
 export default Index;
-
-export const planNum = (id: number) => {
-  if (id == 4) return "Basic";
-  if (id == 5) return "Pro";
-  if (id == 6) return "Premium";
-  return "Free";
-};

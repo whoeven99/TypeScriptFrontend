@@ -5,6 +5,7 @@ interface UserConfigState {
   locale: string;
   plan: {
     id: number;
+    type: string;
     feeType: number;
   };
   updateTime: string | null;
@@ -19,6 +20,7 @@ const initialState: UserConfigState = {
   locale: "",
   plan: {
     id: 0,
+    type: "",
     feeType: 0,
   },
   updateTime: null,
@@ -37,6 +39,7 @@ const userConfigSlice = createSlice({
       action: PayloadAction<{
         plan: {
           id: number;
+          type: string;
           feeType: number;
         };
       }>,
