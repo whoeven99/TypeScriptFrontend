@@ -1305,6 +1305,12 @@ const Index = () => {
     });
   };
 
+  useEffect(() => {
+    console.log("optionsData: ", optionsData);
+    console.log("optionsData[0]: ", optionsData[0]);
+    console.log("metafieldsData: ", metafieldsData);
+  });
+
   const handleMetafieldsInputChange = (key: string, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
@@ -2046,89 +2052,88 @@ const Index = () => {
                       })}
                     </Space>
                   </Card>
-                  {Array.isArray(optionsData) &&
-                    optionsData[0] !== undefined && (
-                      <Card title={t("Product Options")}>
-                        <Space direction="vertical" style={{ width: "100%" }}>
-                          {optionsData.map((item: any, index: number) => {
-                            return (
-                              <Space
-                                key={index}
-                                direction="vertical"
-                                size="small"
-                                style={{ width: "100%" }}
+                  {Array.isArray(optionsData) && optionsData[0] !== null && (
+                    <Card title={t("Product Options")}>
+                      <Space direction="vertical" style={{ width: "100%" }}>
+                        {optionsData.map((item: any, index: number) => {
+                          return (
+                            <Space
+                              key={index}
+                              direction="vertical"
+                              size="small"
+                              style={{ width: "100%" }}
+                            >
+                              <Text
+                                strong
+                                style={{
+                                  fontSize: "16px",
+                                }}
                               >
-                                <Text
-                                  strong
-                                  style={{
-                                    fontSize: "16px",
-                                  }}
-                                >
-                                  {t(item?.resource)}
-                                </Text>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "8px",
-                                  }}
-                                >
-                                  <Text>{t("Default Language")}</Text>
-                                  <ManageTableInput record={item} />
-                                </div>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "8px",
-                                  }}
-                                >
-                                  <Text>{t("Translated")}</Text>
-                                  <ManageTableInput
-                                    translatedValues={translatedValues}
-                                    setTranslatedValues={setTranslatedValues}
-                                    handleInputChange={handleOptionsInputChange}
-                                    isRtl={searchTerm === "ar"}
-                                    record={item}
-                                  />
-                                </div>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    justifyContent: "flex-end",
-                                  }}
-                                >
-                                  <Button
-                                    onClick={() => {
-                                      handleTranslate(
-                                        "PRODUCT_OPTION",
-                                        item?.key || "",
-                                        item?.type || "",
-                                        item?.default_language || "",
-                                        handleOptionsInputChange,
-                                      );
-                                      reportClick("editor_list_translate");
-                                    }}
-                                    loading={loadingItems.includes(
-                                      item?.key || "",
-                                    )}
-                                  >
-                                    {t("Translate")}
-                                  </Button>
-                                </div>
-                                <Divider
-                                  style={{
-                                    margin: "8px 0",
-                                  }}
+                                {t(item?.resource)}
+                              </Text>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
+                                <Text>{t("Default Language")}</Text>
+                                <ManageTableInput record={item} />
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
+                                <Text>{t("Translated")}</Text>
+                                <ManageTableInput
+                                  translatedValues={translatedValues}
+                                  setTranslatedValues={setTranslatedValues}
+                                  handleInputChange={handleOptionsInputChange}
+                                  isRtl={searchTerm === "ar"}
+                                  record={item}
                                 />
-                              </Space>
-                            );
-                          })}
-                        </Space>
-                      </Card>
-                    )}
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "flex-end",
+                                }}
+                              >
+                                <Button
+                                  onClick={() => {
+                                    handleTranslate(
+                                      "PRODUCT_OPTION",
+                                      item?.key || "",
+                                      item?.type || "",
+                                      item?.default_language || "",
+                                      handleOptionsInputChange,
+                                    );
+                                    reportClick("editor_list_translate");
+                                  }}
+                                  loading={loadingItems.includes(
+                                    item?.key || "",
+                                  )}
+                                >
+                                  {t("Translate")}
+                                </Button>
+                              </div>
+                              <Divider
+                                style={{
+                                  margin: "8px 0",
+                                }}
+                              />
+                            </Space>
+                          );
+                        })}
+                      </Space>
+                    </Card>
+                  )}
                   {Array.isArray(metafieldsData) &&
-                    metafieldsData[0] !== undefined && (
+                    metafieldsData[0] !== null && (
                       <Card title={t("Metafield")}>
                         <Space direction="vertical" style={{ width: "100%" }}>
                           {metafieldsData.map((item: any, index: number) => {
@@ -2210,89 +2215,86 @@ const Index = () => {
                         </Space>
                       </Card>
                     )}
-                  {Array.isArray(variantsData) &&
-                    variantsData[0] !== undefined && (
-                      <Card title={t("OptionValue")}>
-                        <Space direction="vertical" style={{ width: "100%" }}>
-                          {variantsData.map((item: any, index: number) => {
-                            return (
-                              <Space
-                                key={index}
-                                direction="vertical"
-                                size="small"
-                                style={{ width: "100%" }}
+                  {Array.isArray(variantsData) && variantsData[0] !== null && (
+                    <Card title={t("OptionValue")}>
+                      <Space direction="vertical" style={{ width: "100%" }}>
+                        {variantsData.map((item: any, index: number) => {
+                          return (
+                            <Space
+                              key={index}
+                              direction="vertical"
+                              size="small"
+                              style={{ width: "100%" }}
+                            >
+                              <Text
+                                strong
+                                style={{
+                                  fontSize: "16px",
+                                }}
                               >
-                                <Text
-                                  strong
-                                  style={{
-                                    fontSize: "16px",
-                                  }}
-                                >
-                                  {t(item?.resource)}
-                                </Text>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "8px",
-                                  }}
-                                >
-                                  <Text>{t("Default Language")}</Text>
-                                  <ManageTableInput record={item} />
-                                </div>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "8px",
-                                  }}
-                                >
-                                  <Text>{t("Translated")}</Text>
-                                  <ManageTableInput
-                                    translatedValues={translatedValues}
-                                    setTranslatedValues={setTranslatedValues}
-                                    handleInputChange={
-                                      handleVariantsInputChange
-                                    }
-                                    isRtl={searchTerm === "ar"}
-                                    record={item}
-                                  />
-                                </div>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    justifyContent: "flex-end",
-                                  }}
-                                >
-                                  <Button
-                                    onClick={() => {
-                                      handleTranslate(
-                                        "PRODUCT_OPTION_VALUE",
-                                        item?.key || "",
-                                        item?.type || "",
-                                        item?.default_language || "",
-                                        handleVariantsInputChange,
-                                      );
-                                      reportClick("editor_list_translate");
-                                    }}
-                                    loading={loadingItems.includes(
-                                      item?.key || "",
-                                    )}
-                                  >
-                                    {t("Translate")}
-                                  </Button>
-                                </div>
-                                <Divider
-                                  style={{
-                                    margin: "8px 0",
-                                  }}
+                                {t(item?.resource)}
+                              </Text>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
+                                <Text>{t("Default Language")}</Text>
+                                <ManageTableInput record={item} />
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
+                                <Text>{t("Translated")}</Text>
+                                <ManageTableInput
+                                  translatedValues={translatedValues}
+                                  setTranslatedValues={setTranslatedValues}
+                                  handleInputChange={handleVariantsInputChange}
+                                  isRtl={searchTerm === "ar"}
+                                  record={item}
                                 />
-                              </Space>
-                            );
-                          })}
-                        </Space>
-                      </Card>
-                    )}
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "flex-end",
+                                }}
+                              >
+                                <Button
+                                  onClick={() => {
+                                    handleTranslate(
+                                      "PRODUCT_OPTION_VALUE",
+                                      item?.key || "",
+                                      item?.type || "",
+                                      item?.default_language || "",
+                                      handleVariantsInputChange,
+                                    );
+                                    reportClick("editor_list_translate");
+                                  }}
+                                  loading={loadingItems.includes(
+                                    item?.key || "",
+                                  )}
+                                >
+                                  {t("Translate")}
+                                </Button>
+                              </div>
+                              <Divider
+                                style={{
+                                  margin: "8px 0",
+                                }}
+                              />
+                            </Space>
+                          );
+                        })}
+                      </Space>
+                    </Card>
+                  )}
                   <Menu
                     mode="inline"
                     defaultSelectedKeys={[productsData[0]?.id]}
@@ -2358,34 +2360,31 @@ const Index = () => {
                     dataSource={productSeoData}
                     pagination={false}
                   />
-                  {Array.isArray(optionsData) &&
-                    optionsData[0] !== undefined && (
-                      <Table
-                        columns={optionsColumns}
-                        dataSource={optionsData}
-                        pagination={false}
-                      />
-                    )}
+                  {Array.isArray(optionsData) && optionsData[0] !== null && (
+                    <Table
+                      columns={optionsColumns}
+                      dataSource={optionsData}
+                      pagination={false}
+                    />
+                  )}
                   {Array.isArray(metafieldsData) &&
-                    metafieldsData[0] !== undefined && (
+                    metafieldsData[0] !== null && (
                       <Table
                         columns={metafieldsColumns}
                         dataSource={metafieldsData}
                         pagination={false}
                       />
                     )}
-                  {Array.isArray(variantsData) &&
-                    variantsData[0] !== undefined && (
-                      <Table
-                        loading={
-                          variantFetcher.state === "submitting" ||
-                          variantsLoading
-                        }
-                        columns={variantsColumns}
-                        dataSource={variantsData}
-                        pagination={false}
-                      />
-                    )}
+                  {Array.isArray(variantsData) && variantsData[0] !== null && (
+                    <Table
+                      loading={
+                        variantFetcher.state === "submitting" || variantsLoading
+                      }
+                      columns={variantsColumns}
+                      dataSource={variantsData}
+                      pagination={false}
+                    />
+                  )}
                 </Space>
               )}
             </Content>
