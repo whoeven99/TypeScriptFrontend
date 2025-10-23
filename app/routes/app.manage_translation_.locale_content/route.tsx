@@ -586,6 +586,15 @@ const Index = () => {
     }
   };
 
+  const handleMenuChange = (key: string) => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      shopify.saveBar.hide("save-bar");
+      setSelectedThemeKey(key);
+    }
+  };
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchInput(value);
@@ -739,7 +748,7 @@ const Index = () => {
                     }}
                     items={menuData}
                     selectedKeys={[selectedThemeKey]}
-                    onClick={(e: any) => setSelectedThemeKey(e.key)}
+                    onClick={(e: any) => handleMenuChange(e.key)}
                   />
                 </div>
               </Sider>
@@ -923,7 +932,7 @@ const Index = () => {
                     }}
                     items={menuData}
                     selectedKeys={[selectedThemeKey]}
-                    onClick={(e) => setSelectedThemeKey(e.key)}
+                    onClick={(e) => handleMenuChange(e.key)}
                   />
                 </Space>
               ) : (
