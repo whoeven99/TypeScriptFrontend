@@ -1038,12 +1038,14 @@ const Index = () => {
                     onClick={(e: any) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={productsHasPreviousPage}
-                      onPrevious={handleProductPrevious}
-                      hasNext={productsHasNextPage}
-                      onNext={handleProductNext}
-                    />
+                    {(productsHasPreviousPage || productsHasNextPage) && (
+                      <Pagination
+                        hasPrevious={productsHasPreviousPage}
+                        onPrevious={handleProductPrevious}
+                        hasNext={productsHasNextPage}
+                        onNext={handleProductNext}
+                      />
+                    )}
                   </div>
                 </div>
               </Sider>
@@ -1173,12 +1175,14 @@ const Index = () => {
                     onClick={(e: any) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={productsHasPreviousPage}
-                      onPrevious={handleProductPrevious}
-                      hasNext={productsHasNextPage}
-                      onNext={handleProductNext}
-                    />
+                    {(productsHasPreviousPage || productsHasNextPage) && (
+                      <Pagination
+                        hasPrevious={productsHasPreviousPage}
+                        onPrevious={handleProductPrevious}
+                        hasNext={productsHasNextPage}
+                        onNext={handleProductNext}
+                      />
+                    )}
                   </div>
                 </Space>
               ) : (
@@ -1250,12 +1254,14 @@ const Index = () => {
                     loading={tableDataLoading}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={imageHasPreviousPage}
-                      onPrevious={handleImagePrevious}
-                      hasNext={imageHasNextPage}
-                      onNext={handleImageNext}
-                    />
+                    {(imageHasPreviousPage || imageHasNextPage) && (
+                      <Pagination
+                        hasPrevious={imageHasPreviousPage}
+                        onPrevious={handleImagePrevious}
+                        hasNext={imageHasNextPage}
+                        onNext={handleImageNext}
+                      />
+                    )}
                   </div>
                 </Space>
               )}

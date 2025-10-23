@@ -658,7 +658,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={confirmFetcher.state === "submitting" && ""}
+          loading={confirmFetcher.state === "submitting" ? "true" : undefined}
         >
           {t("Save")}
         </button>
@@ -800,12 +800,14 @@ const Index = () => {
                   </Space>
                 </Card>
                 <div style={{ display: "flex", justifyContent: "center" }}>
-                  <Pagination
-                    hasPrevious={hasPrevious}
-                    onPrevious={onPrevious}
-                    hasNext={hasNext}
-                    onNext={onNext}
-                  />
+                  {(hasNext || hasPrevious) && (
+                    <Pagination
+                      hasPrevious={hasPrevious}
+                      onPrevious={onPrevious}
+                      hasNext={hasNext}
+                      onNext={onNext}
+                    />
+                  )}
                 </div>
               </Space>
             ) : (
@@ -854,12 +856,14 @@ const Index = () => {
                   pagination={false}
                 />
                 <div style={{ display: "flex", justifyContent: "center" }}>
-                  <Pagination
-                    hasPrevious={hasPrevious}
-                    onPrevious={onPrevious}
-                    hasNext={hasNext}
-                    onNext={onNext}
-                  />
+                  {(hasNext || hasPrevious) && (
+                    <Pagination
+                      hasPrevious={hasPrevious}
+                      onPrevious={onPrevious}
+                      hasNext={hasNext}
+                      onNext={onNext}
+                    />
+                  )}
                 </div>
               </Space>
             )}

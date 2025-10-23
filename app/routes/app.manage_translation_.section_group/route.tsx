@@ -719,7 +719,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={confirmFetcher.state === "submitting" && ""}
+          loading={confirmFetcher.state === "submitting" ? "true" : undefined}
         >
           {t("Save")}
         </button>
@@ -778,14 +778,17 @@ const Index = () => {
                     onClick={(e) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={
-                        themesData?.pageInfo.hasPreviousPage || false
-                      }
-                      onPrevious={onPrevious}
-                      hasNext={themesData?.pageInfo.hasNextPage || false}
-                      onNext={onNext}
-                    />
+                    {(themesData?.pageInfo.hasPreviousPage ||
+                      themesData?.pageInfo.hasNextPage) && (
+                      <Pagination
+                        hasPrevious={
+                          themesData?.pageInfo.hasPreviousPage || false
+                        }
+                        onPrevious={onPrevious}
+                        hasNext={themesData?.pageInfo.hasNextPage || false}
+                        onNext={onNext}
+                      />
+                    )}
                   </div>
                 </div>
               </Sider>
@@ -941,14 +944,17 @@ const Index = () => {
                     onClick={(e) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={
-                        themesData?.pageInfo?.hasPreviousPage || false
-                      }
-                      onPrevious={onPrevious}
-                      hasNext={themesData?.pageInfo?.hasNextPage || false}
-                      onNext={onNext}
-                    />
+                    {(themesData?.pageInfo.hasPreviousPage ||
+                      themesData?.pageInfo.hasNextPage) && (
+                      <Pagination
+                        hasPrevious={
+                          themesData?.pageInfo.hasPreviousPage || false
+                        }
+                        onPrevious={onPrevious}
+                        hasNext={themesData?.pageInfo.hasNextPage || false}
+                        onNext={onNext}
+                      />
+                    )}
                   </div>
                 </Space>
               ) : (

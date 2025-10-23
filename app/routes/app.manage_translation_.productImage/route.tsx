@@ -1218,12 +1218,14 @@ const Index = () => {
                     onClick={(e: any) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={productsHasPreviousPage}
-                      onPrevious={handleProductPrevious}
-                      hasNext={productsHasNextPage}
-                      onNext={handleProductNext}
-                    />
+                    {(productsHasPreviousPage || productsHasNextPage) && (
+                      <Pagination
+                        hasPrevious={productsHasPreviousPage}
+                        onPrevious={handleProductPrevious}
+                        hasNext={productsHasNextPage}
+                        onNext={handleProductNext}
+                      />
+                    )}
                   </div>
                 </div>
               </Sider>
@@ -1473,12 +1475,14 @@ const Index = () => {
                     onClick={(e: any) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={productsHasPreviousPage}
-                      onPrevious={handleProductPrevious}
-                      hasNext={productsHasNextPage}
-                      onNext={handleProductNext}
-                    />
+                    {(productsHasPreviousPage || productsHasNextPage) && (
+                      <Pagination
+                        hasPrevious={productsHasPreviousPage}
+                        onPrevious={handleProductPrevious}
+                        hasNext={productsHasNextPage}
+                        onNext={handleProductNext}
+                      />
+                    )}
                   </div>
                 </Space>
               ) : (
@@ -1507,12 +1511,15 @@ const Index = () => {
                     pagination={false}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={productImageData[0]?.imageHasPreviousPage}
-                      onPrevious={handleImagePrevious}
-                      hasNext={productImageData[0]?.imageHasNextPage}
-                      onNext={handleImageNext}
-                    />
+                    {(productImageData[0]?.imageHasPreviousPage ||
+                      productImageData[0]?.imageHasNextPage) && (
+                      <Pagination
+                        hasPrevious={productImageData[0]?.imageHasPreviousPage}
+                        onPrevious={handleImagePrevious}
+                        hasNext={productImageData[0]?.imageHasNextPage}
+                        onNext={handleImageNext}
+                      />
+                    )}
                   </div>
                 </Space>
               )}
