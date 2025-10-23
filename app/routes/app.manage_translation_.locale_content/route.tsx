@@ -236,7 +236,6 @@ const Index = () => {
 
   useEffect(() => {
     const filterMenuData = exMenuData(filteredResourceData);
-    console.log("filterMenuData: ", filterMenuData);
 
     setMenuData(filterMenuData);
     const findIndex = filterMenuData.find(
