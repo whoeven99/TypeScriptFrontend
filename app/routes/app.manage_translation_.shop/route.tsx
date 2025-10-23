@@ -629,11 +629,46 @@ const Index = () => {
         </button>
         <button onClick={handleDiscard}>{t("Cancel")}</button>
       </SaveBar>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          flexGrow: 2,
+          justifyContent: "flex-end",
+          marginBottom: "15px",
+        }}
+      >
+        <div
+          style={{
+            width: "100px",
+          }}
+        >
+          <Select
+            label={""}
+            options={languageOptions}
+            value={selectedLanguage}
+            onChange={(value) => handleLanguageChange(value)}
+          />
+        </div>
+        <div
+          style={{
+            width: "100px",
+          }}
+        >
+          <Select
+            label={""}
+            options={itemOptions}
+            value={selectedItem}
+            onChange={(value) => handleItemChange(value)}
+          />
+        </div>
+      </div>
       <Layout
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 104px)",
+          height: "calc(100vh - 154px)",
         }}
       >
         {isLoading ? (
@@ -651,44 +686,15 @@ const Index = () => {
           <Content
             style={{
               paddingLeft: isMobile ? "16px" : "0",
+              height: "calc(100% - 25px)",
+              minHeight: "70vh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "auto",
             }}
           >
             {isMobile ? (
               <Space direction="vertical" style={{ width: "100%" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    flexGrow: 2,
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "100px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={languageOptions}
-                      value={selectedLanguage}
-                      onChange={(value) => handleLanguageChange(value)}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      width: "100px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={itemOptions}
-                      value={selectedItem}
-                      onChange={(value) => handleItemChange(value)}
-                    />
-                  </div>
-                </div>
                 <Card title={t("Resource")}>
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {resourceData.map((item: any, index: number) => {
@@ -780,40 +786,6 @@ const Index = () => {
                 size="middle"
                 style={{ display: "flex" }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    flexGrow: 2,
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "150px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={languageOptions}
-                      value={selectedLanguage}
-                      onChange={(value) => handleLanguageChange(value)}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      width: "150px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={itemOptions}
-                      value={selectedItem}
-                      onChange={(value) => handleItemChange(value)}
-                    />
-                  </div>
-                </div>
                 <Table
                   columns={resourceColumns}
                   dataSource={resourceData}
