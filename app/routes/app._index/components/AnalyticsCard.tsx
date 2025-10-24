@@ -273,8 +273,6 @@ const AnalyticsCard = ({ isLoading }: any) => {
           localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
           localStorage.removeItem("local_conversion_rate");
         }
-      } else {
-        console.warn("globalStore.shop 还未加载，跳过存储逻辑");
       }
     } catch (error) {
       console.error("useEffect 错误：", error);
