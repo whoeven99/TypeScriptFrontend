@@ -1748,9 +1748,72 @@ const Index = () => {
         },
       ].filter((item) => item.default_language),
     );
+    const optionsData = productFetcher.data.response?.options?.nodes
+      ?.filter(
+        (item: any) =>
+          item?.translatableContent[0]?.value !== "Title" &&
+          item?.translatableContent[0]?.value,
+      )
+      ?.map((option: any, index: number) => {
+        return {
+          resourceId: option?.resourceId,
+          key: `${option?.translatableContent[0]?.key}_${index}`,
+          index: index,
+          locale: option?.translatableContent[0]?.locale,
+          digest: option?.translatableContent[0]?.digest,
+          resource: t(option?.translatableContent[0]?.value),
+          type: option?.translatableContent[0]?.type,
+          default_language: option?.translatableContent[0]?.value,
+          translated: option?.translations[0]?.value,
+        };
+      });
+    if (optionsData) setOptionsData(optionsData);
+    const metafieldsData = productFetcher.data.response?.metafields?.nodes?.map(
+      (metafield: any, index: number) => {
+        return {
+          resourceId: metafield?.resourceId,
+          key: `${metafield?.translatableContent[0]?.key}_${index}`,
+          index: index,
+          locale: metafield?.translatableContent[0]?.locale,
+          digest: metafield?.translatableContent[0]?.digest,
+          resource: t(metafield?.translatableContent[0]?.key),
+          type: metafield?.translatableContent[0]?.type,
+          default_language: metafield?.translatableContent[0]?.value,
+          translated: metafield?.translations[0]?.value,
+        };
+      },
+    );
+    if (metafieldsData) setMetafieldsData(metafieldsData);
+    // variantFetcher.data.variantsData.forEach((result: any) => {
+    //   if (result.status === "fulfilled") {
+    //     setVariantsData((prev: any) => {
+    //       const newData = result.value.data.translatableResourcesByIds.nodes
+    //         .filter(
+    //           (variant: any) =>
+    //             variant?.translatableContent[0]?.value &&
+    //             variant?.translatableContent[0]?.value !== "Default Title",
+    //         )
+    //         .map((variant: any, index: number) => ({
+    //           key: variant?.resourceId,
+    //           index: index,
+    //           resource: t(variant?.translatableContent[0]?.key),
+    //           type: variant?.translatableContent[0]?.type,
+    //           locale: variant?.translatableContent[0]?.locale,
+    //           digest: variant?.translatableContent[0]?.digest,
+    //           default_language: variant?.translatableContent[0]?.value,
+    //           translated: variant?.translations[0]?.value,
+    //         }));
+    //       return [...prev, ...newData];
+    //     });
+    //   }
+    // });
     setConfirmData([]);
     setSuccessTranslatedKey([]);
   };
+
+  useEffect(() => {
+    console.log(optionsData);
+  }, [optionsData]);
 
   const onCancel = () => {
     if (confirmData.length > 0) {
