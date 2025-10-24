@@ -32,6 +32,7 @@ import { ShopLocalesType } from "../app.language/route";
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
 import { SearchOutlined } from "@ant-design/icons";
+import { getItemOptions } from "../app.manage_translation/route";
 const { Sider, Content } = Layout;
 
 const { Text, Title } = Typography;
@@ -44,37 +45,6 @@ type TableDataType = {
   default_language: string | undefined;
   translated: string | undefined;
 } | null;
-
-const modelOptions = [
-  {
-    label: "OpenAI/GPT-4",
-    value: "1",
-  },
-  {
-    label: "Google/Gemini-1.5",
-    value: "2",
-  },
-  {
-    label: "DeepL/DeepL-translator",
-    value: "3",
-  },
-  {
-    label: "Qwen/Qwen-Max",
-    value: "4",
-  },
-  {
-    label: "DeepSeek-ai/DeepSeek-V3",
-    value: "5",
-  },
-  {
-    label: "Meta/Llama-3",
-    value: "6",
-  },
-  {
-    label: "Google/Google translate",
-    value: "7",
-  },
-];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -107,7 +77,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const response = await admin.graphql(
           `#graphql
             query products($startCursor: String, $query: String) {     
-              products(last: 20 ,before: $startCursor, query: $query) {
+              products(last: 20 ,before: $startCursor, query: $query, reverse: true) {
                 nodes {
                   id
                   title
@@ -171,7 +141,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const response = await admin.graphql(
           `#graphql
             query products($endCursor: String, $query: String) {     
-              products(first: 20 ,after: $endCursor, query: $query) {
+              products(first: 20 ,after: $endCursor, query: $query, reverse: true) {
                 nodes {
                   id
                   title
@@ -398,30 +368,15 @@ const Index = () => {
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [variantsLoading, setVariantsLoading] = useState<boolean>(false);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
   const [queryText, setQueryText] = useState<string>("");
   const { reportClick } = useReport();
-  const itemOptions = [
-    { label: t("Products"), value: "product" },
-    { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "theme" },
-    { label: t("Shop"), value: "shop" },
-    { label: t("Store metadata"), value: "metafield" },
-    { label: t("Articles"), value: "article" },
-    { label: t("Blog titles"), value: "blog" },
-    { label: t("Pages"), value: "page" },
-    { label: t("Filters"), value: "filter" },
-    { label: t("Metaobjects"), value: "metaobject" },
-    { label: t("Navigation"), value: "navigation" },
-    { label: t("Email"), value: "email" },
-    { label: t("Policies"), value: "policy" },
-    { label: t("Product images"), value: "productImage" },
-    { label: t("Product image alt text"), value: "productImageAlt" },
-    { label: t("Delivery"), value: "delivery" },
-    { label: t("Shipping"), value: "shipping" },
-  ];
+  const itemOptions = getItemOptions(t);
   const languagePackOptions = [
     {
       label: t("General"),
@@ -726,11 +681,13 @@ const Index = () => {
             },
           ].filter((item) => item.default_language),
         );
-        const optionsData = productFetcher.data.response?.options?.nodes?.map(
-          (option: any, index: number) => {
-            if (option?.translatableContent[0]?.value === "Title") {
-              return null;
-            }
+        const optionsData = productFetcher.data.response?.options?.nodes
+          ?.filter(
+            (item: any) =>
+              item?.translatableContent[0]?.value !== "Title" &&
+              item?.translatableContent[0]?.value,
+          )
+          ?.map((option: any, index: number) => {
             return {
               resourceId: option?.resourceId,
               key: `${option?.translatableContent[0]?.key}_${index}`,
@@ -742,8 +699,7 @@ const Index = () => {
               default_language: option?.translatableContent[0]?.value,
               translated: option?.translations[0]?.value,
             };
-          },
-        );
+          });
         if (optionsData) setOptionsData(optionsData);
         const metafieldsData =
           productFetcher.data.response?.metafields?.nodes?.map(
@@ -806,6 +762,7 @@ const Index = () => {
     setVariantsData([]);
     setLoadingItems([]);
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
     setTranslatedValues({});
     productFetcher.submit(
       {
@@ -878,6 +835,7 @@ const Index = () => {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [confirmFetcher.data]);
 
@@ -906,10 +864,10 @@ const Index = () => {
 
   useEffect(() => {
     if (variantFetcher.data && variantFetcher.data.variantsData) {
-      variantFetcher.data.variantsData.forEach((result: any) => {
-        if (result.status === "fulfilled") {
-          setVariantsData((prev: any) => {
-            const newData = result.value.data.translatableResourcesByIds.nodes
+      const variantsData = variantFetcher.data.variantsData.flatMap(
+        (result: any) => {
+          if (result.status === "fulfilled") {
+            return result.value.data.translatableResourcesByIds.nodes
               .filter(
                 (variant: any) =>
                   variant?.translatableContent[0]?.value &&
@@ -917,7 +875,7 @@ const Index = () => {
               )
               .map((variant: any, index: number) => ({
                 key: variant?.resourceId,
-                index: index,
+                index,
                 resource: t(variant?.translatableContent[0]?.key),
                 type: variant?.translatableContent[0]?.type,
                 locale: variant?.translatableContent[0]?.locale,
@@ -925,12 +883,14 @@ const Index = () => {
                 default_language: variant?.translatableContent[0]?.value,
                 translated: variant?.translations[0]?.value,
               }));
-            return [...prev, ...newData];
-          });
-        } else {
-          console.error("Request failed:", result.reason);
-        }
-      });
+          } else {
+            console.error("Request failed:", result.reason);
+          }
+          return []; // 记得返回空数组避免 undefined
+        },
+      );
+
+      if (variantsData) setVariantsData(variantsData);
       setVariantsLoading(false);
     }
   }, [variantFetcher.data]);
@@ -968,6 +928,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleProductBaseInputChange}
@@ -1026,6 +987,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleProductSeoInputChange}
@@ -1088,6 +1050,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleOptionsInputChange}
@@ -1151,6 +1114,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleMetafieldsInputChange}
@@ -1214,6 +1178,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleVariantsInputChange}
@@ -1446,7 +1411,7 @@ const Index = () => {
 
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
-      source: productBaseData[0]?.locale,
+      source: globalStore?.source || "",
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -1457,6 +1422,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, key]);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
@@ -1784,7 +1750,70 @@ const Index = () => {
         },
       ].filter((item) => item.default_language),
     );
+    const optionsData = productFetcher.data.response?.options?.nodes
+      ?.filter(
+        (item: any) =>
+          item?.translatableContent[0]?.value !== "Title" &&
+          item?.translatableContent[0]?.value,
+      )
+      ?.map((option: any, index: number) => {
+        return {
+          resourceId: option?.resourceId,
+          key: `${option?.translatableContent[0]?.key}_${index}`,
+          index: index,
+          locale: option?.translatableContent[0]?.locale,
+          digest: option?.translatableContent[0]?.digest,
+          resource: t(option?.translatableContent[0]?.value),
+          type: option?.translatableContent[0]?.type,
+          default_language: option?.translatableContent[0]?.value,
+          translated: option?.translations[0]?.value,
+        };
+      });
+    if (optionsData) setOptionsData(optionsData);
+    const metafieldsData = productFetcher.data.response?.metafields?.nodes?.map(
+      (metafield: any, index: number) => {
+        return {
+          resourceId: metafield?.resourceId,
+          key: `${metafield?.translatableContent[0]?.key}_${index}`,
+          index: index,
+          locale: metafield?.translatableContent[0]?.locale,
+          digest: metafield?.translatableContent[0]?.digest,
+          resource: t(metafield?.translatableContent[0]?.key),
+          type: metafield?.translatableContent[0]?.type,
+          default_language: metafield?.translatableContent[0]?.value,
+          translated: metafield?.translations[0]?.value,
+        };
+      },
+    );
+    if (metafieldsData) setMetafieldsData(metafieldsData);
+    const variantsData = variantFetcher.data.variantsData.flatMap(
+      (result: any) => {
+        if (result.status === "fulfilled") {
+          return result.value.data.translatableResourcesByIds.nodes
+            .filter(
+              (variant: any) =>
+                variant?.translatableContent[0]?.value &&
+                variant?.translatableContent[0]?.value !== "Default Title",
+            )
+            .map((variant: any, index: number) => ({
+              key: variant?.resourceId,
+              index,
+              resource: t(variant?.translatableContent[0]?.key),
+              type: variant?.translatableContent[0]?.type,
+              locale: variant?.translatableContent[0]?.locale,
+              digest: variant?.translatableContent[0]?.digest,
+              default_language: variant?.translatableContent[0]?.value,
+              translated: variant?.translations[0]?.value,
+            }));
+        }
+        return []; // 记得返回空数组避免 undefined
+      },
+    );
+
+    if (variantsData) setVariantsData(variantsData);
+
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
   };
 
   const onCancel = () => {
@@ -1859,7 +1888,7 @@ const Index = () => {
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 104px)",
+          height: "calc(100vh - 154px)",
         }}
       >
         {isLoading ? (
@@ -1908,12 +1937,14 @@ const Index = () => {
                     onClick={(e: any) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={hasPrevious}
-                      onPrevious={onPrevious}
-                      hasNext={hasNext}
-                      onNext={onNext}
-                    />
+                    {(hasNext || hasPrevious) && (
+                      <Pagination
+                        hasPrevious={hasPrevious}
+                        onPrevious={onPrevious}
+                        hasNext={hasNext}
+                        onNext={onNext}
+                      />
+                    )}
                   </div>
                 </div>
               </Sider>
@@ -1921,6 +1952,11 @@ const Index = () => {
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
+                height: "calc(100% - 25px)",
+                minHeight: "70vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "auto",
               }}
             >
               {isMobile ? (
@@ -1977,6 +2013,9 @@ const Index = () => {
                             >
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleProductBaseInputChange}
@@ -2053,6 +2092,9 @@ const Index = () => {
                             >
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleProductSeoInputChange}
@@ -2131,6 +2173,9 @@ const Index = () => {
                                 >
                                   <Text>{t("Translated")}</Text>
                                   <ManageTableInput
+                                    isSuccess={successTranslatedKey?.includes(
+                                      item?.key as string,
+                                    )}
                                     translatedValues={translatedValues}
                                     setTranslatedValues={setTranslatedValues}
                                     handleInputChange={handleOptionsInputChange}
@@ -2212,6 +2257,9 @@ const Index = () => {
                                 >
                                   <Text>{t("Translated")}</Text>
                                   <ManageTableInput
+                                    isSuccess={successTranslatedKey?.includes(
+                                      item?.key as string,
+                                    )}
                                     translatedValues={translatedValues}
                                     setTranslatedValues={setTranslatedValues}
                                     handleInputChange={
@@ -2295,6 +2343,9 @@ const Index = () => {
                                 >
                                   <Text>{t("Translated")}</Text>
                                   <ManageTableInput
+                                    isSuccess={successTranslatedKey?.includes(
+                                      item?.key as string,
+                                    )}
                                     translatedValues={translatedValues}
                                     setTranslatedValues={setTranslatedValues}
                                     handleInputChange={
@@ -2352,12 +2403,14 @@ const Index = () => {
                     onClick={(e) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={hasPrevious}
-                      onPrevious={onPrevious}
-                      hasNext={hasNext}
-                      onNext={onNext}
-                    />
+                    {(hasNext || hasPrevious) && (
+                      <Pagination
+                        hasPrevious={hasPrevious}
+                        onPrevious={onPrevious}
+                        hasNext={hasNext}
+                        onNext={onNext}
+                      />
+                    )}
                   </div>
                 </Space>
               ) : !productBaseData.length ? (

@@ -39,6 +39,7 @@ import { setLocale } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
 import { DeleteProductImageData, GetProductImageData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
+import { getItemOptions } from "../app.manage_translation/route";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -84,7 +85,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = await admin.graphql(
           `#graphql
             query products($startCursor: String, $query: String) {     
-              products(last: 20 ,before: $startCursor, query: $query) {
+              products(last: 20 ,before: $startCursor, query: $query, reverse: true) {
                 edges {
                 node {
                   id
@@ -185,7 +186,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = await admin.graphql(
           `#graphql
             query products($endCursor: String, $query: String) {     
-              products(first: 20 ,after: $endCursor, query: $query) {
+              products(first: 20 ,after: $endCursor, query: $query, reverse: true) {
                 edges {
                 node {
                   id
@@ -465,25 +466,7 @@ const Index = () => {
     { label: string; value: string }[]
   >([]);
   const [queryText, setQueryText] = useState<string>("");
-  const itemOptions = [
-    { label: t("Products"), value: "product" },
-    { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "theme" },
-    { label: t("Shop"), value: "shop" },
-    { label: t("Store metadata"), value: "metafield" },
-    { label: t("Articles"), value: "article" },
-    { label: t("Blog titles"), value: "blog" },
-    { label: t("Pages"), value: "page" },
-    { label: t("Filters"), value: "filter" },
-    { label: t("Metaobjects"), value: "metaobject" },
-    { label: t("Navigation"), value: "navigation" },
-    { label: t("Email"), value: "email" },
-    { label: t("Policies"), value: "policy" },
-    { label: t("Product images"), value: "productImage" },
-    { label: t("Product image alt text"), value: "productImageAlt" },
-    { label: t("Delivery"), value: "delivery" },
-    { label: t("Shipping"), value: "shipping" },
-  ];
+  const itemOptions = getItemOptions(t);
 
   const fetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
@@ -1182,7 +1165,7 @@ const Index = () => {
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 104px)",
+          height: "calc(100vh - 154px)",
         }}
       >
         {isLoading ? (
@@ -1235,12 +1218,14 @@ const Index = () => {
                     onClick={(e: any) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={productsHasPreviousPage}
-                      onPrevious={handleProductPrevious}
-                      hasNext={productsHasNextPage}
-                      onNext={handleProductNext}
-                    />
+                    {(productsHasPreviousPage || productsHasNextPage) && (
+                      <Pagination
+                        hasPrevious={productsHasPreviousPage}
+                        onPrevious={handleProductPrevious}
+                        hasNext={productsHasNextPage}
+                        onNext={handleProductNext}
+                      />
+                    )}
                   </div>
                 </div>
               </Sider>
@@ -1248,6 +1233,11 @@ const Index = () => {
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
+                height: "calc(100% - 25px)",
+                minHeight: "70vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "auto",
               }}
             >
               {isMobile ? (
@@ -1490,12 +1480,14 @@ const Index = () => {
                     onClick={(e: any) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={productsHasPreviousPage}
-                      onPrevious={handleProductPrevious}
-                      hasNext={productsHasNextPage}
-                      onNext={handleProductNext}
-                    />
+                    {(productsHasPreviousPage || productsHasNextPage) && (
+                      <Pagination
+                        hasPrevious={productsHasPreviousPage}
+                        onPrevious={handleProductPrevious}
+                        hasNext={productsHasNextPage}
+                        onNext={handleProductNext}
+                      />
+                    )}
                   </div>
                 </Space>
               ) : (
@@ -1524,12 +1516,15 @@ const Index = () => {
                     pagination={false}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={productImageData[0]?.imageHasPreviousPage}
-                      onPrevious={handleImagePrevious}
-                      hasNext={productImageData[0]?.imageHasNextPage}
-                      onNext={handleImageNext}
-                    />
+                    {(productImageData[0]?.imageHasPreviousPage ||
+                      productImageData[0]?.imageHasNextPage) && (
+                      <Pagination
+                        hasPrevious={productImageData[0]?.imageHasPreviousPage}
+                        onPrevious={handleImagePrevious}
+                        hasNext={productImageData[0]?.imageHasNextPage}
+                        onNext={handleImageNext}
+                      />
+                    )}
                   </div>
                 </Space>
               )}

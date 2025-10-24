@@ -37,7 +37,6 @@ interface TransalteSettingCardProps {
   setTranslateSettings5: (e: boolean) => void;
   handleUsePrivateApi: () => void;
   isMobile: boolean;
-  plan: any;
 }
 
 const TransalteSettingCard = ({
@@ -51,7 +50,6 @@ const TransalteSettingCard = ({
   setTranslateSettings5,
   handleUsePrivateApi,
   isMobile,
-  plan,
 }: TransalteSettingCardProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -134,7 +132,7 @@ const TransalteSettingCard = ({
       value: "metaobjects",
     },
     {
-      label: t("Store metadata"),
+      label: t("Metafield"),
       value: "metadata",
     },
     {
@@ -277,37 +275,13 @@ const TransalteSettingCard = ({
             <Title level={5} style={{ fontSize: "1rem", margin: "0" }}>
               {t("translateSettings1.title")}
             </Title>
-            {(typeof plan?.id === "number" && plan?.id <= 2) ||
-            typeof plan?.id === "undefined" ? (
-              <Flex align="center" gap="middle">
-                <Popconfirm
-                  title=""
-                  description={t(
-                    "This feature is available only with the paid plan.",
-                  )}
-                  trigger="hover"
-                  showCancel={false}
-                  okText={t("Upgrade")}
-                  onConfirm={() => navigate("/app/pricing")}
-                >
-                  <InfoCircleOutlined />
-                </Popconfirm>
-                <Button
-                  className={defaultStyles.Button_disable}
-                  icon={<Icon source={PlusIcon} />}
-                  onClick={() => handleUsePrivateApi()}
-                >
-                  {t("Use private api to translate")}
-                </Button>
-              </Flex>
-            ) : (
-              <Button
-                icon={<Icon source={PlusIcon} />}
-                onClick={() => handleUsePrivateApi()}
-              >
-                {t("Use private api to translate")}
-              </Button>
-            )}
+
+            <Button
+              icon={<Icon source={PlusIcon} />}
+              onClick={() => handleUsePrivateApi()}
+            >
+              {t("Use private api to translate")}
+            </Button>
           </Space>
           {translateSettings1Options.map((item, index) => (
             <Flex

@@ -9,6 +9,7 @@ const { TextArea } = Input;
 
 interface ManageTableInputProps {
   record: any;
+  isSuccess?: boolean;
   translatedValues?: {
     [key: string]: string;
   };
@@ -44,6 +45,7 @@ interface ManageTableInputProps {
 
 const ManageTableInput: React.FC<ManageTableInputProps> = ({
   record,
+  isSuccess,
   translatedValues,
   setTranslatedValues,
   handleInputChange,
@@ -54,7 +56,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     return record?.default_language || "";
   }, [record?.default_language]);
   const locale = useSelector((state: any) => state.userConfig.locale);
-  
+
   useEffect(() => {
     if (setTranslatedValues && record?.key) {
       setTranslatedValues((prev) => {
@@ -88,7 +90,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
             index ? Number(index + "" + record.index) : record.index,
           )
         }
-        className={isRtl ? "rtl-input" : ""}
+        className={`${isRtl ? "rtl-input" : ""} ${isSuccess ? "success_input" : ""}`}
       />
     );
   } else {
@@ -100,7 +102,6 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         className={locale === "ar" ? "rtl-input" : ""}
       />
     );
-
   }
 };
 

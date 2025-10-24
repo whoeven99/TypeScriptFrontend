@@ -37,6 +37,7 @@ import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import { globalStore } from "~/globalStore";
+import { getItemOptions } from "../app.manage_translation/route";
 
 const { Content } = Layout;
 
@@ -169,28 +170,13 @@ const Index = () => {
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
-  const itemOptions = [
-    { label: t("Products"), value: "product" },
-    { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "theme" },
-    { label: t("Shop"), value: "shop" },
-    { label: t("Store metadata"), value: "metafield" },
-    { label: t("Articles"), value: "article" },
-    { label: t("Blog titles"), value: "blog" },
-    { label: t("Pages"), value: "page" },
-    { label: t("Filters"), value: "filter" },
-    { label: t("Metaobjects"), value: "metaobject" },
-    { label: t("Navigation"), value: "navigation" },
-    { label: t("Email"), value: "email" },
-    { label: t("Policies"), value: "policy" },
-    { label: t("Product images"), value: "productImage" },
-    { label: t("Product image alt text"), value: "productImageAlt" },
-    { label: t("Delivery"), value: "delivery" },
-    { label: t("Shipping"), value: "shipping" },
-  ];
+  const itemOptions = getItemOptions(t);
   const [languageOptions, setLanguageOptions] = useState<
     { label: string; value: string }[]
   >([]);
@@ -279,6 +265,7 @@ const Index = () => {
         setMetaobjectsData(dataFetcher.data?.response);
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [dataFetcher.data]);
 
@@ -302,6 +289,7 @@ const Index = () => {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [confirmFetcher.data]);
 
@@ -361,6 +349,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
@@ -416,7 +405,7 @@ const Index = () => {
         const newItem = {
           resourceId: metaobjectsData.nodes[index]?.resourceId,
           locale: metaobjectsData.nodes[index]?.translatableContent[0]?.locale,
-          key: "label",
+          key: metaobjectsData.nodes[index]?.translatableContent[0]?.key,
           value: value, // 初始为空字符串
           translatableContentDigest:
             metaobjectsData.nodes[index]?.translatableContent[0]?.digest,
@@ -465,9 +454,7 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
-      source: metaobjectsData.nodes
-        .find((item: any) => item?.resourceId === key)
-        ?.translatableContent.find((item: any) => item.key === key)?.locale,
+      source: globalStore?.source || "",
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -478,6 +465,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response, index);
+        setSuccessTranslatedKey((prev) => [...prev, key]);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
@@ -593,6 +581,7 @@ const Index = () => {
     shopify.saveBar.hide("save-bar");
     setMetaobjectsData({ ...metaobjectsData });
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
   };
 
   // const handleLeaveItem = (
@@ -673,17 +662,52 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={confirmFetcher.state === "submitting" && ""}
+          loading={confirmFetcher.state === "submitting" ? "true" : undefined}
         >
           {t("Save")}
         </button>
         <button onClick={handleDiscard}>{t("Cancel")}</button>
       </SaveBar>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          flexGrow: 2,
+          justifyContent: "flex-end",
+          marginBottom: "15px",
+        }}
+      >
+        <div
+          style={{
+            width: "100px",
+          }}
+        >
+          <Select
+            label={""}
+            options={languageOptions}
+            value={selectedLanguage}
+            onChange={(value) => handleLanguageChange(value)}
+          />
+        </div>
+        <div
+          style={{
+            width: "100px",
+          }}
+        >
+          <Select
+            label={""}
+            options={itemOptions}
+            value={selectedItem}
+            onChange={(value) => handleItemChange(value)}
+          />
+        </div>
+      </div>
       <Layout
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 104px)",
+          height: "calc(100vh - 154px)",
         }}
       >
         {isLoading ? (
@@ -701,44 +725,15 @@ const Index = () => {
           <Content
             style={{
               paddingLeft: isMobile ? "16px" : "0",
+              height: "calc(100% - 25px)",
+              minHeight: "70vh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "auto",
             }}
           >
             {isMobile ? (
               <Space direction="vertical" style={{ width: "100%" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    flexGrow: 2,
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "100px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={languageOptions}
-                      value={selectedLanguage}
-                      onChange={(value) => handleLanguageChange(value)}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      width: "100px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={itemOptions}
-                      value={selectedItem}
-                      onChange={(value) => handleItemChange(value)}
-                    />
-                  </div>
-                </div>
                 <Card title={t("Resource")}>
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {resourceData.map((item: any, index: number) => {
@@ -776,6 +771,9 @@ const Index = () => {
                           >
                             <Text>{t("Translated")}</Text>
                             <ManageTableInput
+                              isSuccess={successTranslatedKey?.includes(
+                                item?.key as string,
+                              )}
                               translatedValues={translatedValues}
                               setTranslatedValues={setTranslatedValues}
                               handleInputChange={handleInputChange}
@@ -815,12 +813,14 @@ const Index = () => {
                   </Space>
                 </Card>
                 <div style={{ display: "flex", justifyContent: "center" }}>
-                  <Pagination
-                    hasPrevious={hasPrevious}
-                    onPrevious={onPrevious}
-                    hasNext={hasNext}
-                    onNext={onNext}
-                  />
+                  {(hasNext || hasPrevious) && (
+                    <Pagination
+                      hasPrevious={hasPrevious}
+                      onPrevious={onPrevious}
+                      hasNext={hasNext}
+                      onNext={onNext}
+                    />
+                  )}
                 </div>
               </Space>
             ) : (
@@ -829,52 +829,20 @@ const Index = () => {
                 size="large"
                 style={{ display: "flex" }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    flexGrow: 2,
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "150px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={languageOptions}
-                      value={selectedLanguage}
-                      onChange={(value) => handleLanguageChange(value)}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      width: "150px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={itemOptions}
-                      value={selectedItem}
-                      onChange={(value) => handleItemChange(value)}
-                    />
-                  </div>
-                </div>
                 <Table
                   columns={resourceColumns}
                   dataSource={resourceData}
                   pagination={false}
                 />
                 <div style={{ display: "flex", justifyContent: "center" }}>
-                  <Pagination
-                    hasPrevious={hasPrevious}
-                    onPrevious={onPrevious}
-                    hasNext={hasNext}
-                    onNext={onNext}
-                  />
+                  {(hasNext || hasPrevious) && (
+                    <Pagination
+                      hasPrevious={hasPrevious}
+                      onPrevious={onPrevious}
+                      hasNext={hasNext}
+                      onNext={onNext}
+                    />
+                  )}
                 </div>
               </Space>
             )}
