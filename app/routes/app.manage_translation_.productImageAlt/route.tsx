@@ -35,10 +35,12 @@ import { authenticate } from "~/shopify.server";
 import {
   DeleteProductImageData,
   GetProductImageData,
+  SingleTextTranslate,
   UpdateProductImageAltData,
 } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import useReport from "scripts/eventReport";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -488,6 +490,7 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { reportClick } = useReport();
   const languageTableData = useSelector(
     (state: any) => state.languageTableData.rows,
   );
@@ -495,6 +498,7 @@ const Index = () => {
   const { searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(false);
+  const loadingItemsRef = useRef<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState<boolean>(false);
@@ -541,6 +545,7 @@ const Index = () => {
     searchTerm || "",
   );
   const [selectedItem, setSelectedItem] = useState<string>("productImageAlt");
+  const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [languageOptions, setLanguageOptions] = useState<
     { label: string; value: string }[]
   >([]);
@@ -638,6 +643,13 @@ const Index = () => {
       }
     }
   }, [languageFetcher.data]);
+
+  // 更新 loadingItemsRef 的值
+  useEffect(() => {
+    console.log(loadingItems);
+    
+    loadingItemsRef.current = loadingItems;
+  }, [loadingItems]);
 
   useEffect(() => {
     if (selectedKey && dataResource.length > 0) {
@@ -741,31 +753,36 @@ const Index = () => {
               confirmData.find((item: any) => item.key === record?.imageId)
                 ?.value || record.targetAltText
             }
-            onChange={(e) =>
-              handleInputChange(
-                record?.imageId,
-                record?.productId,
-                record?.imageUrl,
-                record?.altText,
-                e.target.value,
-              )
-            }
+            onChange={(e) => handleInputChange(record, e.target.value)}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: any) => {
+        return (
+          <Button
+            onClick={() => {
+              handleTranslate("PRODUCT_OPTION_VALUE", record, (e) =>
+                handleInputChange(record, e.target.value),
+              );
+              reportClick("editor_list_translate");
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
   ];
 
-  const handleInputChange = (
-    key: string,
-    productId: string,
-    imageUrl: string,
-    altText: string,
-    value: string,
-  ) => {
+  const handleInputChange = (record: any, value: string) => {
     setConfirmData((prevData: any) => {
       const existingItemIndex = prevData.findIndex(
-        (item: any) => item.key === key,
+        (item: any) => item.key === record?.imageId,
       );
       if (existingItemIndex !== -1) {
         const updatedConfirmData = [...prevData];
@@ -775,9 +792,70 @@ const Index = () => {
         };
         return updatedConfirmData;
       } else {
-        return [...prevData, { key, productId, imageUrl, altText, value }];
+        return [
+          ...prevData,
+          {
+            key: record?.imageId,
+            productId: record?.productId,
+            imageUrl: record?.imageUrl,
+            altText: record?.altText,
+            value,
+          },
+        ];
       }
     });
+  };
+
+  const handleTranslate = async (
+    resourceType: string,
+    record: any,
+    handleInputChange: (record: any, value: string) => void,
+  ) => {
+    if (!record?.key || !record?.altText) {
+      return;
+    }
+    fetcher.submit(
+      {
+        log: `${globalStore?.shop} 从翻译管理-产品页面点击单行翻译`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+
+    setLoadingItems((prev) => [...prev, record?.key]);
+
+    const data = await SingleTextTranslate({
+      shopName: globalStore?.shop || "",
+      source: globalStore?.source || "",
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: record?.altText,
+      key: record?.key,
+      type: "SINGLE_LINE_TEXT_FIELD",
+      server: globalStore?.server || "",
+    });
+    if (data?.success) {
+      console.log(loadingItemsRef.current.includes(record?.key));
+
+      if (loadingItemsRef.current.includes(record?.key)) {
+        handleInputChange(record, data.response);
+        shopify.toast.show(t("Translated successfully"));
+        fetcher.submit(
+          {
+            log: `${globalStore?.shop} 从翻译管理-产品页面点击单行翻译返回结果 ${data?.response}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
+      }
+    } else {
+      shopify.toast.show(data.errorMsg);
+    }
+    setLoadingItems((prev) => prev.filter((item) => item !== record?.key));
   };
 
   const handleMenuChange = (key: string) => {
@@ -956,22 +1034,6 @@ const Index = () => {
     <Page
       title={t("Product image alt text")}
       fullWidth={true}
-      // primaryAction={{
-      //   content: t("Save"),
-      //   loading: confirmFetcher.state === "submitting",
-      //   disabled:
-      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //   onAction: handleConfirm,
-      // }}
-      // secondaryActions={[
-      //   {
-      //     content: t("Cancel"),
-      //     loading: confirmFetcher.state === "submitting",
-      //     disabled:
-      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //     onAction: handleDiscard,
-      //   },
-      // ]}
       backAction={{
         onAction: onCancel,
       }}
