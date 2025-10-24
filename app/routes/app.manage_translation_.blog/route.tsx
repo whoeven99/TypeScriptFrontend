@@ -188,6 +188,9 @@ const Index = () => {
   const [selectBlogKey, setSelectBlogKey] = useState<string>("");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -269,6 +272,7 @@ const Index = () => {
       });
       setBlogData(data);
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
       setTranslatedValues({});
     }
   }, [selectBlogKey, blogsData]);
@@ -345,6 +349,7 @@ const Index = () => {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
       fetcher.submit(
         {
           log: `${globalStore?.shop} 翻译管理-博客页面修改数据保存成功`,
@@ -413,6 +418,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
@@ -568,6 +574,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, key]);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
@@ -695,6 +702,7 @@ const Index = () => {
     });
     setBlogData(data);
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
   };
 
   // const handleLeaveItem = (
@@ -955,6 +963,9 @@ const Index = () => {
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
                                 translatedValues={translatedValues}
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleInputChange}
                                 isRtl={searchTerm === "ar"}

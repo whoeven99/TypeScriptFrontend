@@ -171,6 +171,9 @@ const Index = () => {
   const [searchInput, setSearchInput] = useState("");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -268,6 +271,8 @@ const Index = () => {
       return label == selectedThemeKey;
     });
     setThemeData(dataSource);
+    setConfirmData([]);
+    setSuccessTranslatedKey([]);
     if (currentPage !== 1) setCurrentPage(1);
   }, [selectedThemeKey]);
 
@@ -330,6 +335,7 @@ const Index = () => {
         shopify.toast.show(errorItem?.errorMsg);
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [confirmFetcher.data]);
 
@@ -393,6 +399,7 @@ const Index = () => {
           record && (
             <ManageTableInput
               record={record}
+              isSuccess={successTranslatedKey?.includes(record?.key as string)}
               translatedValues={translatedValues}
               setTranslatedValues={setTranslatedValues}
               handleInputChange={handleInputChange}
@@ -535,6 +542,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, key]);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
@@ -628,6 +636,7 @@ const Index = () => {
     const data = generateMenuItemsArray(themeFetcher.data.response);
     setFilteredResourceData(data); // 使用展开运算符创建新数组引用
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
   };
 
   const onCancel = () => {
@@ -821,6 +830,9 @@ const Index = () => {
                                 >
                                   <Text>{t("Translated")}</Text>
                                   <ManageTableInput
+                                    isSuccess={successTranslatedKey?.includes(
+                                      item?.key as string,
+                                    )}
                                     translatedValues={translatedValues}
                                     setTranslatedValues={setTranslatedValues}
                                     handleInputChange={handleInputChange}
@@ -885,6 +897,9 @@ const Index = () => {
                             >
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleInputChange}

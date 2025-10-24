@@ -546,6 +546,9 @@ const Index = () => {
   );
   const [selectedItem, setSelectedItem] = useState<string>("productImageAlt");
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [languageOptions, setLanguageOptions] = useState<
     { label: string; value: string }[]
   >([]);
@@ -646,8 +649,6 @@ const Index = () => {
 
   // 更新 loadingItemsRef 的值
   useEffect(() => {
-    console.log(loadingItems);
-
     loadingItemsRef.current = loadingItems;
   }, [loadingItems]);
 
@@ -686,6 +687,8 @@ const Index = () => {
         }
       }
       getTargetData();
+      setConfirmData([]);
+      setSuccessTranslatedKey([]);
       setIsLoading(false);
     }
   }, [selectedKey, dataResource, selectedLanguage]);
@@ -864,6 +867,7 @@ const Index = () => {
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
     } else {
+      shopify.saveBar.hide("save-bar");
       setSelectedKey(key);
     }
   };
@@ -1010,17 +1014,15 @@ const Index = () => {
         }),
       );
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
       shopify.saveBar.hide("save-bar");
       setSaveLoading(false);
     }
   };
 
-  useEffect(() => {
-    console.log(productAltTextData);
-  }, [productAltTextData]);
-
   const handleDiscard = () => {
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
     shopify.saveBar.hide("save-bar");
   };
 

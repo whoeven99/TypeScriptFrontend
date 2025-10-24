@@ -368,6 +368,9 @@ const Index = () => {
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [variantsLoading, setVariantsLoading] = useState<boolean>(false);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -759,6 +762,7 @@ const Index = () => {
     setVariantsData([]);
     setLoadingItems([]);
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
     setTranslatedValues({});
     productFetcher.submit(
       {
@@ -831,6 +835,7 @@ const Index = () => {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [confirmFetcher.data]);
 
@@ -921,6 +926,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleProductBaseInputChange}
@@ -979,6 +985,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleProductSeoInputChange}
@@ -1041,6 +1048,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleOptionsInputChange}
@@ -1104,6 +1112,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleMetafieldsInputChange}
@@ -1167,6 +1176,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleVariantsInputChange}
@@ -1410,6 +1420,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, key]);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
@@ -1738,6 +1749,7 @@ const Index = () => {
       ].filter((item) => item.default_language),
     );
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
   };
 
   const onCancel = () => {
@@ -1937,6 +1949,9 @@ const Index = () => {
                             >
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleProductBaseInputChange}
@@ -2013,6 +2028,9 @@ const Index = () => {
                             >
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleProductSeoInputChange}
@@ -2091,6 +2109,9 @@ const Index = () => {
                                 >
                                   <Text>{t("Translated")}</Text>
                                   <ManageTableInput
+                                    isSuccess={successTranslatedKey?.includes(
+                                      item?.key as string,
+                                    )}
                                     translatedValues={translatedValues}
                                     setTranslatedValues={setTranslatedValues}
                                     handleInputChange={handleOptionsInputChange}
@@ -2172,6 +2193,9 @@ const Index = () => {
                                 >
                                   <Text>{t("Translated")}</Text>
                                   <ManageTableInput
+                                    isSuccess={successTranslatedKey?.includes(
+                                      item?.key as string,
+                                    )}
                                     translatedValues={translatedValues}
                                     setTranslatedValues={setTranslatedValues}
                                     handleInputChange={
@@ -2255,6 +2279,9 @@ const Index = () => {
                                 >
                                   <Text>{t("Translated")}</Text>
                                   <ManageTableInput
+                                    isSuccess={successTranslatedKey?.includes(
+                                      item?.key as string,
+                                    )}
                                     translatedValues={translatedValues}
                                     setTranslatedValues={setTranslatedValues}
                                     handleInputChange={
@@ -2364,13 +2391,14 @@ const Index = () => {
                     dataSource={productSeoData}
                     pagination={false}
                   />
-                  {Array.isArray(optionsData) && optionsData[0] !== undefined && (
-                    <Table
-                      columns={optionsColumns}
-                      dataSource={optionsData}
-                      pagination={false}
-                    />
-                  )}
+                  {Array.isArray(optionsData) &&
+                    optionsData[0] !== undefined && (
+                      <Table
+                        columns={optionsColumns}
+                        dataSource={optionsData}
+                        pagination={false}
+                      />
+                    )}
                   {Array.isArray(metafieldsData) &&
                     metafieldsData[0] !== undefined && (
                       <Table
@@ -2379,16 +2407,18 @@ const Index = () => {
                         pagination={false}
                       />
                     )}
-                  {Array.isArray(variantsData) && variantsData[0] !== undefined && (
-                    <Table
-                      loading={
-                        variantFetcher.state === "submitting" || variantsLoading
-                      }
-                      columns={variantsColumns}
-                      dataSource={variantsData}
-                      pagination={false}
-                    />
-                  )}
+                  {Array.isArray(variantsData) &&
+                    variantsData[0] !== undefined && (
+                      <Table
+                        loading={
+                          variantFetcher.state === "submitting" ||
+                          variantsLoading
+                        }
+                        columns={variantsColumns}
+                        dataSource={variantsData}
+                        pagination={false}
+                      />
+                    )}
                 </Space>
               )}
             </Content>

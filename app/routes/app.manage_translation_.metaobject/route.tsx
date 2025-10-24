@@ -170,6 +170,9 @@ const Index = () => {
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -262,6 +265,7 @@ const Index = () => {
         setMetaobjectsData(dataFetcher.data?.response);
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [dataFetcher.data]);
 
@@ -285,6 +289,7 @@ const Index = () => {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [confirmFetcher.data]);
 
@@ -344,6 +349,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
@@ -459,6 +465,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response, index);
+        setSuccessTranslatedKey((prev) => [...prev, key]);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
@@ -574,6 +581,7 @@ const Index = () => {
     shopify.saveBar.hide("save-bar");
     setMetaobjectsData({ ...metaobjectsData });
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
   };
 
   // const handleLeaveItem = (
@@ -763,6 +771,9 @@ const Index = () => {
                           >
                             <Text>{t("Translated")}</Text>
                             <ManageTableInput
+                              isSuccess={successTranslatedKey?.includes(
+                                item?.key as string,
+                              )}
                               translatedValues={translatedValues}
                               setTranslatedValues={setTranslatedValues}
                               handleInputChange={handleInputChange}
