@@ -781,7 +781,7 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (record: any, value: string) => {    
+  const handleInputChange = (record: any, value: string) => {
     setConfirmData((prevData: any) => {
       const existingItemIndex = prevData.findIndex(
         (item: any) => item.key === record?.imageId,
@@ -814,6 +814,9 @@ const Index = () => {
     handleInputChange: (record: any, value: string) => void,
   ) => {
     if (!record?.key || !record?.altText) {
+      shopify.toast.show(
+        t("The source text is empty and cannot be translated"),
+      );
       return;
     }
     fetcher.submit(

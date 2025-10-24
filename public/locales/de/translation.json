@@ -750,5 +750,6 @@
   "devplanCard2.title": "Optimiertes Editorverzeichnis",
   "devplanCard3.title": "30 % schnellere Übersetzungsgeschwindigkeit",
   "devplanCard4.title": "Umschalter mit unsichtbarem Modus unter IP-basierter Geolokalisierung",
-  "translation_process_saving_shopify": "Übersetzungen werden auf das Modul {{item}} angewendet…"
+  "translation_process_saving_shopify": "Übersetzungen werden auf das Modul {{item}} angewendet…",
+  "The source text is empty and cannot be translated": "Der Quelltext ist leer und kann nicht übersetzt werden"
 }

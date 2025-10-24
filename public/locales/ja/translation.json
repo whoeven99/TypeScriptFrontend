@@ -751,5 +751,6 @@
   "devplanCard1.title": "製品画像の翻訳をサポート",
   "devplanCard2.title": "最適化されたエディターディレクトリ",
   "devplanCard3.title": "翻訳速度が30%向上",
-  "devplanCard4.title": "IPベースの位置情報に基づく非表示モードを備えたスイッチャー"
+  "devplanCard4.title": "IPベースの位置情報に基づく非表示モードを備えたスイッチャー",
+  "The source text is empty and cannot be translated.": "ソーステキストが空で翻訳できません"
 }
