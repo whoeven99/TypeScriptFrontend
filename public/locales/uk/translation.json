@@ -750,5 +750,6 @@
   "devplanCard2.title": "Оптимізований каталог редактора",
   "devplanCard3.title": "На 30% швидше перекладати",
   "devplanCard4.title": "Перемикач з невидимим режимом під час геолокації на основі IP",
-  "translation_process_saving_shopify": "Застосування перекладів до модуля {{item}}…"
+  "translation_process_saving_shopify": "Застосування перекладів до модуля {{item}}…",
+  "The source text is empty and cannot be translated": "Вихідний текст порожній і не може бути перекладений"
 }

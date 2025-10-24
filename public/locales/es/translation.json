@@ -751,5 +751,6 @@
   "devplanCard1.title": "Admite la traducción de imágenes de productos.",
   "devplanCard2.title": "Directorio de editores optimizado",
   "devplanCard3.title": "Velocidad de traducción un 30% más rápida",
-  "devplanCard4.title": "Conmutador con modo invisible bajo geolocalización basada en IP"
+  "devplanCard4.title": "Conmutador con modo invisible bajo geolocalización basada en IP",
+  "The source text is empty and cannot be translated": "El texto de origen está vacío y no se puede traducir"
 }

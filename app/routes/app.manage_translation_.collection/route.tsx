@@ -948,7 +948,7 @@ const Index = () => {
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 154px)",
+          height: "calc(100vh - 104px)",
         }}
       >
         {isLoading ? (
