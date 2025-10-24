@@ -1,14 +1,6 @@
-import { UploadOutlined } from "@ant-design/icons";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  json,
-  useFetcher,
-  useLoaderData,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-} from "@remix-run/react";
-import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
+import { json, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Pagination, Select } from "@shopify/polaris";
 import {
   Button,
@@ -18,9 +10,7 @@ import {
   Space,
   Spin,
   Image,
-  theme,
   Typography,
-  Upload,
   Divider,
   Table,
   Input,
@@ -33,7 +23,6 @@ import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { authenticate } from "~/shopify.server";
 import {
-  DeleteProductImageData,
   GetProductImageData,
   SingleTextTranslate,
   UpdateProductImageAltData,
@@ -41,6 +30,7 @@ import {
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import useReport from "scripts/eventReport";
+import styles from "./styles.module.css";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -752,6 +742,11 @@ const Index = () => {
       render: (_: any, record: any) => {
         return (
           <Input
+            className={
+              successTranslatedKey?.includes(record?.key)
+                ? styles.success_input
+                : ""
+            }
             value={
               confirmData.find((item: any) => item.key === record?.imageId)
                 ? confirmData.find((item: any) => item.key === record?.imageId)
@@ -786,7 +781,7 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (record: any, value: string) => {
+  const handleInputChange = (record: any, value: string) => {    
     setConfirmData((prevData: any) => {
       const existingItemIndex = prevData.findIndex(
         (item: any) => item.key === record?.imageId,
@@ -846,6 +841,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
         handleInputChange(record, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, record?.key]);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
@@ -1228,6 +1224,13 @@ const Index = () => {
                               >
                                 <Text>{t("Translated")}</Text>
                                 <Input
+                                  className={
+                                    successTranslatedKey?.includes(
+                                      productAltTextItem?.imageId,
+                                    )
+                                      ? styles.success_input
+                                      : ""
+                                  }
                                   value={
                                     confirmData.find(
                                       (confirmItem: any) =>
