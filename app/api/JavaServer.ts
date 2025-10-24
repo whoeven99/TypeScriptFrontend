@@ -19,6 +19,56 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const IsInFreePlanTime = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/userTrials/isInFreePlanTime?shopName=${shop}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} IsInFreePlanTime: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} IsInFreePlanTime error:`, error);
+  }
+}
+
+export const GetAllProgressData = async ({
+  shop,
+  server,
+  source,
+}: {
+  shop: string;
+  server: string;
+  source: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/translate/getAllProgressData?shopName=${shop}&source=${source}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} GetAllProgressData: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} GetAllProgressData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: "",
+    };
+  }
+};
+
 export const IsShowFreePlan = async ({
   shop,
   server,
@@ -1358,10 +1408,7 @@ export const GetLanguageStatus = async ({
       ],
     });
 
-    console.log(
-      `${shop} GetLanguageStatus: `,
-      response.data?.response,
-    );
+    console.log(`${shop} GetLanguageStatus: `, response.data?.response);
 
     return response.data;
   } catch (error) {
@@ -1513,6 +1560,143 @@ export const GoogleAnalyticClickReport = async (params: any, name: string) => {
   } catch (error) {
     console.log("google analytic error:", error);
     return false;
+  }
+};
+
+// 获取翻译报告分数以及详细报告指标
+export const GetTranslationQualityScore = async ({
+  shop,
+  source,
+}: {
+  shop: string;
+  source: string;
+}) => {
+  try {
+    const response = await axios({
+      method: "POST",
+      url: `${process.env.SERVER_URL}/rating/getRatingInfo?shopName=${shop}&source=${source}`,
+    });
+    return response.data;
+  } catch (error) {
+    console.log("get translationQuality score error:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
+  }
+};
+
+// 查询未翻译的字符数
+export const GetUnTranslatedWords = async ({
+  shop,
+  module,
+  accessToken,
+  source,
+}: {
+  shop: string;
+  module: string;
+  accessToken: string;
+  source: string;
+}) => {
+  try {
+    const response = await axios({
+      method: "POST",
+      url: `${process.env.SERVER_URL}/shopify/getUnTranslatedToken?shopName=${shop}&source=${source}&modelType=${module}`,
+      data: {
+        accessToken,
+      },
+    });
+    console.log("unTranslated words data", response.data);
+    return response.data;
+  } catch (error) {
+    console.log("get unTranslated words failed:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
+  }
+};
+
+// 获取web pixel事件获得的用户的数据
+export const GetConversionData = async ({
+  shop,
+  storeLanguage,
+  dayData,
+}: {
+  shop: string;
+  storeLanguage: string[];
+  dayData: number;
+}) => {
+  try {
+    const response = await axios({
+      method: "POST",
+      url: `${process.env.SERVER_URL}/getUserDataReport?shopName=${shop}`,
+      data: {
+        storeLanguage,
+        dayData,
+        timestamp: new Date().toISOString(),
+      },
+    });
+    console.log("coversion rate data", response.data);
+    return response.data;
+  } catch (error) {
+    console.log("get conversion data failed:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
+  }
+};
+
+// 获取用户商店翻译的语言
+export const GetStoreLanguage = async ({
+  shop,
+  source,
+}: {
+  shop: string;
+  source: string;
+}) => {
+  try {
+    const response = await axios({
+      method: "POST",
+      url: `${process.env.SERVER_URL}/rating/getTranslationStatus?shopName=${shop}&source=${source}`,
+    });
+    console.log("user stroe language data", response.data);
+    return response.data;
+  } catch (error) {
+    console.log("get conversion data failed:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
+  }
+};
+
+// 获取实时翻译指标数据值（四个开关）
+export const GetRealTimeQuotaData = async ({ shop }: { shop: string }) => {
+  try {
+    const response = await axios({
+      method: "POST",
+      url: `${process.env.SERVER_URL}/rating/getDBConfiguration?shopName=${shop}`,
+    });
+    console.log("user stroe language data", response.data);
+    return response.data;
+  } catch (error) {
+    console.log("get conversion data failed:", error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: undefined,
+    };
   }
 };
 
@@ -1876,14 +2060,6 @@ export const AddCurrency = async ({
   currencyCode: string;
   primaryStatus: number;
 }) => {
-  console.log("AddCurrency: ", {
-    shopName: shop,
-    currencyName: currencyName, // 国家
-    currencyCode: currencyCode, // 货币代码
-    rounding: "",
-    exchangeRate: "Auto",
-    primaryStatus: primaryStatus,
-  });
   try {
     const response = await axios({
       url: `${server}/currency/insertCurrency`,
@@ -1898,7 +2074,7 @@ export const AddCurrency = async ({
       },
     });
 
-    console.log(`${shop} AddCurrency: `, response.data);
+    console.log(`应用日志: ${shop} 添加货币: `, response.data);
 
     return response.data;
   } catch (error) {
@@ -2017,7 +2193,7 @@ export const GetCurrencyByShopName = async ({
       }));
       return {
         success: true,
-        errorCode: 0,
+        errorCode: 10001,
         errorMsg: "",
         response: data,
       };
@@ -2091,16 +2267,6 @@ export const InsertOrUpdateOrder = async ({
   confirmationUrl?: URL;
 }) => {
   try {
-    console.log("Order: ", {
-      shopName: shop,
-      id: id,
-      amount: amount,
-      name: name,
-      createdAt: createdAt,
-      status: status,
-      confirmationUrl: confirmationUrl,
-    });
-
     await axios({
       url: `${process.env.SERVER_URL}/orders/insertOrUpdateOrder?shopName=${shop}`,
       method: "POST",
@@ -2271,7 +2437,7 @@ export const GetGlossaryByShopNameLoading = async ({
 
     return {
       success: true,
-      errorCode: 0,
+      errorCode: 10001,
       errorMsg: "",
       response: {
         glossaryTableData: sortedRes,

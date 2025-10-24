@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { IsShowFreePlan } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
-import { planNum } from "../route";
 
 const { Title, Text } = Typography;
 
@@ -81,7 +80,7 @@ const HasPayForFreePlanModal: React.FC<HasPayForFreePlanModalProps> = ({}) => {
         </Title>
         <Text>
           {t("You have received {{ plan }} Plan benefits", {
-            plan: planNum(plan?.id),
+            plan: plan?.type,
           })}
         </Text>
         <Space

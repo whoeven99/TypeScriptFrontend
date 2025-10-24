@@ -67,11 +67,13 @@ const EasyTranslateIcon: React.FC<EasyTranslateIconProps> = ({ status }) => {
       title={t("Translation Exception")}
       placement="top"
       trigger="hover"
-      overlayStyle={{ maxWidth: 350 }}
-      overlayInnerStyle={{
-        padding: "12px",
-        backgroundColor: "#fff1f0",
-        border: "1px solid #ffccc7",
+      styles={{
+        root: { maxWidth: 350 },
+        body: {
+          padding: "12px",
+          backgroundColor: "#fff1f0",
+          border: "1px solid #ffccc7",
+        },
       }}
     >
       {iconContent}

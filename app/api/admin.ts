@@ -1130,7 +1130,7 @@ export const queryNextTransType = async ({
 }) => {
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, first: 20 ${endCursor ? `, after: "${endCursor}"` : ""}) {
+      translatableResources(resourceType: ${resourceType}, first: 20 ${endCursor ? `, after: "${endCursor}"` : ""}, reverse: true) {
         nodes {
           resourceId
           translatableContent {
@@ -1185,7 +1185,7 @@ export const queryPreviousTransType = async ({
 }) => {
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, last: 20 ${startCursor ? `, before: "${startCursor}"` : ""}) {
+      translatableResources(resourceType: ${resourceType}, last: 20 ${startCursor ? `, before: "${startCursor}"` : ""}, reverse: true) {
         nodes {
           resourceId
           translatableContent {
@@ -1736,7 +1736,6 @@ export const mutationAppSubscriptionCreate = async ({
   trialDays: number;
   returnUrl: URL;
 }) => {
-  console.log("mutationAppSubscriptionCreate is coming");
   try {
     // 执行 API 请求
     const response = await axios({
@@ -1795,7 +1794,10 @@ export const mutationAppSubscriptionCreate = async ({
         },
       },
     });
-    const res = response.data.data.appSubscriptionCreate;
+    const res = response.data?.data?.appSubscriptionCreate;
+
+    console.log(`${shop} mutationAppSubscriptionCreate: `, res);
+
     return res;
   } catch (error) {
     console.error("Error mutationAppSubscriptionCreate:", error);
