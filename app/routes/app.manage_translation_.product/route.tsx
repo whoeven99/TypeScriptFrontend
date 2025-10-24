@@ -864,10 +864,10 @@ const Index = () => {
 
   useEffect(() => {
     if (variantFetcher.data && variantFetcher.data.variantsData) {
-      variantFetcher.data.variantsData.forEach((result: any) => {
-        if (result.status === "fulfilled") {
-          setVariantsData((prev: any) => {
-            const newData = result.value.data.translatableResourcesByIds.nodes
+      const variantsData = variantFetcher.data.variantsData.flatMap(
+        (result: any) => {
+          if (result.status === "fulfilled") {
+            return result.value.data.translatableResourcesByIds.nodes
               .filter(
                 (variant: any) =>
                   variant?.translatableContent[0]?.value &&
@@ -875,7 +875,7 @@ const Index = () => {
               )
               .map((variant: any, index: number) => ({
                 key: variant?.resourceId,
-                index: index,
+                index,
                 resource: t(variant?.translatableContent[0]?.key),
                 type: variant?.translatableContent[0]?.type,
                 locale: variant?.translatableContent[0]?.locale,
@@ -883,12 +883,14 @@ const Index = () => {
                 default_language: variant?.translatableContent[0]?.value,
                 translated: variant?.translations[0]?.value,
               }));
-            return [...prev, ...newData];
-          });
-        } else {
-          console.error("Request failed:", result.reason);
-        }
-      });
+          } else {
+            console.error("Request failed:", result.reason);
+          }
+          return []; // 记得返回空数组避免 undefined
+        },
+      );
+
+      if (variantsData) setVariantsData(variantsData);
       setVariantsLoading(false);
     }
   }, [variantFetcher.data]);
@@ -1784,36 +1786,35 @@ const Index = () => {
       },
     );
     if (metafieldsData) setMetafieldsData(metafieldsData);
-    // variantFetcher.data.variantsData.forEach((result: any) => {
-    //   if (result.status === "fulfilled") {
-    //     setVariantsData((prev: any) => {
-    //       const newData = result.value.data.translatableResourcesByIds.nodes
-    //         .filter(
-    //           (variant: any) =>
-    //             variant?.translatableContent[0]?.value &&
-    //             variant?.translatableContent[0]?.value !== "Default Title",
-    //         )
-    //         .map((variant: any, index: number) => ({
-    //           key: variant?.resourceId,
-    //           index: index,
-    //           resource: t(variant?.translatableContent[0]?.key),
-    //           type: variant?.translatableContent[0]?.type,
-    //           locale: variant?.translatableContent[0]?.locale,
-    //           digest: variant?.translatableContent[0]?.digest,
-    //           default_language: variant?.translatableContent[0]?.value,
-    //           translated: variant?.translations[0]?.value,
-    //         }));
-    //       return [...prev, ...newData];
-    //     });
-    //   }
-    // });
+    const variantsData = variantFetcher.data.variantsData.flatMap(
+      (result: any) => {
+        if (result.status === "fulfilled") {
+          return result.value.data.translatableResourcesByIds.nodes
+            .filter(
+              (variant: any) =>
+                variant?.translatableContent[0]?.value &&
+                variant?.translatableContent[0]?.value !== "Default Title",
+            )
+            .map((variant: any, index: number) => ({
+              key: variant?.resourceId,
+              index,
+              resource: t(variant?.translatableContent[0]?.key),
+              type: variant?.translatableContent[0]?.type,
+              locale: variant?.translatableContent[0]?.locale,
+              digest: variant?.translatableContent[0]?.digest,
+              default_language: variant?.translatableContent[0]?.value,
+              translated: variant?.translations[0]?.value,
+            }));
+        }
+        return []; // 记得返回空数组避免 undefined
+      },
+    );
+
+    if (variantsData) setVariantsData(variantsData);
+
     setConfirmData([]);
     setSuccessTranslatedKey([]);
   };
-
-  useEffect(() => {
-    console.log(optionsData);
-  }, [optionsData]);
 
   const onCancel = () => {
     if (confirmData.length > 0) {
