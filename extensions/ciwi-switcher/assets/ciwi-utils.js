@@ -186,3 +186,19 @@ export function transformPrices({ rate, moneyFormat, selectedCurrency }) {
     }
   });
 }
+
+/**
+ * 跳转页面
+ */
+export function updateLocalization({ country, language }) {
+  const formId = crypto.randomUUID();
+  const formHtml = `
+    <form id="${formId}" action="/localization" method="POST" hidden>
+      <input name="_method" value="PUT">
+      <input name="country_code" value="${country}">
+      <input name="language_code" value="${language}">
+    </form>
+  `;
+  document.body.insertAdjacentHTML("beforeend", formHtml);
+  document.getElementById(formId).submit();
+}
