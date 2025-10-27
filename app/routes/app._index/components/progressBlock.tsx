@@ -190,11 +190,9 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
         >
           <Progress
             percent={
-              status === 1
-                ? 100
-                : translateStatus === "translation_process_init" && status === 2
-                  ? 0
-                  : parseFloat(progress)
+              translateStatus === "translation_process_init" && status === 2
+                ? 0
+                : parseFloat(progress)
             }
             status={
               status === 1 ? "success" : status === 2 ? "active" : "normal"
