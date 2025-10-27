@@ -19,21 +19,15 @@ const Tiptap = ({ editor, style, readOnly }: TiptapProps) => {
     editor?.options?.content || "",
   );
 
-  console.log("style: ", style);
-
   // HTML 模式下同步 div 内容
   useEffect(() => {
     if (!showTiptap) {
-      const content = editor?.getJSON()?.content?.[0]?.content?.[0]?.text || "";
+      // const content = editor?.getJSON()?.content?.[0]?.content?.[0]?.text || "";
       // const html = formatHtml(content);
       setHtmlContent(editor?.getHTML() || "");
       // htmlEditorRef.current.innerText = (htmlContent);
     }
   }, [showTiptap]);
-
-  useEffect(() => {
-    console.log("editor: ", editor);
-  }, [editor]);
 
   const hideTiptap = (value: boolean) => {
     setShowTiptap(value);
@@ -86,8 +80,6 @@ const Tiptap = ({ editor, style, readOnly }: TiptapProps) => {
           }}
         />
       )}
-      {/* <FloatingMenu editor={editor}>This is the floating menu</FloatingMenu> */}
-      {/* <BubbleMenu editor={editor}>This is the bubble menu</BubbleMenu> */}
     </div>
   );
 };

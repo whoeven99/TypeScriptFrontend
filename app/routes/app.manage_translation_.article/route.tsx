@@ -542,7 +542,12 @@ const Index = () => {
       key: "default_language",
       width: "40%",
       render: (_: any, record: TableDataType) => {
-        return <ManageTableInput record={record} />;
+        return (
+          <ManageTableInput
+            record={record}
+            isHtml={record?.key == "body_html"}
+          />
+        );
       },
     },
     {
@@ -554,6 +559,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isHtml={record?.key == "body_html"}
             isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
@@ -914,47 +920,6 @@ const Index = () => {
     setSuccessTranslatedKey([]);
   };
 
-  // const handleLeaveItem = (
-  //   key: string | boolean | { language: string } | { item: string },
-  // ) => {
-  //   setIsVisible(false);
-  //   if (typeof key === "string" && key !== "previous" && key !== "next") {
-  //     setSelectArticleKey(key);
-  //   } else if (key === "previous") {
-  //     // 向前翻页
-  //     const formData = new FormData();
-  //     const startCursor = articlesData.pageInfo.startCursor;
-  //     formData.append("startCursor", JSON.stringify(startCursor));
-  //     submit(formData, {
-  //       method: "post",
-  //       action: `/app/manage_translation/article?language=${searchTerm}`,
-  //     });
-  //   } else if (key === "next") {
-  //     // 向后翻页
-  //     const formData = new FormData();
-  //     const endCursor = articlesData.pageInfo.endCursor;
-  //     formData.append("endCursor", JSON.stringify(endCursor));
-  //     submit(formData, {
-  //       method: "post",
-  //       action: `/app/manage_translation/article?language=${searchTerm}`,
-  //     });
-  //   } else if (typeof key === "object" && "language" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedLanguage(key.language);
-  //     navigate(`/app/manage_translation/article?language=${key.language}`);
-  //   } else if (typeof key === "object" && "item" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedItem(key.item);
-  //     navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
-  //   } else {
-  //     navigate(`/app/manage_translation?language=${searchTerm}`, {
-  //       state: { key: searchTerm },
-  //     }); // 跳转到 /app/manage_translation
-  //   }
-  // };
-
   const onCancel = () => {
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
@@ -970,22 +935,6 @@ const Index = () => {
     <Page
       title={t("Article")}
       fullWidth={true}
-      // primaryAction={{
-      //   content: t("Save"),
-      //   loading: confirmFetcher.state === "submitting",
-      //   disabled:
-      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //   onAction: handleConfirm,
-      // }}
-      // secondaryActions={[
-      //   {
-      //     content: t("Cancel"),
-      //     loading: confirmFetcher.state === "submitting",
-      //     disabled:
-      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //     onAction: handleDiscard,
-      //   },
-      // ]}
       backAction={{
         onAction: onCancel,
       }}

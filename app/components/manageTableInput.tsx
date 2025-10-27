@@ -1,14 +1,27 @@
 import { Input } from "antd";
-// import dynamic from "next/dist/shared/lib/dynamic";
 import { useEffect, useMemo } from "react";
-// import debounce from 'lodash/debounce';
 import "./styles.css";
 import { useSelector } from "react-redux";
+import { useEditor } from "@tiptap/react";
+import { Video } from "app/components/richTextInput/extensions/VideoNode";
+import TextAlign from "@tiptap/extension-text-align";
+import TableRow from "@tiptap/extension-table-row";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
+import { Table } from "@tiptap/extension-table";
+import { LocalImage } from "app/components/richTextInput/extensions/imageNode";
+import Color from "@tiptap/extension-color";
+import { TextStyle } from "@tiptap/extension-text-style";
+import StarterKit from "@tiptap/starter-kit";
+import Highlight from "@tiptap/extension-highlight";
+import Tiptap from "app/components/richTextInput/richTextInput";
+import styles from "app/routes/styles/styles.module.css";
 
 const { TextArea } = Input;
 
 interface ManageTableInputProps {
   record: any;
+  isHtml?: boolean;
   isSuccess?: boolean;
   translatedValues?: {
     [key: string]: string;
@@ -23,28 +36,9 @@ interface ManageTableInputProps {
   index?: number;
 }
 
-// const modules = {
-//   toolbar: [
-//     ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
-//     ['blockquote', 'code-block'],
-//     [{ 'direction': 'rtl' }],                         // text direction
-
-//     [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
-//     [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-
-//     [{ 'color': [] }],          // dropdown with defaults from theme
-//     [{ 'font': [] }],
-//     [{ 'align': [] }],
-
-//     ['clean']                                         // remove formatting button
-//   ],
-//   clipboard: {
-//     matchVisual: false // 禁用视觉匹配，可以减少自动添加的空格
-//   }
-// };
-
 const ManageTableInput: React.FC<ManageTableInputProps> = ({
   record,
+  isHtml = false,
   isSuccess,
   translatedValues,
   setTranslatedValues,
@@ -55,6 +49,53 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   const defaultValue = useMemo(() => {
     return record?.default_language || "";
   }, [record?.default_language]);
+
+  const originalEditor = useEditor({
+    extensions: [
+      StarterKit,
+      TextStyle,
+      Color,
+      Highlight,
+      LocalImage,
+      Table.configure({
+        resizable: true, // 允许拖动调整列宽
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      TextAlign.configure({
+        types: ["heading", "paragraph"], // 指定允许设置对齐的节点类型
+      }),
+      Video,
+      // Underline
+    ], // define your extension array
+    content: defaultValue, // initial content
+    immediatelyRender: false, // 🔹 SSR 环境下必须加这个
+  });
+
+  const targetEditor = useEditor({
+    extensions: [
+      StarterKit,
+      TextStyle,
+      Color,
+      Highlight,
+      LocalImage,
+      Table.configure({
+        resizable: true, // 允许拖动调整列宽
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      TextAlign.configure({
+        types: ["heading", "paragraph"], // 指定允许设置对齐的节点类型
+      }),
+      Video,
+      // Underline
+    ], // define your extension array
+    content: translatedValues, // initial content
+    immediatelyRender: false, // 🔹 SSR 环境下必须加这个
+  });
+
   const locale = useSelector((state: any) => state.userConfig.locale);
 
   useEffect(() => {
@@ -79,6 +120,9 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     translatedValues !== undefined &&
     setTranslatedValues !== undefined
   ) {
+    if (isHtml) {
+      return <Tiptap editor={targetEditor} />;
+    }
     return (
       <TextArea
         value={translatedValues[record?.key]}
@@ -94,6 +138,9 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
       />
     );
   } else {
+    if (isHtml) {
+      return <Tiptap editor={originalEditor} />;
+    }
     return (
       <TextArea
         disabled
