@@ -136,7 +136,24 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
               maxWidth: isMobile ? "50%" : status === 1 ? "100%" : "80%", // 限制最大宽度
             }}
           >
-            {status === 1 && <Text>{t("progressing.finished")}</Text>}
+            {status === 1 && (
+              <Text>
+                {t(translateStatus, {
+                  item: t(module),
+                  hasTranslated:
+                    progressData.TotalQuantity -
+                      progressData.RemainingQuantity >
+                    0
+                      ? progressData.TotalQuantity -
+                        progressData.RemainingQuantity
+                      : 0,
+                  totalNumber:
+                    progressData.TotalQuantity > 0
+                      ? progressData.TotalQuantity
+                      : 0,
+                })}
+              </Text>
+            )}
             {status === 2 && (
               <Text>
                 {t(translateStatus, {

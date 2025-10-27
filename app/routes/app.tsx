@@ -254,7 +254,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: false,
           errorCode: 0,
           errorMsg: "",
-          response: [],
+          response: undefined,
         };
       }
     }
