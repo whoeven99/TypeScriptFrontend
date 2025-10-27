@@ -76,7 +76,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           const response = await admin.graphql(
             `#graphql
             query {     
-              translatableResources(resourceType: ONLINE_STORE_THEME_LOCALE_CONTENT, first: 1) {
+              translatableResources(resourceType: ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS, first: 1) {
                 nodes {
                   resourceId
                   translatableContent {
@@ -177,7 +177,9 @@ const Index = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<string>(
     searchTerm || "",
   );
-  const [selectedItem, setSelectedItem] = useState<string>("locale_content");
+  const [selectedItem, setSelectedItem] = useState<string>(
+    "settings_data_sections",
+  );
   const [isMobile, setIsMobile] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -414,7 +416,7 @@ const Index = () => {
           <Button
             onClick={() => {
               handleTranslate(
-                "ONLINE_STORE_THEME_LOCALE_CONTENT",
+                "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
                 record?.key || "",
                 record?.type || "",
                 record?.default_language || "",
@@ -575,7 +577,9 @@ const Index = () => {
       );
       isManualChangeRef.current = true;
       setSelectedLanguage(language);
-      navigate(`/app/manage_translation/locale_content?language=${language}`);
+      navigate(
+        `/app/manage_translation/settings_data_sections?language=${language}`,
+      );
     }
   };
 
@@ -649,7 +653,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("Locale Content")}
+      title={t("Settings Data Sections")}
       fullWidth={true}
       backAction={{
         onAction: onCancel,
@@ -846,7 +850,7 @@ const Index = () => {
                                   <Button
                                     onClick={() => {
                                       handleTranslate(
-                                        "ONLINE_STORE_THEME_LOCALE_CONTENT",
+                                        "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
                                         item?.key || "",
                                         item?.type || "",
                                         item?.default_language || "",
@@ -913,7 +917,7 @@ const Index = () => {
                               <Button
                                 onClick={() => {
                                   handleTranslate(
-                                    "ONLINE_STORE_THEME_LOCALE_CONTENT",
+                                    "ONLINE_STORE_THEME_SETTINGS_DATA_SECTIONS",
                                     item?.key || "",
                                     item?.type || "",
                                     item?.default_language || "",
@@ -986,33 +990,6 @@ const Index = () => {
           />
         )}
       </Layout>
-      {/* <Modal
-        variant={"base"}
-        open={!!isVisible}
-        onHide={() => setIsVisible(false)}
-      >
-        <div
-          style={{
-            padding: "16px",
-          }}
-        >
-          <Text>
-            {t("If you leave this page, any unsaved changes will be lost.")}
-          </Text>
-        </div>
-        <TitleBar title={t("Unsaved changes")}>
-          <button
-            variant="primary"
-            tone="critical"
-            onClick={() => handleLeaveItem(isVisible)}
-          >
-            {t("Leave Anyway")}
-          </button>
-          <button onClick={() => setIsVisible(false)}>
-            {t("Stay on Page")}
-          </button>
-        </TitleBar>
-      </Modal> */}
     </Page>
   );
 };
