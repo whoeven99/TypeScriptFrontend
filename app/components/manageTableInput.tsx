@@ -38,7 +38,7 @@ interface ManageTableInputProps {
 
 const ManageTableInput: React.FC<ManageTableInputProps> = ({
   record,
-  isHtml = false,
+  isHtml,
   isSuccess,
   translatedValues,
   setTranslatedValues,
@@ -51,6 +51,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   }, [record?.default_language]);
 
   const originalEditor = useEditor({
+    editable: false,
     extensions: [
       StarterKit,
       TextStyle,
@@ -69,7 +70,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
       Video,
       // Underline
     ], // define your extension array
-    content: defaultValue, // initial content
+    content: defaultValue || "", // initial content
     immediatelyRender: false, // 🔹 SSR 环境下必须加这个
   });
 
@@ -92,7 +93,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
       Video,
       // Underline
     ], // define your extension array
-    content: translatedValues, // initial content
+    content: translatedValues || "", // initial content
     immediatelyRender: false, // 🔹 SSR 环境下必须加这个
   });
 
@@ -114,6 +115,10 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
       });
     }
   }, [record]);
+
+  useEffect(() => {
+    originalEditor?.commands.setContent(defaultValue);
+  }, [defaultValue]);
 
   if (
     handleInputChange &&
@@ -139,7 +144,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     );
   } else {
     if (isHtml) {
-      return <Tiptap editor={originalEditor} />;
+      return <Tiptap editor={originalEditor} readOnly={true} />;
     }
     return (
       <TextArea

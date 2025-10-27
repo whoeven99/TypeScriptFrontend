@@ -1,4 +1,3 @@
-import { useEditorState } from "@tiptap/react";
 import {
   CodeIcon,
   TextBoldIcon,
@@ -7,15 +6,12 @@ import {
 } from "@shopify/polaris-icons";
 import "./styles/commands.css";
 import { useState, useEffect, useRef } from "react";
-import Typography from "@tiptap/extension-typography";
 import TableMenu from "./components/TableMenu";
-import { AlignText } from "./components/AlignText";
 import HeadingMenu from "./components/Heading";
-// import VideoComponent from './components/VideoComponent'
 import ImageUpload from "./components/ImageUpload";
-import { Button, Icon, InlineStack, Tooltip } from "@shopify/polaris";
+import { Button, InlineStack, Tooltip } from "@shopify/polaris";
 
-const Commands = ({ editor, handleTiptap, className, setHtmlContent }: any) => {
+const Commands = ({ editor, handleTiptap, className, readOnly }: any) => {
   const sanitizeHtml = (html: any) => {
     return html
       .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "") // 移除 script
@@ -24,25 +20,8 @@ const Commands = ({ editor, handleTiptap, className, setHtmlContent }: any) => {
 
   const textareaRef = useRef(null);
 
-  const editorState = useEditorState({
-    editor,
-    selector: (ctx) => ({
-      isBold: ctx.editor?.isActive("bold") ?? false,
-      // canBold: ctx.editor.chain().focus().toggleBold().run() ?? false,
-      isItalic: ctx.editor?.isActive("italic") ?? false,
-      // canItalic: ctx.editor.can().chain().toggleItalic().run() ?? false,
-      // canUnderline: ctx.editor.can().chain().toggleUnderline().run() ?? false,
-      isParagraph: ctx.editor?.isActive("paragraph") ?? false,
-      isHeading1: ctx.editor?.isActive("heading", { level: 1 }) ?? false,
-      isHeading2: ctx.editor?.isActive("heading", { level: 2 }) ?? false,
-      isHeading3: ctx.editor?.isActive("heading", { level: 3 }) ?? false,
-      isHeading4: ctx.editor?.isActive("heading", { level: 4 }) ?? false,
-      isHeading5: ctx.editor?.isActive("heading", { level: 5 }) ?? false,
-      isHeading6: ctx.editor?.isActive("heading", { level: 6 }) ?? false,
-    }),
-  });
-
   const [isHtmlMode, setIsHtmlMode] = useState(false);
+
   useEffect(() => {
     if (isHtmlMode && textareaRef.current) {
       const el = textareaRef.current as HTMLTextAreaElement;
@@ -50,12 +29,6 @@ const Commands = ({ editor, handleTiptap, className, setHtmlContent }: any) => {
       el.style.height = el.scrollHeight + "px";
     }
   }, [isHtmlMode]);
-  // 初始化编辑器内容
-  useEffect(() => {
-    if (editor && !editor.getJSON().content) {
-      editor.commands.setContent("<p>Please enter content</p>");
-    }
-  }, [editor]);
 
   const toggleHtmlMode = () => {
     if (!editor) return;
@@ -73,13 +46,13 @@ const Commands = ({ editor, handleTiptap, className, setHtmlContent }: any) => {
       <div className="commands">
         <InlineStack gap="200" align="center" blockAlign="center" wrap={false}>
           <Tooltip content="heading" dismissOnMouseOut>
-            <HeadingMenu editor={editor} disabled={isHtmlMode} />
+            <HeadingMenu editor={editor} disabled={isHtmlMode || readOnly} />
           </Tooltip>
           <Tooltip content="Bold" dismissOnMouseOut>
             <Button
               variant="tertiary"
               onClick={() => editor.chain().focus().toggleBold().run()}
-              disabled={!editor || isHtmlMode}
+              disabled={!editor || isHtmlMode || readOnly}
               icon={TextBoldIcon}
             />
           </Tooltip>
@@ -87,7 +60,7 @@ const Commands = ({ editor, handleTiptap, className, setHtmlContent }: any) => {
             <Button
               variant="tertiary"
               onClick={() => editor.chain().focus().toggleItalic().run()}
-              disabled={!editor || isHtmlMode}
+              disabled={!editor || isHtmlMode || readOnly}
               icon={TextItalicIcon}
             />
           </Tooltip>
@@ -95,26 +68,15 @@ const Commands = ({ editor, handleTiptap, className, setHtmlContent }: any) => {
             <Button
               variant="tertiary"
               onClick={() => editor.chain().focus().toggleUnderline().run()}
-              disabled={!editor || isHtmlMode}
+              disabled={!editor || isHtmlMode || readOnly}
               icon={TextUnderlineIcon}
             />
           </Tooltip>
-
           <Tooltip content="table" dismissOnMouseOut>
-            <TableMenu editor={editor} disabled={isHtmlMode} />
+            <TableMenu editor={editor} disabled={isHtmlMode || readOnly} />
           </Tooltip>
-
-          {/* <Button
-          type="text"
-          onClick={() => videoRef.current?.openModal()}
-        >
-          <IconFileVideo />
-        </Button>
-        <VideoComponent ref={videoRef}  onInsert={(url) => {
-          editor.chain().focus().setVideo({ src: url }).run();
-        }}/> */}
           <Tooltip content="Image" dismissOnMouseOut>
-            <ImageUpload editor={editor} disabled={isHtmlMode} />
+            <ImageUpload editor={editor} disabled={isHtmlMode || readOnly} />
           </Tooltip>
         </InlineStack>
         <Tooltip

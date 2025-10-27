@@ -485,7 +485,12 @@ const Index = () => {
       key: "default_language",
       width: "40%",
       render: (_: any, record: TableDataType) => {
-        return <ManageTableInput record={record} />;
+        return (
+          <ManageTableInput
+            record={record}
+            isHtml={record?.key == "body_html"}
+          />
+        );
       },
     },
     {
@@ -497,6 +502,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isHtml={record?.key == "body_html"}
             isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}

@@ -1,9 +1,8 @@
 // src/Tiptap.tsx
-import { EditorContent, Editor, useEditorState } from "@tiptap/react";
-import "./styles/tiptap.css";
+import { EditorContent, Editor } from "@tiptap/react";
 import Commands from "./commands";
 import { useRef, useEffect, useState } from "react";
-import { Button } from "@shopify/polaris";
+import "./styles/tiptap.css";
 
 interface TiptapProps {
   editor: Editor | null;
@@ -22,10 +21,7 @@ const Tiptap = ({ editor, style, readOnly }: TiptapProps) => {
   // HTML 模式下同步 div 内容
   useEffect(() => {
     if (!showTiptap) {
-      // const content = editor?.getJSON()?.content?.[0]?.content?.[0]?.text || "";
-      // const html = formatHtml(content);
       setHtmlContent(editor?.getHTML() || "");
-      // htmlEditorRef.current.innerText = (htmlContent);
     }
   }, [showTiptap]);
 
@@ -50,6 +46,7 @@ const Tiptap = ({ editor, style, readOnly }: TiptapProps) => {
       {editor && (
         <Commands
           editor={editor}
+          readOnly={readOnly}
           handleTiptap={hideTiptap}
           setHtmlContent={setHtmlContent}
           className="tiptap-commands"
@@ -69,14 +66,14 @@ const Tiptap = ({ editor, style, readOnly }: TiptapProps) => {
           style={{
             border: "1px solid #ccc",
             padding: "8px",
-            height: "calc(100% - 38px)",
             fontFamily: "monospace",
             whiteSpace: "pre-wrap",
             wordWrap: "break-word",
             overflow: "auto",
             width: "100%",
             borderRadius: "0 0 10px 10px",
-            minHeight: "660px",
+            marginBottom: "-6px",
+            resize: "vertical",
           }}
         />
       )}
