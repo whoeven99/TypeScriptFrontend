@@ -240,11 +240,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
 
         return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
+          ...translatingData,
           response: {
-            ...translatingData?.response,
+            list: translatingData?.response?.list || [],
             source: shopPrimaryLanguage[0]?.locale,
           },
         };
@@ -254,7 +252,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: false,
           errorCode: 0,
           errorMsg: "",
-          response: undefined,
+          response: {
+            list: [],
+            source: "",
+          },
         };
       }
     }
