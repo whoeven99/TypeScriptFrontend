@@ -58,7 +58,7 @@ interface ArticleType {
     value: string;
     type: string;
   };
-  summary: {
+  summary_html: {
     value: string;
     type: string;
   };
@@ -77,7 +77,7 @@ interface ArticleType {
     key: string;
     title: string | undefined;
     body: string | undefined;
-    summary: string | undefined;
+    summary_html: string | undefined;
     seo: {
       description: string | undefined;
       title: string | undefined;
@@ -322,11 +322,11 @@ const Index = () => {
           type: articleData?.body.type,
         },
         {
-          key: "summary",
+          key: "summary_html",
           resource: t("Summary"),
-          default_language: articleData?.summary.value,
-          translated: articleData?.translations?.summary,
-          type: articleData?.summary.type,
+          default_language: articleData?.summary_html.value,
+          translated: articleData?.translations?.summary_html,
+          type: articleData?.summary_html.type,
         },
       ].filter((item) => item.default_language),
     );
@@ -629,7 +629,7 @@ const Index = () => {
         value: "",
         type: "",
       },
-      summary: {
+      summary_html: {
         value: "",
         type: "",
       },
@@ -648,7 +648,7 @@ const Index = () => {
         key: "",
         title: "",
         body: "",
-        summary: "",
+        summary_html: "",
         seo: {
           description: "",
           title: "",
@@ -683,7 +683,7 @@ const Index = () => {
         (item: any) => item.key === "body_html",
       )?.type,
     };
-    data.summary = {
+    data.summary_html = {
       value: article?.translatableContent.find(
         (item: any) => item.key === "summary_html",
       )?.value,
@@ -717,7 +717,7 @@ const Index = () => {
     data.translations.body = article?.translations.find(
       (item: any) => item.key === "body_html",
     )?.value;
-    data.translations.summary = article?.translations.find(
+    data.translations.summary_html = article?.translations.find(
       (item: any) => item.key === "summary_html",
     )?.value;
     data.translations.seo.title = article?.translations.find(
