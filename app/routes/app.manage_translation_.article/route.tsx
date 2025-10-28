@@ -38,6 +38,7 @@ import { ShopLocalesType } from "../app.language/route";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { globalStore } from "~/globalStore";
+import { getItemOptions } from "../app.manage_translation/route";
 
 const { Sider, Content } = Layout;
 
@@ -57,7 +58,7 @@ interface ArticleType {
     value: string;
     type: string;
   };
-  summary: {
+  summary_html: {
     value: string;
     type: string;
   };
@@ -76,7 +77,7 @@ interface ArticleType {
     key: string;
     title: string | undefined;
     body: string | undefined;
-    summary: string | undefined;
+    summary_html: string | undefined;
     seo: {
       description: string | undefined;
       title: string | undefined;
@@ -218,28 +219,7 @@ const Index = () => {
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
-  const itemOptions: { label: string; value: string }[] = [
-    { label: t("Products"), value: "product" },
-    { label: t("Collection"), value: "collection" },
-    { label: t("Json Template"), value: "json_template" },
-    { label: t("Locale Content"), value: "locale_content" },
-    { label: t("Section Group"), value: "section_group" },
-    { label: t("Settings Category"), value: "settings_category" },
-    { label: t("Shop"), value: "shop" },
-    { label: t("Metafield"), value: "metafield" },
-    { label: t("Articles"), value: "article" },
-    { label: t("Blog titles"), value: "blog" },
-    { label: t("Pages"), value: "page" },
-    { label: t("Filters"), value: "filter" },
-    { label: t("Metaobjects"), value: "metaobject" },
-    { label: t("Navigation"), value: "navigation" },
-    { label: t("Email"), value: "email" },
-    { label: t("Policies"), value: "policy" },
-    { label: t("Product images"), value: "productImage" },
-    { label: t("Product image alt text"), value: "productImageAlt" },
-    { label: t("Delivery"), value: "delivery" },
-    { label: t("Shipping"), value: "shipping" },
-  ];
+  const itemOptions = getItemOptions(t);
   const [languageOptions, setLanguageOptions] = useState<
     { label: string; value: string }[]
   >([]);
@@ -342,11 +322,11 @@ const Index = () => {
           type: articleData?.body.type,
         },
         {
-          key: "summary",
+          key: "summary_html",
           resource: t("Summary"),
-          default_language: articleData?.summary.value,
-          translated: articleData?.translations?.summary,
-          type: articleData?.summary.type,
+          default_language: articleData?.summary_html.value,
+          translated: articleData?.translations?.summary_html,
+          type: articleData?.summary_html.type,
         },
       ].filter((item) => item.default_language),
     );
@@ -661,7 +641,7 @@ const Index = () => {
         value: "",
         type: "",
       },
-      summary: {
+      summary_html: {
         value: "",
         type: "",
       },
@@ -680,7 +660,7 @@ const Index = () => {
         key: "",
         title: "",
         body: "",
-        summary: "",
+        summary_html: "",
         seo: {
           description: "",
           title: "",
@@ -715,7 +695,7 @@ const Index = () => {
         (item: any) => item.key === "body_html",
       )?.type,
     };
-    data.summary = {
+    data.summary_html = {
       value: article?.translatableContent.find(
         (item: any) => item.key === "summary_html",
       )?.value,
@@ -749,7 +729,7 @@ const Index = () => {
     data.translations.body = article?.translations.find(
       (item: any) => item.key === "body_html",
     )?.value;
-    data.translations.summary = article?.translations.find(
+    data.translations.summary_html = article?.translations.find(
       (item: any) => item.key === "summary_html",
     )?.value;
     data.translations.seo.title = article?.translations.find(
