@@ -212,7 +212,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
           // 移除固定高度，让它根据按钮内容自动调整
         }}
       >
-        {status === 1 && (
+        {status === 1 && translateStatus == "translation_process_saved" && (
           <div
             style={{
               width: "100%", // 限制最大宽度
@@ -250,16 +250,17 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             </Button>
           </div>
         )}
-        {status === 2 && (
-          <Button
-            block
-            onClick={handleStopTranslate}
-            loading={stopTranslateFetcher.state == "submitting"}
-            style={{ marginTop: "auto" }}
-          >
-            {t("progressing.stopTranslate")}
-          </Button>
-        )}
+        {status === 2 &&
+          translateStatus == "translation_process_translating" && (
+            <Button
+              block
+              onClick={handleStopTranslate}
+              loading={stopTranslateFetcher.state == "submitting"}
+              style={{ marginTop: "auto" }}
+            >
+              {t("progressing.stopTranslate")}
+            </Button>
+          )}
         {status === 3 && (
           <div
             style={{
