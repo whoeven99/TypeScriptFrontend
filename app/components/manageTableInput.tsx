@@ -50,53 +50,6 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     return record?.default_language || "";
   }, [record?.default_language]);
 
-  const originalEditor = useEditor({
-    editable: false,
-    extensions: [
-      StarterKit,
-      TextStyle,
-      Color,
-      Highlight,
-      LocalImage,
-      Table.configure({
-        resizable: true, // 允许拖动调整列宽
-      }),
-      TableRow,
-      TableHeader,
-      TableCell,
-      TextAlign.configure({
-        types: ["heading", "paragraph"], // 指定允许设置对齐的节点类型
-      }),
-      Video,
-      // Underline
-    ], // define your extension array
-    content: defaultValue || "", // initial content
-    immediatelyRender: false, // 🔹 SSR 环境下必须加这个
-  });
-
-  const targetEditor = useEditor({
-    extensions: [
-      StarterKit,
-      TextStyle,
-      Color,
-      Highlight,
-      LocalImage,
-      Table.configure({
-        resizable: true, // 允许拖动调整列宽
-      }),
-      TableRow,
-      TableHeader,
-      TableCell,
-      TextAlign.configure({
-        types: ["heading", "paragraph"], // 指定允许设置对齐的节点类型
-      }),
-      Video,
-      // Underline
-    ], // define your extension array
-    content: translatedValues || "", // initial content
-    immediatelyRender: false, // 🔹 SSR 环境下必须加这个
-  });
-
   const locale = useSelector((state: any) => state.userConfig.locale);
 
   useEffect(() => {
@@ -116,16 +69,50 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     }
   }, [record]);
 
-  useEffect(() => {
-    originalEditor?.commands.setContent(defaultValue);
-  }, [defaultValue]);
-
   if (
     handleInputChange &&
     translatedValues !== undefined &&
     setTranslatedValues !== undefined
   ) {
     if (isHtml) {
+      const targetEditor = useEditor({
+        extensions: [
+          StarterKit,
+          TextStyle,
+          Color,
+          Highlight,
+          LocalImage,
+          Table.configure({
+            resizable: true, // 允许拖动调整列宽
+          }),
+          TableRow,
+          TableHeader,
+          TableCell,
+          TextAlign.configure({
+            types: ["heading", "paragraph"], // 指定允许设置对齐的节点类型
+          }),
+          Video,
+          // Underline
+        ], // define your extension array
+        content: "", // initial content
+        immediatelyRender: false, // 🔹 SSR 环境下必须加这个
+        onUpdate: (anchors) => {
+          handleInputChange(
+            record.key,
+            targetEditor?.getHTML() || "",
+            index ? Number(index + "" + record.index) : record.index,
+          );
+        },
+      });
+
+      useEffect(() => {
+        console.log(record);
+        targetEditor?.commands.setContent(record.translated, {
+          emitUpdate: false,
+        });
+        console.log(targetEditor);
+      }, [record]);
+
       return <Tiptap editor={targetEditor} />;
     }
     return (
@@ -144,6 +131,34 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     );
   } else {
     if (isHtml) {
+      const originalEditor = useEditor({
+        editable: false,
+        extensions: [
+          StarterKit,
+          TextStyle,
+          Color,
+          Highlight,
+          LocalImage,
+          Table.configure({
+            resizable: true, // 允许拖动调整列宽
+          }),
+          TableRow,
+          TableHeader,
+          TableCell,
+          TextAlign.configure({
+            types: ["heading", "paragraph"], // 指定允许设置对齐的节点类型
+          }),
+          Video,
+          // Underline
+        ], // define your extension array
+        content: defaultValue || "", // initial content
+        immediatelyRender: false, // 🔹 SSR 环境下必须加这个
+      });
+
+      useEffect(() => {
+        originalEditor?.commands.setContent(defaultValue);
+      }, [defaultValue]);
+
       return <Tiptap editor={originalEditor} readOnly={true} />;
     }
     return (

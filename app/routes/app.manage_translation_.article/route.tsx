@@ -468,7 +468,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
-            isHtml={record?.key == "body_html"}
+            isHtml={record?.key == "body_html" || record?.key == "summary_html"}
           />
         );
       },
@@ -482,7 +482,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
-            isHtml={record?.key == "body_html"}
+            isHtml={record?.key == "body_html" || record?.key == "summary_html"}
             isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
@@ -528,12 +528,7 @@ const Index = () => {
       key: "default_language",
       width: "40%",
       render: (_: any, record: TableDataType) => {
-        return (
-          <ManageTableInput
-            record={record}
-            isHtml={record?.key == "body_html"}
-          />
-        );
+        return <ManageTableInput record={record} />;
       },
     },
     {
@@ -545,7 +540,6 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
-            isHtml={record?.key == "body_html"}
             isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
@@ -588,7 +582,7 @@ const Index = () => {
     return data;
   };
 
-  const handleInputChange = (key: string, value: string) => {
+  const handleInputChange = (key: string, value: string) => {    
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
@@ -916,6 +910,10 @@ const Index = () => {
       }); // 跳转到 /app/manage_translation
     }
   };
+
+  useEffect(() => {
+    console.log(confirmData);
+  }, [confirmData]);
 
   return (
     <Page

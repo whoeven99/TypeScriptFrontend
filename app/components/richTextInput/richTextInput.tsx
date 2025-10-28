@@ -14,9 +14,7 @@ const Tiptap = ({ editor, style, readOnly }: TiptapProps) => {
   const textareaRef = useRef(null);
 
   const [showTiptap, setShowTiptap] = useState(true);
-  const [htmlContent, setHtmlContent] = useState(
-    editor?.options?.content || "",
-  );
+  const [htmlContent, setHtmlContent] = useState(editor?.getHTML() || "");
 
   // HTML 模式下同步 div 内容
   useEffect(() => {
