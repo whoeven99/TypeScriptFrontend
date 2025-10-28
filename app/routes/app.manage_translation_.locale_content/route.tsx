@@ -33,6 +33,7 @@ import { ShopLocalesType } from "../app.language/route";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import pkg from "lodash";
+import { isHTML } from "~/utils/ishtml";
 const { isArray } = pkg;
 
 const { Text } = Typography;
@@ -383,7 +384,12 @@ const Index = () => {
       key: "default_language",
       width: "40%",
       render: (_: any, record: TableDataType) => {
-        return <ManageTableInput record={record} />;
+        return (
+          <ManageTableInput
+            record={record}
+            isHtml={isHTML(record?.default_language as string)}
+          />
+        );
       },
     },
     {
@@ -396,6 +402,7 @@ const Index = () => {
           record && (
             <ManageTableInput
               record={record}
+              isHtml={isHTML(record?.default_language as string)}
               isSuccess={successTranslatedKey?.includes(record?.key as string)}
               translatedValues={translatedValues}
               setTranslatedValues={setTranslatedValues}

@@ -3,14 +3,16 @@ import { EditorContent, Editor } from "@tiptap/react";
 import Commands from "./commands";
 import { useRef, useEffect, useState } from "react";
 import "./styles/tiptap.css";
+import "../styles.css";
 
 interface TiptapProps {
   editor: Editor | null;
   readOnly?: boolean;
   style?: any;
+  isrtl?: boolean;
 }
 
-const Tiptap = ({ editor, style, readOnly }: TiptapProps) => {
+const Tiptap = ({ editor, style, readOnly, isrtl }: TiptapProps) => {
   const textareaRef = useRef(null);
 
   const [showTiptap, setShowTiptap] = useState(true);
@@ -53,11 +55,12 @@ const Tiptap = ({ editor, style, readOnly }: TiptapProps) => {
       {showTiptap ? (
         <EditorContent
           editor={editor}
-          className="tiptap-content"
+          className={`tiptap-content ${isrtl ? "rtl-input" : ""}`}
           style={style}
         />
       ) : (
         <textarea
+          className={`${isrtl ? "rtl-input" : ""}`}
           ref={textareaRef}
           value={formatHtml(htmlContent)}
           onChange={(e) => handleHtmlContentChange(e)}
@@ -72,6 +75,8 @@ const Tiptap = ({ editor, style, readOnly }: TiptapProps) => {
             borderRadius: "0 0 10px 10px",
             marginBottom: "-6px",
             resize: "vertical",
+            minHeight: "300px",
+            maxHeight: "660px",
           }}
         />
       )}

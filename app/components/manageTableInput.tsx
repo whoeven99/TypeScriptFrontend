@@ -1,8 +1,8 @@
 import { Input } from "antd";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import "./styles.css";
 import { useSelector } from "react-redux";
-import { useEditor } from "@tiptap/react";
+import { Editor, useEditor } from "@tiptap/react";
 import { Video } from "app/components/richTextInput/extensions/VideoNode";
 import TextAlign from "@tiptap/extension-text-align";
 import TableRow from "@tiptap/extension-table-row";
@@ -45,7 +45,9 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   handleInputChange,
   isRtl,
   index,
-}) => {
+}) => {  
+  const editorRef = useRef<Editor | null>(null);
+
   const defaultValue = useMemo(() => {
     return record?.default_language || "";
   }, [record?.default_language]);
@@ -75,45 +77,44 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     setTranslatedValues !== undefined
   ) {
     if (isHtml) {
-      const targetEditor = useEditor({
-        extensions: [
-          StarterKit,
-          TextStyle,
-          Color,
-          Highlight,
-          LocalImage,
-          Table.configure({
-            resizable: true, // 允许拖动调整列宽
-          }),
-          TableRow,
-          TableHeader,
-          TableCell,
-          TextAlign.configure({
-            types: ["heading", "paragraph"], // 指定允许设置对齐的节点类型
-          }),
-          Video,
-          // Underline
-        ], // define your extension array
-        content: "", // initial content
-        immediatelyRender: false, // 🔹 SSR 环境下必须加这个
-        onUpdate: (anchors) => {
-          handleInputChange(
-            record.key,
-            targetEditor?.getHTML() || "",
-            index ? Number(index + "" + record.index) : record.index,
-          );
-        },
-      });
-
       useEffect(() => {
-        console.log(record);
-        targetEditor?.commands.setContent(record.translated, {
-          emitUpdate: false,
-        });
-        console.log(targetEditor);
-      }, [record]);
+        // 只在首次创建
+        if (!editorRef.current) {
+          editorRef.current = new Editor({
+            extensions: [
+              StarterKit,
+              TextStyle,
+              Color,
+              Highlight,
+              Table.configure({ resizable: true }),
+              TableRow,
+              TableHeader,
+              TableCell,
+              TextAlign.configure({
+                types: ["heading", "paragraph"],
+              }),
+            ],
+            content: translatedValues[record?.key] || "",
+            onUpdate: () => {
+              handleInputChange(
+                record.key,
+                editorRef.current?.getHTML() || "",
+                index ? Number(index + "" + record.index) : record.index,
+              );
+            },
+          });
+        } else {
+          // 如果内容外部更新，但不想触发 onUpdate
+          editorRef.current.commands.setContent(
+            translatedValues[record?.key] || "",
+            {
+              emitUpdate: false,
+            },
+          );
+        }
+      }, [translatedValues, record.key]);
 
-      return <Tiptap editor={targetEditor} />;
+      return <Tiptap isrtl={isRtl} editor={editorRef.current} />;
     }
     return (
       <TextArea
@@ -159,7 +160,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         originalEditor?.commands.setContent(defaultValue);
       }, [defaultValue]);
 
-      return <Tiptap editor={originalEditor} readOnly={true} />;
+      return <Tiptap isrtl={isRtl} editor={originalEditor} readOnly={true} />;
     }
     return (
       <TextArea

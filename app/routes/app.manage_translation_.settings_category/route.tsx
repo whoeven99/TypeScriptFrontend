@@ -29,6 +29,7 @@ import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import { isHTML } from "~/utils/ishtml";
 
 const { Title, Text } = Typography;
 
@@ -411,7 +412,12 @@ const Index = () => {
       key: "default_language",
       width: "40%",
       render: (_: any, record: TableDataType) => {
-        return <ManageTableInput record={record} />;
+        return (
+          <ManageTableInput
+            record={record}
+            isHtml={isHTML(record?.default_language as string)}
+          />
+        );
       },
     },
     {
@@ -424,6 +430,7 @@ const Index = () => {
           record && (
             <ManageTableInput
               record={record}
+              isHtml={isHTML(record?.default_language as string)}
               isSuccess={successTranslatedKey?.includes(record?.key as string)}
               translatedValues={translatedValues}
               setTranslatedValues={setTranslatedValues}
