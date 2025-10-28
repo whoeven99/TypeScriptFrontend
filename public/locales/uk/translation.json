@@ -538,7 +538,7 @@
   "progressing.contact": "У вас закінчилися кредити для перекладу. Купіть більше, щоб продовжити переклад.",
   "progressing.contactButton": "Підтримка",
   "progressing.continueTranslate": "Продовжити переклад",
-  "progressing.finished": "Ваш переклад готовий. Опублікуйте його, щоб застосувати зміни.",
+  "translation_process_saved": "Ваш переклад готовий. Опублікуйте його, щоб застосувати зміни.",
   "progressing.hasPayed": "Кредити для перекладу додано. Тепер ви можете продовжити переклад.",
   "translation_process_init": "Ініціалізація завдання перекладу...",
   "progressing.noTranslate": "Немає поточних завдань перекладу.",

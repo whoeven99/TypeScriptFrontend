@@ -538,7 +538,7 @@
   "progressing.contact": "Ihre Übersetzungs-Credits sind aufgebraucht. Kaufen Sie mehr, um Ihre Übersetzung fortzusetzen.",
   "progressing.contactButton": "Support",
   "progressing.continueTranslate": "Übersetzung fortsetzen",
-  "progressing.finished": "Ihre Übersetzung ist bereit. Veröffentlichen Sie sie, um die Änderungen anzuwenden.",
+  "translation_process_saved": "Ihre Übersetzung ist bereit. Veröffentlichen Sie sie, um die Änderungen anzuwenden.",
   "progressing.hasPayed": "Übersetzungs-Credits wurden hinzugefügt. Sie können nun Ihre Übersetzung fortsetzen.",
   "translation_process_init": "Übersetzungsaufgabe wird initialisiert...",
   "progressing.noTranslate": "Es gibt keine laufenden Übersetzungsaufgaben.",
