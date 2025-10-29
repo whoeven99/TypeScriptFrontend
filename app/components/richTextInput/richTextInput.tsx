@@ -16,12 +16,11 @@ const Tiptap = ({ editor, style, readOnly, isrtl }: TiptapProps) => {
   const textareaRef = useRef(null);
 
   const [showTiptap, setShowTiptap] = useState(true);
-  const [htmlContent, setHtmlContent] = useState(editor?.getHTML() || "");
+  const [htmlContent, setHtmlContent] = useState<string>("");
 
-  // HTML 模式下同步 div 内容
   useEffect(() => {
     if (!showTiptap) {
-      setHtmlContent(editor?.getHTML() || "");
+      setHtmlContent(editor?.options?.content as string);
     }
   }, [showTiptap]);
 
@@ -31,53 +30,32 @@ const Tiptap = ({ editor, style, readOnly, isrtl }: TiptapProps) => {
 
   const handleHtmlContentChange = (e: any) => {
     editor?.commands.setContent(e.target.value);
-    setHtmlContent(e.target.value);
-  };
-
-  // 格式化 HTML 内容以换行显示
-  const formatHtml = (html: any) => {
-    return html
-      .replace(/></g, ">\n<") // 标签之间加换行
-      .replace(/\n\s*\n/g, "\n"); // 去掉多余空行
+    setHtmlContent(e.target.value)
   };
 
   return (
-    <div className="tiptap-container">
+    <div className={`tiptap-container ${readOnly ? "readOnly-input" : ""}`}>
       {editor && (
         <Commands
           editor={editor}
           readOnly={readOnly}
           handleTiptap={hideTiptap}
-          setHtmlContent={setHtmlContent}
           className="tiptap-commands"
         />
       )}
       {showTiptap ? (
         <EditorContent
           editor={editor}
-          className={`tiptap-content ${isrtl ? "rtl-input" : ""}`}
+          className={`tiptap-content ${isrtl ? "rtl-input" : ""} ${readOnly ? "readOnly-input" : ""}`}
           style={style}
         />
       ) : (
         <textarea
-          className={`${isrtl ? "rtl-input" : ""}`}
+          className={`html-input ${isrtl ? "rtl-input" : ""} ${readOnly ? "readOnly-input" : ""}`}
           ref={textareaRef}
-          value={formatHtml(htmlContent)}
+          value={htmlContent}
           onChange={(e) => handleHtmlContentChange(e)}
-          style={{
-            border: "1px solid #ccc",
-            padding: "8px",
-            fontFamily: "monospace",
-            whiteSpace: "pre-wrap",
-            wordWrap: "break-word",
-            overflow: "auto",
-            width: "100%",
-            borderRadius: "0 0 10px 10px",
-            marginBottom: "-6px",
-            resize: "vertical",
-            minHeight: "300px",
-            maxHeight: "660px",
-          }}
+          readOnly={readOnly}
         />
       )}
     </div>

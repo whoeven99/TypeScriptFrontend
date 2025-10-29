@@ -45,7 +45,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   handleInputChange,
   isRtl,
   index,
-}) => {  
+}) => {
   const editorRef = useRef<Editor | null>(null);
 
   const defaultValue = useMemo(() => {
@@ -77,44 +77,51 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     setTranslatedValues !== undefined
   ) {
     if (isHtml) {
-      useEffect(() => {
-        // 只在首次创建
-        if (!editorRef.current) {
-          editorRef.current = new Editor({
-            extensions: [
-              StarterKit,
-              TextStyle,
-              Color,
-              Highlight,
-              Table.configure({ resizable: true }),
-              TableRow,
-              TableHeader,
-              TableCell,
-              TextAlign.configure({
-                types: ["heading", "paragraph"],
-              }),
-            ],
-            content: translatedValues[record?.key] || "",
-            onUpdate: () => {
-              handleInputChange(
-                record.key,
-                editorRef.current?.getHTML() || "",
-                index ? Number(index + "" + record.index) : record.index,
-              );
-            },
-          });
-        } else {
-          // 如果内容外部更新，但不想触发 onUpdate
-          editorRef.current.commands.setContent(
-            translatedValues[record?.key] || "",
-            {
-              emitUpdate: false,
-            },
+      const targetEditor = useEditor({
+        extensions: [
+          StarterKit,
+          TextStyle,
+          Color,
+          Highlight,
+          LocalImage,
+          Table.configure({
+            resizable: true, // 允许拖动调整列宽
+          }),
+          TableRow,
+          TableHeader,
+          TableCell,
+          TextAlign.configure({
+            types: ["heading", "paragraph"], // 指定允许设置对齐的节点类型
+          }),
+          Video,
+          // Underline
+        ], // define your extension array
+        content: translatedValues[record?.key] || "", // initial content
+        onUpdate: (anchors) => {
+          console.log(anchors);
+          handleInputChange(
+            record.key,
+            (targetEditor?.options?.content as string) || "",
+            index ? Number(index + "" + record.index) : record.index,
           );
-        }
-      }, [translatedValues, record.key]);
+        },
+        immediatelyRender: false, // 🔹 SSR 环境下必须加这个
+      });
 
-      return <Tiptap isrtl={isRtl} editor={editorRef.current} />;
+      // useEffect(() => {
+      //   // 只在首次创建
+      //   if (targetEditor) {
+      //     // 如果内容外部更新，但不想触发 onUpdate
+      //     targetEditor.commands.setContent(
+      //       translatedValues[record?.key] || "",
+      //       {
+      //         emitUpdate: false,
+      //       },
+      //     );
+      //   }
+      // }, [translatedValues, record.key]);
+
+      return <Tiptap isrtl={isRtl} editor={targetEditor} />;
     }
     return (
       <TextArea

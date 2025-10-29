@@ -33,6 +33,7 @@ import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
 import { SearchOutlined } from "@ant-design/icons";
 import { getItemOptions } from "../app.manage_translation/route";
+import { isHTML } from "~/utils/ishtml";
 
 const { Sider, Content } = Layout;
 
@@ -1106,7 +1107,12 @@ const Index = () => {
       width: "40%",
       render: (_: any, record: TableDataType) => {
         if (record) {
-          return <ManageTableInput record={record} />;
+          return (
+            <ManageTableInput
+              record={record}
+              isHtml={isHTML(record?.default_language as string)}
+            />
+          );
         } else {
           return null;
         }
@@ -1121,6 +1127,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isHtml={isHTML(record?.default_language as string)}
             isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
