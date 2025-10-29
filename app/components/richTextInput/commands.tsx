@@ -6,9 +6,7 @@ import {
 } from "@shopify/polaris-icons";
 import "./styles/commands.css";
 import { useState, useEffect, useRef } from "react";
-import TableMenu from "./components/TableMenu";
 import HeadingMenu from "./components/Heading";
-import ImageUpload from "./components/ImageUpload";
 import { Button, InlineStack, Tooltip } from "@shopify/polaris";
 
 const Commands = ({ editor, handleTiptap, className, readOnly }: any) => {
@@ -71,12 +69,6 @@ const Commands = ({ editor, handleTiptap, className, readOnly }: any) => {
               disabled={!editor || isHtmlMode || readOnly}
               icon={TextUnderlineIcon}
             />
-          </Tooltip>
-          <Tooltip content="table" dismissOnMouseOut>
-            <TableMenu editor={editor} disabled={isHtmlMode || readOnly} />
-          </Tooltip>
-          <Tooltip content="Image" dismissOnMouseOut>
-            <ImageUpload editor={editor} disabled={isHtmlMode || readOnly} />
           </Tooltip>
         </InlineStack>
         <Tooltip
