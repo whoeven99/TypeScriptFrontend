@@ -370,7 +370,6 @@ const Index = () => {
   const statusFetcher = useFetcher<any>();
   const addDataFetcher = useFetcher<any>();
   const webPresencesFetcher = useFetcher<any>();
-  const publishFetcher = useFetcher<any>();
   const { reportClick, report } = useReport();
 
   useEffect(() => {
@@ -799,11 +798,6 @@ const Index = () => {
       setNoFirstTranslation(true);
       return;
     }
-    // const items = dataSource.filter((item) => item.autoTranslate).length;
-    // if (
-    //   items <=
-    //   autoTranslationMapping[plan as keyof typeof autoTranslationMapping]
-    // ) {
     dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
     const row = dataSource.find((item: any) => item.locale === locale);
     if (row) {
@@ -1091,12 +1085,8 @@ const Index = () => {
       <Modal
         open={noFirstTranslation}
         onCancel={() => setNoFirstTranslation(false)}
-        // title={t("The 20 language limit has been reached")}
         footer={
           <Space>
-            <Button onClick={() => setNoFirstTranslation(false)}>
-              {t("Cancel")}
-            </Button>
             <Button
               type="primary"
               onClick={() =>
