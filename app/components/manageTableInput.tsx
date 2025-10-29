@@ -97,29 +97,37 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
           // Underline
         ], // define your extension array
         content: translatedValues[record?.key] || "", // initial content
-        onUpdate: (anchors) => {
-          console.log(anchors);
-          handleInputChange(
-            record.key,
-            (targetEditor?.options?.content as string) || "",
-            index ? Number(index + "" + record.index) : record.index,
-          );
-        },
+        // onUpdate: (anchors) => {
+          // console.log(anchors);
+          // handleInputChange(
+          //   record.key,
+          //   (targetEditor?.options?.content as string) || "",
+          //   index ? Number(index + "" + record.index) : record.index,
+          // );
+        // },
         immediatelyRender: false, // 🔹 SSR 环境下必须加这个
       });
 
-      // useEffect(() => {
-      //   // 只在首次创建
-      //   if (targetEditor) {
-      //     // 如果内容外部更新，但不想触发 onUpdate
-      //     targetEditor.commands.setContent(
-      //       translatedValues[record?.key] || "",
-      //       {
-      //         emitUpdate: false,
-      //       },
-      //     );
-      //   }
-      // }, [translatedValues, record.key]);
+      useEffect(() => {
+        console.log(
+          "translatedValues[record?.key]: ",
+          translatedValues[record?.key],
+        );
+
+        // 只在首次创建
+        if (targetEditor) {
+          // 如果内容外部更新，但不想触发 onUpdate
+          targetEditor.commands.setContent(
+            translatedValues[record?.key] || "",
+            {
+              emitUpdate: false,
+            },
+          );
+        }
+      }, [translatedValues, record.key]);
+
+      console.log(targetEditor);
+      
 
       return <Tiptap isrtl={isRtl} editor={targetEditor} />;
     }
