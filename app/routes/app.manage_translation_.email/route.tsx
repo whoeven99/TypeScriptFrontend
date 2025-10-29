@@ -394,7 +394,6 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
-            isHtml={record?.key == "body_html"}
           />
         );
       },
@@ -408,7 +407,6 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
-            isHtml={record?.key == "body_html"}
             isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}

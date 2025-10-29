@@ -1,5 +1,5 @@
 import { Input } from "antd";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 import { useSelector } from "react-redux";
 import { Editor, useEditor } from "@tiptap/react";
@@ -77,64 +77,66 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     setTranslatedValues !== undefined
   ) {
     if (isHtml) {
-      const targetEditor = useEditor({
-        extensions: [
-          StarterKit,
-          TextStyle,
-          Color,
-          Highlight,
-          LocalImage,
-          Table.configure({
-            resizable: true, // 允许拖动调整列宽
-          }),
-          TableRow,
-          TableHeader,
-          TableCell,
-          TextAlign.configure({
-            types: ["heading", "paragraph"], // 指定允许设置对齐的节点类型
-          }),
-          Video,
-          // Underline
-        ], // define your extension array
-        content: translatedValues[record?.key] || "", // initial content
-        // onUpdate: (anchors) => {
-          // console.log(anchors);
-          // handleInputChange(
-          //   record.key,
-          //   (targetEditor?.options?.content as string) || "",
-          //   index ? Number(index + "" + record.index) : record.index,
-          // );
-        // },
-        immediatelyRender: false, // 🔹 SSR 环境下必须加这个
-      });
+      const [isInitialized, setIsInitialized] = useState(false);
+
+      const targetEditor = useEditor(
+        {
+          extensions: [
+            StarterKit,
+            TextStyle,
+            Color,
+            Highlight,
+            LocalImage,
+            Table.configure({ resizable: true }),
+            TableRow,
+            TableHeader,
+            TableCell,
+            TextAlign.configure({ types: ["heading", "paragraph"] }),
+            Video,
+          ],
+          content: translatedValues[record?.key] || "",
+          immediatelyRender: false,
+          onUpdate: ({ editor }) => {
+            if (!isInitialized) return;
+            const html = editor.view.dom.innerHTML; // 原始 HTML
+            handleInputChange(
+              record.key,
+              html,
+              index ? Number(index + "" + record.index) : record.index,
+            );
+          },
+        },
+        [],
+      );
 
       useEffect(() => {
-        console.log(
-          "translatedValues[record?.key]: ",
-          translatedValues[record?.key],
-        );
+        if (!targetEditor) return;
 
-        // 只在首次创建
-        if (targetEditor) {
-          // 如果内容外部更新，但不想触发 onUpdate
-          targetEditor.commands.setContent(
-            translatedValues[record?.key] || "",
-            {
+        const externalHtml = translatedValues[record?.key] || "";
+
+        // 只在首次加载或内容真的不同的时候才更新
+        if (!isInitialized) {
+          targetEditor.commands.setContent(externalHtml, { emitUpdate: false });
+          setIsInitialized(true);
+        } else {
+          // 如果外部内容变了但和当前内容不同，再更新
+          const currentHtml = targetEditor.view.dom.innerHTML;
+          if (currentHtml !== externalHtml) {
+            targetEditor.commands.setContent(externalHtml, {
               emitUpdate: false,
-            },
-          );
+            });
+          }
         }
-      }, [translatedValues, record.key]);
+      }, [targetEditor, translatedValues, record.key]);
 
-      console.log(targetEditor);
-      
-
-      return <Tiptap isrtl={isRtl} editor={targetEditor} />;
+      return (
+        <Tiptap isrtl={isRtl} editor={targetEditor} isSuccess={isSuccess} />
+      );
     }
     return (
       <TextArea
+        rows={4}
         value={translatedValues[record?.key]}
-        autoSize={{ minRows: 1, maxRows: 6 }}
         onChange={(e) =>
           handleInputChange(
             record.key,
@@ -179,9 +181,9 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     }
     return (
       <TextArea
+        rows={4}
         disabled
         value={defaultValue}
-        autoSize={{ minRows: 1, maxRows: 6 }}
         className={locale === "ar" ? "rtl-input" : ""}
       />
     );

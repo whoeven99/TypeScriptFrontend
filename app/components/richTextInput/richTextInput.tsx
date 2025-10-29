@@ -7,12 +7,13 @@ import "../styles.css";
 
 interface TiptapProps {
   editor: Editor | null;
+  isSuccess?: boolean;
   readOnly?: boolean;
   style?: any;
   isrtl?: boolean;
 }
 
-const Tiptap = ({ editor, style, readOnly, isrtl }: TiptapProps) => {
+const Tiptap = ({ editor, isSuccess, readOnly, style, isrtl }: TiptapProps) => {
   const textareaRef = useRef(null);
 
   const [showTiptap, setShowTiptap] = useState(true);
@@ -30,11 +31,13 @@ const Tiptap = ({ editor, style, readOnly, isrtl }: TiptapProps) => {
 
   const handleHtmlContentChange = (e: any) => {
     editor?.commands.setContent(e.target.value);
-    setHtmlContent(e.target.value)
+    setHtmlContent(e.target.value);
   };
 
   return (
-    <div className={`tiptap-container ${readOnly ? "readOnly-input" : ""}`}>
+    <div
+      className={`tiptap-container ${readOnly ? "readOnly-input" : ""} ${isSuccess ? "success_input" : ""}`}
+    >
       {editor && (
         <Commands
           editor={editor}
