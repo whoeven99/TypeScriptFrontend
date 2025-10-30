@@ -39,6 +39,7 @@ import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 
@@ -582,7 +583,7 @@ const Index = () => {
     return data;
   };
 
-  const handleInputChange = (key: string, value: string) => {    
+  const handleInputChange = (key: string, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
       [key]: value, // 更新对应的 key
@@ -972,18 +973,11 @@ const Index = () => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[articlesData.nodes[0]?.resourceId]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      backgroundColor: "var(--p-color-bg)",
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={articlesData.nodes[0]?.resourceId}
                     items={menuData}
-                    selectedKeys={[selectArticleKey]}
-                    onClick={(e) => handleMenuChange(e.key)}
+                    selectedKeys={selectArticleKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     {(hasNext || hasPrevious) && (
@@ -1221,17 +1215,11 @@ const Index = () => {
                       })}
                     </Space>
                   </Card>
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[articlesData.nodes[0]?.resourceId]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={articlesData.nodes[0]?.resourceId}
                     items={menuData}
-                    selectedKeys={[selectArticleKey]}
-                    onClick={(e) => handleMenuChange(e.key)}
+                    selectedKeys={selectArticleKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     {(hasNext || hasPrevious) && (

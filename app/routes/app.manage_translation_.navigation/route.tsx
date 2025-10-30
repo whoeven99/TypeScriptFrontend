@@ -30,6 +30,7 @@ import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 
@@ -578,8 +579,6 @@ const Index = () => {
   };
 
   const transBeforeData = ({ menus }: { menus: any }) => {
-    console.log("menus: ", menus);
-
     let data: ItemType[] = [
       {
         key: "",
@@ -955,39 +954,11 @@ const Index = () => {
                   backgroundColor: "var(--p-color-bg)",
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    height: "100%",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Menu
-                    mode="inline"
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      backgroundColor: "var(--p-color-bg)",
-                    }}
-                    items={menuData}
-                    selectedKeys={[selectNavigationKey]}
-                    onClick={(e: any) => {
-                      handleMenuChange(e.key);
-                    }}
-                  />
-                  <div style={{ display: "flex", justifyContent: "center" }}>
-                    {(hasNext || hasPrevious) && (
-                      <Pagination
-                        hasPrevious={hasPrevious}
-                        onPrevious={onPrevious}
-                        hasNext={hasNext}
-                        onNext={onNext}
-                      />
-                    )}
-                  </div>
-                </div>
+                <SideMenu
+                  items={menuData}
+                  selectedKeys={selectNavigationKey}
+                  onClick={handleMenuChange}
+                />
               </Sider>
             )}
             <Content
@@ -1139,17 +1110,10 @@ const Index = () => {
                       })}
                     </Space>
                   </Card>
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[navigationsData.nodes[0]?.resourceId]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                    }}
+                  <SideMenu
                     items={menuData}
-                    selectedKeys={[selectNavigationKey]}
-                    onClick={(e) => handleMenuChange(e.key)}
+                    selectedKeys={selectNavigationKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     {(hasNext || hasPrevious) && (
@@ -1230,6 +1194,16 @@ const Index = () => {
                     dataSource={resourceData}
                     pagination={false}
                   />
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    {(hasNext || hasPrevious) && (
+                      <Pagination
+                        hasPrevious={hasPrevious}
+                        onPrevious={onPrevious}
+                        hasNext={hasNext}
+                        onNext={onNext}
+                      />
+                    )}
+                  </div>
                 </Space>
               )}
             </Content>

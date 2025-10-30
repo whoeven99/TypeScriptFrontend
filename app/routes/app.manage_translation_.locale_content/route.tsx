@@ -33,6 +33,7 @@ import { ShopLocalesType } from "../app.language/route";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import pkg from "lodash";
+import SideMenu from "~/components/sideMenu/sideMenu";
 const { isArray } = pkg;
 
 const { Text } = Typography;
@@ -383,11 +384,7 @@ const Index = () => {
       key: "default_language",
       width: "40%",
       render: (_: any, record: TableDataType) => {
-        return (
-          <ManageTableInput
-            record={record}
-          />
-        );
+        return <ManageTableInput record={record} />;
       },
     },
     {
@@ -747,18 +744,11 @@ const Index = () => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[menuData[0]?.key]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      backgroundColor: "var(--p-color-bg)",
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={menuData[0]?.key}
                     items={menuData}
-                    selectedKeys={[selectedThemeKey]}
-                    onClick={(e: any) => handleMenuChange(e.key)}
+                    selectedKeys={selectedThemeKey}
+                    onClick={handleMenuChange}
                   />
                 </div>
               </Sider>
@@ -938,17 +928,11 @@ const Index = () => {
                       )}
                     </Space>
                   </Card>
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[menuData[0]?.key]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={menuData[0]?.key}
                     items={menuData}
-                    selectedKeys={[selectedThemeKey]}
-                    onClick={(e) => handleMenuChange(e.key)}
+                    selectedKeys={selectedThemeKey}
+                    onClick={handleMenuChange}
                   />
                 </Space>
               ) : (
