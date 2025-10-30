@@ -58,7 +58,7 @@ const rtlLanguages = [
   "ئۇيغۇرچە",
 ];
 
-window.onload = async () => {
+async function ciwiOnload() {
   console.log("onload start (modular+full)");
   const blockId = document.querySelector('input[name="block_id"]')?.value;
   if (!blockId) return console.warn("blockId not found");
@@ -320,4 +320,6 @@ window.onload = async () => {
   }
   // 刷新缓存
   console.log("onload end (modular+full)");
-};
+}
+
+window.addEventListener("load", ciwiOnload);
