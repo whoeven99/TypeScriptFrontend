@@ -192,6 +192,9 @@ const AnalyticsCard = ({ isLoading }: any) => {
   };
 
   const handleConfigScopes = async () => {
+    console.log(showRequireScopeBtn);
+    console.log(configCreateWebPixel);
+    
     setNavigateToRateState(true);
     try {
       if (!showRequireScopeBtn) {
@@ -223,6 +226,23 @@ const AnalyticsCard = ({ isLoading }: any) => {
           return null;
         }
       };
+      const localShop = safeParse(localStorage.getItem("shop_origin"));
+      // ---- 处理 shop 逻辑 ----
+      if (globalStore?.shop) {
+        if (!localShop) {
+          // 首次写入
+          localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
+        } else if (
+          JSON.stringify(localShop) !== JSON.stringify(globalStore.shop)
+        ) {
+          // 如果不同 -> 更新并清除 rate
+          console.log("检测到 shop 变化：清除 浏览器缓存数据");
+          localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
+          localStorage.removeItem("local_conversion_rate");
+          localStorage.removeItem("translate_report_score");
+          localStorage.removeItem("reportData");
+        }
+      }
 
       // ---- 获取本地数据 ----
       const translateReportData = safeParse(
@@ -234,7 +254,6 @@ const AnalyticsCard = ({ isLoading }: any) => {
       const localConversionRate = safeParse(
         localStorage.getItem("local_conversion_rate"),
       );
-      const localShop = safeParse(localStorage.getItem("shop_origin"));
 
       // ---- 初始化 Web Pixel ----
       if (
@@ -244,7 +263,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
       ) {
         queryWebPixel();
       }
-
+      
       // ---- 设置本地状态 ----
       if (localUnTranslateWords)
         setLocalUnTranslateWords(localUnTranslateWords);
@@ -259,20 +278,6 @@ const AnalyticsCard = ({ isLoading }: any) => {
           method: "post",
           action: "/app/translate_report",
         });
-      }
-      // ---- 处理 shop 逻辑 ----
-      if (globalStore?.shop) {
-        if (!localShop) {
-          // 首次写入
-          localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
-        } else if (
-          JSON.stringify(localShop) !== JSON.stringify(globalStore.shop)
-        ) {
-          // 如果不同 -> 更新并清除 rate
-          console.log("检测到 shop 变化：清除 local_conversion_rate");
-          localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
-          localStorage.removeItem("local_conversion_rate");
-        }
       }
     } catch (error) {
       console.error("useEffect 错误：", error);
@@ -348,6 +353,8 @@ const AnalyticsCard = ({ isLoading }: any) => {
   // 监听 graphqlFetcher.data（创建响应），如果需要处理错误或其他逻辑
   useEffect(() => {
     if (graphqlFetcher.data) {
+      console.log(graphqlFetcher.data);
+      
       if (graphqlFetcher.data?.success) {
         // 可在此处理创建成功逻辑，如 toast
         // shopify.toast.show("Web Pixel 激活成功");

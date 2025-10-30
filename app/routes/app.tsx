@@ -239,22 +239,54 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source: shopPrimaryLanguage[0]?.locale,
         });
 
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            ...translatingData?.response,
-            source: shopPrimaryLanguage[0]?.locale,
-          },
-        };
+        if (translatingData?.success) {
+          const listData = translatingData?.response?.list?.map((item: any) => {
+            return {
+              target: item?.target,
+              status: item?.status,
+              translateStatus: item?.translateStatus,
+              resourceType: item?.resourceType,
+              value: item?.value,
+              progressData:
+                item.translateStatus == "translation_process_saving_shopify"
+                  ? {
+                      RemainingQuantity:
+                        item?.writingData?.write_total -
+                          item?.writingData?.write_done || 0,
+                      TotalQuantity: item?.writingData?.write_total || 1,
+                    }
+                  : item?.progressData,
+            };
+          });
+
+          return {
+            ...translatingData,
+            response: {
+              list: listData || [],
+              source: shopPrimaryLanguage[0]?.locale,
+            },
+          };
+        } else {
+          return {
+            success: false,
+            errorCode: 0,
+            errorMsg: "",
+            response: {
+              list: [],
+              source: "",
+            },
+          };
+        }
       } catch (error) {
         console.error("Error nearTransaltedData app:", error);
         return {
           success: false,
           errorCode: 0,
           errorMsg: "",
-          response: [],
+          response: {
+            list: [],
+            source: "",
+          },
         };
       }
     }

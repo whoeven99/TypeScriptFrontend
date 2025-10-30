@@ -158,7 +158,7 @@
   "translation_process_init": "正在初始化翻译任务...",
   "translation_process_translating": "正在翻译{{item}}模块({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "正在翻译{{item}}模块: ",
-  "progressing.finished": "翻译已完成。翻译内容需要发布后才能生效。",
+  "translation_process_saved": "翻译已完成。翻译内容需要发布后才能生效。",
   "progressing.buyCredits": "购买积分",
   "progressing.review": "检查翻译",
   "progressing.publish": "发布语言",

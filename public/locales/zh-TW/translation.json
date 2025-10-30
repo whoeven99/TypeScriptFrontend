@@ -162,7 +162,7 @@
   "translation_process_init": "正在初始化翻譯任務...",
   "translation_process_translating": "翻譯 {{item}} 模組({{hasTranslated}}/{{totalNumber}}):",
   "progressing.progressingWithoutSpace": "翻譯 {{item}} 模組:",
-  "progressing.finished": "您的翻譯已完成。發布它以應用更改。",
+  "translation_process_saved": "您的翻譯已完成。發布它以應用更改。",
   "progressing.buyCredits": "購買積分",
   "progressing.review": "審閱翻譯",
   "progressing.publish": "發布",

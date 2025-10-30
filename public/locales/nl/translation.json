@@ -489,7 +489,7 @@
   "progressing.contact": "You’re out of translation credits. Buy more to resume your translation.",
   "progressing.contactButton": "Support",
   "progressing.continueTranslate": "Continue translating",
-  "progressing.finished": "Your translation is ready. Publish it to apply the changes.",
+  "translation_process_saved": "Your translation is ready. Publish it to apply the changes.",
   "progressing.hasPayed": "Translation credits have been added. You can now resume your translation.",
   "translation_process_init": "Initializing translation task...",
   "progressing.noTranslate": "There are no ongoing translation tasks.",
