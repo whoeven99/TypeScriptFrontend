@@ -1130,7 +1130,7 @@ export const queryNextTransType = async ({
 }) => {
   try {
     const query = `{
-      translatableResources(resourceType: ${resourceType}, first: 2 ${endCursor ? `, after: "${endCursor}"` : ""}, reverse: true) {
+      translatableResources(resourceType: ${resourceType}, first: 20 ${endCursor ? `, after: "${endCursor}"` : ""}, reverse: true) {
         nodes {
           resourceId
           translatableContent {
