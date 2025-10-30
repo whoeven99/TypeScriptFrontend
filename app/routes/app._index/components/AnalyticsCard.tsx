@@ -192,6 +192,9 @@ const AnalyticsCard = ({ isLoading }: any) => {
   };
 
   const handleConfigScopes = async () => {
+    console.log(showRequireScopeBtn);
+    console.log(configCreateWebPixel);
+    
     setNavigateToRateState(true);
     try {
       if (!showRequireScopeBtn) {
@@ -350,6 +353,8 @@ const AnalyticsCard = ({ isLoading }: any) => {
   // 监听 graphqlFetcher.data（创建响应），如果需要处理错误或其他逻辑
   useEffect(() => {
     if (graphqlFetcher.data) {
+      console.log(graphqlFetcher.data);
+      
       if (graphqlFetcher.data?.success) {
         // 可在此处理创建成功逻辑，如 toast
         // shopify.toast.show("Web Pixel 激活成功");
