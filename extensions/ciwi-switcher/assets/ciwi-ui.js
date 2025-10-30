@@ -409,7 +409,6 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
       productId: productId,
       languageCode: language,
     });
-    console.log("productImageData: ", productImageData);
 
     if (productImageData.response.length > 0) {
       const imageDomList = document.querySelectorAll("img");
