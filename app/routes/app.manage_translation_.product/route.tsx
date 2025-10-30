@@ -527,23 +527,70 @@ const Index = () => {
       );
       successfulItem.forEach((item: any) => {
         console.log(successfulItem);
-
-        // const index = articlesData.nodes.findIndex(
-        //   (option: any) => option.resourceId === item.data.resourceId,
-        // );
-        // if (index !== -1) {
-        //   const article = articlesData.nodes[index].translations.find(
-        //     (option: any) => option.key === item.data.key,
-        //   );
-        //   if (article) {
-        //     article.value = item.data.value;
-        //   } else {
-        //     articlesData.nodes[index].translations.push({
-        //       key: item.data.key,
-        //       value: item.data.value,
-        //     });
-        //   }
-        // }
+        const key = successfulItem?.data?.key || "";
+        const resourceId = successfulItem?.data?.resourceId || "";
+        const targetValue = successfulItem?.data?.value || "";
+        switch (true) {
+          case key in ["title", "body_html", "product_type"]:
+            const productBaseDataCase = productBaseData.find(
+              (item: any) => item.key == key,
+            );
+            setProductBaseData([
+              ...productBaseData,
+              {
+                ...productBaseDataCase,
+                translated: targetValue,
+              },
+            ]);
+          case key in ["handle", "meta_title", "meta_description"]:
+            const productSeoDataCase = productSeoData.find(
+              (item: any) => item.key == key,
+            );
+            setProductBaseData([
+              ...productSeoData,
+              {
+                ...productSeoDataCase,
+                translated: targetValue,
+              },
+            ]);
+          case optionsData.find((item: any) => item?.resourceId == resourceId):
+            const optionsDataCase = optionsData.find(
+              (item: any) => item.resourceId == resourceId,
+            );
+            setProductBaseData([
+              ...optionsData,
+              {
+                ...optionsDataCase,
+                translated: targetValue,
+              },
+            ]);
+          case metafieldsData.find(
+            (item: any) => item?.resourceId == resourceId,
+          ):
+            const metafieldsDataCase = metafieldsData.find(
+              (item: any) => item.resourceId == resourceId,
+            );
+            setProductBaseData([
+              ...metafieldsData,
+              {
+                ...metafieldsDataCase,
+                translated: targetValue,
+              },
+            ]);
+          case variantsData.find((item: any) => item?.resourceId == resourceId):
+            const variantsDataCase = variantsData.find(
+              (item: any) => item.resourceId == resourceId,
+            );
+            setProductBaseData([
+              ...variantsData,
+              {
+                ...variantsDataCase,
+                translated: targetValue,
+              },
+            ]);
+          default:
+            break;
+        }
       });
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
@@ -586,7 +633,7 @@ const Index = () => {
       }
     }
   }, [languageFetcher.data]);
-  
+
   useEffect(() => {
     if (productFetcher.data) {
       if (productFetcher.data.success) {
@@ -1573,175 +1620,6 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("save-bar");
-    setProductBaseData(
-      [
-        {
-          key: "title",
-          index: 4,
-          resource: t("Title"),
-          type:
-            productFetcher.data.response?.translatableContent?.find(
-              (item: any) => item.key == "title",
-            )?.type || "",
-          default_language:
-            productFetcher.data.response?.translatableContent?.find(
-              (item: any) => item.key == "title",
-            )?.value || "",
-          translated: productFetcher.data.response?.translations?.find(
-            (item: any) => item.key == "title",
-          )?.value,
-        },
-        {
-          key: "body_html",
-          index: 4,
-          resource: t("Description"),
-          type:
-            productFetcher.data.response?.translatableContent?.find(
-              (item: any) => item.key == "body_html",
-            )?.type || "",
-          default_language:
-            productFetcher.data.response?.translatableContent?.find(
-              (item: any) => item.key == "body_html",
-            )?.value || "",
-          translated: productFetcher.data.response?.translations?.find(
-            (item: any) => item.key == "body_html",
-          )?.value,
-        },
-        {
-          key: "product_type",
-          index: 4,
-          resource: t("ProductType"),
-          type:
-            productFetcher.data.response?.translatableContent?.find(
-              (item: any) => item.key == "product_type",
-            )?.type || "",
-          default_language:
-            productFetcher.data.response?.translatableContent?.find(
-              (item: any) => item.key == "product_type",
-            )?.value || "",
-          translated: productFetcher.data.response?.translations?.find(
-            (item: any) => item.key == "product_type",
-          )?.value,
-        },
-      ].filter((item) => item.default_language),
-    );
-    setProductSeoData(
-      [
-        {
-          key: "handle",
-          index: 4,
-          resource: t("URL handle"),
-          type:
-            productFetcher.data.response?.translatableContent?.find(
-              (item: any) => item.key == "handle",
-            )?.type || "",
-          default_language:
-            productFetcher.data.response?.translatableContent?.find(
-              (item: any) => item.key == "handle",
-            )?.value || "",
-          translated:
-            productFetcher.data.response?.translation?.find(
-              (item: any) => item.key == "handle",
-            )?.value || "",
-        },
-        {
-          key: "meta_title",
-          index: 4,
-          resource: t("Meta title"),
-          type:
-            productFetcher.data.response?.translatableContent?.find(
-              (item: any) => item.key == "meta_title",
-            )?.type || "",
-          default_language:
-            productFetcher.data.response?.translatableContent?.find(
-              (item: any) => item.key == "meta_title",
-            )?.value || "",
-          translated:
-            productFetcher.data.response?.translation?.find(
-              (item: any) => item.key == "meta_title",
-            )?.value || "",
-        },
-        {
-          key: "meta_description",
-          index: 4,
-          resource: t("Meta description"),
-          type:
-            productFetcher.data.response?.translatableContent?.find(
-              (item: any) => item.key == "meta_description",
-            )?.type || "",
-          default_language:
-            productFetcher.data.response?.translatableContent?.find(
-              (item: any) => item.key == "meta_description",
-            )?.value || "",
-          translated:
-            productFetcher.data.response?.translation?.find(
-              (item: any) => item.key == "meta_description",
-            )?.value || "",
-        },
-      ].filter((item) => item.default_language),
-    );
-    const optionsData = productFetcher.data.response?.options?.nodes
-      ?.filter(
-        (item: any) =>
-          item?.translatableContent[0]?.value !== "Title" &&
-          item?.translatableContent[0]?.value,
-      )
-      ?.map((option: any, index: number) => {
-        return {
-          resourceId: option?.resourceId,
-          key: `${option?.translatableContent[0]?.key}_${index}`,
-          index: index,
-          locale: option?.translatableContent[0]?.locale,
-          digest: option?.translatableContent[0]?.digest,
-          resource: t(option?.translatableContent[0]?.value),
-          type: option?.translatableContent[0]?.type,
-          default_language: option?.translatableContent[0]?.value,
-          translated: option?.translations[0]?.value,
-        };
-      });
-    if (optionsData) setOptionsData(optionsData);
-    const metafieldsData = productFetcher.data.response?.metafields?.nodes?.map(
-      (metafield: any, index: number) => {
-        return {
-          resourceId: metafield?.resourceId,
-          key: `${metafield?.translatableContent[0]?.key}_${index}`,
-          index: index,
-          locale: metafield?.translatableContent[0]?.locale,
-          digest: metafield?.translatableContent[0]?.digest,
-          resource: t(metafield?.translatableContent[0]?.key),
-          type: metafield?.translatableContent[0]?.type,
-          default_language: metafield?.translatableContent[0]?.value,
-          translated: metafield?.translations[0]?.value,
-        };
-      },
-    );
-    if (metafieldsData) setMetafieldsData(metafieldsData);
-    const variantsData = variantFetcher.data.variantsData.flatMap(
-      (result: any) => {
-        if (result.status === "fulfilled") {
-          return result.value.data.translatableResourcesByIds.nodes
-            .filter(
-              (variant: any) =>
-                variant?.translatableContent[0]?.value &&
-                variant?.translatableContent[0]?.value !== "Default Title",
-            )
-            .map((variant: any, index: number) => ({
-              key: variant?.resourceId,
-              index,
-              resource: t(variant?.translatableContent[0]?.key),
-              type: variant?.translatableContent[0]?.type,
-              locale: variant?.translatableContent[0]?.locale,
-              digest: variant?.translatableContent[0]?.digest,
-              default_language: variant?.translatableContent[0]?.value,
-              translated: variant?.translations[0]?.value,
-            }));
-        }
-        return []; // 记得返回空数组避免 undefined
-      },
-    );
-
-    if (variantsData) setVariantsData(variantsData);
-
     setConfirmData([]);
     setSuccessTranslatedKey([]);
   };
