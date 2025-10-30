@@ -93,11 +93,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
           content: translatedValues[record?.key] || "",
           immediatelyRender: false,
           onUpdate: ({ editor }) => {
-            console.log(1111);
-
             if (!isInitialized) return;
-            console.log(2222);
-
             const html = editor.getHTML(); // 原始 HTML
             handleInputChange(
               record.key,

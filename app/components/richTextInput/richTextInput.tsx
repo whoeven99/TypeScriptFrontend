@@ -28,10 +28,6 @@ const Tiptap = ({
 
   const [showTiptap, setShowTiptap] = useState(true);
 
-  useEffect(() => {
-    console.log(editor?.getHTML());
-  }, [editor?.getHTML()]);
-
   const hideTiptap = (value: boolean) => {
     setHtmlContent(editor?.options?.content as string);
     setShowTiptap(value);
