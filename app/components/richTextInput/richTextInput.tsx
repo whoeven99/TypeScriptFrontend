@@ -20,6 +20,10 @@ const Tiptap = ({ editor, isSuccess, readOnly, style, isrtl }: TiptapProps) => {
   const [htmlContent, setHtmlContent] = useState<string>("");
 
   useEffect(() => {
+    console.log(editor);
+  }, [editor]);
+
+  useEffect(() => {
     if (!showTiptap) {
       setHtmlContent(editor?.options?.content as string);
     }
