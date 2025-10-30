@@ -378,72 +378,6 @@ const Index = () => {
   const [queryText, setQueryText] = useState<string>("");
   const { reportClick } = useReport();
   const itemOptions = getItemOptions(t);
-  const languagePackOptions = [
-    {
-      label: t("General"),
-      value: "1",
-    },
-    {
-      label: t("Fashion & Apparel"),
-      value: "2",
-    },
-    {
-      label: t("Electronics & Technology"),
-      value: "3",
-    },
-    {
-      label: t("Home Goods & Daily Essentials"),
-      value: "4",
-    },
-    {
-      label: t("Pet Supplies"),
-      value: "5",
-    },
-    {
-      label: t("Beauty & Personal Care"),
-      value: "6",
-    },
-    {
-      label: t("Furniture & Gardening"),
-      value: "7",
-    },
-    {
-      label: t("Hardware & Tools"),
-      value: "8",
-    },
-    {
-      label: t("Baby & Toddler Products"),
-      value: "9",
-    },
-    {
-      label: t("Toys & Games"),
-      value: "10",
-    },
-    {
-      label: t("Luggage & Accessories"),
-      value: "11",
-    },
-    {
-      label: t("Health & Nutrition"),
-      value: "12",
-    },
-    {
-      label: t("Outdoor & Sports"),
-      value: "13",
-    },
-    {
-      label: t("Crafts & Small Goods"),
-      value: "14",
-    },
-    {
-      label: t("Home Appliances"),
-      value: "15",
-    },
-    {
-      label: t("Automotive Parts"),
-      value: "16",
-    },
-  ];
   const [languageOptions, setLanguageOptions] = useState<
     { label: string; value: string }[]
   >([]);
@@ -524,6 +458,135 @@ const Index = () => {
     }
   }, [dataFetcher.data]);
 
+  // 更新 loadingItemsRef 的值
+  useEffect(() => {
+    loadingItemsRef.current = loadingItems;
+  }, [loadingItems]);
+
+  useEffect(() => {
+    if (languageTableData) {
+      setLanguageOptions(
+        languageTableData
+          .filter((item: any) => !item.primary)
+          .map((item: any) => ({
+            label: item.language,
+            value: item.locale,
+          })),
+      );
+    }
+  }, [languageTableData]);
+
+  useEffect(() => {
+    setProductBaseData([]);
+    setProductSeoData([]);
+    setOptionsData([]);
+    setMetafieldsData([]);
+    setVariantsData([]);
+    setLoadingItems([]);
+    setConfirmData([]);
+    setSuccessTranslatedKey([]);
+    setTranslatedValues({});
+    productFetcher.submit(
+      {
+        productId: selectProductKey,
+      },
+      {
+        method: "POST",
+      },
+    );
+    const variants = productsData
+      .find((item: any) => item.id === selectProductKey)
+      ?.options.flatMap((item: any) =>
+        item.optionValues.map((opt: any) => opt.id),
+      );
+    if (variants && Array.isArray(variants)) {
+      variantFetcher.submit(
+        {
+          variants: JSON.stringify({
+            data: variants,
+            searchTerm: searchTerm,
+          }),
+        },
+        {
+          method: "post",
+          action: "/app/manage_translation/product",
+        },
+      );
+    } else {
+      setVariantsLoading(false);
+    }
+  }, [selectProductKey, productsData]);
+
+  useEffect(() => {
+    if (confirmFetcher.data && confirmFetcher.data.data) {
+      const errorItem = confirmFetcher.data.data.filter(
+        (item: any) => item.success === false,
+      );
+      const successfulItem = confirmFetcher.data.data.filter(
+        (item: any) => item.success === true,
+      );
+      successfulItem.forEach((item: any) => {
+        console.log(successfulItem);
+
+        // const index = articlesData.nodes.findIndex(
+        //   (option: any) => option.resourceId === item.data.resourceId,
+        // );
+        // if (index !== -1) {
+        //   const article = articlesData.nodes[index].translations.find(
+        //     (option: any) => option.key === item.data.key,
+        //   );
+        //   if (article) {
+        //     article.value = item.data.value;
+        //   } else {
+        //     articlesData.nodes[index].translations.push({
+        //       key: item.data.key,
+        //       value: item.data.value,
+        //     });
+        //   }
+        // }
+      });
+      if (errorItem.length == 0) {
+        shopify.toast.show(t("Saved successfully"));
+        fetcher.submit(
+          {
+            log: `${globalStore?.shop} 翻译管理-产品页面修改数据保存成功`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
+      } else {
+        shopify.toast.show(t("Some items saved failed"));
+      }
+      setConfirmData([]);
+      setSuccessTranslatedKey([]);
+    }
+  }, [confirmFetcher.data]);
+
+  useEffect(() => {
+    if (languageFetcher.data) {
+      if (languageFetcher.data.data) {
+        const shopLanguages = languageFetcher.data.data;
+        dispatch(
+          setTableData(
+            shopLanguages.map((language: ShopLocalesType, index: number) => ({
+              key: language.locale,
+              language: language.name,
+              locale: language.locale,
+              primary: language.primary,
+              published: language.published,
+            })),
+          ),
+        );
+        const locale = shopLanguages.find(
+          (language: ShopLocalesType) => language.primary === true,
+        )?.locale;
+        dispatch(setLocale({ locale: locale || "" }));
+      }
+    }
+  }, [languageFetcher.data]);
+  
   useEffect(() => {
     if (productFetcher.data) {
       if (productFetcher.data.success) {
@@ -722,146 +785,6 @@ const Index = () => {
       }
     }
   }, [productFetcher.data]);
-
-  // 更新 loadingItemsRef 的值
-  useEffect(() => {
-    loadingItemsRef.current = loadingItems;
-  }, [loadingItems]);
-
-  useEffect(() => {
-    if (languageTableData) {
-      setLanguageOptions(
-        languageTableData
-          .filter((item: any) => !item.primary)
-          .map((item: any) => ({
-            label: item.language,
-            value: item.locale,
-          })),
-      );
-    }
-  }, [languageTableData]);
-
-  // useEffect(() => {
-  //   if (products && isManualChangeRef.current) {
-  //     setProductsData(products);
-  //     setMenuData(exMenuData(products));
-  //     setSelectProductKey(
-  //       products.data.translatableResources.nodes[0]?.resourceId,
-  //     );
-  //     setTimeout(() => {
-  //       setIsLoading(false);
-  //     }, 100);
-  //     isManualChangeRef.current = false; // 重置
-  //   }
-  // }, [products]);
-
-  useEffect(() => {
-    setProductBaseData([]);
-    setProductSeoData([]);
-    setOptionsData([]);
-    setMetafieldsData([]);
-    setVariantsData([]);
-    setLoadingItems([]);
-    setConfirmData([]);
-    setSuccessTranslatedKey([]);
-    setTranslatedValues({});
-    productFetcher.submit(
-      {
-        productId: selectProductKey,
-      },
-      {
-        method: "POST",
-      },
-    );
-    const variants = productsData
-      .find((item: any) => item.id === selectProductKey)
-      ?.options.flatMap((item: any) =>
-        item.optionValues.map((opt: any) => opt.id),
-      );
-    if (variants && Array.isArray(variants)) {
-      variantFetcher.submit(
-        {
-          variants: JSON.stringify({
-            data: variants,
-            searchTerm: searchTerm,
-          }),
-        },
-        {
-          method: "post",
-          action: "/app/manage_translation/product",
-        },
-      );
-    } else {
-      setVariantsLoading(false);
-    }
-  }, [selectProductKey, productsData]);
-
-  // useEffect(() => {
-  //   if (actionData && "nextProducts" in actionData) {
-  //     // 在这里处理 nextProducts
-  //     setMenuData(exMenuData(actionData.nextProducts));
-  //     setProductsData(actionData.nextProducts);
-  //     setSelectProductKey(
-  //       actionData.nextProducts.data.translatableResources.nodes[0]?.resourceId,
-  //     );
-  //   } else if (actionData && "previousProducts" in actionData) {
-  //     setMenuData(exMenuData(actionData.previousProducts));
-  //     setProductsData(actionData.previousProducts);
-  //     setSelectProductKey(
-  //       actionData.previousProducts.data.translatableResources.nodes[0]
-  //         ?.resourceId,
-  //     );
-  //   } else {
-  //     // 如果不存在 nextProducts，可以执行其他逻辑
-  //   }
-  // }, [actionData]);
-
-  useEffect(() => {
-    if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.filter(
-        (item: any) => item.success === false,
-      );
-      if (errorItem.length == 0) {
-        shopify.toast.show(t("Saved successfully"));
-        fetcher.submit(
-          {
-            log: `${globalStore?.shop} 翻译管理-产品页面修改数据保存成功`,
-          },
-          {
-            method: "POST",
-            action: "/log",
-          },
-        );
-      } else {
-        shopify.toast.show(t("Some items saved failed"));
-      }
-      setConfirmData([]);
-      setSuccessTranslatedKey([]);
-    }
-  }, [confirmFetcher.data]);
-
-  useEffect(() => {
-    if (languageFetcher.data) {
-      if (languageFetcher.data.data) {
-        const shopLanguages = languageFetcher.data.data;
-        dispatch(
-          setTableData(
-            shopLanguages.map((language: ShopLocalesType, index: number) => ({
-              key: language.locale,
-              language: language.name,
-              locale: language.locale,
-              primary: language.primary,
-              published: language.published,
-            })),
-          ),
-        );
-        const locale = shopLanguages.find(
-          (language: ShopLocalesType) => language.primary === true,
-        )?.locale;
-        dispatch(setLocale({ locale: locale || "" }));
-      }
-    }
-  }, [languageFetcher.data]);
 
   useEffect(() => {
     if (variantFetcher.data && variantFetcher.data.variantsData) {
@@ -1106,11 +1029,7 @@ const Index = () => {
       width: "40%",
       render: (_: any, record: TableDataType) => {
         if (record) {
-          return (
-            <ManageTableInput
-              record={record}
-            />
-          );
+          return <ManageTableInput record={record} />;
         } else {
           return null;
         }
