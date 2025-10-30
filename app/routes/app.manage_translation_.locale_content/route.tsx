@@ -383,7 +383,11 @@ const Index = () => {
       key: "default_language",
       width: "40%",
       render: (_: any, record: TableDataType) => {
-        return <ManageTableInput record={record} />;
+        return (
+          <ManageTableInput
+            record={record}
+          />
+        );
       },
     },
     {
