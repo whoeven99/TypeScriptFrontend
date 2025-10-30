@@ -233,6 +233,57 @@ const Index = () => {
     },
   ];
 
+  const onlineStoreThemeDataSource: TableDataType[] = [
+    {
+      key: "locale_content",
+      title: t("Locale Content"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "ONLINE_STORE_THEME",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) =>
+            item?.language === current && item?.type === "ONLINE_STORE_THEME",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "locale_content",
+    },
+    {
+      key: "json_template",
+      title: t("Json Template"),
+      allTranslatedItems: undefined,
+      allItems: undefined,
+      sync_status: false,
+      navigation: "json_template",
+    },
+    {
+      key: "section_group",
+      title: t("Section Group"),
+      allTranslatedItems: undefined,
+      allItems: undefined,
+      sync_status: false,
+      navigation: "section_group",
+    },
+    {
+      key: "settings_category",
+      title: t("Settings Category"),
+      allTranslatedItems: undefined,
+      allItems: undefined,
+      sync_status: false,
+      navigation: "settings_category",
+    },
+    {
+      key: "settings_data_sections",
+      title: t("Settings Data Sections"),
+      allTranslatedItems: undefined,
+      allItems: undefined,
+      sync_status: false,
+      navigation: "settings_data_sections",
+    },
+  ];
+
   const onlineStoreDataSource: TableDataType[] = [
     {
       key: "shop",
@@ -247,22 +298,6 @@ const Index = () => {
         )?.totalNumber ?? undefined,
       sync_status: false,
       navigation: "shop",
-    },
-    {
-      key: "theme",
-      title: t("Theme"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === current && item?.type === "ONLINE_STORE_THEME",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) =>
-            item?.language === current && item?.type === "ONLINE_STORE_THEME",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "theme",
     },
     {
       key: "pages",
@@ -308,23 +343,23 @@ const Index = () => {
       sync_status: false,
       navigation: "metaobject",
     },
-    // {
-    //   key: "navigation",
-    //   title: t("Navigation"),
-    //   allTranslatedItems:
-    //     languageItemsData.find(
-    //       (item: any) => item?.language === current && item?.type === "LINK",
-    //     )?.translatedNumber ?? undefined,
-    //   allItems:
-    //     languageItemsData.find(
-    //       (item: any) => item?.language === current && item?.type === "LINK",
-    //     )?.totalNumber ?? undefined,
-    //   sync_status: false,
-    //   navigation: "navigation",
-    // },
+    {
+      key: "navigation",
+      title: t("Navigation"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) => item?.language === current && item?.type === "LINK",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) => item?.language === current && item?.type === "LINK",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "navigation",
+    },
     {
       key: "store_metadata",
-      title: t("Store metadata"),
+      title: t("Metafield"),
       allTranslatedItems:
         languageItemsData.find(
           (item: any) =>
@@ -615,6 +650,17 @@ const Index = () => {
   }, [emailFetcher.data]);
 
   useEffect(() => {
+    if (navigationFetcher.data) {
+      if (
+        navigationFetcher.data?.success &&
+        navigationFetcher.data?.response?.length > 0
+      ) {
+        dispatch(updateData(navigationFetcher.data?.response));
+      }
+    }
+  }, [navigationFetcher.data]);
+
+  useEffect(() => {
     if (policiesFetcher.data) {
       if (
         policiesFetcher.data?.success &&
@@ -839,7 +885,7 @@ const Index = () => {
         JSON.stringify({
           source: primaryLanguage,
           target: current,
-          resourceType: "Store metadata",
+          resourceType: "Metafield",
         }),
       );
       store_metadataFetcher.submit(store_metadataFormData, {
@@ -966,7 +1012,8 @@ const Index = () => {
               />
             </div>
             <div className="manage-header-right">
-              {(typeof plan === "number" && plan <= 4) ||
+              {plan?.type == "Free" ||
+              plan?.type == "Basic" ||
               typeof plan === "undefined" ? (
                 <Flex align="center" gap="middle">
                   <Popconfirm
@@ -1003,6 +1050,11 @@ const Index = () => {
                 <ManageTranslationsCard
                   cardTitle={t("Products")}
                   dataSource={productsDataSource}
+                  current={current}
+                />
+                <ManageTranslationsCard
+                  cardTitle={t("Online Store Theme")}
+                  dataSource={onlineStoreThemeDataSource}
                   current={current}
                 />
                 <ManageTranslationsCard
@@ -1113,5 +1165,29 @@ const Index = () => {
     </Page>
   );
 };
+
+export const getItemOptions = (t: (key: string) => string) => [
+  { label: t("Products"), value: "product" },
+  { label: t("Collection"), value: "collection" },
+  { label: t("Json Template"), value: "json_template" },
+  { label: t("Locale Content"), value: "locale_content" },
+  { label: t("Section Group"), value: "section_group" },
+  { label: t("Settings Category"), value: "settings_category" },
+  { label: t("Settings Data Sections"), value: "settings_data_sections" },
+  { label: t("Shop"), value: "shop" },
+  { label: t("Metafield"), value: "metafield" },
+  { label: t("Articles"), value: "article" },
+  { label: t("Blog titles"), value: "blog" },
+  { label: t("Pages"), value: "page" },
+  { label: t("Filters"), value: "filter" },
+  { label: t("Metaobjects"), value: "metaobject" },
+  { label: t("Navigation"), value: "navigation" },
+  { label: t("Email"), value: "email" },
+  { label: t("Policies"), value: "policy" },
+  { label: t("Product images"), value: "productImage" },
+  { label: t("Product image alt text"), value: "productImageAlt" },
+  { label: t("Delivery"), value: "delivery" },
+  { label: t("Shipping"), value: "shipping" },
+];
 
 export default Index;

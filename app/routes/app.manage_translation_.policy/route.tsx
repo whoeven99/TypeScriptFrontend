@@ -37,6 +37,7 @@ import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import { globalStore } from "~/globalStore";
+import { getItemOptions } from "../app.manage_translation/route";
 
 const { Sider, Content } = Layout;
 
@@ -48,7 +49,7 @@ type TableDataType = {
   default_language: string | undefined;
   translated: string | undefined;
   type: string | undefined;
-} | null;
+};
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -63,31 +64,82 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const { admin, session } = await authenticate.admin(request);
+  const { shop, accessToken } = session;
 
   try {
     const formData = await request.formData();
-    const endCursor = JSON.parse(formData.get("endCursor") as string);
+    const loading = JSON.parse(formData.get("loading") as string);
+    const policyId = formData.get("policyId") as string;
     const confirmData: ConfirmDataType[] = JSON.parse(
       formData.get("confirmData") as string,
     );
     switch (true) {
-      case !!endCursor:
+      case !!loading:
         try {
-          const response = await queryNextTransType({
-            shop,
-            accessToken: accessToken as string,
-            resourceType: "SHOP_POLICY",
-            endCursor: endCursor.cursor,
-            locale: searchTerm || "",
-          });
+          const data = await admin.graphql(
+            `#graphql
+            query shopPolicies {     
+              shop {
+                shopPolicies {
+                  title
+                  body
+                  id
+                }
+              }
+            }`,
+          );
+
+          const response = await data.json();
+
+          const res = response.data?.shop?.shopPolicies;
 
           return {
             success: true,
             errorCode: 0,
             errorMsg: "",
-            response,
+            response: res,
+          };
+        } catch (error) {
+          return {
+            success: false,
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: undefined,
+          };
+        }
+
+      case !!policyId:
+        try {
+          const data = await admin.graphql(
+            `#graphql
+            query policyData {     
+              translatableResource(resourceId: "${policyId}") {
+                  resourceId
+                  translatableContent {
+                    digest
+                    key
+                    locale
+                    type
+                    value
+                  }
+                  translations(locale: "${searchTerm}") {
+                    value
+                    key
+                  }
+              }
+            }`,
+          );
+
+          const response = await data.json();
+
+          const res = response.data?.translatableResource;
+
+          return {
+            success: true,
+            errorCode: 0,
+            errorMsg: "",
+            response: res,
           };
         } catch (error) {
           return {
@@ -128,40 +180,25 @@ const Index = () => {
   const loadingItemsRef = useRef<string[]>([]);
 
   const dataFetcher = useFetcher<any>();
+  const policyFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
 
   const [menuData, setMenuData] = useState<any[]>([]);
-  const [policiesData, setPoliciesData] = useState<any>();
   const [policyData, setPolicyData] = useState<any>();
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [selectPolicyKey, setSelectPolicyKey] = useState<string>("");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
-  const itemOptions = [
-    { label: t("Products"), value: "product" },
-    { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "theme" },
-    { label: t("Shop"), value: "shop" },
-    { label: t("Store metadata"), value: "metafield" },
-    { label: t("Articles"), value: "article" },
-    { label: t("Blog titles"), value: "blog" },
-    { label: t("Pages"), value: "page" },
-    { label: t("Filters"), value: "filter" },
-    { label: t("Metaobjects"), value: "metaobject" },
-    { label: t("Navigation"), value: "navigation" },
-    { label: t("Email"), value: "email" },
-    { label: t("Policies"), value: "policy" },
-    { label: t("Product images"), value: "productImage" },
-    { label: t("Product image alt text"), value: "productImageAlt" },
-    { label: t("Delivery"), value: "delivery" },
-    { label: t("Shipping"), value: "shipping" },
-  ];
+  const itemOptions = getItemOptions(t);
   const [languageOptions, setLanguageOptions] = useState<
     { label: string; value: string }[]
   >([]);
@@ -185,10 +222,7 @@ const Index = () => {
     }
     dataFetcher.submit(
       {
-        endCursor: JSON.stringify({
-          cursor: "",
-          searchTerm: searchTerm,
-        }),
+        loading: JSON.stringify({}),
       },
       {
         method: "POST",
@@ -222,53 +256,51 @@ const Index = () => {
   }, [languageTableData]);
 
   useEffect(() => {
-    if (policiesData) {
-      const data: any = policiesData.nodes.find(
-        (policy: any) => policy.resourceId === selectPolicyKey,
-      );
-      setConfirmData([]);
-      setPolicyData(data);
-      setTranslatedValues({});
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 100);
-      setLoadingItems([]);
-    }
-  }, [selectPolicyKey, policiesData]);
-
-  useEffect(() => {
-    setResourceData([
-      {
-        key: "body",
-        resource: "Content",
-        default_language: policyData?.translatableContent[0]?.value,
-        translated: policyData?.translations[0]?.value,
-        type: policyData?.translatableContent[0]?.type,
-      },
-    ]);
-  }, [policyData]);
-
-  useEffect(() => {
     if (dataFetcher.data) {
       if (dataFetcher.data?.success) {
-        setPoliciesData(dataFetcher.data?.response);
-        setMenuData(
-          dataFetcher.data?.response?.nodes?.map((policy: any) => ({
-            key: policy.resourceId,
-            label: policy.translatableContent.find(
-              (item: any) => item.key === "body",
-            ).value,
-          })),
+        console.log(dataFetcher.data.response);
+
+        const filterMenuData = dataFetcher.data?.response?.map(
+          (policy: any) => ({
+            key: policy?.id,
+            label: policy?.title,
+          }),
         );
-        setSelectPolicyKey(dataFetcher.data.response?.nodes[0]?.resourceId);
+        setMenuData(filterMenuData);
+        setSelectPolicyKey(dataFetcher.data.response[0]?.id);
+        policyFetcher.submit(
+          {
+            policyId: dataFetcher.data.response[0]?.id,
+          },
+          { method: "POST" },
+        );
         isManualChangeRef.current = false; // 重置
         setTimeout(() => {
           setIsLoading(false);
         }, 100);
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [dataFetcher.data]);
+
+  useEffect(() => {
+    if (policyFetcher.data) {
+      if (policyFetcher.data?.success) {
+        const response = policyFetcher.data.response;
+        setPolicyData(response);
+        setResourceData([
+          {
+            key: "body",
+            resource: "Content",
+            default_language: response?.translatableContent[0]?.value,
+            translated: response?.translations[0]?.value,
+            type: response?.translatableContent[0]?.type,
+          },
+        ]);
+      }
+    }
+  }, [policyFetcher.data]);
 
   useEffect(() => {
     if (confirmFetcher.data && confirmFetcher.data.data) {
@@ -280,22 +312,10 @@ const Index = () => {
       );
 
       successfulItem.forEach((item: any) => {
-        const index = policiesData.nodes.findIndex(
-          (option: any) => option.resourceId === item.data.resourceId,
-        );
-        if (index !== -1) {
-          const policy = policiesData.nodes[index].translations.find(
-            (option: any) => option.key === item.data.key,
-          );
-          if (policy) {
-            policy.value = item.data.value;
-          } else {
-            policiesData.nodes[index].translations.push({
-              key: item.data.key,
-              value: item.data.value,
-            });
-          }
-        }
+        setPolicyData({
+          ...policyData,
+          translations: { key: item.data.key, value: item.data.value },
+        });
       });
       if (errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
@@ -303,6 +323,7 @@ const Index = () => {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [confirmFetcher.data]);
 
@@ -363,6 +384,7 @@ const Index = () => {
           record && (
             <ManageTableInput
               record={record}
+              isSuccess={successTranslatedKey?.includes(record?.key as string)}
               translatedValues={translatedValues}
               setTranslatedValues={setTranslatedValues}
               handleInputChange={handleInputChange}
@@ -372,22 +394,27 @@ const Index = () => {
         );
       },
     },
-    // {
-    //   title: t("Translate"),
-    //   width: "10%",
-    //   render: (_: any, record: TableDataType) => {
-    //     return (
-    //       <Button
-    //         onClick={() => {
-    //           handleTranslate("SHOP_POLICY", record?.key || "", record?.type || "", record?.default_language || "");
-    //         }}
-    //         loading={loadingItems.includes(record?.key || "")}
-    //       >
-    //         {t("Translate")}
-    //       </Button>
-    //     );
-    //   },
-    // },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: TableDataType) => {
+        return (
+          <Button
+            onClick={() => {
+              handleTranslate(
+                "SHOP_POLICY",
+                record?.key || "",
+                record?.type || "",
+                record?.default_language || "",
+              );
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
+        );
+      },
+    },
   ];
 
   const handleInputChange = (key: string, value: string) => {
@@ -395,8 +422,10 @@ const Index = () => {
       ...prev,
       [key]: value, // 更新对应的 key
     }));
-    setConfirmData((prevData) => {
-      const existingItemIndex = prevData.findIndex((item) => item.key === key);
+    setConfirmData((prevData: any) => {
+      const existingItemIndex = prevData.findIndex(
+        (item: any) => item.key === key,
+      );
 
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
@@ -410,14 +439,10 @@ const Index = () => {
         // 如果 key 不存在，新增一条数据
         const newItem = {
           resourceId: policyData.resourceId,
-          locale: policyData.translatableContent.find(
-            (item: any) => item.key === key,
-          )?.locale,
+          locale: globalStore?.source,
           key: key,
           value: value, // 初始为空字符串
-          translatableContentDigest: policyData.translatableContent.find(
-            (item: any) => item.key === key,
-          )?.digest,
+          translatableContentDigest: policyData.translatableContent[0]?.digest,
           target: searchTerm || "",
         };
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
@@ -437,9 +462,7 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
-      source: policiesData.nodes
-        .find((item: any) => item?.resourceId === selectPolicyKey)
-        ?.translatableContent.find((item: any) => item.key === key)?.locale,
+      source: globalStore?.source || "",
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -450,6 +473,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, key]);
         shopify.toast.show(t("Translated successfully"));
       }
     } else {
@@ -466,10 +490,7 @@ const Index = () => {
       setIsLoading(true);
       dataFetcher.submit(
         {
-          endCursor: JSON.stringify({
-            cursor: "",
-            searchTerm: searchTerm,
-          }),
+          loading: JSON.stringify({}),
         },
         {
           method: "POST",
@@ -499,7 +520,15 @@ const Index = () => {
       shopify.saveBar.leaveConfirmation();
     } else {
       shopify.saveBar.hide("save-bar");
+      setPolicyData([]);
+      setLoadingItems([]);
       setSelectPolicyKey(key);
+      policyFetcher.submit(
+        {
+          policyId: key,
+        },
+        { method: "POST" },
+      );
     }
   };
 
@@ -514,35 +543,20 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("save-bar");
-    const data: any = policiesData.nodes.find(
-      (policy: any) => policy.resourceId === selectPolicyKey,
-    );
-    setPolicyData(data);
-    setConfirmData([]);
-  };
+    console.log(policyData);
 
-  // const handleLeaveItem = (
-  //   key: string | boolean | { language: string } | { item: string },
-  // ) => {
-  //   setIsVisible(false);
-  //   if (typeof key === "string" && key !== "previous" && key !== "next") {
-  //     setSelectPolicyKey(key);
-  //   } else if (typeof key === "object" && "language" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedLanguage(key.language);
-  //     navigate(`/app/manage_translation/policy?language=${key.language}`);
-  //   } else if (typeof key === "object" && "item" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedItem(key.item);
-  //     navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
-  //   } else {
-  //     navigate(`/app/manage_translation?language=${searchTerm}`, {
-  //       state: { key: searchTerm },
-  //     }); // 跳转到 /app/manage_translation
-  //   }
-  // };
+    setResourceData([
+      {
+        key: "body",
+        resource: "Content",
+        default_language: policyData?.translatableContent[0]?.value,
+        translated: policyData?.translations[0]?.value,
+        type: policyData?.translatableContent[0]?.type,
+      },
+    ]);
+    setConfirmData([]);
+    setSuccessTranslatedKey([]);
+  };
 
   const onCancel = () => {
     if (confirmData.length > 0) {
@@ -559,22 +573,6 @@ const Index = () => {
     <Page
       title={t("Policies")}
       fullWidth={true}
-      // primaryAction={{
-      //   content: t("Save"),
-      //   loading: confirmFetcher.state === "submitting",
-      //   disabled:
-      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //   onAction: handleConfirm,
-      // }}
-      // secondaryActions={[
-      //   {
-      //     content: t("Cancel"),
-      //     loading: confirmFetcher.state === "submitting",
-      //     disabled:
-      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //     onAction: handleDiscard,
-      //   },
-      // ]}
       backAction={{
         onAction: onCancel,
       }}
@@ -583,7 +581,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={confirmFetcher.state === "submitting" && ""}
+          loading={confirmFetcher.state === "submitting" ? "true" : undefined}
         >
           {t("Save")}
         </button>
@@ -607,7 +605,7 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : policiesData.nodes.length ? (
+        ) : menuData.length ? (
           <>
             {!isMobile && (
               <Sider
@@ -637,6 +635,11 @@ const Index = () => {
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
+                height: "calc(100% - 25px)",
+                minHeight: "70vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "auto",
               }}
             >
               {isMobile ? (
@@ -698,7 +701,10 @@ const Index = () => {
                       </div>
                     </div>
                   </div>
-                  <Card title={t("Resource")}>
+                  <Card
+                    title={t("Resource")}
+                    loading={policyFetcher.state == "submitting"}
+                  >
                     <Space direction="vertical" style={{ width: "100%" }}>
                       {resourceData.map((item: any, index: number) => {
                         return (
@@ -735,6 +741,9 @@ const Index = () => {
                             >
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleInputChange}
@@ -742,16 +751,26 @@ const Index = () => {
                                 record={item}
                               />
                             </div>
-                            {/* <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                <Button
-                                  onClick={() => {
-                                    handleTranslate("ARTICLE", item?.key || "", item?.type || "", item?.default_language || "");
-                                  }}
-                                  loading={loadingItems.includes(item?.key || "")}
-                                >
-                                  {t("Translate")}
-                                </Button>
-                              </div> */}
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              <Button
+                                onClick={() => {
+                                  handleTranslate(
+                                    "SHOP_POLICY",
+                                    item?.key || "",
+                                    item?.type || "",
+                                    item?.default_language || "",
+                                  );
+                                }}
+                                loading={loadingItems.includes(item?.key || "")}
+                              >
+                                {t("Translate")}
+                              </Button>
+                            </div>
                             <Divider
                               style={{
                                 margin: "8px 0",
@@ -837,6 +856,7 @@ const Index = () => {
                   </div>
 
                   <Table
+                    loading={policyFetcher.state == "submitting"}
                     columns={resourceColumns}
                     dataSource={resourceData}
                     pagination={false}

@@ -222,7 +222,7 @@ const Index = () => {
           initFetcher.data?.response?.defaultCurrencyCode;
         const currencyLocaleData =
           initFetcher.data?.response?.currencyLocaleData;
-        const currencyDataWithoutPrimary = currencyData.filter(
+        const currencyDataWithoutPrimary = currencyLocaleData.filter(
           (item: any) => item.currencyCode !== defaultCurrencyCode,
         );
         setCurrencyData(currencyLocaleData);

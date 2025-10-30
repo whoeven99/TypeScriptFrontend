@@ -406,10 +406,6 @@ const Index = () => {
   };
 
   const handleUsePrivateApi = () => {
-    if (plan?.id <= 2 || !plan?.id) {
-      setShowWarnModal(true);
-      return;
-    }
     navigate("/app/apikeySetting");
     fetcher.submit(
       {
@@ -672,7 +668,6 @@ const Index = () => {
               setTranslateSettings5={setTranslateSettings5}
               handleUsePrivateApi={handleUsePrivateApi}
               isMobile={isMobile}
-              plan={plan}
             />
             {toneSettingCardShow && (
               <div

@@ -54,13 +54,10 @@ export interface GLossaryDataType {
 }
 
 export const planMapping = {
-  1: 0,
-  2: 0,
-  3: 0,
-  4: 10,
-  5: 50,
-  6: 100,
-  7: 100,
+  Free: 0,
+  Basic: 10,
+  Pro: 50,
+  Premium: 100,
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -242,7 +239,9 @@ const Index = () => {
       const activeItemsCount = dataSource.filter(
         (item: any) => item.status === 1,
       ).length;
-      if (activeItemsCount >= planMapping[plan as keyof typeof planMapping]) {
+      if (
+        activeItemsCount >= planMapping[plan?.type as keyof typeof planMapping]
+      ) {
         setShowWarnModal(true);
         return;
       }
@@ -283,12 +282,12 @@ const Index = () => {
   };
 
   const handleIsModalOpen = (title: string, key: number) => {
-    if (!plan) {
+    if (!plan?.type) {
       return;
     }
     if (
       title === "Create rule" &&
-      dataSource.length >= planMapping[plan as keyof typeof planMapping]
+      dataSource.length >= planMapping[plan?.type as keyof typeof planMapping]
     ) {
       setShowWarnModal(true);
     } else {
@@ -435,7 +434,7 @@ const Index = () => {
                   ? `${t("Selected")}${selectedRowKeys.length}${t("items")}`
                   : null}
               </Flex>
-              {planMapping[plan as keyof typeof planMapping] === 0 ? (
+              {planMapping[plan?.type as keyof typeof planMapping] === 0 ? (
                 <div
                   style={{ display: "flex", alignItems: "center", gap: "8px" }}
                 >

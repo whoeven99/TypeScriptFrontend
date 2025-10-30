@@ -228,6 +228,7 @@
   "OK": "OK",
   "Oceania": "Oceania",
   "Online Store": "Online Store",
+  "Online Store Theme": "Thème de boutique en ligne",
   "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported",
   "Only images can be uploaded": "Only images can be uploaded",
   "Option Border Color:": "Option Border:",
@@ -317,7 +318,6 @@
   "Stay on Page": "Stay on Page",
   "Step 1: Set up Currency Format": "Step 1: Set up Currency Format",
   "Step 2: Enable switcher": "Step 2: Enable switcher",
-  "Store metadata": "Store metadata",
   "Storytelling": "Storytelling",
   "Strong CTA – Clear call to buy": "Strong CTA – Clear call to buy",
   "Summary": "Résumé",
@@ -490,7 +490,7 @@
   "progressing.contact": "You’re out of translation credits. Buy more to resume your translation.",
   "progressing.contactButton": "Support",
   "progressing.continueTranslate": "Continue translating",
-  "progressing.finished": "Your translation is ready. Publish it to apply the changes.",
+  "translation_process_saved": "Your translation is ready. Publish it to apply the changes.",
   "progressing.hasPayed": "Translation credits have been added. You can now resume your translation.",
   "translation_process_init": "Initializing translation task...",
   "progressing.noTranslate": "There are no ongoing translation tasks.",
@@ -751,5 +751,6 @@
   "devplanCard1.title": "Prend en charge la traduction des images du produit",
   "devplanCard2.title": "Répertoire d'éditeur optimisé",
   "devplanCard3.title": "Vitesse de traduction 30 % plus rapide",
-  "devplanCard4.title": "Commutateur avec mode invisible sous géolocalisation IP"
+  "devplanCard4.title": "Commutateur avec mode invisible sous géolocalisation IP",
+  "The source text is empty and cannot be translated": "Le texte source est vide et ne peut pas être traduit"
 }

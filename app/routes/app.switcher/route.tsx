@@ -92,12 +92,6 @@ const initialLocalization = {
   ],
 };
 
-const planMapping = {
-  1: "Free",
-  2: "Free",
-  3: "Starter",
-};
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
@@ -633,10 +627,10 @@ const Index = () => {
   };
 
   const handleIpOpenChange = (checked: boolean) => {
-    if (!plan?.id) {
+    if (!plan?.type) {
       return;
     }
-    if (plan?.id > 3 || !checked) {
+    if (plan?.type !== "Free" || !checked) {
       setIsGeoLocationEnabled(checked);
       setEditData((prev) => ({
         ...prev,
@@ -785,8 +779,8 @@ const Index = () => {
                     <Title level={5}>
                       {t("Selector Auto IP position configuration:")}
                     </Title>
-                    {(Number(plan?.id) <= 3 ||
-                      typeof plan?.id === "undefined") && (
+                    {(plan?.type == "Free" ||
+                      typeof plan?.type === "undefined") && (
                       <Popconfirm
                         title=""
                         description={t(
@@ -808,8 +802,8 @@ const Index = () => {
                     <Text>{t("Geolocation: ")}</Text>
                     <Switch
                       className={
-                        (typeof plan?.id === "number" && plan?.id <= 3) ||
-                        typeof plan?.id === "undefined"
+                        plan?.type == "Free" ||
+                        typeof plan?.type === "undefined"
                           ? defaultStyles.Switch_disable
                           : ""
                       }

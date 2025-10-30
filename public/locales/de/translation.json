@@ -200,7 +200,6 @@
   "Medium": "Mittel",
   "Meta description": "Meta-Beschreibung",
   "Meta title": "Meta-Titel",
-  "Metafield": "Metafeld",
   "Metaobjects": "Meta-Objekte",
   "Minimalist": "Minimalistisch",
   "Monthly Payment": "Monatliche Zahlung",
@@ -228,6 +227,7 @@
   "OK": "OK",
   "Oceania": "Ozeanien",
   "Online Store": "Online-Shop",
+  "Online Store Theme": "Onlineshop-Theme",
   "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Nur JPEG-, PNG-, WEBP-, HEIC- und GIF-Formate werden unterstützt",
   "Only images can be uploaded": "Nur Bilder können hochgeladen werden",
   "Option Border Color:": "Options-Rahmen:",
@@ -317,7 +317,7 @@
   "Stay on Page": "Auf Seite bleiben",
   "Step 1: Set up Currency Format": "Schritt 1: Währungsformat einrichten",
   "Step 2: Enable switcher": "Schritt 2: Umschalter aktivieren",
-  "Store metadata": "Shop-Metadaten",
+  "Metafield": "Shop-Metadaten",
   "Storytelling": "Storytelling",
   "Strong CTA – Clear call to buy": "Starker CTA – Klarer Kaufaufruf",
   "Summary": "Zusammenfassung",
@@ -538,7 +538,7 @@
   "progressing.contact": "Ihre Übersetzungs-Credits sind aufgebraucht. Kaufen Sie mehr, um Ihre Übersetzung fortzusetzen.",
   "progressing.contactButton": "Support",
   "progressing.continueTranslate": "Übersetzung fortsetzen",
-  "progressing.finished": "Ihre Übersetzung ist bereit. Veröffentlichen Sie sie, um die Änderungen anzuwenden.",
+  "translation_process_saved": "Ihre Übersetzung ist bereit. Veröffentlichen Sie sie, um die Änderungen anzuwenden.",
   "progressing.hasPayed": "Übersetzungs-Credits wurden hinzugefügt. Sie können nun Ihre Übersetzung fortsetzen.",
   "translation_process_init": "Übersetzungsaufgabe wird initialisiert...",
   "progressing.noTranslate": "Es gibt keine laufenden Übersetzungsaufgaben.",
@@ -750,5 +750,6 @@
   "devplanCard2.title": "Optimiertes Editorverzeichnis",
   "devplanCard3.title": "30 % schnellere Übersetzungsgeschwindigkeit",
   "devplanCard4.title": "Umschalter mit unsichtbarem Modus unter IP-basierter Geolokalisierung",
-  "translation_process_saving_shopify": "Übersetzungen werden auf das Modul {{item}} angewendet…"
+  "translation_process_saving_shopify": "Übersetzungen werden auf das Modul {{item}} angewendet…",
+  "The source text is empty and cannot be translated": "Der Quelltext ist leer und kann nicht übersetzt werden"
 }

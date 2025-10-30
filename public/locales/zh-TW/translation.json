@@ -76,6 +76,7 @@
   "Manage Translation": "管理翻譯",
   "Products": "產品",
   "Online Store": "網上商店",
+  "Online Store Theme": "線上商店主題",
   "Settings": "設定",
   "Collections": "收藏",
   "Collection": "收藏",
@@ -89,7 +90,7 @@
   "Email": "電子郵件",
   "Policies": "政策",
   "Shop": "店鋪",
-  "Store metadata": "儲存元數據",
+  "Metafield": "儲存元數據",
   "Theme": "主題",
   "Delivery": "送貨",
   "Shipping": "船運",
@@ -161,7 +162,7 @@
   "translation_process_init": "正在初始化翻譯任務...",
   "translation_process_translating": "翻譯 {{item}} 模組({{hasTranslated}}/{{totalNumber}}):",
   "progressing.progressingWithoutSpace": "翻譯 {{item}} 模組:",
-  "progressing.finished": "您的翻譯已完成。發布它以應用更改。",
+  "translation_process_saved": "您的翻譯已完成。發布它以應用更改。",
   "progressing.buyCredits": "購買積分",
   "progressing.review": "審閱翻譯",
   "progressing.publish": "發布",
@@ -388,7 +389,6 @@
   "Don’t prompt again next time": "不再顯示此內容",
   "Localized content:": "在地化內容：",
   "Product Options": "產品選項",
-  "Metafield": "元場",
   "value": "價值",
   "name": "姓名",
   "ProductType": "產品類型",
@@ -751,5 +751,6 @@
   "devplanCard2.title": "優化編輯器目錄",
   "devplanCard3.title": "翻譯速度提高 30%",
   "devplanCard4.title": "基於 IP 地理位置的隱形模式切換器",
-  "translation_process_saving_shopify": "正在將翻譯套用到 {{item}} 模組…"
+  "translation_process_saving_shopify": "正在將翻譯套用到 {{item}} 模組…",
+  "The source text is empty and cannot be translated": "源文字為空，無法翻譯"
 }

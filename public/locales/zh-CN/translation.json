@@ -76,6 +76,7 @@
   "Manage Translation": "管理翻译",
   "Products": "产品",
   "Online Store": "在线商店",
+  "Online Store Theme": "在线商店主题",
   "Settings": "设置",
   "Collections": "商品分类",
   "Articles": "文章",
@@ -86,7 +87,7 @@
   "Navigation": "导航",
   "Policies": "政策",
   "Shop": "商店",
-  "Store metadata": "商店元数据",
+  "Metafield": "商店元数据",
   "Theme": "主题",
   "Delivery": "配送",
   "Shipping": "运输",
@@ -157,7 +158,7 @@
   "translation_process_init": "正在初始化翻译任务...",
   "translation_process_translating": "正在翻译{{item}}模块({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "正在翻译{{item}}模块: ",
-  "progressing.finished": "翻译已完成。翻译内容需要发布后才能生效。",
+  "translation_process_saved": "翻译已完成。翻译内容需要发布后才能生效。",
   "progressing.buyCredits": "购买积分",
   "progressing.review": "检查翻译",
   "progressing.publish": "发布语言",
@@ -396,7 +397,6 @@
   "Don’t prompt again next time": "不再提示",
   "Localized content:": "本地化内容：",
   "Product Options": "产品选项",
-  "Metafield": "元字段",
   "value": "值",
   "name": "名称",
   "ProductType": "产品类型",
@@ -753,5 +753,6 @@
   "devplanCard2.title": "优化编辑器目录",
   "devplanCard3.title": "翻译速度提高 30%",
   "devplanCard4.title": "基于 IP 地理位置的隐形模式切换器",
-  "translation_process_saving_shopify": "正在将翻译应用到 {{item}} 模块…"
+  "translation_process_saving_shopify": "正在将翻译应用到 {{item}} 模块…",
+  "The source text is empty and cannot be translated": "源文本为空，无法翻译"
 }

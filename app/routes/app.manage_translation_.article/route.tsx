@@ -38,6 +38,7 @@ import { ShopLocalesType } from "../app.language/route";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { globalStore } from "~/globalStore";
+import { getItemOptions } from "../app.manage_translation/route";
 
 const { Sider, Content } = Layout;
 
@@ -57,7 +58,7 @@ interface ArticleType {
     value: string;
     type: string;
   };
-  summary: {
+  summary_html: {
     value: string;
     type: string;
   };
@@ -76,7 +77,7 @@ interface ArticleType {
     key: string;
     title: string | undefined;
     body: string | undefined;
-    summary: string | undefined;
+    summary_html: string | undefined;
     seo: {
       description: string | undefined;
       title: string | undefined;
@@ -193,7 +194,6 @@ const Index = () => {
   );
 
   const { searchTerm } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
@@ -213,28 +213,13 @@ const Index = () => {
   const [selectArticleKey, setSelectArticleKey] = useState<string>("");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
-  const itemOptions: { label: string; value: string }[] = [
-    { label: t("Products"), value: "product" },
-    { label: t("Collection"), value: "collection" },
-    { label: t("Theme"), value: "theme" },
-    { label: t("Shop"), value: "shop" },
-    { label: t("Store metadata"), value: "metafield" },
-    { label: t("Articles"), value: "article" },
-    { label: t("Blog titles"), value: "blog" },
-    { label: t("Pages"), value: "page" },
-    { label: t("Filters"), value: "filter" },
-    { label: t("Metaobjects"), value: "metaobject" },
-    { label: t("Navigation"), value: "navigation" },
-    { label: t("Email"), value: "email" },
-    { label: t("Policies"), value: "policy" },
-    { label: t("Product images"), value: "productImage" },
-    { label: t("Product image alt text"), value: "productImageAlt" },
-    { label: t("Delivery"), value: "delivery" },
-    { label: t("Shipping"), value: "shipping" },
-  ];
+  const itemOptions = getItemOptions(t);
   const [languageOptions, setLanguageOptions] = useState<
     { label: string; value: string }[]
   >([]);
@@ -314,6 +299,7 @@ const Index = () => {
       setArticleData(data);
       setLoadingItems([]);
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
       setTranslatedValues({});
     }
   }, [selectArticleKey, articlesData]);
@@ -336,11 +322,11 @@ const Index = () => {
           type: articleData?.body.type,
         },
         {
-          key: "summary",
+          key: "summary_html",
           resource: t("Summary"),
-          default_language: articleData?.summary.value,
-          translated: articleData?.translations?.summary,
-          type: articleData?.summary.type,
+          default_language: articleData?.summary_html.value,
+          translated: articleData?.translations?.summary_html,
+          type: articleData?.summary_html.type,
         },
       ].filter((item) => item.default_language),
     );
@@ -430,8 +416,9 @@ const Index = () => {
       } else {
         shopify.toast.show(t("Some items saved failed"));
       }
-      setConfirmData([]);
     }
+    setConfirmData([]);
+    setSuccessTranslatedKey([]);
   }, [confirmFetcher.data]);
 
   useEffect(() => {
@@ -490,6 +477,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
@@ -546,6 +534,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
@@ -640,7 +629,7 @@ const Index = () => {
         value: "",
         type: "",
       },
-      summary: {
+      summary_html: {
         value: "",
         type: "",
       },
@@ -659,7 +648,7 @@ const Index = () => {
         key: "",
         title: "",
         body: "",
-        summary: "",
+        summary_html: "",
         seo: {
           description: "",
           title: "",
@@ -694,7 +683,7 @@ const Index = () => {
         (item: any) => item.key === "body_html",
       )?.type,
     };
-    data.summary = {
+    data.summary_html = {
       value: article?.translatableContent.find(
         (item: any) => item.key === "summary_html",
       )?.value,
@@ -728,7 +717,7 @@ const Index = () => {
     data.translations.body = article?.translations.find(
       (item: any) => item.key === "body_html",
     )?.value;
-    data.translations.summary = article?.translations.find(
+    data.translations.summary_html = article?.translations.find(
       (item: any) => item.key === "summary_html",
     )?.value;
     data.translations.seo.title = article?.translations.find(
@@ -762,9 +751,7 @@ const Index = () => {
     setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
-      source: articlesData.nodes
-        .find((item: any) => item?.resourceId === selectArticleKey)
-        ?.translatableContent.find((item: any) => item.key === key)?.locale,
+      source: globalStore?.source || "",
       target: searchTerm || "",
       resourceType: resourceType,
       context: context,
@@ -775,6 +762,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data?.response);
+        setSuccessTranslatedKey((prev) => [...prev, key]);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
@@ -848,7 +836,7 @@ const Index = () => {
         },
         {
           method: "POST",
-          action: `/app/manage_translation/article?language=${language}`
+          action: `/app/manage_translation/article?language=${language}`,
         },
       );
       isManualChangeRef.current = true;
@@ -903,6 +891,7 @@ const Index = () => {
     });
     setArticleData(data);
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
   };
 
   // const handleLeaveItem = (
@@ -985,7 +974,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={confirmFetcher.state === "submitting" && ""}
+          loading={confirmFetcher.state === "submitting" ? "true" : undefined}
         >
           {t("Save")}
         </button>
@@ -1044,12 +1033,14 @@ const Index = () => {
                     onClick={(e) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={hasPrevious}
-                      onPrevious={onPrevious}
-                      hasNext={hasNext}
-                      onNext={onNext}
-                    />
+                    {(hasNext || hasPrevious) && (
+                      <Pagination
+                        hasPrevious={hasPrevious}
+                        onPrevious={onPrevious}
+                        hasNext={hasNext}
+                        onNext={onNext}
+                      />
+                    )}
                   </div>
                 </div>
               </Sider>
@@ -1057,6 +1048,11 @@ const Index = () => {
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
+                height: "calc(100% - 25px)",
+                minHeight: "70vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "auto",
               }}
             >
               {isMobile ? (
@@ -1155,6 +1151,9 @@ const Index = () => {
                             >
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleInputChange}
@@ -1229,6 +1228,9 @@ const Index = () => {
                             >
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleInputChange}
@@ -1279,12 +1281,14 @@ const Index = () => {
                     onClick={(e) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={hasPrevious}
-                      onPrevious={onPrevious}
-                      hasNext={hasNext}
-                      onNext={onNext}
-                    />
+                    {(hasNext || hasPrevious) && (
+                      <Pagination
+                        hasPrevious={hasPrevious}
+                        onPrevious={onPrevious}
+                        hasNext={hasNext}
+                        onNext={onNext}
+                      />
+                    )}
                   </div>
                 </Space>
               ) : (

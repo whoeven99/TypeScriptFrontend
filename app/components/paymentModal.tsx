@@ -35,15 +35,9 @@ export interface OptionType {
   };
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({
-  visible,
-  setVisible,
-}) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ visible, setVisible }) => {
   const [selectedKey, setSelectedKey] = useState<string>("option-1");
   const [buyButtonLoading, setBuyButtonLoading] = useState<boolean>(false);
-  const [credits, setCredits] = useState<number | undefined>(undefined);
-  // const [multiple1, setMultiple1] = useState<number>(1);
-  // const [multiple2, setMultiple2] = useState<number>(model?.speed || 2);
   const { t } = useTranslation();
   const payFetcher = useFetcher<any>();
   const orderFetcher = useFetcher<any>();
@@ -57,8 +51,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         name: "500K",
         Credits: 500000,
         price: {
-          currentPrice:
-            plan === 6 ? 1.99 : plan === 5 ? 2.99 : plan === 4 ? 3.59 : 3.99,
+          currentPrice: plan?.isInFreePlanTime
+            ? 3.99
+            : plan?.type === "Premium"
+              ? 1.99
+              : plan?.type === "Pro"
+                ? 2.99
+                : plan?.type === "Basic"
+                  ? 3.59
+                  : 3.99,
           comparedPrice: 3.99,
           currencyCode: "USD",
         },
@@ -68,8 +69,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         name: "1M",
         Credits: 1000000,
         price: {
-          currentPrice:
-            plan === 6 ? 3.99 : plan === 5 ? 5.99 : plan === 4 ? 7.19 : 7.99,
+          currentPrice: plan?.isInFreePlanTime
+            ? 7.99
+            : plan?.type === "Premium"
+              ? 3.99
+              : plan?.type === "Pro"
+                ? 5.99
+                : plan?.type === "Basic"
+                  ? 7.19
+                  : 7.99,
           comparedPrice: 7.99,
           currencyCode: "USD",
         },
@@ -79,8 +87,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         name: "2M",
         Credits: 2000000,
         price: {
-          currentPrice:
-            plan === 6 ? 7.99 : plan === 5 ? 11.99 : plan === 4 ? 14.39 : 15.99,
+          currentPrice: plan?.isInFreePlanTime
+            ? 15.99
+            : plan?.type === "Premium"
+              ? 7.99
+              : plan?.type === "Pro"
+                ? 11.99
+                : plan?.type === "Basic"
+                  ? 14.39
+                  : 15.99,
           comparedPrice: 15.99,
           currencyCode: "USD",
         },
@@ -90,12 +105,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         name: "3M",
         Credits: 3000000,
         price: {
-          currentPrice:
-            plan === 6
+          currentPrice: plan?.isInFreePlanTime
+            ? 23.99
+            : plan?.type === "Premium"
               ? 11.99
-              : plan === 5
+              : plan?.type === "Pro"
                 ? 17.99
-                : plan === 4
+                : plan?.type === "Basic"
                   ? 21.79
                   : 23.99,
           comparedPrice: 23.99,
@@ -107,12 +123,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         name: "5M",
         Credits: 5000000,
         price: {
-          currentPrice:
-            plan === 6
+          currentPrice: plan?.isInFreePlanTime
+            ? 39.99
+            : plan?.type === "Premium"
               ? 19.99
-              : plan === 5
+              : plan?.type === "Pro"
                 ? 29.99
-                : plan === 4
+                : plan?.type === "Basic"
                   ? 35.99
                   : 39.99,
           comparedPrice: 39.99,
@@ -124,12 +141,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         name: "10M",
         Credits: 10000000,
         price: {
-          currentPrice:
-            plan === 6
+          currentPrice: plan?.isInFreePlanTime
+            ? 79.99
+            : plan?.type === "Premium"
               ? 39.99
-              : plan === 5
+              : plan?.type === "Pro"
                 ? 59.99
-                : plan === 4
+                : plan?.type === "Basic"
                   ? 71.99
                   : 79.99,
           comparedPrice: 79.99,
@@ -141,12 +159,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         name: "20M",
         Credits: 20000000,
         price: {
-          currentPrice:
-            plan === 6
+          currentPrice: plan?.isInFreePlanTime
+            ? 159.99
+            : plan?.type === "Premium"
               ? 79.99
-              : plan === 5
+              : plan?.type === "Pro"
                 ? 119.99
-                : plan === 4
+                : plan?.type === "Basic"
                   ? 143.99
                   : 159.99,
           comparedPrice: 159.99,
@@ -158,12 +177,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         name: "30M",
         Credits: 30000000,
         price: {
-          currentPrice:
-            plan === 6
+          currentPrice: plan?.isInFreePlanTime
+            ? 239.99
+            : plan?.type === "Premium"
               ? 119.99
-              : plan === 5
+              : plan?.type === "Pro"
                 ? 179.99
-                : plan === 4
+                : plan?.type === "Basic"
                   ? 215.99
                   : 239.99,
           comparedPrice: 239.99,
@@ -177,17 +197,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const selectedOption = useMemo(() => {
     return options.find((item) => item.key == selectedKey) || options[0];
   }, [selectedKey]);
-
-  // useEffect(() => {
-  //   if (credits && !selectedKey) {
-  //     const matchedOption = options.find(
-  //       (option) => option?.Credits >= credits * multiple1 * multiple2,
-  //     ); // 找到第一个符合条件的选项
-  //     if (matchedOption) {
-  //       setSelectedKey(matchedOption?.key);
-  //     }
-  //   }
-  // }, [credits]);
 
   useEffect(() => {
     if (payFetcher.data) {

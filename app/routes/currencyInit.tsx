@@ -26,14 +26,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (!primaryCurrency?.response) {
       const currencyData = shopLoad.currencySettings.nodes
         .filter((item1: any) => item1.enabled)
-        .map((item2: any) => ({
+        .filter((item2: any) => item2.currencyCode !== shopLoad.currencyCode)
+        .map((item3: any) => ({
           currencyName:
             currencyLocaleData.find(
-              (item3: any) => item3.currencyCode === item2.currencyCode,
+              (item4: any) => item4.currencyCode === item3.currencyCode,
             )?.currencyName || "",
-          currencyCode: item2.currencyCode,
-          primaryStatus: item2.currencyCode == shopLoad.currencyCode ? 1 : 0,
+          currencyCode: item3.currencyCode,
+          primaryStatus: 0,
         }));
+
+      currencyData.push({
+        currencyName:
+          currencyLocaleData.find(
+            (item: any) => item.currencyCode === shopLoad.currencyCode,
+          )?.currencyName || "",
+        currencyCode: shopLoad.currencyCode,
+        primaryStatus: 1,
+      });
 
       console.log(`应用日志: ${shop} 初始化货币`, currencyData);
 
@@ -73,7 +83,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const url = new URL("/currencies.json", request.url).toString();
     const currencyLocaleData = await fetch(url)
       .then((response) => response.json())
-      .catch((error) => console.error("Error loading currencyLocaleData:", error));
+      .catch((error) =>
+        console.error("Error loading currencyLocaleData:", error),
+      );
     return {
       success: false,
       errorCode: 10001,

@@ -9,6 +9,7 @@ import {
   LanguageSelectorTakeEffect,
   HomeImageTranslate
 } from "./ciwi-ui.js";
+import { updateLocalization } from "./ciwi-utils.js";
 
 // 在 window.onload 里
 

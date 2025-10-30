@@ -37,6 +37,7 @@ import {
   IsOpenFreePlan,
   GetUnTranslatedWords,
   GetAllProgressData,
+  IsInFreePlanTime,
 } from "~/api/JavaServer";
 import { ShopLocalesType } from "./app.language/route";
 import {
@@ -160,10 +161,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           console.warn(`${shop} shopLanguagesIndex: `, shopLanguagesIndex);
         }
 
-        return null;
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response: {
+            source: shopPrimaryLanguage[0]?.locale || undefined,
+          },
+        };
       } catch (error) {
         console.error("Error languageInit app:", error);
-        return null;
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
       }
     }
 
@@ -226,22 +239,54 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           source: shopPrimaryLanguage[0]?.locale,
         });
 
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            ...translatingData?.response,
-            source: shopPrimaryLanguage[0]?.locale,
-          },
-        };
+        if (translatingData?.success) {
+          const listData = translatingData?.response?.list?.map((item: any) => {
+            return {
+              target: item?.target,
+              status: item?.status,
+              translateStatus: item?.translateStatus,
+              resourceType: item?.resourceType,
+              value: item?.value,
+              progressData:
+                item.translateStatus == "translation_process_saving_shopify"
+                  ? {
+                      RemainingQuantity:
+                        item?.writingData?.write_total -
+                          item?.writingData?.write_done || 0,
+                      TotalQuantity: item?.writingData?.write_total || 1,
+                    }
+                  : item?.progressData,
+            };
+          });
+
+          return {
+            ...translatingData,
+            response: {
+              list: listData || [],
+              source: shopPrimaryLanguage[0]?.locale,
+            },
+          };
+        } else {
+          return {
+            success: false,
+            errorCode: 0,
+            errorMsg: "",
+            response: {
+              list: [],
+              source: "",
+            },
+          };
+        }
       } catch (error) {
         console.error("Error nearTransaltedData app:", error);
         return {
           success: false,
           errorCode: 0,
           errorMsg: "",
-          response: [],
+          response: {
+            list: [],
+            source: "",
+          },
         };
       }
     }
@@ -566,6 +611,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (languageFetcher.data) {
+      if (languageFetcher.data?.response) {
+        globalStore.source = languageFetcher.data?.response?.source;
+      }
+    }
+  }, [languageFetcher.data]);
+
+  useEffect(() => {
     // 当 URL 改变时调用这两个函数
     if (!plan?.id) {
       getPlan();
@@ -579,30 +632,51 @@ export default function App() {
   }, [location]); // 监听 URL 的变化
 
   const getPlan = async () => {
-    const data = await GetUserSubscriptionPlan({
+    const getUserSubscriptionPlan = await GetUserSubscriptionPlan({
       shop: shop,
       server: server as string,
     });
-    if (data?.success) {
-      dispatch(
-        setPlan({
-          plan: {
-            id: data?.response?.userSubscriptionPlan || 2,
-            feeType: data?.response?.feeType || 0,
-          },
-        }),
-      );
-      if (data?.response?.currentPeriodEnd) {
-        const date = new Date(data?.response?.currentPeriodEnd)
+    const isInFreePlanTime = await IsInFreePlanTime({
+      shop: shop,
+      server: server as string,
+    });
+
+    let data: any = {
+      id: 2,
+      type: "Free",
+      feeType: 0,
+      isInFreePlanTime: false,
+    };
+
+    if (getUserSubscriptionPlan?.success) {
+      data = {
+        ...data,
+        id: getUserSubscriptionPlan?.response?.userSubscriptionPlan || 2,
+        type: getUserSubscriptionPlan?.response?.planType || "Free",
+        feeType: getUserSubscriptionPlan?.response?.feeType || 0,
+      };
+
+      if (getUserSubscriptionPlan?.response?.currentPeriodEnd) {
+        const updateTime = new Date(
+          getUserSubscriptionPlan?.response?.currentPeriodEnd,
+        )
           .toLocaleDateString("zh-CN", {
             year: "numeric",
             month: "2-digit",
             day: "2-digit",
           })
           .replace(/\//g, "-");
-        dispatch(setUpdateTime({ updateTime: date }));
+        dispatch(setUpdateTime({ updateTime: updateTime }));
       }
     }
+    if (isInFreePlanTime?.success) {
+      data = { ...data, isInFreePlanTime: isInFreePlanTime?.response || false };
+    }
+    dispatch(
+      setPlan({
+        plan: data,
+      }),
+    );
   };
 
   const getWords = async () => {
