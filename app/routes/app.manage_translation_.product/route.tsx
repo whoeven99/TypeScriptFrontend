@@ -527,8 +527,6 @@ const Index = () => {
         (item: any) => item.success === true,
       );
       successfulItem.forEach((item: any) => {
-        console.log(successfulItem);
-
         // const index = articlesData.nodes.findIndex(
         //   (option: any) => option.resourceId === item.data.resourceId,
         // );
@@ -1478,8 +1476,6 @@ const Index = () => {
   const clickBackTimestampsRef = useRef<number[]>([]); // 用于存储点击时间戳
 
   const handleMenuChange = (key: string) => {
-    console.log(key);
-
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
     } else {
