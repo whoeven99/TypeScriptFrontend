@@ -75,6 +75,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   ) {
     if (isHtml) {
       const [isInitialized, setIsInitialized] = useState(false);
+      const [htmlContent, setHtmlContent] = useState<string>("");
 
       const targetEditor = useEditor(
         {
@@ -92,8 +93,12 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
           content: translatedValues[record?.key] || "",
           immediatelyRender: false,
           onUpdate: ({ editor }) => {
+            console.log(1111);
+
             if (!isInitialized) return;
-            const html = editor.view.dom.innerHTML; // 原始 HTML
+            console.log(2222);
+
+            const html = editor.getHTML(); // 原始 HTML
             handleInputChange(
               record.key,
               html,
@@ -115,17 +120,24 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
           setIsInitialized(true);
         } else {
           // 如果外部内容变了但和当前内容不同，再更新
-          const currentHtml = targetEditor.view.dom.innerHTML;
+          const currentHtml = targetEditor.getHTML();
           if (currentHtml !== externalHtml) {
             targetEditor.commands.setContent(externalHtml, {
               emitUpdate: false,
             });
+            setHtmlContent(externalHtml);
           }
         }
       }, [targetEditor, translatedValues, record.key]);
 
       return (
-        <Tiptap isrtl={isRtl} editor={targetEditor} isSuccess={isSuccess} />
+        <Tiptap
+          editor={targetEditor}
+          htmlContent={htmlContent}
+          setHtmlContent={setHtmlContent}
+          isSuccess={isSuccess}
+          isrtl={isRtl}
+        />
       );
     }
     return (
@@ -144,6 +156,8 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     );
   } else {
     if (isHtml) {
+      const [htmlContent, setHtmlContent] = useState<string>(defaultValue);
+
       const originalEditor = useEditor({
         editable: false,
         extensions: [
@@ -170,7 +184,15 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         originalEditor?.commands.setContent(defaultValue);
       }, [defaultValue]);
 
-      return <Tiptap isrtl={isRtl} editor={originalEditor} readOnly={true} />;
+      return (
+        <Tiptap
+          editor={originalEditor}
+          htmlContent={htmlContent}
+          setHtmlContent={setHtmlContent}
+          isrtl={isRtl}
+          readOnly={true}
+        />
+      );
     }
     return (
       <TextArea

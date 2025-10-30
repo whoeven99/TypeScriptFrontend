@@ -7,29 +7,33 @@ import "../styles.css";
 
 interface TiptapProps {
   editor: Editor | null;
+  htmlContent: string;
+  setHtmlContent: (e: string) => void;
   isSuccess?: boolean;
   readOnly?: boolean;
   style?: any;
   isrtl?: boolean;
 }
 
-const Tiptap = ({ editor, isSuccess, readOnly, style, isrtl }: TiptapProps) => {
+const Tiptap = ({
+  editor,
+  htmlContent,
+  setHtmlContent,
+  isSuccess,
+  readOnly,
+  style,
+  isrtl,
+}: TiptapProps) => {
   const textareaRef = useRef(null);
 
   const [showTiptap, setShowTiptap] = useState(true);
-  const [htmlContent, setHtmlContent] = useState<string>("");
 
   useEffect(() => {
-    console.log(editor);
-  }, [editor]);
-
-  useEffect(() => {
-    if (!showTiptap) {
-      setHtmlContent(editor?.options?.content as string);
-    }
-  }, [showTiptap]);
+    console.log(editor?.getHTML());
+  }, [editor?.getHTML()]);
 
   const hideTiptap = (value: boolean) => {
+    setHtmlContent(editor?.options?.content as string);
     setShowTiptap(value);
   };
 
