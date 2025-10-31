@@ -66,7 +66,7 @@ export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const authForShopifyData = await authForShopify({ request });
 
-  if (!authForShopifyData) return null;
+  if (!authForShopifyData) return { shouldRefresh: true };
   const { shop } = authForShopifyData;
 
   return {
