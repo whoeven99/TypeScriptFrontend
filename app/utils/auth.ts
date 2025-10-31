@@ -5,6 +5,7 @@ export const authForShopify = async ({ request }: { request: Request }) => {
   const secFetchMode = request.headers.get("sec-fetch-mode");
 
   console.log("Authorization:", authorization);
+  console.log("request:", request);
   
 
   if (!authorization && secFetchMode != "navigate") {
