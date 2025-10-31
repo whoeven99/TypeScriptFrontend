@@ -4,6 +4,9 @@ export const authForShopify = async ({ request }: { request: Request }) => {
   const authorization = request.headers.get("Authorization");
   const secFetchMode = request.headers.get("sec-fetch-mode");
 
+  console.log("Authorization:", authorization);
+  
+
   if (!authorization && secFetchMode != "navigate") {
     // 🔄 方案一：刷新当前页面
     return undefined;
