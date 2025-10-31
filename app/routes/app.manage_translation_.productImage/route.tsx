@@ -40,14 +40,10 @@ import { setTableData } from "~/store/modules/languageTableData";
 import { DeleteProductImageData, GetProductImageData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import { authForShopify } from "~/utils/auth";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
-
-interface LanguageOption {
-  label: string;
-  value: string;
-}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -60,11 +56,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { admin } = adminAuthResult;
+  const authForShopifyData = await authForShopify({ request });
 
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
+  if (!authForShopifyData) return null;
+  const { admin } = authForShopifyData;
 
   const formData = await request.formData();
   const productStartCursor: any = JSON.parse(
@@ -751,8 +746,8 @@ const Index = () => {
           productId: selectedKey,
           languageCode: selectedLanguage,
         });
-        console.log("targetData: ",targetData);
-        
+        console.log("targetData: ", targetData);
+
         if (targetData?.success && targetData?.response?.length > 0) {
           setProductImageData(
             data.map((item: any) => {

@@ -30,6 +30,7 @@ import { ShopLocalesType } from "../app.language/route";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import SideMenu from "~/components/sideMenu/sideMenu";
+import { authForShopify } from "~/utils/auth";
 
 const { Title, Text } = Typography;
 
@@ -49,6 +50,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return json({
     searchTerm,
+    server: process.env.SERVER_URL,
   });
 };
 
@@ -57,9 +59,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const searchTerm = url.searchParams.get("language");
 
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-  const { admin } = adminAuthResult;
+  const authForShopifyData = await authForShopify({ request });
+  if (!authForShopifyData) return null;
+  const { admin, shop, accessToken } = authForShopifyData;
 
   try {
     const formData = await request.formData();
@@ -208,7 +210,7 @@ const Index = () => {
     (state: any) => state.languageTableData.rows,
   );
 
-  const { searchTerm } = useLoaderData<typeof loader>();
+  const { searchTerm, server } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
@@ -573,7 +575,7 @@ const Index = () => {
       context: context,
       key: key,
       type: type,
-      server: globalStore?.server || "",
+      server: server || "",
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {

@@ -71,7 +71,7 @@ export const queryShopLanguages = async ({
     });
     const res = response?.data?.data?.shopLocales;
 
-    console.log(`${shop} queryShopLanguages: `, res);
+    // console.log(`${shop} queryShopLanguages: `, res);
 
     return res;
   } catch (error) {

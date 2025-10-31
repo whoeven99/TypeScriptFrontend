@@ -1,10 +1,10 @@
 import { ActionFunctionArgs } from "@remix-run/node";
-import { authenticate } from "~/shopify.server";
+import { authForShopify } from "~/utils/auth";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { admin } = adminAuthResult;
-  const { shop } = adminAuthResult.session;
+  const authForShopifyData = await authForShopify({ request });
+  if (!authForShopifyData) return null;
+  const { admin, shop, accessToken } = authForShopifyData;
   const formData = await request.formData();
 
   const webPresencesData = JSON.parse(

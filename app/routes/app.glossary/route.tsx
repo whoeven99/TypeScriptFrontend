@@ -40,6 +40,7 @@ import defaultStyles from "../styles/defaultStyles.module.css";
 import styles from "../app.language/styles.module.css";
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
+import { authForShopify } from "~/utils/auth";
 const { Title, Text } = Typography;
 
 export interface GLossaryDataType {
@@ -71,8 +72,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const authForShopifyData = await authForShopify({ request });
+  if (!authForShopifyData) return null;
+  const { admin, shop, accessToken } = authForShopifyData;
 
   try {
     const formData = await request.formData();

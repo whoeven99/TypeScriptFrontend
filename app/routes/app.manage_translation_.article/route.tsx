@@ -40,6 +40,7 @@ import { setLocale } from "~/store/modules/userConfig";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import SideMenu from "~/components/sideMenu/sideMenu";
+import { authForShopify } from "~/utils/auth";
 
 const { Sider, Content } = Layout;
 
@@ -108,8 +109,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
 
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const authForShopifyData = await authForShopify({ request });
+  if (!authForShopifyData) return null;
+  const { admin, shop, accessToken } = authForShopifyData;
 
   try {
     const formData = await request.formData();

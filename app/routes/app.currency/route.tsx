@@ -40,6 +40,7 @@ import ScrollNotice from "~/components/ScrollNotice";
 import { useNavigate } from "react-router-dom";
 import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
+import { authForShopify } from "~/utils/auth";
 const { Title, Text } = Typography;
 
 export interface CurrencyDataType {
@@ -68,8 +69,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session, admin } = await authenticate.admin(request);
-  const { shop } = session;
+  const authForShopifyData = await authForShopify({ request });
+  if (!authForShopifyData) return null;
+  const { admin, shop, accessToken } = authForShopifyData;
   const formData = await request.formData();
   const theme = JSON.parse(formData.get("theme") as string);
   const deleteCurrencies: number[] = JSON.parse(

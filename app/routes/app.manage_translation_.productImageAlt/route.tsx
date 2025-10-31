@@ -32,6 +32,7 @@ import { getItemOptions } from "../app.manage_translation/route";
 import useReport from "scripts/eventReport";
 import styles from "./styles.module.css";
 import SideMenu from "~/components/sideMenu/sideMenu";
+import { authForShopify } from "~/utils/auth";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -47,9 +48,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-  const { admin } = adminAuthResult;
+  const authForShopifyData = await authForShopify({ request });
+  if (!authForShopifyData) return null;
+  const { admin, shop, accessToken } = authForShopifyData;
 
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
@@ -841,7 +842,7 @@ const Index = () => {
       context: record?.altText,
       key: record?.key,
       type: "SINGLE_LINE_TEXT_FIELD",
-      server: globalStore?.server || "",
+      server: server as string,
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {

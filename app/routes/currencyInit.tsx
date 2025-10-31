@@ -5,11 +5,12 @@ import {
   AddCurrency,
   UpdateDefaultCurrency,
 } from "~/api/JavaServer";
-import { authenticate } from "~/shopify.server";
+import { authForShopify } from "~/utils/auth";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const authForShopifyData = await authForShopify({ request });
+  if (!authForShopifyData) return null;
+  const { shop, accessToken } = authForShopifyData;
 
   try {
     const primaryCurrency = await InitCurrency({ shop });

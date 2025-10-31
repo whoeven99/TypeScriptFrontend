@@ -41,6 +41,7 @@ import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
 import { setLocale } from "~/store/modules/userConfig";
 import { globalStore } from "~/globalStore";
+import { authForShopify } from "~/utils/auth";
 
 const { Text, Title } = Typography;
 
@@ -68,8 +69,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
+  const authForShopifyData = await authForShopify({ request });
+  if (!authForShopifyData) return null;
+  const { admin, shop, accessToken } = authForShopifyData;
 
   const formData = await request.formData();
   const language = JSON.parse(formData.get("language") as string);

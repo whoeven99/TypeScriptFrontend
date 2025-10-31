@@ -42,6 +42,7 @@ import TranslatedIcon from "app/components/translateIcon";
 import store from "~/store";
 import { RootState } from "~/store";
 import { useSelector } from "react-redux";
+import { authForShopify } from "~/utils/auth";
 const { Text, Title } = Typography;
 interface RealTimeData {
   autoTranslate: false;
@@ -50,9 +51,9 @@ interface RealTimeData {
 }
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-  const { admin } = adminAuthResult;
+  const authForShopifyData = await authForShopify({ request });
+  if (!authForShopifyData) return null;
+  const { admin, shop, accessToken } = authForShopifyData;
 
   try {
     const formData = await request.formData();

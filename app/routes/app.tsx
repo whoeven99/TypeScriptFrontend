@@ -59,25 +59,27 @@ import {
   setUserConfigIsLoading,
 } from "~/store/modules/userConfig";
 import { globalStore } from "~/globalStore";
+import { authForShopify } from "~/utils/auth";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  console.log("Authorization: ", request.headers.get("Authorization"));
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
+  const authForShopifyData = await authForShopify({ request });
 
-  return json({
+  if (!authForShopifyData) return null;
+  const { shop } = authForShopifyData;
+
+  return {
     shop,
     server: process.env.SERVER_URL,
     apiKey: process.env.SHOPIFY_API_KEY || "",
-  });
+  };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop, accessToken } = adminAuthResult.session;
-  const { admin } = adminAuthResult;
+  const authForShopifyData = await authForShopify({ request });
+  if (!authForShopifyData) return null;
+  const { admin, shop, accessToken } = authForShopifyData;
 
   try {
     const formData = await request.formData();
@@ -102,10 +104,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     const findWebPixelId = JSON.parse(formData.get("findWebPixelId") as string);
     const unTranslated = JSON.parse(formData.get("unTranslated") as string);
-    const conversionRate = JSON.parse(formData.get("conversionRate") as string);
-    const getAssessmentScoreFetcher = JSON.parse(
-      formData.get("getAssessmentScoreFetcher") as string,
-    );
     if (init) {
       try {
         const init = await InitializationDetection({ shop });
@@ -131,7 +129,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return null;
       } catch (error) {
         console.error("Error loading app:", error);
-        return null;
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+        };
       }
     }
 
@@ -176,7 +179,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: false,
           errorCode: 10001,
           errorMsg: "SERVER_ERROR",
-          response: undefined,
+          response: null,
         };
       }
     }
@@ -196,10 +199,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       } catch (error) {
         console.error("Error languageData app:", error);
         return {
-          success: true,
+          success: false,
           errorCode: 0,
           errorMsg: "",
-          response: [],
+          response: null,
         };
       }
     }
@@ -270,24 +273,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         } else {
           return {
             success: false,
-            errorCode: 0,
-            errorMsg: "",
-            response: {
-              list: [],
-              source: "",
-            },
+            errorCode: 10001,
+            errorMsg: "SERVER_ERROR",
+            response: null,
           };
         }
       } catch (error) {
         console.error("Error nearTransaltedData app:", error);
         return {
           success: false,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            list: [],
-            source: "",
-          },
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
         };
       }
     }
@@ -304,9 +301,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.error("Error statusData app:", error);
         return {
           success: false,
-          errorCode: 0,
-          errorMsg: "",
-          response: [],
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
         };
       }
     }
@@ -329,7 +326,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ data: payData });
       } catch (error) {
         console.error("Error payInfo app:", error);
-        return json({ error: "Error payInfo app" }, { status: 500 });
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+        };
       }
     }
 
@@ -347,7 +349,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ data: orderData });
       } catch (error) {
         console.error("Error orderInfo app:", error);
-        return json({ error: "Error orderInfo app" }, { status: 500 });
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+        };
       }
     }
 
@@ -361,12 +368,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return data;
       } catch (error) {
         console.error("Error stopTranslate app:", error);
-        return json({
-          data: {
-            success: false,
-            message: "Error stopTranslate app",
-          },
-        });
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+        };
       }
     }
 
@@ -570,7 +577,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    return json({ success: false, message: "Invalid data" });
+    return null;
   } catch (error) {
     console.error("Error action app:", error);
     return json({ error: "Error action app" }, { status: 500 });
@@ -578,7 +585,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function App() {
-  const { apiKey, shop, server } = useLoaderData<typeof loader>();
+  const loaderData = useLoaderData<any>();
   const [isClient, setIsClient] = useState(false);
 
   const { t } = useTranslation();
@@ -607,13 +614,20 @@ export default function App() {
       },
     );
     setIsClient(true);
-    globalStore.shop = shop as string;
+    if (!globalStore.shop) globalStore.shop = loaderData?.shop as string;
   }, []);
 
   useEffect(() => {
+    console.log("loaderData?.shouldRefresh: ", loaderData?.shouldRefresh);
+    if (loaderData?.shouldRefresh) {
+      window.location.reload(); // 强制刷新当前页面
+    }
+  }, [loaderData?.shouldRefresh]);
+
+  useEffect(() => {
     if (languageFetcher.data) {
-      if (languageFetcher.data?.response) {
-        globalStore.source = languageFetcher.data?.response?.source;
+      if (!globalStore.source) {
+        globalStore.source = languageFetcher.data?.response?.source || "";
       }
     }
   }, [languageFetcher.data]);
@@ -633,12 +647,12 @@ export default function App() {
 
   const getPlan = async () => {
     const getUserSubscriptionPlan = await GetUserSubscriptionPlan({
-      shop: shop,
-      server: server as string,
+      shop: loaderData?.shop as string,
+      server: loaderData?.server as string,
     });
     const isInFreePlanTime = await IsInFreePlanTime({
-      shop: shop,
-      server: server as string,
+      shop: loaderData?.shop as string,
+      server: loaderData?.server as string,
     });
 
     let data: any = {
@@ -681,8 +695,8 @@ export default function App() {
 
   const getWords = async () => {
     const data = await GetUserWords({
-      shop,
-      server: server as string,
+      shop: loaderData?.shop as string,
+      server: loaderData?.server as string,
     });
     if (data?.success) {
       dispatch(setChars({ chars: data?.response?.chars }));
@@ -697,8 +711,8 @@ export default function App() {
 
   const checkFreeUsed = async () => {
     const data = await IsOpenFreePlan({
-      shop,
-      server: server as string,
+      shop: loaderData?.shop as string,
+      server: loaderData?.server as string,
     });
     if (data?.success) {
       dispatch(setIsNew({ isNew: !data?.response }));
@@ -706,7 +720,7 @@ export default function App() {
   };
 
   return (
-    <AppProvider isEmbeddedApp apiKey={apiKey}>
+    <AppProvider isEmbeddedApp apiKey={loaderData?.apiKey}>
       <ConfigProvider
         theme={{
           token: {
@@ -749,7 +763,7 @@ export default function App() {
             </>
           )}
         </NavMenu>
-        <Outlet />
+        {isClient && <Outlet />}
       </ConfigProvider>
     </AppProvider>
   );

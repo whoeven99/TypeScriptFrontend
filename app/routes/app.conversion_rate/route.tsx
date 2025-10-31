@@ -30,18 +30,13 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
 import LineChartECharts from "./components/LineChartECharts";
+import { authForShopify } from "~/utils/auth";
 const { Title } = Typography;
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-  return json({ shop });
-};
-
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
-  const { admin } = adminAuthResult;
+  const authForShopifyData = await authForShopify({ request });
+  if (!authForShopifyData) return null;
+  const { admin, shop, accessToken } = authForShopifyData;
 
   try {
     const formData = await request.formData();
@@ -63,8 +58,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = (await mutationResponse.json()) as any;
         let storeLanguage = [] as string[];
         let defaultLanguage = "en";
-        console.log("data.data.shopLocales",data.data.shopLocales);
-        
+        console.log("data.data.shopLocales", data.data.shopLocales);
+
         if (data.data.shopLocales.length > 0) {
           data.data.shopLocales.forEach((item: any) => {
             // storeLanguage.push(item.locale);
@@ -177,10 +172,9 @@ const Index = () => {
     const filled = chartData.map((chart: any) => {
       return {
         ...chart,
-        language:
-          chart.locale?.includes(defaultLanguage)
-            ? `${chart.language} (${t("Default Language")})`
-            : chart.language,
+        language: chart.locale?.includes(defaultLanguage)
+          ? `${chart.language} (${t("Default Language")})`
+          : chart.language,
         data: chart.data.map((series: any) => {
           const valueMap = new Map(
             Array.isArray(series.data)

@@ -48,6 +48,7 @@ import useReport from "scripts/eventReport";
 import isEqual from "lodash/isEqual";
 import styles from "./styles.module.css";
 import { globalStore } from "~/globalStore";
+import { authForShopify } from "~/utils/auth";
 
 const { Title, Text } = Typography;
 
@@ -95,9 +96,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-  const { admin } = adminAuthResult;
-  const { shop, accessToken } = adminAuthResult.session;
+  const authForShopifyData = await authForShopify({ request });
+  if (!authForShopifyData) return null;
+  const { admin, shop, accessToken } = authForShopifyData;
+
   const formData = await request.formData();
   const loading = JSON.parse(formData.get("loading") as string);
   const primaryMarket = JSON.parse(formData.get("primaryMarket") as string);

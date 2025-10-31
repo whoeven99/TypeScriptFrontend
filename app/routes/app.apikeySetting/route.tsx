@@ -31,7 +31,6 @@ import {
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import { ArrowLeftIcon } from "@shopify/polaris-icons";
-import { SessionService } from "~/utils/session.server";
 import { authenticate } from "~/shopify.server";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
@@ -44,6 +43,7 @@ import styles from "./styles.module.css";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import ApiCard from "./components/ApiCard";
 import { globalStore } from "~/globalStore";
+import { authForShopify } from "~/utils/auth";
 
 const { Title, Text } = Typography;
 
@@ -59,9 +59,10 @@ export interface GLossaryDataType {
 }
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-
-  const { shop, accessToken } = adminAuthResult.session;
+  const authForShopifyData = await authForShopify({ request });
+  if (!authForShopifyData) return null;
+  const { admin, shop, accessToken } = authForShopifyData;
+  
   try {
     const formData = await request.formData();
     const loading = JSON.parse(formData.get("loading") as string);
