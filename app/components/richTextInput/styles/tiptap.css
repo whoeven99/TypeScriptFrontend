@@ -13,7 +13,7 @@
 }
 
 .tiptap-container {
-  width: 100%;
+  max-width: 785px;
   height: 350px;
   margin: auto;
   border: 1px solid #d9d9d9;
@@ -24,6 +24,9 @@
   height: 100%;
   max-height: 300px;
   overflow-y: auto;
+  overflow-wrap: break-word; /* ✅ 自动换行 */
+  word-break: break-word; /* ✅ 兼容旧版浏览器 */
+  white-space: normal; /* ✅ 确保允许换行 */
 }
 
 .ProseMirror table {

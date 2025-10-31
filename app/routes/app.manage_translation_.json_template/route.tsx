@@ -29,6 +29,7 @@ import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Title, Text } = Typography;
 
@@ -772,18 +773,11 @@ const Index = () => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[themesData.nodes[0]?.resourceId]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      backgroundColor: "var(--p-color-bg)",
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={themesData.nodes[0]?.resourceId}
                     items={menuData}
-                    selectedKeys={[selectedThemeKey]}
-                    onClick={(e) => handleMenuChange(e.key)}
+                    selectedKeys={selectedThemeKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     {(themesData?.pageInfo.hasPreviousPage ||
@@ -947,17 +941,11 @@ const Index = () => {
                       })}
                     </Space>
                   </Card>
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[themesData.nodes[0]?.resourceId]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={themesData.nodes[0]?.resourceId}
                     items={menuData}
-                    selectedKeys={[selectedThemeKey]}
-                    onClick={(e) => handleMenuChange(e.key)}
+                    selectedKeys={selectedThemeKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     {(themesData?.pageInfo.hasPreviousPage ||

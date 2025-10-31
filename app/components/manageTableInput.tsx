@@ -1,5 +1,5 @@
 import { Input } from "antd";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Editor, useEditor } from "@tiptap/react";
 import TextAlign from "@tiptap/extension-text-align";
