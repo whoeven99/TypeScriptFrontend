@@ -43,8 +43,6 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   isRtl,
   index,
 }) => {
-  const editorRef = useRef<Editor | null>(null);
-
   const defaultValue = useMemo(() => {
     return record?.default_language || "";
   }, [record?.default_language]);

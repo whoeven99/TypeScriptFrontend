@@ -526,69 +526,61 @@ const Index = () => {
         (item: any) => item.success === true,
       );
       successfulItem.forEach((item: any) => {
-        console.log(successfulItem);
-        const key = successfulItem?.data?.key || "";
-        const resourceId = successfulItem?.data?.resourceId || "";
-        const targetValue = successfulItem?.data?.value || "";
+        const key = item?.data?.key || "";
+        const resourceId = item?.data?.resourceId || "";
+        const targetValue = item?.data?.value || "";
+
         switch (true) {
-          case key in ["title", "body_html", "product_type"]:
-            const productBaseDataCase = productBaseData.find(
-              (item: any) => item.key == key,
+          case ["title", "body_html", "product_type"].includes(key):
+            setProductBaseData(
+              productBaseData.map((item) =>
+                item.key === key ? { ...item, translated: targetValue } : item,
+              ),
             );
-            setProductBaseData([
-              ...productBaseData,
-              {
-                ...productBaseDataCase,
-                translated: targetValue,
-              },
-            ]);
-          case key in ["handle", "meta_title", "meta_description"]:
-            const productSeoDataCase = productSeoData.find(
-              (item: any) => item.key == key,
+            break;
+          case ["handle", "meta_title", "meta_description"].includes(key):
+            setProductSeoData(
+              productSeoData.map((item) =>
+                item.key === key ? { ...item, translated: targetValue } : item,
+              ),
             );
-            setProductBaseData([
-              ...productSeoData,
-              {
-                ...productSeoDataCase,
-                translated: targetValue,
-              },
-            ]);
-          case optionsData.find((item: any) => item?.resourceId == resourceId):
-            const optionsDataCase = optionsData.find(
-              (item: any) => item.resourceId == resourceId,
-            );
-            setProductBaseData([
-              ...optionsData,
-              {
-                ...optionsDataCase,
-                translated: targetValue,
-              },
-            ]);
-          case metafieldsData.find(
+            break;
+          case !!optionsData.find(
             (item: any) => item?.resourceId == resourceId,
           ):
-            const metafieldsDataCase = metafieldsData.find(
-              (item: any) => item.resourceId == resourceId,
+            setOptionsData(
+              optionsData.map((item) =>
+                item.resourceId === resourceId
+                  ? { ...item, translated: targetValue }
+                  : item,
+              ),
             );
-            setProductBaseData([
-              ...metafieldsData,
-              {
-                ...metafieldsDataCase,
-                translated: targetValue,
-              },
-            ]);
-          case variantsData.find((item: any) => item?.resourceId == resourceId):
-            const variantsDataCase = variantsData.find(
-              (item: any) => item.resourceId == resourceId,
+            break;
+          case !!metafieldsData.find(
+            (item: any) => item?.resourceId == resourceId,
+          ):
+            setMetafieldsData(
+              metafieldsData.map((item) =>
+                item.resourceId === resourceId
+                  ? { ...item, translated: targetValue }
+                  : item,
+              ),
             );
-            setProductBaseData([
-              ...variantsData,
-              {
-                ...variantsDataCase,
-                translated: targetValue,
-              },
-            ]);
+            break;
+          case !!variantsData.find(
+            (item: any) => item?.resourceId == resourceId,
+          ):
+            setVariantsData(
+              variantsData.map((item) =>
+                item.resourceId === resourceId
+                  ? { ...item, translated: targetValue }
+                  : item,
+              ),
+            );
+            break;
           default:
+            console.log(6);
+
             break;
         }
       });
@@ -836,7 +828,7 @@ const Index = () => {
   useEffect(() => {
     if (variantFetcher.data && variantFetcher.data.variantsData) {
       const variantsData = variantFetcher.data.variantsData.flatMap(
-        (result: any) => {
+        (result: any, index: number) => {
           if (result.status === "fulfilled") {
             return result.value.data.translatableResourcesByIds.nodes
               .filter(
@@ -844,8 +836,9 @@ const Index = () => {
                   variant?.translatableContent[0]?.value &&
                   variant?.translatableContent[0]?.value !== "Default Title",
               )
-              .map((variant: any, index: number) => ({
-                key: variant?.resourceId,
+              .map((variant: any) => ({
+                resourceId: variant?.resourceId,
+                key: `${variant?.translatableContent[0]?.key}_${index}`,
                 index,
                 resource: t(variant?.translatableContent[0]?.key),
                 type: variant?.translatableContent[0]?.type,
@@ -1210,8 +1203,7 @@ const Index = () => {
       } else {
         const newItem = {
           resourceId: selectProductKey,
-          locale: productBaseData?.find((item: any) => item?.key === key)
-            ?.locale,
+          locale: globalStore?.source || "",
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest: productBaseData?.find(
@@ -1245,8 +1237,7 @@ const Index = () => {
       } else {
         const newItem = {
           resourceId: selectProductKey,
-          locale: productSeoData?.find((item: any) => item?.key === key)
-            ?.locale,
+          locale: globalStore?.source || "",
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest: productSeoData?.find(
@@ -1281,7 +1272,7 @@ const Index = () => {
         const newItem = {
           resourceId: optionsData?.find((item: any) => item?.key === key)
             ?.resourceId,
-          locale: optionsData?.find((item: any) => item?.key === key)?.locale,
+          locale: globalStore?.source || "",
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest: optionsData?.find(
@@ -1316,8 +1307,7 @@ const Index = () => {
         const newItem = {
           resourceId: metafieldsData?.find((item: any) => item?.key === key)
             ?.resourceId,
-          locale: metafieldsData?.find((item: any) => item?.key === key)
-            ?.locale,
+          locale: globalStore?.source || "",
           key: key,
           value: value, // 初始为空字符串
           translatableContentDigest: metafieldsData?.find(
@@ -1350,9 +1340,10 @@ const Index = () => {
         return updatedConfirmData;
       } else {
         const newItem = {
-          resourceId: variantsData?.find((item: any) => item?.key === key)?.key,
-          locale: variantsData?.find((item: any) => item?.key === key)?.locale,
-          key: variantsData?.find((item: any) => item?.key === key)?.resource,
+          resourceId: variantsData?.find((item: any) => item?.key === key)
+            ?.resourceId,
+          locale: globalStore?.source || "",
+          key: key,
           value: value, // 初始为空字符串
           translatableContentDigest: variantsData?.find(
             (item: any) => item?.key === key,
@@ -1453,16 +1444,6 @@ const Index = () => {
       navigate(`/app/manage_translation/${item}?language=${searchTerm}`);
     }
   };
-
-  // const handleModelChange = (model: string) => {
-  //   setSelectedModel(model);
-  //   localStorage.setItem("translateModel", model);
-  // }
-
-  // const handleLanguagePackChange = (languagePack: string) => {
-  //   setSelectedLanguagePack(languagePack);
-  //   localStorage.setItem("translateLanguagePack", languagePack);
-  // }
 
   // 节流函数
   const throttle = (func: Function, delay: number) => {
@@ -1620,6 +1601,22 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("save-bar");
+    const productBaseNewData = JSON.parse(JSON.stringify(productBaseData));
+
+    setProductBaseData(productBaseNewData);
+    const productSeoNewData = JSON.parse(JSON.stringify(productSeoData));
+
+    setProductSeoData(productSeoNewData);
+    const optionsNewData = JSON.parse(JSON.stringify(optionsData));
+
+    setOptionsData(optionsNewData);
+    const metafieldsNewData = JSON.parse(JSON.stringify(metafieldsData));
+
+    setMetafieldsData(metafieldsNewData);
+    const variantsNewData = JSON.parse(JSON.stringify(variantsData));
+
+    setVariantsData(variantsNewData);
+
     setConfirmData([]);
     setSuccessTranslatedKey([]);
   };
