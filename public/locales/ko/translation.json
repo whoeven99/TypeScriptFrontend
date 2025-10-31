@@ -115,6 +115,7 @@
   "Manage Translation": "번역 관리",
   "Products": "제품",
   "Online Store": "온라인 스토어",
+  "Online Store Theme": "온라인 스토어 테마",
   "Settings": "설정",
   "Collections": "컬렉션",
   "Collection": "컬렉션",
@@ -128,7 +129,6 @@
   "Email": "이메일",
   "Policies": "정책",
   "Shop": "가게",
-  "Metafield": "메타데이터 저장",
   "Theme": "주제",
   "Delivery": "배달",
   "Shipping": "해운",
@@ -201,7 +201,7 @@
   "translation_process_translating": "{{item}} 모듈 번역 중({{hasTranslated}}/{{totalNumber}}):",
   "progressing.progressingWithoutSpace": "{{item}} 모듈 번역:",
   "translation_process_saving_shopify": "{{item}} 모듈 작성",
-  "progressing.finished": "번역이 준비되었습니다. 게시하여 변경 사항을 적용하세요.",
+  "translation_process_saved": "번역이 준비되었습니다. 게시하여 변경 사항을 적용하세요.",
   "progressing.buyCredits": "크레딧 구매",
   "progressing.review": "번역 검토",
   "progressing.publish": "게시하다",
@@ -750,5 +750,6 @@
   "devplanCard2.title": "최적화된 편집기 디렉토리",
   "devplanCard3.title": "번역 속도가 30% 더 빨라졌습니다",
   "devplanCard4.title": "IP 기반 지리적 위치에서 보이지 않는 모드가 있는 스위처",
-  "devplanCard5.title": "번역 결과를 최적화하기 위해 다양한 언어에 대한 전환율 지표를 표시합니다."
+  "devplanCard5.title": "번역 결과를 최적화하기 위해 다양한 언어에 대한 전환율 지표를 표시합니다.",
+  "The source text is empty and cannot be translated": "소스 텍스트가 비어 있어 번역할 수 없습니다"
 }

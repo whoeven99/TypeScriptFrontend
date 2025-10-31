@@ -136,7 +136,24 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
               maxWidth: isMobile ? "50%" : status === 1 ? "100%" : "80%", // 限制最大宽度
             }}
           >
-            {status === 1 && <Text>{t("progressing.finished")}</Text>}
+            {status === 1 && (
+              <Text>
+                {t(translateStatus, {
+                  item: t(module),
+                  hasTranslated:
+                    progressData.TotalQuantity -
+                      progressData.RemainingQuantity >
+                    0
+                      ? progressData.TotalQuantity -
+                        progressData.RemainingQuantity
+                      : 0,
+                  totalNumber:
+                    progressData.TotalQuantity > 0
+                      ? progressData.TotalQuantity
+                      : 0,
+                })}
+              </Text>
+            )}
             {status === 2 && (
               <Text>
                 {t(translateStatus, {
@@ -173,11 +190,9 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
         >
           <Progress
             percent={
-              status === 1
-                ? 100
-                : translateStatus === "translation_process_init" && status === 2
-                  ? 0
-                  : parseFloat(progress)
+              translateStatus === "translation_process_init" && status === 2
+                ? 0
+                : parseFloat(progress)
             }
             status={
               status === 1 ? "success" : status === 2 ? "active" : "normal"
@@ -197,7 +212,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
           // 移除固定高度，让它根据按钮内容自动调整
         }}
       >
-        {status === 1 && (
+        {status === 1 && translateStatus == "translation_process_saved" && (
           <div
             style={{
               width: "100%", // 限制最大宽度
@@ -235,16 +250,17 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
             </Button>
           </div>
         )}
-        {status === 2 && (
-          <Button
-            block
-            onClick={handleStopTranslate}
-            loading={stopTranslateFetcher.state == "submitting"}
-            style={{ marginTop: "auto" }}
-          >
-            {t("progressing.stopTranslate")}
-          </Button>
-        )}
+        {status === 2 &&
+          translateStatus == "translation_process_translating" && (
+            <Button
+              block
+              onClick={handleStopTranslate}
+              loading={stopTranslateFetcher.state == "submitting"}
+              style={{ marginTop: "auto" }}
+            >
+              {t("progressing.stopTranslate")}
+            </Button>
+          )}
         {status === 3 && (
           <div
             style={{

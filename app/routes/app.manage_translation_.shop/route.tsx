@@ -169,6 +169,9 @@ const Index = () => {
   const [resourceData, setResourceData] = useState<TableDataType[]>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -262,6 +265,7 @@ const Index = () => {
         isManualChangeRef.current = false; // 重置
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [dataFetcher.data]);
 
@@ -276,6 +280,7 @@ const Index = () => {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [confirmFetcher.data]);
 
@@ -335,6 +340,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
@@ -447,6 +453,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, key]);
         shopify.toast.show(t("Translated successfully"));
       }
     } else {
@@ -544,6 +551,7 @@ const Index = () => {
     shopify.saveBar.hide("save-bar");
     setShopsData({ ...shopsData });
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
   };
 
   // const handleLeaveItem = (
@@ -624,17 +632,52 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={confirmFetcher.state === "submitting" && ""}
+          loading={confirmFetcher.state === "submitting" ? "true" : undefined}
         >
           {t("Save")}
         </button>
         <button onClick={handleDiscard}>{t("Cancel")}</button>
       </SaveBar>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          flexGrow: 2,
+          justifyContent: "flex-end",
+          marginBottom: "15px",
+        }}
+      >
+        <div
+          style={{
+            width: "100px",
+          }}
+        >
+          <Select
+            label={""}
+            options={languageOptions}
+            value={selectedLanguage}
+            onChange={(value) => handleLanguageChange(value)}
+          />
+        </div>
+        <div
+          style={{
+            width: "100px",
+          }}
+        >
+          <Select
+            label={""}
+            options={itemOptions}
+            value={selectedItem}
+            onChange={(value) => handleItemChange(value)}
+          />
+        </div>
+      </div>
       <Layout
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 104px)",
+          height: "calc(100vh - 154px)",
         }}
       >
         {isLoading ? (
@@ -652,44 +695,15 @@ const Index = () => {
           <Content
             style={{
               paddingLeft: isMobile ? "16px" : "0",
+              height: "calc(100% - 25px)",
+              minHeight: "70vh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "auto",
             }}
           >
             {isMobile ? (
               <Space direction="vertical" style={{ width: "100%" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    flexGrow: 2,
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "100px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={languageOptions}
-                      value={selectedLanguage}
-                      onChange={(value) => handleLanguageChange(value)}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      width: "100px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={itemOptions}
-                      value={selectedItem}
-                      onChange={(value) => handleItemChange(value)}
-                    />
-                  </div>
-                </div>
                 <Card title={t("Resource")}>
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {resourceData.map((item: any, index: number) => {
@@ -727,6 +741,9 @@ const Index = () => {
                           >
                             <Text>{t("Translated")}</Text>
                             <ManageTableInput
+                              isSuccess={successTranslatedKey?.includes(
+                                item?.key as string,
+                              )}
                               translatedValues={translatedValues}
                               setTranslatedValues={setTranslatedValues}
                               handleInputChange={handleInputChange}
@@ -765,12 +782,14 @@ const Index = () => {
                   </Space>
                 </Card>
                 <div style={{ display: "flex", justifyContent: "center" }}>
-                  <Pagination
-                    hasPrevious={hasPrevious}
-                    onPrevious={onPrevious}
-                    hasNext={hasNext}
-                    onNext={onNext}
-                  />
+                  {(hasNext || hasPrevious) && (
+                    <Pagination
+                      hasPrevious={hasPrevious}
+                      onPrevious={onPrevious}
+                      hasNext={hasNext}
+                      onNext={onNext}
+                    />
+                  )}
                 </div>
               </Space>
             ) : (
@@ -779,52 +798,20 @@ const Index = () => {
                 size="middle"
                 style={{ display: "flex" }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    flexGrow: 2,
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "150px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={languageOptions}
-                      value={selectedLanguage}
-                      onChange={(value) => handleLanguageChange(value)}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      width: "150px",
-                    }}
-                  >
-                    <Select
-                      label={""}
-                      options={itemOptions}
-                      value={selectedItem}
-                      onChange={(value) => handleItemChange(value)}
-                    />
-                  </div>
-                </div>
                 <Table
                   columns={resourceColumns}
                   dataSource={resourceData}
                   pagination={false}
                 />
                 <div style={{ display: "flex", justifyContent: "center" }}>
-                  <Pagination
-                    hasPrevious={hasPrevious}
-                    onPrevious={onPrevious}
-                    hasNext={hasNext}
-                    onNext={onNext}
-                  />
+                  {(hasNext || hasPrevious) && (
+                    <Pagination
+                      hasPrevious={hasPrevious}
+                      onPrevious={onPrevious}
+                      hasNext={hasNext}
+                      onNext={onNext}
+                    />
+                  )}
                 </div>
               </Space>
             )}

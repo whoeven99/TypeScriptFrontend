@@ -233,21 +233,7 @@ const Index = () => {
     },
   ];
 
-  const onlineStoreDataSource: TableDataType[] = [
-    {
-      key: "shop",
-      title: t("Shop"),
-      allTranslatedItems:
-        languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "SHOP",
-        )?.translatedNumber ?? undefined,
-      allItems:
-        languageItemsData.find(
-          (item: any) => item?.language === current && item?.type === "SHOP",
-        )?.totalNumber ?? undefined,
-      sync_status: false,
-      navigation: "shop",
-    },
+  const onlineStoreThemeDataSource: TableDataType[] = [
     {
       key: "locale_content",
       title: t("Locale Content"),
@@ -287,6 +273,31 @@ const Index = () => {
       allItems: undefined,
       sync_status: false,
       navigation: "settings_category",
+    },
+    {
+      key: "settings_data_sections",
+      title: t("Settings Data Sections"),
+      allTranslatedItems: undefined,
+      allItems: undefined,
+      sync_status: false,
+      navigation: "settings_data_sections",
+    },
+  ];
+
+  const onlineStoreDataSource: TableDataType[] = [
+    {
+      key: "shop",
+      title: t("Shop"),
+      allTranslatedItems:
+        languageItemsData.find(
+          (item: any) => item?.language === current && item?.type === "SHOP",
+        )?.translatedNumber ?? undefined,
+      allItems:
+        languageItemsData.find(
+          (item: any) => item?.language === current && item?.type === "SHOP",
+        )?.totalNumber ?? undefined,
+      sync_status: false,
+      navigation: "shop",
     },
     {
       key: "pages",
@@ -1001,7 +1012,8 @@ const Index = () => {
               />
             </div>
             <div className="manage-header-right">
-              {(typeof plan === "number" && plan <= 4) ||
+              {plan?.type == "Free" ||
+              plan?.type == "Basic" ||
               typeof plan === "undefined" ? (
                 <Flex align="center" gap="middle">
                   <Popconfirm
@@ -1038,6 +1050,11 @@ const Index = () => {
                 <ManageTranslationsCard
                   cardTitle={t("Products")}
                   dataSource={productsDataSource}
+                  current={current}
+                />
+                <ManageTranslationsCard
+                  cardTitle={t("Online Store Theme")}
+                  dataSource={onlineStoreThemeDataSource}
                   current={current}
                 />
                 <ManageTranslationsCard
@@ -1156,6 +1173,7 @@ export const getItemOptions = (t: (key: string) => string) => [
   { label: t("Locale Content"), value: "locale_content" },
   { label: t("Section Group"), value: "section_group" },
   { label: t("Settings Category"), value: "settings_category" },
+  { label: t("Settings Data Sections"), value: "settings_data_sections" },
   { label: t("Shop"), value: "shop" },
   { label: t("Metafield"), value: "metafield" },
   { label: t("Articles"), value: "article" },

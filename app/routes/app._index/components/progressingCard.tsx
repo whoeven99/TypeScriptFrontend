@@ -32,6 +32,7 @@ const ProgressingCard: React.FC<ProgressingCardProps> = ({
       state: { from: "/app", selectedLanguageCode: "" },
     });
   };
+  
   return (
     <Card
       style={{ width: "100%" }}

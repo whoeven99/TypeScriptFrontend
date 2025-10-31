@@ -228,6 +228,7 @@
   "OK": "Гаразд",
   "Oceania": "Океанія",
   "Online Store": "Інтернет-магазин",
+  "Online Store Theme": "Тема інтернет-магазину",
   "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Підтримуються лише формати JPEG, PNG, WEBP, HEIC та GIF",
   "Only images can be uploaded": "Можна завантажувати лише зображення",
   "Option Border Color:": "Межа опції:",
@@ -317,7 +318,6 @@
   "Stay on Page": "Залишитися на сторінці",
   "Step 1: Set up Currency Format": "Крок 1: Налаштуйте формат валюти",
   "Step 2: Enable switcher": "Крок 2: Увімкніть перемикач",
-  "Metafield": "Метадані магазину",
   "Storytelling": "Розповідь історій",
   "Strong CTA – Clear call to buy": "Сильний заклик до дії – Чіткий заклик до покупки",
   "Summary": "Підсумок",
@@ -538,7 +538,7 @@
   "progressing.contact": "У вас закінчилися кредити для перекладу. Купіть більше, щоб продовжити переклад.",
   "progressing.contactButton": "Підтримка",
   "progressing.continueTranslate": "Продовжити переклад",
-  "progressing.finished": "Ваш переклад готовий. Опублікуйте його, щоб застосувати зміни.",
+  "translation_process_saved": "Ваш переклад готовий. Опублікуйте його, щоб застосувати зміни.",
   "progressing.hasPayed": "Кредити для перекладу додано. Тепер ви можете продовжити переклад.",
   "translation_process_init": "Ініціалізація завдання перекладу...",
   "progressing.noTranslate": "Немає поточних завдань перекладу.",
@@ -750,5 +750,6 @@
   "devplanCard2.title": "Оптимізований каталог редактора",
   "devplanCard3.title": "На 30% швидше перекладати",
   "devplanCard4.title": "Перемикач з невидимим режимом під час геолокації на основі IP",
-  "translation_process_saving_shopify": "Застосування перекладів до модуля {{item}}…"
+  "translation_process_saving_shopify": "Застосування перекладів до модуля {{item}}…",
+  "The source text is empty and cannot be translated": "Вихідний текст порожній і не може бути перекладений"
 }

@@ -184,12 +184,13 @@ const Index = () => {
         name: "500K",
         Credits: 500000,
         price: {
-          currentPrice:
-            plan.id === 6
+          currentPrice: plan?.isInFreePlanTime
+            ? 3.99
+            : plan?.type === "Premium"
               ? 1.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 2.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 3.59
                   : 3.99,
           comparedPrice: 3.99,
@@ -201,12 +202,13 @@ const Index = () => {
         name: "1M",
         Credits: 1000000,
         price: {
-          currentPrice:
-            plan.id === 6
+          currentPrice: plan?.isInFreePlanTime
+            ? 7.99
+            : plan?.type === "Premium"
               ? 3.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 5.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 7.19
                   : 7.99,
           comparedPrice: 7.99,
@@ -218,12 +220,13 @@ const Index = () => {
         name: "2M",
         Credits: 2000000,
         price: {
-          currentPrice:
-            plan.id === 6
+          currentPrice: plan?.isInFreePlanTime
+            ? 15.99
+            : plan?.type === "Premium"
               ? 7.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 11.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 14.39
                   : 15.99,
           comparedPrice: 15.99,
@@ -235,12 +238,13 @@ const Index = () => {
         name: "3M",
         Credits: 3000000,
         price: {
-          currentPrice:
-            plan.id === 6
+          currentPrice: plan?.isInFreePlanTime
+            ? 23.99
+            : plan?.type === "Premium"
               ? 11.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 17.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 21.79
                   : 23.99,
           comparedPrice: 23.99,
@@ -252,12 +256,13 @@ const Index = () => {
         name: "5M",
         Credits: 5000000,
         price: {
-          currentPrice:
-            plan.id === 6
+          currentPrice: plan?.isInFreePlanTime
+            ? 39.99
+            : plan?.type === "Premium"
               ? 19.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 29.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 35.99
                   : 39.99,
           comparedPrice: 39.99,
@@ -269,12 +274,13 @@ const Index = () => {
         name: "10M",
         Credits: 10000000,
         price: {
-          currentPrice:
-            plan.id === 6
+          currentPrice: plan?.isInFreePlanTime
+            ? 79.99
+            : plan?.type === "Premium"
               ? 39.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 59.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 71.99
                   : 79.99,
           comparedPrice: 79.99,
@@ -286,12 +292,13 @@ const Index = () => {
         name: "20M",
         Credits: 20000000,
         price: {
-          currentPrice:
-            plan.id === 6
+          currentPrice: plan?.isInFreePlanTime
+            ? 159.99
+            : plan?.type === "Premium"
               ? 79.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 119.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 143.99
                   : 159.99,
           comparedPrice: 159.99,
@@ -303,12 +310,13 @@ const Index = () => {
         name: "30M",
         Credits: 30000000,
         price: {
-          currentPrice:
-            plan.id === 6
+          currentPrice: plan?.isInFreePlanTime
+            ? 239.99
+            : plan?.type === "Premium"
               ? 119.99
-              : plan.id === 5
+              : plan?.type === "Pro"
                 ? 179.99
-                : plan.id === 4
+                : plan?.type === "Basic"
                   ? 215.99
                   : 239.99,
           comparedPrice: 239.99,
@@ -436,7 +444,9 @@ const Index = () => {
         setPlan({
           plan: {
             id: 2,
+            type: "Free",
             feeType: 0,
+            isInFreePlanTime: false,
           },
         }),
       );
@@ -456,11 +466,11 @@ const Index = () => {
           amount: 76.68,
         }),
         buttonText:
-          plan.id === 4 && yearly === !!(plan.feeType === 2)
+          plan.type === "Basic" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
         buttonType: "default",
-        disabled: plan.id === 4 && yearly === !!(plan.feeType === 2),
+        disabled: plan.type === "Basic" && yearly === !!(plan.feeType === 2),
         features: [
           t("{{credits}} credits/month", { credits: "1,500,000" }),
           t("Glossary ({{count}} entries)", { count: 10 }),
@@ -484,11 +494,11 @@ const Index = () => {
           amount: 191.88,
         }),
         buttonText:
-          plan.id === 5 && yearly === !!(plan.feeType === 2)
+          plan.type === "Pro" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
         buttonType: "default",
-        disabled: plan.id === 5 && yearly === !!(plan.feeType === 2),
+        disabled: plan.type === "Pro" && yearly === !!(plan.feeType === 2),
         features: [
           t("all in Basic Plan"),
           t("{{credits}} credits/month", { credits: "3,000,000" }),
@@ -512,10 +522,10 @@ const Index = () => {
           amount: 383.88,
         }),
         buttonText:
-          plan.id === 6 && yearly === !!(plan.feeType === 2)
+          plan.type === "Premium" && yearly === !!(plan.feeType === 2)
             ? t("pricing.current_plan")
             : t("pricing.get_start"),
-        disabled: plan.id === 6 && yearly === !!(plan.feeType === 2),
+        disabled: plan.type === "Premium" && yearly === !!(plan.feeType === 2),
         isRecommended: true,
         features: [
           t("all in Pro Plan"),
@@ -920,17 +930,13 @@ const Index = () => {
                 <div>
                   <Text>{t("Current plan: ")}</Text>
                   <Text style={{ color: "#007F61", fontWeight: "bold" }}>
-                    {plan.id === 3
-                      ? "Starter"
-                      : plan.id === 4
-                        ? "Basic"
-                        : plan.id === 5
-                          ? "Pro"
-                          : plan.id === 6
-                            ? "Premium"
-                            : plan.id === 7
-                              ? "Free Trial"
-                              : "Free"}{" "}
+                    {plan.type === "Basic"
+                      ? "Basic"
+                      : plan.type === "Pro"
+                        ? "Pro"
+                        : plan.type === "Premium"
+                          ? "Premium"
+                          : "Free"}
                     {t("plan")}
                   </Text>
                 </div>
@@ -1049,7 +1055,7 @@ const Index = () => {
                 flexDirection: "column",
                 position: "relative",
                 borderColor:
-                  plan.id === 1 || plan.id === 2 ? "#007F61" : undefined,
+                  plan.type === "Free" ? "#007F61" : undefined,
                 minWidth: "220px",
               }}
               styles={{
@@ -1072,15 +1078,15 @@ const Index = () => {
                 type="default"
                 block
                 disabled={
-                  plan.id === 1 || plan.id === 2 || selectedPayPlanOption
+                  plan.type === "Free" || selectedPayPlanOption
                 }
-                style={{ marginBottom: isNew ? "20px" : "70px" }}
+                style={{ marginBottom: isNew ? "70px" : "20px" }}
                 onClick={() => {
                   setCancelPlanWarnModal(true);
                   reportClick("pricing_plan_trial");
                 }}
               >
-                {plan.id === 1 || plan.id === 2
+                {plan.type === "Free"
                   ? t("pricing.current_plan")
                   : t("pricing.get_start")}
               </Button>
@@ -1162,7 +1168,7 @@ const Index = () => {
                 color="#1890ff"
                 style={{
                   display:
-                    item.isRecommended && plan.id <= 2 && plan.id
+                    item.isRecommended && plan.type === "Free" && plan.id
                       ? "block"
                       : "none",
                   right: -8,
@@ -1178,7 +1184,7 @@ const Index = () => {
                     position: "relative",
                     borderColor: item.disabled
                       ? "#007F61"
-                      : item.isRecommended && plan.id <= 2 && plan.id
+                      : item.isRecommended && plan.type === "Free" && plan.id
                         ? "#1890ff"
                         : undefined,
                     minWidth: "220px",
@@ -1344,11 +1350,11 @@ const Index = () => {
               {t("Buy Credits")}
             </Title> */}
             <Text style={{ fontWeight: "bold" }}>
-              {plan.id === 6
+              {plan.type === "Premium"
                 ? t("discountText.premium")
-                : plan.id === 5
+                : plan.type === "Pro"
                   ? t("discountText.pro")
-                  : plan.id === 4
+                  : plan.type === "Basic"
                     ? t("discountText.basic")
                     : t("discountText.free")}
             </Text>
@@ -1389,7 +1395,9 @@ const Index = () => {
                   >
                     {option.Credits.toLocaleString()} {t("Credits")}
                   </Text>
-                  {plan.id === 6 || plan.id === 5 || plan.id === 4 ? (
+                  {(plan.type === "Premium" ||
+                  plan.type === "Pro" ||
+                  plan.type === "Basic") && !plan?.isInFreePlanTime ? (
                     <>
                       <Title
                         level={3}
@@ -1472,46 +1480,6 @@ const Index = () => {
           )}
         </Text>
       </Modal>
-      {/* <Modal open={creditsCalculatorOpen} onCancel={() => setCreditsCalculatorOpen(false)}>
-        <Title level={4}>{t("Credits Calculator")}</Title>
-        <Form>
-          <Form.Item label={t("Target Language")} name="targetLanguage">
-            <Select>
-              {modelOptions.map((option) => (
-                <Select.Option key={option.value} value={option.value}>{option.label}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item label={t("Translate Model")} name="model">
-            <Select>
-              {modelOptions.map((option) => (
-                <Select.Option key={option.value} value={option.value}>{option.label}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item label={t("Translate Items")} name="translateItem">
-            <Checkbox.Group>
-              {translateItemOptions.map((option) => (
-                <Checkbox key={option.value} value={option.value}>{option.label}</Checkbox>
-              ))}
-            </Checkbox.Group>
-          </Form.Item>
-        </Form>
-      </Modal> */}
-      <Modal
-        centered
-        title={
-          <span style={{ fontSize: "24px", fontWeight: 700 }}>
-            {t("Shared Plan: How to Set Up")}
-          </span>
-        } // 标题加粗
-        open={isModalVisible}
-        onCancel={handleCancel}
-        width={800}
-        style={{ top: 50 }}
-        footer={null} // 移除 OK 和 Cancel 按钮
-        className="custom-modal" // 自定义类名
-      ></Modal>
       <Modal
         centered
         title={
@@ -1623,10 +1591,3 @@ const Index = () => {
 };
 
 export default Index;
-
-export const planNum = (id: number) => {
-  if (id == 4) return "Basic";
-  if (id == 5) return "Pro";
-  if (id == 6) return "Premium";
-  return "Free";
-};

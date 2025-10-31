@@ -228,6 +228,7 @@
   "OK": "Tamam",
   "Oceania": "Oceania",
   "Online Store": "Online Store",
+  "Online Store Theme": "Çevrimiçi mağaza teması",
   "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported",
   "Only images can be uploaded": "Only images can be uploaded",
   "Option Border Color:": "Option Border:",
@@ -317,7 +318,6 @@
   "Stay on Page": "Stay on Page",
   "Step 1: Set up Currency Format": "Step 1: Set up Currency Format",
   "Step 2: Enable switcher": "Step 2: Enable switcher",
-  "Metafield": "Metafield",
   "Storytelling": "Storytelling",
   "Strong CTA – Clear call to buy": "Strong CTA – Clear call to buy",
   "Summary": "Özet",
@@ -489,7 +489,7 @@
   "progressing.contact": "You’re out of translation credits. Buy more to resume your translation.",
   "progressing.contactButton": "Support",
   "progressing.continueTranslate": "Continue translating",
-  "progressing.finished": "Your translation is ready. Publish it to apply the changes.",
+  "translation_process_saved": "Your translation is ready. Publish it to apply the changes.",
   "progressing.hasPayed": "Translation credits have been added. You can now resume your translation.",
   "translation_process_init": "Initializing translation task...",
   "progressing.noTranslate": "There are no ongoing translation tasks.",
@@ -751,5 +751,6 @@
   "devplanCard1.title": "Ürün görseli çevirisini destekler",
   "devplanCard2.title": "Optimize edilmiş editör dizini",
   "devplanCard3.title": "%30 daha hızlı çeviri hızı",
-  "devplanCard4.title": "IP tabanlı coğrafi konum altında görünmez modlu anahtarlayıcı"
+  "devplanCard4.title": "IP tabanlı coğrafi konum altında görünmez modlu anahtarlayıcı",
+  "The source text is empty and cannot be translated": "Kaynak metin boş ve çevrilemiyor"
 }

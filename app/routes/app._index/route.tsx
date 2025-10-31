@@ -168,7 +168,11 @@ const Index = () => {
         hasInitialized.current = true;
       }
 
-      const needRepoll = response.some((item: any) => item?.status === 2);
+      const needRepoll = response.some(
+        (item: any) =>
+          item?.translateStatus !== "translation_process_saved" &&
+          (item?.status == 1 || item?.status == 2),
+      );
 
       if (!needRepoll || hasStopped.current) {
         if (timeoutIdRef.current) {
@@ -264,52 +268,6 @@ const Index = () => {
     reportClick("dashboard_footer_help_center");
   };
 
-  const navigateToTranslate = () => {
-    reportClick("dashboard_translate_button");
-    navigate("/app/translate", {
-      state: { from: "/app", selectedLanguageCode: "" },
-    });
-    fetcher.submit(
-      {
-        log: `${globalStore?.shop} 前往翻译页面, 从主页面点击`,
-      },
-      {
-        method: "POST",
-        action: "/log",
-      },
-    );
-  };
-
-  const navigateToHelpSwitchCurrency = () => {
-    reportClick("dashboard_currency_guide");
-    window.open(
-      "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-set-up-multi-currency-pricing-on-your-shopify-store%ef%bc%9f/",
-      "_blank",
-    );
-  };
-
-  const navigateToSwitchCurrencyDetail = () => {
-    reportClick("dashboard_currency_view_detail");
-    window.open(
-      "https://ciwi.bogdatech.com/help/frequently-asked-question/how-to-enable-the-app-from-shopify-theme-customization-to-apply-the-language-currency-exchange-switcher/",
-      "_blank",
-    );
-  };
-
-  const navigateToLanguage = () => {
-    navigate("/app/language");
-    fetcher.submit(
-      {
-        log: `${globalStore?.shop} 前往语言页面, 从主页面点击`,
-      },
-      {
-        method: "POST",
-        action: "/log",
-      },
-    );
-    reportClick("dashboard_language_manage");
-  };
-
   const navigateToCurrency = () => {
     navigate("/app/currency");
     fetcher.submit(
@@ -339,8 +297,6 @@ const Index = () => {
 
   const pollStatus = () => {
     if (!isActiveRef.current) return;
-
-    console.log("[poll] fetch /app at", new Date().toLocaleTimeString());
 
     languageFetcher.submit(
       { nearTransaltedData: JSON.stringify(true) },
@@ -413,7 +369,6 @@ const Index = () => {
   return (
     <Page>
       <TitleBar title={t("Dashboard")} />
-      {/* <FreePlanCountdownCard /> */}
       <ScrollNotice
         text={t(
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",

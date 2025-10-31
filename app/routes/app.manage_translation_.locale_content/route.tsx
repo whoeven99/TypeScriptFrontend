@@ -8,21 +8,13 @@ import {
   Space,
   Spin,
   Table,
-  theme,
   Typography,
   List,
   Menu,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
-import {
-  useFetcher,
-  useLoaderData,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-} from "@remix-run/react"; // 引入 useNavigate
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
 import { SearchOutlined } from "@ant-design/icons";
 import {
   ConfirmDataType,
@@ -33,14 +25,16 @@ import { authenticate } from "~/shopify.server";
 import ManageTableInput from "~/components/manageTableInput";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
-import { Page, Pagination, Select } from "@shopify/polaris";
+import { SaveBar } from "@shopify/app-bridge-react";
+import { Page, Select } from "@shopify/polaris";
 import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
-import { S } from "node_modules/vite/dist/node/types.d-aGj9QkWt";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import pkg from "lodash";
+import SideMenu from "~/components/sideMenu/sideMenu";
+const { isArray } = pkg;
 
 const { Text } = Typography;
 
@@ -164,7 +158,7 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [menuData, setMenuData] = useState<any>([]);
+  const [menuData, setMenuData] = useState<any>(null);
   const [selectedThemeKey, setSelectedThemeKey] = useState<string>("");
   const [themeData, setThemeData] = useState<any>([]);
   const [resourceData, setResourceData] = useState<any>([]);
@@ -172,6 +166,9 @@ const Index = () => {
   const [searchInput, setSearchInput] = useState("");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -231,16 +228,20 @@ const Index = () => {
       setResourceData(data);
       setFilteredResourceData(data);
       isManualChangeRef.current = false;
-      setIsLoading(false);
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 5);
     }
   }, [themeFetcher.data]);
 
   useEffect(() => {
     const filterMenuData = exMenuData(filteredResourceData);
-    console.log("filterMenuData: ", filterMenuData);
 
     setMenuData(filterMenuData);
-    setSelectedThemeKey(filterMenuData[0]?.key);
+    const findIndex = filterMenuData.find(
+      (item: any) => item.key == selectedThemeKey,
+    );
+    if (!findIndex) setSelectedThemeKey(filterMenuData[0]?.key);
     const dataSource = filteredResourceData?.filter((item: any) => {
       const { key } = item;
       if (!key) return false;
@@ -269,6 +270,8 @@ const Index = () => {
       return label == selectedThemeKey;
     });
     setThemeData(dataSource);
+    setConfirmData([]);
+    setSuccessTranslatedKey([]);
     if (currentPage !== 1) setCurrentPage(1);
   }, [selectedThemeKey]);
 
@@ -331,6 +334,7 @@ const Index = () => {
         shopify.toast.show(errorItem?.errorMsg);
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [confirmFetcher.data]);
 
@@ -394,6 +398,7 @@ const Index = () => {
           record && (
             <ManageTableInput
               record={record}
+              isSuccess={successTranslatedKey?.includes(record?.key as string)}
               translatedValues={translatedValues}
               setTranslatedValues={setTranslatedValues}
               handleInputChange={handleInputChange}
@@ -536,6 +541,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, key]);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
@@ -587,6 +593,15 @@ const Index = () => {
     }
   };
 
+  const handleMenuChange = (key: string) => {
+    if (confirmData.length > 0) {
+      shopify.saveBar.leaveConfirmation();
+    } else {
+      shopify.saveBar.hide("save-bar");
+      setSelectedThemeKey(key);
+    }
+  };
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchInput(value);
@@ -620,6 +635,7 @@ const Index = () => {
     const data = generateMenuItemsArray(themeFetcher.data.response);
     setFilteredResourceData(data); // 使用展开运算符创建新数组引用
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
   };
 
   const onCancel = () => {
@@ -645,7 +661,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={confirmFetcher.state === "submitting" && ""}
+          loading={confirmFetcher.state === "submitting" ? "true" : undefined}
         >
           {t("Save")}
         </button>
@@ -708,7 +724,7 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : themeFetcher.data.response.length ? (
+        ) : isArray(menuData) && menuData?.length ? (
           <>
             {!isMobile && (
               <Sider
@@ -729,18 +745,11 @@ const Index = () => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[menuData[0]?.key]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      backgroundColor: "var(--p-color-bg)",
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={menuData[0]?.key}
                     items={menuData}
-                    selectedKeys={[selectedThemeKey]}
-                    onClick={(e: any) => setSelectedThemeKey(e.key)}
+                    selectedKeys={selectedThemeKey}
+                    onClick={handleMenuChange}
                   />
                 </div>
               </Sider>
@@ -813,6 +822,9 @@ const Index = () => {
                                 >
                                   <Text>{t("Translated")}</Text>
                                   <ManageTableInput
+                                    isSuccess={successTranslatedKey?.includes(
+                                      item?.key as string,
+                                    )}
                                     translatedValues={translatedValues}
                                     setTranslatedValues={setTranslatedValues}
                                     handleInputChange={handleInputChange}
@@ -877,6 +889,9 @@ const Index = () => {
                             >
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleInputChange}
@@ -914,17 +929,11 @@ const Index = () => {
                       )}
                     </Space>
                   </Card>
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[menuData[0]?.key]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={menuData[0]?.key}
                     items={menuData}
-                    selectedKeys={[selectedThemeKey]}
-                    onClick={(e) => setSelectedThemeKey(e.key)}
+                    selectedKeys={selectedThemeKey}
+                    onClick={handleMenuChange}
                   />
                 </Space>
               ) : (

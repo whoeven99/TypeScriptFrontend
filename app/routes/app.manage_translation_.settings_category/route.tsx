@@ -29,6 +29,7 @@ import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Title, Text } = Typography;
 
@@ -224,6 +225,9 @@ const Index = () => {
   const [themeData, setThemeData] = useState<any>([]);
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -294,6 +298,7 @@ const Index = () => {
     setThemeData(transBeforeData());
     setLoadingItems([]);
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
     setTranslatedValues({});
   }, [selectedThemeKey, themesData]);
 
@@ -356,6 +361,7 @@ const Index = () => {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [confirmFetcher.data]);
 
@@ -419,6 +425,7 @@ const Index = () => {
           record && (
             <ManageTableInput
               record={record}
+              isSuccess={successTranslatedKey?.includes(record?.key as string)}
               translatedValues={translatedValues}
               setTranslatedValues={setTranslatedValues}
               handleInputChange={handleInputChange}
@@ -570,6 +577,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, key]);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
@@ -694,6 +702,7 @@ const Index = () => {
     shopify.saveBar.hide("save-bar");
     setThemeData(transBeforeData()); // 使用展开运算符创建新数组引用
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
   };
 
   const onCancel = () => {
@@ -719,7 +728,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={confirmFetcher.state === "submitting" && ""}
+          loading={confirmFetcher.state === "submitting" ? "true" : undefined}
         >
           {t("Save")}
         </button>
@@ -764,28 +773,24 @@ const Index = () => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[themesData.nodes[0]?.resourceId]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      backgroundColor: "var(--p-color-bg)",
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={themesData.nodes[0]?.resourceId}
                     items={menuData}
-                    selectedKeys={[selectedThemeKey]}
-                    onClick={(e) => handleMenuChange(e.key)}
+                    selectedKeys={selectedThemeKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={
-                        themesData?.pageInfo.hasPreviousPage || false
-                      }
-                      onPrevious={onPrevious}
-                      hasNext={themesData?.pageInfo.hasNextPage || false}
-                      onNext={onNext}
-                    />
+                    {(themesData?.pageInfo.hasPreviousPage ||
+                      themesData?.pageInfo.hasNextPage) && (
+                      <Pagination
+                        hasPrevious={
+                          themesData?.pageInfo.hasPreviousPage || false
+                        }
+                        onPrevious={onPrevious}
+                        hasNext={themesData?.pageInfo.hasNextPage || false}
+                        onNext={onNext}
+                      />
+                    )}
                   </div>
                 </div>
               </Sider>
@@ -793,6 +798,11 @@ const Index = () => {
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
+                height: "calc(100% - 25px)",
+                minHeight: "70vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "auto",
               }}
             >
               {isMobile ? (
@@ -891,6 +901,9 @@ const Index = () => {
                             >
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleInputChange}
@@ -928,27 +941,24 @@ const Index = () => {
                       })}
                     </Space>
                   </Card>
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[themesData.nodes[0]?.resourceId]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={themesData.nodes[0]?.resourceId}
                     items={menuData}
-                    selectedKeys={[selectedThemeKey]}
-                    onClick={(e) => handleMenuChange(e.key)}
+                    selectedKeys={selectedThemeKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={
-                        themesData?.pageInfo?.hasPreviousPage || false
-                      }
-                      onPrevious={onPrevious}
-                      hasNext={themesData?.pageInfo?.hasNextPage || false}
-                      onNext={onNext}
-                    />
+                    {(themesData?.pageInfo.hasPreviousPage ||
+                      themesData?.pageInfo.hasNextPage) && (
+                      <Pagination
+                        hasPrevious={
+                          themesData?.pageInfo.hasPreviousPage || false
+                        }
+                        onPrevious={onPrevious}
+                        hasNext={themesData?.pageInfo.hasNextPage || false}
+                        onNext={onNext}
+                      />
+                    )}
                   </div>
                 </Space>
               ) : (

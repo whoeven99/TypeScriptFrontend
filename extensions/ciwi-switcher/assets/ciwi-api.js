@@ -87,6 +87,20 @@ export async function GetProductImageData({
   }
 }
 
+export async function GetShopImageData({ shopName, languageCode,blockId }) {
+  try {
+    const { data } = await fetchJson(
+      `${switchUrl(blockId)}/picture/getPictureDataByShopNameAndLanguageCode?shopName=${shopName}&languageCode=${languageCode}`,
+      {
+        method: "POST",
+      },
+    );
+    return data;
+  } catch (err) {
+    console.error(`${shop} Error GetProductImageData:`, err);
+  }
+}
+
 export async function fetchSwitcherConfig({ blockId, shop }) {
   const { data } = await fetchJson(
     `${switchUrl(blockId)}/widgetConfigurations/getData`,

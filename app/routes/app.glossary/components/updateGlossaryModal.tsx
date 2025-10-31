@@ -125,7 +125,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
 
     if (
       title === "Create rule" &&
-      dataSource.length >= planMapping[plan as keyof typeof planMapping]
+      dataSource.length >= planMapping[plan?.type as keyof typeof planMapping]
     ) {
       isOversizeError = false;
     }

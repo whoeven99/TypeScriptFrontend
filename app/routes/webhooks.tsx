@@ -9,6 +9,7 @@ import {
   DeleteData,
   GetUserSubscriptionPlan,
   InsertOrUpdateOrder,
+  IsInFreePlanTime,
   RequestData,
   SendPurchaseSuccessEmail,
   SendSubscribeSuccessEmail,
@@ -55,92 +56,104 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             shop,
             server: process.env.SERVER_URL as string,
           });
+          const isInFreePlan = await IsInFreePlanTime({
+            shop,
+            server: process.env.SERVER_URL as string,
+          });
           switch (payload?.app_purchase_one_time.name) {
             case "500K Credits":
               credits = 500000;
-              price =
-                plan?.response?.userSubscriptionPlan === 6
+              price = isInFreePlan?.response
+                ? 3.99
+                : plan?.response?.planType === "Premium"
                   ? 1.99
-                  : plan?.response?.userSubscriptionPlan === 5
+                  : plan?.response?.planType === "Pro"
                     ? 2.99
-                    : plan?.response?.userSubscriptionPlan === 4
+                    : plan?.response?.planType === "Basic"
                       ? 3.59
                       : 3.99;
               break;
             case "1M Credits":
               credits = 1000000;
-              price =
-                plan?.response?.userSubscriptionPlan === 6
+              price = isInFreePlan?.response
+                ? 7.99
+                : plan?.response?.planType === "Premium"
                   ? 3.99
-                  : plan?.response?.userSubscriptionPlan === 5
+                  : plan?.response?.planType === "Pro"
                     ? 5.99
-                    : plan?.response?.userSubscriptionPlan === 4
+                    : plan?.response?.planType === "Basic"
                       ? 7.19
                       : 7.99;
               break;
             case "2M Credits":
               credits = 2000000;
-              price =
-                plan?.response?.userSubscriptionPlan === 6
+              price = isInFreePlan?.response
+                ? 15.99
+                : plan?.response?.planType === "Premium"
                   ? 7.99
-                  : plan?.response?.userSubscriptionPlan === 5
+                  : plan?.response?.planType === "Pro"
                     ? 11.99
-                    : plan?.response?.userSubscriptionPlan === 4
+                    : plan?.response?.planType === "Basic"
                       ? 14.39
                       : 15.99;
               break;
             case "3M Credits":
               credits = 3000000;
-              price =
-                plan?.response?.userSubscriptionPlan === 6
+              price = isInFreePlan?.response
+                ? 23.99
+                : plan?.response?.planType === "Premium"
                   ? 11.99
-                  : plan?.response?.userSubscriptionPlan === 5
+                  : plan?.response?.planType === "Pro"
                     ? 19.99
-                    : plan?.response?.userSubscriptionPlan === 4
+                    : plan?.response?.planType === "Basic"
                       ? 21.99
                       : 23.99;
               break;
             case "5M Credits":
               credits = 5000000;
-              price =
-                plan?.response?.userSubscriptionPlan === 6
+              price = isInFreePlan?.response
+                ? 39.99
+                : plan?.response?.planType === "Premium"
                   ? 19.99
-                  : plan?.response?.userSubscriptionPlan === 5
+                  : plan?.response?.planType === "Pro"
                     ? 29.99
-                    : plan?.response?.userSubscriptionPlan === 4
+                    : plan?.response?.planType === "Basic"
                       ? 35.99
                       : 39.99;
               break;
             case "10M Credits":
               credits = 10000000;
-              price =
-                plan?.response?.userSubscriptionPlan === 6
+              price = isInFreePlan?.response
+                ? 79.99
+                : plan?.response?.planType === "Premium"
                   ? 39.99
-                  : plan?.response?.userSubscriptionPlan === 5
+                  : plan?.response?.planType === "Pro"
                     ? 59.99
-                    : plan?.response?.userSubscriptionPlan === 4
+                    : plan?.response?.planType === "Basic"
                       ? 71.99
                       : 79.99;
               break;
             case "20M Credits":
               credits = 20000000;
-              price =
-                plan?.response?.userSubscriptionPlan === 6
+              price = isInFreePlan?.response
+                ? 159.99
+                : plan?.response?.planType === "Premium"
                   ? 79.99
-                  : plan?.response?.userSubscriptionPlan === 5
+                  : plan?.response?.planType === "Pro"
                     ? 119.99
-                    : plan?.response?.userSubscriptionPlan === 4
+                    : plan?.response?.planType === "Basic"
                       ? 143.99
                       : 159.99;
               break;
             case "30M Credits":
               credits = 30000000;
-              price =
-                plan?.response?.userSubscriptionPlan === 6
+              price = isInFreePlan?.response
+                ? 239.99
+                : plan?.response?.planType === "Premium"
                   ? 119.99
-                  : plan?.response?.userSubscriptionPlan === 5
+                  : plan?.response?.planType === "Pro"
                     ? 179.99
-                    : plan?.response?.userSubscriptionPlan === 4
+                    : plan?.response?.planType === "Basic"
                       ? 219.99
                       : 239.99;
               break;
@@ -174,44 +187,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.error("Error processing purchase:", error);
         return new Response(null, { status: 200 });
       }
-    // case "LOCALES_CREATE":
-    //   try {
-    //     if (payload) {
-    //       new Response(null, { status: 200 });
-    //       console.log("payload: ", payload);
-
-    //       // await InsertTargets({ shop, accessToken: accessToken as string, source: "webhook", targets: ["customers"] });
-    //     }
-    //     break;
-    //   } catch (error) {
-    //     console.error("Error LOCALES_CREATE:", error);
-    //     return new Response(null, { status: 200 });
-    //   }
     case "APP_SUBSCRIPTIONS_UPDATE":
       try {
         new Response(null, { status: 200 });
-        // let credits = 0;
-        // let price = 0;
         let plan = 0;
         switch (payload?.app_subscription.name) {
-          case "Starter":
-            // credits = 0;
-            // price = 1.99;
-            plan = 3;
-            break;
           case "Basic":
-            // credits = 1500000;
-            // price = 7.99;
             plan = 4;
             break;
           case "Pro":
-            // credits = 3000000;
-            // price = 19.99;
             plan = 5;
             break;
           case "Premium":
-            // credits = 8000000;
-            // price = 39.99;
             plan = 6;
             break;
         }

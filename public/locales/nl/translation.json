@@ -227,7 +227,7 @@
   "Not enough translation credits. Purchase more to continue": "Not enough translation credits. Purchase more to continue",
   "OK": "OK",
   "Oceania": "Oceania",
-  "Online Store": "Online Store",
+  "Online Store": "Onlinewinkelthema",
   "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported": "Only JPEG, PNG, WEBP, HEIC and GIF formats are supported",
   "Only images can be uploaded": "Only images can be uploaded",
   "Option Border Color:": "Option Border:",
@@ -317,7 +317,6 @@
   "Stay on Page": "Stay on Page",
   "Step 1: Set up Currency Format": "Step 1: Set up Currency Format",
   "Step 2: Enable switcher": "Step 2: Enable switcher",
-  "Metafield": "Metafield",
   "Storytelling": "Storytelling",
   "Strong CTA – Clear call to buy": "Strong CTA – Clear call to buy",
   "Summary": "Samenvatting",
@@ -490,7 +489,7 @@
   "progressing.contact": "You’re out of translation credits. Buy more to resume your translation.",
   "progressing.contactButton": "Support",
   "progressing.continueTranslate": "Continue translating",
-  "progressing.finished": "Your translation is ready. Publish it to apply the changes.",
+  "translation_process_saved": "Your translation is ready. Publish it to apply the changes.",
   "progressing.hasPayed": "Translation credits have been added. You can now resume your translation.",
   "translation_process_init": "Initializing translation task...",
   "progressing.noTranslate": "There are no ongoing translation tasks.",
@@ -751,5 +750,6 @@
   "devplanCard1.title": "Ondersteunt productafbeeldingvertaling",
   "devplanCard2.title": "Geoptimaliseerde editor directory",
   "devplanCard3.title": "30% snellere vertaalsnelheid",
-  "devplanCard4.title": "Switcher met onzichtbare modus onder IP-gebaseerde geolocatie"
+  "devplanCard4.title": "Switcher met onzichtbare modus onder IP-gebaseerde geolocatie",
+  "The source text is empty and cannot be translated": "De brontekst is leeg en kan niet worden vertaald"
 }

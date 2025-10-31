@@ -1,14 +1,6 @@
-import { UploadOutlined } from "@ant-design/icons";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  json,
-  useFetcher,
-  useLoaderData,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-} from "@remix-run/react";
-import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
+import { json, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import { SaveBar } from "@shopify/app-bridge-react";
 import { Page, Pagination, Select } from "@shopify/polaris";
 import {
   Button,
@@ -18,9 +10,7 @@ import {
   Space,
   Spin,
   Image,
-  theme,
   Typography,
-  Upload,
   Divider,
   Table,
   Input,
@@ -33,12 +23,15 @@ import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { authenticate } from "~/shopify.server";
 import {
-  DeleteProductImageData,
   GetProductImageData,
+  SingleTextTranslate,
   UpdateProductImageAltData,
 } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import useReport from "scripts/eventReport";
+import styles from "./styles.module.css";
+import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -489,6 +482,7 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { reportClick } = useReport();
   const languageTableData = useSelector(
     (state: any) => state.languageTableData.rows,
   );
@@ -496,6 +490,7 @@ const Index = () => {
   const { server, searchTerm } = useLoaderData<typeof loader>();
 
   const isManualChangeRef = useRef(false);
+  const loadingItemsRef = useRef<string[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState<boolean>(false);
@@ -542,6 +537,10 @@ const Index = () => {
     searchTerm || "",
   );
   const [selectedItem, setSelectedItem] = useState<string>("productImageAlt");
+  const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [languageOptions, setLanguageOptions] = useState<
     { label: string; value: string }[]
   >([]);
@@ -568,7 +567,7 @@ const Index = () => {
     }
     fetcher.submit(
       {
-        log: `${globalStore?.shop} 目前在翻译管理-产品图片描述页面`,
+        log: `${globalStore?.shop} 目前在翻译管理-产品图片Alt图片描述页面`,
       },
       {
         method: "POST",
@@ -640,6 +639,11 @@ const Index = () => {
     }
   }, [languageFetcher.data]);
 
+  // 更新 loadingItemsRef 的值
+  useEffect(() => {
+    loadingItemsRef.current = loadingItems;
+  }, [loadingItems]);
+
   useEffect(() => {
     if (selectedKey && dataResource.length > 0) {
       const data =
@@ -675,6 +679,8 @@ const Index = () => {
         }
       }
       getTargetData();
+      setConfirmData([]);
+      setSuccessTranslatedKey([]);
       setIsLoading(false);
     }
   }, [selectedKey, dataResource, selectedLanguage]);
@@ -738,35 +744,49 @@ const Index = () => {
       render: (_: any, record: any) => {
         return (
           <Input
+            className={
+              successTranslatedKey?.includes(record?.key)
+                ? styles.success_input
+                : ""
+            }
             value={
               confirmData.find((item: any) => item.key === record?.imageId)
-                ?.value || record.targetAltText
+                ? confirmData.find((item: any) => item.key === record?.imageId)
+                    ?.value
+                : record?.targetAltText
             }
-            onChange={(e) =>
-              handleInputChange(
-                record?.imageId,
-                record?.productId,
-                record?.imageUrl,
-                record?.altText,
-                e.target.value,
-              )
-            }
+            onChange={(e) => handleInputChange(record, e.target.value)}
           />
+        );
+      },
+    },
+    {
+      title: t("Translate"),
+      width: "10%",
+      render: (_: any, record: any) => {
+        return (
+          <Button
+            onClick={() => {
+              handleTranslate(
+                "PRODUCT_OPTION_VALUE",
+                record,
+                handleInputChange,
+              );
+              reportClick("editor_list_translate");
+            }}
+            loading={loadingItems.includes(record?.key || "")}
+          >
+            {t("Translate")}
+          </Button>
         );
       },
     },
   ];
 
-  const handleInputChange = (
-    key: string,
-    productId: string,
-    imageUrl: string,
-    altText: string,
-    value: string,
-  ) => {
+  const handleInputChange = (record: any, value: string) => {
     setConfirmData((prevData: any) => {
       const existingItemIndex = prevData.findIndex(
-        (item: any) => item.key === key,
+        (item: any) => item.key === record?.imageId,
       );
       if (existingItemIndex !== -1) {
         const updatedConfirmData = [...prevData];
@@ -776,15 +796,79 @@ const Index = () => {
         };
         return updatedConfirmData;
       } else {
-        return [...prevData, { key, productId, imageUrl, altText, value }];
+        return [
+          ...prevData,
+          {
+            key: record?.imageId,
+            productId: record?.productId,
+            imageUrl: record?.imageUrl,
+            altText: record?.altText,
+            value,
+          },
+        ];
       }
     });
+  };
+
+  const handleTranslate = async (
+    resourceType: string,
+    record: any,
+    handleInputChange: (record: any, value: string) => void,
+  ) => {
+    if (!record?.key || !record?.altText) {
+      shopify.toast.show(
+        t("The source text is empty and cannot be translated"),
+      );
+      return;
+    }
+    fetcher.submit(
+      {
+        log: `${globalStore?.shop} 从翻译管理-产品图片Alt页面点击单行翻译`,
+      },
+      {
+        method: "POST",
+        action: "/log",
+      },
+    );
+
+    setLoadingItems((prev) => [...prev, record?.key]);
+
+    const data = await SingleTextTranslate({
+      shopName: globalStore?.shop || "",
+      source: globalStore?.source || "",
+      target: searchTerm || "",
+      resourceType: resourceType,
+      context: record?.altText,
+      key: record?.key,
+      type: "SINGLE_LINE_TEXT_FIELD",
+      server: globalStore?.server || "",
+    });
+    if (data?.success) {
+      if (loadingItemsRef.current.includes(record?.key)) {
+        handleInputChange(record, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, record?.key]);
+        shopify.toast.show(t("Translated successfully"));
+        fetcher.submit(
+          {
+            log: `${globalStore?.shop} 从翻译管理-产品图片Alt页面点击单行翻译返回结果 ${data?.response}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
+      }
+    } else {
+      shopify.toast.show(data.errorMsg);
+    }
+    setLoadingItems((prev) => prev.filter((item) => item !== record?.key));
   };
 
   const handleMenuChange = (key: string) => {
     if (confirmData.length > 0) {
       shopify.saveBar.leaveConfirmation();
     } else {
+      shopify.saveBar.hide("save-bar");
       setSelectedKey(key);
     }
   };
@@ -924,14 +1008,14 @@ const Index = () => {
         productAltTextData.map((item: any) => {
           return {
             ...item,
-            targetAltText:
-              confirmData.find(
-                (confirmItem: any) => item.key === confirmItem.key,
-              )?.value || item.targetAltText,
+            targetAltText: confirmData.find(
+              (confirmItem: any) => item.key === confirmItem.key,
+            )?.value,
           };
         }),
       );
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
       shopify.saveBar.hide("save-bar");
       setSaveLoading(false);
     }
@@ -939,6 +1023,7 @@ const Index = () => {
 
   const handleDiscard = () => {
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
     shopify.saveBar.hide("save-bar");
   };
 
@@ -957,22 +1042,6 @@ const Index = () => {
     <Page
       title={t("Product image alt text")}
       fullWidth={true}
-      // primaryAction={{
-      //   content: t("Save"),
-      //   loading: confirmFetcher.state === "submitting",
-      //   disabled:
-      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //   onAction: handleConfirm,
-      // }}
-      // secondaryActions={[
-      //   {
-      //     content: t("Cancel"),
-      //     loading: confirmFetcher.state === "submitting",
-      //     disabled:
-      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //     onAction: handleDiscard,
-      //   },
-      // ]}
       backAction={{
         onAction: onCancel,
       }}
@@ -1026,33 +1095,32 @@ const Index = () => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Menu
-                    mode="inline"
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      backgroundColor: "var(--p-color-bg)",
-                    }}
+                  <SideMenu
                     items={menuData}
-                    selectedKeys={[selectedKey]}
-                    onClick={(e: any) => handleMenuChange(e.key)}
+                    selectedKeys={selectedKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={productsHasPreviousPage}
-                      onPrevious={handleProductPrevious}
-                      hasNext={productsHasNextPage}
-                      onNext={handleProductNext}
-                    />
+                    {(productsHasPreviousPage || productsHasNextPage) && (
+                      <Pagination
+                        hasPrevious={productsHasPreviousPage}
+                        onPrevious={handleProductPrevious}
+                        hasNext={productsHasNextPage}
+                        onNext={handleProductNext}
+                      />
+                    )}
                   </div>
                 </div>
               </Sider>
             )}
             <Content
               style={{
-                padding: "0 24px",
-                height: "calc(100vh - 112px)", // 64px为FullscreenBar高度
+                paddingLeft: isMobile ? "16px" : "24px",
+                height: "calc(100% - 25px)",
+                minHeight: "70vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "auto",
               }}
             >
               {isMobile ? (
@@ -1115,71 +1183,120 @@ const Index = () => {
                   </div>
                   <Card title={t("Resource")}>
                     <Space direction="vertical" style={{ width: "100%" }}>
-                      {productAltTextData.map((item: any, index: number) => {
-                        return (
-                          <Space
-                            key={index}
-                            direction="vertical"
-                            size="small"
-                            style={{ width: "100%" }}
-                          >
-                            <Text
-                              strong
-                              style={{
-                                fontSize: "16px",
-                              }}
+                      {productAltTextData.map(
+                        (productAltTextItem: any, index: number) => {
+                          return (
+                            <Space
+                              key={index}
+                              direction="vertical"
+                              size="small"
+                              style={{ width: "100%" }}
                             >
-                              {item.productTitle}
-                            </Text>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
-                              }}
-                            >
-                              <Text>{t("Default Language")}</Text>
-                              <Input disabled value={item.altText} />
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "8px",
-                              }}
-                            >
-                              <Text>{t("Translated")}</Text>
-                              <Input value={item.targetAltText} />
-                            </div>
-                            <Divider
-                              style={{
-                                margin: "8px 0",
-                              }}
-                            />
-                          </Space>
-                        );
-                      })}
+                              <Text
+                                strong
+                                style={{
+                                  fontSize: "16px",
+                                }}
+                              >
+                                {productAltTextItem.productTitle}
+                              </Text>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
+                                <Text>{t("Default Language")}</Text>
+                                <Input
+                                  disabled
+                                  value={productAltTextItem.altText}
+                                />
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "8px",
+                                }}
+                              >
+                                <Text>{t("Translated")}</Text>
+                                <Input
+                                  className={
+                                    successTranslatedKey?.includes(
+                                      productAltTextItem?.imageId,
+                                    )
+                                      ? styles.success_input
+                                      : ""
+                                  }
+                                  value={
+                                    confirmData.find(
+                                      (confirmItem: any) =>
+                                        confirmItem.key ===
+                                        productAltTextItem?.imageId,
+                                    )
+                                      ? confirmData.find(
+                                          (confirmItem: any) =>
+                                            confirmItem.key ===
+                                            productAltTextItem?.imageId,
+                                        )?.value
+                                      : productAltTextItem.targetAltText
+                                  }
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      productAltTextItem,
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "flex-end",
+                                }}
+                              >
+                                <Button
+                                  onClick={() => {
+                                    handleTranslate(
+                                      "PRODUCT_OPTION_VALUE",
+                                      productAltTextItem,
+                                      handleInputChange,
+                                    );
+                                    reportClick("editor_list_translate");
+                                  }}
+                                  loading={loadingItems.includes(
+                                    productAltTextItem?.key || "",
+                                  )}
+                                >
+                                  {t("Translate")}
+                                </Button>
+                              </div>
+                              <Divider
+                                style={{
+                                  margin: "8px 0",
+                                }}
+                              />
+                            </Space>
+                          );
+                        },
+                      )}
                     </Space>
                   </Card>
-                  <Menu
-                    mode="inline"
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      marginBottom: "10px",
-                    }}
+                  <SideMenu
                     items={menuData}
-                    selectedKeys={[selectedKey]}
-                    onClick={(e: any) => handleMenuChange(e.key)}
+                    selectedKeys={selectedKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={productsHasPreviousPage}
-                      onPrevious={handleProductPrevious}
-                      hasNext={productsHasNextPage}
-                      onNext={handleProductNext}
-                    />
+                    {(productsHasPreviousPage || productsHasNextPage) && (
+                      <Pagination
+                        hasPrevious={productsHasPreviousPage}
+                        onPrevious={handleProductPrevious}
+                        hasNext={productsHasNextPage}
+                        onNext={handleProductNext}
+                      />
+                    )}
                   </div>
                 </Space>
               ) : (
@@ -1251,12 +1368,14 @@ const Index = () => {
                     loading={tableDataLoading}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={imageHasPreviousPage}
-                      onPrevious={handleImagePrevious}
-                      hasNext={imageHasNextPage}
-                      onNext={handleImageNext}
-                    />
+                    {(imageHasPreviousPage || imageHasNextPage) && (
+                      <Pagination
+                        hasPrevious={imageHasPreviousPage}
+                        onPrevious={handleImagePrevious}
+                        hasNext={imageHasNextPage}
+                        onNext={handleImageNext}
+                      />
+                    )}
                   </div>
                 </Space>
               )}

@@ -115,6 +115,7 @@
   "Manage Translation": "Manage Translation",
   "Products": "Products",
   "Online Store": "Online Store",
+  "Online Store Theme": "Online Store Theme",
   "Settings": "Settings",
   "Collections": "Collections",
   "Collection": "Collections",
@@ -128,7 +129,6 @@
   "Email": "Email",
   "Policies": "Policies",
   "Shop": "Shop",
-  "Metafield": "Metafield",
   "Theme": "Theme",
   "Delivery": "Delivery",
   "Shipping": "Shipping",
@@ -201,7 +201,7 @@
   "translation_process_translating":"Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace":"Translating {{item}} Module: ",
   "translation_process_saving_shopify":"Applying translations to {{item}} module…",
-  "progressing.finished":"Your translation is ready. Publish it to apply the changes.",
+  "translation_process_saved":"Your translation is ready. Publish it to apply the changes.",
   "progressing.buyCredits":"Buy credits",
   "progressing.review":"Review Translation",
   "progressing.publish":"Publish",
@@ -750,5 +750,6 @@
   "Average conversion rate over 7 days":"Average conversion rate over 7 days",
   "5 Days Free Trial":"5 Days Free Trial",
   "{{count}} languages in progress — ": "{{count}} languages in progress — ",
-  "see all tasks": "see all tasks"
+  "see all tasks": "see all tasks",
+  "The source text is empty and cannot be translated": "The source text is empty and cannot be translated"
 }

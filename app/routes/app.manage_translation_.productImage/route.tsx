@@ -751,6 +751,8 @@ const Index = () => {
           productId: selectedKey,
           languageCode: selectedLanguage,
         });
+        console.log("targetData: ",targetData);
+        
         if (targetData?.success && targetData?.response?.length > 0) {
           setProductImageData(
             data.map((item: any) => {
@@ -1166,7 +1168,7 @@ const Index = () => {
         style={{
           overflow: "auto",
           backgroundColor: "var(--p-color-bg)",
-          height: "calc(100vh - 104px)",
+          height: "calc(100vh - 154px)",
         }}
       >
         {isLoading ? (
@@ -1219,12 +1221,14 @@ const Index = () => {
                     onClick={(e: any) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={productsHasPreviousPage}
-                      onPrevious={handleProductPrevious}
-                      hasNext={productsHasNextPage}
-                      onNext={handleProductNext}
-                    />
+                    {(productsHasPreviousPage || productsHasNextPage) && (
+                      <Pagination
+                        hasPrevious={productsHasPreviousPage}
+                        onPrevious={handleProductPrevious}
+                        hasNext={productsHasNextPage}
+                        onNext={handleProductNext}
+                      />
+                    )}
                   </div>
                 </div>
               </Sider>
@@ -1232,6 +1236,11 @@ const Index = () => {
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
+                height: "calc(100% - 25px)",
+                minHeight: "70vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "auto",
               }}
             >
               {isMobile ? (
@@ -1474,12 +1483,14 @@ const Index = () => {
                     onClick={(e: any) => handleMenuChange(e.key)}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={productsHasPreviousPage}
-                      onPrevious={handleProductPrevious}
-                      hasNext={productsHasNextPage}
-                      onNext={handleProductNext}
-                    />
+                    {(productsHasPreviousPage || productsHasNextPage) && (
+                      <Pagination
+                        hasPrevious={productsHasPreviousPage}
+                        onPrevious={handleProductPrevious}
+                        hasNext={productsHasNextPage}
+                        onNext={handleProductNext}
+                      />
+                    )}
                   </div>
                 </Space>
               ) : (
@@ -1508,12 +1519,15 @@ const Index = () => {
                     pagination={false}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={productImageData[0]?.imageHasPreviousPage}
-                      onPrevious={handleImagePrevious}
-                      hasNext={productImageData[0]?.imageHasNextPage}
-                      onNext={handleImageNext}
-                    />
+                    {(productImageData[0]?.imageHasPreviousPage ||
+                      productImageData[0]?.imageHasNextPage) && (
+                      <Pagination
+                        hasPrevious={productImageData[0]?.imageHasPreviousPage}
+                        onPrevious={handleImagePrevious}
+                        hasNext={productImageData[0]?.imageHasNextPage}
+                        onNext={handleImageNext}
+                      />
+                    )}
                   </div>
                 </Space>
               )}

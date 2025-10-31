@@ -20,7 +20,9 @@ import store from "~/store";
 import { UseSelector } from "react-redux";
 import { RootState } from "~/store";
 import { globalStore } from "~/globalStore";
+
 const { Text, Title } = Typography;
+
 const AnalyticsCard = ({ isLoading }: any) => {
   const { reportClick } = useReport();
   const navigate = useNavigate(); // 统一使用小写 navigate（React Router 规范）
@@ -37,7 +39,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
     "read_customer_events",
     "write_pixels",
   ]);
-  const { plan, isNew } = useSelector((state: any) => state.userConfig);
+  const { plan } = useSelector((state: any) => state.userConfig);
   const Schedule = [
     "Free Plan",
     "Free Plan",
@@ -46,10 +48,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
     "Pro Plan",
     "Premium Plan",
   ];
-  const getPlanName = (planId: number, isNew: boolean) => {
-    if (isNew && planId >= 1 && planId <= 3) {
-      return t("5 Days Free Trial");
-    }
+  const getPlanName = (planId: number) => {
     return Schedule[planId - 1];
   };
   const translationScoreFetcher = useFetcher<any>();
@@ -193,6 +192,9 @@ const AnalyticsCard = ({ isLoading }: any) => {
   };
 
   const handleConfigScopes = async () => {
+    console.log(showRequireScopeBtn);
+    console.log(configCreateWebPixel);
+    
     setNavigateToRateState(true);
     try {
       if (!showRequireScopeBtn) {
@@ -213,33 +215,63 @@ const AnalyticsCard = ({ isLoading }: any) => {
     reportClick("dashboard_conversion_detail");
   };
 
-  // 组件加载时自动查询 Web Pixel
   useEffect(() => {
     try {
-      const translateReportData = localStorage.getItem(
-        "translate_report_score",
-      ) as any;
-      const localUnTranslateWords = localStorage.getItem(
-        "local_untranslate_words",
-      ) as any;
-      const localConversionRate = localStorage.getItem(
-        "local_conversion_rate",
-      ) as any;
-      if (queryWebPixelFetcher.state === "idle" && !queryWebPixelFetcher.data) {
-        if (showRequireScopeBtn) {
-          queryWebPixel();
+      // ---- 辅助安全解析函数 ----
+      const safeParse = (value: string | null) => {
+        if (!value || value === "undefined" || value === "null") return null;
+        try {
+          return JSON.parse(value);
+        } catch {
+          return null;
+        }
+      };
+      const localShop = safeParse(localStorage.getItem("shop_origin"));
+      // ---- 处理 shop 逻辑 ----
+      if (globalStore?.shop) {
+        if (!localShop) {
+          // 首次写入
+          localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
+        } else if (
+          JSON.stringify(localShop) !== JSON.stringify(globalStore.shop)
+        ) {
+          // 如果不同 -> 更新并清除 rate
+          console.log("检测到 shop 变化：清除 浏览器缓存数据");
+          localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
+          localStorage.removeItem("local_conversion_rate");
+          localStorage.removeItem("translate_report_score");
+          localStorage.removeItem("reportData");
         }
       }
-      if (localUnTranslateWords) {
-        setLocalUnTranslateWords(JSON.parse(localUnTranslateWords));
+
+      // ---- 获取本地数据 ----
+      const translateReportData = safeParse(
+        localStorage.getItem("translate_report_score"),
+      );
+      const localUnTranslateWords = safeParse(
+        localStorage.getItem("local_untranslate_words"),
+      );
+      const localConversionRate = safeParse(
+        localStorage.getItem("local_conversion_rate"),
+      );
+
+      // ---- 初始化 Web Pixel ----
+      if (
+        queryWebPixelFetcher.state === "idle" &&
+        !queryWebPixelFetcher.data &&
+        showRequireScopeBtn
+      ) {
+        queryWebPixel();
       }
-      if (localConversionRate && localConversionRate !== "undefined") {
-        setLocalConversionRate(JSON.parse(localConversionRate));
-      }
+      
+      // ---- 设置本地状态 ----
+      if (localUnTranslateWords)
+        setLocalUnTranslateWords(localUnTranslateWords);
+      if (localConversionRate) setLocalConversionRate(localConversionRate);
       if (translateReportData) {
-        setTranslateData(JSON.parse(translateReportData));
+        setTranslateData(translateReportData);
       } else {
-        // 初始化获取翻译质量的分数
+        // 初始化翻译分数请求
         const formData = new FormData();
         formData.append("translationScore", JSON.stringify({}));
         translationScoreFetcher.submit(formData, {
@@ -247,33 +279,8 @@ const AnalyticsCard = ({ isLoading }: any) => {
           action: "/app/translate_report",
         });
       }
-      const rawShop = localStorage.getItem("shop_origin");
-      if (rawShop === "undefined") {
-        localStorage.removeItem("shop_origin");
-      }
-      const localShop =
-        rawShop && rawShop !== "undefined" ? JSON.parse(rawShop) : null;
-
-      if (localShop === null) {
-        // 处理 shop 相关逻辑
-        localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
-      }
     } catch (error) {
-      console.error("localConversionRate JSON 解析失败", error);
-    }
-  }, []);
-  useEffect(() => {
-    try {
-      const localShop = JSON.parse(
-        localStorage.getItem("shop_origin") || "null",
-      );
-      if (localShop !== globalStore.shop) {
-        // 处理 shop 相关逻辑
-        localStorage.setItem("shop_origin", JSON.stringify(globalStore.shop));
-        localStorage.removeItem("local_conversion_rate");
-      }
-    } catch (error) {
-      console.log(error);
+      console.error("useEffect 错误：", error);
     }
   }, [globalStore.shop]);
   useEffect(() => {
@@ -346,6 +353,8 @@ const AnalyticsCard = ({ isLoading }: any) => {
   // 监听 graphqlFetcher.data（创建响应），如果需要处理错误或其他逻辑
   useEffect(() => {
     if (graphqlFetcher.data) {
+      console.log(graphqlFetcher.data);
+      
       if (graphqlFetcher.data?.success) {
         // 可在此处理创建成功逻辑，如 toast
         // shopify.toast.show("Web Pixel 激活成功");
@@ -417,7 +426,7 @@ const AnalyticsCard = ({ isLoading }: any) => {
             onClick={() => navigate("/app/pricing")}
             style={{ fontSize: "14px", color: "#007F61", cursor: "pointer" }}
           >
-            {plan ? getPlanName(plan.id, isNew) : ""}
+            {plan ? getPlanName(plan.id) : ""}
           </Text>
         )}
       </Flex>

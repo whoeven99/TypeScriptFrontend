@@ -39,6 +39,7 @@ import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 
@@ -191,6 +192,9 @@ const Index = () => {
   const [selectEmailKey, setSelectEmailKey] = useState<any>("");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -263,6 +267,7 @@ const Index = () => {
       });
       setEmailData(data);
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
       setTranslatedValues({});
       setLoadingItems([]);
     }
@@ -340,6 +345,7 @@ const Index = () => {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [confirmFetcher.data]);
 
@@ -399,6 +405,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
@@ -565,6 +572,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, key]);
         shopify.toast.show(t("Translated successfully"));
       }
     } else {
@@ -674,6 +682,7 @@ const Index = () => {
     });
     setEmailData(data);
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
   };
 
   // const handleLeaveItem = (
@@ -756,7 +765,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={confirmFetcher.state === "submitting" && ""}
+          loading={confirmFetcher.state === "submitting" ? "true" : undefined}
         >
           {t("Save")}
         </button>
@@ -801,28 +810,21 @@ const Index = () => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[emailsData.nodes[0]?.resourceId]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      backgroundColor: "var(--p-color-bg)",
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={emailsData.nodes[0]?.resourceId}
                     items={menuData}
-                    selectedKeys={[selectEmailKey]}
-                    onClick={(e: any) => {
-                      handleMenuChange(e.key);
-                    }}
+                    selectedKeys={selectEmailKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={hasPrevious}
-                      onPrevious={onPrevious}
-                      hasNext={hasNext}
-                      onNext={onNext}
-                    />
+                    {(hasNext || hasPrevious) && (
+                      <Pagination
+                        hasPrevious={hasPrevious}
+                        onPrevious={onPrevious}
+                        hasNext={hasNext}
+                        onNext={onNext}
+                      />
+                    )}
                   </div>
                 </div>
               </Sider>
@@ -830,6 +832,11 @@ const Index = () => {
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
+                height: "calc(100% - 25px)",
+                minHeight: "70vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "auto",
               }}
             >
               {isMobile ? (
@@ -928,6 +935,9 @@ const Index = () => {
                             >
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleInputChange}
@@ -965,25 +975,21 @@ const Index = () => {
                       })}
                     </Space>
                   </Card>
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[emailsData.nodes[0]?.resourceId]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={emailsData.nodes[0]?.resourceId}
                     items={menuData}
-                    selectedKeys={[selectEmailKey]}
-                    onClick={(e) => handleMenuChange(e.key)}
+                    selectedKeys={selectEmailKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={hasPrevious}
-                      onPrevious={onPrevious}
-                      hasNext={hasNext}
-                      onNext={onNext}
-                    />
+                    {(hasNext || hasPrevious) && (
+                      <Pagination
+                        hasPrevious={hasPrevious}
+                        onPrevious={onPrevious}
+                        hasNext={hasNext}
+                        onNext={onNext}
+                      />
+                    )}
                   </div>
                 </Space>
               ) : (

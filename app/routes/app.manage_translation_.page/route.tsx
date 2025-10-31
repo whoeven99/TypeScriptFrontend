@@ -40,6 +40,7 @@ import { setLocale } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 
@@ -211,6 +212,9 @@ const Index = () => {
   const [selectPageKey, setSelectPageKey] = useState<string>("");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
+  const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
+    [],
+  );
   const [translatedValues, setTranslatedValues] = useState<{
     [key: string]: string;
   }>({});
@@ -292,6 +296,7 @@ const Index = () => {
       });
       setPageData(data);
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
       setTranslatedValues({});
       setLoadingItems([]);
     }
@@ -403,6 +408,7 @@ const Index = () => {
         shopify.toast.show(t("Some items saved failed"));
       }
       setConfirmData([]);
+      setSuccessTranslatedKey([]);
     }
   }, [confirmFetcher.data]);
 
@@ -450,7 +456,12 @@ const Index = () => {
       key: "default_language",
       width: "40%",
       render: (_: any, record: TableDataType) => {
-        return <ManageTableInput record={record} />;
+        return (
+          <ManageTableInput
+            record={record}
+            isHtml={record?.key == "body_html"}
+          />
+        );
       },
     },
     {
@@ -462,6 +473,8 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isHtml={record?.key == "body_html"}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
@@ -518,6 +531,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
+            isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
             handleInputChange={handleInputChange}
@@ -590,21 +604,6 @@ const Index = () => {
             ?.translatableContent.find((item: any) => item.key === key)?.digest,
           target: searchTerm || "",
         };
-        // const newItem = {
-        //   resourceId: pagesData.nodes.find(
-        //     (item: any) => item?.resourceId === selectPageKey,
-        //   )?.resourceId,
-        //   locale: pagesData.nodes
-        //     .find((item: any) => item?.resourceId === selectPageKey)
-        //     ?.translatableContent.find((item: any) => item.key === key)?.locale,
-        //   key: key,
-        //   value: value, // 初始为空字符串
-        //   translatableContentDigest: pagesData.nodes
-        //     .find((item: any) => item?.resourceId === selectPageKey)
-        //     ?.translatableContent.find((item: any) => item.key === key)?.digest,
-        //   target: searchTerm || "",
-        // };
-
         return [...prevData, newItem]; // 将新数据添加到 confirmData 中
       }
     });
@@ -738,6 +737,7 @@ const Index = () => {
     if (data?.success) {
       if (loadingItemsRef.current.includes(key)) {
         handleInputChange(key, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, key]);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
@@ -865,48 +865,8 @@ const Index = () => {
     });
     setPageData(data);
     setConfirmData([]);
+    setSuccessTranslatedKey([]);
   };
-
-  // const handleLeaveItem = (
-  //   key: string | boolean | { language: string } | { item: string },
-  // ) => {
-  //   setIsVisible(false);
-  //   if (typeof key === "string" && key !== "previous" && key !== "next") {
-  //     setSelectPageKey(key);
-  //   } else if (key === "previous") {
-  //     // 向前翻页
-  //     const formData = new FormData();
-  //     const startCursor = pagesData.pageInfo.startCursor;
-  //     formData.append("startCursor", JSON.stringify(startCursor));
-  //     submit(formData, {
-  //       method: "post",
-  //       action: `/app/manage_translation/page?language=${searchTerm}`,
-  //     });
-  //   } else if (key === "next") {
-  //     // 向后翻页
-  //     const formData = new FormData();
-  //     const endCursor = pagesData.pageInfo.endCursor;
-  //     formData.append("endCursor", JSON.stringify(endCursor));
-  //     submit(formData, {
-  //       method: "post",
-  //       action: `/app/manage_translation/page?language=${searchTerm}`,
-  //     });
-  //   } else if (typeof key === "object" && "language" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedLanguage(key.language);
-  //     navigate(`/app/manage_translation/page?language=${key.language}`);
-  //   } else if (typeof key === "object" && "item" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedItem(key.item);
-  //     navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
-  //   } else {
-  //     navigate(`/app/manage_translation?language=${searchTerm}`, {
-  //       state: { key: searchTerm },
-  //     }); // 跳转到 /app/manage_translation
-  //   }
-  // };
 
   const onCancel = () => {
     if (confirmData.length > 0) {
@@ -923,22 +883,6 @@ const Index = () => {
     <Page
       title={t("Pages")}
       fullWidth={true}
-      // primaryAction={{
-      //   content: t("Save"),
-      //   loading: confirmFetcher.state === "submitting",
-      //   disabled:
-      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //   onAction: handleConfirm,
-      // }}
-      // secondaryActions={[
-      //   {
-      //     content: t("Cancel"),
-      //     loading: confirmFetcher.state === "submitting",
-      //     disabled:
-      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //     onAction: handleDiscard,
-      //   },
-      // ]}
       backAction={{
         onAction: onCancel,
       }}
@@ -947,7 +891,7 @@ const Index = () => {
         <button
           variant="primary"
           onClick={handleConfirm}
-          loading={confirmFetcher.state === "submitting" && ""}
+          loading={confirmFetcher.state === "submitting" ? "true" : undefined}
         >
           {t("Save")}
         </button>
@@ -992,28 +936,21 @@ const Index = () => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[pagesData.nodes[0]?.resourceId]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      backgroundColor: "var(--p-color-bg)",
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={pagesData.nodes[0]?.resourceId}
                     items={menuData}
-                    selectedKeys={[selectPageKey]}
-                    onClick={(e: any) => {
-                      handleMenuChange(e.key);
-                    }}
+                    selectedKeys={selectPageKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={hasPrevious}
-                      onPrevious={onPrevious}
-                      hasNext={hasNext}
-                      onNext={onNext}
-                    />
+                    {(hasNext || hasPrevious) && (
+                      <Pagination
+                        hasPrevious={hasPrevious}
+                        onPrevious={onPrevious}
+                        hasNext={hasNext}
+                        onNext={onNext}
+                      />
+                    )}
                   </div>
                 </div>
               </Sider>
@@ -1021,6 +958,11 @@ const Index = () => {
             <Content
               style={{
                 paddingLeft: isMobile ? "16px" : "24px",
+                height: "calc(100% - 25px)",
+                minHeight: "70vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "auto",
               }}
             >
               {isMobile ? (
@@ -1118,6 +1060,9 @@ const Index = () => {
                             >
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleInputChange}
@@ -1192,6 +1137,9 @@ const Index = () => {
                             >
                               <Text>{t("Translated")}</Text>
                               <ManageTableInput
+                                isSuccess={successTranslatedKey?.includes(
+                                  item?.key as string,
+                                )}
                                 translatedValues={translatedValues}
                                 setTranslatedValues={setTranslatedValues}
                                 handleInputChange={handleInputChange}
@@ -1229,25 +1177,21 @@ const Index = () => {
                       })}
                     </Space>
                   </Card>
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[pagesData.nodes[0]?.resourceId]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={pagesData.nodes[0]?.resourceId}
                     items={menuData}
-                    selectedKeys={[selectPageKey]}
-                    onClick={(e) => handleMenuChange(e.key)}
+                    selectedKeys={selectPageKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Pagination
-                      hasPrevious={hasPrevious}
-                      onPrevious={onPrevious}
-                      hasNext={hasNext}
-                      onNext={onNext}
-                    />
+                    {(hasNext || hasPrevious) && (
+                      <Pagination
+                        hasPrevious={hasPrevious}
+                        onPrevious={onPrevious}
+                        hasNext={hasNext}
+                        onNext={onNext}
+                      />
+                    )}
                   </div>
                 </Space>
               ) : (
