@@ -1,5 +1,5 @@
 import { Input } from "antd";
-import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Editor, useEditor } from "@tiptap/react";
 import TextAlign from "@tiptap/extension-text-align";
@@ -43,6 +43,8 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   isRtl,
   index,
 }) => {
+  const editorRef = useRef<Editor | null>(null);
+
   const defaultValue = useMemo(() => {
     return record?.default_language || "";
   }, [record?.default_language]);
