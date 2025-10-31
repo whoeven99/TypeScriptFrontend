@@ -31,6 +31,7 @@ import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import useReport from "scripts/eventReport";
 import styles from "./styles.module.css";
+import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -1093,17 +1094,10 @@ const Index = () => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Menu
-                    mode="inline"
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      backgroundColor: "var(--p-color-bg)",
-                    }}
+                  <SideMenu
                     items={menuData}
-                    selectedKeys={[selectedKey]}
-                    onClick={(e: any) => handleMenuChange(e.key)}
+                    selectedKeys={selectedKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     {(productsHasPreviousPage || productsHasNextPage) && (
@@ -1288,17 +1282,10 @@ const Index = () => {
                       )}
                     </Space>
                   </Card>
-                  <Menu
-                    mode="inline"
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      marginBottom: "10px",
-                    }}
+                  <SideMenu
                     items={menuData}
-                    selectedKeys={[selectedKey]}
-                    onClick={(e: any) => handleMenuChange(e.key)}
+                    selectedKeys={selectedKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     {(productsHasPreviousPage || productsHasNextPage) && (

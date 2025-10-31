@@ -33,6 +33,7 @@ import useReport from "scripts/eventReport";
 import { globalStore } from "~/globalStore";
 import { SearchOutlined } from "@ant-design/icons";
 import { getItemOptions } from "../app.manage_translation/route";
+import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 
@@ -526,8 +527,6 @@ const Index = () => {
         (item: any) => item.success === true,
       );
       successfulItem.forEach((item: any) => {
-        console.log(successfulItem);
-
         // const index = articlesData.nodes.findIndex(
         //   (option: any) => option.resourceId === item.data.resourceId,
         // );
@@ -586,7 +585,7 @@ const Index = () => {
       }
     }
   }, [languageFetcher.data]);
-  
+
   useEffect(() => {
     if (productFetcher.data) {
       if (productFetcher.data.success) {
@@ -1853,18 +1852,11 @@ const Index = () => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[productsData[0]?.id]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      backgroundColor: "var(--p-color-bg)",
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={productsData[0]?.id}
                     items={menuData}
-                    selectedKeys={[selectProductKey]}
-                    onClick={(e: any) => handleMenuChange(e.key)}
+                    selectedKeys={selectProductKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     {(hasNext || hasPrevious) && (
@@ -2320,17 +2312,11 @@ const Index = () => {
                         </Space>
                       </Card>
                     )}
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[productsData[0]?.id]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={productsData[0]?.id}
                     items={menuData}
-                    selectedKeys={[selectProductKey]}
-                    onClick={(e) => handleMenuChange(e.key)}
+                    selectedKeys={selectProductKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     {(hasNext || hasPrevious) && (

@@ -40,6 +40,7 @@ import { setLocale } from "~/store/modules/userConfig";
 import { setTableData } from "~/store/modules/languageTableData";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 const { Text, Title } = Typography;
@@ -830,18 +831,11 @@ const Index = () => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[blogsData.nodes[0]?.resourceId]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                      backgroundColor: "var(--p-color-bg)",
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={blogsData.nodes[0]?.resourceId}
                     items={menuData}
-                    selectedKeys={[selectBlogKey]}
-                    onClick={(e) => handleMenuChange(e.key)}
+                    selectedKeys={selectBlogKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     {(hasNext || hasPrevious) && (
@@ -1002,17 +996,11 @@ const Index = () => {
                       })}
                     </Space>
                   </Card>
-                  <Menu
-                    mode="inline"
-                    defaultSelectedKeys={[blogsData.nodes[0]?.resourceId]}
-                    style={{
-                      flex: 1,
-                      overflowY: "auto",
-                      minHeight: 0,
-                    }}
+                  <SideMenu
+                    defaultSelectedKeys={blogsData.nodes[0]?.resourceId}
                     items={menuData}
-                    selectedKeys={[selectBlogKey]}
-                    onClick={(e) => handleMenuChange(e.key)}
+                    selectedKeys={selectBlogKey}
+                    onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
                     {(hasNext || hasPrevious) && (

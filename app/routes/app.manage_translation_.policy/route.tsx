@@ -38,6 +38,7 @@ import { setLocale } from "~/store/modules/userConfig";
 import { ShopLocalesType } from "../app.language/route";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
+import SideMenu from "~/components/sideMenu/sideMenu";
 
 const { Sider, Content } = Layout;
 
@@ -619,17 +620,10 @@ const Index = () => {
                   backgroundColor: "var(--p-color-bg)",
                 }}
               >
-                <Menu
-                  mode="inline"
-                  style={{
-                    height: "100%",
-                    backgroundColor: "var(--p-color-bg)",
-                  }}
+                <SideMenu
                   items={menuData}
-                  selectedKeys={[selectPolicyKey]}
-                  onClick={(e: any) => {
-                    handleMenuChange(e.key);
-                  }}
+                  selectedKeys={selectPolicyKey}
+                  onClick={handleMenuChange}
                 />
               </Sider>
             )}
@@ -782,14 +776,10 @@ const Index = () => {
                       })}
                     </Space>
                   </Card>
-                  <Menu
-                    mode="inline"
-                    style={{ height: "100%" }}
+                  <SideMenu
                     items={menuData}
-                    selectedKeys={[selectPolicyKey]}
-                    onClick={(e: any) => {
-                      handleMenuChange(e.key);
-                    }}
+                    selectedKeys={selectPolicyKey}
+                    onClick={handleMenuChange}
                   />
                 </Space>
               ) : (
