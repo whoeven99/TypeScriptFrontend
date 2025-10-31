@@ -6,12 +6,12 @@ import { useTranslation } from "react-i18next";
 import { FetcherWithComponents, useNavigate } from "@remix-run/react";
 import useReport from "scripts/eventReport";
 import { useMemo } from "react";
+import { globalStore } from "~/globalStore";
 
 const { Text } = Typography;
 
 interface ProgressBlockProps {
   isMobile: boolean; // 是否为移动端
-  source: string; // 原语言
   target: string; // 目标语言
   status: number; // 状态
   translateStatus: string; // 翻译状态
@@ -26,7 +26,6 @@ interface ProgressBlockProps {
 
 const ProgressBlock: React.FC<ProgressBlockProps> = ({
   isMobile,
-  source,
   target,
   status,
   translateStatus,
@@ -57,7 +56,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
     stopTranslateFetcher.submit(
       {
         stopTranslate: JSON.stringify({
-          source: source,
+          source: globalStore?.source,
           target: target,
         }),
       },
@@ -69,7 +68,7 @@ const ProgressBlock: React.FC<ProgressBlockProps> = ({
     report(
       {
         stopTranslate: JSON.stringify({
-          source: source,
+          source:  globalStore?.source,
           target: target,
         }),
       },

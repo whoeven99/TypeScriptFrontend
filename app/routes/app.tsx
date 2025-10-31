@@ -101,10 +101,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     const findWebPixelId = JSON.parse(formData.get("findWebPixelId") as string);
     const unTranslated = JSON.parse(formData.get("unTranslated") as string);
-    const conversionRate = JSON.parse(formData.get("conversionRate") as string);
-    const getAssessmentScoreFetcher = JSON.parse(
-      formData.get("getAssessmentScoreFetcher") as string,
-    );
+
     if (init) {
       try {
         const init = await InitializationDetection({ shop });
@@ -225,18 +222,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (nearTransaltedData) {
       try {
-        const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
-          shop,
-          accessToken: accessToken as string,
-        });
-        const shopPrimaryLanguage = shopLanguagesIndex?.filter(
-          (language) => language?.primary,
-        );
+        let source = nearTransaltedData?.source;
+        if (!source) {
+          const shopLanguagesIndex: ShopLocalesType[] =
+            await queryShopLanguages({
+              shop,
+              accessToken: accessToken as string,
+            });
+          source = shopLanguagesIndex?.filter(
+            (language) => language?.primary,
+          )[0]?.locale;
+        }
 
         const translatingData = await GetAllProgressData({
           shop,
           server: process.env.SERVER_URL as string,
-          source: shopPrimaryLanguage[0]?.locale,
+          source: source,
         });
 
         if (translatingData?.success) {
@@ -263,7 +264,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             ...translatingData,
             response: {
               list: listData || [],
-              source: shopPrimaryLanguage[0]?.locale,
             },
           };
         } else {

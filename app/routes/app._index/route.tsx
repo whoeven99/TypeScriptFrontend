@@ -30,6 +30,7 @@ import ProgressingModal from "./components/progressingModal";
 import CorrectIcon from "~/components/icon/correctIcon";
 import GiftIcon from "~/components/icon/giftIcon";
 import TranslationPanel from "./components/TranslationPanel";
+import { globalStore } from "~/globalStore";
 
 const { Title, Text } = Typography;
 
@@ -68,7 +69,6 @@ const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const source = useRef<string>("");
   const timeoutIdRef = useRef<number | null>(null);
   const isActiveRef = useRef(false); // 当前轮询是否激活（可控制停止）
   const hasInitialized = useRef(false);
@@ -166,7 +166,6 @@ const Index = () => {
         }) ?? [];
       if (!hasInitialized.current) {
         setProgressDataSource(data);
-        source.current = languageFetcher.data?.response?.source;
         setIsProgressLoading(false);
         hasInitialized.current = true;
       }
@@ -302,7 +301,11 @@ const Index = () => {
     if (!isActiveRef.current) return;
 
     languageFetcher.submit(
-      { nearTransaltedData: JSON.stringify(true) },
+      {
+        nearTransaltedData: JSON.stringify({
+          source: globalStore?.source,
+        }),
+      },
       { method: "post", action: "/app" },
     );
   };
@@ -389,7 +392,6 @@ const Index = () => {
           <AnalyticsCard isLoading={isLoading}></AnalyticsCard>
           <ProgressingCard
             dataSource={progressDataSource}
-            source={source.current}
             stopTranslateFetcher={stopTranslateFetcher}
             isProgressLoading={isProgressLoading}
             isMobile={isMobile}
@@ -588,7 +590,6 @@ const Index = () => {
         onCancel={() => setProgressingModalOpen(false)}
         dataSource={progressDataSource}
         isMobile={isMobile}
-        source={source.current || ""}
         stopTranslateFetcher={stopTranslateFetcher}
       />
     </Page>

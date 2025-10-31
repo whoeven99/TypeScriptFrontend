@@ -9,7 +9,6 @@ interface ProgressingModalProps {
   onCancel: () => void;
   dataSource: any[];
   isMobile: boolean;
-  source: string;
   stopTranslateFetcher: FetcherWithComponents<any>;
 }
 
@@ -18,7 +17,6 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
   onCancel,
   dataSource = [],
   isMobile,
-  source,
   stopTranslateFetcher,
 }) => {
   const { t } = useTranslation();
@@ -30,7 +28,6 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
           <ProgressBlock
             key={item?.target}
             isMobile={isMobile}
-            source={source}
             target={item?.target}
             status={item?.status}
             translateStatus={item?.translateStatus}
@@ -44,7 +41,7 @@ const ProgressingModal: React.FC<ProgressingModalProps> = ({
     });
 
     return dom;
-  }, [dataSource, isMobile, source, stopTranslateFetcher]);
+  }, [dataSource, isMobile, stopTranslateFetcher]);
 
   return (
     <Modal
