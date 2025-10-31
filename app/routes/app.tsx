@@ -63,6 +63,7 @@ import { globalStore } from "~/globalStore";
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  console.log("Authorization: ", request.headers.get("Authorization"));
   const adminAuthResult = await authenticate.admin(request);
   const { shop } = adminAuthResult.session;
 
