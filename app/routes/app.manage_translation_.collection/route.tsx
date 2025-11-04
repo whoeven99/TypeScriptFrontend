@@ -200,8 +200,6 @@ const Index = () => {
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
-  // const [isVisible, setIsVisible] = useState<boolean | string | { language: string } | { item: string }>(false);
-
   const [menuData, setMenuData] = useState<any[]>([]);
   const [collectionsData, setCollectionsData] = useState<any>();
   const [collectionData, setCollectionData] = useState<CollectionType>();
@@ -923,20 +921,6 @@ const Index = () => {
     <Page
       title={t("Collections")}
       fullWidth={true}
-      // primaryAction={{
-      //   content: t("Save"),
-      //   loading: confirmFetcher.state === "submitting",
-      //   disabled: confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //   onAction: handleConfirm,
-      // }}
-      // secondaryActions={[
-      //   {
-      //     content: t("Cancel"),
-      //     loading: confirmFetcher.state === "submitting",
-      //     disabled: confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //     onAction: handleDiscard,
-      //   },
-      // ]}
       backAction={{
         onAction: onCancel,
       }}

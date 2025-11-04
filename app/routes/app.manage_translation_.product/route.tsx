@@ -123,20 +123,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       } catch (error) {
         console.error("Error action startCursor product:", error);
-        return json({
+        return {
           success: false,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            data: [],
-            pageInfo: {
-              endCursor: "",
-              hasNextPage: false,
-              hasPreviousPage: false,
-              startCursor: "",
-            },
-          },
-        });
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
       }
     case !!endCursor:
       try {
@@ -187,20 +179,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       } catch (error) {
         console.error("Error action endCursor product:", error);
-        return json({
+        return {
           success: false,
-          errorCode: 0,
-          errorMsg: "",
-          response: {
-            data: [],
-            pageInfo: {
-              endCursor: "",
-              hasNextPage: false,
-              hasPreviousPage: false,
-              startCursor: "",
-            },
-          },
-        });
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
       }
     case !!productId:
       try {
@@ -266,12 +250,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
       } catch (error) {
         console.error("Error action productId product:", error);
-        return json({
+        return {
           success: false,
-          errorCode: 0,
-          errorMsg: "",
-          response: [],
-        });
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
       }
     case !!variants:
       try {
@@ -303,6 +287,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ variantsData: variantsData });
       } catch (error) {
         console.error("Error action variants product:", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
       }
     case !!confirmData:
       const originalConfirmData = confirmData;
@@ -330,7 +320,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return json({ data: data, confirmData: originalConfirmData });
     default:
       // 你可以在这里处理一个默认的情况，如果没有符合的条件
-      return json({ success: false, message: "Invalid data" });
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: undefined,
+      };
   }
 };
 
