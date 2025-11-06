@@ -282,6 +282,14 @@ const Index = () => {
       sync_status: false,
       navigation: "settings_data_sections",
     },
+    {
+      key: "custom_liquid",
+      title: t("Custom Liquid"),
+      allTranslatedItems: undefined,
+      allItems: undefined,
+      sync_status: false,
+      navigation: "custom_liquid",
+    },
   ];
 
   const onlineStoreDataSource: TableDataType[] = [
@@ -1174,6 +1182,7 @@ export const getItemOptions = (t: (key: string) => string) => [
   { label: t("Section Group"), value: "section_group" },
   { label: t("Settings Category"), value: "settings_category" },
   { label: t("Settings Data Sections"), value: "settings_data_sections" },
+  { label: t("Custom Liquid"), value: "custom_liquid" },
   { label: t("Shop"), value: "shop" },
   { label: t("Metafield"), value: "metafield" },
   { label: t("Articles"), value: "article" },

@@ -73,7 +73,8 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
           record.key == "json_template" ||
           record.key == "section_group" ||
           record.key == "settings_category" ||
-          record.key == "settings_data_sections"
+          record.key == "settings_data_sections" ||
+          record.key == "custom_liquid"
         )
           return null;
         return record.allItems === undefined ||

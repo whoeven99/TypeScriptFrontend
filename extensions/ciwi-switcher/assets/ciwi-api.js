@@ -63,6 +63,29 @@ export async function CrawlerDDetectionReport({ shop, blockId, ua, reason }) {
   }
 }
 
+export async function SelectShopNameLiquidData({
+  blockId,
+  shopName,
+  liquidId,
+  languageCode,
+}) {
+  try {
+    const { data } = await fetchJson(
+      `${switchUrl(blockId)}/liquid/selectShopNameLiquidData?shopName=${shopName}`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          liquidId,
+          languageCode,
+        }),
+      },
+    );
+    return data;
+  } catch (err) {
+    console.error("Error SelectShopNameLiquidData:", err);
+  }
+}
+
 export async function GetProductImageData({
   blockId,
   shopName,
@@ -87,7 +110,7 @@ export async function GetProductImageData({
   }
 }
 
-export async function GetShopImageData({ shopName, languageCode,blockId }) {
+export async function GetShopImageData({ shopName, languageCode, blockId }) {
   try {
     const { data } = await fetchJson(
       `${switchUrl(blockId)}/picture/getPictureDataByShopNameAndLanguageCode?shopName=${shopName}&languageCode=${languageCode}`,

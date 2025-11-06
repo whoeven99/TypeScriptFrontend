@@ -4,6 +4,7 @@ import {
   GetProductImageData,
   fetchAutoRate,
   GetShopImageData,
+  SelectShopNameLiquidData,
 } from "./ciwi-api.js";
 import { transformPrices } from "./ciwi-utils.js";
 
@@ -334,7 +335,7 @@ export async function LanguageSelectorTakeEffect(
 }
 
 /**
- * 观察 DOM 变化，动态处理新价格
+ * 观察 DOM 变化，动态处理新图片
  */
 export function initProductImgObserver({
   translateSourceArray = [],
@@ -395,6 +396,9 @@ export function initProductImgObserver({
   });
 }
 
+/**
+ * 根据数据库数据替换网页图片
+ */
 export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
   const productIdInput = ciwiBlock.querySelector('input[name="product_id"]');
   const productId = productIdInput.value;
@@ -443,6 +447,62 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
 }
 
 /**
+ * 根据数据库数据替换网页文本
+ */
+export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
+  const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
+  const language = languageInput?.value;
+  const templateNameInput = ciwiBlock.querySelector(
+    'input[name="template_name"]',
+  );
+  const templateName = templateNameInput?.value;
+  console.log("templateName: ", templateName);
+
+  // 🧩 获取数据库翻译数据
+  const selectShopNameLiquidData = await SelectShopNameLiquidData({
+    blockId,
+    shopName: shop.value,
+    liquidId: templateName,
+    languageCode: language,
+  });
+
+  const translations = selectShopNameLiquidData?.response || [];
+  if (translations.length === 0) return;
+
+  // ✅ 遍历每条翻译，进行全局替换
+  translations.forEach((item) => {
+    const before = item.liquidBeforeTranslation?.trim();
+    const after = item.liquidAfterTranslation?.trim();
+
+    if (!before || !after) return;
+
+    // 使用 TreeWalker 遍历整个页面所有文本节点（全局范围）
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          // 只替换包含原文本的节点
+          return node.nodeValue?.includes(before)
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_REJECT;
+        },
+      },
+    );
+
+    const textNodes = [];
+    while (walker.nextNode()) {
+      textNodes.push(walker.currentNode);
+    }
+
+    // 📝 执行替换操作
+    textNodes.forEach((node) => {
+      node.nodeValue = node.nodeValue.replaceAll(before, after);
+    });
+  });
+}
+
+/**
  * 批量替换主页图片
  */
 export async function HomeImageTranslate(blockId) {
@@ -474,8 +534,8 @@ export async function HomeImageTranslate(blockId) {
         img.src = item.imageAfterUrl;
         img.srcset = item.imageAfterUrl;
       }
-      if (item.altBeforeTranslation) {
-        img.alt = item.altBeforeTranslation;
+      if (item.altAfterTranslation) {
+        img.alt = item.altAfterTranslation;
       }
     });
   });

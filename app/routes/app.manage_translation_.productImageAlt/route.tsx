@@ -47,14 +47,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
-  const { shop } = adminAuthResult.session;
   const { admin } = adminAuthResult;
 
-  const url = new URL(request.url);
-  const searchTerm = url.searchParams.get("language");
-
   const formData = await request.formData();
-  const loading: any = JSON.parse(formData.get("loading") as string);
   const productStartCursor: any = JSON.parse(
     formData.get("productStartCursor") as string,
   );
@@ -69,98 +64,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   );
 
   switch (true) {
-    case !!loading:
-      try {
-        const loadData = await admin.graphql(
-          `query {
-            products(first: 20, reverse: true) {
-              edges {
-                node {
-                  id
-                  title
-                  images(first: 20) {
-                    edges {
-                      node {
-                        id
-                        url
-                        altText
-                      }
-                    }
-                    pageInfo {
-                        hasNextPage
-                        hasPreviousPage
-                        startCursor
-                        endCursor
-                    }
-                  }
-                }
-              } 
-              pageInfo {
-                hasNextPage
-                hasPreviousPage
-                startCursor
-                endCursor
-              }
-            }
-          }`,
-        );
-        const response = await loadData.json();
-        console.log("loadData", response?.data?.products?.edges);
-        if (response?.data?.products?.edges.length > 0) {
-          const menuData = response?.data?.products?.edges.map((item: any) => {
-            return {
-              key: item?.node?.id,
-              label: item?.node?.title,
-            };
-          });
-          const imageData = response?.data?.products?.edges.map((item: any) => {
-            return item?.node?.images?.edges.map((image: any) => {
-              return {
-                key: image?.node?.id,
-                productId: item?.node?.id,
-                productTitle: item?.node?.title,
-                imageUrl: image?.node?.url,
-                imageId: image?.node?.id,
-                altText: image?.node?.altText,
-                targetAltText: "",
-                imageStartCursor: item?.node?.images?.pageInfo?.startCursor,
-                imageEndCursor: item?.node?.images?.pageInfo?.endCursor,
-                imageHasNextPage: item?.node?.images?.pageInfo?.hasNextPage,
-                imageHasPreviousPage:
-                  item?.node?.images?.pageInfo?.hasPreviousPage,
-              };
-            });
-          });
-          return json({
-            menuData,
-            imageData,
-            productStartCursor: response?.data?.products?.pageInfo?.startCursor,
-            productEndCursor: response?.data?.products?.pageInfo?.endCursor,
-            productHasNextPage: response?.data?.products?.pageInfo?.hasNextPage,
-            productHasPreviousPage:
-              response?.data?.products?.pageInfo?.hasPreviousPage,
-          });
-        } else {
-          return json({
-            menuData: [],
-            imageData: [],
-            productStartCursor: "",
-            productEndCursor: "",
-            productHasNextPage: "",
-            productHasPreviousPage: "",
-          });
-        }
-      } catch (error) {
-        console.error("Error action loadData productImage:", error);
-        return json({
-          menuData: [],
-          imageData: [],
-          productStartCursor: "",
-          productEndCursor: "",
-          productHasNextPage: "",
-          productHasPreviousPage: "",
-        });
-      }
     case !!productStartCursor:
       try {
         const loadData = await admin.graphql(
@@ -256,8 +159,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     case !!productEndCursor:
       try {
         const loadData = await admin.graphql(
-          `query {
-              products(first: 20, after: "${productEndCursor?.productsEndCursor}", reverse: true) {
+          `query Product($endCursor: String){
+              products(first: 20, after: $endCursor, reverse: true) {
                 edges {
                   node {    
                     id
@@ -287,6 +190,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
                 }
               }
             }`,
+          {
+            variables: {
+              endCursor: productEndCursor?.productsEndCursor
+                ? productEndCursor?.productsEndCursor
+                : undefined,
+            },
+          },
         );
         const response = await loadData.json();
         console.log("productEndCursor", response?.data?.products?.edges);
@@ -335,7 +245,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           });
         }
       } catch (error) {
-        console.error("Error action productStartCursor productImage:", error);
+        console.error("Error action productEndCursor productImage:", error);
         return json({
           menuData: [],
           imageData: [],
@@ -546,13 +456,11 @@ const Index = () => {
   const itemOptions = getItemOptions(t);
 
   const fetcher = useFetcher<any>();
-  const loadFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
   const imageFetcher = useFetcher<any>();
 
   useEffect(() => {
-    loadFetcher.submit({ loading: true }, { method: "post" });
     if (languageTableData.length === 0) {
       languageFetcher.submit(
         {
@@ -564,6 +472,12 @@ const Index = () => {
         },
       );
     }
+    productsFetcher.submit(
+      {
+        productEndCursor: JSON.stringify({}),
+      },
+      { method: "POST" },
+    );
     fetcher.submit(
       {
         log: `${globalStore?.shop} 目前在翻译管理-产品图片Alt图片描述页面`,
@@ -582,20 +496,6 @@ const Index = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-
-  useEffect(() => {
-    if (loadFetcher.data) {
-      setMenuData(loadFetcher.data.menuData);
-      setDataResource(loadFetcher.data.imageData);
-      setSelectedKey(loadFetcher.data.menuData[0]?.key || "");
-      setProductsHasNextPage(loadFetcher.data.productHasNextPage);
-      setProductsHasPreviousPage(loadFetcher.data.productHasPreviousPage);
-      setProductsStartCursor(loadFetcher.data.productStartCursor);
-      setProductsEndCursor(loadFetcher.data.productEndCursor);
-      setTableDataLoading(false);
-      setIsLoading(false);
-    }
-  }, [loadFetcher.data]);
 
   useEffect(() => {
     if (productsFetcher.data) {
@@ -665,8 +565,8 @@ const Index = () => {
               if (index !== -1) {
                 return {
                   ...item,
-                  imageUrl:
-                    targetData.response[index].imageAfterUrl || item.imageUrl,
+                  targetImageUrl:
+                    targetData.response[index].imageAfterUrl || "",
                   targetAltText: targetData.response[index].altAfterTranslation,
                 };
               }
@@ -720,7 +620,7 @@ const Index = () => {
       render: (_: any, record: any) => {
         return (
           <Image
-            src={record?.imageUrl}
+            src={record?.targetImageUrl || record?.imageUrl}
             preview={false}
             width={"100%"}
             height={"auto"}

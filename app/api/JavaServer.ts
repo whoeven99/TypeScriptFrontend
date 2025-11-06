@@ -19,6 +19,95 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const SelectShopNameLiquidData = async ({
+  shopName,
+  server,
+  liquidId,
+  languageCode,
+}: {
+  shopName: string;
+  server: string;
+  liquidId: string;
+  languageCode: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/liquid/selectShopNameLiquidData?shopName=${shopName}`,
+      method: "POST",
+      data: {
+        liquidId,
+        languageCode,
+      },
+    });
+
+    console.log(`${shopName} SelectShopNameLiquidData: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shopName} SelectShopNameLiquidData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+export const InsertShopNameLiquidData = async ({
+  shopName,
+  server,
+  key,
+  liquidId,
+  liquidBeforeTranslation,
+  liquidAfterTranslation,
+  languageCode,
+}: {
+  shopName: string;
+  server: string;
+  key: string;
+  liquidId: string;
+  liquidBeforeTranslation: string;
+  liquidAfterTranslation: string;
+  languageCode: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/liquid/insertShopNameLiquidData?shopName=${shopName}`,
+      method: "POST",
+      data: {
+        liquidId,
+        liquidBeforeTranslation,
+        liquidAfterTranslation,
+        languageCode,
+      },
+    });
+
+    console.log(`${shopName} InsertShopNameLiquidData: `, response.data);
+
+    return {
+      ...response.data,
+      response: {
+        shopName,
+        server,
+        key,
+        liquidId,
+        liquidBeforeTranslation,
+        liquidAfterTranslation,
+        languageCode,
+      },
+    };
+  } catch (error) {
+    console.error(`${shopName} InsertShopNameLiquidData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
 export const IsInFreePlanTime = async ({
   shop,
   server,
@@ -37,8 +126,14 @@ export const IsInFreePlanTime = async ({
     return response.data;
   } catch (error) {
     console.error(`${shop} IsInFreePlanTime error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
   }
-}
+};
 
 export const GetAllProgressData = async ({
   shop,

@@ -7,7 +7,8 @@ import {
   ProductImgTranslate,
   CurrencySelectorTakeEffect,
   LanguageSelectorTakeEffect,
-  HomeImageTranslate
+  HomeImageTranslate,
+  CustomLiquidTextTranslate,
 } from "./ciwi-ui.js";
 import { updateLocalization } from "./ciwi-utils.js";
 
@@ -63,7 +64,7 @@ async function ciwiOnload() {
   const blockId = document.querySelector('input[name="block_id"]')?.value;
   if (!blockId) return console.warn("blockId not found");
   const ciwiBlock = document.querySelector(`#shopify-block-${blockId}`);
-  if (!ciwiBlock) return console.warn("ciwiBlock not found"); 
+  if (!ciwiBlock) return console.warn("ciwiBlock not found");
   const shop = ciwiBlock.querySelector("#queryCiwiId");
   // 爬虫检测
   const reason = isLikelyBotByUA();
@@ -79,20 +80,13 @@ async function ciwiOnload() {
   }
   // 产品图片翻译（非阻塞）
   await ProductImgTranslate(blockId, shop, ciwiBlock);
+
+  // 网页custom liquid 文本翻译
+  await CustomLiquidTextTranslate(blockId, shop, ciwiBlock);
+
   // 主页图片替换
   await HomeImageTranslate(blockId);
-  setTimeout(() => {
-    const observer = new MutationObserver(async (mutations) => {
-      for (const m of mutations) {
-        if (m.addedNodes.length > 0) {
-          await ProductImgTranslate(blockId, shop, ciwiBlock);
-        }
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-  }, 100);
-  console.log('switcher image replace');
-  
+
   // 加载配置（缓存 + 后台刷新，保留“最多两次”语义）
   const configKey = `ciwi_switcher_config`;
   const configData = await useCacheThenRefresh(
