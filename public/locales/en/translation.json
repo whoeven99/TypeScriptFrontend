@@ -200,7 +200,7 @@
   "translation_process_init":"Initializing translation task...",
   "translation_process_translating":"Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace":"Translating {{item}} Module: ",
-  "translation_process_saving_shopify":"Applying translations to {{item}} module…",
+  "translation_process_saving_shopify":"Applying translations to shopify",
   "translation_process_saved":"Your translation is ready. Publish it to apply the changes.",
   "progressing.buyCredits":"Buy credits",
   "progressing.review":"Review Translation",

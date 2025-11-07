@@ -200,7 +200,7 @@
   "translation_process_init": "번역 작업을 초기화하는 중...",
   "translation_process_translating": "{{item}} 모듈 번역 중({{hasTranslated}}/{{totalNumber}}):",
   "progressing.progressingWithoutSpace": "{{item}} 모듈 번역:",
-  "translation_process_saving_shopify": "{{item}} 모듈 작성",
+  "translation_process_saving_shopify": "Shopify에 번역 적용 중",
   "translation_process_saved": "번역이 준비되었습니다. 게시하여 변경 사항을 적용하세요.",
   "progressing.buyCredits": "크레딧 구매",
   "progressing.review": "번역 검토",
