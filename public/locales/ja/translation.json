@@ -497,7 +497,7 @@
   "progressing.privateApiKeyAmountLimit": "Your API key has hit the limit. Please reset it to continue your translation task.",
   "translation_process_translating": "Translating {{item}} Module({{hasTranslated}}/{{totalNumber}}): ",
   "progressing.progressingWithoutSpace": "Translating {{item}} Module: ",
-  "translation_process_saving_shopify": "{{item}} モジュールに翻訳を適用中…",
+  "translation_process_saving_shopify": "翻訳をShopifyに適用中",
   "progressing.publish": "Publish",
   "progressing.reTranslate": "Retranslate",
   "progressing.reTranslateText": "Current translation was manually stopped.",

@@ -753,6 +753,6 @@
   "devplanCard2.title": "优化编辑器目录",
   "devplanCard3.title": "翻译速度提高 30%",
   "devplanCard4.title": "基于 IP 地理位置的隐形模式切换器",
-  "translation_process_saving_shopify": "正在将翻译应用到 {{item}} 模块…",
+  "translation_process_saving_shopify": "正在将翻译应用到Shopify",
   "The source text is empty and cannot be translated": "源文本为空，无法翻译"
 }
