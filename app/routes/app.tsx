@@ -749,6 +749,7 @@ export default function App() {
               <Link to="/app/currency">{t("Currency")}</Link>
               <Link to="/app/switcher">{t("Switcher")}</Link>
               <Link to="/app/glossary">{t("Glossary")}</Link>
+              <Link to="/app/customTrans">{t("Glossary")}</Link>
               <Link to="/app/pricing">{t("Pricing")}</Link>
             </>
           )}

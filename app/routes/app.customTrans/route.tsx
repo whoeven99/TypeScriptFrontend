@@ -23,6 +23,7 @@ import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
 import styles from "../app.language/styles.module.css";
+import { LanguagesDataType } from "../app.language/route";
 const { Title, Text } = Typography;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -41,7 +42,11 @@ const Index = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
-  const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
+
+  //获取应用语言数据
+  const languageTableData: LanguagesDataType[] = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
 
   const [loading, setLoading] = useState<boolean>(true);
   const [isMobile, setIsMobile] = useState<boolean>(mobile);
@@ -51,24 +56,24 @@ const Index = () => {
     return selectedRowKeys.length > 0;
   }, [selectedRowKeys]);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10; // 每页显示5条，可自定义
-  const pagedData = useMemo(
-    () =>
-      dataSource.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [dataSource, currentPage, pageSize],
-  );
-  const currentPageKeys = useMemo(
-    () => pagedData.map((item: any) => item.key),
-    [pagedData],
-  );
-  const allCurrentPageSelected = useMemo(
-    () => currentPageKeys.every((key: any) => selectedRowKeys.includes(key)),
-    [currentPageKeys, selectedRowKeys],
-  );
-  const someCurrentPageSelected = useMemo(
-    () => currentPageKeys.some((key: any) => selectedRowKeys.includes(key)),
-    [currentPageKeys, selectedRowKeys],
-  );
+  // const pageSize = 10; // 每页显示5条，可自定义
+  // const pagedData = useMemo(
+  //   () =>
+  //     dataSource.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+  //   [dataSource, currentPage, pageSize],
+  // );
+  // const currentPageKeys = useMemo(
+  //   () => pagedData.map((item: any) => item.key),
+  //   [pagedData],
+  // );
+  // const allCurrentPageSelected = useMemo(
+  //   () => currentPageKeys.every((key: any) => selectedRowKeys.includes(key)),
+  //   [currentPageKeys, selectedRowKeys],
+  // );
+  // const someCurrentPageSelected = useMemo(
+  //   () => currentPageKeys.some((key: any) => selectedRowKeys.includes(key)),
+  //   [currentPageKeys, selectedRowKeys],
+  // );
 
   const fetcher = useFetcher<any>();
 
@@ -95,18 +100,18 @@ const Index = () => {
   const handleDelete = () => {};
 
   const columns = [
-    {
-      title: t("Status"),
-      dataIndex: "status",
-      key: "status",
-      width: "10%",
-      render: (_: any, record: any) => (
-        <Switch
-          checked={record?.status}
-          loading={record.loading} // 使用每个项的 loading 状态
-        />
-      ),
-    },
+    // {
+    //   title: t("Status"),
+    //   dataIndex: "status",
+    //   key: "status",
+    //   width: "10%",
+    //   render: (_: any, record: any) => (
+    //     <Switch
+    //       checked={record?.status}
+    //       loading={record.loading} // 使用每个项的 loading 状态
+    //     />
+    //   ),
+    // },
     {
       title: t("Text"),
       dataIndex: "sourceText",
@@ -124,32 +129,6 @@ const Index = () => {
       dataIndex: "language",
       key: "language",
       width: "20%",
-      render: (_: any, record: any) => {
-        return record.language ? (
-          <Text>{record.language}</Text>
-        ) : (
-          <Popover
-            content={t("This language has been deleted. Please edit again.")}
-          >
-            <WarningOutlined
-              style={{ color: "#F8B400", fontSize: "18px", width: "100%" }}
-            />
-          </Popover>
-        );
-      },
-    },
-    {
-      title: t("Case"),
-      dataIndex: "type",
-      key: "type",
-      width: "15%",
-      render: (_: any, record: any) => {
-        return record.type ? (
-          <Text>{t("Case-sensitive")}</Text>
-        ) : (
-          <Text>{t("Case-insensitive")}</Text>
-        );
-      },
     },
     {
       title: t("Action"),
@@ -183,7 +162,7 @@ const Index = () => {
         <Title style={{ fontSize: "1.25rem", display: "inline" }}>
           {t("Glossary")}
         </Title>
-        {!shopLocales?.length && !loading ? (
+        {!languageTableData.length && !loading ? (
           <div
             style={{
               display: "flex",
@@ -225,134 +204,135 @@ const Index = () => {
               )}
             </Flex>
             {isMobile ? (
-              <>
-                <Card
-                  title={
-                    <Checkbox
-                      checked={allCurrentPageSelected && !loading}
-                      indeterminate={
-                        someCurrentPageSelected && !allCurrentPageSelected
-                      }
-                      onChange={(e) =>
-                        setSelectedRowKeys(
-                          e.target.checked
-                            ? [
-                                ...currentPageKeys,
-                                ...selectedRowKeys.filter(
-                                  (key) => !currentPageKeys.includes(key),
-                                ),
-                              ]
-                            : [
-                                ...selectedRowKeys.filter(
-                                  (key) => !currentPageKeys.includes(key),
-                                ),
-                              ],
-                        )
-                      }
-                    >
-                      {t("Glossary")}
-                    </Checkbox>
-                  }
-                  loading={loading}
-                >
-                  {pagedData.map((item: any) => (
-                    <Card.Grid key={item.key} style={{ width: "100%" }}>
-                      <Space
-                        direction="vertical"
-                        size="middle"
-                        style={{ width: "100%" }}
-                      >
-                        <Flex justify="space-between">
-                          <Checkbox
-                            checked={selectedRowKeys.includes(item.key)}
-                            onChange={(e: any) => {
-                              setSelectedRowKeys(
-                                e.target.checked
-                                  ? [...selectedRowKeys, item.key]
-                                  : selectedRowKeys.filter(
-                                      (key) => key !== item.key,
-                                    ),
-                              );
-                            }}
-                          >
-                            {t("Text")}{" "}
-                          </Checkbox>
-                          <Text>{item.sourceText}</Text>
-                        </Flex>
-                        <Flex justify="space-between">
-                          <Text>{t("Translation text")}</Text>
-                          <Text>{item.targetText}</Text>
-                        </Flex>
-                        <Flex justify="space-between">
-                          <Text>{t("Apply for")}</Text>
-                          {item.language ? (
-                            <Text>{item.language}</Text>
-                          ) : (
-                            <Popover
-                              content={t(
-                                "This language has been deleted. Please edit again.",
-                              )}
-                            >
-                              <WarningOutlined
-                                style={{
-                                  color: "#F8B400",
-                                  fontSize: "18px",
-                                  width: "100%",
-                                }}
-                              />
-                            </Popover>
-                          )}
-                        </Flex>
-                        <Flex justify="space-between">
-                          <Text>{t("Case")}</Text>
-                          {item.type ? (
-                            <Text>{t("Case-sensitive")}</Text>
-                          ) : (
-                            <Text>{t("Case-insensitive")}</Text>
-                          )}
-                        </Flex>
-                        <Flex justify="space-between">
-                          <Text>{t("Status")}</Text>
-                          <Switch
-                            checked={item?.statu}
-                            loading={item.loading}
-                          />
-                        </Flex>
-                        <Button
-                          style={{ width: "100%" }}
-                          //   onClick={() =>
-                          //     handleIsModalOpen(t("Edit rules"), item.key)
-                          //   }
-                        >
-                          {t("Edit")}
-                        </Button>
-                      </Space>
-                    </Card.Grid>
-                  ))}
-                </Card>
-                <div
-                  style={{
-                    display: "flex",
-                    background: "#fff",
-                    padding: "12px 0",
-                    textAlign: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Pagination
-                    current={currentPage}
-                    pageSize={pageSize}
-                    total={dataSource.length}
-                    onChange={(page) => setCurrentPage(page)}
-                  />
-                </div>
-              </>
+              // <>
+              //   <Card
+              //     title={
+              //       <Checkbox
+              //         checked={allCurrentPageSelected && !loading}
+              //         indeterminate={
+              //           someCurrentPageSelected && !allCurrentPageSelected
+              //         }
+              //         onChange={(e) =>
+              //           setSelectedRowKeys(
+              //             e.target.checked
+              //               ? [
+              //                   ...currentPageKeys,
+              //                   ...selectedRowKeys.filter(
+              //                     (key) => !currentPageKeys.includes(key),
+              //                   ),
+              //                 ]
+              //               : [
+              //                   ...selectedRowKeys.filter(
+              //                     (key) => !currentPageKeys.includes(key),
+              //                   ),
+              //                 ],
+              //           )
+              //         }
+              //       >
+              //         {t("Glossary")}
+              //       </Checkbox>
+              //     }
+              //     loading={loading}
+              //   >
+              //     {pagedData.map((item: any) => (
+              //       <Card.Grid key={item.key} style={{ width: "100%" }}>
+              //         <Space
+              //           direction="vertical"
+              //           size="middle"
+              //           style={{ width: "100%" }}
+              //         >
+              //           <Flex justify="space-between">
+              //             <Checkbox
+              //               checked={selectedRowKeys.includes(item.key)}
+              //               onChange={(e: any) => {
+              //                 setSelectedRowKeys(
+              //                   e.target.checked
+              //                     ? [...selectedRowKeys, item.key]
+              //                     : selectedRowKeys.filter(
+              //                         (key) => key !== item.key,
+              //                       ),
+              //                 );
+              //               }}
+              //             >
+              //               {t("Text")}{" "}
+              //             </Checkbox>
+              //             <Text>{item.sourceText}</Text>
+              //           </Flex>
+              //           <Flex justify="space-between">
+              //             <Text>{t("Translation text")}</Text>
+              //             <Text>{item.targetText}</Text>
+              //           </Flex>
+              //           <Flex justify="space-between">
+              //             <Text>{t("Apply for")}</Text>
+              //             {item.language ? (
+              //               <Text>{item.language}</Text>
+              //             ) : (
+              //               <Popover
+              //                 content={t(
+              //                   "This language has been deleted. Please edit again.",
+              //                 )}
+              //               >
+              //                 <WarningOutlined
+              //                   style={{
+              //                     color: "#F8B400",
+              //                     fontSize: "18px",
+              //                     width: "100%",
+              //                   }}
+              //                 />
+              //               </Popover>
+              //             )}
+              //           </Flex>
+              //           <Flex justify="space-between">
+              //             <Text>{t("Case")}</Text>
+              //             {item.type ? (
+              //               <Text>{t("Case-sensitive")}</Text>
+              //             ) : (
+              //               <Text>{t("Case-insensitive")}</Text>
+              //             )}
+              //           </Flex>
+              //           <Flex justify="space-between">
+              //             <Text>{t("Status")}</Text>
+              //             <Switch
+              //               checked={item?.statu}
+              //               loading={item.loading}
+              //             />
+              //           </Flex>
+              //           <Button
+              //             style={{ width: "100%" }}
+              //             //   onClick={() =>
+              //             //     handleIsModalOpen(t("Edit rules"), item.key)
+              //             //   }
+              //           >
+              //             {t("Edit")}
+              //           </Button>
+              //         </Space>
+              //       </Card.Grid>
+              //     ))}
+              //   </Card>
+              //   <div
+              //     style={{
+              //       display: "flex",
+              //       background: "#fff",
+              //       padding: "12px 0",
+              //       textAlign: "center",
+              //       justifyContent: "center",
+              //     }}
+              //   >
+              //     <Pagination
+              //       current={currentPage}
+              //       pageSize={pageSize}
+              //       total={dataSource.length}
+              //       onChange={(page) => setCurrentPage(page)}
+              //     />
+              //   </div>
+              // </>
+              <></>
             ) : (
               <Table
                 rowSelection={rowSelection}
                 columns={columns}
                 loading={loading}
-                dataSource={dataSource}
+                // dataSource={dataSource}
               />
             )}
           </div>
