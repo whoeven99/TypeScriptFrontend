@@ -39,7 +39,6 @@ const Index = () => {
   const { server, mobile } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
 
@@ -50,8 +49,8 @@ const Index = () => {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [isMobile, setIsMobile] = useState<boolean>(mobile);
+  const [dataSource, setDataSource] = useState<any[]>([]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
-  const [showWarnModal, setShowWarnModal] = useState<boolean>(false);
   const hasSelected = useMemo(() => {
     return selectedRowKeys.length > 0;
   }, [selectedRowKeys]);
@@ -152,7 +151,7 @@ const Index = () => {
 
   return (
     <Page>
-      <TitleBar title={t("Glossary")} />
+      <TitleBar title={t("Custom Translation")} />
       <ScrollNotice
         text={t(
           "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
@@ -160,7 +159,7 @@ const Index = () => {
       />
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
         <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-          {t("Glossary")}
+          {t("Custom Translation")}
         </Title>
         {!languageTableData.length && !loading ? (
           <div
@@ -229,7 +228,7 @@ const Index = () => {
               //           )
               //         }
               //       >
-              //         {t("Glossary")}
+              //         {t("Custom Translation")}
               //       </Checkbox>
               //     }
               //     loading={loading}
@@ -332,26 +331,12 @@ const Index = () => {
                 rowSelection={rowSelection}
                 columns={columns}
                 loading={loading}
-                // dataSource={dataSource}
+                dataSource={dataSource}
               />
             )}
           </div>
         )}
       </Space>
-      <Modal
-        title={t("Feature Unavailable")}
-        open={showWarnModal}
-        onCancel={() => setShowWarnModal(false)}
-        centered
-        width={700}
-        footer={
-          <Button type="primary" onClick={() => navigate("/app/pricing")}>
-            {t("Upgrade")}
-          </Button>
-        }
-      >
-        <Text>{t("This feature is available only with the paid plan.")}</Text>
-      </Modal>
     </Page>
   );
 };
