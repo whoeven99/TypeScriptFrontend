@@ -347,7 +347,7 @@ const TranslationDashboard = () => {
     <Page>
       <ScrollNotice
         text={t(
-          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible."
+          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
         )}
       />
       {/* 头部卡片 - 翻译质量得分 */}
@@ -450,7 +450,7 @@ const TranslationDashboard = () => {
                 <div style={{ lineHeight: 1.8, fontSize: "16px" }}>
                   <p>
                     {t(
-                      "After AI evaluation, your website translation quality score is"
+                      "After AI evaluation, your website translation quality score is",
                     )}
                     <span
                       style={{
@@ -478,9 +478,7 @@ const TranslationDashboard = () => {
                       ) : (
                         <>
                           <span style={{ color: "red", fontWeight: "bold" }}>
-                            {
-                              reportIntroduction.notTransLanguage
-                            }
+                            {reportIntroduction.notTransLanguage}
                           </span>{" "}
                         </>
                       )}
@@ -614,7 +612,7 @@ const TranslationDashboard = () => {
                   <Text strong>{t("Glossary")}</Text>
                   <Text>
                     {t(
-                      "Define key terms to keep translations consistent with your brand."
+                      "Define key terms to keep translations consistent with your brand.",
                     )}
                   </Text>
                 </Flex>
@@ -641,7 +639,7 @@ const TranslationDashboard = () => {
                   <Text strong>{t("Language & Currency Switcher")}</Text>
                   <Text>
                     {t(
-                      "Enable automatic switching to match visitors’ language and currency."
+                      "Enable automatic switching to match visitors’ language and currency.",
                     )}
                   </Text>
                 </Flex>
@@ -668,7 +666,7 @@ const TranslationDashboard = () => {
                   <Text strong>{t("Published Languages")}</Text>
                   <Text>
                     {t(
-                      "Make your translations live so customers can see them."
+                      "Make your translations live so customers can see them.",
                     )}
                   </Text>
                 </Flex>
@@ -695,7 +693,7 @@ const TranslationDashboard = () => {
                   <Text strong>{t("Auto-Translation")}</Text>
                   <Text>
                     {t(
-                      "Turn on automatic translation to keep your store updated in real time."
+                      "Turn on automatic translation to keep your store updated in real time.",
                     )}
                   </Text>
                 </Flex>

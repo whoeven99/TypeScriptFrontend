@@ -2,52 +2,34 @@ import {
   Button,
   Image,
   Layout,
-  message,
   Result,
   Space,
   Spin,
   Table,
-  theme,
   Upload,
   Typography,
   Menu,
   Card,
   Divider,
-  Skeleton,
   Modal,
   Select as SelectAnt,
   Input,
 } from "antd";
 import { SearchOutlined, UploadOutlined } from "@ant-design/icons";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  useFetcher,
-  useLoaderData,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-} from "@remix-run/react";
-import { SaveBar, TitleBar } from "@shopify/app-bridge-react";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { NoteIcon } from "@shopify/polaris-icons";
 import { Page, Pagination, Select, Thumbnail, Spinner } from "@shopify/polaris";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
-import { ShopLocalesType } from "../app.language/route";
-import { setLocale } from "~/store/modules/userConfig";
-import { setTableData } from "~/store/modules/languageTableData";
 import { DeleteProductImageData, GetProductImageData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 
 const { Sider, Content } = Layout;
 const { Title, Text } = Typography;
-
-interface LanguageOption {
-  label: string;
-  value: string;
-}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -417,13 +399,18 @@ const Index = () => {
   const { searchTerm } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const languageTableData = useSelector(
     (state: any) => state.languageTableData.rows,
   );
   const navigate = useNavigate();
   const isManualChange = useRef(true);
   const timeoutIdRef = useRef<any>(true);
+
+  const fetcher = useFetcher<any>();
+  const productsFetcher = useFetcher<any>();
+  const imageFetcher = useFetcher<any>();
+  const translateImageFetcher = useFetcher<any>();
+  const replaceTranslateImageFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
@@ -467,14 +454,6 @@ const Index = () => {
   >([]);
   const [queryText, setQueryText] = useState<string>("");
   const itemOptions = getItemOptions(t);
-
-  const fetcher = useFetcher<any>();
-  const languageFetcher = useFetcher<any>();
-  const productsFetcher = useFetcher<any>();
-  const imageFetcher = useFetcher<any>();
-
-  const translateImageFetcher = useFetcher<any>();
-  const replaceTranslateImageFetcher = useFetcher<any>();
 
   const [translatrImageactive, setTranslatrImageactive] = useState(false);
   const sourceLanguages = [
@@ -666,17 +645,6 @@ const Index = () => {
       },
       { method: "post" },
     );
-    if (languageTableData.length === 0) {
-      languageFetcher.submit(
-        {
-          language: JSON.stringify(true),
-        },
-        {
-          method: "post",
-          action: "/app/manage_translation",
-        },
-      );
-    }
     fetcher.submit(
       {
         log: `${globalStore?.shop} 目前在翻译管理-产品图片页面`,
@@ -715,29 +683,6 @@ const Index = () => {
   }, [imageFetcher.data]);
 
   useEffect(() => {
-    if (languageFetcher.data) {
-      if (languageFetcher.data.data) {
-        const shopLanguages = languageFetcher.data.data;
-        dispatch(
-          setTableData(
-            shopLanguages.map((language: ShopLocalesType, index: number) => ({
-              key: language.locale,
-              language: language.name,
-              locale: language.locale,
-              primary: language.primary,
-              published: language.published,
-            })),
-          ),
-        );
-        const locale = shopLanguages.find(
-          (language: ShopLocalesType) => language.primary === true,
-        )?.locale;
-        dispatch(setLocale({ locale: locale || "" }));
-      }
-    }
-  }, [languageFetcher.data]);
-
-  useEffect(() => {
     if (selectedKey && dataResource.length > 0) {
       const data =
         dataResource.filter(
@@ -750,8 +695,8 @@ const Index = () => {
           productId: selectedKey,
           languageCode: selectedLanguage,
         });
-        console.log("targetData: ",targetData);
-        
+        console.log("targetData: ", targetData);
+
         if (targetData?.success && targetData?.response?.length > 0) {
           setProductImageData(
             data.map((item: any) => {
@@ -782,7 +727,7 @@ const Index = () => {
         languageTableData
           .filter((item: any) => !item.primary)
           .map((item: any) => ({
-            label: item.language,
+            label: item.name,
             value: item.locale,
           })),
       );

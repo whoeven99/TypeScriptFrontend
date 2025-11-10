@@ -7,19 +7,10 @@ import {
   Space,
   Spin,
   Table,
-  theme,
   Typography,
 } from "antd";
 import { useEffect, useRef, useState } from "react";
-import {
-  useActionData,
-  useFetcher,
-  useLoaderData,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-  useSubmit,
-} from "@remix-run/react"; // 引入 useNavigate
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
@@ -31,11 +22,8 @@ import {
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
-import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
-import { setTableData } from "~/store/modules/languageTableData";
-import { setLocale } from "~/store/modules/userConfig";
-import { ShopLocalesType } from "../app.language/route";
+import { useSelector } from "react-redux";
+import { SaveBar } from "@shopify/app-bridge-react";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 
@@ -147,7 +135,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const languageTableData = useSelector(
     (state: any) => state.languageTableData.rows,
   );
@@ -159,7 +146,6 @@ const Index = () => {
 
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
-  const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -186,17 +172,6 @@ const Index = () => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    if (languageTableData.length === 0) {
-      languageFetcher.submit(
-        {
-          language: JSON.stringify(true),
-        },
-        {
-          method: "post",
-          action: "/app/manage_translation",
-        },
-      );
-    }
     dataFetcher.submit(
       {
         endCursor: JSON.stringify({
@@ -237,7 +212,7 @@ const Index = () => {
         languageTableData
           .filter((item: any) => !item.primary)
           .map((item: any) => ({
-            label: item.language,
+            label: item.name,
             value: item.locale,
           })),
       );
@@ -289,29 +264,6 @@ const Index = () => {
       setSuccessTranslatedKey([]);
     }
   }, [confirmFetcher.data]);
-
-  useEffect(() => {
-    if (languageFetcher.data) {
-      if (languageFetcher.data.data) {
-        const shopLanguages = languageFetcher.data.data;
-        dispatch(
-          setTableData(
-            shopLanguages.map((language: ShopLocalesType, index: number) => ({
-              key: language.locale,
-              language: language.name,
-              locale: language.locale,
-              primary: language.primary,
-              published: language.published,
-            })),
-          ),
-        );
-        const locale = shopLanguages.find(
-          (language: ShopLocalesType) => language.primary === true,
-        )?.locale;
-        dispatch(setLocale({ locale: locale || "" }));
-      }
-    }
-  }, [languageFetcher.data]);
 
   useEffect(() => {
     if (confirmData.length > 0) {
@@ -582,45 +534,6 @@ const Index = () => {
     setConfirmData([]);
     setSuccessTranslatedKey([]);
   };
-
-  // const handleLeaveItem = (
-  //   key: string | boolean | { language: string } | { item: string },
-  // ) => {
-  //   setIsVisible(false);
-  //   if (key === "previous") {
-  //     // 向前翻页
-  //     const formData = new FormData();
-  //     const startCursor = metafieldsData.pageInfo.startCursor;
-  //     formData.append("startCursor", JSON.stringify(startCursor));
-  //     submit(formData, {
-  //       method: "post",
-  //       action: `/app/manage_translation/metafield?language=${searchTerm}`,
-  //     });
-  //   } else if (key === "next") {
-  //     // 向后翻页
-  //     const formData = new FormData();
-  //     const endCursor = metafieldsData.pageInfo.endCursor;
-  //     formData.append("endCursor", JSON.stringify(endCursor));
-  //     submit(formData, {
-  //       method: "post",
-  //       action: `/app/manage_translation/metafield?language=${searchTerm}`,
-  //     });
-  //   } else if (typeof key === "object" && "language" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedLanguage(key.language);
-  //     navigate(`/app/manage_translation/metafield?language=${key.language}`);
-  //   } else if (typeof key === "object" && "item" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedItem(key.item);
-  //     navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
-  //   } else {
-  //     navigate(`/app/manage_translation?language=${searchTerm}`, {
-  //       state: { key: searchTerm },
-  //     }); // 跳转到 /app/manage_translation
-  //   }
-  // };
 
   const onCancel = () => {
     if (confirmData.length > 0) {

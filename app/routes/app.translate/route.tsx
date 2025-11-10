@@ -23,7 +23,6 @@ import {
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { LanguagesDataType } from "../app.language/route";
-import { setTableData } from "~/store/modules/languageTableData";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import PaymentModal from "~/components/paymentModal";
 import ScrollNotice from "~/components/ScrollNotice";
@@ -42,6 +41,7 @@ import LanguageSelectorCard from "./components/languageSelectorCard";
 import TransalteSettingCard from "./components/transalteSettingCard";
 import ToneSettingCard from "./components/toneSettingCard";
 import AdvanceSettingCard from "./components/advanceSettingCard";
+import { setLanguageTableData } from "~/store/modules/languageTableData";
 
 const { Title, Text } = Typography;
 
@@ -87,10 +87,7 @@ const Index = () => {
   );
 
   //用户基础数据
-  const { plan, isNew } = useSelector((state: any) => state.userConfig);
-
-  //默认语言数据
-  const [languageSetting, setLanguageSetting] = useState<LanguageSettingType>();
+  const { source, isNew } = useSelector((state: any) => state.userConfig);
 
   //选择的语言数据
   const [selectedLanguageCode, setSelectedLanguageCode] = useState<string[]>(
@@ -212,13 +209,6 @@ const Index = () => {
   };
 
   useEffect(() => {
-    loadingLanguageFetcher.submit(
-      { languageData: JSON.stringify(true) },
-      {
-        method: "post",
-        action: "/app",
-      },
-    );
     customApiKeyFetcher.submit(
       {
         customApikeyData: JSON.stringify(true),
@@ -250,79 +240,51 @@ const Index = () => {
     };
   }, []);
 
+  //更新语言数据，增加src、localeName、status字段
   useEffect(() => {
-    if (loadingLanguageFetcher.data) {
-      if (loadingLanguageFetcher.data.success) {
-        const shopLanguages = loadingLanguageFetcher.data.response;
-        const shopPrimaryLanguage = shopLanguages?.filter(
-          (language: any) => language?.primary,
-        );
-        const shopLanguagesWithoutPrimaryIndex = shopLanguages?.filter(
-          (language: any) => !language?.primary,
-        );
-        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
-          (item: any) => item?.locale,
-        );
-        setLanguageSetting({
-          primaryLanguage: shopPrimaryLanguage[0]?.name || "",
-          primaryLanguageCode: shopPrimaryLanguage[0]?.locale || "",
+    if (languageData?.length > 0 && source.code) {
+      const shopLocalesIndex = languageData?.map((item: any) => item?.locale);
+
+      let data = languageData.map((lang: any) => ({
+        key: lang?.locale,
+        name: lang?.name,
+        locale: lang?.locale,
+        published: lang.published,
+      }));
+      const GetLanguageDataFront = async () => {
+        const languageLocaleInfo = await GetLanguageLocaleInfo({
+          server: server as string,
+          locale: shopLocalesIndex,
+        });
+        const languageList = await GetLanguageList({
+          shop,
+          server: server as string,
+          source: source.code,
         });
 
-        let data = shopLanguagesWithoutPrimaryIndex.map(
-          (lang: any, index: number) => ({
-            key: lang.locale,
-            name: lang?.name,
-            locale: lang?.locale,
-            published: lang.published,
-          }),
+        dispatch(
+          setLanguageTableData(
+            data.map((item: any) => ({
+              ...item, // 展开原对象
+              src: languageLocaleInfo?.response
+                ? languageLocaleInfo?.response[item?.locale]?.countries
+                : [], // 插入新字段
+              localeName: languageLocaleInfo?.response
+                ? languageLocaleInfo?.response[item?.locale]?.Local
+                : "", // 插入新字段
+              status: languageList?.response
+                ? languageList?.response.find(
+                    (language: any) => language.target === item.locale,
+                  )?.status
+                : 0,
+            })),
+          ),
         );
-        const GetLanguageDataFront = async () => {
-          const languageLocaleInfo = await GetLanguageLocaleInfo({
-            server: server as string,
-            locale: shopLocalesIndex,
-          });
-          const languageList = await GetLanguageList({
-            shop,
-            server: server as string,
-            source: shopPrimaryLanguage[0]?.locale,
-          });
-
-          dispatch(
-            setTableData(
-              data.map((item: any) => ({
-                ...item, // 展开原对象
-                language: item.name,
-                src: languageLocaleInfo?.response
-                  ? languageLocaleInfo?.response[item?.locale]?.countries
-                  : [], // 插入新字段
-                localeName: languageLocaleInfo?.response
-                  ? languageLocaleInfo?.response[item?.locale]?.Local
-                  : "", // 插入新字段
-                status: languageList?.response
-                  ? languageList?.response.find(
-                      (language: any) => language.target === item.locale,
-                    )?.status
-                  : 0,
-              })),
-            ),
-          );
-
-          fetcher.submit(
-            {
-              log: `${shop} 翻译设置页面数据加载完毕`,
-            },
-            {
-              method: "POST",
-              action: "/log",
-            },
-          );
-
-          setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
-        };
-        GetLanguageDataFront();
-      }
+        setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
+      };
+      GetLanguageDataFront();
     }
-  }, [loadingLanguageFetcher.data]);
+  }, [languageData, source.code]);
 
   useEffect(() => {
     if (customApiKeyFetcher.data && customApiKeyFetcher.data.customApikeyData) {
@@ -428,7 +390,7 @@ const Index = () => {
   };
 
   const checkIfNeedPay = async () => {
-    if (!languageSetting?.primaryLanguageCode) {
+    if (!source.code) {
       shopify.toast.show(t("Please set the primary language first."));
       return;
     }
@@ -512,7 +474,7 @@ const Index = () => {
     translateFetcher.submit(
       {
         translation: JSON.stringify({
-          primaryLanguage: languageSetting?.primaryLanguageCode,
+          primaryLanguage: source.code,
           selectedLanguage: selectedLanguageCode,
           translateSettings1: translateSettings1,
           translateSettings2: ["1"],
@@ -532,7 +494,7 @@ const Index = () => {
     );
     report(
       {
-        primaryLanguage: languageSetting?.primaryLanguageCode,
+        primaryLanguage: source.code,
         selectedLanguage: selectedLanguageCode,
         translateSettings1: translateSettings1,
         translateSettings2: ["1"],
@@ -627,8 +589,8 @@ const Index = () => {
             <div style={{ paddingLeft: "8px" }}>
               <Text>{t("Your store's default language:")}</Text>{" "}
               <Text strong>
-                {languageSetting?.primaryLanguage ? (
-                  languageSetting?.primaryLanguage
+                {source.name ? (
+                  source.name
                 ) : (
                   <Skeleton active paragraph={{ rows: 0 }} />
                 )}
