@@ -506,7 +506,7 @@
   "Call-to-action": "號召性用語",
   "No Visible Switcher: ": "無可見切換器：",
   "The Private API has been limited due to your plan (Current plan: {{plan}})": "由於您的計劃（當前計劃：{{plan}}），私有 API 受到限制",
-  "This feature is available only with the paid plan.": "此功能僅在付費方案中可用。",
+  "Upgrade to get a higher credit limit (Current plan: {{plan}})": "升級以獲得更高的額度（當前方案：{{plan}}）。",
   "Import": "進口",
   "How to import translation data": "如何導入翻譯數據",
   "Import steps:": "導入步驟：",
