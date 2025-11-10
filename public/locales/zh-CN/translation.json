@@ -755,5 +755,8 @@
   "devplanCard4.title": "基于 IP 地理位置的隐形模式切换器",
   "translation_process_saving_shopify": "正在将翻译应用到Shopify",
   "The source text is empty and cannot be translated": "源文本为空，无法翻译",
-  "Feature Unavailable": "功能不可用"
+  "Feature Unavailable": "功能不可用",
+  "This feature is available only with the paid plan.": "此功能仅在付费计划中可用。",
+  "You’ve reached your term limit": "您已达到术语上限",
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "您已添加了当前计划允许的所有术语。要继续构建术语表并提高翻译准确性，请升级到更高的计划以获得更多容量。"
 }

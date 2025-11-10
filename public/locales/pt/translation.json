@@ -752,5 +752,9 @@
   "devplanCard2.title": "Diretório do editor otimizado",
   "devplanCard3.title": "Velocidade de tradução 30% mais rápida",
   "devplanCard4.title": "Comutador com modo invisível sob geolocalização baseada em IP",
-  "The source text is empty and cannot be translated": "O texto de origem está vazio e não pode ser traduzido"
+  "The source text is empty and cannot be translated": "O texto de origem está vazio e não pode ser traduzido",
+  "Feature Unavailable": "Recurso indisponível",
+  "This feature is available only with the paid plan.": "Esta funcionalidade está disponível apenas no plano pago.",
+  "You’ve reached your term limit": "Você atingiu o limite de termos",
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Você adicionou todos os termos permitidos no seu plano atual. Para continuar construindo seu glossário e melhorar a precisão das traduções, faça um upgrade para um plano superior com mais capacidade."
 }

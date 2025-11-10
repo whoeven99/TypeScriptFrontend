@@ -752,5 +752,9 @@
   "devplanCard2.title": "Оптимизированный каталог редактора",
   "devplanCard3.title": "Скорость перевода на 30% выше",
   "devplanCard4.title": "Переключатель с невидимым режимом при геолокации на основе IP",
-  "The source text is empty and cannot be translated": "Исходный текст пуст и не может быть переведен"
+  "The source text is empty and cannot be translated": "Исходный текст пуст и не может быть переведен",
+  "Feature Unavailable": "Функция недоступна",
+  "This feature is available only with the paid plan.": "Эта функция доступна только в платном тарифе.",
+  "You’ve reached your term limit": "Вы достигли лимита по терминам",
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Вы добавили все термины, разрешенные в вашем текущем плане. Чтобы продолжать строить ваш глоссарий и улучшать точность перевода, перейдите на более высокий план с большей емкостью."
 }

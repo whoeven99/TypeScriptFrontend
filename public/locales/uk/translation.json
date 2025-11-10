@@ -751,5 +751,9 @@
   "devplanCard3.title": "На 30% швидше перекладати",
   "devplanCard4.title": "Перемикач з невидимим режимом під час геолокації на основі IP",
   "translation_process_saving_shopify": "Застосування перекладів до Shopify",
-  "The source text is empty and cannot be translated": "Вихідний текст порожній і не може бути перекладений"
+  "The source text is empty and cannot be translated": "Вихідний текст порожній і не може бути перекладений",
+  "Feature Unavailable": "Функція недоступна",
+  "This feature is available only with the paid plan.": "Ця функція доступна лише у платному плані.",
+  "You’ve reached your term limit": "Ви досягли ліміту термінів",
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Ви додали всі терміни, дозволені у вашому поточному плані. Щоб продовжити створення глосарію та покращити точність перекладу, перейдіть на вищий план із більшою ємністю."
 }

@@ -752,5 +752,9 @@
   "devplanCard2.title": "Optimize edilmiş editör dizini",
   "devplanCard3.title": "%30 daha hızlı çeviri hızı",
   "devplanCard4.title": "IP tabanlı coğrafi konum altında görünmez modlu anahtarlayıcı",
-  "The source text is empty and cannot be translated": "Kaynak metin boş ve çevrilemiyor"
+  "The source text is empty and cannot be translated": "Kaynak metin boş ve çevrilemiyor",
+  "Feature Unavailable": "Özellik kullanılamıyor",
+  "This feature is available only with the paid plan.": "Bu özellik yalnızca ücretli planda mevcuttur.",
+  "You’ve reached your term limit": "Terim sınırınıza ulaştınız",
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Mevcut planınızda izin verilen tüm terimleri eklediniz. Sözlüğünüzü oluşturmaya devam etmek ve çeviri doğruluğunu artırmak için daha yüksek bir plana yükseltin."
 }
