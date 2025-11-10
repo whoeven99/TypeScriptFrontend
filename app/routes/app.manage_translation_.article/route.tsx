@@ -35,7 +35,6 @@ import { useTranslation } from "react-i18next";
 import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
 import { useDispatch, useSelector } from "react-redux";
 import { ShopLocalesType } from "../app.language/route";
-import { setTableData } from "~/store/modules/languageTableData";
 import { setLocale } from "~/store/modules/userConfig";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";

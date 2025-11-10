@@ -1,8 +1,7 @@
 import { TitleBar } from "@shopify/app-bridge-react";
 import { Page } from "@shopify/polaris";
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { authenticate } from "~/shopify.server";
-import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
+import { useEffect, useMemo, useState } from "react";
+import { LoaderFunctionArgs } from "@remix-run/node";
 import {
   Button,
   Card,
@@ -10,7 +9,6 @@ import {
   Flex,
   Modal,
   Pagination,
-  Popconfirm,
   Popover,
   Skeleton,
   Space,
@@ -19,51 +17,15 @@ import {
   Typography,
 } from "antd";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
-import {
-  DeleteGlossaryInfo,
-  GetGlossaryByShopNameLoading,
-  InsertGlossaryInfo,
-  UpdateTargetTextById,
-} from "~/api/JavaServer";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  setGLossaryStatusLoadingState,
-  setGLossaryTableData,
-} from "~/store/modules/glossaryTableData";
-import { ShopLocalesType } from "../app.language/route";
-// import UpdateGlossaryModal from "./components/updateGlossaryModal";
-import { InfoCircleOutlined, WarningOutlined } from "@ant-design/icons";
+import { WarningOutlined } from "@ant-design/icons";
 import NoLanguageSetCard from "~/components/noLanguageSetCard";
 import { useTranslation } from "react-i18next";
 import ScrollNotice from "~/components/ScrollNotice";
-import defaultStyles from "../styles/defaultStyles.module.css";
 import styles from "../app.language/styles.module.css";
-import useReport from "scripts/eventReport";
-import { globalStore } from "~/globalStore";
 const { Title, Text } = Typography;
 
-export interface GLossaryDataType {
-  key: number;
-  sourceText: string;
-  targetText: string;
-  language: string;
-  rangeCode: string;
-  type: number;
-  status: number;
-  loading: boolean;
-  createdDate: string;
-}
-
-export const planMapping = {
-  Free: 0,
-  Basic: 10,
-  Pro: 50,
-  Premium: 100,
-};
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const adminAuthResult = await authenticate.admin(request);
-
   const isMobile = request.headers.get("user-agent")?.includes("Mobile");
 
   return {
@@ -81,14 +43,9 @@ const Index = () => {
   const { plan } = useSelector((state: any) => state.userConfig);
   const dataSource = useSelector((state: any) => state.glossaryTableData.rows);
 
-  const [title, setTitle] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [isMobile, setIsMobile] = useState<boolean>(mobile);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
-  const [shopLocales, setShopLocales] = useState<ShopLocalesType[]>([]);
-  const [isGlossaryModalOpen, setIsGlossaryModalOpen] =
-    useState<boolean>(false);
-  const [glossaryModalId, setGlossaryModalId] = useState<number>(-1);
   const [showWarnModal, setShowWarnModal] = useState<boolean>(false);
   const hasSelected = useMemo(() => {
     return selectedRowKeys.length > 0;
@@ -137,54 +94,6 @@ const Index = () => {
 
   const handleDelete = () => {};
 
-  const handleApplication = async (key: number) => {
-    const row = dataSource.find((item: any) => item.key === key);
-    if (row.status === 0) {
-      const activeItemsCount = dataSource.filter(
-        (item: any) => item.status === 1,
-      ).length;
-      if (
-        activeItemsCount >= planMapping[plan?.type as keyof typeof planMapping]
-      ) {
-        setShowWarnModal(true);
-        return;
-      }
-    }
-
-    dispatch(setGLossaryStatusLoadingState({ key, loading: true }));
-
-    const updateInfo = {
-      ...row,
-      type: row.type ? 1 : 0,
-      status: row.status === 0 ? 1 : 0,
-    };
-
-    const data = await UpdateTargetTextById({
-      shop: globalStore?.shop || "",
-      data: updateInfo,
-      server: server as string,
-    });
-
-    if (data?.success) {
-      shopify.toast.show(t("Saved successfully"));
-      dispatch(
-        setGLossaryStatusLoadingState({
-          key: data.response.id,
-          loading: false,
-          status: data.response.status,
-        }),
-      );
-    } else {
-      shopify.toast.show(data?.errorMsg);
-      dispatch(
-        setGLossaryStatusLoadingState({
-          key: data.response.id,
-          loading: false,
-        }),
-      );
-    }
-  };
-
   const columns = [
     {
       title: t("Status"),
@@ -194,7 +103,6 @@ const Index = () => {
       render: (_: any, record: any) => (
         <Switch
           checked={record?.status}
-          onClick={() => handleApplication(record.key)}
           loading={record.loading} // 使用每个项的 loading 状态
         />
       ),
@@ -275,9 +183,6 @@ const Index = () => {
         <Title style={{ fontSize: "1.25rem", display: "inline" }}>
           {t("Glossary")}
         </Title>
-        <Text>
-          {t("Create translation rules for certain words and phrases")}
-        </Text>
         {!shopLocales?.length && !loading ? (
           <div
             style={{
@@ -308,30 +213,7 @@ const Index = () => {
                   ? `${t("Selected")}${selectedRowKeys.length}${t("items")}`
                   : null}
               </Flex>
-              {planMapping[plan?.type as keyof typeof planMapping] === 0 ? (
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
-                >
-                  <Popconfirm
-                    title=""
-                    description={t(
-                      "Upgrade to a paid plan to unlock this feature",
-                    )}
-                    trigger="hover"
-                    showCancel={false}
-                    okText={t("Upgrade")}
-                    onConfirm={() => navigate("/app/pricing")}
-                  >
-                    <InfoCircleOutlined />
-                  </Popconfirm>
-                  <Button
-                    className={defaultStyles.Button_disable}
-                    onClick={() => setShowWarnModal(true)}
-                  >
-                    {t("Create rule")}
-                  </Button>
-                </div>
-              ) : loading ? (
+              {loading ? (
                 <Skeleton.Button active />
               ) : (
                 <Button
@@ -432,9 +314,8 @@ const Index = () => {
                         <Flex justify="space-between">
                           <Text>{t("Status")}</Text>
                           <Switch
-                            checked={item?.status}
-                            onClick={() => handleApplication(item.key)}
-                            loading={item.loading} // 使用每个项的 loading 状态
+                            checked={item?.statu}
+                            loading={item.loading}
                           />
                         </Flex>
                         <Button
@@ -477,15 +358,6 @@ const Index = () => {
           </div>
         )}
       </Space>
-      {/* <UpdateGlossaryModal
-        id={glossaryModalId}
-        title={title}
-        isVisible={isGlossaryModalOpen}
-        setIsModalOpen={setIsGlossaryModalOpen}
-        shopLocales={shopLocales}
-        shop={shop}
-        server={server as string}
-      /> */}
       <Modal
         title={t("Feature Unavailable")}
         open={showWarnModal}
