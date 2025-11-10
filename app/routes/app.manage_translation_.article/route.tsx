@@ -39,6 +39,7 @@ import { setLocale } from "~/store/modules/userConfig";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import SideMenu from "~/components/sideMenu/sideMenu";
+import { setTableData } from "~/store/modules/languageTableData";
 
 const { Sider, Content } = Layout;
 
