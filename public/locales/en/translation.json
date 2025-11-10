@@ -567,7 +567,7 @@
   "Call-to-action": "Call-to-action",
   "No Visible Switcher: ": "No Visible Switcher: ",
   "The Private API has been limited due to your plan (Current plan: {{plan}})": "The Private API has been limited due to your plan (Current plan: {{plan}})",
-  "This feature is available only with the paid plan.": "This feature is available only with the paid plan.",
+  "Upgrade to get a higher credit limit (Current plan: {{plan}})": "Upgrade to get a higher credit limit (Current plan: {{plan}})",
   "Import": "Import",
   "How to import translation data": "How to import translation data",
   "Import steps:": "Import steps:",
@@ -751,5 +751,9 @@
   "5 Days Free Trial":"5 Days Free Trial",
   "{{count}} languages in progress — ": "{{count}} languages in progress — ",
   "see all tasks": "see all tasks",
-  "The source text is empty and cannot be translated": "The source text is empty and cannot be translated"
+  "The source text is empty and cannot be translated": "The source text is empty and cannot be translated",
+  "Feature Unavailable": "Feature Unavailable",
+  "This feature is available only with the paid plan.": "This feature is available only with the paid plan.",
+  "You’ve reached your term limit": "You’ve reached your term limit",
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity."
 }

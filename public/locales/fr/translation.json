@@ -355,7 +355,7 @@
   "There are empty fields. Please complete all the required information.": "There are empty fields. Please complete all the required information.",
   "Third-party app translation": "Third-party app translation",
   "This bill was issued on {{date}}": "This bill was issued on {{date}}",
-  "This feature is available only with the paid plan.": "This feature is available only with the paid plan.",
+  "Upgrade to get a higher credit limit (Current plan: {{plan}})": "Passez à une formule supérieure pour augmenter votre limite de crédit (Formule actuelle : {{plan}}).",
   "This language has been deleted. Please edit again.": "Language deleted. Please edit again.",
   "Tiffany – Elegant & romantic (Jewelry)": "Tiffany – Elegant & romantic (Jewelry)",
   "Title": "Titre",
@@ -752,5 +752,9 @@
   "devplanCard2.title": "Répertoire d'éditeur optimisé",
   "devplanCard3.title": "Vitesse de traduction 30 % plus rapide",
   "devplanCard4.title": "Commutateur avec mode invisible sous géolocalisation IP",
-  "The source text is empty and cannot be translated": "Le texte source est vide et ne peut pas être traduit"
+  "The source text is empty and cannot be translated": "Le texte source est vide et ne peut pas être traduit",
+  "Feature Unavailable": "Fonction non disponible",
+  "This feature is available only with the paid plan.": "Cette fonctionnalité est disponible uniquement avec le plan payant.",
+  "You’ve reached your term limit": "Vous avez atteint votre limite de termes",
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Vous avez ajouté tous les termes autorisés dans votre plan actuel. Pour continuer à construire votre glossaire et améliorer la précision des traductions, passez à un plan supérieur pour plus de capacité."
 }

@@ -355,7 +355,7 @@
   "There are empty fields. Please complete all the required information.": "Es gibt leere Felder. Bitte vervollständigen Sie alle erforderlichen Informationen.",
   "Third-party app translation": "Drittanbieter-App-Übersetzung",
   "This bill was issued on {{date}}": "Diese Rechnung wurde am {{date}} ausgestellt",
-  "This feature is available only with the paid plan.": "Diese Funktion ist nur mit dem bezahlten Plan verfügbar.",
+  "Upgrade to get a higher credit limit (Current plan: {{plan}})": "Aktualisieren Sie, um ein höheres Kreditlimit zu erhalten (Aktueller Plan: {{plan}}).",
   "This language has been deleted. Please edit again.": "Sprache gelöscht. Bitte bearbeiten Sie erneut.",
   "Tiffany – Elegant & romantic (Jewelry)": "Tiffany – Elegant & romantisch (Schmuck)",
   "Title": "Titel",
@@ -751,5 +751,9 @@
   "devplanCard3.title": "30 % schnellere Übersetzungsgeschwindigkeit",
   "devplanCard4.title": "Umschalter mit unsichtbarem Modus unter IP-basierter Geolokalisierung",
   "translation_process_saving_shopify": "Übersetzungen auf Shopify anwenden",
-  "The source text is empty and cannot be translated": "Der Quelltext ist leer und kann nicht übersetzt werden"
+  "The source text is empty and cannot be translated": "Der Quelltext ist leer und kann nicht übersetzt werden",
+  "Feature Unavailable": "Funktion nicht verfügbar",
+  "This feature is available only with the paid plan.": "Diese Funktion ist nur im kostenpflichtigen Plan verfügbar.",
+  "You’ve reached your term limit": "Sie haben Ihr Terminlimit erreicht",
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Sie haben alle Begriffe hinzugefügt, die in Ihrem aktuellen Plan erlaubt sind. Um weiterhin Ihr Glossar zu erweitern und die Übersetzungsgenauigkeit zu verbessern, upgraden Sie auf einen höheren Plan für mehr Kapazität."
 }
