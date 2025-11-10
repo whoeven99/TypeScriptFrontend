@@ -136,7 +136,10 @@ const Index = () => {
   const [isGlossaryModalOpen, setIsGlossaryModalOpen] =
     useState<boolean>(false);
   const [glossaryModalId, setGlossaryModalId] = useState<number>(-1);
-  const [showWarnModal, setShowWarnModal] = useState<boolean>(false);
+  const [upgradeModalContent, setUpgradeModalContent] = useState<{
+    title: string;
+    body: string;
+  } | null>(null);
   const hasSelected = useMemo(() => {
     return selectedRowKeys.length > 0;
   }, [selectedRowKeys]);
@@ -239,7 +242,7 @@ const Index = () => {
       if (
         activeItemsCount >= planMapping[plan?.type as keyof typeof planMapping]
       ) {
-        setShowWarnModal(true);
+        modalShowForPlan();
         return;
       }
     }
@@ -286,13 +289,29 @@ const Index = () => {
       title === "Create rule" &&
       dataSource.length >= planMapping[plan?.type as keyof typeof planMapping]
     ) {
-      setShowWarnModal(true);
+      modalShowForPlan();
     } else {
       setTitle(t(title));
       setGlossaryModalId(key);
       setIsGlossaryModalOpen(true); // 打开Modal
     }
     reportClick("glossary_list_edit");
+  };
+
+  const modalShowForPlan = () => {
+    if (plan?.type == "Free") {
+      setUpgradeModalContent({
+        title: t("Feature Unavailable"),
+        body: t("This feature is available only with the paid plan."),
+      });
+    } else {
+      setUpgradeModalContent({
+        title: t("You’ve reached your term limit"),
+        body: t(
+          "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.",
+        ),
+      });
+    }
   };
 
   const columns = [
@@ -449,7 +468,7 @@ const Index = () => {
                   </Popconfirm>
                   <Button
                     className={defaultStyles.Button_disable}
-                    onClick={() => setShowWarnModal(true)}
+                    onClick={modalShowForPlan}
                   >
                     {t("Create rule")}
                   </Button>
@@ -610,22 +629,23 @@ const Index = () => {
         server={server as string}
       />
       <Modal
-        title={t("Feature Unavailable")}
-        open={showWarnModal}
-        onCancel={() => setShowWarnModal(false)}
+        title={upgradeModalContent?.title}
+        open={!!upgradeModalContent}
+        onCancel={() => setUpgradeModalContent(null)}
         centered
         width={700}
         footer={
-          <Button type="primary" onClick={() => navigate("/app/pricing")}>
-            {t("Upgrade")}
-          </Button>
+          <Space>
+            <Button onClick={() => setUpgradeModalContent(null)}>
+              {t("Maybe later")}
+            </Button>
+            <Button type="primary" onClick={() => navigate("/app/pricing")}>
+              {t("Upgrade plan")}
+            </Button>
+          </Space>
         }
       >
-        <Text>
-          {t("Upgrade to get a higher credit limit (Current plan: {{plan}})", {
-            plan: plan?.type,
-          })}
-        </Text>
+        <Text>{upgradeModalContent?.body}</Text>
       </Modal>
     </Page>
   );
