@@ -68,7 +68,7 @@ const LanguageSelectorCard = forwardRef<
                 >
                   <img
                     src={lang?.src?.[0] || ""}
-                    alt={lang?.language}
+                    alt={lang?.name}
                     style={{
                       width: "30px",
                       height: "auto",
@@ -77,7 +77,7 @@ const LanguageSelectorCard = forwardRef<
                       borderRadius: "2px",
                     }}
                   />
-                  <span>{lang?.language}</span>
+                  <span>{lang?.name}</span>
                   <EasyTranslateIcon status={lang?.status || 0} />
                 </div>
               </Checkbox>

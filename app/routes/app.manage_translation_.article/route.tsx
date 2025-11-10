@@ -3,24 +3,14 @@ import {
   Card,
   Divider,
   Layout,
-  Menu,
   Result,
   Space,
   Spin,
   Table,
-  theme,
   Typography,
 } from "antd";
 import { useEffect, useState, useRef } from "react";
-import {
-  useActionData,
-  useFetcher,
-  useLoaderData,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-  useSubmit,
-} from "@remix-run/react"; // 引入 useNavigate
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryNextTransType, queryPreviousTransType } from "~/api/admin";
@@ -32,11 +22,8 @@ import {
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
-import { Modal, SaveBar, TitleBar } from "@shopify/app-bridge-react";
-import { useDispatch, useSelector } from "react-redux";
-import { ShopLocalesType } from "../app.language/route";
-import { setTableData } from "~/store/modules/languageTableData";
-import { setLocale } from "~/store/modules/userConfig";
+import { SaveBar } from "@shopify/app-bridge-react";
+import { useSelector } from "react-redux";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import SideMenu from "~/components/sideMenu/sideMenu";
@@ -189,7 +176,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const languageTableData = useSelector(
     (state: any) => state.languageTableData.rows,
   );
@@ -201,7 +187,6 @@ const Index = () => {
 
   const fetcher = useFetcher<any>();
   const dataFetcher = useFetcher<any>();
-  const languageFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -234,17 +219,6 @@ const Index = () => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    if (languageTableData.length === 0) {
-      languageFetcher.submit(
-        {
-          language: JSON.stringify(true),
-        },
-        {
-          method: "post",
-          action: "/app/manage_translation",
-        },
-      );
-    }
     dataFetcher.submit(
       {
         endCursor: JSON.stringify({
@@ -285,7 +259,7 @@ const Index = () => {
         languageTableData
           .filter((item: any) => !item.primary)
           .map((item: any) => ({
-            label: item.language,
+            label: item.name,
             value: item.locale,
           })),
       );
@@ -421,29 +395,6 @@ const Index = () => {
     setConfirmData([]);
     setSuccessTranslatedKey([]);
   }, [confirmFetcher.data]);
-
-  useEffect(() => {
-    if (languageFetcher.data) {
-      if (languageFetcher.data.data) {
-        const shopLanguages = languageFetcher.data.data;
-        dispatch(
-          setTableData(
-            shopLanguages.map((language: ShopLocalesType, index: number) => ({
-              key: language.locale,
-              language: language.name,
-              locale: language.locale,
-              primary: language.primary,
-              published: language.published,
-            })),
-          ),
-        );
-        const locale = shopLanguages.find(
-          (language: ShopLocalesType) => language.primary === true,
-        )?.locale;
-        dispatch(setLocale({ locale: locale || "" }));
-      }
-    }
-  }, [languageFetcher.data]);
 
   useEffect(() => {
     if (confirmData.length > 0) {

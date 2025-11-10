@@ -28,7 +28,7 @@ import {
   setAutoTranslateLoadingState,
   setAutoTranslateState,
   setStatusState,
-  setTableData,
+  setLanguageTableData,
 } from "~/store/modules/languageTableData";
 import {
   GetLanguageList,
@@ -72,7 +72,7 @@ export interface AllLanguagesType {
 
 export interface LanguagesDataType {
   key: number;
-  language: string;
+  name: string;
   src?: string[];
   localeName?: string;
   locale: string;
@@ -234,7 +234,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const data = await mutationShopLocaleEnable({
           shop,
           accessToken: accessToken as string,
-          source: addLanguages?.primaryLanguage?.locale || "",
+          source: addLanguages?.primaryLanguage || "",
           targets: addLanguages?.selectedLanguages || [],
         }); // 处理逻辑
 
@@ -322,6 +322,10 @@ const Index = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { plan } = useSelector((state: any) => state.userConfig);
+
+  //用户默认语言数据
+  const { source } = useSelector((state: any) => state.userConfig);
+
   const dataSource: LanguagesDataType[] = useSelector(
     (state: any) => state.languageTableData.rows,
   );
@@ -331,9 +335,6 @@ const Index = () => {
   }, [dataSource]);
 
   const prevLocaleDataRef = useRef<string[]>();
-  const [shopPrimaryLanguage, setShopPrimaryLanguage] = useState<
-    ShopLocalesType[]
-  >([]);
   const [markets, setMarkets] = useState<MarketType[]>([]);
   const [languageLocaleInfo, setLanguageLocaleInfo] = useState<any>();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); //表格多选控制key
@@ -474,11 +475,9 @@ const Index = () => {
         const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
           (item: any) => item?.locale,
         );
-        setShopPrimaryLanguage(shopPrimaryLanguageData || []);
-
         let data = shopLanguagesWithoutPrimaryIndex.map((lang: any) => ({
           key: lang?.locale,
-          language: lang?.name,
+          name: lang?.name,
           locale: lang?.locale,
           published: lang.published,
           localeName: "",
@@ -529,7 +528,7 @@ const Index = () => {
               action: "/app",
             });
           }
-          dispatch(setTableData(data));
+          dispatch(setLanguageTableData(data));
           setLoading(false);
         };
 
@@ -556,7 +555,7 @@ const Index = () => {
         (item) => !deleteData.includes(item.locale),
       );
       // 更新表格数据
-      dispatch(setTableData(newData));
+      dispatch(setLanguageTableData(newData));
       // 清空已选中项
       setSelectedRowKeys([]);
       // 结束加载状态
@@ -595,7 +594,7 @@ const Index = () => {
             formData.append(
               "statusData",
               JSON.stringify({
-                source: shopPrimaryLanguage[0]?.locale,
+                source: source.code,
                 target: [items[0]?.target],
               }),
             );
@@ -623,12 +622,12 @@ const Index = () => {
 
   useEffect(() => {
     if (dataSource && dataSource.find((item: any) => item.status === 2)) {
-      if (shopPrimaryLanguage) {
+      if (source?.code) {
         const formData = new FormData();
         formData.append(
           "statusData",
           JSON.stringify({
-            source: shopPrimaryLanguage[0]?.locale,
+            source: source?.code,
             target: [dataSource.find((item: any) => item.status === 2)?.locale],
           }),
         );
@@ -653,7 +652,7 @@ const Index = () => {
       render: (_: any, record: any) => {
         return (
           <Text>
-            {record.language}({record.localeName})
+            {record.name}({record.localeName})
           </Text>
         );
       },
@@ -799,17 +798,12 @@ const Index = () => {
       setNoFirstTranslation(true);
       return;
     }
-    // const items = dataSource.filter((item) => item.autoTranslate).length;
-    // if (
-    //   items <=
-    //   autoTranslationMapping[plan as keyof typeof autoTranslationMapping]
-    // ) {
     dispatch(setAutoTranslateLoadingState({ locale, loading: true }));
     const row = dataSource.find((item: any) => item.locale === locale);
     if (row) {
       const data = await UpdateAutoTranslateByData({
         shopName: shop,
-        source: shopPrimaryLanguage[0]?.locale,
+        source: source?.code,
         target: row.locale,
         autoTranslate: checked,
         server: server || "",
@@ -840,13 +834,6 @@ const Index = () => {
       },
       "language_list_auto_translate",
     );
-    // } else {
-    //   shopify.toast.show(
-    //     t(
-    //       `The ${autoTranslationMapping[plan as keyof typeof autoTranslationMapping]} autoTranslation limit has been reached`,
-    //     ),
-    //   );
-    // }
   };
 
   const handleDelete = () => {
@@ -863,7 +850,7 @@ const Index = () => {
       "deleteData",
       JSON.stringify({
         targets: targets,
-        primaryLanguage: shopPrimaryLanguage[0]?.locale,
+        primaryLanguage: source?.code,
       }),
     ); // 将选中的语言作为字符串发送
     deleteFetcher.submit(formData, { method: "post", action: "/app/language" }); // 提交表单请求
@@ -897,7 +884,7 @@ const Index = () => {
           <Title style={{ fontSize: "1.25rem", display: "inline" }}>
             {t("Languages")}
           </Title>
-          <PrimaryLanguage shopLanguages={shopPrimaryLanguage} />
+          <PrimaryLanguage />
         </div>
         <div className={styles.languageTable_action}>
           <Flex
@@ -981,7 +968,7 @@ const Index = () => {
                         );
                       }}
                     >
-                      {item.language}
+                      {item.name}
                     </Checkbox>
                     <TranslatedIcon status={item.status} />
                     <Flex justify="space-between">
@@ -1049,7 +1036,6 @@ const Index = () => {
         isVisible={isLanguageModalOpen}
         setIsModalOpen={setIsLanguageModalOpen}
         languageLocaleInfo={languageLocaleInfo}
-        primaryLanguage={shopPrimaryLanguage[0]}
       />
       <DeleteConfirmModal
         isVisible={deleteConfirmModalVisible}

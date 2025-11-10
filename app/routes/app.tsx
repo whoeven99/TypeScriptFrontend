@@ -3,7 +3,7 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import {
   Link,
   Outlet,
@@ -18,8 +18,6 @@ import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate } from "../shopify.server";
 import {
-  GetLanguageLocaleInfo,
-  GetLanguageList,
   GetUserWords,
   GetLanguageStatus,
   AddUserFreeSubscription,
@@ -29,7 +27,6 @@ import {
   AddDefaultLanguagePack,
   InsertCharsByShopName,
   InsertTargets,
-  GetTranslateDOByShopNameAndSource,
   GetUserData,
   StopTranslatingTask,
   GetUserSubscriptionPlan,
@@ -39,7 +36,7 @@ import {
   GetAllProgressData,
   IsInFreePlanTime,
 } from "~/api/JavaServer";
-import { ShopLocalesType } from "./app.language/route";
+import { LanguagesDataType, ShopLocalesType } from "./app.language/route";
 import {
   mutationAppPurchaseOneTimeCreate,
   queryShopLanguages,
@@ -53,12 +50,13 @@ import {
   setChars,
   setIsNew,
   setPlan,
-  setShop,
+  setSource,
   setTotalChars,
   setUpdateTime,
   setUserConfigIsLoading,
 } from "~/store/modules/userConfig";
 import { globalStore } from "~/globalStore";
+import { setLanguageTableData } from "~/store/modules/languageTableData";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -101,10 +99,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
     const findWebPixelId = JSON.parse(formData.get("findWebPixelId") as string);
     const unTranslated = JSON.parse(formData.get("unTranslated") as string);
-    const conversionRate = JSON.parse(formData.get("conversionRate") as string);
-    const getAssessmentScoreFetcher = JSON.parse(
-      formData.get("getAssessmentScoreFetcher") as string,
-    );
     if (init) {
       try {
         const init = await InitializationDetection({ shop });
@@ -136,6 +130,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (languageInit) {
       try {
+        await InsertTargets({
+          shop,
+          accessToken: accessToken!,
+          source: languageInit?.source,
+          targets: languageInit?.targets,
+        });
+      } catch (error) {
+        console.error("Error languageInit app:", error);
+      }
+    }
+
+    if (languageData) {
+      try {
         const shopLanguagesIndex: ShopLocalesType[] = await queryShopLanguages({
           shop,
           accessToken: accessToken as string,
@@ -146,51 +153,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopLanguagesWithoutPrimaryIndex = shopLanguagesIndex?.filter(
           (language) => !language.primary,
         );
-        const shopLocalesIndex = shopLanguagesWithoutPrimaryIndex?.map(
-          (item) => item.locale,
-        );
-
-        if (shopLocalesIndex.length && shopPrimaryLanguage[0].locale) {
-          await InsertTargets({
-            shop,
-            accessToken: accessToken!,
-            source: shopPrimaryLanguage[0].locale,
-            targets: shopLocalesIndex,
-          });
-        } else {
-          console.warn(`${shop} shopLanguagesIndex: `, shopLanguagesIndex);
-        }
 
         return {
           success: true,
           errorCode: 0,
           errorMsg: "",
           response: {
-            source: shopPrimaryLanguage[0]?.locale || undefined,
+            source: shopPrimaryLanguage[0] || undefined,
+            targets: shopLanguagesWithoutPrimaryIndex || [],
           },
-        };
-      } catch (error) {
-        console.error("Error languageInit app:", error);
-        return {
-          success: false,
-          errorCode: 10001,
-          errorMsg: "SERVER_ERROR",
-          response: undefined,
-        };
-      }
-    }
-
-    if (languageData) {
-      try {
-        const data: ShopLocalesType[] = await queryShopLanguages({
-          shop,
-          accessToken: accessToken as string,
-        });
-        return {
-          success: true,
-          errorCode: 0,
-          errorMsg: "",
-          response: data,
         };
       } catch (error) {
         console.error("Error languageData app:", error);
@@ -198,7 +169,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: true,
           errorCode: 0,
           errorMsg: "",
-          response: [],
+          response: undefined,
         };
       }
     }
@@ -584,25 +555,30 @@ export default function App() {
   const dispatch = useDispatch();
   const location = useLocation();
 
+  //获取应用语言数据
+  const languageTableData: LanguagesDataType[] = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
+
   const { plan, chars, totalChars, isNew } = useSelector(
     (state: any) => state.userConfig,
   );
   const initFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
+  const languageAddFetcher = useFetcher<any>();
 
   useEffect(() => {
     initFetcher.submit(
-      { init: JSON.stringify(true) },
+      { init: JSON.stringify({}) },
       {
-        method: "post",
-        action: "/app",
+        method: "POST",
       },
     );
+    //由于/translate/insertTargets接口返回较慢拆分为两个请求先请求shopify获取语言数据
     languageFetcher.submit(
-      { languageInit: JSON.stringify(true) },
+      { languageData: JSON.stringify({}) },
       {
-        method: "post",
-        action: "/app",
+        method: "POST",
       },
     );
     setIsClient(true);
@@ -613,7 +589,35 @@ export default function App() {
   useEffect(() => {
     if (languageFetcher.data) {
       if (languageFetcher.data?.response) {
-        globalStore.source = languageFetcher.data?.response?.source;
+        const source = {
+          code: languageFetcher.data?.response?.source?.locale || "",
+          name: languageFetcher.data?.response?.source?.name || "",
+        };
+        const targets = languageFetcher.data?.response?.targets;
+        globalStore.source = source.code;
+
+        dispatch(
+          setSource({
+            source,
+          }),
+        );
+
+        //判断语言数据是否存在，针对用户直接进入language页面的情况，此时可能会出现同时调用setLanguageTableData方法的情况所以保证根路由的优先级较低不覆盖language页面的数据
+        if (targets?.length > 0 && source && languageTableData.length == 0) {
+          dispatch(setLanguageTableData(targets));
+          //像后端提供最新的语言数据
+          languageAddFetcher.submit(
+            {
+              languageInit: JSON.stringify({
+                source,
+                targets,
+              }),
+            },
+            {
+              method: "POST",
+            },
+          );
+        }
       }
     }
   }, [languageFetcher.data]);

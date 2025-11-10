@@ -2,7 +2,10 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface UserConfigState {
   shop: string;
-  locale: string;
+  source: {
+    code: string;
+    name: string;
+  };
   plan: {
     id: number;
     type: string;
@@ -18,7 +21,10 @@ interface UserConfigState {
 
 const initialState: UserConfigState = {
   shop: "",
-  locale: "",
+  source: {
+    code: "",
+    name: "",
+  },
   plan: {
     id: 0,
     type: "",
@@ -49,14 +55,22 @@ const userConfigSlice = createSlice({
     ) => {
       state.plan = action.payload.plan;
     },
+    setSource: (
+      state,
+      action: PayloadAction<{
+        source: {
+          code: string;
+          name: string;
+        };
+      }>,
+    ) => {
+      state.source = action.payload.source;
+    },
     setUpdateTime: (state, action: PayloadAction<{ updateTime: string }>) => {
       state.updateTime = action.payload.updateTime;
     },
     setShop: (state, action: PayloadAction<{ shop: string }>) => {
       state.shop = action.payload.shop;
-    },
-    setLocale: (state, action: PayloadAction<{ locale: string }>) => {
-      state.locale = action.payload.locale;
     },
     setChars: (state, action: PayloadAction<{ chars: number | undefined }>) => {
       state.chars = action.payload.chars;
@@ -81,9 +95,9 @@ const userConfigSlice = createSlice({
 
 export const {
   setPlan,
+  setSource,
   setUpdateTime,
   setShop,
-  setLocale,
   setChars,
   setTotalChars,
   setUserConfigIsLoading,

@@ -19,7 +19,7 @@ import {
   ShopLocalesType,
 } from "~/routes/app.language/route";
 import { useDispatch, useSelector } from "react-redux";
-import { updateTableData } from "~/store/modules/languageTableData";
+import { updateLanguageTableData } from "~/store/modules/languageTableData";
 import { useTranslation } from "react-i18next";
 import { useFetcher } from "@remix-run/react";
 
@@ -30,7 +30,6 @@ interface AddLanguageModalProps {
   isVisible: boolean;
   setIsModalOpen: (visible: boolean) => void;
   languageLocaleInfo: any;
-  primaryLanguage: ShopLocalesType | undefined;
 }
 
 const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
@@ -38,9 +37,13 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   isVisible,
   setIsModalOpen,
   languageLocaleInfo,
-  primaryLanguage,
 }) => {
   const { t } = useTranslation();
+
+  //用户默认语言数据
+  const { source } = useSelector((state: any) => state.userConfig);
+
+  console.log(source?.code);
 
   const regions = [
     // 常用语言
@@ -259,7 +262,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   ];
 
   const updatedLocales = useMemo(() => {
-    if (primaryLanguage && languageLocaleInfo) {
+    if (source?.code && languageLocaleInfo) {
       return regions.map((region) => ({
         ...region,
         countries: region.countries
@@ -268,10 +271,10 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
             name: `${lang.name}(${languageLocaleInfo[lang.isoCode]?.Local})`,
             flag: languageLocaleInfo[lang.isoCode]?.countries[0],
           }))
-          .filter((lang) => lang.isoCode !== primaryLanguage?.locale),
+          .filter((lang) => lang.isoCode !== source?.code),
       }));
     }
-  }, [primaryLanguage, languageLocaleInfo]);
+  }, [source?.code, languageLocaleInfo]);
 
   const [allSelectedKeys, setAllSelectedKeys] = useState<string[]>([]); // 保存所有选中的key
   const [searchInput, setSearchInput] = useState("");
@@ -315,7 +318,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
       if (addFetcher.data?.success) {
         const data = addFetcher.data.response?.map((lang: any, i: any) => ({
           key: lang.locale,
-          language: lang.name,
+          name: lang.name,
           localeName:
             languageLocaleInfo[addFetcher.data.response[i].locale].Local,
           locale: lang.locale,
@@ -324,7 +327,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
           published: lang.published,
           loading: false,
         }));
-        dispatch(updateTableData(data));
+        dispatch(updateLanguageTableData(data));
         shopify.toast.show(t("Add success"));
         setAllSelectedKeys([]);
         setFilteredLanguages(updatedLocales);
@@ -451,7 +454,7 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
       "addLanguages",
       JSON.stringify({
         selectedLanguages: allSelectedKeys,
-        primaryLanguage: primaryLanguage,
+        primaryLanguage: source?.code,
       }),
     ); // 将选中的语言作为字符串发送
     addFetcher.submit(formData, {
