@@ -252,10 +252,8 @@ const Index = () => {
         return updated;
       } else {
         // ✅ 新增到数组最前面
-        const newKey =
-          prev.length > 0 ? Math.max(...prev.map((i) => i.key)) + 1 : 1;
         const newItem = {
-          key: newKey,
+          key: key || 0,
           sourceText,
           targetText,
           languageCode,

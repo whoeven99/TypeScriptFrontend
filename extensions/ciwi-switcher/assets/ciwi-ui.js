@@ -4,6 +4,7 @@ import {
   GetProductImageData,
   fetchAutoRate,
   GetShopImageData,
+  ParseLiquidDataByShopNameAndLanguage,
 } from "./ciwi-api.js";
 import { transformPrices } from "./ciwi-utils.js";
 
@@ -334,7 +335,7 @@ export async function LanguageSelectorTakeEffect(
 }
 
 /**
- * 观察 DOM 变化，动态处理新价格
+ * 观察 DOM 变化，动态处理新图片
  */
 export function initProductImgObserver({
   translateSourceArray = [],
@@ -395,6 +396,9 @@ export function initProductImgObserver({
   });
 }
 
+/**
+ * 根据数据库数据替换网页图片
+ */
 export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
   const productIdInput = ciwiBlock.querySelector('input[name="product_id"]');
   const productId = productIdInput.value;
@@ -443,6 +447,57 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
 }
 
 /**
+ * 根据数据库数据替换网页文本
+ */
+export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
+  const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
+  const language = languageInput?.value;
+
+  // 🧩 获取数据库翻译数据
+  const parseLiquidDataByShopNameAndLanguage =
+    await ParseLiquidDataByShopNameAndLanguage({
+      blockId,
+      shopName: shop.value,
+      languageCode: language,
+    });
+
+  const translations = parseLiquidDataByShopNameAndLanguage?.response || [];
+  if (translations.length === 0) return;
+
+  console.log("translations: ", translations);
+
+  // ✅ 遍历整个对象键值对
+  Object.entries(translations).forEach(([before, after]) => {
+    const trimmedBefore = before?.trim();
+    const trimmedAfter = after?.trim();
+    if (!trimmedBefore || !trimmedAfter) return;
+
+    // 使用 TreeWalker 全局扫描文本节点
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          return node.nodeValue == trimmedBefore
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_REJECT;
+        },
+      },
+    );
+
+    const textNodes = [];
+    while (walker.nextNode()) {
+      textNodes.push(walker.currentNode);
+    }
+
+    // 替换文本节点中的内容
+    textNodes.forEach((node) => {
+      node.nodeValue = node.nodeValue.replaceAll(trimmedBefore, trimmedAfter);
+    });
+  });
+}
+
+/**
  * 批量替换主页图片
  */
 export async function HomeImageTranslate(blockId) {
@@ -474,8 +529,8 @@ export async function HomeImageTranslate(blockId) {
         img.src = item.imageAfterUrl;
         img.srcset = item.imageAfterUrl;
       }
-      if (item.altBeforeTranslation) {
-        img.alt = item.altBeforeTranslation;
+      if (item.altAfterTranslation) {
+        img.alt = item.altAfterTranslation;
       }
     });
   });

@@ -63,6 +63,24 @@ export async function CrawlerDDetectionReport({ shop, blockId, ua, reason }) {
   }
 }
 
+export async function ParseLiquidDataByShopNameAndLanguage({
+  blockId,
+  shopName,
+  languageCode,
+}) {
+  try {
+    const { data } = await fetchJson(
+      `${switchUrl(blockId)}/liquid/parseLiquidDataByShopNameAndLanguage?shopName=${shopName}&languageCode=${languageCode}`,
+      {
+        method: "POST",
+      },
+    );
+    return data;
+  } catch (err) {
+    console.error("Error ParseLiquidDataByShopNameAndLanguage:", err);
+  }
+}
+
 export async function GetProductImageData({
   blockId,
   shopName,
@@ -87,7 +105,7 @@ export async function GetProductImageData({
   }
 }
 
-export async function GetShopImageData({ shopName, languageCode,blockId }) {
+export async function GetShopImageData({ shopName, languageCode, blockId }) {
   try {
     const { data } = await fetchJson(
       `${switchUrl(blockId)}/picture/getPictureDataByShopNameAndLanguageCode?shopName=${shopName}&languageCode=${languageCode}`,
