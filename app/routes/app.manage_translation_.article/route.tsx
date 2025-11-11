@@ -863,10 +863,6 @@ const Index = () => {
     }
   };
 
-  useEffect(() => {
-    console.log(confirmData);
-  }, [confirmData]);
-
   return (
     <Page
       title={t("Article")}

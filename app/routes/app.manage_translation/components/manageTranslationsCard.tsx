@@ -69,13 +69,7 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       key: "items",
       width: "30%",
       render: (_: any, record: any) => {
-        if (
-          record.key == "json_template" ||
-          record.key == "section_group" ||
-          record.key == "settings_category" ||
-          record.key == "settings_data_sections"
-        )
-          return null;
+        if (record.withoutCount) return null;
         return record.allItems === undefined ||
           record.allTranslatedItems === undefined ? (
           <div>{t("Syncing")}</div>

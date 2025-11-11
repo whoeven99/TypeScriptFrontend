@@ -45,6 +45,7 @@ const Index = () => {
   const { server, mobile } = useLoaderData<typeof loader>();
 
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   //加载状态数组，目前loading表示页面正在加载
   const [loadingArray, setLoadingArray] = useState<string[]>(["loading"]);
@@ -263,22 +264,22 @@ const Index = () => {
     });
   };
 
+  const onCancel = () => {
+    navigate(`/app/manage_translation`); // 跳转到 /app/manage_translation
+  };
+
   return (
-    <Page>
-      <TitleBar title={t("Custom Translation")} />
-      <ScrollNotice
-        text={t(
-          "Welcome to our app! If you have any questions, feel free to email us at support@ciwi.ai, and we will respond as soon as possible.",
-        )}
-      />
+    <Page
+      title={t("Custom Translation")}
+      backAction={{
+        onAction: onCancel,
+      }}
+    >
       <Space
         direction="vertical"
         size="middle"
         style={{ display: "flex", width: "100%" }}
       >
-        <Title style={{ fontSize: "1.25rem", display: "inline" }}>
-          {t("Custom Translation")}
-        </Title>
         <Flex
           align="center"
           justify="space-between" // 使按钮左右分布

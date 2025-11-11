@@ -472,13 +472,16 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     const trimmedAfter = after?.trim();
     if (!trimmedBefore || !trimmedAfter) return;
 
-    // 使用 TreeWalker 全局扫描文本节点
     const walker = document.createTreeWalker(
       document.body,
       NodeFilter.SHOW_TEXT,
       {
         acceptNode(node) {
-          return node.nodeValue == trimmedBefore
+          const nodeText = node.nodeValue?.trim();
+
+          // 允许带引号的文本也被匹配
+          const normalized = nodeText?.replace(/^["“”]+|["“”]+$/g, "");
+          return normalized === trimmedBefore
             ? NodeFilter.FILTER_ACCEPT
             : NodeFilter.FILTER_REJECT;
         },
@@ -490,9 +493,13 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
       textNodes.push(walker.currentNode);
     }
 
-    // 替换文本节点中的内容
     textNodes.forEach((node) => {
-      node.nodeValue = node.nodeValue.replaceAll(trimmedBefore, trimmedAfter);
+      // 判断是否原文包含引号
+      const hasQuote =
+        /^["“”]/.test(node.nodeValue) && /["“”]$/.test(node.nodeValue);
+
+      // 如果原文本带引号，则保留引号
+      node.nodeValue = hasQuote ? `"${trimmedAfter}"` : trimmedAfter;
     });
   });
 }
