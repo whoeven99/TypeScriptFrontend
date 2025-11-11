@@ -751,5 +751,7 @@
   "devplanCard3.title": "На 30% швидше перекладати",
   "devplanCard4.title": "Перемикач з невидимим режимом під час геолокації на основі IP",
   "translation_process_saving_shopify": "Застосування перекладів до Shopify",
-  "The source text is empty and cannot be translated": "Вихідний текст порожній і не може бути перекладений"
+  "The source text is empty and cannot be translated": "Вихідний текст порожній і не може бути перекладений",
+  "Custom Liquid": "Користувацький Liquid",
+  "Liquid & Third-Party Apps": "Liquid та сторонні додатки"
 }

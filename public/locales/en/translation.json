@@ -751,5 +751,7 @@
   "5 Days Free Trial":"5 Days Free Trial",
   "{{count}} languages in progress — ": "{{count}} languages in progress — ",
   "see all tasks": "see all tasks",
-  "The source text is empty and cannot be translated": "The source text is empty and cannot be translated"
+  "The source text is empty and cannot be translated": "The source text is empty and cannot be translated",
+  "Custom Liquid": "Custom Liquid",
+  "Liquid & Third-Party Apps": "Liquid & Third-Party Apps"
 }

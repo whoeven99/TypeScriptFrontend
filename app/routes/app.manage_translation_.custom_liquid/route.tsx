@@ -119,7 +119,37 @@ const Index = () => {
         action: "/log",
       },
     );
-    dataSourceGet();
+    
+    //表格数据初始化方法
+    setTimeout(async () => {
+      const selectShopNameLiquidData = await SelectShopNameLiquidData({
+        shop: globalStore?.shop || "",
+        server: server || "",
+      });
+
+      if (selectShopNameLiquidData.success) {
+        let newData: {
+          key: number;
+          sourceText: string;
+          targetText: string;
+          languageCode: string;
+        }[] = [];
+        if (
+          Array.isArray(selectShopNameLiquidData.response) &&
+          selectShopNameLiquidData.response?.length
+        ) {
+          newData = selectShopNameLiquidData.response.map((item: any) => ({
+            key: item?.id,
+            sourceText: item?.liquidBeforeTranslation,
+            targetText: item?.liquidAfterTranslation,
+            languageCode: item?.languageCode,
+          }));
+        }
+        setDataSource(newData);
+        setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
+      }
+    }, 100);
+
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -194,36 +224,6 @@ const Index = () => {
     onChange: (e: any) => setSelectedRowKeys(e),
   };
 
-  //表格数据初始化方法
-  const dataSourceGet = async () => {
-    const selectShopNameLiquidData = await SelectShopNameLiquidData({
-      shop: globalStore?.shop || "",
-      server: server || "",
-    });
-
-    if (selectShopNameLiquidData.success) {
-      let newData: {
-        key: number;
-        sourceText: string;
-        targetText: string;
-        languageCode: string;
-      }[] = [];
-      if (
-        Array.isArray(selectShopNameLiquidData.response) &&
-        selectShopNameLiquidData.response?.length
-      ) {
-        newData = selectShopNameLiquidData.response.map((item: any) => ({
-          key: item?.id,
-          sourceText: item?.liquidBeforeTranslation,
-          targetText: item?.liquidAfterTranslation,
-          languageCode: item?.languageCode,
-        }));
-      }
-      setDataSource(newData);
-      setLoadingArray((prev) => prev.filter((item) => item !== "loading"));
-    }
-  };
-
   //编辑表单数据更新和提交后更新表格方法
   const handleUpdateDataSource = ({
     key,
@@ -270,7 +270,7 @@ const Index = () => {
 
   return (
     <Page
-      title={t("Custom Translation")}
+      title={t("Custom Liquid")}
       backAction={{
         onAction: onCancel,
       }}
@@ -342,7 +342,7 @@ const Index = () => {
                     )
                   }
                 >
-                  {t("Custom Translation")}
+                  {t("Custom Liquid")}
                 </Checkbox>
               }
               loading={loadingArray.includes("loading")}

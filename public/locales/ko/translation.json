@@ -751,5 +751,7 @@
   "devplanCard3.title": "번역 속도가 30% 더 빨라졌습니다",
   "devplanCard4.title": "IP 기반 지리적 위치에서 보이지 않는 모드가 있는 스위처",
   "devplanCard5.title": "번역 결과를 최적화하기 위해 다양한 언어에 대한 전환율 지표를 표시합니다.",
-  "The source text is empty and cannot be translated": "소스 텍스트가 비어 있어 번역할 수 없습니다"
+  "The source text is empty and cannot be translated": "소스 텍스트가 비어 있어 번역할 수 없습니다",
+  "Custom Liquid": "맞춤 Liquid",
+  "Liquid & Third-Party Apps": "Liquid 및 타사 앱"
 }

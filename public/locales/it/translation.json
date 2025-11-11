@@ -752,5 +752,7 @@
   "devplanCard2.title": "Directory dell'editor ottimizzata",
   "devplanCard3.title": "Velocità di traduzione più veloce del 30%",
   "devplanCard4.title": "Switcher con modalità invisibile in geolocalizzazione basata su IP",
-  "The source text is empty and cannot be translated": "Il testo di origine è vuoto e non può essere tradotto"
+  "The source text is empty and cannot be translated": "Il testo di origine è vuoto e non può essere tradotto",
+  "Custom Liquid": "Liquid personalizzato",
+  "Liquid & Third-Party Apps": "Liquid e app di terze parti"
 }

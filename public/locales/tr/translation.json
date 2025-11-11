@@ -752,5 +752,7 @@
   "devplanCard2.title": "Optimize edilmiş editör dizini",
   "devplanCard3.title": "%30 daha hızlı çeviri hızı",
   "devplanCard4.title": "IP tabanlı coğrafi konum altında görünmez modlu anahtarlayıcı",
-  "The source text is empty and cannot be translated": "Kaynak metin boş ve çevrilemiyor"
+  "The source text is empty and cannot be translated": "Kaynak metin boş ve çevrilemiyor",
+  "Custom Liquid": "Özel Liquid",
+  "Liquid & Third-Party Apps": "Liquid ve Üçüncü Taraf Uygulamalar"
 }

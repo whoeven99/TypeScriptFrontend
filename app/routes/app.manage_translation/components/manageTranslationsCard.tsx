@@ -9,6 +9,7 @@ import {
   Result,
   Skeleton,
 } from "antd";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import useReport from "scripts/eventReport";
@@ -55,44 +56,49 @@ const ManageTranslationsCard: React.FC<SwitcherSettingCardProps> = ({
       "manage_list_edit",
     );
   };
-
-  const columns = [
-    {
-      title: cardTitle,
-      dataIndex: "title",
-      key: "title",
-      width: "30%",
-    },
-    {
-      title: t("Items Translated"),
-      dataIndex: "items",
-      key: "items",
-      width: "30%",
-      render: (_: any, record: any) => {
-        if (record.withoutCount) return null;
-        return record.allItems === undefined ||
-          record.allTranslatedItems === undefined ? (
-          <div>{t("Syncing")}</div>
-        ) : record.allItems === 0 && record.allTranslatedItems === 0 ? (
-          <div>--</div>
-        ) : (
-          <div>
-            {record.allTranslatedItems}/{record.allItems}
-          </div>
-        );
+  const columns = useMemo(
+    () => [
+      {
+        title: cardTitle,
+        dataIndex: "title",
+        key: "title",
+        width: "30%",
       },
-    },
-    {
-      title: t("Action"),
-      dataIndex: "operation",
-      key: "operation",
-      width: "40%",
-      render: (_: any, record: DataType) => {
-        return <Button onClick={() => handleEdit(record)}>{t("Edit")}</Button>;
+      dataSource.some((item: any) => !item.withoutCount)
+        ? {
+            title: t("Items Translated"),
+            dataIndex: "items",
+            key: "items",
+            width: "30%",
+            render: (_: any, record: any) => {
+              if (record.withoutCount) return null;
+              return record.allItems === undefined ||
+                record.allTranslatedItems === undefined ? (
+                <div>{t("Syncing")}</div>
+              ) : record.allItems === 0 && record.allTranslatedItems === 0 ? (
+                <div>--</div>
+              ) : (
+                <div>
+                  {record.allTranslatedItems}/{record.allItems}
+                </div>
+              );
+            },
+          }
+        : {},
+      {
+        title: t("Action"),
+        dataIndex: "operation",
+        key: "operation",
+        width: "40%",
+        render: (_: any, record: DataType) => {
+          return (
+            <Button onClick={() => handleEdit(record)}>{t("Edit")}</Button>
+          );
+        },
       },
-    },
-  ];
-
+    ],
+    [dataSource, cardTitle, t],
+  );
   return (
     <Card>
       <Space direction="vertical" size="small" style={{ display: "flex" }}>

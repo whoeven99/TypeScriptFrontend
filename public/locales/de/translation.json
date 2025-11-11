@@ -751,5 +751,7 @@
   "devplanCard3.title": "30 % schnellere Übersetzungsgeschwindigkeit",
   "devplanCard4.title": "Umschalter mit unsichtbarem Modus unter IP-basierter Geolokalisierung",
   "translation_process_saving_shopify": "Übersetzungen auf Shopify anwenden",
-  "The source text is empty and cannot be translated": "Der Quelltext ist leer und kann nicht übersetzt werden"
+  "The source text is empty and cannot be translated": "Der Quelltext ist leer und kann nicht übersetzt werden",
+  "Custom Liquid": "Benutzerdefiniertes Liquid",
+  "Liquid & Third-Party Apps": "Liquid und Apps von Drittanbietern"
 }

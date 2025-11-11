@@ -751,5 +751,7 @@
   "devplanCard2.title": "Geoptimaliseerde editor directory",
   "devplanCard3.title": "30% snellere vertaalsnelheid",
   "devplanCard4.title": "Switcher met onzichtbare modus onder IP-gebaseerde geolocatie",
-  "The source text is empty and cannot be translated": "De brontekst is leeg en kan niet worden vertaald"
+  "The source text is empty and cannot be translated": "De brontekst is leeg en kan niet worden vertaald",
+  "Custom Liquid": "Aangepaste Liquid",
+  "Liquid & Third-Party Apps": "Liquid & apps van derden"
 }

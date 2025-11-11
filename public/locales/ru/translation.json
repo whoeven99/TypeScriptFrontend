@@ -752,5 +752,7 @@
   "devplanCard2.title": "Оптимизированный каталог редактора",
   "devplanCard3.title": "Скорость перевода на 30% выше",
   "devplanCard4.title": "Переключатель с невидимым режимом при геолокации на основе IP",
-  "The source text is empty and cannot be translated": "Исходный текст пуст и не может быть переведен"
+  "The source text is empty and cannot be translated": "Исходный текст пуст и не может быть переведен",
+  "Custom Liquid": "Пользовательский Liquid",
+  "Liquid & Third-Party Apps": "Liquid и сторонние приложения"
 }
