@@ -366,8 +366,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (qualityEvaluation) {
       try {
-        console.log("quailtyEvaluation1");
-
         const mutationResponse = await admin.graphql(
           `
         #graphql
