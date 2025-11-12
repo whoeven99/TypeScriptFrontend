@@ -630,7 +630,7 @@
   "Compare plans": "比较计划",
   "<strong>${{amount}}</strong> billed once a year": "<strong>${{amount}}</strong> 每年计费",
   "translate to": "翻译为",
-  "This feature is available only with the paid plan.": "此功能仅在付费计划中可用。",
+  "Upgrade to get a higher credit limit (Current plan: {{plan}})": "升级套餐以获得更高的信用额度（当前套餐：{{plan}}）。",
   "Configure now": "去配置",
   "The usage has exceeded your configured quota. Please update your settings.": "请重新配置额度",
   "Unsupported language": "该语言不支持翻译",
@@ -756,5 +756,9 @@
   "translation_process_saving_shopify": "正在将翻译应用到Shopify",
   "The source text is empty and cannot be translated": "源文本为空，无法翻译",
   "Custom Liquid": "自定义 Liquid",
-  "Liquid & Third-Party Apps": "Liquid 与第三方应用"
+  "Liquid & Third-Party Apps": "Liquid 与第三方应用",
+  "Feature Unavailable": "功能不可用",
+  "This feature is available only with the paid plan.": "此功能仅在付费计划中可用。",
+  "You’ve reached your term limit": "您已达到术语上限",
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "您已添加了当前计划允许的所有术语。要继续构建术语表并提高翻译准确性，请升级到更高的计划以获得更多容量。"
 }

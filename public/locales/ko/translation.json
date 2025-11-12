@@ -562,7 +562,7 @@
   "Call-to-action": "행동 촉구",
   "No Visible Switcher: ": "눈에 보이는 스위처 없음:",
   "The Private API has been limited due to your plan (Current plan: {{plan}})": "귀하의 요금제(현재 요금제: {{plan}})로 인해 Private API가 제한되었습니다.",
-  "This feature is available only with the paid plan.": "이 기능은 유료 플랜에서만 사용할 수 있습니다.",
+  "Upgrade to get a higher credit limit (Current plan: {{plan}})": "더 높은 크레딧 한도를 위해 업그레이드하세요 (현재 플랜: {{plan}}).",
   "Import": "수입",
   "How to import translation data": "번역 데이터를 가져오는 방법",
   "Import steps:": "가져오기 단계:",
@@ -753,5 +753,9 @@
   "devplanCard5.title": "번역 결과를 최적화하기 위해 다양한 언어에 대한 전환율 지표를 표시합니다.",
   "The source text is empty and cannot be translated": "소스 텍스트가 비어 있어 번역할 수 없습니다",
   "Custom Liquid": "맞춤 Liquid",
-  "Liquid & Third-Party Apps": "Liquid 및 타사 앱"
+  "Liquid & Third-Party Apps": "Liquid 및 타사 앱",
+  "Feature Unavailable": "기능을 사용할 수 없습니다",
+  "This feature is available only with the paid plan.": "이 기능은 유료 플랜에서만 이용 가능합니다.",
+  "You’ve reached your term limit": "당신은 용어 한도를 초과했습니다",
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "현재 플랜에서 허용된 모든 용어를 추가했습니다. 용어집을 계속 구축하고 번역 정확도를 향상시키려면, 더 많은 용량을 제공하는 상위 플랜으로 업그레이드하세요."
 }

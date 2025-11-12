@@ -355,7 +355,7 @@
   "There are empty fields. Please complete all the required information.": "There are empty fields. Please complete all the required information.",
   "Third-party app translation": "Third-party app translation",
   "This bill was issued on {{date}}": "This bill was issued on {{date}}",
-  "This feature is available only with the paid plan.": "This feature is available only with the paid plan.",
+  "Upgrade to get a higher credit limit (Current plan: {{plan}})": "Esegui l’upgrade per ottenere un limite di credito più alto (Piano attuale: {{plan}}).",
   "This language has been deleted. Please edit again.": "Language deleted. Please edit again.",
   "Tiffany – Elegant & romantic (Jewelry)": "Tiffany – Elegant & romantic (Jewelry)",
   "Title": "Titolo",
@@ -754,5 +754,9 @@
   "devplanCard4.title": "Switcher con modalità invisibile in geolocalizzazione basata su IP",
   "The source text is empty and cannot be translated": "Il testo di origine è vuoto e non può essere tradotto",
   "Custom Liquid": "Liquid personalizzato",
-  "Liquid & Third-Party Apps": "Liquid e app di terze parti"
+  "Liquid & Third-Party Apps": "Liquid e app di terze parti",
+  "Feature Unavailable": "Funzione non disponibile",
+  "This feature is available only with the paid plan.": "Cette fonctionnalité est disponible uniquement avec le plan payant.",
+  "You’ve reached your term limit": "Vous avez atteint votre limite de termes",
+  "You’ve added all the terms allowed in your current plan.To keep building your glossary and improve translation accuracy, upgrade to a higher plan for more capacity.": "Vous avez ajouté tous les termes autorisés dans votre plan actuel. Pour continuer à construire votre glossaire et améliorer la précision des traductions, passez à un plan supérieur pour plus de capacité."
 }
