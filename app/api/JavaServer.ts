@@ -18,6 +18,35 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const UpdateLiquidReplacementMethod = async ({
+  shop,
+  server,
+  id,
+}: {
+  shop: string;
+  server: string;
+  id: number;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/liquid/updateLiquidReplacementMethod?shopName=${shop}&id=${id}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} UpdateLiquidReplacementMethod: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} UpdateLiquidReplacementMethod error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
 export const DeleteLiquidDataByIds = async ({
   shop,
   server,
@@ -84,6 +113,7 @@ export const InsertShopNameLiquidData = async ({
   server,
   sourceText,
   targetText,
+  replacementMethod,
   languageCode,
 }: {
   id?: number;
@@ -91,6 +121,7 @@ export const InsertShopNameLiquidData = async ({
   server: string;
   sourceText: string;
   targetText: string;
+  replacementMethod: boolean;
   languageCode: string;
 }) => {
   try {
@@ -101,6 +132,7 @@ export const InsertShopNameLiquidData = async ({
         id: id,
         liquidBeforeTranslation: sourceText,
         liquidAfterTranslation: targetText,
+        replacementMethod,
         languageCode,
       },
     });

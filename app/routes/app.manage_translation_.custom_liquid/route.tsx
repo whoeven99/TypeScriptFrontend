@@ -10,6 +10,7 @@ import {
   Modal,
   Pagination,
   Popover,
+  Select,
   Skeleton,
   Space,
   Switch,
@@ -28,6 +29,7 @@ import { globalStore } from "~/globalStore";
 import {
   DeleteLiquidDataByIds,
   SelectShopNameLiquidData,
+  UpdateLiquidReplacementMethod,
 } from "~/api/JavaServer";
 import UpdateCustomTransModal from "./components/updateCustomTransModal";
 const { Title, Text } = Typography;
@@ -59,6 +61,7 @@ const Index = () => {
       key: number;
       sourceText: string;
       targetText: string;
+      replacementMethod: boolean;
       languageCode: string;
     }[]
   >([]);
@@ -119,7 +122,7 @@ const Index = () => {
         action: "/log",
       },
     );
-    
+
     //表格数据初始化方法
     setTimeout(async () => {
       const selectShopNameLiquidData = await SelectShopNameLiquidData({
@@ -132,6 +135,7 @@ const Index = () => {
           key: number;
           sourceText: string;
           targetText: string;
+          replacementMethod: boolean;
           languageCode: string;
         }[] = [];
         if (
@@ -142,6 +146,7 @@ const Index = () => {
             key: item?.id,
             sourceText: item?.liquidBeforeTranslation,
             targetText: item?.liquidAfterTranslation,
+            replacementMethod: item?.replacementMethod,
             languageCode: item?.languageCode,
           }));
         }
@@ -189,19 +194,48 @@ const Index = () => {
       title: t("Translation text"),
       dataIndex: "targetText",
       key: "targetText",
-      width: "30%",
+      width: "25%",
     },
     {
       title: t("Apply for"),
       dataIndex: "languageCode",
       key: "languageCode",
-      width: "30%",
+      width: "20%",
+    },
+    {
+      title: t("Replacement method"),
+      dataIndex: "languageCode",
+      key: "languageCode",
+      width: "20%",
+      render: (_: any, record: any) => {
+        return (
+          <Select
+            options={[
+              {
+                label: t("Precise replacement"),
+                value: true,
+              },
+              {
+                label: t("Fuzzy Replacement"),
+                value: false,
+              },
+            ]}
+            style={{ width: "100%" }}
+            onChange={() => {
+              handleSwitchReplaceMethod({
+                id: record?.key,
+              });
+            }}
+            value={record.replacementMethod}
+          />
+        );
+      },
     },
     {
       title: t("Action"),
       dataIndex: "action",
       key: "action",
-      width: "15%",
+      width: "10%",
       render: (_: any, record: any) => (
         <Button
           onClick={() =>
@@ -224,16 +258,40 @@ const Index = () => {
     onChange: (e: any) => setSelectedRowKeys(e),
   };
 
+  //编辑替换方式
+  const handleSwitchReplaceMethod = async ({ id }: { id: number }) => {
+    const updateLiquidReplacementMethod = await UpdateLiquidReplacementMethod({
+      shop: globalStore?.shop || "",
+      server: server || "",
+      id,
+    });
+    if (updateLiquidReplacementMethod?.success) {
+      const newData = dataSource.map((item) =>
+        item.key === id
+          ? {
+              ...item,
+              replacementMethod: !!updateLiquidReplacementMethod?.response,
+            }
+          : item,
+      );      
+      setDataSource(newData);
+    } else {
+      shopify.toast.show(updateLiquidReplacementMethod?.errorMsg);
+    }
+  };
+
   //编辑表单数据更新和提交后更新表格方法
   const handleUpdateDataSource = ({
     key,
     sourceText,
     targetText,
+    replacementMethod,
     languageCode,
   }: {
     key?: number;
     sourceText: string;
     targetText: string;
+    replacementMethod: boolean;
     languageCode: string;
   }) => {
     setDataSource((prev) => {
@@ -248,6 +306,7 @@ const Index = () => {
           ...updated[index],
           sourceText,
           targetText,
+          replacementMethod,
           languageCode,
         };
         return updated;
@@ -257,6 +316,7 @@ const Index = () => {
           key: key || 0,
           sourceText,
           targetText,
+          replacementMethod,
           languageCode,
         };
         return [newItem, ...prev];
@@ -377,35 +437,17 @@ const Index = () => {
                     </Flex>
                     <Flex justify="space-between">
                       <Text>{t("Apply for")}</Text>
-                      {item.language ? (
-                        <Text>{item.language}</Text>
-                      ) : (
-                        <Popover
-                          content={t(
-                            "This language has been deleted. Please edit again.",
-                          )}
-                        >
-                          <WarningOutlined
-                            style={{
-                              color: "#F8B400",
-                              fontSize: "18px",
-                              width: "100%",
-                            }}
-                          />
-                        </Popover>
-                      )}
+                      <Text>{item.languageCode}</Text>
                     </Flex>
                     <Flex justify="space-between">
-                      <Text>{t("Case")}</Text>
-                      {item.type ? (
-                        <Text>{t("Case-sensitive")}</Text>
-                      ) : (
-                        <Text>{t("Case-insensitive")}</Text>
-                      )}
-                    </Flex>
-                    <Flex justify="space-between">
-                      <Text>{t("Status")}</Text>
-                      <Switch checked={item?.statu} loading={item.loading} />
+                      <Text>{t("Apply for")}</Text>
+                      <Text>
+                        {t(
+                          item.replacementMethod
+                            ? "Precise replacement"
+                            : "Fuzzy Replacement",
+                        )}
+                      </Text>
                     </Flex>
                     <Button
                       style={{ width: "100%" }}
@@ -456,14 +498,22 @@ const Index = () => {
           key,
           sourceText,
           targetText,
+          replacementMethod,
           languageCode,
         }: {
           key?: number;
           sourceText: string;
           targetText: string;
+          replacementMethod: boolean;
           languageCode: string;
         }) =>
-          handleUpdateDataSource({ key, sourceText, targetText, languageCode })
+          handleUpdateDataSource({
+            key,
+            sourceText,
+            targetText,
+            replacementMethod,
+            languageCode,
+          })
         }
         defaultData={editData}
         open={createOrEditModal.open}

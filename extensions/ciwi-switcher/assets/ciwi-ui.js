@@ -462,46 +462,81 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
     });
 
   const translations = parseLiquidDataByShopNameAndLanguage?.response || [];
-  if (translations.length === 0) return;
+  if (!translations || Object.keys(translations).length === 0) return;
 
   console.log("translations: ", translations);
 
-  // ✅ 遍历整个对象键值对
-  Object.entries(translations).forEach(([before, after]) => {
-    const trimmedBefore = before?.trim();
-    const trimmedAfter = after?.trim();
-    if (!trimmedBefore || !trimmedAfter) return;
+  // 🧮 辅助函数
+  const escapeRegExp = (string) =>
+    string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-    const walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode(node) {
-          const nodeText = node.nodeValue?.trim();
+  const normalizeText = (text) =>
+    text?.trim()?.replace(/^["“”]+|["“”]+$/g, "") || "";
 
-          // 允许带引号的文本也被匹配
-          const normalized = nodeText?.replace(/^["“”]+|["“”]+$/g, "");
-          return normalized === trimmedBefore
-            ? NodeFilter.FILTER_ACCEPT
-            : NodeFilter.FILTER_REJECT;
+  const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(text);
+
+  // 将 translations 拆分成精准匹配和模糊匹配
+  const entries = Object.entries(translations).map(
+    ([before, [after, isExact]]) => ({
+      before,
+      after,
+      isExact: Boolean(isExact),
+    }),
+  );
+
+  const exactEntries = entries.filter((e) => e.isExact);
+  const fuzzyEntries = entries.filter((e) => !e.isExact);
+
+  /**
+   * 🔄 通用替换函数
+   */
+  const replaceForEntries = (entryList, matcherFn, replacerFn) => {
+    entryList.forEach(({ before, after }) => {
+      const trimmedBefore = before?.trim();
+      const trimmedAfter = after?.trim();
+      if (!trimmedBefore || !trimmedAfter) return;
+
+      const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT,
+        {
+          acceptNode(node) {
+            const normalized = normalizeText(node.nodeValue);
+            return matcherFn(normalized, trimmedBefore)
+              ? NodeFilter.FILTER_ACCEPT
+              : NodeFilter.FILTER_REJECT;
+          },
         },
-      },
-    );
+      );
 
-    const textNodes = [];
-    while (walker.nextNode()) {
-      textNodes.push(walker.currentNode);
-    }
+      const textNodes = [];
+      while (walker.nextNode()) textNodes.push(walker.currentNode);
 
-    textNodes.forEach((node) => {
-      // 判断是否原文包含引号
-      const hasQuote =
-        /^["“”]/.test(node.nodeValue) && /["“”]$/.test(node.nodeValue);
-
-      // 如果原文本带引号，则保留引号
-      node.nodeValue = hasQuote ? `"${trimmedAfter}"` : trimmedAfter;
+      textNodes.forEach((node) => {
+        const original = node.nodeValue;
+        const keepQuote = hasOuterQuote(original);
+        const newValue = replacerFn(original, trimmedBefore, trimmedAfter);
+        node.nodeValue = keepQuote ? `"${newValue}"` : newValue;
+      });
     });
-  });
+  };
+
+  // ✅ 1. 先执行精准替换
+  replaceForEntries(
+    exactEntries,
+    (normalized, trimmedBefore) => normalized === trimmedBefore,
+    (_original, _trimmedBefore, trimmedAfter) => trimmedAfter,
+  );
+
+  // ✅ 2. 再执行模糊替换
+  replaceForEntries(
+    fuzzyEntries,
+    (normalized, trimmedBefore) => normalized.includes(trimmedBefore),
+    (original, trimmedBefore, trimmedAfter) => {
+      const re = new RegExp(escapeRegExp(trimmedBefore), "g");
+      return original.replace(re, trimmedAfter);
+    },
+  );
 }
 
 /**

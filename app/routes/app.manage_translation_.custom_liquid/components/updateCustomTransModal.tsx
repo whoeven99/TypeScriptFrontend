@@ -5,7 +5,6 @@ import { LanguagesDataType } from "~/routes/app.language/route";
 import { useTranslation } from "react-i18next";
 import { InsertShopNameLiquidData } from "~/api/JavaServer";
 import { globalStore } from "~/globalStore";
-import { ExclamationCircleOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -15,6 +14,7 @@ interface UpdateCustomTransModalProps {
     key: number;
     sourceText: string;
     targetText: string;
+    replacementMethod: boolean;
     languageCode: string;
   }[];
   defaultData?:
@@ -22,6 +22,7 @@ interface UpdateCustomTransModalProps {
         key: number;
         sourceText: string;
         targetText: string;
+        replacementMethod: boolean;
         languageCode: string;
       }
     | undefined;
@@ -29,11 +30,13 @@ interface UpdateCustomTransModalProps {
     key,
     sourceText,
     targetText,
+    replacementMethod,
     languageCode,
   }: {
     key?: number;
     sourceText: string;
     targetText: string;
+    replacementMethod: boolean;
     languageCode: string;
   }) => void;
   title: string;
@@ -71,17 +74,22 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
   const [formData, setFormData] = useState<{
     sourceText: string;
     targetText: string;
+    replacementMethod: boolean;
     languageCode: string;
   }>({
     sourceText: "",
     targetText: "",
+    replacementMethod: true,
     languageCode: "",
   });
 
   //存在数据为空时禁用提交
   const confirmButtonDisable = useMemo<boolean>(
     () =>
-      !formData.languageCode || !formData.sourceText || !formData.targetText,
+      !formData.languageCode ||
+      !formData.sourceText ||
+      !formData.targetText ||
+      JSON.stringify(formData) == JSON.stringify(defaultData),
     [formData],
   );
 
@@ -96,6 +104,7 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
       setFormData({
         sourceText: "",
         targetText: "",
+        replacementMethod: true,
         languageCode: "",
       });
     }
@@ -129,6 +138,7 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
           server: server,
           sourceText: formData.sourceText,
           targetText: formData.targetText,
+          replacementMethod: formData.replacementMethod,
           languageCode: formData.languageCode,
         });
       } else {
@@ -137,6 +147,7 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
           server: server,
           sourceText: formData.sourceText,
           targetText: formData.targetText,
+          replacementMethod: formData.replacementMethod,
           languageCode: formData.languageCode,
         });
       }
@@ -146,6 +157,7 @@ const UpdateCustomTransModal: React.FC<UpdateCustomTransModalProps> = ({
           key: data.response?.id || defaultData?.key,
           sourceText: data.response?.liquidBeforeTranslation,
           targetText: data.response?.liquidAfterTranslation,
+          replacementMethod: true,
           languageCode: data.response?.languageCode,
         };
         handleUpdateDataSource(newData);
