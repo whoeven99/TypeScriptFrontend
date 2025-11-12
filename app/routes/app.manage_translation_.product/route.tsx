@@ -794,7 +794,7 @@ const Index = () => {
           ?.map((option: any, index: number) => {
             return {
               resourceId: option?.resourceId,
-              key: `${option?.translatableContent[0]?.key}_${index}`,
+              key: `${option?.translatableContent[0]?.key}_${option?.resourceId}_${index}`,
               index: index,
               locale: option?.translatableContent[0]?.locale,
               digest: option?.translatableContent[0]?.digest,
@@ -810,7 +810,7 @@ const Index = () => {
             (metafield: any, index: number) => {
               return {
                 resourceId: metafield?.resourceId,
-                key: `${metafield?.translatableContent[0]?.key}_${index}`,
+                key: `${metafield?.translatableContent[0]?.key}_${metafield?.resourceId}_${index}`,
                 index: index,
                 locale: metafield?.translatableContent[0]?.locale,
                 digest: metafield?.translatableContent[0]?.digest,
@@ -839,7 +839,7 @@ const Index = () => {
               )
               .map((variant: any) => ({
                 resourceId: variant?.resourceId,
-                key: `${variant?.translatableContent[0]?.key}_${index}`,
+                key: `${variant?.translatableContent[0]?.key}_${variant?.resourceId}_${index}`,
                 index,
                 resource: t(variant?.translatableContent[0]?.key),
                 type: variant?.translatableContent[0]?.type,
