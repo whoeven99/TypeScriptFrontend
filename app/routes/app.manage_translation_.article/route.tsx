@@ -45,55 +45,6 @@ const { Sider, Content } = Layout;
 
 const { Title, Text } = Typography;
 
-interface ArticleType {
-  key: string;
-  handle: {
-    value: string;
-    type: string;
-  };
-  title: {
-    value: string;
-    type: string;
-  };
-  body: {
-    value: string;
-    type: string;
-  };
-  summary_html: {
-    value: string;
-    type: string;
-  };
-  seo: {
-    description: {
-      value: string | undefined;
-      type: string;
-    };
-    title: {
-      value: string | undefined;
-      type: string;
-    };
-  };
-  translations: {
-    handle: string | undefined;
-    key: string;
-    title: string | undefined;
-    body: string | undefined;
-    summary_html: string | undefined;
-    seo: {
-      description: string | undefined;
-      title: string | undefined;
-    };
-  };
-}
-
-type TableDataType = {
-  key: string;
-  resource: string;
-  type: string | undefined;
-  default_language: string | undefined;
-  translated: string | undefined;
-} | null;
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
@@ -208,9 +159,9 @@ const Index = () => {
 
   const [menuData, setMenuData] = useState<any[]>([]);
   const [articlesData, setArticlesData] = useState<any>();
-  const [articleData, setArticleData] = useState<ArticleType>();
-  const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [SeoData, setSeoData] = useState<TableDataType[]>([]);
+  // const [articleData, setArticleData] = useState<any>();
+  const [resourceData, setResourceData] = useState<any[]>([]);
+  const [SeoData, setSeoData] = useState<any[]>([]);
   const [selectArticleKey, setSelectArticleKey] = useState<string>("");
   const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
@@ -294,69 +245,66 @@ const Index = () => {
 
   useEffect(() => {
     if (articlesData) {
-      const data = transBeforeData({
-        articles: articlesData,
-      });
-      setArticleData(data);
+      // const data = transBeforeData({
+      //   articles: articlesData,
+      // });
+      // setArticleData(data);
+      //   setResourceData(
+      //     [
+      //       {
+      //         key: "title",
+      //         resource: t("Title"),
+      //         default_language: articleData?.title.value,
+      //         translated: articleData?.translations?.title,
+      //         type: articleData?.title.type,
+      //       },
+      //       {
+      //         key: "body_html",
+      //         resource: t("Description"),
+      //         default_language: articleData?.body.value,
+      //         translated: articleData?.translations?.body,
+      //         type: articleData?.body.type,
+      //       },
+      //       {
+      //         key: "summary_html",
+      //         resource: t("Summary"),
+      //         default_language: articleData?.summary_html.value,
+      //         translated: articleData?.translations?.summary_html,
+      //         type: articleData?.summary_html.type,
+      //       },
+      //     ].filter((item) => item.default_language),
+      //   );
+      //   setSeoData(
+      //     [
+      //       {
+      //         key: "handle",
+      //         resource: t("URL handle"),
+      //         default_language: articleData?.handle.value,
+      //         translated: articleData?.translations?.handle,
+      //         type: articleData?.handle.type,
+      //       },
+      //       {
+      //         key: "meta_title",
+      //         resource: t("Meta title"),
+      //         default_language: articleData?.seo.title.value,
+      //         translated: articleData?.translations?.seo.title,
+      //         type: articleData?.seo.title.type,
+      //       },
+      //       {
+      //         key: "meta_description",
+      //         resource: "Meta description",
+      //         default_language: articleData?.seo.description.value,
+      //         translated: articleData?.translations?.seo.description,
+      //         type: articleData?.seo.description.type,
+      //       },
+      //     ].filter((item) => item.default_language),
+      //   );
       setLoadingItems([]);
       setConfirmData([]);
       setSuccessTranslatedKey([]);
       setTranslatedValues({});
     }
   }, [selectArticleKey, articlesData]);
-
-  useEffect(() => {
-    setResourceData(
-      [
-        {
-          key: "title",
-          resource: t("Title"),
-          default_language: articleData?.title.value,
-          translated: articleData?.translations?.title,
-          type: articleData?.title.type,
-        },
-        {
-          key: "body_html",
-          resource: t("Description"),
-          default_language: articleData?.body.value,
-          translated: articleData?.translations?.body,
-          type: articleData?.body.type,
-        },
-        {
-          key: "summary_html",
-          resource: t("Summary"),
-          default_language: articleData?.summary_html.value,
-          translated: articleData?.translations?.summary_html,
-          type: articleData?.summary_html.type,
-        },
-      ].filter((item) => item.default_language),
-    );
-    setSeoData(
-      [
-        {
-          key: "handle",
-          resource: t("URL handle"),
-          default_language: articleData?.handle.value,
-          translated: articleData?.translations?.handle,
-          type: articleData?.handle.type,
-        },
-        {
-          key: "meta_title",
-          resource: t("Meta title"),
-          default_language: articleData?.seo.title.value,
-          translated: articleData?.translations?.seo.title,
-          type: articleData?.seo.title.type,
-        },
-        {
-          key: "meta_description",
-          resource: "Meta description",
-          default_language: articleData?.seo.description.value,
-          translated: articleData?.translations?.seo.description,
-          type: articleData?.seo.description.type,
-        },
-      ].filter((item) => item.default_language),
-    );
-  }, [articleData]);
 
   useEffect(() => {
     if (dataFetcher.data) {
@@ -465,7 +413,7 @@ const Index = () => {
       dataIndex: "default_language",
       key: "default_language",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return (
           <ManageTableInput
             record={record}
@@ -479,7 +427,7 @@ const Index = () => {
       dataIndex: "translated",
       key: "translated",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return (
           <ManageTableInput
             record={record}
@@ -496,7 +444,7 @@ const Index = () => {
     {
       title: t("Translate"),
       width: "10%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return (
           <Button
             onClick={() => {
@@ -528,7 +476,7 @@ const Index = () => {
       dataIndex: "default_language",
       key: "default_language",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return <ManageTableInput record={record} />;
       },
     },
@@ -537,7 +485,7 @@ const Index = () => {
       dataIndex: "translated",
       key: "translated",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return (
           <ManageTableInput
             record={record}
@@ -553,7 +501,7 @@ const Index = () => {
     {
       title: t("Translate"),
       width: "10%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return (
           <Button
             onClick={() => {
@@ -621,120 +569,120 @@ const Index = () => {
     });
   };
 
-  const transBeforeData = ({ articles }: { articles: any }) => {
-    let data: ArticleType = {
-      key: "",
-      handle: {
-        value: "",
-        type: "",
-      },
-      title: {
-        value: "",
-        type: "",
-      },
-      body: {
-        value: "",
-        type: "",
-      },
-      summary_html: {
-        value: "",
-        type: "",
-      },
-      seo: {
-        description: {
-          value: "",
-          type: "",
-        },
-        title: {
-          value: "",
-          type: "",
-        },
-      },
-      translations: {
-        handle: "",
-        key: "",
-        title: "",
-        body: "",
-        summary_html: "",
-        seo: {
-          description: "",
-          title: "",
-        },
-      },
-    };
-    const article = articles.nodes.find(
-      (article: any) => article?.resourceId === selectArticleKey,
-    );
-    data.key = article?.resourceId;
-    data.handle = {
-      value: article?.translatableContent.find(
-        (item: any) => item.key === "handle",
-      )?.value,
-      type: article?.translatableContent.find(
-        (item: any) => item.key === "handle",
-      )?.type,
-    };
-    data.title = {
-      value: article?.translatableContent.find(
-        (item: any) => item.key === "title",
-      )?.value,
-      type: article?.translatableContent.find(
-        (item: any) => item.key === "title",
-      )?.type,
-    };
-    data.body = {
-      value: article?.translatableContent.find(
-        (item: any) => item.key === "body_html",
-      )?.value,
-      type: article?.translatableContent.find(
-        (item: any) => item.key === "body_html",
-      )?.type,
-    };
-    data.summary_html = {
-      value: article?.translatableContent.find(
-        (item: any) => item.key === "summary_html",
-      )?.value,
-      type: article?.translatableContent.find(
-        (item: any) => item.key === "summary_html",
-      )?.type,
-    };
-    data.seo.title = {
-      value: article?.translatableContent.find(
-        (item: any) => item.key === "meta_title",
-      )?.value,
-      type: article?.translatableContent.find(
-        (item: any) => item.key === "meta_title",
-      )?.type,
-    };
-    data.seo.description = {
-      value: article?.translatableContent.find(
-        (item: any) => item.key === "meta_description",
-      )?.value,
-      type: article?.translatableContent.find(
-        (item: any) => item.key === "meta_description",
-      )?.type,
-    };
-    data.translations.key = article?.resourceId;
-    data.translations.title = article?.translations.find(
-      (item: any) => item.key === "title",
-    )?.value;
-    data.translations.handle = article?.translations.find(
-      (item: any) => item.key === "handle",
-    )?.value;
-    data.translations.body = article?.translations.find(
-      (item: any) => item.key === "body_html",
-    )?.value;
-    data.translations.summary_html = article?.translations.find(
-      (item: any) => item.key === "summary_html",
-    )?.value;
-    data.translations.seo.title = article?.translations.find(
-      (item: any) => item.key === "meta_title",
-    )?.value;
-    data.translations.seo.description = article?.translations.find(
-      (item: any) => item.key === "meta_description",
-    )?.value;
-    return data;
-  };
+  // const transBeforeData = ({ articles }: { articles: any }) => {
+  //   let data = {
+  //     key: "",
+  //     handle: {
+  //       value: "",
+  //       type: "",
+  //     },
+  //     title: {
+  //       value: "",
+  //       type: "",
+  //     },
+  //     body: {
+  //       value: "",
+  //       type: "",
+  //     },
+  //     summary_html: {
+  //       value: "",
+  //       type: "",
+  //     },
+  //     seo: {
+  //       description: {
+  //         value: "",
+  //         type: "",
+  //       },
+  //       title: {
+  //         value: "",
+  //         type: "",
+  //       },
+  //     },
+  //     translations: {
+  //       handle: "",
+  //       key: "",
+  //       title: "",
+  //       body: "",
+  //       summary_html: "",
+  //       seo: {
+  //         description: "",
+  //         title: "",
+  //       },
+  //     },
+  //   };
+  //   const article = articles.nodes.find(
+  //     (article: any) => article?.resourceId === selectArticleKey,
+  //   );
+  //   data.key = article?.resourceId;
+  //   data.handle = {
+  //     value: article?.translatableContent.find(
+  //       (item: any) => item.key === "handle",
+  //     )?.value,
+  //     type: article?.translatableContent.find(
+  //       (item: any) => item.key === "handle",
+  //     )?.type,
+  //   };
+  //   data.title = {
+  //     value: article?.translatableContent.find(
+  //       (item: any) => item.key === "title",
+  //     )?.value,
+  //     type: article?.translatableContent.find(
+  //       (item: any) => item.key === "title",
+  //     )?.type,
+  //   };
+  //   data.body = {
+  //     value: article?.translatableContent.find(
+  //       (item: any) => item.key === "body_html",
+  //     )?.value,
+  //     type: article?.translatableContent.find(
+  //       (item: any) => item.key === "body_html",
+  //     )?.type,
+  //   };
+  //   data.summary_html = {
+  //     value: article?.translatableContent.find(
+  //       (item: any) => item.key === "summary_html",
+  //     )?.value,
+  //     type: article?.translatableContent.find(
+  //       (item: any) => item.key === "summary_html",
+  //     )?.type,
+  //   };
+  //   data.seo.title = {
+  //     value: article?.translatableContent.find(
+  //       (item: any) => item.key === "meta_title",
+  //     )?.value,
+  //     type: article?.translatableContent.find(
+  //       (item: any) => item.key === "meta_title",
+  //     )?.type,
+  //   };
+  //   data.seo.description = {
+  //     value: article?.translatableContent.find(
+  //       (item: any) => item.key === "meta_description",
+  //     )?.value,
+  //     type: article?.translatableContent.find(
+  //       (item: any) => item.key === "meta_description",
+  //     )?.type,
+  //   };
+  //   data.translations.key = article?.resourceId;
+  //   data.translations.title = article?.translations.find(
+  //     (item: any) => item.key === "title",
+  //   )?.value;
+  //   data.translations.handle = article?.translations.find(
+  //     (item: any) => item.key === "handle",
+  //   )?.value;
+  //   data.translations.body = article?.translations.find(
+  //     (item: any) => item.key === "body_html",
+  //   )?.value;
+  //   data.translations.summary_html = article?.translations.find(
+  //     (item: any) => item.key === "summary_html",
+  //   )?.value;
+  //   data.translations.seo.title = article?.translations.find(
+  //     (item: any) => item.key === "meta_title",
+  //   )?.value;
+  //   data.translations.seo.description = article?.translations.find(
+  //     (item: any) => item.key === "meta_description",
+  //   )?.value;
+  //   return data;
+  // };
 
   const handleTranslate = async (
     resourceType: string,
@@ -893,10 +841,10 @@ const Index = () => {
 
   const handleDiscard = () => {
     shopify.saveBar.hide("save-bar");
-    const data = transBeforeData({
-      articles: articlesData,
-    });
-    setArticleData(data);
+    // const data = transBeforeData({
+    //   articles: articlesData,
+    // });
+    // setArticleData(data);
     setConfirmData([]);
     setSuccessTranslatedKey([]);
   };

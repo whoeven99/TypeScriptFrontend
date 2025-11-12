@@ -709,7 +709,9 @@ const Index = () => {
         setProductSeoData(
           [
             {
-              key: "handle",
+              key: `${productFetcher.data.response?.resourceId}_1`,
+              resourceId: productFetcher.data.response?.resourceId,
+              shopifyKey: "handle",
               index: 4,
               resource: t("URL handle"),
               locale:
@@ -734,7 +736,9 @@ const Index = () => {
                 )?.value || "",
             },
             {
-              key: "meta_title",
+              key: `${productFetcher.data.response?.resourceId}_2`,
+              resourceId: productFetcher.data.response?.resourceId,
+              shopifyKey: "meta_title",
               index: 4,
               resource: t("Meta title"),
               locale:
@@ -794,7 +798,7 @@ const Index = () => {
           ?.map((option: any, index: number) => {
             return {
               resourceId: option?.resourceId,
-              key: `${option?.translatableContent[0]?.key}_${option?.resourceId}`,
+              key: `${option?.translatableContent[0]?.key}_${option?.resourceId}_${index}`,
               index: index,
               locale: option?.translatableContent[0]?.locale,
               digest: option?.translatableContent[0]?.digest,
