@@ -15,11 +15,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react"; // 引入 useNavigate
 import { Page, Pagination, Select } from "@shopify/polaris";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  ConfirmDataType,
-  SingleTextTranslate,
-  updateManageTranslation,
-} from "~/api/JavaServer";
+import { SingleTextTranslate, updateManageTranslation } from "~/api/JavaServer";
 import ManageTableInput from "~/components/manageTableInput";
 import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
@@ -70,9 +66,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const endCursor: any = JSON.parse(formData.get("endCursor") as string);
   const productId: any = formData.get("productId") as string;
   const variants: any = JSON.parse(formData.get("variants") as string);
-  const confirmData: ConfirmDataType[] = JSON.parse(
-    formData.get("confirmData") as string,
-  );
+  const confirmData: any[] = JSON.parse(formData.get("confirmData") as string);
   switch (true) {
     case !!startCursor:
       try {
@@ -367,7 +361,7 @@ const Index = () => {
   const [variantsData, setVariantsData] = useState<any[]>([]);
 
   const [selectProductKey, setSelectProductKey] = useState<string>("");
-  const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [confirmData, setConfirmData] = useState<any[]>([]);
   const [variantsLoading, setVariantsLoading] = useState<boolean>(false);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
@@ -1196,7 +1190,7 @@ const Index = () => {
     }));
     setConfirmData((prevData) => {
       const existingItemIndex = prevData.findIndex(
-        (item) => item.key === record?.key,
+        (item) => item.id === record?.key,
       );
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
@@ -1208,6 +1202,7 @@ const Index = () => {
         return updatedConfirmData;
       } else {
         const newItem = {
+          id: record?.key,
           resourceId: record?.resourceId,
           locale: globalStore?.source || "",
           key: record?.shopifyKey,
@@ -1220,143 +1215,6 @@ const Index = () => {
       }
     });
   };
-
-  // const handleProductSeoInputChange = (record: any, value: string) => {
-  //   setTranslatedValues((prev) => ({
-  //     ...prev,
-  //     [record?.key]: value, // 更新对应的 key
-  //   }));
-  //   setConfirmData((prevData) => {
-  //     const existingItemIndex = prevData.findIndex(
-  //       (item) => item.key === record?.key,
-  //     );
-  //     if (existingItemIndex !== -1) {
-  //       // 如果 key 存在，更新其对应的 value
-  //       const updatedConfirmData = [...prevData];
-  //       updatedConfirmData[existingItemIndex] = {
-  //         ...updatedConfirmData[existingItemIndex],
-  //         value: value,
-  //       };
-  //       return updatedConfirmData;
-  //     } else {
-  //       const newItem = {
-  //         resourceId: record?.resourceId,
-  //         locale: globalStore?.source || "",
-  //         key: record?.shopifyKey,
-  //         value: value, // 初始为空字符串
-  //         translatableContentDigest: record?.digest,
-  //         target: searchTerm || "",
-  //       };
-
-  //       return [...prevData, newItem]; // 将新数据添加到 confirmData 中
-  //     }
-  //   });
-  // };
-
-  // const handleOptionsInputChange = (key: string, value: string) => {
-  //   setTranslatedValues((prev) => ({
-  //     ...prev,
-  //     [key]: value, // 更新对应的 key
-  //   }));
-  //   setConfirmData((prevData) => {
-  //     const existingItemIndex = prevData.findIndex(
-  //       (item) => item.resourceId === key || item.key === key,
-  //     );
-  //     if (existingItemIndex !== -1) {
-  //       // 如果 key 存在，更新其对应的 value
-  //       const updatedConfirmData = [...prevData];
-  //       updatedConfirmData[existingItemIndex] = {
-  //         ...updatedConfirmData[existingItemIndex],
-  //         value: value,
-  //       };
-  //       return updatedConfirmData;
-  //     } else {
-  //       const newItem = {
-  //         resourceId: optionsData?.find((item: any) => item?.key === key)
-  //           ?.resourceId,
-  //         locale: globalStore?.source || "",
-  //         key: key,
-  //         value: value, // 初始为空字符串
-  //         translatableContentDigest: optionsData?.find(
-  //           (item: any) => item?.key === key,
-  //         )?.digest,
-  //         target: searchTerm || "",
-  //       };
-
-  //       return [...prevData, newItem]; // 将新数据添加到 confirmData 中
-  //     }
-  //   });
-  // };
-
-  // const handleMetafieldsInputChange = (key: string, value: string) => {
-  //   setTranslatedValues((prev) => ({
-  //     ...prev,
-  //     [key]: value, // 更新对应的 key
-  //   }));
-  //   setConfirmData((prevData) => {
-  //     const existingItemIndex = prevData.findIndex(
-  //       (item) => item.resourceId === key || item.key === key,
-  //     );
-  //     if (existingItemIndex !== -1) {
-  //       // 如果 key 存在，更新其对应的 value
-  //       const updatedConfirmData = [...prevData];
-  //       updatedConfirmData[existingItemIndex] = {
-  //         ...updatedConfirmData[existingItemIndex],
-  //         value: value,
-  //       };
-  //       return updatedConfirmData;
-  //     } else {
-  //       const newItem = {
-  //         resourceId: metafieldsData?.find((item: any) => item?.key === key)
-  //           ?.resourceId,
-  //         locale: globalStore?.source || "",
-  //         key: key,
-  //         value: value, // 初始为空字符串
-  //         translatableContentDigest: metafieldsData?.find(
-  //           (item: any) => item?.key === key,
-  //         )?.digest,
-  //         target: searchTerm || "",
-  //       };
-
-  //       return [...prevData, newItem]; // 将新数据添加到 confirmData 中
-  //     }
-  //   });
-  // };
-
-  // const handleVariantsInputChange = (key: string, value: string) => {
-  //   setTranslatedValues((prev) => ({
-  //     ...prev,
-  //     [key]: value, // 更新对应的 key
-  //   }));
-  //   setConfirmData((prevData) => {
-  //     const existingItemIndex = prevData.findIndex(
-  //       (item) => item.resourceId === key || item.key === key,
-  //     );
-  //     if (existingItemIndex !== -1) {
-  //       // 如果 key 存在，更新其对应的 value
-  //       const updatedConfirmData = [...prevData];
-  //       updatedConfirmData[existingItemIndex] = {
-  //         ...updatedConfirmData[existingItemIndex],
-  //         value: value,
-  //       };
-  //       return updatedConfirmData;
-  //     } else {
-  //       const newItem = {
-  //         resourceId: variantsData?.find((item: any) => item?.key === key)
-  //           ?.resourceId,
-  //         locale: globalStore?.source || "",
-  //         key: key,
-  //         value: value, // 初始为空字符串
-  //         translatableContentDigest: variantsData?.find(
-  //           (item: any) => item?.key === key,
-  //         )?.digest,
-  //         target: searchTerm || "",
-  //       };
-
-  //       return [...prevData, newItem]; // 将新数据添加到 confirmData 中
-  //     }
-  //   });
-  // };
 
   const handleTranslate = async ({
     resourceType,
@@ -1390,7 +1248,7 @@ const Index = () => {
     });
     if (data?.success) {
       if (loadingItemsRef.current.includes(record?.key)) {
-        handleInputChange(record?.key, data.response);
+        handleInputChange(record, data.response);
         setSuccessTranslatedKey((prev) => [...prev, record?.key]);
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
