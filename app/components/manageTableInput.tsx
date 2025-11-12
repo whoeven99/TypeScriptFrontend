@@ -28,7 +28,7 @@ interface ManageTableInputProps {
       [key: string]: string;
     }>
   >;
-  handleInputChange?: (key: string, value: string, index: number) => void;
+  handleInputChange?: (record: any, value: string, index?: number) => void;
   isRtl?: boolean;
   index?: number;
 }
@@ -94,7 +94,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
             if (!isInitialized) return;
             const html = editor.getHTML(); // 原始 HTML
             handleInputChange(
-              record.key,
+              record,
               html,
               index ? Number(index + "" + record.index) : record.index,
             );
@@ -140,7 +140,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
         value={translatedValues[record?.key]}
         onChange={(e) =>
           handleInputChange(
-            record.key,
+            record,
             e.target.value,
             index ? Number(index + "" + record.index) : record.index,
           )
