@@ -464,8 +464,6 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const translations = parseLiquidDataByShopNameAndLanguage?.response || [];
   if (!translations || Object.keys(translations).length === 0) return;
 
-  console.log("translations: ", translations);
-
   // 🧮 辅助函数
   const escapeRegExp = (string) =>
     string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
