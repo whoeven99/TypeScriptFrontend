@@ -3,7 +3,6 @@ import {
   Card,
   Divider,
   Layout,
-  Menu,
   Result,
   Space,
   Spin,
@@ -24,10 +23,7 @@ import { authenticate } from "~/shopify.server";
 import { useTranslation } from "react-i18next";
 import ManageTableInput from "~/components/manageTableInput";
 import { SaveBar } from "@shopify/app-bridge-react";
-import { useDispatch, useSelector } from "react-redux";
-import { setTableData } from "~/store/modules/languageTableData";
-import { setLocale } from "~/store/modules/userConfig";
-import { ShopLocalesType } from "../app.language/route";
+import { useSelector } from "react-redux";
 import { globalStore } from "~/globalStore";
 import { getItemOptions } from "../app.manage_translation/route";
 import SideMenu from "~/components/sideMenu/sideMenu";
@@ -214,7 +210,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const languageTableData = useSelector(
     (state: any) => state.languageTableData.rows,
   );
@@ -224,7 +219,6 @@ const Index = () => {
   const isManualChangeRef = useRef(true);
   const loadingItemsRef = useRef<string[]>([]);
 
-  const languageFetcher = useFetcher<any>();
   const menuDataFetcher = useFetcher<any>();
   const linkDataFetcher = useFetcher<any>();
   const confirmFetcher = useFetcher<any>();
@@ -269,17 +263,6 @@ const Index = () => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    if (languageTableData.length === 0) {
-      languageFetcher.submit(
-        {
-          language: JSON.stringify(true),
-        },
-        {
-          method: "post",
-          action: "/app/manage_translation",
-        },
-      );
-    }
     menuDataFetcher.submit(
       {
         navigationEndCursor: JSON.stringify({
@@ -322,7 +305,7 @@ const Index = () => {
         languageTableData
           .filter((item: any) => !item.primary)
           .map((item: any) => ({
-            label: item.language,
+            label: item.name,
             value: item.locale,
           })),
       );
@@ -439,29 +422,6 @@ const Index = () => {
       setSuccessTranslatedKey([]);
     }
   }, [confirmFetcher.data]);
-
-  useEffect(() => {
-    if (languageFetcher.data) {
-      if (languageFetcher.data.data) {
-        const shopLanguages = languageFetcher.data.data;
-        dispatch(
-          setTableData(
-            shopLanguages.map((language: ShopLocalesType, index: number) => ({
-              key: language.locale,
-              language: language.name,
-              locale: language.locale,
-              primary: language.primary,
-              published: language.published,
-            })),
-          ),
-        );
-        const locale = shopLanguages.find(
-          (language: ShopLocalesType) => language.primary === true,
-        )?.locale;
-        dispatch(setLocale({ locale: locale || "" }));
-      }
-    }
-  }, [languageFetcher.data]);
 
   useEffect(() => {
     if (confirmData.length > 0) {
@@ -799,67 +759,6 @@ const Index = () => {
       }
     }
   };
-
-  // const handleLeaveItem = (
-  //   key: string | boolean | { language: string } | { item: string },
-  // ) => {
-  //   setIsVisible(false);
-  //   if (typeof key === "string" && key !== "previous" && key !== "next") {
-  //     setSelectNavigationKey(key);
-  //   } else if (key === "previous") {
-  //     // 向前翻页
-  //     if (selectNavigationKey === "names") {
-  //       const formData = new FormData();
-  //       const startCursor = navigationsData.pageInfo.startCursor;
-  //       formData.append("navigationStartCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-  //       submit(formData, {
-  //         method: "post",
-  //         action: `/app/manage_translation/navigation?language=${searchTerm}`,
-  //       }); // 提交表单请求
-  //     } else {
-  //       const formData = new FormData();
-  //       const startCursor = itemsData.pageInfo.startCursor;
-  //       formData.append("itemStartCursor", JSON.stringify(startCursor)); // 将选中的语言作为字符串发送
-  //       submit(formData, {
-  //         method: "post",
-  //         action: `/app/manage_translation/navigation?language=${searchTerm}`,
-  //       }); // 提交表单请求
-  //     }
-  //   } else if (key === "next") {
-  //     // 向后翻页
-  //     if (selectNavigationKey === "names") {
-  //       const formData = new FormData();
-  //       const endCursor = navigationsData.pageInfo.endCursor;
-  //       formData.append("navigationEndCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-  //       submit(formData, {
-  //         method: "post",
-  //         action: `/app/manage_translation/navigation?language=${searchTerm}`,
-  //       }); // 提交表单请求
-  //     } else {
-  //       const formData = new FormData();
-  //       const endCursor = itemsData.pageInfo.endCursor;
-  //       formData.append("itemEndCursor", JSON.stringify(endCursor)); // 将选中的语言作为字符串发送
-  //       submit(formData, {
-  //         method: "post",
-  //         action: `/app/manage_translation/navigation?language=${searchTerm}`,
-  //       }); // 提交表单请求
-  //     }
-  //   } else if (typeof key === "object" && "language" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedLanguage(key.language);
-  //     navigate(`/app/manage_translation/navigation?language=${key.language}`);
-  //   } else if (typeof key === "object" && "item" in key) {
-  //     setIsLoading(true);
-  //     isManualChangeRef.current = true;
-  //     setSelectedItem(key.item);
-  //     navigate(`/app/manage_translation/${key.item}?language=${searchTerm}`);
-  //   } else {
-  //     navigate(`/app/manage_translation?language=${searchTerm}`, {
-  //       state: { key: searchTerm },
-  //     }); // 跳转到 /app/manage_translation
-  //   }
-  // };
 
   const handleConfirm = () => {
     const formData = new FormData();

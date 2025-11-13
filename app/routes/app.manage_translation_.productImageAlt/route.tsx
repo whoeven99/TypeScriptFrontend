@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   Layout,
-  Menu,
   Space,
   Spin,
   Image,
@@ -17,10 +16,7 @@ import {
 } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
-import { ShopLocalesType } from "../app.language/route";
-import { setTableData } from "~/store/modules/languageTableData";
-import { setLocale } from "~/store/modules/userConfig";
+import { useSelector } from "react-redux";
 import { authenticate } from "~/shopify.server";
 import {
   GetProductImageData,
@@ -480,7 +476,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 const Index = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const { reportClick } = useReport();
   const languageTableData = useSelector(
     (state: any) => state.languageTableData.rows,
@@ -490,6 +485,11 @@ const Index = () => {
 
   const isManualChangeRef = useRef(false);
   const loadingItemsRef = useRef<string[]>([]);
+
+  const fetcher = useFetcher<any>();
+  const loadFetcher = useFetcher<any>();
+  const productsFetcher = useFetcher<any>();
+  const imageFetcher = useFetcher<any>();
 
   const [isLoading, setIsLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState<boolean>(false);
@@ -545,25 +545,8 @@ const Index = () => {
   >([]);
   const itemOptions = getItemOptions(t);
 
-  const fetcher = useFetcher<any>();
-  const loadFetcher = useFetcher<any>();
-  const languageFetcher = useFetcher<any>();
-  const productsFetcher = useFetcher<any>();
-  const imageFetcher = useFetcher<any>();
-
   useEffect(() => {
     loadFetcher.submit({ loading: true }, { method: "post" });
-    if (languageTableData.length === 0) {
-      languageFetcher.submit(
-        {
-          language: JSON.stringify(true),
-        },
-        {
-          method: "post",
-          action: "/app/manage_translation",
-        },
-      );
-    }
     fetcher.submit(
       {
         log: `${globalStore?.shop} 目前在翻译管理-产品图片Alt图片描述页面`,
@@ -614,29 +597,6 @@ const Index = () => {
       setProductAltTextData(imageFetcher.data.imageData);
     }
   }, [imageFetcher.data]);
-
-  useEffect(() => {
-    if (languageFetcher.data) {
-      if (languageFetcher.data.data) {
-        const shopLanguages = languageFetcher.data.data;
-        dispatch(
-          setTableData(
-            shopLanguages.map((language: ShopLocalesType, index: number) => ({
-              key: language.locale,
-              language: language.name,
-              locale: language.locale,
-              primary: language.primary,
-              published: language.published,
-            })),
-          ),
-        );
-        const locale = shopLanguages.find(
-          (language: ShopLocalesType) => language.primary === true,
-        )?.locale;
-        dispatch(setLocale({ locale: locale || "" }));
-      }
-    }
-  }, [languageFetcher.data]);
 
   // 更新 loadingItemsRef 的值
   useEffect(() => {
@@ -697,7 +657,7 @@ const Index = () => {
         languageTableData
           .filter((item: any) => !item.primary)
           .map((item: any) => ({
-            label: item.language,
+            label: item.name,
             value: item.locale,
           })),
       );

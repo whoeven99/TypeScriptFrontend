@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./styles.css";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { queryShopLanguages } from "~/api/admin";
-import { ShopLocalesType } from "../app.language/route";
+import { LanguagesDataType, ShopLocalesType } from "../app.language/route";
 import {
   useFetcher,
   useLoaderData,
@@ -35,11 +35,9 @@ import { updateData } from "~/store/modules/languageItemsData";
 import { useTranslation } from "react-i18next";
 import ManageTranslationsCard from "./components/manageTranslationsCard";
 import ScrollNotice from "~/components/ScrollNotice";
-import { setTableData } from "~/store/modules/languageTableData";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import defaultStyles from "../styles/defaultStyles.module.css";
 import useReport from "scripts/eventReport";
-import { setLocale } from "~/store/modules/userConfig";
 import { globalStore } from "~/globalStore";
 
 const { Text, Title } = Typography;
@@ -165,10 +163,13 @@ const Index = () => {
   const navigate = useNavigate();
   const { plan } = useSelector((state: any) => state.userConfig);
 
+  const languageTableData: LanguagesDataType[] = useSelector(
+    (state: any) => state.languageTableData.rows,
+  );
+
   const [selectOptions, setSelectOptions] = useState<ManageSelectDataType[]>(
     [],
   );
-  const [primaryLanguage, setPrimaryLanguage] = useState<string>();
   const [current, setCurrent] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
@@ -178,12 +179,12 @@ const Index = () => {
   const [showWarnModal, setShowWarnModal] = useState(false);
 
   const { key } = useMemo(() => location.state || {}, [location.state]);
+  const { source } = useSelector((state: any) => state.userConfig);
   const languageItemsData = useSelector(
     (state: any) => state.languageItemsData,
   );
 
   const fetcher = useFetcher<any>();
-  const languageFetcher = useFetcher<any>();
   const productsFetcher = useFetcher<any>();
   const collectionsFetcher = useFetcher<any>();
   const articlesFetcher = useFetcher<any>();
@@ -501,15 +502,6 @@ const Index = () => {
   };
 
   useEffect(() => {
-    languageFetcher.submit(
-      {
-        language: JSON.stringify(true),
-      },
-      {
-        method: "post",
-        action: "/app/manage_translation",
-      },
-    );
     fetcher.submit(
       {
         log: `${globalStore?.shop} 目前在翻译管理页面`,
@@ -522,44 +514,20 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (languageFetcher.data) {
-      if (languageFetcher.data.data) {
-        const shopLanguages = languageFetcher.data.data;
-        const primaryLanguage = shopLanguages.filter(
-          (language: ShopLocalesType) => language.primary,
-        );
-        setPrimaryLanguage(primaryLanguage[0].locale);
-        const newArray = shopLanguages
-          .filter((language: ShopLocalesType) => !language.primary)
-          .map((language: ShopLocalesType) => ({
-            label: language.name,
-            value: language.locale,
-          }));
-        setSelectOptions(newArray);
-        if (!searchTerm) {
-          setCurrent(newArray[0]?.value);
-        } else {
-          setCurrent(searchTerm);
-        }
-        dispatch(
-          setTableData(
-            shopLanguages.map((language: ShopLocalesType, index: number) => ({
-              key: language.locale,
-              language: language.name,
-              locale: language.locale,
-              primary: language.primary,
-              published: language.published,
-            })),
-          ),
-        );
-        setLoading(false);
-        const locale = shopLanguages.find(
-          (language: ShopLocalesType) => language.primary === true,
-        )?.locale;
-        dispatch(setLocale({ locale: locale || "" }));
+    if (languageTableData.length > 0) {
+      const newArray = languageTableData.map((language: ShopLocalesType) => ({
+        label: language.name,
+        value: language.locale,
+      }));
+      setSelectOptions(newArray);
+      if (!searchTerm) {
+        setCurrent(newArray[0]?.value);
+      } else {
+        setCurrent(searchTerm);
       }
+      setLoading(false);
     }
-  }, [languageFetcher.data]);
+  }, [languageTableData]);
 
   useEffect(() => {
     if (productsFetcher.data) {
@@ -725,7 +693,7 @@ const Index = () => {
 
   useEffect(() => {
     const foundItem = selectOptions?.find((item) => item.value === key);
-    if (foundItem && primaryLanguage) {
+    if (foundItem && source) {
       setCurrent(key);
     }
   }, [key, selectOptions]);
@@ -735,12 +703,13 @@ const Index = () => {
     const findItem = languageItemsData.find(
       (item: any) => item?.language === current,
     );
-    if (!findItem && primaryLanguage) {
+    const sourceCode = source?.code;
+    if (!findItem && sourceCode) {
       const productsFormData = new FormData();
       productsFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Products",
         }),
@@ -753,7 +722,7 @@ const Index = () => {
       collectionsFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Collection",
         }),
@@ -766,7 +735,7 @@ const Index = () => {
       articlesFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Article",
         }),
@@ -779,7 +748,7 @@ const Index = () => {
       blog_titlesFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Blog titles",
         }),
@@ -792,7 +761,7 @@ const Index = () => {
       pagesFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Pages",
         }),
@@ -805,7 +774,7 @@ const Index = () => {
       filtersFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Filters",
         }),
@@ -818,7 +787,7 @@ const Index = () => {
       metaobjectsFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Metaobjects",
         }),
@@ -831,7 +800,7 @@ const Index = () => {
       navigationFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Navigation",
         }),
@@ -844,7 +813,7 @@ const Index = () => {
       emailFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Notifications",
         }),
@@ -857,7 +826,7 @@ const Index = () => {
       policiesFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Policies",
         }),
@@ -870,7 +839,7 @@ const Index = () => {
       shopFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Shop",
         }),
@@ -883,7 +852,7 @@ const Index = () => {
       store_metadataFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Metafield",
         }),
@@ -896,7 +865,7 @@ const Index = () => {
       themeFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Theme",
         }),
@@ -909,7 +878,7 @@ const Index = () => {
       deliveryFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Delivery",
         }),
@@ -922,7 +891,7 @@ const Index = () => {
       shippingFormData.append(
         "itemsCount",
         JSON.stringify({
-          source: primaryLanguage,
+          source: sourceCode,
           target: current,
           resourceType: "Shipping",
         }),
@@ -932,7 +901,7 @@ const Index = () => {
         action: "/app/manage_translation",
       }); // 提交表单请求
     }
-  }, [current]);
+  }, [current, source?.code]);
 
   const imageColumns = [
     {

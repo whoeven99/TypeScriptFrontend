@@ -35,8 +35,7 @@ const currencyTableDataSlice = createSlice({
   },
 });
 
-export const { setTableData, updateTableData } =
-  currencyTableDataSlice.actions;
+export const { setTableData, updateTableData } = currencyTableDataSlice.actions;
 
 const reducer = currencyTableDataSlice.reducer;
 export default reducer;
