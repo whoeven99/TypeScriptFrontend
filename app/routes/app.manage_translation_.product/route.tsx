@@ -31,12 +31,15 @@ const { Sider, Content } = Layout;
 
 const { Text, Title } = Typography;
 
-type TableDataType = {
+type ManageDataSourceType = {
   key: string;
+  resourceId: string;
+  shopifyKey: string;
   index: number;
   resource: string;
-  type: string | undefined;
-  default_language: string | undefined;
+  type: string;
+  digest: string;
+  default_language: string;
   translated: string | undefined;
 } | null;
 
@@ -117,15 +120,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: false,
           errorCode: 0,
           errorMsg: "",
-          response: {
-            data: [],
-            pageInfo: {
-              endCursor: "",
-              hasNextPage: false,
-              hasPreviousPage: false,
-              startCursor: "",
-            },
-          },
+          response: null,
         });
       }
     case !!endCursor:
@@ -181,15 +176,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: false,
           errorCode: 0,
           errorMsg: "",
-          response: {
-            data: [],
-            pageInfo: {
-              endCursor: "",
-              hasNextPage: false,
-              hasPreviousPage: false,
-              startCursor: "",
-            },
-          },
+          response: null,
         });
       }
     case !!productId:
@@ -260,7 +247,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: false,
           errorCode: 0,
           errorMsg: "",
-          response: [],
+          response: null,
         });
       }
     case !!variants:
@@ -293,34 +280,34 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         return json({ variantsData: variantsData });
       } catch (error) {
         console.error("Error action variants product:", error);
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: null,
+        };
       }
     case !!confirmData:
-      const originalConfirmData = confirmData;
-      confirmData.map((item) => {
-        // 检查 key 是否是字符串并包含下划线
-        if (
-          typeof item.key === "string" &&
-          item.key.includes("_") &&
-          item.key.split("_")[1] !== "type" &&
-          item.key.split("_")[0] !== "meta" &&
-          item.key.split("_")[0] !== "body"
-        ) {
-          // 将 key 修改为下划线前的部分
-          item.key = item.key.split("_")[0]; // 取下划线前的部分
-        }
-
-        return item;
-      });
       const data = await updateManageTranslation({
         shop,
         accessToken: accessToken as string,
         confirmData,
       });
 
-      return json({ data: data, confirmData: originalConfirmData });
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: data,
+      };
     default:
       // 你可以在这里处理一个默认的情况，如果没有符合的条件
-      return json({ success: false, message: "Invalid data" });
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: null,
+      };
   }
 };
 
@@ -495,106 +482,16 @@ const Index = () => {
   }, [selectProductKey, productsData]);
 
   useEffect(() => {
-    if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.filter(
-        (item: any) => item.success === false,
-      );
-      const successfulItem = confirmFetcher.data.data.filter(
-        (item: any) => item.success === true,
-      );
-      successfulItem.forEach((item: any) => {
-        const key = item?.data?.key || "";
-        const resourceId = item?.data?.resourceId || "";
-        const targetValue = item?.data?.value || "";
-
-        switch (true) {
-          case ["title", "body_html", "product_type"].includes(key):
-            setProductBaseData(
-              productBaseData.map((item) =>
-                item.key === key ? { ...item, translated: targetValue } : item,
-              ),
-            );
-            break;
-          case ["handle", "meta_title", "meta_description"].includes(key):
-            setProductSeoData(
-              productSeoData.map((item) =>
-                item.key === key ? { ...item, translated: targetValue } : item,
-              ),
-            );
-            break;
-          case !!optionsData.find(
-            (item: any) => item?.resourceId == resourceId,
-          ):
-            setOptionsData(
-              optionsData.map((item) =>
-                item.resourceId === resourceId
-                  ? { ...item, translated: targetValue }
-                  : item,
-              ),
-            );
-            break;
-          case !!metafieldsData.find(
-            (item: any) => item?.resourceId == resourceId,
-          ):
-            setMetafieldsData(
-              metafieldsData.map((item) =>
-                item.resourceId === resourceId
-                  ? { ...item, translated: targetValue }
-                  : item,
-              ),
-            );
-            break;
-          case !!variantsData.find(
-            (item: any) => item?.resourceId == resourceId,
-          ):
-            setVariantsData(
-              variantsData.map((item) =>
-                item.resourceId === resourceId
-                  ? { ...item, translated: targetValue }
-                  : item,
-              ),
-            );
-            break;
-          default:
-            console.log(6);
-
-            break;
-        }
-      });
-      if (errorItem.length == 0) {
-        shopify.toast.show(t("Saved successfully"));
-        fetcher.submit(
-          {
-            log: `${globalStore?.shop} 翻译管理-产品页面修改数据保存成功`,
-          },
-          {
-            method: "POST",
-            action: "/log",
-          },
-        );
-      } else {
-        shopify.toast.show(t("Some items saved failed"));
-      }
-      setConfirmData([]);
-      setSuccessTranslatedKey([]);
-    }
-  }, [confirmFetcher.data]);
-
-  useEffect(() => {
     if (productFetcher.data) {
       if (productFetcher.data.success) {
         setProductBaseData(
           [
             {
-              key: `title_${productFetcher.data.response?.resourceId}_1`,
+              key: `title_${productFetcher.data.response?.resourceId}_0`,
               resourceId: productFetcher.data.response?.resourceId,
               shopifyKey: "title",
               index: 4,
               resource: t("Title"),
-              locale:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "title",
-                )?.locale || "",
               digest:
                 productFetcher.data.response?.translatableContent?.find(
                   (item: any) => item.key == "title",
@@ -617,10 +514,6 @@ const Index = () => {
               shopifyKey: "body_html",
               index: 4,
               resource: t("Description"),
-              locale:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "body_html",
-                )?.locale || "",
               digest:
                 productFetcher.data.response?.translatableContent?.find(
                   (item: any) => item.key == "body_html",
@@ -638,15 +531,11 @@ const Index = () => {
               )?.value,
             },
             {
-              key: `product_type_${productFetcher.data.response?.resourceId}_1`,
+              key: `product_type_${productFetcher.data.response?.resourceId}_2`,
               resourceId: productFetcher.data.response?.resourceId,
               shopifyKey: "product_type",
               index: 4,
               resource: t("ProductType"),
-              locale:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "product_type",
-                )?.locale || "",
               digest:
                 productFetcher.data.response?.translatableContent?.find(
                   (item: any) => item.key == "product_type",
@@ -668,15 +557,11 @@ const Index = () => {
         setProductSeoData(
           [
             {
-              key: `handle_${productFetcher.data.response?.resourceId}_1`,
+              key: `handle_${productFetcher.data.response?.resourceId}_0`,
               resourceId: productFetcher.data.response?.resourceId,
               shopifyKey: "handle",
               index: 4,
               resource: t("URL handle"),
-              locale:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "handle",
-                )?.locale || "",
               digest:
                 productFetcher.data.response?.translatableContent?.find(
                   (item: any) => item.key == "handle",
@@ -695,15 +580,11 @@ const Index = () => {
                 )?.value || "",
             },
             {
-              key: `meta_title_${productFetcher.data.response?.resourceId}_2`,
+              key: `meta_title_${productFetcher.data.response?.resourceId}_1`,
               resourceId: productFetcher.data.response?.resourceId,
               shopifyKey: "meta_title",
               index: 4,
               resource: t("Meta title"),
-              locale:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "meta_title",
-                )?.locale || "",
               digest:
                 productFetcher.data.response?.translatableContent?.find(
                   (item: any) => item.key == "meta_title",
@@ -722,15 +603,11 @@ const Index = () => {
                 )?.value || "",
             },
             {
-              key: `meta_description_${productFetcher.data.response?.resourceId}_3`,
+              key: `meta_description_${productFetcher.data.response?.resourceId}_2`,
               resourceId: productFetcher.data.response?.resourceId,
               shopifyKey: "meta_description",
               index: 4,
               resource: t("Meta description"),
-              locale:
-                productFetcher.data.response?.translatableContent?.find(
-                  (item: any) => item.key == "meta_description",
-                )?.locale || "",
               digest:
                 productFetcher.data.response?.translatableContent?.find(
                   (item: any) => item.key == "meta_description",
@@ -762,7 +639,6 @@ const Index = () => {
               resourceId: option?.resourceId,
               shopifyKey: option?.translatableContent[0]?.key,
               index: index,
-              locale: option?.translatableContent[0]?.locale,
               digest: option?.translatableContent[0]?.digest,
               resource: t(option?.translatableContent[0]?.value),
               type: option?.translatableContent[0]?.type,
@@ -779,7 +655,6 @@ const Index = () => {
                 resourceId: metafield?.resourceId,
                 shopifyKey: metafield?.translatableContent[0]?.key,
                 index: index,
-                locale: metafield?.translatableContent[0]?.locale,
                 digest: metafield?.translatableContent[0]?.digest,
                 resource: t(metafield?.translatableContent[0]?.key),
                 type: metafield?.translatableContent[0]?.type,
@@ -792,6 +667,88 @@ const Index = () => {
       }
     }
   }, [productFetcher.data]);
+
+  useEffect(() => {
+    if (confirmFetcher.data?.success) {
+      const errorItem = confirmFetcher.data?.response?.filter(
+        (item: any) => item?.success === false,
+      );
+      const successfulItem = confirmFetcher.data?.response?.filter(
+        (item: any) => item?.success === true,
+      );
+      if (Array.isArray(successfulItem) && successfulItem.length) {
+        successfulItem.forEach((item: any) => {
+          const key = item?.response?.id || "";
+          const targetValue = item?.response?.value || "";
+          switch (true) {
+            case !!productBaseData.find((item: any) => item?.key == key):
+              setProductBaseData(
+                productBaseData.map((item) =>
+                  item.key === key
+                    ? { ...item, translated: targetValue }
+                    : item,
+                ),
+              );
+              break;
+            case !!productSeoData.find((item: any) => item?.key == key):
+              setProductSeoData(
+                productSeoData.map((item) =>
+                  item.key === key
+                    ? { ...item, translated: targetValue }
+                    : item,
+                ),
+              );
+              break;
+            case !!optionsData.find((item: any) => item?.key == key):
+              setOptionsData(
+                optionsData.map((item) =>
+                  item.key === key
+                    ? { ...item, translated: targetValue }
+                    : item,
+                ),
+              );
+              break;
+            case !!metafieldsData.find((item: any) => item?.key == key):
+              setMetafieldsData(
+                metafieldsData.map((item) =>
+                  item.key === key
+                    ? { ...item, translated: targetValue }
+                    : item,
+                ),
+              );
+              break;
+            case !!variantsData.find((item: any) => item?.key == key):
+              setVariantsData(
+                variantsData.map((item) =>
+                  item.key === key
+                    ? { ...item, translated: targetValue }
+                    : item,
+                ),
+              );
+              break;
+            default:
+              break;
+          }
+        });
+      }
+      if (Array.isArray(errorItem) && errorItem.length == 0) {
+        shopify.toast.show(t("Saved successfully"));
+        fetcher.submit(
+          {
+            log: `${globalStore?.shop} 翻译管理-产品页面修改数据保存成功`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
+      } else {
+        shopify.toast.show(t("Some items saved failed"));
+      }
+      setConfirmData([]);
+      setSuccessTranslatedKey([]);
+    }
+  }, [confirmFetcher.data]);
 
   useEffect(() => {
     if (variantFetcher.data && variantFetcher.data.variantsData) {
@@ -811,7 +768,6 @@ const Index = () => {
                 index,
                 resource: t(variant?.translatableContent[0]?.key),
                 type: variant?.translatableContent[0]?.type,
-                locale: variant?.translatableContent[0]?.locale,
                 digest: variant?.translatableContent[0]?.digest,
                 default_language: variant?.translatableContent[0]?.value,
                 translated: variant?.translations[0]?.value,
@@ -848,11 +804,11 @@ const Index = () => {
       dataIndex: "default_language",
       key: "default_language",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         return (
           <ManageTableInput
             record={record}
-            isHtml={record?.key == "body_html"}
+            isHtml={record?.shopifyKey == "body_html"}
           />
         );
       },
@@ -862,11 +818,11 @@ const Index = () => {
       dataIndex: "translated",
       key: "translated",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         return (
           <ManageTableInput
             record={record}
-            isHtml={record?.key == "body_html"}
+            isHtml={record?.shopifyKey == "body_html"}
             isSuccess={successTranslatedKey?.includes(record?.key as string)}
             translatedValues={translatedValues}
             setTranslatedValues={setTranslatedValues}
@@ -879,7 +835,7 @@ const Index = () => {
     {
       title: t("Translate"),
       width: "10%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         return (
           <Button
             onClick={() => {
@@ -911,7 +867,7 @@ const Index = () => {
       dataIndex: "default_language",
       key: "default_language",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         return <ManageTableInput record={record} />;
       },
     },
@@ -920,7 +876,7 @@ const Index = () => {
       dataIndex: "translated",
       key: "translated",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         return (
           <ManageTableInput
             record={record}
@@ -936,7 +892,7 @@ const Index = () => {
     {
       title: t("Translate"),
       width: "10%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         return (
           <Button
             onClick={() => {
@@ -968,7 +924,7 @@ const Index = () => {
       dataIndex: "default_language",
       key: "default_language",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         if (record) {
           return <ManageTableInput record={record} />;
         } else {
@@ -981,7 +937,7 @@ const Index = () => {
       dataIndex: "translated",
       key: "translated",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         return (
           <ManageTableInput
             record={record}
@@ -998,7 +954,7 @@ const Index = () => {
     {
       title: t("Translate"),
       width: "10%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         return (
           <Button
             onClick={() => {
@@ -1030,7 +986,7 @@ const Index = () => {
       dataIndex: "default_language",
       key: "default_language",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         if (record) {
           return <ManageTableInput record={record} />;
         } else {
@@ -1043,7 +999,7 @@ const Index = () => {
       dataIndex: "translated",
       key: "translated",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         return (
           <ManageTableInput
             record={record}
@@ -1060,7 +1016,7 @@ const Index = () => {
     {
       title: t("Translate"),
       width: "10%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         return (
           <Button
             onClick={() => {
@@ -1092,7 +1048,7 @@ const Index = () => {
       dataIndex: "default_language",
       key: "default_language",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         if (record) {
           return <ManageTableInput record={record} />;
         } else {
@@ -1105,7 +1061,7 @@ const Index = () => {
       dataIndex: "translated",
       key: "translated",
       width: "40%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         return (
           <ManageTableInput
             record={record}
@@ -1122,7 +1078,7 @@ const Index = () => {
     {
       title: t("Translate"),
       width: "10%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: ManageDataSourceType) => {
         return (
           <Button
             onClick={() => {
@@ -1339,7 +1295,7 @@ const Index = () => {
       clearTimeout(timeoutIdRef.current);
     }
 
-    // 延迟 1s 再执行请求
+    // 延迟 0.5s 再执行请求
     timeoutIdRef.current = setTimeout(() => {
       dataFetcher.submit(
         {
