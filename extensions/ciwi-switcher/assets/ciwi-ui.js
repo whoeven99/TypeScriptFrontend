@@ -447,7 +447,7 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
 }
 
 /**
- * 根据数据库数据替换网页文本
+ * 根据数据库数据替换网页文本（安全版）
  */
 export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
   const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
@@ -475,6 +475,20 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
 
   const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(text);
 
+  // ❌ 不应替换内容的标签
+  const skipTags = new Set([
+    "SCRIPT",
+    "STYLE",
+    "NOSCRIPT",
+    "CODE",
+    "PRE",
+    "TEXTAREA",
+    "SVG",
+    "META",
+    "LINK",
+    "TITLE",
+  ]);
+
   // 将 translations 拆分成精准匹配和模糊匹配
   const entries = Object.entries(translations).map(
     ([before, [after, isExact]]) => ({
@@ -501,6 +515,18 @@ export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
         NodeFilter.SHOW_TEXT,
         {
           acceptNode(node) {
+            // ⛔ 跳过不应替换的标签
+            const parentTag = node.parentNode?.nodeName;
+            if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
+
+            // ⛔ 跳过隐藏元素（如 display:none 或 visibility:hidden）
+            if (
+              node.parentElement &&
+              window.getComputedStyle(node.parentElement).display === "none"
+            )
+              return NodeFilter.FILTER_REJECT;
+
+            // ✅ 普通节点匹配逻辑
             const normalized = normalizeText(node.nodeValue);
             return matcherFn(normalized, trimmedBefore)
               ? NodeFilter.FILTER_ACCEPT
