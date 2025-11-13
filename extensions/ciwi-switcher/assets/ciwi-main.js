@@ -79,13 +79,16 @@ async function ciwiOnload() {
     return;
   }
   // 产品图片翻译（非阻塞）
-  await ProductImgTranslate(blockId, shop, ciwiBlock);
+  ProductImgTranslate(blockId, shop, ciwiBlock);
 
   // 网页custom liquid 文本翻译
-  await CustomLiquidTextTranslate(blockId, shop, ciwiBlock);
+  CustomLiquidTextTranslate(blockId, shop, ciwiBlock);
+
+  //延时5s后再次执行
+  setTimeout(() => CustomLiquidTextTranslate(blockId, shop, ciwiBlock), 5000);
 
   // 主页图片替换
-  await HomeImageTranslate(blockId);
+  HomeImageTranslate(blockId);
 
   // 加载配置（缓存 + 后台刷新，保留“最多两次”语义）
   const configKey = `ciwi_switcher_config`;
