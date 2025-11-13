@@ -24,7 +24,7 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
 
     return (
         <Modal
-            title={langauges.length > 1 ? t("Delete {{count}} languages", { count: langauges.length }) : t("Delete {{item}}", { item: langauges[0]?.language })}
+            title={langauges.length > 1 ? t("Delete {{count}} languages", { count: langauges.length }) : t("Delete {{item}}", { item: langauges[0]?.name })}
             width={1000}
             open={isVisible}
             onCancel={() => setVisible(false)}
