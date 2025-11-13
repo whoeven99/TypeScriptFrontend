@@ -338,7 +338,7 @@ const Index = () => {
         shopify.toast.show(t("Saved successfully"));
         fetcher.submit(
           {
-            log: `${globalStore?.shop} 翻译管理-文章页面修改数据保存成功`,
+            log: `${globalStore?.shop} 翻译管理-博客页面修改数据保存成功`,
           },
           {
             method: "POST",
@@ -470,7 +470,7 @@ const Index = () => {
   }) => {
     fetcher.submit(
       {
-        log: `${globalStore?.shop} 从翻译管理-文章页面点击单行翻译`,
+        log: `${globalStore?.shop} 从翻译管理-博客页面点击单行翻译`,
       },
       {
         method: "POST",
@@ -496,7 +496,7 @@ const Index = () => {
         shopify.toast.show(t("Translated successfully"));
         fetcher.submit(
           {
-            log: `${globalStore?.shop} 从翻译管理-文章页面点击单行翻译返回结果 ${data?.response}`,
+            log: `${globalStore?.shop} 从翻译管理-博客页面点击单行翻译返回结果 ${data?.response}`,
           },
           {
             method: "POST",
@@ -742,7 +742,7 @@ const Index = () => {
                     onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    {pageInfo && (
+                    {(pageInfo.hasPreviousPage || pageInfo.hasNextPage) && (
                       <Pagination
                         hasPrevious={pageInfo.hasPreviousPage}
                         onPrevious={onPrevious}
@@ -905,7 +905,7 @@ const Index = () => {
                     onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    {pageInfo && (
+                    {(pageInfo.hasPreviousPage || pageInfo.hasNextPage) && (
                       <Pagination
                         hasPrevious={pageInfo.hasPreviousPage}
                         onPrevious={onPrevious}

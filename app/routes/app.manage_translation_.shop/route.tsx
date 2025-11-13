@@ -31,15 +31,6 @@ const { Content } = Layout;
 
 const { Text } = Typography;
 
-type TableDataType = {
-  key: string;
-  index: number;
-  resource: string;
-  default_language: string | undefined;
-  translated: string | undefined;
-  type: string | undefined;
-} | null;
-
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const searchTerm = url.searchParams.get("language");
@@ -56,79 +47,86 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const adminAuthResult = await authenticate.admin(request);
   const { shop, accessToken } = adminAuthResult.session;
 
-  try {
-    const formData = await request.formData();
-    const startCursor = JSON.parse(formData.get("startCursor") as string);
-    const endCursor = JSON.parse(formData.get("endCursor") as string);
-    const confirmData: ConfirmDataType[] = JSON.parse(
-      formData.get("confirmData") as string,
-    );
-    switch (true) {
-      case !!startCursor:
-        try {
-          const response = await queryPreviousTransType({
-            shop,
-            accessToken: accessToken as string,
-            resourceType: "SHOP",
-            startCursor: startCursor.cursor,
-            locale: searchTerm || "",
-          }); // 处理逻辑
-          console.log(`应用日志: ${shop} 翻译管理-商店页面翻到上一页`);
-
-          return {
-            success: true,
-            errorCode: 0,
-            errorMsg: "",
-            response,
-          };
-        } catch (error) {
-          return {
-            success: false,
-            errorCode: 10001,
-            errorMsg: "SERVER_ERROR",
-            response: undefined,
-          };
-        }
-
-      case !!endCursor:
-        try {
-          const response = await queryNextTransType({
-            shop,
-            accessToken: accessToken as string,
-            resourceType: "SHOP",
-            endCursor: endCursor.cursor,
-            locale: searchTerm || "",
-          }); // 处理逻辑
-          console.log(`应用日志: ${shop} 翻译管理-商店页面翻到下一页`);
-
-          return {
-            success: true,
-            errorCode: 0,
-            errorMsg: "",
-            response,
-          };
-        } catch (error) {
-          return {
-            success: false,
-            errorCode: 10001,
-            errorMsg: "SERVER_ERROR",
-            response: undefined,
-          };
-        }
-      case !!confirmData:
-        const data = await updateManageTranslation({
+  const formData = await request.formData();
+  const startCursor = JSON.parse(formData.get("startCursor") as string);
+  const endCursor = JSON.parse(formData.get("endCursor") as string);
+  const confirmData: ConfirmDataType[] = JSON.parse(
+    formData.get("confirmData") as string,
+  );
+  switch (true) {
+    case !!startCursor:
+      try {
+        const response = await queryPreviousTransType({
           shop,
           accessToken: accessToken as string,
-          confirmData,
-        });
-        return json({ data: data });
-      default:
-        // 你可以在这里处理一个默认的情况，如果没有符合的条件
-        return json({ success: false, message: "Invalid data" });
-    }
-  } catch (error) {
-    console.error("Error action shop:", error);
-    throw new Response("Error action shop", { status: 500 });
+          resourceType: "SHOP",
+          startCursor: startCursor.cursor,
+          locale: searchTerm || "",
+        }); // 处理逻辑
+        console.log(`应用日志: ${shop} 翻译管理-商店页面翻到上一页`);
+
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
+      }
+
+    case !!endCursor:
+      try {
+        const response = await queryNextTransType({
+          shop,
+          accessToken: accessToken as string,
+          resourceType: "SHOP",
+          endCursor: endCursor.cursor,
+          locale: searchTerm || "",
+        }); // 处理逻辑
+        console.log(`应用日志: ${shop} 翻译管理-商店页面翻到下一页`);
+
+        return {
+          success: true,
+          errorCode: 0,
+          errorMsg: "",
+          response,
+        };
+      } catch (error) {
+        return {
+          success: false,
+          errorCode: 10001,
+          errorMsg: "SERVER_ERROR",
+          response: undefined,
+        };
+      }
+    case !!confirmData:
+      const data = await updateManageTranslation({
+        shop,
+        accessToken: accessToken as string,
+        confirmData,
+      });
+
+      return {
+        success: true,
+        errorCode: 0,
+        errorMsg: "",
+        response: data,
+      };
+
+    default:
+      // 你可以在这里处理一个默认的情况，如果没有符合的条件
+      return {
+        success: false,
+        errorCode: 10001,
+        errorMsg: "SERVER_ERROR",
+        response: null,
+      };
   }
 };
 
@@ -150,9 +148,9 @@ const Index = () => {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const [shopsData, setShopsData] = useState<any>();
-  const [resourceData, setResourceData] = useState<TableDataType[]>([]);
-  const [confirmData, setConfirmData] = useState<ConfirmDataType[]>([]);
+  const [shopsData, setShopsData] = useState<any[]>([]);
+  const [resourceData, setResourceData] = useState<any[]>([]);
+  const [confirmData, setConfirmData] = useState<any[]>([]);
   const [loadingItems, setLoadingItems] = useState<string[]>([]);
   const [successTranslatedKey, setSuccessTranslatedKey] = useState<string[]>(
     [],
@@ -168,8 +166,17 @@ const Index = () => {
     searchTerm || "",
   );
   const [selectedItem, setSelectedItem] = useState<string>("shop");
-  const [hasPrevious, setHasPrevious] = useState<boolean>(false);
-  const [hasNext, setHasNext] = useState<boolean>(false);
+  const [pageInfo, setPageInfo] = useState<{
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+    startCursor: string;
+    endCursor: string;
+  }>({
+    hasPreviousPage: false,
+    hasNextPage: false,
+    startCursor: "",
+    endCursor: "",
+  });
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -222,40 +229,78 @@ const Index = () => {
 
   useEffect(() => {
     if (shopsData) {
-      setHasPrevious(shopsData?.pageInfo?.hasPreviousPage);
-      setHasNext(shopsData?.pageInfo?.hasNextPage);
       const data = generateMenuItemsArray(shopsData);
       setResourceData(data);
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 100);
+      setLoadingItems([]);
+      setConfirmData([]);
+      setSuccessTranslatedKey([]);
+      setTranslatedValues({});
     }
   }, [shopsData]);
 
   useEffect(() => {
     if (dataFetcher.data) {
       if (dataFetcher.data?.success) {
-        setShopsData(dataFetcher.data?.response);
+        const newData = dataFetcher.data.response?.nodes;
+        if (Array.isArray(newData)) {
+          setShopsData(newData);
+        }
+        const newPageInfo = dataFetcher.data.response?.pageInfo;
+
+        if (newPageInfo) setPageInfo(newPageInfo);
         isManualChangeRef.current = false; // 重置
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 100);
       }
-      setConfirmData([]);
-      setSuccessTranslatedKey([]);
     }
   }, [dataFetcher.data]);
 
   useEffect(() => {
-    if (confirmFetcher.data && confirmFetcher.data.data) {
-      const errorItem = confirmFetcher.data.data.filter(
-        (item: any) => item.success === false,
+    if (confirmFetcher.data?.success) {
+      const errorItem = confirmFetcher.data?.response?.filter(
+        (item: any) => item?.success === false,
       );
-      if (errorItem.length == 0) {
+      const successfulItem = confirmFetcher.data?.response?.filter(
+        (item: any) => item?.success === true,
+      );
+      if (Array.isArray(successfulItem) && successfulItem.length) {
+        successfulItem.forEach((item: any) => {
+          const index = shopsData.findIndex(
+            (option: any) => option.resourceId === item?.response?.resourceId,
+          );
+          if (index !== -1) {
+            const data = shopsData[index]?.translations?.find(
+              (option: any) => option?.key === item?.response?.key,
+            );
+            if (data) {
+              data.value = item?.response?.value;
+            } else {
+              shopsData[index].translations.push({
+                key: item.response.key,
+                value: item.response.value,
+              });
+            }
+          }
+        });
+      }
+      if (Array.isArray(errorItem) && errorItem.length == 0) {
         shopify.toast.show(t("Saved successfully"));
+        fetcher.submit(
+          {
+            log: `${globalStore?.shop} 翻译管理-商店页面修改数据保存成功`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       } else {
         shopify.toast.show(t("Some items saved failed"));
       }
-      setConfirmData([]);
-      setSuccessTranslatedKey([]);
     }
+    setConfirmData([]);
+    setSuccessTranslatedKey([]);
   }, [confirmFetcher.data]);
 
   useEffect(() => {
@@ -278,7 +323,7 @@ const Index = () => {
       dataIndex: "default_language",
       key: "default_language",
       width: "45%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return <ManageTableInput record={record} />;
       },
     },
@@ -287,7 +332,7 @@ const Index = () => {
       dataIndex: "translated",
       key: "translated",
       width: "45%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return (
           <ManageTableInput
             record={record}
@@ -303,16 +348,15 @@ const Index = () => {
     {
       title: t("Translate"),
       width: "10%",
-      render: (_: any, record: TableDataType) => {
+      render: (_: any, record: any) => {
         return (
           <Button
             onClick={() => {
-              handleTranslate(
-                "SHOP",
-                record?.key || "",
-                record?.type || "",
-                record?.default_language || "",
-              );
+              handleTranslate({
+                resourceType: "SHOP",
+                record,
+                handleInputChange,
+              });
             }}
             loading={loadingItems.includes(record?.key || "")}
           >
@@ -323,16 +367,36 @@ const Index = () => {
     },
   ];
 
-  const handleInputChange = (key: string, value: string) => {
+  const generateMenuItemsArray = (items: any) => {
+    return items.flatMap((item: any, index: number) => {
+      if (item?.translatableContent.length !== 0) {
+        // 创建当前项的对象
+        const currentItem = {
+          key: `${item?.translatableContent[index]?.key}_${item?.resourceId}_${index}`,
+          resourceId: item?.resourceId,
+          shopifyKey: item?.translatableContent[index]?.key,
+          index,
+          resource: t(item?.translatableContent[index]?.key),
+          digest: item?.translatableContent[index]?.digest || "",
+          type: item?.translatableContent[index]?.type || "",
+          default_language: item?.translatableContent[index]?.value || "",
+          translated: item?.translations[index]?.value,
+        };
+        return currentItem.default_language !== "" ? [currentItem] : [];
+      }
+      return [];
+    });
+  };
+
+  const handleInputChange = (record: any, value: string) => {
     setTranslatedValues((prev) => ({
       ...prev,
-      [key]: value, // 更新对应的 key
+      [record?.key]: value, // 更新对应的 key
     }));
     setConfirmData((prevData) => {
       const existingItemIndex = prevData.findIndex(
-        (item) => item?.resourceId === key,
+        (item) => item.id === record?.key,
       );
-
       if (existingItemIndex !== -1) {
         // 如果 key 存在，更新其对应的 value
         const updatedConfirmData = [...prevData];
@@ -342,18 +406,13 @@ const Index = () => {
         };
         return updatedConfirmData;
       } else {
-        // 如果 key 不存在，新增一条数据
         const newItem = {
-          resourceId: shopsData.nodes[0]?.resourceId,
-          locale: shopsData.nodes[0]?.translatableContent.find(
-            (item: any) => item.key === key,
-          )?.locale,
-          key: key,
+          id: record?.key,
+          resourceId: record?.resourceId,
+          locale: globalStore?.source || "",
+          key: record?.shopifyKey,
           value: value, // 初始为空字符串
-          translatableContentDigest:
-            shopsData.nodes[0]?.translatableContent.find(
-              (item: any) => item.key === key,
-            )?.digest,
+          translatableContentDigest: record?.digest,
           target: searchTerm || "",
         };
 
@@ -362,55 +421,55 @@ const Index = () => {
     });
   };
 
-  const generateMenuItemsArray = (items: any) => {
-    return items.nodes[0]?.translatableContent.flatMap(
-      (item: any, index: number) => {
-        // 创建当前项的对象
-        const currentItem = {
-          key: item.key, // 使用 key 生成唯一的 key
-          resource: item.key,
-          default_language: item.value, // 默认语言为 item 的标题
-          translated:
-            items.nodes[0]?.translations.find(
-              (translation: any) => translation.key === item.key,
-            )?.value || "", // 翻译字段初始化为空字符串
-          type: item.type,
-        };
-        return [currentItem];
+  const handleTranslate = async ({
+    resourceType,
+    record,
+    handleInputChange,
+  }: {
+    resourceType: string;
+    record: any;
+    handleInputChange: (key: string, value: string) => void;
+  }) => {
+    fetcher.submit(
+      {
+        log: `${globalStore?.shop} 从翻译管理-商店页面点击单行翻译`,
+      },
+      {
+        method: "POST",
+        action: "/log",
       },
     );
-  };
+    setLoadingItems((prev) => [...prev, record?.key]);
 
-  const handleTranslate = async (
-    resourceType: string,
-    key: string,
-    type: string,
-    context: string,
-  ) => {
-    if (!key || !type || !context) {
-      return;
-    }
-    setLoadingItems((prev) => [...prev, key]);
     const data = await SingleTextTranslate({
       shopName: globalStore?.shop || "",
       source: globalStore?.source || "",
       target: searchTerm || "",
       resourceType: resourceType,
-      context: context,
-      key: key,
-      type: type,
+      context: record?.default_language,
+      key: record?.shopifyKey,
+      type: record?.type,
       server: globalStore?.server || "",
     });
     if (data?.success) {
-      if (loadingItemsRef.current.includes(key)) {
-        handleInputChange(key, data.response);
-        setSuccessTranslatedKey((prev) => [...prev, key]);
+      if (loadingItemsRef.current.includes(record?.key)) {
+        handleInputChange(record, data.response);
+        setSuccessTranslatedKey((prev) => [...prev, record?.key]);
         shopify.toast.show(t("Translated successfully"));
+        fetcher.submit(
+          {
+            log: `${globalStore?.shop} 从翻译管理-商店页面点击单行翻译返回结果 ${data?.response}`,
+          },
+          {
+            method: "POST",
+            action: "/log",
+          },
+        );
       }
     } else {
       shopify.toast.show(data.errorMsg);
     }
-    setLoadingItems((prev) => prev.filter((item) => item !== key));
+    setLoadingItems((prev) => prev.filter((item) => item !== record?.key));
   };
 
   const handleLanguageChange = (language: string) => {
@@ -457,7 +516,7 @@ const Index = () => {
       dataFetcher.submit(
         {
           startCursor: JSON.stringify({
-            cursor: shopsData.pageInfo.startCursor,
+            cursor: pageInfo.startCursor,
             searchTerm: searchTerm,
           }),
         },
@@ -477,7 +536,7 @@ const Index = () => {
       dataFetcher.submit(
         {
           endCursor: JSON.stringify({
-            cursor: shopsData.pageInfo.endCursor,
+            cursor: pageInfo.endCursor,
             searchTerm: searchTerm,
           }),
         },
@@ -520,22 +579,6 @@ const Index = () => {
     <Page
       title={t("Shop")}
       fullWidth={true}
-      // primaryAction={{
-      //   content: t("Save"),
-      //   loading: confirmFetcher.state === "submitting",
-      //   disabled:
-      //     confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //   onAction: handleConfirm,
-      // }}
-      // secondaryActions={[
-      //   {
-      //     content: t("Cancel"),
-      //     loading: confirmFetcher.state === "submitting",
-      //     disabled:
-      //       confirmData.length == 0 || confirmFetcher.state === "submitting",
-      //     onAction: handleDiscard,
-      //   },
-      // ]}
       backAction={{
         onAction: onCancel,
       }}
@@ -603,7 +646,7 @@ const Index = () => {
           >
             <Spin />
           </div>
-        ) : shopsData?.nodes?.length ? (
+        ) : shopsData.length ? (
           <Content
             style={{
               paddingLeft: isMobile ? "16px" : "0",
@@ -671,12 +714,11 @@ const Index = () => {
                           >
                             <Button
                               onClick={() => {
-                                handleTranslate(
-                                  "SHOP",
-                                  item?.key || "",
-                                  item?.type || "",
-                                  item?.default_language || "",
-                                );
+                                handleTranslate({
+                                  resourceType: "SHOP",
+                                  record: item,
+                                  handleInputChange,
+                                });
                               }}
                               loading={loadingItems.includes(item?.key || "")}
                             >
@@ -694,11 +736,11 @@ const Index = () => {
                   </Space>
                 </Card>
                 <div style={{ display: "flex", justifyContent: "center" }}>
-                  {(hasNext || hasPrevious) && (
+                  {(pageInfo.hasPreviousPage || pageInfo.hasNextPage) && (
                     <Pagination
-                      hasPrevious={hasPrevious}
+                      hasPrevious={pageInfo.hasPreviousPage}
                       onPrevious={onPrevious}
-                      hasNext={hasNext}
+                      hasNext={pageInfo.hasNextPage}
                       onNext={onNext}
                     />
                   )}
@@ -716,11 +758,11 @@ const Index = () => {
                   pagination={false}
                 />
                 <div style={{ display: "flex", justifyContent: "center" }}>
-                  {(hasNext || hasPrevious) && (
+                  {(pageInfo.hasPreviousPage || pageInfo.hasNextPage) && (
                     <Pagination
-                      hasPrevious={hasPrevious}
+                      hasPrevious={pageInfo.hasPreviousPage}
                       onPrevious={onPrevious}
-                      hasNext={hasNext}
+                      hasNext={pageInfo.hasNextPage}
                       onNext={onNext}
                     />
                   )}
@@ -739,33 +781,6 @@ const Index = () => {
           />
         )}
       </Layout>
-      {/* <Modal
-        variant={"base"}
-        open={!!isVisible}
-        onHide={() => setIsVisible(false)}
-      >
-        <div
-          style={{
-            padding: "16px",
-          }}
-        >
-          <Text>
-            {t("If you leave this page, any unsaved changes will be lost.")}
-          </Text>
-        </div>
-        <TitleBar title={t("Unsaved changes")}>
-          <button
-            variant="primary"
-            tone="critical"
-            onClick={() => handleLeaveItem(isVisible)}
-          >
-            {t("Leave Anyway")}
-          </button>
-          <button onClick={() => setIsVisible(false)}>
-            {t("Stay on Page")}
-          </button>
-        </TitleBar>
-      </Modal> */}
     </Page>
   );
 };

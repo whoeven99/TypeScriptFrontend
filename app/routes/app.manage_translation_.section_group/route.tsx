@@ -334,7 +334,7 @@ const Index = () => {
         shopify.toast.show(t("Saved successfully"));
         fetcher.submit(
           {
-            log: `${globalStore?.shop} 翻译管理-文章页面修改数据保存成功`,
+            log: `${globalStore?.shop} 翻译管理-主题页面修改数据保存成功`,
           },
           {
             method: "POST",

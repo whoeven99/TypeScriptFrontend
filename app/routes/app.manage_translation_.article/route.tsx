@@ -183,6 +183,7 @@ const Index = () => {
     startCursor: "",
     endCursor: "",
   });
+
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -992,7 +993,7 @@ const Index = () => {
                     onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    {pageInfo && (
+                    {(pageInfo.hasPreviousPage || pageInfo.hasNextPage) && (
                       <Pagination
                         hasPrevious={pageInfo.hasPreviousPage}
                         onPrevious={onPrevious}
@@ -1231,7 +1232,7 @@ const Index = () => {
                     onClick={handleMenuChange}
                   />
                   <div style={{ display: "flex", justifyContent: "center" }}>
-                    {pageInfo && (
+                    {(pageInfo.hasPreviousPage || pageInfo.hasNextPage) && (
                       <Pagination
                         hasPrevious={pageInfo.hasPreviousPage}
                         onPrevious={onPrevious}
