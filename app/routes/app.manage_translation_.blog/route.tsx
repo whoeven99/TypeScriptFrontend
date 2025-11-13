@@ -320,15 +320,15 @@ const Index = () => {
             (option: any) => option.resourceId === item?.response?.resourceId,
           );
           if (index !== -1) {
-            const article = blogsData[index]?.translations?.find(
+            const data = blogsData[index]?.translations?.find(
               (option: any) => option?.key === item?.response?.key,
             );
-            if (article) {
-              article.value = item?.response?.value;
+            if (data) {
+              data.value = item?.response?.value;
             } else {
               blogsData[index].translations.push({
-                key: item.data.key,
-                value: item.data.value,
+                key: item.response.key,
+                value: item.response.value,
               });
             }
           }
