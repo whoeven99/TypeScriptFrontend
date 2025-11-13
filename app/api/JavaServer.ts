@@ -1,5 +1,4 @@
 import axios from "axios";
-import { authenticate } from "~/shopify.server";
 import { queryShop, queryShopLanguages } from "./admin";
 import { ShopLocalesType } from "~/routes/app.language/route";
 import pLimit from "p-limit";
@@ -19,6 +18,139 @@ interface GroupedDeleteData {
   translationKeys: string[];
 }
 
+export const UpdateLiquidReplacementMethod = async ({
+  shop,
+  server,
+  id,
+}: {
+  shop: string;
+  server: string;
+  id: number;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/liquid/updateLiquidReplacementMethod?shopName=${shop}&id=${id}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} UpdateLiquidReplacementMethod: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} UpdateLiquidReplacementMethod error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+export const DeleteLiquidDataByIds = async ({
+  shop,
+  server,
+  ids,
+}: {
+  shop: string;
+  server: string;
+  ids: number[];
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/liquid/deleteLiquidDataByIds?shopName=${shop}`,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: ids,
+    });
+
+    console.log(`${shop} DeleteLiquidDataByIds: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} DeleteLiquidDataByIds error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+export const SelectShopNameLiquidData = async ({
+  shop,
+  server,
+}: {
+  shop: string;
+  server: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/liquid/selectShopNameLiquidData?shopName=${shop}`,
+      method: "POST",
+    });
+
+    console.log(`${shop} SelectShopNameLiquidData: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} SelectShopNameLiquidData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
+export const InsertShopNameLiquidData = async ({
+  id,
+  shop,
+  server,
+  sourceText,
+  targetText,
+  replacementMethod,
+  languageCode,
+}: {
+  id?: number;
+  shop: string;
+  server: string;
+  sourceText: string;
+  targetText: string;
+  replacementMethod: boolean;
+  languageCode: string;
+}) => {
+  try {
+    const response = await axios({
+      url: `${server}/liquid/insertShopNameLiquidData?shopName=${shop}`,
+      method: "POST",
+      data: {
+        id: id,
+        liquidBeforeTranslation: sourceText,
+        liquidAfterTranslation: targetText,
+        replacementMethod,
+        languageCode,
+      },
+    });
+
+    console.log(`${shop} InsertShopNameLiquidData: `, response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error(`${shop} InsertShopNameLiquidData error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
+  }
+};
+
 export const IsInFreePlanTime = async ({
   shop,
   server,
@@ -37,8 +169,14 @@ export const IsInFreePlanTime = async ({
     return response.data;
   } catch (error) {
     console.error(`${shop} IsInFreePlanTime error:`, error);
+    return {
+      success: false,
+      errorCode: 10001,
+      errorMsg: "SERVER_ERROR",
+      response: null,
+    };
   }
-}
+};
 
 export const GetAllProgressData = async ({
   shop,

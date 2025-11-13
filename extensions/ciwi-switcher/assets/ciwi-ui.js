@@ -4,6 +4,7 @@ import {
   GetProductImageData,
   fetchAutoRate,
   GetShopImageData,
+  ParseLiquidDataByShopNameAndLanguage,
 } from "./ciwi-api.js";
 import { transformPrices } from "./ciwi-utils.js";
 
@@ -334,7 +335,7 @@ export async function LanguageSelectorTakeEffect(
 }
 
 /**
- * 观察 DOM 变化，动态处理新价格
+ * 观察 DOM 变化，动态处理新图片
  */
 export function initProductImgObserver({
   translateSourceArray = [],
@@ -395,6 +396,9 @@ export function initProductImgObserver({
   });
 }
 
+/**
+ * 根据数据库数据替换网页图片
+ */
 export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
   const productIdInput = ciwiBlock.querySelector('input[name="product_id"]');
   const productId = productIdInput.value;
@@ -443,6 +447,123 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
 }
 
 /**
+ * 根据数据库数据替换网页文本（安全版）
+ */
+export async function CustomLiquidTextTranslate(blockId, shop, ciwiBlock) {
+  const languageInput = ciwiBlock.querySelector('input[name="language_code"]');
+  const language = languageInput?.value;
+
+  // 🧩 获取数据库翻译数据
+  const parseLiquidDataByShopNameAndLanguage =
+    await ParseLiquidDataByShopNameAndLanguage({
+      blockId,
+      shopName: shop.value,
+      languageCode: language,
+    });
+
+  const translations = parseLiquidDataByShopNameAndLanguage?.response || [];
+  if (!translations || Object.keys(translations).length === 0) return;
+
+  // 🧮 辅助函数
+  const escapeRegExp = (string) =>
+    string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const normalizeText = (text) =>
+    text?.trim()?.replace(/^["“”]+|["“”]+$/g, "") || "";
+
+  const hasOuterQuote = (text) => /^["“”]/.test(text) && /["“”]$/.test(text);
+
+  // ❌ 不应替换内容的标签
+  const skipTags = new Set([
+    "SCRIPT",
+    "STYLE",
+    "NOSCRIPT",
+    "CODE",
+    "PRE",
+    "TEXTAREA",
+    "SVG",
+    "META",
+    "LINK",
+    "TITLE",
+  ]);
+
+  // 将 translations 拆分成精准匹配和模糊匹配
+  const entries = Object.entries(translations).map(
+    ([before, [after, isExact]]) => ({
+      before,
+      after,
+      isExact: Boolean(isExact),
+    }),
+  );
+
+  const exactEntries = entries.filter((e) => e.isExact);
+  const fuzzyEntries = entries.filter((e) => !e.isExact);
+
+  /**
+   * 🔄 通用替换函数
+   */
+  const replaceForEntries = (entryList, matcherFn, replacerFn) => {
+    entryList.forEach(({ before, after }) => {
+      const trimmedBefore = before?.trim();
+      const trimmedAfter = after?.trim();
+      if (!trimmedBefore || !trimmedAfter) return;
+
+      const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT,
+        {
+          acceptNode(node) {
+            // ⛔ 跳过不应替换的标签
+            const parentTag = node.parentNode?.nodeName;
+            if (skipTags.has(parentTag)) return NodeFilter.FILTER_REJECT;
+
+            // ⛔ 跳过隐藏元素（如 display:none 或 visibility:hidden）
+            if (
+              node.parentElement &&
+              window.getComputedStyle(node.parentElement).display === "none"
+            )
+              return NodeFilter.FILTER_REJECT;
+
+            // ✅ 普通节点匹配逻辑
+            const normalized = normalizeText(node.nodeValue);
+            return matcherFn(normalized, trimmedBefore)
+              ? NodeFilter.FILTER_ACCEPT
+              : NodeFilter.FILTER_REJECT;
+          },
+        },
+      );
+
+      const textNodes = [];
+      while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+      textNodes.forEach((node) => {
+        const original = node.nodeValue;
+        const keepQuote = hasOuterQuote(original);
+        const newValue = replacerFn(original, trimmedBefore, trimmedAfter);
+        node.nodeValue = keepQuote ? `"${newValue}"` : newValue;
+      });
+    });
+  };
+
+  // ✅ 1. 先执行精准替换
+  replaceForEntries(
+    exactEntries,
+    (normalized, trimmedBefore) => normalized === trimmedBefore,
+    (_original, _trimmedBefore, trimmedAfter) => trimmedAfter,
+  );
+
+  // ✅ 2. 再执行模糊替换
+  replaceForEntries(
+    fuzzyEntries,
+    (normalized, trimmedBefore) => normalized.includes(trimmedBefore),
+    (original, trimmedBefore, trimmedAfter) => {
+      const re = new RegExp(escapeRegExp(trimmedBefore), "g");
+      return original.replace(re, trimmedAfter);
+    },
+  );
+}
+
+/**
  * 批量替换主页图片
  */
 export async function HomeImageTranslate(blockId) {
@@ -474,8 +595,8 @@ export async function HomeImageTranslate(blockId) {
         img.src = item.imageAfterUrl;
         img.srcset = item.imageAfterUrl;
       }
-      if (item.altBeforeTranslation) {
-        img.alt = item.altBeforeTranslation;
+      if (item.altAfterTranslation) {
+        img.alt = item.altAfterTranslation;
       }
     });
   });

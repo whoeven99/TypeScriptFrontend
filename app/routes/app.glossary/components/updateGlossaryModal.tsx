@@ -284,7 +284,7 @@ const UpdateGlossaryModal: React.FC<GlossaryModalProps> = ({
       ]}
     >
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
-        <Text>{t("Always translate")}</Text>
+        <Text>{t("Keep translation consistent across your store")}</Text>
         <div
           style={{
             display: "flex",

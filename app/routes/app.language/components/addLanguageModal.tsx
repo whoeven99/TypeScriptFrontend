@@ -43,8 +43,6 @@ const AddLanguageModal: React.FC<AddLanguageModalProps> = ({
   //用户默认语言数据
   const { source } = useSelector((state: any) => state.userConfig);
 
-  console.log(source?.code);
-
   const regions = [
     // 常用语言
     {
