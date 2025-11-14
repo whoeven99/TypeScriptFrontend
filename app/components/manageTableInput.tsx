@@ -28,9 +28,10 @@ interface ManageTableInputProps {
       [key: string]: string;
     }>
   >;
-  handleInputChange?: (key: string, value: string, index: number) => void;
+  handleInputChange?: (record: any, value: string, index?: number) => void;
   isRtl?: boolean;
   index?: number;
+  isNewVersion?: boolean;
 }
 
 const ManageTableInput: React.FC<ManageTableInputProps> = ({
@@ -42,6 +43,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
   handleInputChange,
   isRtl,
   index,
+  isNewVersion,
 }) => {
   const defaultValue = useMemo(() => {
     return record?.default_language || "";
@@ -71,6 +73,18 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
     translatedValues !== undefined &&
     setTranslatedValues !== undefined
   ) {
+    const callHandleChange = (value: string) => {
+      const idx = index ? Number(index + "" + record.index) : record.index;
+
+      // 新版：handleInputChange(key, value, index)
+      if (isNewVersion) {
+        return handleInputChange(record, value, idx);
+      }
+
+      // 旧版：handleInputChange(record, value, index)
+      return handleInputChange(record.key, value, idx);
+    };
+
     if (isHtml) {
       const [isInitialized, setIsInitialized] = useState(false);
       const [htmlContent, setHtmlContent] = useState<string>("");
@@ -93,11 +107,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
           onUpdate: ({ editor }) => {
             if (!isInitialized) return;
             const html = editor.getHTML(); // 原始 HTML
-            handleInputChange(
-              record.key,
-              html,
-              index ? Number(index + "" + record.index) : record.index,
-            );
+            callHandleChange(html);
           },
         },
         [],
@@ -138,13 +148,7 @@ const ManageTableInput: React.FC<ManageTableInputProps> = ({
       <TextArea
         rows={4}
         value={translatedValues[record?.key]}
-        onChange={(e) =>
-          handleInputChange(
-            record.key,
-            e.target.value,
-            index ? Number(index + "" + record.index) : record.index,
-          )
-        }
+        onChange={(e) => callHandleChange(e.target.value)}
         className={`${isRtl ? "rtl-input" : ""} ${isSuccess ? "success_input" : ""}`}
       />
     );
