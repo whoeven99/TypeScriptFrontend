@@ -334,6 +334,40 @@ export async function LanguageSelectorTakeEffect(
   }
 }
 
+// 保存所有我们替换过的 img 以及“替换后的最终值”
+const monitoredImages = new WeakMap();
+
+export function monitorImage(img, finalSrc, finalSrcset, finalAlt) {
+  // 如果已经在监控，就先断开之前的观察
+  if (monitoredImages.has(img)) {
+    const old = monitoredImages.get(img);
+    old?.observer.disconnect();
+  }
+
+  // 创建新的 MutationObserver
+  const observer = new MutationObserver(() => {
+    // 只要有人篡改了 src/srcset/alt，则立即恢复
+    if (img.src !== finalSrc && finalSrc) img.src = finalSrc;
+    if (img.srcset !== finalSrcset && finalSrcset) img.srcset = finalSrcset;
+    if (img.alt !== finalAlt && finalAlt) img.alt = finalAlt;
+  });
+
+  // 监听属性变化
+  observer.observe(img, {
+    attributes: true,
+    attributeFilter: ['src', 'srcset', 'alt'],
+  });
+
+  // 保存监控信息
+  monitoredImages.set(img, {
+    finalSrc,
+    finalSrcset,
+    finalAlt,
+    observer,
+  });
+}
+
+
 /**
  * 观察 DOM 变化，动态处理新图片
  */
@@ -435,6 +469,8 @@ export async function ProductImgTranslate(blockId, shop, ciwiBlock) {
           if (match?.altAfterTranslation) {
             img.alt = match?.altAfterTranslation;
           }
+
+          monitorImage(img, match?.imageAfterUrl, match?.imageAfterUrl, match?.altAfterTranslation);
         }
       });
 
