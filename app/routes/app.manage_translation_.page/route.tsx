@@ -450,7 +450,7 @@ const Index = () => {
         return (
           <ManageTableInput
             record={record}
-            isHtml={record?.key == "body_html"}
+            isHtml={record?.shopifyKey == "body_html"}
           />
         );
       },
